@@ -38,6 +38,50 @@
       }
     },
     "parameters" : {
+      "AuditActions" : {
+        "description" : "Audit actions to include.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "actions",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "$ref" : "#/components/schemas/AuditAction"
+          },
+          "type" : "array"
+        },
+        "style" : "form"
+      },
+      "AuditEnd" : {
+        "description" : "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+        "in" : "query",
+        "name" : "end",
+        "required" : false,
+        "schema" : {
+          "format" : "date-time",
+          "type" : "string"
+        }
+      },
+      "AuditSearch" : {
+        "description" : "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+        "in" : "query",
+        "name" : "q",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 255,
+          "type" : "string"
+        }
+      },
+      "AuditStart" : {
+        "description" : "Inclusive earliest event time. The server limits the range to 183 days.",
+        "in" : "query",
+        "name" : "start",
+        "required" : false,
+        "schema" : {
+          "format" : "date-time",
+          "type" : "string"
+        }
+      },
       "ContainersExclude" : {
         "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[containers]=id,name.",
         "explode" : true,
@@ -426,6 +470,78 @@
       }
     },
     "responses" : {
+      "AuditEvents" : {
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "properties" : {
+                "docs" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApiV2AuditEvent"
+                  },
+                  "type" : "array"
+                },
+                "endExclusive" : {
+                  "format" : "date-time",
+                  "type" : "string"
+                },
+                "limit" : {
+                  "minimum" : 1,
+                  "type" : "integer"
+                },
+                "start" : {
+                  "format" : "date-time",
+                  "type" : "string"
+                },
+                "truncated" : {
+                  "type" : "boolean"
+                }
+              },
+              "required" : [ "docs", "endExclusive", "limit", "start", "truncated" ],
+              "type" : "object"
+            }
+          }
+        },
+        "description" : "Capped newest-first audit events.",
+        "headers" : {
+          "X-Rate-Limit-MinWaitIntervalMillis" : {
+            "$ref" : "#/components/headers/RateLimitMinWait"
+          },
+          "X-Rate-Limit-WaitTimeMillis" : {
+            "$ref" : "#/components/headers/RateLimitWait"
+          }
+        }
+      },
+      "AuditInvalidRequest" : {
+        "content" : {
+          "application/problem+json" : {
+            "example" : {
+              "code" : "errors.api.v2.invalidRequest",
+              "status" : 400,
+              "title" : "The search range or filters are invalid."
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ApiV2Problem"
+            }
+          }
+        },
+        "description" : "The search range or filters are invalid."
+      },
+      "AuditUnavailable" : {
+        "content" : {
+          "application/problem+json" : {
+            "example" : {
+              "code" : "errors.api.v2.audit.unavailable",
+              "status" : 503,
+              "title" : "The server could not read a consistent audit snapshot and returned no partial data."
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ApiV2Problem"
+            }
+          }
+        },
+        "description" : "The server could not read a consistent audit snapshot and returned no partial data."
+      },
       "BadRequest" : {
         "content" : {
           "application/problem+json" : {
@@ -631,6 +747,45 @@
       }
     },
     "schemas" : {
+      "ApiV2AuditEvent" : {
+        "properties" : {
+          "action" : {
+            "$ref" : "#/components/schemas/AuditAction"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "domain" : {
+            "enum" : [ "MESSAGING", "RECORD", "FOLDER", "NOTEBOOK", "MEDIA", "USER", "GROUP", "COMMUNITY", "FORM", "AUDIT", "INV_SAMPLE", "INV_SUBSAMPLE", "INV_CONTAINER", "INV_INSTRUMENT", "REQUEST", "WORKSPACE", "UNKNOWN" ],
+            "type" : "string"
+          },
+          "eventId" : {
+            "maxLength" : 64,
+            "minLength" : 64,
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : [ "string", "null" ]
+          },
+          "payload" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          },
+          "target" : {
+            "description" : "Stable audited resource identifier",
+            "type" : [ "string", "null" ]
+          },
+          "timestamp" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "username" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "domain", "eventId", "payload", "timestamp", "username" ],
+        "type" : "object"
+      },
       "ApiV2Config" : {
         "properties" : {
           "branding" : {
@@ -986,6 +1141,10 @@
         "required" : [ "accessToken" ],
         "type" : "object"
       },
+      "AuditAction" : {
+        "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
+        "type" : "string"
+      },
       "ContainersRead" : {
         "additionalProperties" : false,
         "properties" : {
@@ -995,21 +1154,24 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "format" : "int64",
@@ -1026,7 +1188,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -1064,7 +1227,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -1078,7 +1242,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -1101,7 +1266,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -1127,6 +1293,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -1221,7 +1388,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "endDate" : {
             "description" : "End of the maintenance window.",
@@ -1230,7 +1398,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable maintenance identifier.",
@@ -1250,7 +1419,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "startDate" : {
             "description" : "Beginning of the maintenance window.",
@@ -1259,7 +1429,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "stopUserLoginDate" : {
             "description" : "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
@@ -1267,7 +1438,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "version" : {
             "description" : "Version for conditional updates and deletes.",
@@ -1277,7 +1449,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -1560,7 +1733,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "email" : {
             "description" : "User's email address.",
@@ -1570,7 +1744,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -1578,7 +1753,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -1597,7 +1773,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -1606,7 +1783,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -1648,6 +1826,11 @@
       }
     },
     "x-rspace-access-policies" : {
+      "AuditRead" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+        "description" : "Authenticated callers who can read the resource."
+      },
       "ContainerRead" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -2160,6 +2343,63 @@
         "x-rspace-operation" : "READ"
       }
     },
+    "/api/v2/containers/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listContainerAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/ContainersId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one containers resource",
+        "tags" : [ "containers" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
     "/api/v2/instruments" : {
       "get" : {
         "description" : "Returns a paginated view of instruments. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
@@ -2481,6 +2721,63 @@
           "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
         },
         "x-rspace-operation" : "READ"
+      }
+    },
+    "/api/v2/instruments/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listInstrumentAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/InstrumentsId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one instruments resource",
+        "tags" : [ "instruments" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
       }
     },
     "/api/v2/maintenances" : {
@@ -3542,6 +3839,63 @@
           "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
         },
         "x-rspace-operation" : "READ"
+      }
+    },
+    "/api/v2/users/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listUserAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/UsersId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one users resource",
+        "tags" : [ "users" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
       }
     }
   },

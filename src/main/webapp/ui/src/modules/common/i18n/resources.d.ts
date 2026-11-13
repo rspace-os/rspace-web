@@ -852,15 +852,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -5608,6 +5599,18 @@ export default interface Resources {
     "api": {
       "v2": {
         "openapi": {
+          "audit": {
+            "access": "Authenticated callers who can read the resource.",
+            "actions": "Audit actions to include.",
+            "description": "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+            "end": "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
+            "invalid": "The search range or filters are invalid.",
+            "search": "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+            "start": "Inclusive earliest event time. The server limits the range to 183 days.",
+            "success": "Capped newest-first audit events.",
+            "summary": "List audit events for one {0} resource",
+            "unavailable": "The server could not read a consistent audit snapshot and returned no partial data."
+          },
           "headers": {
             "etag": "Strong entity tag for the returned representation.",
             "privateNoStore": "Prevents storage of caller-specific subscription state.",
@@ -6092,6 +6095,14 @@ export default interface Resources {
           }
         },
         "v2": {
+          "audit": {
+            "range": {
+              "inverted": "The audit search start date must not be after its end date.",
+              "tooWide": "The audit search range must not exceed {0} days.",
+              "tooWideTitle": "The audit search range is too wide."
+            },
+            "unavailable": "The audit trail is temporarily unavailable. Try again later."
+          },
           "authenticationRequired": "Authentication is required.",
           "bulk": {
             "filter": {
