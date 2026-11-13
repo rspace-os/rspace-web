@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { CalendarCheck2Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -20,9 +19,8 @@ import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bo
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { cn } from "@/modules/common/utils/cn";
 import { type BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
@@ -78,12 +76,6 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   ],
 });
 
-const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
-
-function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
-  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
-}
-
 export const BookingEditorsContext = React.createContext<
   | {
       setEditors: React.Dispatch<React.SetStateAction<Map<string, BookingListDocument>>>;
@@ -92,7 +84,7 @@ export const BookingEditorsContext = React.createContext<
   | undefined
 >(undefined);
 
-function InlineBookingEditor({
+export function InlineBookingEditor({
   event: initialEvent,
   timezone,
   onClose,
@@ -225,46 +217,6 @@ function InlineBookingEditor({
         }}
         onSubmit={(submission) => mutation.mutateAsync(submission)}
       />
-    </div>
-  );
-}
-
-export function BookingActions({ event, timezone }: { event: BookingListDocument; timezone: string }) {
-  const { t } = useTranslation("booking");
-  const [editing, setEditing] = React.useState(false);
-  const editable = isEditableBooking(event);
-  if (editing && editable) {
-    return <InlineBookingEditor event={event} timezone={timezone} onClose={() => setEditing(false)} />;
-  }
-  const canViewDetails = event.privacy === "full";
-  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0);
-  if (actionCount === 0) return null;
-  return (
-    <div
-      className={cn(
-        "grid border-border border-t text-xs",
-        ACTION_COLUMNS[actionCount],
-        actionCount > 1 && "divide-x divide-border",
-      )}
-    >
-      {canViewDetails ? (
-        <Link
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          to="/booking/calendar/bookings/$id"
-          params={{ id: String(event.id) }}
-        >
-          {t("calendar.actions.viewDetails")}
-        </Link>
-      ) : null}
-      {editable ? (
-        <button
-          type="button"
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          onClick={() => setEditing(true)}
-        >
-          {t("calendar.actions.edit")}
-        </button>
-      ) : null}
     </div>
   );
 }
