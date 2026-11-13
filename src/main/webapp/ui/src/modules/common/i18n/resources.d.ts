@@ -759,6 +759,7 @@ export default interface Resources {
   "booking": {
     "access": {
       "allUsers": "All users",
+      "editInventoryPermissions": "To edit the permissions, <inventoryLink>go to the inventory item's settings</inventoryLink>.",
       "leave": "Leave configuration",
       "roles": {
         "booker": {
