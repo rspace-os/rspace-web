@@ -6,6 +6,7 @@ import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiGroupInfo;
 import com.researchspace.api.v1.model.IdentifiableNameableApiObject;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.FilterCriteria;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.ListFormatUtils;
@@ -135,6 +136,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired RecordManager recordManager;
   private @Autowired BaseRecordManager baseRecordManager;
   private @Autowired RaIDDao raidDao;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   private @Autowired IContentInitialiserUtils contentUtils;
 
@@ -144,6 +146,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group saveGroup(Group group, boolean isNew, User subject) {
+    calendarRevocations.affectAll();
     if (!isNew) {
       if (!permissnUtils.isPermitted(group, PermissionType.WRITE, subject)) {
         throw new AuthorizationException(
@@ -182,6 +185,7 @@ public class GroupManagerImpl implements GroupManager {
 
   public Group addUserToGroup(String usernameToAdd, Long groupId, RoleInGroup role)
       throws IllegalAddChildOperation {
+    calendarRevocations.affectAll();
 
     Group group = groupDao.get(groupId);
     User userToAdd = userDao.getUserByUsername(usernameToAdd);
@@ -256,6 +260,7 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   public Group removeUserFromGroup(String uname, Long grpId, User subject) {
+    calendarRevocations.affectAll();
 
     Group grp = groupDao.get(grpId);
     User userToRemove = groupPermUtils.assertLeaveGroupPermissions(uname, subject, grp);
@@ -711,6 +716,7 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group addMembersToProjectGroup(
       Long groupId, List<User> usersToAdd, String owners, User SessionUser) {
+    calendarRevocations.affectAll();
     Group grp = getGroup(groupId);
     grp.setGroupOwners(owners);
     for (User userToAdd : usersToAdd) {
@@ -734,6 +740,7 @@ public class GroupManagerImpl implements GroupManager {
   @Override
   public Group addMembersToGroup(
       Long grpid, List<User> usersToAdd, String pis, String admins, User grpCreator) {
+    calendarRevocations.affectAll();
     Group grp = getGroup(grpid);
     grp.setAdmins(admins);
     grp.setPis(pis);
@@ -797,6 +804,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group removeGroup(Long groupId, User subject) {
+    calendarRevocations.affectAll();
     Group group = groupDao.get(groupId);
     // remove any permissions from admins
     Set<User> admins = group.getLabAdminsWithViewAllPermission();
@@ -848,6 +856,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group removeGroupIfNoMemberLoggedInWithinOneYear(Long groupId, User subject) {
+    calendarRevocations.affectAll();
     Group group = groupDao.get(groupId);
     Date cutoff = java.sql.Date.valueOf(java.time.LocalDate.now().minusYears(1));
     boolean hasRecentlyActiveMember =
@@ -904,6 +913,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public void setRoleForUser(long groupId, Long userid, String roleStr, User subject) {
+    calendarRevocations.affectAll();
     RoleInGroup role = RoleInGroup.valueOf(roleStr);
     Group group = getGroup(groupId);
     User toChange = userDao.get(userid);
@@ -1005,6 +1015,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public void removeLabGroupMembersFromCollabGroup(Long collabGroupId, User pi) {
+    calendarRevocations.affectAll();
     Group collabGroup = groupDao.get(collabGroupId);
     if (!permissnUtils.isPermitted(collabGroup, PermissionType.WRITE, pi)) {
       throw new AuthorizationException(
@@ -1036,6 +1047,7 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   public User promoteUserToPi(User toPromote, User subject) {
+    calendarRevocations.affectAll();
     // we're ok to proceed. move user from existing group
     for (Group grp : toPromote.getGroups()) {
       if (grp.isLabGroup() && grp.isOnlyGroupPi(toPromote.getUsername())) {
@@ -1071,6 +1083,7 @@ public class GroupManagerImpl implements GroupManager {
 
   public User authorizeLabAdminToViewAll(
       Long labAdminId, User subject, Long groupId, boolean enable) {
+    calendarRevocations.affectAll();
     Group group = getGroup(groupId);
     if (!group.isLabGroup()) {
       throw new UnsupportedOperationException(
@@ -1201,6 +1214,7 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group setNewPi(long groupId, Long newPiId, User admin) {
+    calendarRevocations.affectAll();
     Group grp = groupDao.get(groupId);
 
     User newPi = userDao.get(newPiId);
