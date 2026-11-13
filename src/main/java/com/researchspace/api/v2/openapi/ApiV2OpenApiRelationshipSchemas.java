@@ -3,6 +3,7 @@ package com.researchspace.api.v2.openapi;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.RelationshipSchema;
 import com.researchspace.model.collection.WriteOperation;
@@ -36,7 +37,10 @@ final class ApiV2OpenApiRelationshipSchemas {
   }
 
   static Map<String, Object> relationshipInput(
-      RelationshipSchema relationship, WriteOperation operation, Map<String, String> names) {
+      RelationshipSchema relationship,
+      WriteOperation operation,
+      Map<String, String> names,
+      ApiV2OpenApiText text) {
     List<Map<String, Object>> variants = new ArrayList<>();
     Set<RelationshipInputForm> forms = relationship.inputForms().getOrDefault(operation, Set.of());
     if (forms.contains(RelationshipInputForm.GLOBAL_ID)) {
@@ -53,9 +57,9 @@ final class ApiV2OpenApiRelationshipSchemas {
               "example",
               relationship.globalIdPrefixesByTarget().values().iterator().next() + "1",
               "description",
-              "RSpace global identifier. Permitted prefixes: "
-                  + String.join(", ", relationship.globalIdPrefixesByTarget().values())
-                  + "."));
+              text.get(
+                  Key.GLOBAL_ID_PREFIXES,
+                  String.join(", ", relationship.globalIdPrefixesByTarget().values()))));
     }
     if (forms.contains(RelationshipInputForm.OBJECT)) {
       relationship

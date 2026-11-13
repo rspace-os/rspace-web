@@ -49,7 +49,9 @@ class ApiV2OpenApiAnnotationMergerTest {
 
   @Test
   void rejectsUndocumentedV2HandlersButSkipsHiddenAndUnrelatedHandlers() throws Exception {
-    var generator = new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "API", "2.0.0");
+    var generator =
+        new ApiV2OpenApiGenerator(
+            new ApiV2ResourceCatalog(List.of()), ApiV2OpenApiTestText.english(), "API", "2.0.0");
     var endpoints = new ApiV2EndpointCatalog(List.of());
     var handlerMapping = mock(RequestMappingHandlerMapping.class);
     var handler = new HandlerMethod(new UndocumentedController(), "missing");
@@ -342,7 +344,11 @@ class ApiV2OpenApiAnnotationMergerTest {
     RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
     when(handlerMapping.getHandlerMethods()).thenReturn(handlers);
     return new ApiV2OpenApiDocumentService(
-            new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0"),
+            new ApiV2OpenApiGenerator(
+                new ApiV2ResourceCatalog(List.of()),
+                ApiV2OpenApiTestText.english(),
+                "Test API",
+                "2.0.0"),
             endpoints,
             () -> Stream.of(handlerMapping))
         .generate();

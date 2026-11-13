@@ -4,6 +4,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
 import com.researchspace.api.v2.ApiV2ErrorCodes;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,53 +28,54 @@ final class ApiV2OpenApiResponses {
           "429", "TooManyRequests",
           "500", "UnexpectedError");
 
-  static Map<String, Object> standardResponses() {
+  static Map<String, Object> standardResponses(ApiV2OpenApiText text) {
     return ordered(
         STANDARD_RESPONSE_NAMES.get("400"),
         problemResponse(
-            "The request is invalid.", 400, ApiV2ErrorCodes.messageKeyFor(HttpStatus.BAD_REQUEST)),
+            text.get(Key.RESPONSE_BAD_REQUEST),
+            400,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.BAD_REQUEST)),
         STANDARD_RESPONSE_NAMES.get("401"),
         problemResponse(
-            "Authentication is required.",
+            text.get(Key.RESPONSE_UNAUTHENTICATED),
             401,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNAUTHORIZED)),
         STANDARD_RESPONSE_NAMES.get("403"),
         problemResponse(
-            "The caller is not authorized.",
+            text.get(Key.RESPONSE_FORBIDDEN),
             403,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.FORBIDDEN)),
         STANDARD_RESPONSE_NAMES.get("404"),
         problemResponse(
-            "The resource was not found or is not visible.",
+            text.get(Key.RESPONSE_NOT_FOUND),
             404,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_FOUND)),
         STANDARD_RESPONSE_NAMES.get("406"),
         problemResponse(
-            "No acceptable response representation is available.",
+            text.get(Key.RESPONSE_NOT_ACCEPTABLE),
             406,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_ACCEPTABLE)),
         STANDARD_RESPONSE_NAMES.get("415"),
         problemResponse(
-            "The request media type is unsupported.",
+            text.get(Key.RESPONSE_UNSUPPORTED_MEDIA_TYPE),
             415,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNSUPPORTED_MEDIA_TYPE)),
         STANDARD_RESPONSE_NAMES.get("422"),
-        problemResponse(
-            "The bulk operation exceeds the configured limit.", 422, "errors.api.v2.bulk.limit"),
+        problemResponse(text.get(Key.RESPONSE_BULK_LIMIT), 422, "errors.api.v2.bulk.limit"),
         STANDARD_RESPONSE_NAMES.get("429"),
         ordered(
             "description",
-            "The request was throttled.",
+            text.get(Key.RESPONSE_TOO_MANY_REQUESTS),
             "content",
             problemContent(
-                "The request was throttled.",
+                text.get(Key.RESPONSE_TOO_MANY_REQUESTS),
                 429,
                 ApiV2ErrorCodes.messageKeyFor(HttpStatus.TOO_MANY_REQUESTS)),
             "headers",
             rateLimitHeaders()),
         STANDARD_RESPONSE_NAMES.get("500"),
         problemResponse(
-            "An unexpected server error occurred.",
+            text.get(Key.RESPONSE_UNEXPECTED_ERROR),
             500,
             ApiV2ErrorCodes.messageKeyFor(HttpStatus.INTERNAL_SERVER_ERROR)));
   }
@@ -125,22 +127,22 @@ final class ApiV2OpenApiResponses {
     return Map.of(PROBLEM_JSON, media);
   }
 
-  static Map<String, Object> standardHeaders() {
+  static Map<String, Object> standardHeaders(ApiV2OpenApiText text) {
     return ordered(
         "ETag",
         ordered(
             "description",
-            "Strong entity tag for the returned representation.",
+            text.get(Key.HEADER_ETAG),
             "schema",
             ordered("type", "string", "pattern", "^\\\"[^\\\"\\x00-\\x20]+\\\"$")),
         "RateLimitLimit",
-        integerHeader("Configured request limit for the shortest throttle interval."),
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_LIMIT)),
         "RateLimitRemaining",
-        integerHeader("Requests remaining in the shortest throttle interval."),
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_REMAINING)),
         "RateLimitWait",
-        integerHeader("Minimum wait before another request, in milliseconds."),
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_WAIT)),
         "RateLimitMinWait",
-        integerHeader("Configured minimum interval between requests, in milliseconds."));
+        integerHeader(text.get(Key.HEADER_RATE_LIMIT_MIN_WAIT)));
   }
 
   private static Map<String, Object> integerHeader(String description) {

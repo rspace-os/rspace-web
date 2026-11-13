@@ -179,7 +179,9 @@ class ApiV2RuntimeProjectionOpenApiTest {
             selection);
     ApiV2ResourceRegistration<?, ?> registration = catalog.find("sources").orElseThrow();
     List<Map<String, Object>> documents = registration.list(request, actor).docs();
-    OpenAPI document = new ApiV2OpenApiGenerator(catalog, "API", "2.0.0").generate();
+    OpenAPI document =
+        new ApiV2OpenApiGenerator(catalog, ApiV2OpenApiTestText.english(), "API", "2.0.0")
+            .generate();
     return new ProjectionFixture(document, documents);
   }
 

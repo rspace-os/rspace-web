@@ -17,6 +17,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listRes
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.researchspace.api.v2.ApiV2ErrorCodes;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -24,7 +25,6 @@ import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.ResourceSchema;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 
@@ -32,9 +32,11 @@ import org.springframework.http.HttpStatus;
 final class ApiV2OpenApiOperations {
 
   private final ApiV2OpenApiRuntimeFieldDocs runtimeFields;
+  private final ApiV2OpenApiText text;
 
-  ApiV2OpenApiOperations(ApiV2OpenApiRuntimeFieldDocs runtimeFields) {
+  ApiV2OpenApiOperations(ApiV2OpenApiRuntimeFieldDocs runtimeFields, ApiV2OpenApiText text) {
     this.runtimeFields = runtimeFields;
+    this.text = text;
   }
 
   Map<String, Object> operation(
@@ -52,12 +54,12 @@ final class ApiV2OpenApiOperations {
     result.put(
         "summary",
         documentation.summary() == null
-            ? ApiV2OpenApiNames.summary(resource, operation)
+            ? ApiV2OpenApiNames.summary(resource, operation, text)
             : documentation.summary());
     result.put(
         "description",
         documentation.description() == null
-            ? ApiV2OpenApiNames.description(resource, operation)
+            ? ApiV2OpenApiNames.description(resource, operation, text)
             : documentation.description());
     result.put(
         "tags",
@@ -74,10 +76,10 @@ final class ApiV2OpenApiOperations {
             schema,
             resourceSchemas,
             resource.registry(),
-            runtimeFields.runtimeFieldsExtension(resource));
+            runtimeFields.runtimeFieldsExtension(resource),
+            text);
     if (requiresIfMatch(resource, operation)) {
-      parameters.add(
-          ifMatchParameter("Strong entity tag containing the current resource version."));
+      parameters.add(ifMatchParameter(text.get(Key.PARAMETER_IF_MATCH)));
     }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
@@ -87,9 +89,7 @@ final class ApiV2OpenApiOperations {
               "query",
               false,
               ordered("type", "boolean", "default", false),
-              "When true, permanently removes the resource. This is restricted to"
-                  + " a direct sysadmin and returns 204. The default false performs the ordinary"
-                  + " retry-safe archive transition."));
+              text.get(Key.PARAMETER_PERMANENT)));
     }
     if (!parameters.isEmpty()) {
       result.put("parameters", parameters);
@@ -144,7 +144,7 @@ final class ApiV2OpenApiOperations {
             && resource.mutationPolicy().version().requires(ResourceOperation.DELETE));
   }
 
-  private static Map<String, Object> responses(
+  private Map<String, Object> responses(
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
       String component,
@@ -156,7 +156,7 @@ final class ApiV2OpenApiOperations {
             : "200";
     Map<String, Object> successSchema =
         switch (operation) {
-          case LIST -> listResult(ref(component + "Read"));
+          case LIST -> listResult(ref(component + "Read"), text);
           case COUNT -> ref("ApiV2CountResult");
           case BULK_CREATE, BULK_UPDATE, BULK_DELETE -> bulkResult(ref(component + "Read"));
           default -> ref(component + "Read");
@@ -173,7 +173,7 @@ final class ApiV2OpenApiOperations {
                 .getOrDefault(
                     Integer.valueOf(successStatus),
                     new OpenApiOperationDocumentation.Response(
-                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", Map.of()))
+                        ApiV2OpenApiNames.success(operation, text), Map.of()))
                 .description(),
             "headers",
             rateLimitHeaders(),
@@ -185,7 +185,7 @@ final class ApiV2OpenApiOperations {
           "204",
           ordered(
               "description",
-              "The resource and its dependent live data were permanently removed.",
+              text.get(Key.RESPONSE_PERMANENTLY_REMOVED),
               "headers",
               rateLimitHeaders()));
     }
@@ -205,7 +205,7 @@ final class ApiV2OpenApiOperations {
       responses.put(
           "428",
           problemResponse(
-              "A strong If-Match header is required.",
+              text.get(Key.RESPONSE_IF_MATCH_REQUIRED),
               428,
               resource
                   .ifMatchRequiredCode()

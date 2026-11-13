@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 class ApiV2OpenApiDocumentExportTest {
@@ -36,6 +37,7 @@ class ApiV2OpenApiDocumentExportTest {
   void exportFullDocumentWithoutDatabase() throws Exception {
     try (var context = new AnnotationConfigApplicationContext();
         var handlers = ApiV2TestHandlerMappings.newContext()) {
+      context.registerBean("messageSource", MessageSource.class, JsonMessageSource::new);
       context.registerBean(ResourceMutationManager.class, ResourceMutationManager::new);
       context.registerBean(UserManager.class, () -> mock(UserManager.class));
       context.registerBean(
@@ -60,8 +62,7 @@ class ApiV2OpenApiDocumentExportTest {
       context.refresh();
       var document =
           new ApiV2OpenApiDocumentService(
-                  new ApiV2OpenApiGenerator(
-                      context.getBean(ApiV2ResourceCatalog.class), "RSpace REST API v2", "2.0.0"),
+                  context.getBean(ApiV2OpenApiGenerator.class),
                   context.getBean(ApiV2EndpointCatalog.class),
                   () -> Stream.of(ApiV2TestHandlerMappings.mapping(handlers)))
               .generate();

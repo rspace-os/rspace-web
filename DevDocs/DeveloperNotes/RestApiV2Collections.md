@@ -575,3 +575,13 @@ omits that member too.
 Feature resource specs supply `.tagDocumentation(description, group)`; annotated controllers supply a Swagger `@Tag` description and an `x-tag-group` extension. The document lists exactly the tags used by operations, grouped through `x-tagGroups`, and rejects missing metadata.
 
 For OpenAPI 3.2, replace `x-tagGroups` with `Tag.parent` and a `kind: "nav"` parent tag per group once swagger-core supports 3.2 (swagger-api/swagger-core#5326).
+
+## OpenAPI text
+
+The shared builders resolve every summary, description and example title they generate through
+`ApiV2OpenApiText` from the `api.v2.openapi.*` keys in `server.api.openapi.json`. Add a `Key`
+constant and its catalog entry together; `ApiV2OpenApiTextTest` checks that the two sets match.
+Identifiers such as operation IDs, component names, paths, headers and media types stay in code.
+Text that a feature supplies through its spec or Swagger annotations is published as written. The
+document is generated in English; serving another locale would resolve the same keys with the
+request locale.

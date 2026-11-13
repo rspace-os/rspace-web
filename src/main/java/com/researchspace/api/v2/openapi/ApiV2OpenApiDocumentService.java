@@ -49,7 +49,8 @@ public final class ApiV2OpenApiDocumentService {
                 .forEach(
                     type ->
                         controllerTags.addAll(Arrays.asList(type.getAnnotationsByType(Tag.class))));
-            ApiV2OpenApiAnnotationMerger.merge(document, mapping.getHandlerMethods(), endpoints);
+            ApiV2OpenApiAnnotationMerger.merge(
+                document, mapping.getHandlerMethods(), endpoints, generator.text());
           });
     }
     normalize(document);

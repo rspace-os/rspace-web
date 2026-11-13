@@ -1,0 +1,150 @@
+{
+  "api": {
+    "v2": {
+      "openapi": {
+        "headers": {
+          "etag": "Strong entity tag for the returned representation.",
+          "privateNoStore": "Prevents storage of caller-specific subscription state.",
+          "rateLimitLimit": "Configured request limit for the shortest throttle interval.",
+          "rateLimitMinWait": "Configured minimum interval between requests, in milliseconds.",
+          "rateLimitRemaining": "Requests remaining in the shortest throttle interval.",
+          "rateLimitWait": "Minimum wait before another request, in milliseconds."
+        },
+        "info": {
+          "description": "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",
+          "title": "RSpace REST API v2"
+        },
+        "operations": {
+          "archive": {
+            "description": "Archives one {0} and returns the archived document. Repeating ordinary DELETE is a no-op.",
+            "permanentDescription": "Archives one {0} and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.",
+            "summary": "Archive one {0}"
+          },
+          "bulkArchive": {
+            "description": "Archives every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+            "summary": "Archive matching {0}"
+          },
+          "bulkCreate": {
+            "description": "Creates the supplied {0} documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.",
+            "success": "Successful bulk_create.",
+            "summary": "Create many {0}"
+          },
+          "bulkDelete": {
+            "description": "Deletes every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+            "success": "Successful bulk_delete.",
+            "summary": "Delete matching {0}"
+          },
+          "bulkUpdate": {
+            "description": "Updates every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+            "success": "Successful bulk_update.",
+            "summary": "Update matching {0}"
+          },
+          "count": {
+            "description": "Counts {0} matching the optional bounded filter.",
+            "success": "Successful count.",
+            "summary": "Count {0}"
+          },
+          "create": {
+            "description": "Creates one {0} from the documented create schema.",
+            "success": "Successful create.",
+            "summary": "Create one {0}"
+          },
+          "delete": {
+            "description": "Deletes one {0} and returns the deleted document.",
+            "success": "Successful delete.",
+            "summary": "Delete one {0}"
+          },
+          "list": {
+            "description": "Returns a paginated view of {0}. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
+            "success": "Successful list.",
+            "summary": "List {0}"
+          },
+          "read": {
+            "description": "Returns one visible {0}. A resource that is absent or not readable is reported as not found.",
+            "success": "Successful read.",
+            "summary": "Get one {0}"
+          },
+          "update": {
+            "description": "Partially updates one {0} and returns the updated document.",
+            "success": "Successful update.",
+            "summary": "Update one {0}"
+          }
+        },
+        "parameters": {
+          "depth": "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+          "exclude": "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[{0}]=id,name.",
+          "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name.",
+          "id": "Resource identifier.",
+          "ifMatch": "Strong entity tag containing the current resource version.",
+          "limit": "Maximum documents per page.",
+          "max": "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+          "page": "One-based page number.",
+          "permanent": "When true, permanently removes the resource. This is restricted to a direct sysadmin and returns 204. The default false performs the ordinary retry-safe archive transition.",
+          "sort": "Comma-separated sortable fields; prefix descending fields with '-'. At most {0} fields.",
+          "totals": "Include totalDocs and totalIsLowerBound. Defaults to false.",
+          "where": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
+          "whereWithRuntimeFields": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields."
+        },
+        "resourceAccess": {
+          "assignmentAbsent": "The direct assignment is absent.",
+          "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
+          "document": "Current direct assignments and caller capabilities.",
+          "grantees": "Eligible users and groups.",
+          "ifMatch": "Strong ETag from the latest access document.",
+          "leave": {
+            "summary": "Remove the caller's direct assignment"
+          },
+          "limit": "Maximum grantees to return.",
+          "managingCallers": "Authenticated callers with the registered assignment-management capability.",
+          "ownerRequired": "The assignment change would violate a resource invariant.",
+          "query": "Case-insensitive user or group search text.",
+          "read": {
+            "summary": "Get direct access assignments"
+          },
+          "replace": {
+            "summary": "Replace direct access assignments"
+          },
+          "search": {
+            "summary": "Search eligible access grantees"
+          },
+          "stale": "The access document changed since it was read."
+        },
+        "responses": {
+          "badRequest": "The request is invalid.",
+          "bulkLimit": "The bulk operation exceeds the configured limit.",
+          "failure": "Request failed.",
+          "forbidden": "The caller is not authorized.",
+          "ifMatchRequired": "A strong If-Match header is required.",
+          "notAcceptable": "No acceptable response representation is available.",
+          "notFound": "The resource was not found or is not visible.",
+          "permanentlyRemoved": "The resource and its dependent live data were permanently removed.",
+          "success": "Successful response.",
+          "tooManyRequests": "The request was throttled.",
+          "unauthenticated": "Authentication is required.",
+          "unexpectedError": "An unexpected server error occurred.",
+          "unsupportedMediaType": "The request media type is unsupported."
+        },
+        "runtimeFields": {
+          "ids": "Comma-separated field identifiers.",
+          "limit": "Page size.",
+          "namespace": "Runtime field namespace.",
+          "page": "Page number.",
+          "search": "Search text.",
+          "success": "Caller-specific runtime field catalog."
+        },
+        "schemas": {
+          "globalId": "RSpace global identifier.",
+          "globalIdPrefixes": "RSpace global identifier. Permitted prefixes: {0}.",
+          "totalDocs": "Present only when totals=true.",
+          "totalIsLowerBound": "True when the requested total exceeds max."
+        },
+        "security": {
+          "browserSession": "Authenticated browser session. A deployment can rename this cookie."
+        },
+        "server": {
+          "description": "RSpace deployment root for this generated document."
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.field;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.scalarSchema;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.FilterSchema;
@@ -155,7 +156,8 @@ final class ApiV2OpenApiFilterExtension {
   static Map<String, Object> filterExtension(
       ResourceSchema resource,
       Map<String, ResourceSchema> resourceSchemas,
-      ResourceRegistry registry) {
+      ResourceRegistry registry,
+      ApiV2OpenApiText text) {
     Map<String, Map<String, Object>> selectors = new LinkedHashMap<>();
     publishedFilters(resource, resourceSchemas, registry)
         .forEach(
@@ -163,7 +165,7 @@ final class ApiV2OpenApiFilterExtension {
               Map<String, Object> definition =
                   ordered(
                       "schema",
-                      filterSchema(filter.sourceSelector(), filter.source(), resourceSchemas),
+                      filterSchema(filter.sourceSelector(), filter.source(), resourceSchemas, text),
                       "operators",
                       filter.operators(),
                       "wildcards",
@@ -224,7 +226,10 @@ final class ApiV2OpenApiFilterExtension {
   }
 
   private static Map<String, Object> filterSchema(
-      String selector, ResourceSchema resource, Map<String, ResourceSchema> resourceSchemas) {
+      String selector,
+      ResourceSchema resource,
+      Map<String, ResourceSchema> resourceSchemas,
+      ApiV2OpenApiText text) {
     Optional<FieldSchema> field =
         resource.fields().stream().filter(value -> value.name().equals(selector)).findFirst();
     if (field.isPresent()) {
@@ -232,7 +237,7 @@ final class ApiV2OpenApiFilterExtension {
     }
     for (RelationshipSchema relationship : resource.relationships()) {
       if (selector.equals(relationship.name())) {
-        return ordered("type", "string", "description", "RSpace global identifier.");
+        return ordered("type", "string", "description", text.get(Key.GLOBAL_ID));
       }
       if (selector.equals(relationship.name() + ".relationTo")) {
         return ordered("type", "string", "enum", relationship.targetResources());

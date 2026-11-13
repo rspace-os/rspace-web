@@ -275,7 +275,11 @@ class ApiV2DeclaredArrayOpenApiTest {
     var spec = builder.build();
     return Json31.mapper()
         .convertValue(
-            new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "Test API", "2.0.0")
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(List.of(spec)),
+                    ApiV2OpenApiTestText.english(),
+                    "Test API",
+                    "2.0.0")
                 .generate(),
             new TypeReference<LinkedHashMap<String, Object>>() {});
   }

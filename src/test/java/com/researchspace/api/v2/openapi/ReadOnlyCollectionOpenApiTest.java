@@ -54,7 +54,11 @@ class ReadOnlyCollectionOpenApiTest {
             .expose(Set.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ))
             .build();
     var document =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "Read API", "2.0.0")
+        new ApiV2OpenApiGenerator(
+                new ApiV2ResourceCatalog(List.of(spec)),
+                ApiV2OpenApiTestText.english(),
+                "Read API",
+                "2.0.0")
             .generate();
 
     for (String path : List.of("/api/v2/users", "/api/v2/users/count", "/api/v2/users/{id}")) {
@@ -352,7 +356,11 @@ class ReadOnlyCollectionOpenApiTest {
   private static JsonNode document(ApiV2ResourceSpec<?, ?>... specs) {
     return Json31.mapper()
         .valueToTree(
-            new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(specs)), "API", "2.0.0")
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(List.of(specs)),
+                    ApiV2OpenApiTestText.english(),
+                    "API",
+                    "2.0.0")
                 .generate());
   }
 

@@ -4,6 +4,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.field;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.scalarSchema;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FieldSchema;
@@ -28,24 +29,23 @@ final class ApiV2OpenApiQueryParameters {
       ResourceSchema schema,
       Map<String, ResourceSchema> resourceSchemas,
       ResourceRegistry registry,
-      List<Map<String, Object>> runtimeFields) {
+      List<Map<String, Object>> runtimeFields,
+      ApiV2OpenApiText text) {
     List<Map<String, Object>> parameters = new ArrayList<>();
     if (operation == ResourceOperation.READ
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.DELETE) {
-      parameters.add(idParameter(schema));
+      parameters.add(idParameter(schema, text));
     }
     if (operation == ResourceOperation.LIST) {
-      parameters.add(where(schema, false, resourceSchemas, registry, runtimeFields));
+      parameters.add(where(schema, false, resourceSchemas, registry, runtimeFields, text));
       Map<String, Object> sort =
           parameter(
               "sort",
               "query",
               false,
               ordered("type", "string"),
-              "Comma-separated sortable fields; prefix descending fields with '-'. At most "
-                  + CollectionQueryLimits.MAX_SORT_FIELDS
-                  + " fields.");
+              text.get(Key.PARAMETER_SORT, CollectionQueryLimits.MAX_SORT_FIELDS));
       sort.put(
           "x-rspace-sort",
           ordered(
@@ -61,15 +61,15 @@ final class ApiV2OpenApiQueryParameters {
               "maximumFields",
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
-      parameters.add(pageParameter());
-      parameters.add(limitParameter());
+      parameters.add(pageParameter(text));
+      parameters.add(limitParameter(text));
       parameters.add(
           parameter(
               "totals",
               "query",
               false,
               ordered("type", "boolean", "default", false),
-              "Include totalDocs and totalIsLowerBound. Defaults to false."));
+              text.get(Key.PARAMETER_TOTALS)));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.COUNT) {
       parameters.add(
@@ -78,8 +78,7 @@ final class ApiV2OpenApiQueryParameters {
               "query",
               false,
               ordered("type", "integer", "minimum", 1, "maximum", 10000),
-              "Cap requested totals at max. When exceeded, totalDocs equals max and"
-                  + " totalIsLowerBound is true. On list routes, requires totals=true."));
+              text.get(Key.PARAMETER_MAX)));
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
@@ -90,7 +89,8 @@ final class ApiV2OpenApiQueryParameters {
               operation != ResourceOperation.COUNT,
               resourceSchemas,
               registry,
-              runtimeFields));
+              runtimeFields,
+              text));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.READ) {
       parameters.add(
@@ -107,14 +107,13 @@ final class ApiV2OpenApiQueryParameters {
                   CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH,
                   "default",
                   0),
-              "Relationship expansion depth. At depth 0, the response is the canonical update"
-                  + " reference object and value is the readable target ID. At greater depth,"
-                  + " value is the expanded read document; relationTo and globalId remain stable."
-                  + " A missing or unreadable target is null at every depth."));
+              text.get(Key.PARAMETER_DEPTH)));
       parameters.add(
-          fieldset("fields", schema, resourceSchemas, "Fields to include by resource type."));
+          fieldset(
+              "fields", schema, resourceSchemas, text.get(Key.PARAMETER_FIELDS, schema.name())));
       parameters.add(
-          fieldset("exclude", schema, resourceSchemas, "Fields to exclude by resource type."));
+          fieldset(
+              "exclude", schema, resourceSchemas, text.get(Key.PARAMETER_EXCLUDE, schema.name())));
     }
     return parameters;
   }
@@ -124,25 +123,21 @@ final class ApiV2OpenApiQueryParameters {
       boolean required,
       Map<String, ResourceSchema> resourceSchemas,
       ResourceRegistry registry,
-      List<Map<String, Object>> runtimeFields) {
+      List<Map<String, Object>> runtimeFields,
+      ApiV2OpenApiText text) {
     Map<String, Object> parameter =
         parameter(
             "where",
             "query",
             required,
             ordered("type", "string", "maxLength", CollectionQueryLimits.MAX_WHERE_LENGTH),
-            "Bounded RSQL filter expression. Available selectors and operators are provided in"
-                + " x-rspace-filter. For ID selectors on relationships whose targets are all users,"
-                + " exact me resolves to the authenticated effective subject's numeric ID; for"
-                + " example, createdBy.value==me. Scalar user-id selectors may explicitly opt into"
-                + " the same alias."
-                + (runtimeFields.isEmpty()
-                    ? ""
-                    : " Further per-caller selectors are listed by the catalog named in"
-                        + " x-rspace-runtime-fields."));
+            text.get(
+                runtimeFields.isEmpty()
+                    ? Key.PARAMETER_WHERE
+                    : Key.PARAMETER_WHERE_WITH_RUNTIME_FIELDS));
     parameter.put(
         "x-rspace-filter",
-        ApiV2OpenApiFilterExtension.filterExtension(schema, resourceSchemas, registry));
+        ApiV2OpenApiFilterExtension.filterExtension(schema, resourceSchemas, registry, text));
     if (!runtimeFields.isEmpty()) {
       parameter.put("x-rspace-runtime-fields", runtimeFields);
     }
@@ -189,12 +184,7 @@ final class ApiV2OpenApiQueryParameters {
             "query",
             false,
             ordered("type", "object", "additionalProperties", false, "properties", properties),
-            description
-                + " Uses square-bracket keys and comma-separated nested field paths, for example "
-                + name
-                + "["
-                + resource.name()
-                + "]=id,name.");
+            description);
     parameter.put("style", "deepObject");
     parameter.put("explode", true);
     parameter.put("x-rspace-comma-separated-values", true);
@@ -222,13 +212,13 @@ final class ApiV2OpenApiQueryParameters {
         schema);
   }
 
-  static Map<String, Object> idParameter(ResourceSchema schema) {
+  static Map<String, Object> idParameter(ResourceSchema schema, ApiV2OpenApiText text) {
     return parameter(
         "id",
         "path",
         true,
         scalarSchema(field(schema, schema.idField()).type(), false),
-        "Resource identifier.");
+        text.get(Key.PARAMETER_ID));
   }
 
   static Map<String, Object> ifMatchParameter(String description) {
@@ -240,16 +230,16 @@ final class ApiV2OpenApiQueryParameters {
         description);
   }
 
-  private static Map<String, Object> pageParameter() {
+  private static Map<String, Object> pageParameter(ApiV2OpenApiText text) {
     return parameter(
         "page",
         "query",
         false,
         ordered("type", "integer", "minimum", 1, "default", 1),
-        "One-based page number.");
+        text.get(Key.PARAMETER_PAGE));
   }
 
-  private static Map<String, Object> limitParameter() {
+  private static Map<String, Object> limitParameter(ApiV2OpenApiText text) {
     return parameter(
         "limit",
         "query",
@@ -263,6 +253,6 @@ final class ApiV2OpenApiQueryParameters {
             CollectionQueryLimits.MAX_PAGE_SIZE,
             "default",
             20),
-        "Maximum documents per page.");
+        text.get(Key.PARAMETER_LIMIT));
   }
 }

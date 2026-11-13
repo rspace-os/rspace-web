@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiTestText;
 import com.researchspace.api.v2.openapi.ApiV2TestHandlerMappings;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -23,7 +24,8 @@ class ApiV2OpenApiSecurityTest {
     try (var handlers = ApiV2TestHandlerMappings.newContext()) {
       var mapping = ApiV2TestHandlerMappings.mapping(handlers);
       var generator =
-          new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "API", "2.0.0");
+          new ApiV2OpenApiGenerator(
+              new ApiV2ResourceCatalog(List.of()), ApiV2OpenApiTestText.english(), "API", "2.0.0");
       var document =
           Json31.mapper()
               .valueToTree(

@@ -10,6 +10,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHea
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 
 import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -34,24 +35,36 @@ public final class ApiV2OpenApiGenerator {
       List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
 
   private final ApiV2ResourceCatalog catalog;
+  private final ApiV2OpenApiText text;
   private final String title;
   private final String version;
   private final String serverUrl;
   private final ApiV2OpenApiRuntimeFieldDocs runtimeFields;
   private final ApiV2OpenApiOperations operations;
 
-  public ApiV2OpenApiGenerator(ApiV2ResourceCatalog catalog, String title, String version) {
-    this(catalog, title, version, "/");
+  public ApiV2OpenApiGenerator(
+      ApiV2ResourceCatalog catalog, ApiV2OpenApiText text, String title, String version) {
+    this(catalog, text, title, version, "/");
   }
 
   public ApiV2OpenApiGenerator(
-      ApiV2ResourceCatalog catalog, String title, String version, String serverUrl) {
+      ApiV2ResourceCatalog catalog,
+      ApiV2OpenApiText text,
+      String title,
+      String version,
+      String serverUrl) {
     this.catalog = Objects.requireNonNull(catalog, "Resource catalog");
+    this.text = Objects.requireNonNull(text, "OpenAPI text");
     this.title = ApiV2OpenApiNames.requireText(title, "OpenAPI title");
     this.version = ApiV2OpenApiNames.requireText(version, "OpenAPI version");
     this.serverUrl = ApiV2OpenApiNames.requireText(serverUrl, "OpenAPI server URL");
-    this.runtimeFields = new ApiV2OpenApiRuntimeFieldDocs(catalog);
-    this.operations = new ApiV2OpenApiOperations(runtimeFields);
+    this.runtimeFields = new ApiV2OpenApiRuntimeFieldDocs(catalog, text);
+    this.operations = new ApiV2OpenApiOperations(runtimeFields, text);
+  }
+
+  /** The resolver for the document text, shared with the annotated-endpoint merge. */
+  ApiV2OpenApiText text() {
+    return text;
   }
 
   public OpenAPI generate() {
@@ -80,7 +93,8 @@ public final class ApiV2OpenApiGenerator {
                     schemas,
                     description.schema(),
                     componentNames,
-                    routableNames.contains(description.resourceName())));
+                    routableNames.contains(description.resourceName()),
+                    text));
     Set<String> declaredComponents = new LinkedHashSet<>();
     catalog
         .routableResources()
@@ -105,34 +119,24 @@ public final class ApiV2OpenApiGenerator {
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
-    components.put("responses", standardResponses());
-    components.put("headers", standardHeaders());
+    components.put("responses", standardResponses(text));
+    components.put("headers", standardHeaders(text));
     components.put("securitySchemes", securitySchemes());
 
     return new OpenAPI()
         .openapi("3.1.0")
-        .info(
-            new Info()
-                .title(title)
-                .version(version)
-                .description(
-                    "Generated contract for RSpace REST API v2. Resource operations and schemas "
-                        + "are derived from the same definitions used at runtime."))
-        .servers(
-            List.of(
-                new Server()
-                    .url(serverUrl)
-                    .description("RSpace deployment root for this generated document.")))
+        .info(new Info().title(title).version(version).description(text.get(Key.INFO_DESCRIPTION)))
+        .servers(List.of(new Server().url(serverUrl).description(text.get(Key.SERVER_DESCRIPTION))))
         .paths(Json31.mapper().convertValue(paths, Paths.class))
         .components(Json31.mapper().convertValue(components, Components.class));
   }
 
-  private static Map<String, Object> privateNoStoreHeaders() {
+  private Map<String, Object> privateNoStoreHeaders() {
     return ordered(
         "Cache-Control",
         ordered(
             "description",
-            "Prevents storage of caller-specific subscription state.",
+            text.get(Key.HEADER_PRIVATE_NO_STORE),
             "schema",
             ordered("type", "string", "const", "private, no-store")));
   }
@@ -168,10 +172,10 @@ public final class ApiV2OpenApiGenerator {
 
   private void addResourceAccessPaths(
       Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
-    new ApiV2OpenApiResourceAccessDocs().addResourceAccessPaths(paths, resource, component);
+    new ApiV2OpenApiResourceAccessDocs(text).addResourceAccessPaths(paths, resource, component);
   }
 
-  private static Map<String, Object> securitySchemes() {
+  private Map<String, Object> securitySchemes() {
     return ordered(
         "apiKey",
         ordered("type", "apiKey", "in", "header", "name", "apiKey"),
@@ -186,7 +190,7 @@ public final class ApiV2OpenApiGenerator {
             "name",
             "JSESSIONID",
             "description",
-            "Authenticated browser session. A deployment can rename this cookie."));
+            text.get(Key.SECURITY_BROWSER_SESSION)));
   }
 
   static String singularName(ApiV2ResourceRegistration<?, ?> resource) {

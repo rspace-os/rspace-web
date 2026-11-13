@@ -9,6 +9,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.param
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -28,9 +29,11 @@ import java.util.Map;
 final class ApiV2OpenApiRuntimeFieldDocs {
 
   private final ApiV2ResourceCatalog catalog;
+  private final ApiV2OpenApiText text;
 
-  ApiV2OpenApiRuntimeFieldDocs(ApiV2ResourceCatalog catalog) {
+  ApiV2OpenApiRuntimeFieldDocs(ApiV2ResourceCatalog catalog, ApiV2OpenApiText text) {
     this.catalog = catalog;
+    this.text = text;
   }
 
   void addRuntimeFieldsPath(Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource) {
@@ -43,7 +46,7 @@ final class ApiV2OpenApiRuntimeFieldDocs {
         "200",
         ordered(
             "description",
-            "Caller-specific runtime field catalog.",
+            text.get(Key.RUNTIME_FIELDS_SUCCESS),
             "headers",
             Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
             "content",
@@ -75,20 +78,25 @@ final class ApiV2OpenApiRuntimeFieldDocs {
                             "string",
                             "enum",
                             namespaces.stream().map(n -> n.namespace()).toList()),
-                        "Runtime field namespace."),
-                    parameter("q", "query", false, Map.of("type", "string"), "Search text."),
+                        text.get(Key.RUNTIME_FIELDS_NAMESPACE)),
+                    parameter(
+                        "q",
+                        "query",
+                        false,
+                        Map.of("type", "string"),
+                        text.get(Key.RUNTIME_FIELDS_SEARCH)),
                     parameter(
                         "ids",
                         "query",
                         false,
                         Map.of("type", "string"),
-                        "Comma-separated field identifiers."),
+                        text.get(Key.RUNTIME_FIELDS_IDS)),
                     parameter(
                         "page",
                         "query",
                         false,
                         Map.of("type", "integer", "minimum", 1, "default", 1),
-                        "Page number."),
+                        text.get(Key.RUNTIME_FIELDS_PAGE)),
                     parameter(
                         "limit",
                         "query",
@@ -102,7 +110,7 @@ final class ApiV2OpenApiRuntimeFieldDocs {
                             RuntimeFieldCatalogQuery.MAX_LIMIT,
                             "default",
                             RuntimeFieldCatalogQuery.DEFAULT_LIMIT),
-                        "Page size.")))));
+                        text.get(Key.RUNTIME_FIELDS_LIMIT))))));
   }
 
   void applyRuntimeProjectionSchemas(

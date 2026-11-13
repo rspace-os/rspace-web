@@ -13,6 +13,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResp
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -35,18 +36,18 @@ import java.util.Set;
 final class ApiV2OpenApiResourceAccessDocs {
 
   private enum ResourceAccessOperation {
-    READ("get", "Access", "Get direct access assignments", "ACCESS_READ"),
-    REPLACE("replace", "Access", "Replace direct access assignments", "ACCESS_REPLACE"),
-    LEAVE("leave", "Access", "Remove the caller's direct assignment", "ACCESS_LEAVE"),
-    SEARCH("search", "AccessGrantees", "Search eligible access grantees", "ACCESS_GRANTEE_SEARCH");
+    READ("get", "Access", Key.ACCESS_READ_SUMMARY, "ACCESS_READ"),
+    REPLACE("replace", "Access", Key.ACCESS_REPLACE_SUMMARY, "ACCESS_REPLACE"),
+    LEAVE("leave", "Access", Key.ACCESS_LEAVE_SUMMARY, "ACCESS_LEAVE"),
+    SEARCH("search", "AccessGrantees", Key.ACCESS_SEARCH_SUMMARY, "ACCESS_GRANTEE_SEARCH");
 
     private final String operationPrefix;
     private final String operationSuffix;
-    private final String summary;
+    private final Key summary;
     private final String extensionValue;
 
     ResourceAccessOperation(
-        String operationPrefix, String operationSuffix, String summary, String extensionValue) {
+        String operationPrefix, String operationSuffix, Key summary, String extensionValue) {
       this.operationPrefix = operationPrefix;
       this.operationSuffix = operationSuffix;
       this.summary = summary;
@@ -57,7 +58,7 @@ final class ApiV2OpenApiResourceAccessDocs {
       return operationPrefix + component + operationSuffix;
     }
 
-    String summary() {
+    Key summary() {
       return summary;
     }
 
@@ -137,6 +138,12 @@ final class ApiV2OpenApiResourceAccessDocs {
     properties.put(field, replacement);
   }
 
+  private final ApiV2OpenApiText text;
+
+  ApiV2OpenApiResourceAccessDocs(ApiV2OpenApiText text) {
+    this.text = text;
+  }
+
   void addResourceAccessPaths(
       Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
     if (resource.resourceAccess().isEmpty()) {
@@ -167,20 +174,20 @@ final class ApiV2OpenApiResourceAccessDocs {
     Map<String, Object> operation = new LinkedHashMap<>();
     operation.put(
         "operationId", operationKind.operationId(ApiV2OpenApiNames.singularName(resource)));
-    operation.put("summary", operationKind.summary());
+    operation.put("summary", text.get(operationKind.summary()));
     operation.put("tags", List.of(resource.resourceName()));
     operation.put("security", AUTHENTICATED_SECURITY);
     operation.put(
         "x-rspace-access",
         operationAccessExtension(
             operationKind.managesAssignments()
-                ? "Authenticated callers with the registered assignment-management capability."
-                : "Authenticated callers authorized by the registered protected resource.",
+                ? text.get(Key.ACCESS_MANAGING_CALLERS)
+                : text.get(Key.ACCESS_AUTHORIZED_CALLERS),
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     List<Map<String, Object>> parameters = new ArrayList<>();
-    parameters.add(idParameter(resource.description().schema()));
+    parameters.add(idParameter(resource.description().schema(), text));
     if (operationKind == ResourceAccessOperation.REPLACE) {
-      parameters.add(ifMatchParameter("Strong ETag from the latest access document."));
+      parameters.add(ifMatchParameter(text.get(Key.ACCESS_IF_MATCH)));
       operation.put(
           "requestBody",
           ordered(
@@ -196,14 +203,14 @@ final class ApiV2OpenApiResourceAccessDocs {
               "query",
               true,
               ordered("type", "string", "minLength", 2),
-              "Case-insensitive user or group search text."));
+              text.get(Key.ACCESS_QUERY)));
       parameters.add(
           parameter(
               "limit",
               "query",
               false,
               ordered("type", "integer", "minimum", 1, "maximum", 50, "default", 20),
-              "Maximum grantees to return."));
+              text.get(Key.ACCESS_LIMIT)));
     }
     operation.put("parameters", parameters);
     operation.put("responses", resourceAccessResponses(operationKind));
@@ -211,11 +218,10 @@ final class ApiV2OpenApiResourceAccessDocs {
     return operation;
   }
 
-  private static Map<String, Object> resourceAccessResponses(
-      ResourceAccessOperation operationKind) {
+  private Map<String, Object> resourceAccessResponses(ResourceAccessOperation operationKind) {
     Map<String, Object> responses = new LinkedHashMap<>();
     if (operationKind == ResourceAccessOperation.LEAVE) {
-      responses.put("204", ordered("description", "The direct assignment is absent."));
+      responses.put("204", ordered("description", text.get(Key.ACCESS_ASSIGNMENT_ABSENT)));
     } else {
       Map<String, Object> schema =
           operationKind == ResourceAccessOperation.SEARCH
@@ -225,8 +231,8 @@ final class ApiV2OpenApiResourceAccessDocs {
           ordered(
               "description",
               operationKind == ResourceAccessOperation.SEARCH
-                  ? "Eligible users and groups."
-                  : "Current direct assignments and caller capabilities.",
+                  ? text.get(Key.ACCESS_GRANTEES)
+                  : text.get(Key.ACCESS_DOCUMENT),
               "content",
               content(APPLICATION_JSON_VALUE, schema));
       if (operationKind != ResourceAccessOperation.SEARCH) {
@@ -239,22 +245,19 @@ final class ApiV2OpenApiResourceAccessDocs {
       responses.put(
           "409",
           problemResponse(
-              "The assignment change would violate a resource invariant.",
+              text.get(Key.ACCESS_OWNER_REQUIRED),
               409,
               "errors.api.v2.resourceAccess.ownerRequired"));
     }
     if (operationKind == ResourceAccessOperation.REPLACE) {
       responses.put(
           "412",
-          problemResponse(
-              "The access document changed since it was read.",
-              412,
-              "errors.api.v2.resourceAccess.stale"));
+          problemResponse(text.get(Key.ACCESS_STALE), 412, "errors.api.v2.resourceAccess.stale"));
       putStandardResponses(responses, "415");
       responses.put(
           "428",
           problemResponse(
-              "A strong If-Match header is required.",
+              text.get(Key.RESPONSE_IF_MATCH_REQUIRED),
               428,
               "errors.api.v2.resourceAccess.ifMatchRequired"));
     }

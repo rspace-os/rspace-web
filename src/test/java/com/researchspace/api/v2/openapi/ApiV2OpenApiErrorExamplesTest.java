@@ -39,7 +39,11 @@ class ApiV2OpenApiErrorExamplesTest {
     JsonNode document =
         Json31.mapper()
             .valueToTree(
-                new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0")
+                new ApiV2OpenApiGenerator(
+                        new ApiV2ResourceCatalog(List.of()),
+                        ApiV2OpenApiTestText.english(),
+                        "Test API",
+                        "2.0.0")
                     .generate());
     JsonNode example =
         document

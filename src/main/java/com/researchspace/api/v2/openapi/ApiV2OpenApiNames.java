@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.DeletePolicy;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -66,66 +67,69 @@ final class ApiV2OpenApiNames {
     };
   }
 
-  static String summary(ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
-    String resource = registration.resourceName();
-    return switch (operation) {
-      case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
-      case LIST -> "List " + resource;
-      case COUNT -> "Count " + resource;
-      case READ -> "Get one " + resource;
-      case CREATE -> "Create one " + resource;
-      case BULK_CREATE -> "Create many " + resource;
-      case UPDATE -> "Update one " + resource;
-      case BULK_UPDATE -> "Update matching " + resource;
-      case DELETE -> (archives(registration) ? "Archive one " : "Delete one ") + resource;
-      case BULK_DELETE ->
-          (archives(registration) ? "Archive matching " : "Delete matching ") + resource;
-    };
+  static String summary(
+      ApiV2ResourceRegistration<?, ?> registration,
+      ResourceOperation operation,
+      ApiV2OpenApiText text) {
+    boolean archives = archives(registration);
+    Key key =
+        switch (operation) {
+          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case LIST -> Key.LIST_SUMMARY;
+          case COUNT -> Key.COUNT_SUMMARY;
+          case READ -> Key.READ_SUMMARY;
+          case CREATE -> Key.CREATE_SUMMARY;
+          case BULK_CREATE -> Key.BULK_CREATE_SUMMARY;
+          case UPDATE -> Key.UPDATE_SUMMARY;
+          case BULK_UPDATE -> Key.BULK_UPDATE_SUMMARY;
+          case DELETE -> archives ? Key.ARCHIVE_SUMMARY : Key.DELETE_SUMMARY;
+          case BULK_DELETE -> archives ? Key.BULK_ARCHIVE_SUMMARY : Key.BULK_DELETE_SUMMARY;
+        };
+    return text.get(key, registration.resourceName());
   }
 
   static String description(
-      ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
-    String resource = registration.resourceName();
-    return switch (operation) {
-      case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
-      case LIST ->
-          "Returns a paginated view of "
-              + resource
-              + ". Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are"
-              + " applied before rendering.";
-      case COUNT -> "Counts " + resource + " matching the optional bounded filter.";
-      case READ ->
-          "Returns one visible "
-              + resource
-              + ". A resource that is absent or not readable is reported as not found.";
-      case CREATE -> "Creates one " + resource + " from the documented create schema.";
-      case BULK_CREATE ->
-          "Creates the supplied "
-              + resource
-              + " documents in input order. The batch is handled as one service-layer mutation;"
-              + " validation failure prevents the entire batch from being created.";
-      case UPDATE -> "Partially updates one " + resource + " and returns the updated document.";
-      case BULK_UPDATE ->
-          "Updates every "
-              + resource
-              + " matching the required filter. The operation is handled as one service-layer"
-              + " mutation; resource-specific limits are reported with status 422.";
-      case DELETE ->
-          archives(registration)
-              ? "Archives one "
-                  + resource
-                  + " and returns the archived document. Repeating ordinary DELETE is a no-op."
-                  + (registration.mutationPolicy().delete().permanentOption()
-                      ? " The explicit permanent=true option permanently removes the resource for"
-                          + " a direct sysadmin and returns no document."
-                      : "")
-              : "Deletes one " + resource + " and returns the deleted document.";
-      case BULK_DELETE ->
-          (archives(registration) ? "Archives every " : "Deletes every ")
-              + resource
-              + " matching the required filter. The operation is handled as one service-layer"
-              + " mutation; resource-specific limits are reported with status 422.";
-    };
+      ApiV2ResourceRegistration<?, ?> registration,
+      ResourceOperation operation,
+      ApiV2OpenApiText text) {
+    boolean archives = archives(registration);
+    Key key =
+        switch (operation) {
+          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case LIST -> Key.LIST_DESCRIPTION;
+          case COUNT -> Key.COUNT_DESCRIPTION;
+          case READ -> Key.READ_DESCRIPTION;
+          case CREATE -> Key.CREATE_DESCRIPTION;
+          case BULK_CREATE -> Key.BULK_CREATE_DESCRIPTION;
+          case UPDATE -> Key.UPDATE_DESCRIPTION;
+          case BULK_UPDATE -> Key.BULK_UPDATE_DESCRIPTION;
+          case DELETE ->
+              !archives
+                  ? Key.DELETE_DESCRIPTION
+                  : registration.mutationPolicy().delete().permanentOption()
+                      ? Key.ARCHIVE_PERMANENT_DESCRIPTION
+                      : Key.ARCHIVE_DESCRIPTION;
+          case BULK_DELETE -> archives ? Key.BULK_ARCHIVE_DESCRIPTION : Key.BULK_DELETE_DESCRIPTION;
+        };
+    return text.get(key, registration.resourceName());
+  }
+
+  /** The response description of a successful standard operation. */
+  static String success(ResourceOperation operation, ApiV2OpenApiText text) {
+    Key key =
+        switch (operation) {
+          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case LIST -> Key.LIST_SUCCESS;
+          case COUNT -> Key.COUNT_SUCCESS;
+          case READ -> Key.READ_SUCCESS;
+          case CREATE -> Key.CREATE_SUCCESS;
+          case BULK_CREATE -> Key.BULK_CREATE_SUCCESS;
+          case UPDATE -> Key.UPDATE_SUCCESS;
+          case BULK_UPDATE -> Key.BULK_UPDATE_SUCCESS;
+          case DELETE -> Key.DELETE_SUCCESS;
+          case BULK_DELETE -> Key.BULK_DELETE_SUCCESS;
+        };
+    return text.get(key);
   }
 
   static String requireText(String value, String label) {

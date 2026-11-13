@@ -2,6 +2,7 @@ package com.researchspace.api.v2.openapi;
 
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +10,7 @@ import java.util.Map;
 final class ApiV2OpenApiResultSchemas {
   private ApiV2OpenApiResultSchemas() {}
 
-  static Map<String, Object> listResult(Map<String, Object> item) {
+  static Map<String, Object> listResult(Map<String, Object> item, ApiV2OpenApiText text) {
     return ordered(
         "type",
         "object",
@@ -21,14 +22,9 @@ final class ApiV2OpenApiResultSchemas {
             ordered("type", "array", "items", item),
             "totalDocs",
             ordered(
-                "type",
-                "integer",
-                "format",
-                "int64",
-                "description",
-                "Present only when totals=true."),
+                "type", "integer", "format", "int64", "description", text.get(Key.LIST_TOTAL_DOCS)),
             "totalIsLowerBound",
-            ordered("type", "boolean", "description", "True when the requested total exceeds max."),
+            ordered("type", "boolean", "description", text.get(Key.LIST_TOTAL_IS_LOWER_BOUND)),
             "limit",
             ordered("type", "integer"),
             "page",

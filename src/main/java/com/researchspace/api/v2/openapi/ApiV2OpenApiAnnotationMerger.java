@@ -7,6 +7,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
@@ -55,7 +56,8 @@ final class ApiV2OpenApiAnnotationMerger {
   static void merge(
       Map<String, Object> document,
       Map<RequestMappingInfo, HandlerMethod> handlerMethods,
-      ApiV2EndpointCatalog endpoints) {
+      ApiV2EndpointCatalog endpoints,
+      ApiV2OpenApiText text) {
     Map<String, Object> paths = mutableObjectMap(document.get("paths"));
     Map<String, Object> components = mutableObjectMap(document.get("components"));
     Map<String, Object> schemas = mutableObjectMap(components.get("schemas"));
@@ -84,7 +86,7 @@ final class ApiV2OpenApiAnnotationMerger {
         }
         for (RequestMethod method : entry.getKey().getMethodsCondition().getMethods()) {
           Map<String, Object> generated =
-              operation(handler, metadata, schemas, entry.getKey(), endpoints);
+              operation(handler, metadata, schemas, entry.getKey(), endpoints, text);
           mutableObjectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()))
               .put(method.name().toLowerCase(Locale.ROOT), generated);
         }
@@ -101,7 +103,8 @@ final class ApiV2OpenApiAnnotationMerger {
       Operation metadata,
       Map<String, Object> schemas,
       RequestMappingInfo mapping,
-      ApiV2EndpointCatalog endpoints) {
+      ApiV2EndpointCatalog endpoints,
+      ApiV2OpenApiText text) {
     Map<String, Object> operation = new LinkedHashMap<>();
     operation.put("operationId", metadata.operationId());
     operation.put("summary", metadata.summary());
@@ -163,7 +166,7 @@ final class ApiV2OpenApiAnnotationMerger {
         }
         responses.put(responseCode, response);
       } else {
-        Map<String, Object> error = errorResponse(responseCode);
+        Map<String, Object> error = errorResponse(responseCode, text);
         if (!documented.description().isBlank() && !error.containsKey("$ref")) {
           error.put("description", documented.description());
         }
@@ -171,7 +174,7 @@ final class ApiV2OpenApiAnnotationMerger {
       }
     }
     if (responses.keySet().stream().noneMatch(ApiV2OpenApiAnnotationMerger::isSuccessResponse)) {
-      var success = ordered("description", "Successful response.");
+      var success = ordered("description", text.get(Key.RESPONSE_SUCCESS));
       if (hasBody) success.put("content", inferredContent(mediaTypes, responseSchema));
       responses.put(hasBody ? "200" : "204", success);
     }
@@ -420,13 +423,13 @@ final class ApiV2OpenApiAnnotationMerger {
     return responseCode.matches("2(?:\\d\\d|XX)");
   }
 
-  private static Map<String, Object> errorResponse(String responseCode) {
+  private static Map<String, Object> errorResponse(String responseCode, ApiV2OpenApiText text) {
     Map<String, Object> standardResponse =
         ApiV2OpenApiResponses.standardResponseReference(responseCode);
     return standardResponse == null
         ? ordered(
             "description",
-            "Request failed.",
+            text.get(Key.RESPONSE_FAILURE),
             "content",
             content(ApiV2OpenApiResponses.PROBLEM_JSON, ref("ApiV2Problem")))
         : standardResponse;

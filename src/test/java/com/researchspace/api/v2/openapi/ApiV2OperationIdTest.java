@@ -36,7 +36,11 @@ class ApiV2OperationIdTest {
             .expose(Set.of(ResourceOperation.LIST, ResourceOperation.READ))
             .build();
     var document =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "API", "2.0.0")
+        new ApiV2OpenApiGenerator(
+                new ApiV2ResourceCatalog(List.of(spec)),
+                ApiV2OpenApiTestText.english(),
+                "API",
+                "2.0.0")
             .generate();
     var withoutSingular =
         new CollectionDescription<>(
@@ -51,6 +55,7 @@ class ApiV2OperationIdTest {
                 List.of(
                     ApiV2ResourceSpec.readOnly(withoutSingular, operations, Long::valueOf)
                         .build())),
+            ApiV2OpenApiTestText.english(),
             "API",
             "2.0.0");
     assertThrows(IllegalArgumentException.class, generator::generate);

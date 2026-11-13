@@ -6,6 +6,7 @@ import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiText;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
@@ -19,6 +20,7 @@ import com.researchspace.service.ResourceMutationManager;
 import jakarta.servlet.ServletContext;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -64,15 +66,23 @@ public class ApiV2ResourceConfig {
   }
 
   @Bean
+  ApiV2OpenApiText apiV2OpenApiText(MessageSource messageSource) {
+    return new ApiV2OpenApiText(messageSource);
+  }
+
+  @Bean
   ApiV2OpenApiGenerator apiV2OpenApiGenerator(
-      ApiV2ResourceCatalog catalog, ObjectProvider<ServletContext> servletContext) {
+      ApiV2ResourceCatalog catalog,
+      ApiV2OpenApiText text,
+      ObjectProvider<ServletContext> servletContext) {
     String contextPath =
         servletContext.stream()
             .findFirst()
             .map(ServletContext::getContextPath)
             .filter(path -> !path.isBlank())
             .orElse("/");
-    return new ApiV2OpenApiGenerator(catalog, "RSpace REST API v2", "2.0.0", contextPath);
+    return new ApiV2OpenApiGenerator(
+        catalog, text, text.get(ApiV2OpenApiText.Key.INFO_TITLE), "2.0.0", contextPath);
   }
 
   @Bean

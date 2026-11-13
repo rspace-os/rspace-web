@@ -17,7 +17,11 @@ class ApiV2OpenApiStandardParserTest {
   @Test
   void generatedDocumentIsAcceptedByTheStandardOpenApiParser() {
     OpenAPI document =
-        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0")
+        new ApiV2OpenApiGenerator(
+                new ApiV2ResourceCatalog(List.of()),
+                ApiV2OpenApiTestText.english(),
+                "Test API",
+                "2.0.0")
             .generate();
     ParseOptions options = new ParseOptions();
     options.setResolve(false);
