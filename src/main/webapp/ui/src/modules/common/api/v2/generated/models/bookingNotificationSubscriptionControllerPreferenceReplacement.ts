@@ -8,5 +8,7 @@
 
 export interface BookingNotificationSubscriptionControllerPreferenceReplacement {
   autoSubscribeOwnedItems: boolean;
+  notifyOnCancelled: boolean;
+  notifyOnCreated: boolean;
   notifyOwnActions: boolean;
 }
