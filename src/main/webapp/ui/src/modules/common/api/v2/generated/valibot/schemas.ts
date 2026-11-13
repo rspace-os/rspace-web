@@ -22,6 +22,10 @@ export const ContainersCreateSchema = native.ContainersCreate;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
 export const ContainersUpdateSchema = native.ContainersUpdate;
+export const FeatureFlagsCreateSchema = native.FeatureFlagsCreate;
+export const FeatureFlagsReadSchema = native.FeatureFlagsRead;
+export const FeatureFlagsReferenceSchema = native.FeatureFlagsReference;
+export const FeatureFlagsUpdateSchema = native.FeatureFlagsUpdate;
 export const InstrumentsCreateSchema = native.InstrumentsCreate;
 export const InstrumentsReadSchema = native.InstrumentsRead;
 export const InstrumentsReferenceSchema = native.InstrumentsReference;
@@ -126,6 +130,22 @@ export type SchemaModelTypeChecks = {
   ContainersUpdate: [
     Assert<Extends<v.InferOutput<typeof ContainersUpdateSchema>, Models.ContainersUpdate>>,
     Assert<Extends<Models.ContainersUpdate, v.InferOutput<typeof ContainersUpdateSchema>>>,
+  ];
+  FeatureFlagsCreate: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsCreateSchema>, Models.FeatureFlagsCreate>>,
+    Assert<Extends<Models.FeatureFlagsCreate, v.InferOutput<typeof FeatureFlagsCreateSchema>>>,
+  ];
+  FeatureFlagsRead: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsReadSchema>, Models.FeatureFlagsRead>>,
+    Assert<Extends<Models.FeatureFlagsRead, v.InferOutput<typeof FeatureFlagsReadSchema>>>,
+  ];
+  FeatureFlagsReference: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsReferenceSchema>, Models.FeatureFlagsReference>>,
+    Assert<Extends<Models.FeatureFlagsReference, v.InferOutput<typeof FeatureFlagsReferenceSchema>>>,
+  ];
+  FeatureFlagsUpdate: [
+    Assert<Extends<v.InferOutput<typeof FeatureFlagsUpdateSchema>, Models.FeatureFlagsUpdate>>,
+    Assert<Extends<Models.FeatureFlagsUpdate, v.InferOutput<typeof FeatureFlagsUpdateSchema>>>,
   ];
   InstrumentsCreate: [
     Assert<Extends<v.InferOutput<typeof InstrumentsCreateSchema>, Models.InstrumentsCreate>>,

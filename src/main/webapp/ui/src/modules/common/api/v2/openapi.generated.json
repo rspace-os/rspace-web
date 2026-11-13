@@ -162,6 +162,73 @@
           "type" : "integer"
         }
       },
+      "FeatureFlagsExclude" : {
+        "description" : "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[feature-flags]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "exclude",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "feature-flags" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "feature-flags" : [ "name", "value", "baselineValue", "overrideValue", "source", "canOverride" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "fields"
+      },
+      "FeatureFlagsFields" : {
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.",
+        "explode" : true,
+        "in" : "query",
+        "name" : "fields",
+        "required" : false,
+        "schema" : {
+          "additionalProperties" : false,
+          "properties" : {
+            "feature-flags" : {
+              "type" : "string"
+            }
+          },
+          "type" : "object"
+        },
+        "style" : "deepObject",
+        "x-rspace-allowed-fields" : {
+          "feature-flags" : [ "name", "value", "baselineValue", "overrideValue", "source", "canOverride" ]
+        },
+        "x-rspace-comma-separated-values" : true,
+        "x-rspace-mutually-exclusive-with" : "exclude"
+      },
+      "FeatureFlagsId" : {
+        "description" : "Resource identifier.",
+        "in" : "path",
+        "name" : "id",
+        "required" : true,
+        "schema" : {
+          "maxLength" : 128,
+          "type" : "string"
+        }
+      },
+      "FeatureFlagsWhere" : {
+        "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
+        "in" : "query",
+        "name" : "where",
+        "required" : false,
+        "schema" : {
+          "maxLength" : 32768,
+          "type" : "string"
+        },
+        "x-rspace-filter" : {
+          "$ref" : "#/components/x-rspace-filters/FeatureFlags"
+        }
+      },
       "IfMatchOptional" : {
         "description" : "Strong entity tag containing the current resource version.",
         "in" : "header",
@@ -997,6 +1064,18 @@
       },
       "ApiV2CurrentUserSession" : {
         "properties" : {
+          "canChangeFeatureFlagBaselines" : {
+            "description" : "Whether the user may change feature-flag baselines.",
+            "type" : "boolean"
+          },
+          "canOverrideFeatureFlags" : {
+            "description" : "Whether the user may override feature flags.",
+            "type" : "boolean"
+          },
+          "canUseDevtools" : {
+            "description" : "Whether the feature-flag developer tools are available.",
+            "type" : "boolean"
+          },
           "lastSession" : {
             "description" : "Previous successful login instant.",
             "example" : "2026-08-01T20:00:00Z",
@@ -1008,7 +1087,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "lastSession", "operatedAs" ],
+        "required" : [ "canChangeFeatureFlagBaselines", "canOverrideFeatureFlags", "canUseDevtools", "lastSession", "operatedAs" ],
         "type" : "object"
       },
       "ApiV2Problem" : {
@@ -1216,6 +1295,110 @@
         "type" : "object",
         "x-rspace-access" : {
           "$ref" : "#/components/x-rspace-access-policies/Never"
+        }
+      },
+      "FeatureFlagsCreate" : {
+        "additionalProperties" : false,
+        "properties" : { },
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Never"
+        }
+      },
+      "FeatureFlagsRead" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "baselineValue" : {
+            "description" : "Instance value before a user override is applied. Only a real sysadmin can change it.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Anyone"
+            }
+          },
+          "canOverride" : {
+            "description" : "Whether this caller can set a user override.",
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Anyone"
+            }
+          },
+          "name" : {
+            "description" : "Stable lower-camel-case feature flag name.",
+            "example" : "bookingEnabled",
+            "maxLength" : 128,
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Anyone"
+            }
+          },
+          "overrideValue" : {
+            "description" : "Caller override. Set null to clear the override.",
+            "type" : [ "boolean", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Never"
+            }
+          },
+          "source" : {
+            "description" : "Source of the effective value.",
+            "enum" : [ "DEFAULT", "DATABASE", "USER_OVERRIDE", "PROPERTIES_FILE" ],
+            "readOnly" : true,
+            "type" : "string",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Anyone"
+            }
+          },
+          "value" : {
+            "description" : "Effective value for this caller.",
+            "readOnly" : true,
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Anyone"
+            }
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Anyone"
+        }
+      },
+      "FeatureFlagsReference" : {
+        "properties" : {
+          "relationTo" : {
+            "const" : "feature-flags",
+            "type" : "string"
+          },
+          "value" : {
+            "maxLength" : 128,
+            "type" : "string"
+          }
+        },
+        "required" : [ "relationTo", "value" ],
+        "type" : "object"
+      },
+      "FeatureFlagsUpdate" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "baselineValue" : {
+            "description" : "Instance value before a user override is applied. Only a real sysadmin can change it.",
+            "type" : "boolean",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
+          "overrideValue" : {
+            "description" : "Caller override. Set null to clear the override.",
+            "type" : [ "boolean", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          }
+        },
+        "type" : "object",
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
         }
       },
       "InstrumentsCreate" : {
@@ -1801,10 +1984,20 @@
       }
     },
     "x-rspace-access-policies" : {
+      "Anyone" : {
+        "authentication" : "PUBLIC",
+        "denialReasonCodes" : [ ],
+        "description" : "Anyone may perform this action, including anonymous callers."
+      },
       "AuditRead" : {
         "authentication" : "AUTHENTICATED",
         "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
         "description" : "Authenticated callers who can read the resource."
+      },
+      "Authenticated" : {
+        "authentication" : "AUTHENTICATED",
+        "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+        "description" : "A logged-in session is required."
       },
       "ContainerRead" : {
         "authentication" : "AUTHENTICATED",
@@ -1874,6 +2067,57 @@
               "type" : "string"
             },
             "wildcards" : true
+          }
+        }
+      },
+      "FeatureFlags" : {
+        "maximumArguments" : 1000,
+        "maximumComparisons" : 50,
+        "maximumLikeComparisons" : 10,
+        "maximumNesting" : 10,
+        "selectors" : {
+          "baselineValue" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "canOverride" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
+          },
+          "name" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "maxLength" : 128,
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "overrideValue" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : [ "boolean", "null" ]
+            },
+            "wildcards" : false
+          },
+          "source" : {
+            "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+            "schema" : {
+              "type" : "string"
+            },
+            "wildcards" : true
+          },
+          "value" : {
+            "operators" : [ "!=", "==", "=exists=" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "wildcards" : false
           }
         }
       },
@@ -2374,6 +2618,377 @@
         } ],
         "summary" : "List audit events for one containers resource",
         "tags" : [ "containers" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/AuditRead"
+        },
+        "x-rspace-operation" : "AUDIT_LIST"
+      }
+    },
+    "/api/v2/feature-flags" : {
+      "get" : {
+        "description" : "Returns a paginated view of feature-flags. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
+        "operationId" : "listFeatureFlags",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FeatureFlagsWhere"
+        }, {
+          "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "x-rspace-sort" : {
+            "default" : [ "name" ],
+            "fields" : [ "name", "value", "baselineValue", "overrideValue", "source", "canOverride" ],
+            "maximumFields" : 5
+          }
+        }, {
+          "$ref" : "#/components/parameters/Page"
+        }, {
+          "$ref" : "#/components/parameters/Limit"
+        }, {
+          "$ref" : "#/components/parameters/Totals"
+        }, {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/FeatureFlagsFields"
+        }, {
+          "$ref" : "#/components/parameters/FeatureFlagsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "docs" : {
+                      "items" : {
+                        "$ref" : "#/components/schemas/FeatureFlagsRead"
+                      },
+                      "type" : "array"
+                    },
+                    "hasNextPage" : {
+                      "type" : "boolean"
+                    },
+                    "limit" : {
+                      "type" : "integer"
+                    },
+                    "page" : {
+                      "type" : "integer"
+                    },
+                    "totalDocs" : {
+                      "description" : "Present only when totals=true.",
+                      "format" : "int64",
+                      "type" : "integer"
+                    },
+                    "totalIsLowerBound" : {
+                      "description" : "True when the requested total exceeds max.",
+                      "type" : "boolean"
+                    }
+                  },
+                  "required" : [ "docs", "limit", "page" ],
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Successful list.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "List feature-flags",
+        "tags" : [ "feature-flags" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Anyone"
+        },
+        "x-rspace-operation" : "LIST"
+      }
+    },
+    "/api/v2/feature-flags/count" : {
+      "get" : {
+        "description" : "Counts feature-flags matching the optional bounded filter.",
+        "operationId" : "countFeatureFlags",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/Max"
+        }, {
+          "$ref" : "#/components/parameters/FeatureFlagsWhere"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/CountResult"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Count feature-flags",
+        "tags" : [ "feature-flags" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Anyone"
+        },
+        "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/feature-flags/{id}" : {
+      "get" : {
+        "description" : "Returns one visible feature-flags. A resource that is absent or not readable is reported as not found.",
+        "operationId" : "getFeatureFlag",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FeatureFlagsId"
+        }, {
+          "$ref" : "#/components/parameters/Depth"
+        }, {
+          "$ref" : "#/components/parameters/FeatureFlagsFields"
+        }, {
+          "$ref" : "#/components/parameters/FeatureFlagsExclude"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeatureFlagsRead"
+                }
+              }
+            },
+            "description" : "Successful read.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Get one feature-flags",
+        "tags" : [ "feature-flags" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Anyone"
+        },
+        "x-rspace-operation" : "READ"
+      },
+      "patch" : {
+        "description" : "Changes the caller override for one feature flag. A real sysadmin can also change the instance baseline.",
+        "operationId" : "updateFeatureFlag",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FeatureFlagsId"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "example" : {
+                "overrideValue" : true
+              },
+              "schema" : {
+                "$ref" : "#/components/schemas/FeatureFlagsUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeatureFlagsRead"
+                }
+              }
+            },
+            "description" : "Successful update.",
+            "headers" : {
+              "X-Rate-Limit-MinWaitIntervalMillis" : {
+                "$ref" : "#/components/headers/RateLimitMinWait"
+              },
+              "X-Rate-Limit-WaitTimeMillis" : {
+                "$ref" : "#/components/headers/RateLimitWait"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "api.v2.featureFlags.errors.notPermitted",
+                  "status" : 403,
+                  "title" : "The caller cannot change this feature flag."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The caller cannot change this feature flag."
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "api.v2.featureFlags.errors.readOnly",
+                  "status" : 409,
+                  "title" : "The properties file controls this feature flag."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The properties file controls this feature flag."
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Update one feature-flags",
+        "tags" : [ "feature-flags" ],
+        "x-rspace-access" : {
+          "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+        },
+        "x-rspace-operation" : "UPDATE"
+      }
+    },
+    "/api/v2/feature-flags/{id}/audit" : {
+      "get" : {
+        "description" : "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
+        "operationId" : "listFeatureFlagAuditEvents",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FeatureFlagsId"
+        }, {
+          "$ref" : "#/components/parameters/AuditStart"
+        }, {
+          "$ref" : "#/components/parameters/AuditEnd"
+        }, {
+          "$ref" : "#/components/parameters/AuditSearch"
+        }, {
+          "$ref" : "#/components/parameters/AuditActions"
+        } ],
+        "responses" : {
+          "200" : {
+            "$ref" : "#/components/responses/AuditEvents"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/AuditInvalidRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/AuditUnavailable"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List audit events for one feature-flags resource",
+        "tags" : [ "feature-flags" ],
         "x-rspace-access" : {
           "$ref" : "#/components/x-rspace-access-policies/AuditRead"
         },
@@ -3917,6 +4532,9 @@
     "description" : "Inventory containers and their scheduling and access metadata.",
     "name" : "containers"
   }, {
+    "description" : "Feature flag definitions and baseline settings.",
+    "name" : "feature-flags"
+  }, {
     "description" : "Inventory instruments and their scheduling and access metadata.",
     "name" : "instruments"
   }, {
@@ -3955,6 +4573,6 @@
     "tags" : [ "maintenances" ]
   }, {
     "name" : "Platform",
-    "tags" : [ "config", "oauth", "openapi", "users" ]
+    "tags" : [ "config", "feature-flags", "oauth", "openapi", "users" ]
   } ]
 }
