@@ -31,10 +31,10 @@ import org.springframework.http.HttpStatus;
 /** Builds the OpenAPI operation object for one standard resource operation. */
 final class ApiV2OpenApiOperations {
 
-  private final ApiV2OpenApiQueryParameters queryParameters;
+  private final ApiV2OpenApiRuntimeFieldDocs runtimeFields;
 
-  ApiV2OpenApiOperations(ApiV2OpenApiQueryParameters queryParameters) {
-    this.queryParameters = queryParameters;
+  ApiV2OpenApiOperations(ApiV2OpenApiRuntimeFieldDocs runtimeFields) {
+    this.runtimeFields = runtimeFields;
   }
 
   Map<String, Object> operation(
@@ -74,7 +74,7 @@ final class ApiV2OpenApiOperations {
             schema,
             resourceSchemas,
             resource.registry(),
-            queryParameters.runtimeFieldsExtension(resource));
+            runtimeFields.runtimeFieldsExtension(resource));
     if (requiresIfMatch(resource, operation)) {
       parameters.add(
           ifMatchParameter("Strong entity tag containing the current resource version."));

@@ -9,7 +9,6 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuild
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceDocumentBuilder.withNullableReferenceProperties;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHeaders;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiRuntimeFieldDocs.addRuntimeFieldsPath;
 
 import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -39,7 +38,7 @@ public final class ApiV2OpenApiGenerator {
   private final String title;
   private final String version;
   private final String serverUrl;
-  private final ApiV2OpenApiQueryParameters queryParameters;
+  private final ApiV2OpenApiRuntimeFieldDocs runtimeFields;
   private final ApiV2OpenApiOperations operations;
 
   public ApiV2OpenApiGenerator(ApiV2ResourceCatalog catalog, String title, String version) {
@@ -52,8 +51,8 @@ public final class ApiV2OpenApiGenerator {
     this.title = ApiV2OpenApiNames.requireText(title, "OpenAPI title");
     this.version = ApiV2OpenApiNames.requireText(version, "OpenAPI version");
     this.serverUrl = ApiV2OpenApiNames.requireText(serverUrl, "OpenAPI server URL");
-    this.queryParameters = new ApiV2OpenApiQueryParameters(catalog);
-    this.operations = new ApiV2OpenApiOperations(queryParameters);
+    this.runtimeFields = new ApiV2OpenApiRuntimeFieldDocs(catalog);
+    this.operations = new ApiV2OpenApiOperations(runtimeFields);
   }
 
   public OpenAPI generate() {
@@ -97,7 +96,7 @@ public final class ApiV2OpenApiGenerator {
         .routableResources()
         .forEach(
             resource ->
-                queryParameters.applyRuntimeProjectionSchemas(
+                runtimeFields.applyRuntimeProjectionSchemas(
                     schemas, resource, componentNames.get(resource.resourceName())));
     catalog
         .routableResources()
@@ -164,7 +163,7 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(method, operations.operation(resource, operation, component, resourceSchemas));
     }
-    addRuntimeFieldsPath(paths, resource, catalog.runtimeFieldsOf(resource.resourceName()));
+    runtimeFields.addRuntimeFieldsPath(paths, resource);
   }
 
   private void addResourceAccessPaths(
