@@ -25,7 +25,7 @@ import { BookingForm, type BookingFormState } from "./BookingForm";
 import { type BookingCreationDraft } from "./bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "./bookingCreationStore";
 import { DraftMarker } from "./DraftMarker";
-import { type TimelineMovePolicy } from "./timelineMove";
+import { timelinePolicy } from "./timelineRange";
 import { bookingCreationProblemKey, isBookingOutcomeUncertain, useCreateBooking } from "./useCreateBooking";
 
 export function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationContext }) {
@@ -159,11 +159,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
-  const movementPolicy: TimelineMovePolicy = {
-    maxBookingDurationMinutes: maintenance ? 0 : (availabilityTarget?.maxBookingDurationMinutes ?? 0),
-    openingHours: availabilityTarget?.openingHours ?? [],
-    enforceOpeningHours: Boolean(availabilityTarget) && !maintenance,
-  };
 
   return (
     <>
@@ -172,9 +167,9 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
           creation={creation}
           draft={markerDraft}
           timeZone={preferences.timeZone}
-          schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
-          snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
-          movementPolicy={movementPolicy}
+          policy={
+            availabilityTarget ? timelinePolicy(availabilityTarget, maintenance ? "MAINTENANCE" : "BOOKING") : undefined
+          }
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />
       ) : null}

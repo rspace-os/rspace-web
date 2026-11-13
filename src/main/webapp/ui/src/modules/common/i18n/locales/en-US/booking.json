@@ -869,6 +869,24 @@
     "approvalQueue": "Approval Queue",
     "bookableItems": "Bookable Items"
   },
+  "timelineEdit": {
+    "continuationHint": "Double-click or press Enter to apply.",
+    "endAtMidnight": "End at midnight after {date}",
+    "resizeDays": "Day bookings keep the same local start and end time. Move the booking or change its duration in the form.",
+    "resizeEnd": "No other valid end time fits on this day.",
+    "resizeStart": "No other valid start time fits on this day.",
+    "startAtMidnight": "Start at midnight on {date}",
+    "unavailable": {
+      "dayEndMissing": "Midnight would not leave a whole number of this item's increments.",
+      "duration": "Midnight would not leave a whole number of this item's increments.",
+      "maximum": "Midnight would make the booking longer than this item's maximum.",
+      "midnightRepeated": "Midnight occurs twice on {date} in {timezone}. Use the form to choose which one.",
+      "midnightSkipped": "Midnight does not occur on {date} in {timezone}. Use the form to set this time.",
+      "openingHours": "Midnight would extend the booking outside this item's opening hours.",
+      "order": "Midnight would leave the booking with no length.",
+      "precision": "Midnight would leave the booking with no length."
+    }
+  },
   "toolbar": {
     "jumpToDateAccessible": "{label}, {date}"
   },
