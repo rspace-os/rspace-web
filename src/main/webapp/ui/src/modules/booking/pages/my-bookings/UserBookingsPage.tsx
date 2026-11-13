@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } from "lucide-react";
+import { CalendarClockIcon, HistoryIcon, RefreshCwIcon } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,21 +9,22 @@ import {
   mapBookingListDocument,
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
-import type { CollectionRow } from "@/modules/common/collection/config";
+import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import { Badge } from "@/modules/common/ui/badge";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Button } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
+import { Heading } from "@/modules/common/ui/typography";
+import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
-import type { MyBookingsPeriod } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
 const bookingListResource = {
   ...apiV2Resources.bookings,
@@ -72,8 +73,6 @@ const emptyDescriptionKeys = {
 export type UserBookingsPageProps = {
   requesterId: number;
   title: string;
-  period: MyBookingsPeriod;
-  onPeriodChange: (period: MyBookingsPeriod) => void;
 };
 
 function upcomingBookingWhere(requesterId: number, asOf: Date): ApiV2WhereObject<"Bookings"> {
@@ -89,13 +88,14 @@ export async function fetchUpcomingBookingCount(
   requesterId: number,
   asOf: Date,
   signal?: AbortSignal,
-): Promise<number> {
-  const result = await countBookings({ where: upcomingBookingWhere(requesterId, asOf) }, { signal });
+): Promise<ApiV2CountResult & { totalDocs: number }> {
+  const result = await countBookings({ where: upcomingBookingWhere(requesterId, asOf), max: 100 }, { signal });
   if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-  return result.totalDocs;
+  return { ...result, totalDocs: result.totalDocs };
 }
 
-export function UserBookingsPage({ requesterId, title, period, onPeriodChange }: UserBookingsPageProps) {
+export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
+  const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const preferences = useBookingDisplayPreferences();
@@ -159,103 +159,32 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   // Plain useQuery: the optional upcoming count must not hide the bookings table.
   const upcomingCount = useQuery(
     getCountBookingsQueryOptions(
-      { where: upcomingBookingWhere(requesterId, asOfDate) },
+      { where: upcomingBookingWhere(requesterId, asOfDate), max: 100 },
       {
         query: {
           select: (result) => {
             if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return result.totalDocs;
+            return { ...result, totalDocs: result.totalDocs };
           },
         },
       },
     ),
   );
-  const rowActions = useMemo<
-    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">>
-  >(
+  const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
       width: 176,
       minWidth: 176,
-      renderCell: ({ row }) => {
-        const viewDetailsLabel = t("myBookings.actions.viewDetails");
-        const editLabel = t("myBookings.actions.edit");
-        const itemCalendarLabel = t("myBookings.actions.itemCalendar");
-        return (
-          <div className="flex flex-wrap gap-1">
-            {row.canViewConfiguration ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={itemCalendarLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/bookable-items/$globalId/{-$tab}"
-                      params={{ globalId: row.target.globalId, tab: undefined }}
-                    />
-                  }
-                >
-                  <CalendarClockIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{itemCalendarLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.privacy === "full" ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={viewDetailsLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <EyeIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canEdit ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={editLabel}
-                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id/edit"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <PencilIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{editLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canCancel ? (
-              <DeleteBookingDialog
-                bookingId={row.id}
-                bookingVersion={row.version ?? 0}
-                itemName={row.target.value.name}
-                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
-                iconOnly
-                onDeleted={async () => {
-                  await table.refetch();
-                }}
-              />
-            ) : null}
-            {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
-              <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
-            ) : null}
-          </div>
-        );
-      },
+      renderCell: ({ row }) => (
+        <BookingRowActions
+          row={row}
+          timeZone={preferences.timeZone}
+          onCancelled={async () => {
+            await table.refetch();
+          }}
+        />
+      ),
       renderInteraction: () => null,
     }),
     [preferences.timeZone, t],
@@ -264,82 +193,75 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const selectPeriod = (nextPeriod: "upcoming" | "past") => {
     if (nextPeriod === period) return;
     table.setPage({ ...table.state.page, pageIndex: 0 });
-    onPeriodChange(nextPeriod);
+    void setPeriod(nextPeriod);
   };
 
   return (
     <TooltipProvider delay={250}>
       <main className="space-y-6 p-4 sm:p-8">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
+          <Heading level={3} as="h1">
+            {title}
+          </Heading>
           <p className="text-sm text-muted-foreground">
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
         <div className="space-y-2">
-          <fieldset>
-            <legend className="sr-only">{t("myBookings.period.legend")}</legend>
-            <div className="flex gap-3">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={`relative ${period === "upcoming" ? "border-foreground bg-muted text-foreground" : ""}`}
-                      aria-label={
-                        upcomingCount.isSuccess
-                          ? t("myBookings.period.withCount", {
-                              label: t("myBookings.period.upcoming"),
-                              count: upcomingCount.data,
-                            })
-                          : t("myBookings.period.upcoming")
-                      }
-                      aria-pressed={period === "upcoming"}
-                      onClick={() => selectPeriod("upcoming")}
-                    />
+          <ButtonGroup aria-label={t("myBookings.period.legend")}>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "upcoming" ? "secondary" : "outline"}
+              aria-label={
+                upcomingCount.isSuccess
+                  ? t("myBookings.period.withCount", {
+                      label: t("myBookings.period.upcoming"),
+                      count: upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : upcomingCount.data.totalDocs,
+                    })
+                  : t("myBookings.period.upcoming")
+              }
+              aria-pressed={period === "upcoming"}
+              onClick={() => selectPeriod("upcoming")}
+            >
+              <CalendarClockIcon aria-hidden="true" />
+              {t("myBookings.period.upcoming")}{" "}
+              {upcomingCount.isSuccess && (
+                <Badge
+                  variant={period === "upcoming" ? "secondary" : "outline"}
+                  className="pointer-events-none min-w-5 px-1"
+                  aria-label={
+                    upcomingCount.data.totalIsLowerBound
+                      ? t("myBookings.count.lowerBoundAccessible")
+                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                   }
                 >
-                  <CalendarClockIcon aria-hidden="true" />
-                  {upcomingCount.isSuccess && (
-                    <Badge
-                      variant={period === "upcoming" ? "secondary" : "outline"}
-                      className="pointer-events-none absolute -top-2 -right-2 min-w-5 px-1"
-                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
-                    >
-                      {upcomingCount.data}
-                    </Badge>
-                  )}
-                  {upcomingCount.isPending && (
-                    <span role="status" className="sr-only">
-                      {t("myBookings.count.loading")}
-                    </span>
-                  )}
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.upcoming")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className={period === "past" ? "border-foreground bg-muted text-foreground" : undefined}
-                      aria-label={t("myBookings.period.past")}
-                      aria-pressed={period === "past"}
-                      onClick={() => selectPeriod("past")}
-                    />
-                  }
-                >
-                  <HistoryIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{t("myBookings.period.past")}</TooltipContent>
-              </Tooltip>
-            </div>
-          </fieldset>
+                  {" "}
+                  {upcomingCount.data.totalIsLowerBound
+                    ? t("myBookings.count.lowerBound")
+                    : upcomingCount.data.totalDocs}
+                </Badge>
+              )}
+              {upcomingCount.isPending && (
+                <span role="status" className="sr-only">
+                  {t("myBookings.count.loading")}
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={period === "past" ? "secondary" : "outline"}
+              aria-label={t("myBookings.period.past")}
+              aria-pressed={period === "past"}
+              onClick={() => selectPeriod("past")}
+            >
+              <HistoryIcon aria-hidden="true" />
+              {t("myBookings.period.past")}
+            </Button>
+          </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
               <span>{t("myBookings.count.error")}</span>
@@ -368,6 +290,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
           presentations={{ table: "wide", cards: "narrow" }}
           emptyDescription={t(emptyDescriptionKeys[period])}
           rowActions={rowActions}
+          hideHeader
         />
       </main>
     </TooltipProvider>

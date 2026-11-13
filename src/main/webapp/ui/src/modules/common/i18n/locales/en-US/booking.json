@@ -46,6 +46,7 @@
       "overlap": "Booked and blocked out: {ranges}."
     },
     "slice": {
+      "bookedBy": "Booked by {user}",
       "count": "{count, plural, one {# event} other {# events}}",
       "details": "Details",
       "sources": {
@@ -370,8 +371,7 @@
       "discardTitle": "Discard this event?",
       "keepEditing": "Keep editing",
       "maintenanceDescription": "Choose a bookable item and time for the maintenance blockout.",
-      "maintenanceTitle": "New Maintenance Event",
-      "bookingDescription": "Choose a bookable item and time for the new booking."
+      "maintenanceTitle": "New Maintenance Event"
     },
     "deleteDialog": {
       "description": "Delete Booking removes the {itemName} event for {period} from the Calendar. This release cannot restore the event.",
@@ -441,7 +441,7 @@
       "openingHours": "This booking must be within the bookable item's opening hours.",
       "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
       "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
-      "overlap": "This period overlaps another booking.",
+      "overlap": "This period overlaps another booking or a maintenance event.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
       "windowRequired": "Enter a valid start and end.",
@@ -496,6 +496,13 @@
       "typeBlockout": "Maintenance blockout",
       "typeBooking": "Booking",
       "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})"
+    },
+    "itemInformation": {
+      "doubleBookingAllowed": "Double booking allowed",
+      "title": "Item information",
+      "buffer": "Buffer",
+      "bufferAfter": "{count}m after",
+      "bufferBefore": "{count}m before"
     },
     "loading": "Loading booking.",
     "loadingConfiguration": "Loading bookable item settings.",
@@ -588,6 +595,11 @@
     "today": "Today",
     "toolbar": "Calendar controls",
     "unavailable": "Booking events are unavailable.",
+    "windowEditor": {
+      "end": "Change booking end time",
+      "move": "Move booking time",
+      "start": "Change booking start time"
+    },
     "displayControls": "Calendar display controls"
   },
   "dayTimeline": {
@@ -631,7 +643,9 @@
     "count": {
       "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
       "error": "The upcoming booking count could not be loaded.",
-      "loading": "Loading upcoming count"
+      "loading": "Loading upcoming count",
+      "lowerBound": "99+",
+      "lowerBoundAccessible": "More than 99 upcoming bookings"
     },
     "description": "View and manage bookings requested by this user.",
     "empty": {
@@ -756,6 +770,24 @@
     "settings": "Settings",
     "approvalQueue": "Approval Queue",
     "bookableItems": "Bookable Items"
+  },
+  "timelineEdit": {
+    "continuationHint": "Double-click or press Enter to apply.",
+    "endAtMidnight": "End at midnight after {date}",
+    "resizeDays": "Day bookings keep the same local start and end time. Move the booking or change its duration in the form.",
+    "resizeEnd": "No other valid end time fits on this day.",
+    "resizeStart": "No other valid start time fits on this day.",
+    "startAtMidnight": "Start at midnight on {date}",
+    "unavailable": {
+      "dayEndMissing": "Midnight would not leave a whole number of this item's increments.",
+      "duration": "Midnight would not leave a whole number of this item's increments.",
+      "maximum": "Midnight would make the booking longer than this item's maximum.",
+      "midnightRepeated": "Midnight occurs twice on {date} in {timezone}. Use the form to choose which one.",
+      "midnightSkipped": "Midnight does not occur on {date} in {timezone}. Use the form to set this time.",
+      "openingHours": "Midnight would extend the booking outside this item's opening hours.",
+      "order": "Midnight would leave the booking with no length.",
+      "precision": "Midnight would leave the booking with no length."
+    }
   },
   "toolbar": {
     "jumpToDateAccessible": "{label}, {date}"
