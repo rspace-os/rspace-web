@@ -345,6 +345,9 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
+  void rotateUpdatesTheExistingCredentialInsteadOfCreatingAnotherRow() {
+    BookableItemCalendarSubscription existing =
+        BookingCalendarManagerTest.subscription(configuration, owner);
     String previousHash = existing.getTokenHash();
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(existing));
@@ -370,8 +373,10 @@ class BookingCalendarManagerSubscriptionTest {
         .thenReturn(after);
 
     String etag = manager.status(CONFIGURATION_ID, owner, owner).etag();
+    manager.rotate(CONFIGURATION_ID, owner, owner, etag);
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, etag));
 
     verify(subscriptionDao)
         .rotateCurrent(eq(before), eq(previousHash), any(), eq(RAW_TOKEN), any());
@@ -397,9 +402,22 @@ class BookingCalendarManagerSubscriptionTest {
 
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () ->
-            manager.createOrRotate(
-                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+  }
+
+  @Test
+  void rotateConflictsWhenThereIsNoLinkToReplace() {
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () -> manager.rotateUser(owner, owner, "\"inactive\""));
+    verify(subscriptionDao, never()).saveAndFlush(any(BookableItemCalendarSubscription.class));
+    verify(userSubscriptionDao, never()).saveAndFlush(any(UserBookingCalendarSubscription.class));
+  }
+
+  @Test
   void repeatedUserCreationReturnsTheExistingLinkAndRotationReplacesIt() {
     UserBookingCalendarSubscription existing =
         new UserBookingCalendarSubscription(
@@ -446,9 +464,7 @@ class BookingCalendarManagerSubscriptionTest {
 
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () ->
-            manager.createOrRotate(
-                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+        () -> manager.rotate(CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
   }
 
   @Test

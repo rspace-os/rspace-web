@@ -196,6 +196,7 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "412", description = "The subscription is missing or changed."),
         @ApiResponse(responseCode = "428", description = "If-Match is required.")
       })
+  public ResponseEntity<CreatedDocument> rotate(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
       @Parameter(required = true, description = "Strong ETag from the latest subscription status.")
           @RequestHeader(name = "If-Match", required = false)
@@ -204,6 +205,12 @@ public class BookingCalendarSubscriptionController {
     String expectedEtag =
         ApiV2ConditionalRequest.parseStrongEtag(
             ifMatch, "errors.api.v2.bookingCalendar.ifMatchRequired");
+    BookingCalendarManager.Created rotated =
+        manager.rotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
+    return ResponseEntity.ok().eTag(rotated.status().etag()).body(CreatedDocument.from(rotated));
+  }
+
+  /** 201 when the link was issued by this request, 200 when an existing link was returned. */
   static ResponseEntity<CreatedDocument> createdResponse(BookingCalendarManager.Created created) {
     return ResponseEntity.status(created.newlyIssued() ? HttpStatus.CREATED : HttpStatus.OK)
         .eTag(created.status().etag())

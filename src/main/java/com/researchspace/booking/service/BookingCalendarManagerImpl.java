@@ -182,19 +182,20 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   @Override
+  public Created rotate(Long configurationId, User subject, User actor, String expectedEtag) {
     permissionGate.assertNoSuspendedAncestor();
+    Objects.requireNonNull(expectedEtag, "Expected ETag");
     if (permissionGate.hasActiveGate()) {
       requirePersonalIdentity(subject, actor);
-      return createOrRotateInTransaction(configurationId, subject, expectedEtag);
+      return issueItemLink(configurationId, subject, expectedEtag);
     }
     requirePersonalCaller(subject, actor);
     return creationTransaction.create(
         subject.getId(),
-        freshSubject -> createOrRotateInTransaction(configurationId, freshSubject, expectedEtag));
+        freshSubject -> issueItemLink(configurationId, freshSubject, expectedEtag));
   }
 
-  private Created createOrRotateInTransaction(
-      Long configurationId, User subject, String expectedEtag) {
+  /** Issues or returns the caller's item link; rotation requires the current ETag. */
   private Created issueItemLink(Long configurationId, User subject, String rotateFromEtag) {
     if (permissionGate.hasActiveGate()) {
       requireFeatureEnabled(subject);

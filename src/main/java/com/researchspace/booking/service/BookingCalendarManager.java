@@ -96,6 +96,7 @@ public interface BookingCalendarManager {
    * Replaces the caller's existing link with a new one, only when {@code expectedEtag} matches its
    * current ETag. Calendars using the old link stop updating.
    */
+  Created rotate(Long configurationId, User subject, User actor, String expectedEtag);
 
   /** Revokes only the caller's credential for an active configuration the caller can read. */
   void revoke(Long configurationId, User subject, User actor);
