@@ -41,6 +41,14 @@
           "title" : "The interval overlaps another booking or maintenance event. The problem's conflict member identifies the first such event."
         }
       },
+      "errors.api.v2.booking.startInPast" : {
+        "summary" : "The booking start must be in the future.",
+        "value" : {
+          "code" : "errors.api.v2.booking.startInPast",
+          "status" : 400,
+          "title" : "The booking start must be in the future."
+        }
+      },
       "errors.api.v2.booking.state.transition" : {
         "summary" : "The requested state transition is invalid.",
         "value" : {
@@ -8270,6 +8278,9 @@
                   "errors.api.v2.booking.granularity" : {
                     "$ref" : "#/components/examples/errors.api.v2.booking.granularity"
                   },
+                  "errors.api.v2.booking.startInPast" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.startInPast"
+                  },
                   "errors.api.v2.booking.window" : {
                     "$ref" : "#/components/examples/errors.api.v2.booking.window"
                   }
@@ -8279,7 +8290,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -8575,6 +8586,9 @@
                   "errors.api.v2.booking.granularity" : {
                     "$ref" : "#/components/examples/errors.api.v2.booking.granularity"
                   },
+                  "errors.api.v2.booking.startInPast" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.startInPast"
+                  },
                   "errors.api.v2.booking.window" : {
                     "$ref" : "#/components/examples/errors.api.v2.booking.window"
                   }
@@ -8584,7 +8598,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"

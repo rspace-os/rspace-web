@@ -1076,6 +1076,7 @@ export default interface Resources {
         "restored": "Booking configuration restored.",
         "saved": "Booking configuration saved."
       },
+      "view": "View configuration",
       "viewInventory": "View {name} in Inventory",
       "yes": "Yes"
     },
@@ -1244,6 +1245,7 @@ export default interface Resources {
         "title": "Booking details",
         "unavailableDescription": "This booking does not exist or you do not have access to it.",
         "unavailableTitle": "Booking unavailable",
+        "unknownItemDescription": "This item no longer exists, or you no longer have permission to view this item.",
         "viewItem": "View bookable item {globalId}",
         "when": "When"
       },
@@ -1279,6 +1281,11 @@ export default interface Resources {
         "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
         "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
         "overlap": "This period overlaps another booking or a maintenance event.",
+        "overlapBooking": "Booking #{id}",
+        "overlapMaintenance": "Maintenance event #{id}",
+        "overlapReserved": "Reserved booking #{id}",
+        "overlapSummary": "This period overlaps:",
+        "startInPast": "The booking starts in the past and cannot be created.",
         "targetUnavailable": "This bookable item is unavailable.",
         "window": "Enter a start in the future and an end after the start.",
         "windowRequired": "Enter a valid start and end."
@@ -1328,6 +1335,7 @@ export default interface Resources {
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
+        "timezone": "Times shown in {timezone}.",
         "type": "Booking type",
         "typeBlockout": "Maintenance blockout",
         "typeBooking": "Booking"
@@ -1380,7 +1388,8 @@ export default interface Resources {
         "itemSummary": "{0} - {1}",
         "maintenance": "Maintenance",
         "myBookings": "My RSpace bookings",
-        "purpose": "Purpose: {0}"
+        "purpose": "Purpose: {0}",
+        "unknownItem": "Unknown item"
       },
       "fields": {
         "bookedBy": "Booked by",
@@ -1404,6 +1413,12 @@ export default interface Resources {
         "label": ".ics file",
         "preparing": "Preparing the calendar file for {item}, {period}."
       },
+      "filterGroups": {
+        "applied": "{group}, {count, number} applied",
+        "events": "Booking events",
+        "items": "Bookable items",
+        "legend": "Calendar filters"
+      },
       "grid": "Calendar grid",
       "item": "Bookable item",
       "items": "Bookable items",
@@ -1426,12 +1441,18 @@ export default interface Resources {
       "periodNavigation": "Calendar period navigation",
       "previousDay": "Previous day",
       "previousPeriod": "Previous {period}",
+      "privacy": {
+        "busy": "Busy only",
+        "full": "Full details"
+      },
       "quickFilters": {
         "legend": "Booking event quick filters",
-        "mine": "My calendar"
+        "mine": "My Bookings",
+        "myItems": "Owned Items"
       },
       "resourceSchedule": "Resource booking schedule",
       "retry": "Retry",
+      "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
       "title": "Calendar",
       "today": "Today",
       "toolbar": "Calendar controls",
@@ -1645,12 +1666,13 @@ export default interface Resources {
     "preferences": {
       "actions": {
         "reset": "Reset to global defaults",
-        "save": "Save"
+        "save": "Save",
+        "saved": "Saved"
       },
       "availabilityWindow": {
         "description": "The times shown on each day's availability bars and timelines.",
         "end": "End time",
-        "endOfDay": "End of day (24:00)",
+        "endOfDay": "00:00 means midnight at the end of the day.",
         "legend": "Default availability window",
         "start": "Start time"
       },
@@ -1722,7 +1744,7 @@ export default interface Resources {
         "incrementWholeMinutes": "The increment must be a whole number of minutes.",
         "maximumDuration": "Use 0, or a multiple of the time increment ({increment}). The system limit is 366 days.",
         "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
-        "openingHours": "Use an opening start before the end, or select Open all day.",
+        "openingHours": "Use an opening start before the end. Enter 00:00 to close at midnight.",
         "save": "RSpace could not save the booking settings. Try again.",
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
@@ -1732,7 +1754,6 @@ export default interface Resources {
         "bufferAfter": "Gap after (minutes)",
         "bufferBefore": "Gap before (minutes)",
         "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
-        "fullDay": "Open all day",
         "granularity": "Time increment",
         "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
         "incrementDays": "Days",
@@ -1745,6 +1766,7 @@ export default interface Resources {
         "maximumDurationDescription": "Use 0 for no item limit. A day is 24 elapsed hours. The system limit is 366 days.",
         "maximumDurationUnit": "Maximum duration unit",
         "openingEnd": "Opening end",
+        "openingEndDescription": "Enter 00:00 to close at midnight (the end of the day).",
         "openingStart": "Opening start"
       },
       "openingHours": {
@@ -1763,7 +1785,6 @@ export default interface Resources {
       "addBooking": "Add Booking",
       "administration": "Administration",
       "allItems": "All items",
-      "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
       "dashboard": "Dashboard",
@@ -4117,8 +4138,7 @@ export default interface Resources {
           "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
           "recipientLabel": "Recipient",
           "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-          "title": "Transfer Ownership",
-          "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
+          "title": "Transfer Ownership"
         },
         "disabled": {
           "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
@@ -7655,13 +7675,14 @@ export default interface Resources {
             "purpose": {
               "length": "Purpose must not exceed 1,000 characters."
             },
+            "startInPast": "The booking start must be in the future.",
             "state": {
               "transition": "The requested booking state transition is not permitted."
             },
             "target": {
               "unavailable": "The selected target is not available for booking."
             },
-            "window": "Start time must be in the future and end time must be after start time."
+            "window": "The end time must be after the start time."
           },
           "bookingCalendar": {
             "ifMatchRequired": "The current calendar subscription version is required.",
