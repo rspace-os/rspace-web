@@ -90,6 +90,7 @@ public final class ApiV2InstrumentResource {
     FilterExpression notDeleted =
         new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
     return AccessFunction.documented(
+        "ActiveInstruments",
         "A logged-in session is required. Deleted instruments are not returned.",
         Set.of(AccessPolicy.AUTHENTICATION_REQUIRED),
         context ->

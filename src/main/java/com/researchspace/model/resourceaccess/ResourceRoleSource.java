@@ -2,6 +2,7 @@ package com.researchspace.model.resourceaccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -23,8 +24,9 @@ public record ResourceRoleSource(
     return new ResourceRoleSource(ResourceRoleSourceKind.IMPLICIT, roleKey, null, null);
   }
 
-  /** Safe source identity, omitted for direct and implicit sources. */
+  /** Safe source identity, null for direct and implicit sources in direct JSON serialization. */
   @JsonProperty("grantee")
+  @Schema(nullable = true)
   public Map<String, Object> grantee() {
     if (kind == ResourceRoleSourceKind.DIRECT || kind == ResourceRoleSourceKind.IMPLICIT) {
       return null;

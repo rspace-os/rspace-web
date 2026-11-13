@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +20,7 @@ class AccessFunctionTest {
     AccessResult decision = AccessResult.allowed();
     AccessFunction decorated =
         AccessFunction.documented(
+            "ExampleAccess",
             "Any collection-specific explanation can be supplied here.",
             Set.of("errors.example.denied"),
             ignored -> decision);
@@ -28,25 +28,34 @@ class AccessFunctionTest {
     assertSame(decision, decorated.check(context(null, null)));
     assertEquals(
         new AccessDocumentation(
+            "ExampleAccess",
             "Any collection-specific explanation can be supplied here.",
             Set.of("errors.example.denied")),
         decorated.documentation().orElseThrow());
   }
 
   @Test
-  void commonAccessFunctionsAreDocumented() {
-    List.of(
-            AccessFunction.anyone(),
-            AccessFunction.authenticated(),
-            AccessFunction.sysadmin(),
-            AccessFunction.selfOnly(),
-            AccessFunction.sysadminOrSelf(),
-            AccessFunction.never())
-        .forEach(
-            function -> {
-              assertTrue(function.documentation().isPresent());
-              assertTrue(!function.documentation().orElseThrow().description().isBlank());
-            });
+  void commonAccessFunctionsAreDocumentedUnderDistinctNames() {
+    assertEquals(
+        List.of("Anyone", "Authenticated", "Sysadmin", "SelfOnly", "SysadminOrSelf", "Never"),
+        List.of(
+                AccessFunction.anyone(),
+                AccessFunction.authenticated(),
+                AccessFunction.sysadmin(),
+                AccessFunction.selfOnly(),
+                AccessFunction.sysadminOrSelf(),
+                AccessFunction.never())
+            .stream()
+            .map(function -> function.documentation().orElseThrow().name())
+            .toList());
+  }
+
+  @Test
+  void accessNamesMustBePascalCase() {
+    Set<String> codes = Set.of();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new AccessDocumentation("read-scope", "Read scope.", codes));
   }
 
   @Test
