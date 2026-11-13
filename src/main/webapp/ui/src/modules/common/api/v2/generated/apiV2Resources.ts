@@ -11,12 +11,14 @@ export const apiV2Resources = {
     list: { request: resource0.listContainers, queryKey: resource0.getListContainersQueryKey },
     count: { request: resource0.countContainers, queryKey: resource0.getCountContainersQueryKey },
     get: { request: resource0.getContainer, queryKey: resource0.getGetContainerQueryKey },
+    audit: { request: resource0.listContainerAuditEvents, queryKey: resource0.getListContainerAuditEventsQueryKey },
   } satisfies ApiV2ResourceEntry<"containers", ApiV2OperationSet>,
   instruments: {
     name: "instruments",
     list: { request: resource1.listInstruments, queryKey: resource1.getListInstrumentsQueryKey },
     count: { request: resource1.countInstruments, queryKey: resource1.getCountInstrumentsQueryKey },
     get: { request: resource1.getInstrument, queryKey: resource1.getGetInstrumentQueryKey },
+    audit: { request: resource1.listInstrumentAuditEvents, queryKey: resource1.getListInstrumentAuditEventsQueryKey },
     runtimeFields: {
       request: resource1.getInstrumentRuntimeFields,
       queryKey: resource1.getGetInstrumentRuntimeFieldsQueryKey,
@@ -39,5 +41,6 @@ export const apiV2Resources = {
     list: { request: resource3.listUsers, queryKey: resource3.getListUsersQueryKey },
     count: { request: resource3.countUsers, queryKey: resource3.getCountUsersQueryKey },
     get: { request: resource3.getUser, queryKey: resource3.getGetUserQueryKey },
+    audit: { request: resource3.listUserAuditEvents, queryKey: resource3.getListUserAuditEventsQueryKey },
   } satisfies ApiV2ResourceEntry<"users", ApiV2OperationSet>,
 };

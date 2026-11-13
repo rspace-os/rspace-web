@@ -14,12 +14,14 @@ export const apiV2Operations: Record<
   listContainers: { responses: { "200": { "application/json": native.ListContainersResponse } } },
   countContainers: { responses: { "200": { "application/json": native.CountContainersResponse } } },
   getContainer: { responses: { "200": { "application/json": native.GetContainerResponse } } },
+  listContainerAuditEvents: { responses: { "200": { "application/json": native.ListContainerAuditEventsResponse } } },
   listInstruments: { responses: { "200": { "application/json": native.ListInstrumentsResponse } } },
   countInstruments: { responses: { "200": { "application/json": native.CountInstrumentsResponse } } },
   getInstrumentRuntimeFields: {
     responses: { "200": { "application/json": native.GetInstrumentRuntimeFieldsResponse } },
   },
   getInstrument: { responses: { "200": { "application/json": native.GetInstrumentResponse } } },
+  listInstrumentAuditEvents: { responses: { "200": { "application/json": native.ListInstrumentAuditEventsResponse } } },
   deleteManyMaintenances: { responses: { "200": { "application/json": native.DeleteManyMaintenancesResponse } } },
   listMaintenances: { public: true, responses: { "200": { "application/json": native.ListMaintenancesResponse } } },
   updateManyMaintenances: {
@@ -54,4 +56,5 @@ export const apiV2Operations: Record<
   getCurrentUser: { responses: { "200": { "application/json": native.GetCurrentUserResponse } } },
   getCurrentUserProfileImage: { responses: {} },
   getUser: { responses: { "200": { "application/json": native.GetUserResponse } } },
+  listUserAuditEvents: { responses: { "200": { "application/json": native.ListUserAuditEventsResponse } } },
 };
