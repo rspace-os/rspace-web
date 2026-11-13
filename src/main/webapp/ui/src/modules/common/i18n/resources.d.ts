@@ -812,6 +812,7 @@ export default interface Resources {
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
+        "myItems": "Owned Items",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
       },
@@ -1594,6 +1595,11 @@ export default interface Resources {
       "whoCanBook": "Who can book",
       "yourAccess": "You are an Owner. You can edit rules and manage access."
     },
+    "filters": {
+      "dropped": "Some saved filter rules are no longer supported and were removed: {fields}.",
+      "me": "Me",
+      "owner": "Owner"
+    },
     "myBookings": {
       "actions": {
         "edit": "Edit",
@@ -1896,15 +1902,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
@@ -7680,9 +7677,6 @@ export default interface Resources {
             },
             "concurrentModification": "The booking configuration changed. Reload it and try again.",
             "create": "The booking configuration is invalid.",
-            "defaultSharing": {
-              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
-            },
             "granularity": {
               "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
             },
@@ -7765,6 +7759,7 @@ export default interface Resources {
             "duplicateGrantee": "Each user or group can have only one direct role.",
             "forbidden": "You do not have permission to manage access to this resource.",
             "ifMatchRequired": "The current access version is required.",
+            "inheritedReadOnly": "Access to this resource is inherited and cannot be changed here.",
             "invalidGrantee": "The selected user or group is no longer available.",
             "invalidRole": "The selected role is not valid for this resource.",
             "ownerRequired": "At least one direct Owner must remain.",
