@@ -136,6 +136,8 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
     MvcResult created =
         mockMvc
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
             .andExpect(header().exists(HttpHeaders.ETAG))
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.updatedAt").isString())
@@ -154,6 +156,32 @@ class BookingCalendarSubscriptionControllerMVCIT {
             header().string(HttpHeaders.ETAG, created.getResponse().getHeader(HttpHeaders.ETAG)))
         .andExpect(jsonPath("$.active").value(true))
         .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
+
+    mockMvc
+        .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(
+            header().string(HttpHeaders.ETAG, created.getResponse().getHeader(HttpHeaders.ETAG)))
+        .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
+
+    MvcResult rotated =
+        mockMvc
+            .perform(
+                post(USER_SUBSCRIPTION_PATH + "/rotate")
+                    .header("apiKey", apiKey)
+                    .header(
+                        HttpHeaders.IF_MATCH, created.getResponse().getHeader(HttpHeaders.ETAG)))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNotEquals(
+        subscriptionUrl,
+        objectMapper
+            .readTree(rotated.getResponse().getContentAsByteArray())
+            .path("subscriptionUrl")
+            .textValue());
+    assertNotEquals(
+        created.getResponse().getHeader(HttpHeaders.ETAG),
+        rotated.getResponse().getHeader(HttpHeaders.ETAG));
 
     mockMvc
         .perform(delete(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
