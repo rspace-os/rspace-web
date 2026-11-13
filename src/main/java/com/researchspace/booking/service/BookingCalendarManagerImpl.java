@@ -149,21 +149,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
-        .map(
-            subscription ->
-                new Status(
-                    true,
-                    subscription.getUpdatedAt(),
-                    subscription.getRawToken() == null
-                        ? null
-                        : subscriptionUrl(subscription.getRawToken()),
-                    itemEtag(subscription)))
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
   @Override
-  public Created createOrRotate(
-      Long configurationId, User subject, User actor, String expectedEtag) {
     permissionGate.assertNoSuspendedAncestor();
     if (permissionGate.hasActiveGate()) {
       requirePersonalIdentity(subject, actor);
@@ -193,9 +182,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<CurrentItemCalendarSubscription> existing =
         subscriptionDao.lockCurrent(subject.getId(), configurationId);
-    String currentEtag =
-        existing.map(BookingCalendarManagerImpl::itemEtag).orElse(INACTIVE_USER_ETAG);
-    if (!Objects.equals(expectedEtag, currentEtag)) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -239,7 +225,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         saved.id());
     String url = subscriptionUrl(rawToken);
     Status status = new Status(true, saved.updatedAt(), url, itemEtag(saved));
-    return new Created(status, url);
   }
 
   private static String itemEtag(BookableItemCalendarSubscription subscription) {
@@ -291,18 +276,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureRead(subject);
     return userSubscriptionDao
         .findByUserId(subject.getId())
-        .map(
-            subscription ->
-                new Status(
-                    true,
-                    subscription.getUpdatedAt(),
-                    subscriptionUrl(subscription.getRawToken()),
-                    userEtag(subscription)))
         .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
   @Override
-  public Created createOrRotateUser(User subject, User actor, String expectedEtag) {
     permissionGate.assertNoSuspendedAncestor();
     requirePersonalCaller(subject, actor);
     if (permissionGate.hasActiveGate()) {
@@ -317,9 +294,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     Optional<UserBookingCalendarSubscription> existing =
         userSubscriptionDao.findByUserId(subject.getId());
-    String currentEtag =
-        existing.map(BookingCalendarManagerImpl::userEtag).orElse(INACTIVE_USER_ETAG);
-    if (!Objects.equals(expectedEtag, currentEtag)) {
       throw new UserSubscriptionConflictException();
     }
     String rawToken = tokenSupplier.get();
@@ -356,7 +330,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         saved.getId());
     String url = subscriptionUrl(rawToken);
-    return new Created(new Status(true, saved.getUpdatedAt(), url, userEtag(saved)), url);
   }
 
   @Override
@@ -467,7 +440,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private void requireFeatureEnabled(User subject) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
 

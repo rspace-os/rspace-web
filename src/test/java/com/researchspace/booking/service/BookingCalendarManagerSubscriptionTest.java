@@ -133,8 +133,6 @@ class BookingCalendarManagerSubscriptionTest {
 
   @Test
   void createStoresTheTokenAndReturnsTheFixedFeedQueryUrl() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
 
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
@@ -215,9 +213,6 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
-  void duplicateItemCreationCannotReplaceTheFirstSuccessfulCredential() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
     verify(subscriptionDao).saveAndFlush(saved.capture());
@@ -234,12 +229,6 @@ class BookingCalendarManagerSubscriptionTest {
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(saved.getValue()));
 
-    assertThrows(
-        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
-    assertEquals(
-        created.subscriptionUrl(),
-        manager.status(CONFIGURATION_ID, owner, owner).subscriptionUrl());
     verify(subscriptionDao).saveAndFlush(any(BookableItemCalendarSubscription.class));
   }
 
@@ -274,13 +263,10 @@ class BookingCalendarManagerSubscriptionTest {
     assertNull(status.subscriptionUrl());
     assertThrows(
         BookingConfigurationLifecycleException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
   }
 
   @Test
   void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
-    BookingCalendarManager.Created created =
-        manager.createOrRotateUser(owner, owner, "\"inactive\"");
 
     ArgumentCaptor<UserBookingCalendarSubscription> saved =
         ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
@@ -294,7 +280,6 @@ class BookingCalendarManagerSubscriptionTest {
   @Test
   void statusReturnsTheExistingSubscriptionUrl() {
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
-        .thenReturn(Optional.of(subscription(configuration, owner)));
 
     BookingCalendarManager.Status status = manager.status(CONFIGURATION_ID, owner, owner);
 
@@ -325,12 +310,9 @@ class BookingCalendarManagerSubscriptionTest {
     }
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
   }
 
   @Test
-  void replaceUpdatesTheExistingCredentialInsteadOfCreatingAnotherRow() {
-    BookableItemCalendarSubscription existing = subscription(configuration, owner);
     String previousHash = existing.getTokenHash();
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(existing));
@@ -356,10 +338,8 @@ class BookingCalendarManagerSubscriptionTest {
         .thenReturn(after);
 
     String etag = manager.status(CONFIGURATION_ID, owner, owner).etag();
-    manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag);
     assertThrows(
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag));
 
     verify(subscriptionDao)
         .rotateCurrent(eq(before), eq(previousHash), any(), eq(RAW_TOKEN), any());

@@ -24,7 +24,6 @@ public interface BookingCalendarManager {
     }
   }
 
-  record Created(Status status, String subscriptionUrl) {}
 
   sealed interface FeedResult permits Available, NotFound, AtCapacity, Oversized {}
 
@@ -62,8 +61,6 @@ public interface BookingCalendarManager {
   /** Returns the caller's active subscription for a readable configuration, including its URL. */
   Status status(Long configurationId, User subject, User actor);
 
-  /** Creates or replaces the caller's credential only when its current ETag matches. */
-  Created createOrRotate(Long configurationId, User subject, User actor, String expectedEtag);
 
   /** Revokes only the caller's credential for an active configuration the caller can read. */
   void revoke(Long configurationId, User subject, User actor);
@@ -71,8 +68,6 @@ public interface BookingCalendarManager {
   /** Returns the caller's user-wide booking calendar subscription. */
   Status userStatus(User subject, User actor);
 
-  /** Creates or replaces the caller's user-wide booking calendar credential. */
-  Created createOrRotateUser(User subject, User actor, String expectedEtag);
 
   /** Revokes the caller's user-wide booking calendar credential. */
   void revokeUser(User subject, User actor);
