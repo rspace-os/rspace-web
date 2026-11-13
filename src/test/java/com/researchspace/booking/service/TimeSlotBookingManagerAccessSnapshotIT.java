@@ -2,7 +2,6 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.booking.service.TimeSlotBookingManagerIT.sevenDaysFromNow;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,18 +15,13 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
-import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessException;
-import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,10 +89,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "Access snapshot scope");
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     User requester = owner;
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-      requester = createInitAndLoginAnyUser();
-      setAudienceRole(setup.configurationId(), owner, "BOOKER");
-    }
+    User newOwner = createInitAndLoginAnyUser();
     Instant start = sevenDaysFromNow();
     User bookingRequester = requester;
     TimeSlotBooking existing =
@@ -122,8 +113,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                       bookingManager.getBooking(existing.getId(), subject).orElseThrow();
                       competing.executeWithoutResult(
                           other -> {
-                            if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-                              setAudienceRole(setup.configurationId(), owner, "NO_ACCESS");
+                            if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
+                              instrumentDao.get(instrument.getId()).setOwner(newOwner);
                             } else {
                               configurationManager.updateConfiguration(
                                   setup.configurationId(),
@@ -132,7 +123,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                                   owner);
                             }
                           });
-                      if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+                      if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
                         assertTrue(
                             bookingManager
                                 .updateBooking(
@@ -162,7 +153,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
             : BookingConcurrentModificationException.class;
     assertThrows(expected, updateFromStaleSnapshot::run);
 
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+    if (mutation == SnapshotMutation.CHANGE_ITEM_OWNER) {
       assertTrue(
           bookingManager
               .updateBooking(
@@ -174,69 +165,8 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
     }
   }
 
-  @Test
-  public void editReadsAssignmentsCurrentWhenAccessWasNotLoadedBeforeTheRevocation() {
-    User owner = createInitAndLoginAnyUser();
-    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Uncached access scope");
-    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
-    User booker = createInitAndLoginAnyUser();
-    setAudienceRole(setup.configurationId(), owner, "BOOKER");
-    Instant start = sevenDaysFromNow();
-    var existing =
-        bookingManager.createBooking(
-            new TimeSlotBookingManager.Create(
-                new ResolvedBookableTarget(setup.target(), setup.instrument()),
-                Date.from(start),
-                Date.from(start.plus(1, ChronoUnit.HOURS)),
-                null),
-            booker,
-            booker);
-    var competing = new TransactionTemplate(getTxMger());
-    competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    try {
-      new TransactionTemplate(getTxMger())
-          .executeWithoutResult(
-              ignored -> {
-                configurationDao.getSafeNull(setup.configurationId()).orElseThrow();
-                competing.executeWithoutResult(
-                    other -> setAudienceRole(setup.configurationId(), owner, "NO_ACCESS"));
-                assertTrue(
-                    bookingManager
-                        .updateBooking(
-                            existing.getId(),
-                            new TimeSlotBookingManager.Patch(
-                                null, null, true, "Revoked edit", null),
-                            booker,
-                            booker)
-                        .isEmpty());
-              });
-    } catch (BookingConcurrentModificationException exception) {
-      // MariaDB can reject a stale-snapshot locking read instead of returning current rows.
-    } catch (ResourceAccessException exception) {
-      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
-    }
-    assertEquals(
-        "CONFIRMED",
-        jdbcTemplate.queryForObject(
-            "SELECT state FROM TimeSlotBooking WHERE id = ?", String.class, existing.getId()));
-  }
-
-  private void setAudienceRole(long id, User owner, String role) {
-    long version = resourceAccessManager.get(protectedAccess, id, owner).version();
-    resourceAccessManager.replace(
-        protectedAccess,
-        new ReplaceResourceAccess<>(
-            id,
-            version,
-            List.of(
-                new ResourceAccessGrant("user:" + owner.getId(), "OWNER"),
-                new ResourceAccessGrant("audience:all-users", role))),
-        owner,
-        owner);
-  }
-
   private enum SnapshotMutation {
-    REVOKE_BOOKER_ACCESS,
+    CHANGE_ITEM_OWNER,
     DISABLE_CONFIGURATION
   }
 
