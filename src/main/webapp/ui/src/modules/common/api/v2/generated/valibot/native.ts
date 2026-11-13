@@ -164,6 +164,7 @@ export const BookingConfigurationCapabilities = v.object({
   canLeaveConfiguration: v.optional(v.boolean()),
   canManageAllEvents: v.optional(v.boolean()),
   canManageAssignments: v.optional(v.boolean()),
+  canManageNotificationSubscription: v.optional(v.boolean()),
   canManageOwnBookings: v.optional(v.boolean()),
   canManageOwners: v.optional(v.boolean()),
   canSubscribeCalendar: v.optional(v.boolean()),
@@ -393,6 +394,40 @@ export const BookingDisplayPreferencesControllerReplacement = v.object({
   availabilityWindowStart: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$'))),
   customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.'))),
   timezoneMode: v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM'])
+})
+
+export const BookingNotificationSubscriptionControllerLookup = v.object({
+  configurationIds: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.gtValue(0))), v.minLength(1), v.maxLength(100))
+})
+
+export const BookingNotificationSubscriptionControllerPreferenceReplacement = v.object({
+  autoSubscribeOwnedItems: v.boolean(),
+  notifyOwnActions: v.boolean()
+})
+
+export const BookingNotificationSubscriptionControllerSubscriptionStatus = v.object({
+  cancelledEnabled: v.optional(v.boolean()),
+  configurationId: v.optional(v.pipe(v.number(), v.integer())),
+  createdEnabled: v.optional(v.boolean()),
+  emailEnabled: v.optional(v.boolean()),
+  enabled: v.optional(v.boolean())
+})
+
+export const BookingNotificationSubscriptionControllerStatusList = v.object({
+  docs: v.optional(v.array(BookingNotificationSubscriptionControllerSubscriptionStatus))
+})
+
+export const BookingNotificationSubscriptionControllerSubscriptionReplacement = v.object({
+  enabled: v.boolean()
+})
+
+export const BookingNotificationSubscriptionControllerUnsubscribeResult = v.object({
+  updatedCount: v.optional(v.pipe(v.number(), v.integer()))
+})
+
+export const BookingNotificationSubscriptionManagerPreferences = v.object({
+  autoSubscribeOwnedItems: v.optional(v.boolean()),
+  notifyOwnActions: v.optional(v.boolean())
 })
 
 export const BookingSettingsControllerAdminSettingsDocument = v.object({
@@ -1017,6 +1052,32 @@ export const ListBookingConfigurationAuditEventsResponse = v.object({
   start: v.pipe(v.string(), v.isoTimestamp()),
   truncated: v.boolean()
 })
+
+
+/**
+ * @summary Get the caller's personal subscription and effective event delivery
+ */
+export const GetMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer())
+})
+
+export const GetMyBookingNotificationSubscriptionResponse = BookingNotificationSubscriptionControllerSubscriptionStatus
+
+
+/**
+ * @summary Update the caller's personal subscription with optimistic concurrency
+ */
+export const ReplaceMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer())
+})
+
+export const ReplaceMyBookingNotificationSubscriptionHeader = v.object({
+  'If-Match': v.pipe(v.string(), v.description('ETag from the subscription GET.'))
+})
+
+export const ReplaceMyBookingNotificationSubscriptionBody = BookingNotificationSubscriptionControllerSubscriptionReplacement
+
+export const ReplaceMyBookingNotificationSubscriptionResponse = BookingNotificationSubscriptionControllerSubscriptionStatus
 
 
 /**
@@ -1717,6 +1778,34 @@ export const RotateUserBookingCalendarSubscriptionHeader = v.object({
 })
 
 export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated
+
+
+/**
+ * @summary Get the caller's booking notification preferences
+ */
+export const GetMyBookingNotificationPreferencesResponse = BookingNotificationSubscriptionManagerPreferences
+
+
+/**
+ * @summary Change personal notification preferences without changing existing subscriptions
+ */
+export const ReplaceMyBookingNotificationPreferencesBody = BookingNotificationSubscriptionControllerPreferenceReplacement
+
+export const ReplaceMyBookingNotificationPreferencesResponse = BookingNotificationSubscriptionManagerPreferences
+
+
+/**
+ * @summary Unsubscribe from all instruments without changing the automatic subscription default
+ */
+export const UnsubscribeMyBookingNotificationsResponse = BookingNotificationSubscriptionControllerUnsubscribeResult
+
+
+/**
+ * @summary Read personal subscriptions for up to 100 readable instruments
+ */
+export const LookupMyBookingNotificationSubscriptionsBody = BookingNotificationSubscriptionControllerLookup
+
+export const LookupMyBookingNotificationSubscriptionsResponse = BookingNotificationSubscriptionControllerStatusList
 
 
 /**
