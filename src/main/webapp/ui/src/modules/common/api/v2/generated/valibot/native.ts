@@ -223,6 +223,7 @@ export const BookingConfigurationCapabilities = v.object({
   canLeaveConfiguration: v.optional(v.boolean()),
   canManageAllEvents: v.optional(v.boolean()),
   canManageAssignments: v.optional(v.boolean()),
+  canManageNotificationSubscription: v.optional(v.boolean()),
   canManageOwnBookings: v.optional(v.boolean()),
   canManageOwners: v.optional(v.boolean()),
   canSubscribeCalendar: v.optional(v.boolean()),
@@ -729,6 +730,40 @@ export const BookingDisplayPreferencesControllerReplacement = v.object({
 });
 
 export const BookingEventKind = v.picklist(["BOOKING", "MAINTENANCE"]);
+
+export const BookingNotificationSubscriptionControllerLookup = v.object({
+  configurationIds: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.gtValue(0))), v.minLength(1), v.maxLength(100)),
+});
+
+export const BookingNotificationSubscriptionControllerPreferenceReplacement = v.object({
+  autoSubscribeOwnedItems: v.boolean(),
+  notifyOwnActions: v.boolean(),
+});
+
+export const BookingNotificationSubscriptionControllerSubscriptionStatus = v.object({
+  cancelledEnabled: v.optional(v.boolean()),
+  configurationId: v.optional(v.pipe(v.number(), v.integer())),
+  createdEnabled: v.optional(v.boolean()),
+  emailEnabled: v.optional(v.boolean()),
+  enabled: v.optional(v.boolean()),
+});
+
+export const BookingNotificationSubscriptionControllerStatusList = v.object({
+  docs: v.optional(v.array(BookingNotificationSubscriptionControllerSubscriptionStatus)),
+});
+
+export const BookingNotificationSubscriptionControllerSubscriptionReplacement = v.object({
+  enabled: v.boolean(),
+});
+
+export const BookingNotificationSubscriptionControllerUnsubscribeResult = v.object({
+  updatedCount: v.optional(v.pipe(v.number(), v.integer())),
+});
+
+export const BookingNotificationSubscriptionManagerPreferences = v.object({
+  autoSubscribeOwnedItems: v.optional(v.boolean()),
+  notifyOwnActions: v.optional(v.boolean()),
+});
 
 export const BookingSettingsControllerAdminSettingsDocument = v.object({
   allowDoubleBooking: v.optional(v.boolean()),
@@ -1663,6 +1698,36 @@ export const ListBookingConfigurationAuditEventsResponse = v.object({
   start: v.pipe(v.string(), v.isoTimestamp()),
   truncated: v.boolean(),
 });
+
+/**
+ * @summary Get the caller's personal subscription and effective event delivery
+ */
+export const GetMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer()),
+});
+
+export const GetMyBookingNotificationSubscriptionResponse = BookingNotificationSubscriptionControllerSubscriptionStatus;
+
+/**
+ * @summary Update the caller's personal subscription with optimistic concurrency
+ */
+export const ReplaceMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer()),
+});
+
+export const ReplaceMyBookingNotificationSubscriptionHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[!#-~]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const ReplaceMyBookingNotificationSubscriptionBody =
+  BookingNotificationSubscriptionControllerSubscriptionReplacement;
+
+export const ReplaceMyBookingNotificationSubscriptionResponse =
+  BookingNotificationSubscriptionControllerSubscriptionStatus;
 
 /**
  * Returns scheduling defaults for future bookable items and account display fallbacks.
@@ -3082,6 +3147,31 @@ export const RotateUserBookingCalendarSubscriptionHeader = v.object({
 });
 
 export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
+
+/**
+ * @summary Get the caller's booking notification preferences
+ */
+export const GetMyBookingNotificationPreferencesResponse = BookingNotificationSubscriptionManagerPreferences;
+
+/**
+ * @summary Change personal notification preferences without changing existing subscriptions
+ */
+export const ReplaceMyBookingNotificationPreferencesBody =
+  BookingNotificationSubscriptionControllerPreferenceReplacement;
+
+export const ReplaceMyBookingNotificationPreferencesResponse = BookingNotificationSubscriptionManagerPreferences;
+
+/**
+ * @summary Unsubscribe from all instruments without changing the automatic subscription default
+ */
+export const UnsubscribeMyBookingNotificationsResponse = BookingNotificationSubscriptionControllerUnsubscribeResult;
+
+/**
+ * @summary Read personal subscriptions for up to 100 readable instruments
+ */
+export const LookupMyBookingNotificationSubscriptionsBody = BookingNotificationSubscriptionControllerLookup;
+
+export const LookupMyBookingNotificationSubscriptionsResponse = BookingNotificationSubscriptionControllerStatusList;
 
 /**
  * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.

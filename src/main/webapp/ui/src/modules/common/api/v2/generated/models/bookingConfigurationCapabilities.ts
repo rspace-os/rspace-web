@@ -13,6 +13,7 @@ export interface BookingConfigurationCapabilities {
   canLeaveConfiguration?: boolean;
   canManageAllEvents?: boolean;
   canManageAssignments?: boolean;
+  canManageNotificationSubscription?: boolean;
   canManageOwnBookings?: boolean;
   canManageOwners?: boolean;
   canSubscribeCalendar?: boolean;

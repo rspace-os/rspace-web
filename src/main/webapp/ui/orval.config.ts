@@ -19,6 +19,8 @@ const mutatorOverrides: Record<string, "apiV2HeadersFetch" | "apiV2BlobFetch"> =
   createUserBookingCalendarSubscription: "apiV2HeadersFetch",
   rotateUserBookingCalendarSubscription: "apiV2HeadersFetch",
   downloadBookingCalendarFile: "apiV2BlobFetch",
+  getMyBookingNotificationSubscription: "apiV2HeadersFetch",
+  replaceMyBookingNotificationSubscription: "apiV2HeadersFetch",
 };
 const specOperationIds = new Set(getOperations(spec).map(({ operationId }) => operationId));
 for (const operationId of Object.keys(mutatorOverrides)) {
