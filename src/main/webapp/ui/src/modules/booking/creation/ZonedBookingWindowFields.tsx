@@ -1,7 +1,10 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useId, useMemo, useState } from "react";
+import { GlobeIcon, InfoIcon } from "lucide-react";
+import { type ChangeEvent, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
+import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
+import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   type IncrementSettings,
   type IncrementViolation,
@@ -18,14 +21,19 @@ import {
   wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
 import i18n from "@/modules/common/i18n";
+import { Alert, AlertDescription } from "@/modules/common/ui/alert";
+import { Button } from "@/modules/common/ui/button";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import { resolveBookingWindow, validateBookingWindow } from "./bookingWindowValidation";
 
 export {
   type BookingWindowPolicy,
+  type EndpointTimezones,
+  endpointTimezones,
   type ResolvedBookingWindow,
   resolveBookingWindow,
   validateBookingWindow,
@@ -56,6 +64,8 @@ export function ZonedBookingWindowFields({
   density = "comfortable",
   showErrors = true,
   startErrorId,
+  endTimezone,
+  onTimezoneChange,
 }: {
   displayTimezone?: string;
   schedulingTimezone?: string;
@@ -72,15 +82,25 @@ export function ZonedBookingWindowFields({
   density?: "comfortable" | "compact";
   showErrors?: boolean;
   startErrorId?: string;
+  /** The end's zone when it differs from displayTimezone, which then applies to the start only. */
+  endTimezone?: string;
+  /**
+   * Offers a globe beside the start time that shows or hides a timezone field under each endpoint's row, and a note with
+   * the entered times in the scheduling timezone when either zone differs from it. The entered wall clock stays as typed
+   * when either zone changes.
+   */
+  onTimezoneChange?: (name: "start" | "end", timezone: string) => void;
 }) {
   const { t } = useTranslation("booking");
   const fieldId = `booking-window-${useId()}`;
   const windowErrorId = `${fieldId}-errors`;
   const resolvedDisplayTimezone = displayTimezone ?? "UTC";
   const resolvedSchedulingTimezone = schedulingTimezone ?? resolvedDisplayTimezone;
+  const resolvedEndTimezone = endTimezone ?? resolvedDisplayTimezone;
+  const zones = { start: resolvedDisplayTimezone, end: resolvedEndTimezone };
   const result = useMemo(
     () =>
-      validateBookingWindow(value, resolvedDisplayTimezone, {
+      validateBookingWindow(value, zones, {
         schedulingTimezone: resolvedSchedulingTimezone,
         slotGranularityMinutes,
         incrementUnit,
@@ -92,6 +112,7 @@ export function ZonedBookingWindowFields({
     [
       value,
       resolvedDisplayTimezone,
+      resolvedEndTimezone,
       resolvedSchedulingTimezone,
       slotGranularityMinutes,
       incrementUnit,
@@ -111,7 +132,6 @@ export function ZonedBookingWindowFields({
   } = result;
   const increment = formatIncrement({ slotGranularityMinutes, incrementUnit }, t);
   const locale = i18n.resolvedLanguage ?? i18n.language ?? "en-US";
-  const zones = { start: resolvedDisplayTimezone, end: resolvedDisplayTimezone };
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
   const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
     {},
@@ -241,6 +261,16 @@ export function ZonedBookingWindowFields({
     );
   };
 
+  const timezoneFieldId = (name: "start" | "end") => `${fieldId}-${name}-timezone`;
+  const [timezoneOpen, setTimezoneOpen] = useState(false);
+  // Typed text that is not yet a known zone; dropped on blur so the field shows the current zone again.
+  const [timezoneText, setTimezoneText] = useState<Partial<Record<"start" | "end", string>>>({});
+  const timezoneOptions = useMemo(
+    () => bookingTimeZoneOptions(resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone),
+    [resolvedDisplayTimezone, resolvedEndTimezone, resolvedSchedulingTimezone],
+  );
+  const showTimezoneFields = Boolean(onTimezoneChange) && timezoneOpen;
+
   const endpointUnresolved = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     endpointResolution?.kind === "nonexistent" ||
     (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`]);
@@ -318,7 +348,7 @@ export function ZonedBookingWindowFields({
       inputName: `${fieldId}-${name}-occurrence`,
       legend: t("bookings.form.occurrence"),
       values: endpointResolution,
-      timezone: resolvedDisplayTimezone,
+      timezone: zones[name],
       selected: occurrence,
       error:
         showErrors && !occurrence
@@ -335,19 +365,125 @@ export function ZonedBookingWindowFields({
       <FieldError id={`${fieldId}-${name}-error`}>{t("bookings.errors.nonexistentTime")}</FieldError>
     ) : null;
 
+  const timeInput = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) => {
+    const inputProps = {
+      id: `${fieldId}-${name}-time`,
+      "aria-label": t(`bookings.form.${name}Time`),
+      type: "time",
+      step: 60,
+      required: true,
+      "aria-invalid":
+        showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined,
+      "aria-describedby": errorDescription(name, endpointResolution),
+      disabled,
+      value: value[`${name}Time`],
+      onChange: (event: ChangeEvent<HTMLInputElement>) => changeTime(name, event.currentTarget.value),
+      onBlur: name === "end" ? snapEnd : undefined,
+    };
+    if (!onTimezoneChange || name !== "start") return <Input {...inputProps} />;
+    const timezoneLabel = t("bookings.form.changeTimezone");
+    return (
+      <div className="flex items-center gap-2">
+        <Input {...inputProps} className="min-w-0 flex-1" />
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={timezoneLabel}
+                aria-expanded={showTimezoneFields}
+                aria-controls={showTimezoneFields ? `${timezoneFieldId("start")} ${timezoneFieldId("end")}` : undefined}
+                disabled={disabled}
+                onClick={() => setTimezoneOpen((open) => !open)}
+              />
+            }
+          >
+            <GlobeIcon aria-hidden="true" />
+          </TooltipTrigger>
+          <TooltipContent>{timezoneLabel}</TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  };
+
+  const timezoneField = (name: "start" | "end") => {
+    if (!onTimezoneChange || !showTimezoneFields) return null;
+    const id = timezoneFieldId(name);
+    return (
+      <div id={id} className="space-y-2">
+        <Label htmlFor={`${id}-input`}>{t(`bookings.form.${name}Timezone`)}</Label>
+        <Input
+          id={`${id}-input`}
+          role="combobox"
+          aria-expanded="false"
+          list={`${id}-options`}
+          disabled={disabled}
+          value={timezoneText[name] ?? zones[name]}
+          onChange={(event) => {
+            const next = event.currentTarget.value;
+            // Only a known zone reaches the form; a partial name would not resolve.
+            if (timezoneOptions.includes(next)) {
+              setTimezoneText((text) => ({ ...text, [name]: undefined }));
+              if (next !== zones[name]) onTimezoneChange(name, next);
+            } else {
+              setTimezoneText((text) => ({ ...text, [name]: next }));
+            }
+          }}
+          onBlur={() => setTimezoneText((text) => ({ ...text, [name]: undefined }))}
+        />
+        <datalist id={`${id}-options`}>
+          {timezoneOptions.map((timeZone) => (
+            <option key={timeZone} value={timeZone} />
+          ))}
+        </datalist>
+      </div>
+    );
+  };
+
+  // From the resolved endpoints rather than the policy-checked window, so the note stays when the times are rejected.
+  const startInstant = wallClockInstant(result.start, value.startOccurrence);
+  const endInstant = wallClockInstant(result.end, value.endOccurrence);
+  // The time only while it falls on the entered date, otherwise the date as well. On a clock-change day the offset
+  // tells the repeated hour's two occurrences apart.
+  const instrumentTime = (instant: string, enteredDate: string) => {
+    const local = Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone);
+    let time = formatWallClockTime(local.toPlainTime().toString({ smallestUnit: "minute" }));
+    if (local.hoursInDay !== 24) time += ` (UTC${local.offset})`;
+    const date = local.toPlainDate().toString();
+    return date === enteredDate ? time : `${formatPlainDate(date)} ${time}`;
+  };
+  const instrumentTimes =
+    (!sameTimeZone(resolvedSchedulingTimezone, zones.start) || !sameTimeZone(resolvedSchedulingTimezone, zones.end)) &&
+    startInstant &&
+    endInstant &&
+    !result.orderInvalid ? (
+      // A standing note rather than an alert, so screen readers are not interrupted on every keystroke.
+      <Alert role="note">
+        <InfoIcon aria-hidden="true" />
+        <AlertDescription>
+          {t("bookings.form.instrumentTimes", {
+            timezone: resolvedSchedulingTimezone,
+            start: instrumentTime(startInstant, value.startDate),
+            end: instrumentTime(endInstant, value.endDate),
+          })}
+        </AlertDescription>
+      </Alert>
+    ) : null;
+
   const endpoint = (
     name: "start" | "end",
     endpointResolution: WallClockResolution | undefined,
     occurrence: "earlier" | "later" | undefined,
   ) => {
     const dateKey = `${name}Date` as const;
-    const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
     const dateId = `${fieldId}-${name}-date`;
     const timeId = `${fieldId}-${name}-time`;
     const describedBy = errorDescription(name, endpointResolution);
     return (
-      <FieldSet>
+      <FieldSet className="gap-3">
         <FieldLegend>{t(`bookings.form.${name}`)}</FieldLegend>
         <div className={cn("grid sm:grid-cols-2", density === "compact" ? "gap-2" : "gap-4")}>
           <div className="space-y-2">
@@ -368,24 +504,11 @@ export function ZonedBookingWindowFields({
           </div>
           <div className="space-y-2">
             <Label htmlFor={timeId}>{t("bookings.form.time")}</Label>
-            <Input
-              id={timeId}
-              aria-label={t(`bookings.form.${name}Time`)}
-              type="time"
-              step={60}
-              required
-              aria-invalid={
-                showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined
-              }
-              aria-describedby={describedBy}
-              disabled={disabled}
-              value={value[timeKey]}
-              onChange={(event) => changeTime(name, event.currentTarget.value)}
-              onBlur={name === "end" ? snapEnd : undefined}
-            />
+            {timeInput(name, endpointResolution)}
+            {snapNote(name)}
           </div>
         </div>
-        {snapNote(name)}
+        {timezoneField(name)}
         {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
@@ -398,27 +521,11 @@ export function ZonedBookingWindowFields({
     endpointResolution: WallClockResolution | undefined,
     occurrence: "earlier" | "later" | undefined,
   ) => {
-    const timeKey = `${name}Time` as const;
     const timeId = `${fieldId}-${name}-time`;
-    const describedBy = errorDescription(name, endpointResolution);
     return (
       <div className="min-w-0 space-y-2">
         <Label htmlFor={timeId}>{t(`bookings.form.${name}`)}</Label>
-        <Input
-          id={timeId}
-          aria-label={t(`bookings.form.${name}Time`)}
-          type="time"
-          step={60}
-          required
-          aria-invalid={
-            showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined
-          }
-          aria-describedby={describedBy}
-          disabled={disabled}
-          value={value[timeKey]}
-          onChange={(event) => changeTime(name, event.currentTarget.value)}
-          onBlur={name === "end" ? snapEnd : undefined}
-        />
+        {timeInput(name, endpointResolution)}
         {snapNote(name)}
         {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
@@ -442,7 +549,7 @@ export function ZonedBookingWindowFields({
       );
     }
     if (current === "duration" || current === "dayEndMissing") {
-      const resolved = resolveBookingWindow(value, resolvedDisplayTimezone).window;
+      const resolved = resolveBookingWindow(value, zones).window;
       const length = resolved
         ? formatBookingLength(incrementUnit, resolved, resolvedSchedulingTimezone, t, locale)
         : "";
@@ -464,7 +571,7 @@ export function ZonedBookingWindowFields({
       {!allowPolicyMismatch && incrementError(violation)}
       {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
       {maximumDurationInvalid && !allowPolicyMismatch && (
-        <FieldError>{t("bookings.errors.maximumDuration")}</FieldError>
+        <FieldError>{maximumDurationMessage(result.maximumDurationLimitMinutes, t)}</FieldError>
       )}
     </div>
   ) : null;
@@ -499,15 +606,19 @@ export function ZonedBookingWindowFields({
           {compactTime("start", result.start, value.startOccurrence)}
           {compactTime("end", result.end, value.endOccurrence)}
         </div>
+        {timezoneField("start")}
+        {timezoneField("end")}
+        {instrumentTimes}
         {windowErrors}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
+      {instrumentTimes}
       {windowErrors}
     </div>
   );
