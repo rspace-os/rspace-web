@@ -14,12 +14,24 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 /** User Data Access Object (GenericDao) interface. */
 public interface UserDao extends GenericDao<User, Long> {
+  /** Reads detached login fields only, preferring a username match to an alias match. */
+  User readLoginState(String usernameOrAlias);
+
+  /**
+   * Locks login state. A caller that can newly lock the account must register with the gate first.
+   */
+  User lockLoginAccount(Long id);
+
+  /** Updates only login fields if all previously read policy inputs still match. */
+  boolean updateLoginState(User before, User after, Date lastLogin);
+
   /**
    * Gets a list of active (i.e., non-blocked) users ordered by the uppercase version of their
    * username.
