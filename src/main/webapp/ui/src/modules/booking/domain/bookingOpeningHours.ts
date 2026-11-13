@@ -43,6 +43,11 @@ export type OpeningInterval = Pick<BookingOpeningHoursEntry, "start" | "end">;
 /** The opening-hour part of scheduling settings. */
 export type OpeningSchedule = { openingHours: readonly BookingOpeningHoursEntry[] };
 
+/** Every day, all day: the explicit opening-hours bypass for maintenance. */
+export const ALWAYS_OPEN: OpeningSchedule = {
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+};
+
 /** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
 export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
   return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
