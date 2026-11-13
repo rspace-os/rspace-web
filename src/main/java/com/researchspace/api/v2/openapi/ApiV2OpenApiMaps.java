@@ -1,12 +1,11 @@
 package com.researchspace.api.v2.openapi;
 
+import io.swagger.v3.core.util.RefUtils;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Small ordered-map helpers shared by the generated OpenAPI builders. */
 final class ApiV2OpenApiMaps {
-
-  static final String JSON = "application/json";
 
   private ApiV2OpenApiMaps() {}
 
@@ -42,7 +41,7 @@ final class ApiV2OpenApiMaps {
   }
 
   static Map<String, Object> ref(String name) {
-    return Map.of("$ref", "#/components/schemas/" + name);
+    return Map.of("$ref", RefUtils.constructRef(name));
   }
 
   static void putIfNotNull(Map<String, Object> target, String name, Object value) {

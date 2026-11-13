@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.openapi;
 
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.JSON;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
@@ -24,6 +23,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardHea
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.bulkResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listResult;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
@@ -195,7 +195,7 @@ public final class ApiV2OpenApiGenerator {
               "headers",
               Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
               "content",
-              content(JSON, ref("ApiV2RuntimeFieldCatalog"))));
+              content(APPLICATION_JSON_VALUE, ref("ApiV2RuntimeFieldCatalog"))));
       putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
       paths.put(
           collectionPath + "/fields/{namespace}",
@@ -333,7 +333,9 @@ public final class ApiV2OpenApiGenerator {
         media.put("schema", ref(requestComponent));
       }
       putIfNotNull(media, "example", documentation.requestExample());
-      result.put("requestBody", ordered("required", true, "content", Map.of(JSON, media)));
+      result.put(
+          "requestBody",
+          ordered("required", true, "content", Map.of(APPLICATION_JSON_VALUE, media)));
     }
     result.put("responses", responses(resource, operation, component, documentation));
     result.put("x-rspace-operation", operation.name());
@@ -390,7 +392,7 @@ public final class ApiV2OpenApiGenerator {
             "headers",
             rateLimitHeaders(),
             "content",
-            Map.of(JSON, successMedia)));
+            Map.of(APPLICATION_JSON_VALUE, successMedia)));
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
       responses.put(

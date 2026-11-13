@@ -1,10 +1,10 @@
 package com.researchspace.api.v2.openapi;
 
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.JSON;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
@@ -384,7 +384,9 @@ final class ApiV2OpenApiAnnotationMerger {
   }
 
   private static List<String> mediaTypes(Set<MediaType> declared) {
-    return declared.isEmpty() ? List.of(JSON) : declared.stream().map(Object::toString).toList();
+    return declared.isEmpty()
+        ? List.of(APPLICATION_JSON_VALUE)
+        : declared.stream().map(Object::toString).toList();
   }
 
   private static Map<String, Object> inferredContent(

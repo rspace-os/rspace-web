@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator.AUTHENTICATED_SECURITY;
-import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.JSON;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.content;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
@@ -12,6 +11,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.param
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.headerRef;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
@@ -183,7 +183,11 @@ final class ApiV2OpenApiResourceAccessDocs {
       parameters.add(ifMatchParameter("Strong ETag from the latest access document."));
       operation.put(
           "requestBody",
-          ordered("required", true, "content", content(JSON, ref("ResourceAccessReplacement"))));
+          ordered(
+              "required",
+              true,
+              "content",
+              content(APPLICATION_JSON_VALUE, ref("ResourceAccessReplacement"))));
     }
     if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
@@ -224,7 +228,7 @@ final class ApiV2OpenApiResourceAccessDocs {
                   ? "Eligible users and groups."
                   : "Current direct assignments and caller capabilities.",
               "content",
-              content(JSON, schema));
+              content(APPLICATION_JSON_VALUE, schema));
       if (operationKind != ResourceAccessOperation.SEARCH) {
         success.put("headers", ordered("ETag", headerRef("ETag")));
       }
