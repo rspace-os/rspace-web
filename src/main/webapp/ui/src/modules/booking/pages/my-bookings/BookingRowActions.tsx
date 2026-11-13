@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, EyeIcon, PencilIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/config";
@@ -56,6 +57,14 @@ export function BookingRowActions({
             params={{ id: String(row.id) }}
           />
         </TooltipIconLink>
+      ) : null}
+      {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+        <BookingCalendarFileButton
+          bookingId={row.id}
+          itemName={row.target.value.name}
+          period={formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone)}
+          iconOnly
+        />
       ) : null}
       {row.canCancel ? (
         <DeleteBookingDialog
