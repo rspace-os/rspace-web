@@ -11,7 +11,45 @@ public record ResourceRequest(
     Page page,
     ResourceFieldSelections fieldSelections,
     IncludeTree includes,
-    RuntimeFieldSelection runtime) {
+    RuntimeFieldSelection runtime,
+    Integer countMax) {
+
+  /** Preserves the unbounded request contract for existing collection callers. */
+  public ResourceRequest(
+      FilterExpression filter,
+      QueryConstraint serverConstraint,
+      List<Sort> sort,
+      Page page,
+      ResourceFieldSelections fieldSelections,
+      IncludeTree includes,
+      RuntimeFieldSelection runtime) {
+    this(filter, serverConstraint, sort, page, fieldSelections, includes, runtime, null);
+  }
+
+  /** Applies a bound only to explicit count operations, leaving counted pages unchanged. */
+  public ResourceRequest withCountMax(Integer max) {
+    if (max != null && (max < 1 || max > 10000))
+      throw new IllegalArgumentException("Invalid count bound");
+    return new ResourceRequest(
+        filter, serverConstraint, sort, page, fieldSelections, includes, runtime, max);
+  }
+
+  /** Restricts this request to one ID while retaining query constraints and projections. */
+  public ResourceRequest forId(String idField, Object id) {
+    FilterExpression target =
+        new FilterExpression.Comparison(idField, Operator.EQUAL, List.of(id), false);
+    FilterExpression matching =
+        filter == null ? target : new FilterExpression.And(List.of(filter, target));
+    return new ResourceRequest(
+        matching,
+        serverConstraint,
+        sort,
+        new Page(1, 1),
+        fieldSelections,
+        includes,
+        runtime,
+        countMax);
+  }
 
   public record Page(int number, int size) {
 
@@ -110,13 +148,20 @@ public record ResourceRequest(
 
   /** Adds a trusted server-owned restriction without changing or reclassifying caller input. */
   public ResourceRequest restrict(QueryConstraint constraint) {
-    if (constraint == null) {
+    if (constraint == null || containsConstraint(serverConstraint, constraint)) {
       return this;
     }
     QueryConstraint combined =
         serverConstraint == null
             ? constraint
             : new QueryConstraint.And(List.of(serverConstraint, constraint));
-    return new ResourceRequest(filter, combined, sort, page, fieldSelections, includes, runtime);
+    return new ResourceRequest(
+        filter, combined, sort, page, fieldSelections, includes, runtime, countMax);
+  }
+
+  private static boolean containsConstraint(QueryConstraint current, QueryConstraint candidate) {
+    if (candidate.equals(current)) return true;
+    return current instanceof QueryConstraint.And and
+        && and.children().stream().anyMatch(child -> containsConstraint(child, candidate));
   }
 }

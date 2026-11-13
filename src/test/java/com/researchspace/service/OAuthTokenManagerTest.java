@@ -16,6 +16,7 @@ import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.OAuthTokenManager.UiTokenContext;
 import com.researchspace.testutils.SpringTransactionalTest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -27,12 +28,33 @@ import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.TestTransaction;
 
 public class OAuthTokenManagerTest extends SpringTransactionalTest {
   private @Autowired OAuthTokenManager tokenManager;
   private @Autowired OAuthAppManager appManager;
   private @Autowired OAuthTokenDao tokenDao;
   private @Autowired IPropertyHolder properties;
+
+  @Test
+  public void sessionBoundUiTokenRetainsSubjectActorAndSessionContext() {
+    User actor = createAndSaveRandomUser();
+    User subject = createAndSaveRandomUser();
+
+    // The UI token is committed in a REQUIRES_NEW transaction, so its referenced users must already
+    // be visible outside this test transaction.
+    TestTransaction.flagForCommit();
+    TestTransaction.end();
+    String token = tokenManager.createUiToken(subject, actor, "session-context");
+    TestTransaction.start();
+    TestTransaction.flagForRollback();
+    UiTokenContext context = tokenManager.getUiTokenContext(token).orElseThrow();
+
+    assertEquals(subject.getId().longValue(), context.subjectId());
+    assertEquals(actor.getId(), context.actorId().orElseThrow());
+    assertEquals("session-context", context.sessionContextId());
+    assertEquals(subject, tokenManager.authenticate(token).getEntity().getUser());
+  }
 
   @Test
   public void createTokenWithWrongParams() {

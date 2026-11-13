@@ -341,6 +341,7 @@ public class PermissionUtils implements IPermissionUtils {
     SimplePrincipalCollection pc = new SimplePrincipalCollection();
     pc.add(targetUser.getUsername(), realmName);
     subject.runAs(pc);
+    BrowserSessionAuthContext.rotate(session);
     SECURITY_LOG.info(
         "Admin [{}] running as user [{}] using security realms [{}]",
         adminUser.getUsername(),

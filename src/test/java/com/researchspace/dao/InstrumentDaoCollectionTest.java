@@ -75,6 +75,32 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
   @Autowired private CriteriaBuilderFactory queryFactory;
 
   @Test
+  public void boundedCountReadsOnlyTheRequestedPrefixWithoutLoadingEntities() {
+    User owner = createInitAndLoginAnyUser();
+    for (int i = 0; i < 5; i++) createBasicInstrumentForUser(owner, "Bounded SQL scope " + i);
+    var session = sessionFactory.getCurrentSession();
+    session.flush();
+    var executor =
+        new CollectionQueryExecutor<>(Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "i");
+    var statistics = sessionFactory.getStatistics();
+    boolean enabled = statistics.isStatisticsEnabled();
+    statistics.setStatisticsEnabled(true);
+    try {
+      statistics.clear();
+      assertEquals(
+          3,
+          executor.count(
+              queryFactory,
+              session,
+              page(nameContains("Bounded SQL scope"), 1, 20).withCountMax(2)));
+      assertEquals(1, statistics.getPrepareStatementCount());
+      assertEquals(0, statistics.getEntityLoadCount());
+    } finally {
+      statistics.setStatisticsEnabled(enabled);
+    }
+  }
+
+  @Test
   public void countsWithoutSelectingRowsAndDropsFetchPathsOnOverflow() {
     User owner = createInitAndLoginAnyUser();
     createBasicInstrumentForUser(owner, "Count only scope");

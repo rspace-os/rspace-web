@@ -43,7 +43,7 @@ public record ApiV2UserResource(
             createAccess = NEVER,
             updateAccess = NEVER,
             description = "User's email address.",
-            format = "email",
+            format = "idn-email",
             example = "ada@example.org")
         String email) {
 

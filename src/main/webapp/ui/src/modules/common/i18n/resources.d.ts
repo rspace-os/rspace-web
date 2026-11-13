@@ -5931,6 +5931,11 @@ export default interface Resources {
       "allFields": {
         "required": "Please fill in all the fields."
       },
+      "api": {
+        "v2": {
+          "forbidden": "You do not have permission to perform this action."
+        }
+      },
       "authorization": {
         "apiError": "Authorisation error",
         "audit": {
@@ -5992,6 +5997,9 @@ export default interface Resources {
           "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
+        "inventoryOauthToken": {
+          "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+        },
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
@@ -6197,6 +6205,11 @@ export default interface Resources {
     "requestType": {
       "passwordReminder": "password reminder",
       "usernameReminder": "username reminder"
+    },
+    "resourceAccess": {
+      "audiences": {
+        "allUsers": "All users"
+      }
     },
     "resourceType": {
       "community": "Community",

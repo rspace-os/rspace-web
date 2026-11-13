@@ -3,9 +3,11 @@ package com.researchspace.webapp.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
+import com.researchspace.auth.BrowserSessionAuthContext;
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.UserPublicInfo;
@@ -86,7 +88,10 @@ public class LogoutControllerTest extends SpringTransactionalTest {
     // now release
     MockHttpSession mockHttpSession = new MockHttpSession();
     mockHttpSession.setAttribute(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE);
+    String previousContext = BrowserSessionAuthContext.currentOrCreate(mockHttpSession);
     logoutController.runAsRelease(new MockPrincipal(otherUser.getUsername()), mockHttpSession);
+    assertNotEquals(
+        previousContext, BrowserSessionAuthContext.current(mockHttpSession).orElseThrow());
     Subject original = SecurityUtils.getSubject();
     assertTrue(original.hasRole(Constants.SYSADMIN_ROLE));
     // RSPAC-1018

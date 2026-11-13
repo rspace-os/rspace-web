@@ -6,8 +6,10 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.ResourceSlice;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
@@ -35,10 +37,43 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    * <p>The filter, the sort, the permission rules, and the page are all applied by the database, so
    * the page and the total agree and no caller has to read the whole collection.
    */
-  ResourcePage<Instrument> getReadableResources(ResourceRequest request, AccessResult access);
+  default ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return getReadableResources(request, access, RelationshipReadAccess.none());
+  }
+
+  /** Applies registered target visibility while compiling relationship selectors. */
+  ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships);
+
+  /** Returns the same authorized page as scalar rows, without Inventory aggregate hydration. */
+  default ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access) {
+    return getReadableResourceSummaries(request, access, RelationshipReadAccess.none());
+  }
+
+  /** Applies registered target visibility while compiling relationship selectors. */
+  ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships);
+
+  /** Reads a count-free scalar window under the ordinary read policy. */
+  default ResourceSlice<InstrumentReadSummary> getReadableResourceSummarySlice(
+      ResourceRequest request, AccessResult access) {
+    return getReadableResourceSummarySlice(request, access, RelationshipReadAccess.none());
+  }
+
+  /** Applies registered target visibility while compiling relationship selectors. */
+  ResourceSlice<InstrumentReadSummary> getReadableResourceSummarySlice(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships);
 
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
-  long countReadableResources(ResourceRequest request, AccessResult access);
+  default long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(request, access, RelationshipReadAccess.none());
+  }
+
+  /** Applies registered target visibility while compiling relationship selectors. */
+  long countReadableResources(
+      ResourceRequest request, AccessResult access, RelationshipReadAccess relationships);
 
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
