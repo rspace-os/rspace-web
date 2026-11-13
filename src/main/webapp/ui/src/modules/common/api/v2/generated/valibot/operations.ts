@@ -6,10 +6,12 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["listContainers"]: {responses: {["200"]: {["application/json"]: native.ListContainersResponse}}},
 ["countContainers"]: {responses: {["200"]: {["application/json"]: native.CountContainersResponse}}},
 ["getContainer"]: {responses: {["200"]: {["application/json"]: native.GetContainerResponse}}},
+["listContainerAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListContainerAuditEventsResponse}}},
 ["listInstruments"]: {responses: {["200"]: {["application/json"]: native.ListInstrumentsResponse}}},
 ["countInstruments"]: {responses: {["200"]: {["application/json"]: native.CountInstrumentsResponse}}},
 ["getInstrumentRuntimeFields"]: {responses: {["200"]: {["application/json"]: native.GetInstrumentRuntimeFieldsResponse}}},
 ["getInstrument"]: {responses: {["200"]: {["application/json"]: native.GetInstrumentResponse}}},
+["listInstrumentAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListInstrumentAuditEventsResponse}}},
 ["deleteManyMaintenances"]: {responses: {["200"]: {["application/json"]: native.DeleteManyMaintenancesResponse}}},
 ["listMaintenances"]: {public: true, responses: {["200"]: {["application/json"]: native.ListMaintenancesResponse}}},
 ["updateManyMaintenances"]: {request: native.UpdateManyMaintenancesBody, responses: {["200"]: {["application/json"]: native.UpdateManyMaintenancesResponse}}},
@@ -25,5 +27,6 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["countUsers"]: {responses: {["200"]: {["application/json"]: native.CountUsersResponse}}},
 ["getCurrentUser"]: {responses: {["200"]: {["application/json"]: native.GetCurrentUserResponse}}},
 ["getCurrentUserProfileImage"]: {responses: {}},
-["getUser"]: {responses: {["200"]: {["application/json"]: native.GetUserResponse}}}
+["getUser"]: {responses: {["200"]: {["application/json"]: native.GetUserResponse}}},
+["listUserAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListUserAuditEventsResponse}}}
 };

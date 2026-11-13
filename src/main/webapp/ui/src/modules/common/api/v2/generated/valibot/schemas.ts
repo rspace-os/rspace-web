@@ -2,6 +2,7 @@
 import type * as v from "valibot";
 import * as native from "./native";
 import type * as Models from "../models";
+export const ApiV2AuditEventSchema = native.ApiV2AuditEvent;
 export const ApiV2ConfigSchema = native.ApiV2Config;
 export const ApiV2ConfigBrandingSchema = native.ApiV2ConfigBranding;
 export const ApiV2ConfigHelpLinkSchema = native.ApiV2ConfigHelpLink;
@@ -46,6 +47,7 @@ export const UsersUpdateSchema = native.UsersUpdate;
 type Assert<T extends true> = T;
 type Extends<A, B> = [A] extends [B] ? true : false;
 export type SchemaModelTypeChecks = {
+  ApiV2AuditEvent: [Assert<Extends<v.InferOutput<typeof ApiV2AuditEventSchema>, Models.ApiV2AuditEvent>>, Assert<Extends<Models.ApiV2AuditEvent, v.InferOutput<typeof ApiV2AuditEventSchema>>>];
   ApiV2Config: [Assert<Extends<v.InferOutput<typeof ApiV2ConfigSchema>, Models.ApiV2Config>>, Assert<Extends<Models.ApiV2Config, v.InferOutput<typeof ApiV2ConfigSchema>>>];
   ApiV2ConfigBranding: [Assert<Extends<v.InferOutput<typeof ApiV2ConfigBrandingSchema>, Models.ApiV2ConfigBranding>>, Assert<Extends<Models.ApiV2ConfigBranding, v.InferOutput<typeof ApiV2ConfigBrandingSchema>>>];
   ApiV2ConfigHelpLink: [Assert<Extends<v.InferOutput<typeof ApiV2ConfigHelpLinkSchema>, Models.ApiV2ConfigHelpLink>>, Assert<Extends<Models.ApiV2ConfigHelpLink, v.InferOutput<typeof ApiV2ConfigHelpLinkSchema>>>];
