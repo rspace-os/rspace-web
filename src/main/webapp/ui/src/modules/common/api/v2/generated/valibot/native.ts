@@ -195,6 +195,11 @@ export const ApiV2UiToken = v.object({
 
 export const BookingCatalogueCapability = v.picklist(["CREATE_BOOKING", "CREATE_BLOCKOUT"]);
 
+export const BookingCatalogueManagerAvailabilityCounts = v.object({
+  availableNow: v.optional(v.pipe(v.number(), v.integer())),
+  freeLaterToday: v.optional(v.pipe(v.number(), v.integer())),
+});
+
 export const BookingCatalogueManagerFacets = v.object({
   types: v.optional(v.array(v.string())),
 });
@@ -315,6 +320,41 @@ export const UsersRelationship = v.union([
   }),
 ]);
 
+export const ContainersReference = v.object({
+  relationTo: v.literal("containers"),
+  value: v.pipe(v.number(), v.integer()),
+});
+
+export const ContainersRead = v.object({
+  containerType: v.optional(v.picklist(["LIST", "GRID", "IMAGE", "WORKBENCH"])),
+  deleted: v.optional(v.boolean()),
+  globalId: v.optional(v.string()),
+  id: v.pipe(v.number(), v.integer()),
+  name: v.optional(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
+        "Invalid length: Expected <=255",
+      ),
+    ),
+  ),
+});
+
+export const ContainersRelationship = v.union([
+  v.intersect([
+    ContainersReference,
+    v.object({
+      globalId: v.pipe(v.string(), v.regex(/^IC\d+$/)),
+    }),
+  ]),
+  v.object({
+    globalId: v.pipe(v.string(), v.regex(/^IC\d+$/)),
+    relationTo: v.literal("containers"),
+    value: ContainersRead,
+  }),
+]);
+
 export const DeclaredBookingOpeningHoursEntry = v.object({
   dayOfWeek: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7), v.description("ISO weekday, Monday = 1.")),
@@ -365,27 +405,6 @@ export const DeclaredResourceRoleSource = v.object({
 export const InstrumentsReference = v.object({
   relationTo: v.literal("instruments"),
   value: v.pipe(v.number(), v.integer()),
-});
-
-export const ContainersReference = v.object({
-  relationTo: v.literal("containers"),
-  value: v.pipe(v.number(), v.integer()),
-});
-
-export const ContainersRead = v.object({
-  containerType: v.optional(v.picklist(["LIST", "GRID", "IMAGE", "WORKBENCH"])),
-  deleted: v.optional(v.boolean()),
-  globalId: v.optional(v.string()),
-  id: v.pipe(v.number(), v.integer()),
-  name: v.optional(
-    v.pipe(
-      v.string(),
-      v.check(
-        (value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255),
-        "Invalid length: Expected <=255",
-      ),
-    ),
-  ),
 });
 
 export const InstrumentsRead = v.object({
@@ -465,6 +484,14 @@ export const BookingConfigurationsRead = v.object({
       BookingIncrementUnit,
       v.description(
         "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts calendar days in the scheduling timezone, so a booking ends at its start's local time; it requires the item to be open 00:00 to 24:00 on all seven weekdays.",
+      ),
+    ),
+  ),
+  location: v.optional(
+    v.pipe(
+      v.union([ContainersRelationship, v.null()]),
+      v.description(
+        "Filter-only: the bookable item's immediate Inventory parent Container or workbench, matched only where the caller may read it. Address a workbench as IC plus its ID. Responses render null; the booking catalogue returns each item's readable location.",
       ),
     ),
   ),
@@ -774,6 +801,14 @@ export const BookingsRead = v.object({
   end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
   id: v.pipe(v.number(), v.integer()),
   kind: v.optional(BookingEventKind),
+  location: v.optional(
+    v.pipe(
+      v.union([ContainersRelationship, v.null()]),
+      v.description(
+        "The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID.",
+      ),
+    ),
+  ),
   privacy: v.optional(v.string()),
   purpose: v.nullish(
     v.pipe(
@@ -1062,11 +1097,39 @@ export const SearchBookingCatalogueQueryParams = v.object({
   type: v.optional(v.array(v.string())),
   location: v.optional(v.array(v.string())),
   capability: v.optional(BookingCatalogueCapability),
+  availability: v.optional(v.string()),
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start."))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end."))),
+  now: v.optional(v.pipe(v.string(), v.isoTimestamp())),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
 });
 
 export const SearchBookingCatalogueResponse = BookingCatalogueManagerPage;
+
+/**
+ * @summary Count bookable items by current availability
+ */
+export const CountBookingCatalogueAvailabilityQueryParams = v.object({
+  q: v.optional(v.string()),
+  target: v.optional(v.string()),
+  where: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+      ),
+    ),
+  ),
+  type: v.optional(v.array(v.string())),
+  location: v.optional(v.array(v.string())),
+  capability: v.optional(BookingCatalogueCapability),
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Inclusive interval start."))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Exclusive interval end."))),
+  now: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+});
+
+export const CountBookingCatalogueAvailabilityResponse = BookingCatalogueManagerAvailabilityCounts;
 
 /**
  * @summary Search bookable instruments in a calendar interval
@@ -1103,6 +1166,7 @@ export const SearchCalendarCatalogueResponse = BookingCatalogueManagerPage;
 export const SearchBookingCatalogueLocationsQueryParams = v.object({
   q: v.optional(v.string()),
   type: v.optional(v.array(v.string())),
+  globalId: v.optional(v.array(v.string())),
   page: v.pipe(v.number(), v.integer()),
   limit: v.pipe(v.number(), v.integer()),
 });

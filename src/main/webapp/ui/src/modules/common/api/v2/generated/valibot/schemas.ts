@@ -21,6 +21,7 @@ export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCata
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
 export const BookingCatalogueCapabilitySchema = native.BookingCatalogueCapability;
+export const BookingCatalogueManagerAvailabilityCountsSchema = native.BookingCatalogueManagerAvailabilityCounts;
 export const BookingCatalogueManagerFacetsSchema = native.BookingCatalogueManagerFacets;
 export const BookingCatalogueManagerItemSchema = native.BookingCatalogueManagerItem;
 export const BookingCatalogueManagerLocationSchema = native.BookingCatalogueManagerLocation;
@@ -55,6 +56,7 @@ export const BookingsReferenceSchema = native.BookingsReference;
 export const BookingsUpdateSchema = native.BookingsUpdate;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
+export const ContainersRelationshipSchema = native.ContainersRelationship;
 export const DeclaredBookingOpeningHoursEntrySchema = native.DeclaredBookingOpeningHoursEntry;
 export const DeclaredResourceRoleSourceSchema = native.DeclaredResourceRoleSource;
 export const FeatureFlagsReadSchema = native.FeatureFlagsRead;
@@ -162,6 +164,20 @@ export type SchemaModelTypeChecks = {
   BookingCatalogueCapability: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueCapabilitySchema>, Models.BookingCatalogueCapability>>,
     Assert<Extends<Models.BookingCatalogueCapability, v.InferOutput<typeof BookingCatalogueCapabilitySchema>>>,
+  ];
+  BookingCatalogueManagerAvailabilityCounts: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>,
+        Models.BookingCatalogueManagerAvailabilityCounts
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingCatalogueManagerAvailabilityCounts,
+        v.InferOutput<typeof BookingCatalogueManagerAvailabilityCountsSchema>
+      >
+    >,
   ];
   BookingCatalogueManagerFacets: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueManagerFacetsSchema>, Models.BookingCatalogueManagerFacets>>,
@@ -358,6 +374,10 @@ export type SchemaModelTypeChecks = {
   ContainersReference: [
     Assert<Extends<v.InferOutput<typeof ContainersReferenceSchema>, Models.ContainersReference>>,
     Assert<Extends<Models.ContainersReference, v.InferOutput<typeof ContainersReferenceSchema>>>,
+  ];
+  ContainersRelationship: [
+    Assert<Extends<v.InferOutput<typeof ContainersRelationshipSchema>, Models.ContainersRelationship>>,
+    Assert<Extends<Models.ContainersRelationship, v.InferOutput<typeof ContainersRelationshipSchema>>>,
   ];
   DeclaredBookingOpeningHoursEntry: [
     Assert<
