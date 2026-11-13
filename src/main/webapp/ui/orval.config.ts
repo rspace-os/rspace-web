@@ -9,7 +9,10 @@ const spec: Document = JSON.parse(
   readFileSync(new URL("./src/modules/common/api/v2/openapi.generated.json", import.meta.url), "utf8"),
 );
 // Operations whose response headers (ETag, Location) or binary body need another apiV2Fetch.ts mutator.
-const mutatorOverrides: Record<string, "apiV2HeadersFetch" | "apiV2BlobFetch"> = {};
+const mutatorOverrides: Record<string, "apiV2HeadersFetch" | "apiV2BlobFetch"> = {
+  getAdminBookingSettings: "apiV2HeadersFetch",
+  patchAdminBookingSettings: "apiV2HeadersFetch",
+};
 const specOperationIds = new Set(getOperations(spec).map(({ operationId }) => operationId));
 for (const operationId of Object.keys(mutatorOverrides)) {
   if (!specOperationIds.has(operationId)) throw new Error(`Mutator override for an unknown operation: ${operationId}`);
