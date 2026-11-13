@@ -444,7 +444,7 @@ export const getCreateBookingUrl = () => {
 };
 
 /**
- * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.
+ * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Create one bookings
  */
 export const createBooking = async (
@@ -542,7 +542,7 @@ export type CreateBookingMutationError = ErrorType<
 export type CreateBookingMutationVariables = { data: BodyType<BookingsCreate>; headers?: CreateBookingHeaders };
 
 /**
- * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.
+ * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Create one bookings
  */
 export const useCreateBooking = <
@@ -1605,7 +1605,7 @@ export const getUpdateBookingUrl = (id: number) => {
 };
 
 /**
- * Partially updates one bookings and returns the updated document.
+ * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const updateBooking = async (
@@ -1714,7 +1714,7 @@ export type UpdateBookingMutationVariables = {
 };
 
 /**
- * Partially updates one bookings and returns the updated document.
+ * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const useUpdateBooking = <

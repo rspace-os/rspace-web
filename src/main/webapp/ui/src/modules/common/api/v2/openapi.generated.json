@@ -2352,6 +2352,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -2419,6 +2420,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -2885,6 +2887,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3571,6 +3574,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -3750,21 +3754,24 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "format" : "int64",
@@ -3781,7 +3788,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -4076,7 +4084,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "canOverride" : {
             "description" : "Whether this caller can set a user override.",
@@ -4084,7 +4093,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "name" : {
             "description" : "Stable lower-camel-case feature flag name.",
@@ -4111,7 +4121,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "value" : {
             "description" : "Effective value for this caller.",
@@ -4119,7 +4130,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "name" ],
@@ -4180,7 +4192,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -4194,7 +4207,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -4217,7 +4231,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -4243,6 +4258,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -4385,7 +4401,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "endDate" : {
             "description" : "End of the maintenance window.",
@@ -4394,7 +4411,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable maintenance identifier.",
@@ -4414,7 +4432,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "startDate" : {
             "description" : "Beginning of the maintenance window.",
@@ -4423,7 +4442,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "stopUserLoginDate" : {
             "description" : "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
@@ -4431,7 +4451,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "version" : {
             "description" : "Version for conditional updates and deletes.",
@@ -4441,7 +4462,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -4758,7 +4780,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "email" : {
             "description" : "User's email address.",
@@ -4768,7 +4791,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -4776,7 +4800,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -4795,7 +4820,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -4804,7 +4830,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -6394,14 +6421,14 @@
     },
     "/api/v2/booking-configuration-targets" : {
       "get" : {
+        "description" : "Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.",
         "operationId" : "searchBookingConfigurationTargets",
         "parameters" : [ {
-          "description" : "Case-insensitive search text.",
+          "description" : "Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming.",
           "in" : "query",
           "name" : "q",
-          "required" : true,
+          "required" : false,
           "schema" : {
-            "minLength" : 2,
             "type" : "string"
           }
         }, {
@@ -6746,6 +6773,26 @@
                   "dayOfWeek" : 1,
                   "end" : "18:00",
                   "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 2,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 3,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 4,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 5,
+                  "end" : "18:00",
+                  "start" : "08:00"
+                }, {
+                  "dayOfWeek" : 6,
+                  "end" : "16:00",
+                  "start" : "10:00"
                 } ],
                 "slotGranularityMinutes" : 15,
                 "target" : {
@@ -8388,7 +8435,7 @@
         "x-rspace-operation" : "LIST"
       },
       "post" : {
-        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.",
+        "description" : "Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "createBooking",
         "parameters" : [ {
           "$ref" : "#/components/parameters/IdempotencyKey"
@@ -8721,7 +8768,7 @@
         "x-rspace-operation" : "READ"
       },
       "patch" : {
-        "description" : "Partially updates one bookings and returns the updated document.",
+        "description" : "Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "updateBooking",
         "parameters" : [ {
           "$ref" : "#/components/parameters/BookingsId"
