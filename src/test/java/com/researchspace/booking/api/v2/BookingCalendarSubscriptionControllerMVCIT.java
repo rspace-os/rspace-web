@@ -368,12 +368,14 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .perform(get(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
     mockMvc
+        .perform(post(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
 
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
     mockMvc
+        .perform(post(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
 
     new TransactionTemplate(transactionManager)
@@ -384,6 +386,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
               configurationDao.saveAndFlush(configuration);
             });
     mockMvc
+        .perform(post(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
   }
 
