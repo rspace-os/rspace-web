@@ -6,6 +6,7 @@ import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
@@ -52,6 +53,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -106,6 +108,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     this.passwordEncoder = passwordEncoder;
   }
 
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
+
   /** {@inheritDoc} */
   public User getUser(String userId) {
     return userDao.get(Long.valueOf(userId));
@@ -118,6 +122,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public User saveUser(User toChange) {
+    calendarRevocations.affectUser(toChange.getId());
     encryptPasswordIfRequired(toChange);
     try {
       return doSave(toChange);
@@ -126,6 +131,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       log.error(msg);
       throw new IllegalStateException(msg);
     }
+  }
+
+  @Override
+  public User save(User user) {
+    calendarRevocations.affectUser(user.getId());
+    return super.save(user);
   }
 
   @Override
