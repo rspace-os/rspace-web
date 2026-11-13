@@ -105,6 +105,31 @@ class ReadOnlyCollectionOpenApiTest {
   }
 
   @Test
+  void collectionOperationsShareParameterAndResponseComponents() {
+    JsonNode document =
+        referencingDocument(
+            resourceSpec(ApiV2ContainerResource.DESCRIPTION, List.of()),
+            resourceSpec(ApiV2InstrumentResource.DESCRIPTION, List.of()));
+    for (String resource : List.of("containers", "instruments")) {
+      String component = Character.toUpperCase(resource.charAt(0)) + resource.substring(1);
+      String where = "#/components/parameters/" + component + "Where";
+      JsonNode list = document.at("/paths/~1api~1v2~1" + resource + "/get");
+      JsonNode count = document.at("/paths/~1api~1v2~1" + resource + "~1count/get");
+      assertEquals(where, list.at("/parameters/0/$ref").asText());
+      assertTrue(count.path("parameters").toString().contains(where));
+      assertTrue(list.path("parameters").toString().contains("#/components/parameters/Page"));
+      assertEquals("#/components/responses/CountResult", count.at("/responses/200/$ref").asText());
+    }
+    assertEquals(
+        "ApiV2CountResult",
+        document
+            .at("/components/responses/CountResult/content/application~1json/schema/$ref")
+            .asText()
+            .replace("#/components/schemas/", ""));
+    assertTrue(document.at("/components/parameters/ContainersId").isMissingNode());
+  }
+
+  @Test
   void publishesMissingIfMatchResponseOnlyForVersionedWrites() {
     String requiredCode = "errors.api.v2.resourceAccess.ifMatchRequired";
     for (boolean versioned : List.of(false, true)) {
@@ -354,6 +379,10 @@ class ReadOnlyCollectionOpenApiTest {
   }
 
   private static JsonNode document(ApiV2ResourceSpec<?, ?>... specs) {
+    return ApiV2OpenApiTestRefs.dereferenced(referencingDocument(specs));
+  }
+
+  private static JsonNode referencingDocument(ApiV2ResourceSpec<?, ?>... specs) {
     return Json31.mapper()
         .valueToTree(
             new ApiV2OpenApiGenerator(

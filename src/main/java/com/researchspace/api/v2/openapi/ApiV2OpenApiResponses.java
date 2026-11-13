@@ -17,6 +17,8 @@ final class ApiV2OpenApiResponses {
   private ApiV2OpenApiResponses() {}
 
   static final String PROBLEM_JSON = "application/problem+json";
+  static final String RESPONSES = "responses";
+  static final String EXAMPLES = "examples";
   private static final Map<String, String> STANDARD_RESPONSE_NAMES =
       Map.of(
           "400", "BadRequest",
@@ -83,7 +85,7 @@ final class ApiV2OpenApiResponses {
 
   static Map<String, Object> standardResponseReference(String status) {
     String name = STANDARD_RESPONSE_NAMES.get(status);
-    return name == null ? null : componentRef("responses", name);
+    return name == null ? null : componentRef(RESPONSES, name);
   }
 
   /** Adds a reference to the shared component response for each status. */
@@ -98,8 +100,15 @@ final class ApiV2OpenApiResponses {
         "description", description, "content", problemContent(description, status, code));
   }
 
+  /**
+   * A problem response listing the documented error codes. Each code's example is the shared
+   * component named by the code, unless another response already gave that code another example.
+   */
   static Map<String, Object> problemResponse(
-      String description, int status, Map<String, String> errors) {
+      String description,
+      int status,
+      Map<String, String> errors,
+      ApiV2OpenApiComponents components) {
     if (errors.size() == 1) {
       Map.Entry<String, String> error = errors.entrySet().iterator().next();
       return problemResponse(description, status, error.getKey());
@@ -109,11 +118,14 @@ final class ApiV2OpenApiResponses {
         (code, errorDescription) ->
             examples.put(
                 code,
-                ordered(
-                    "summary",
-                    errorDescription,
-                    "value",
-                    ordered("title", errorDescription, "status", status, "code", code))));
+                components.referenceOrInline(
+                    EXAMPLES,
+                    code,
+                    ordered(
+                        "summary",
+                        errorDescription,
+                        "value",
+                        ordered("title", errorDescription, "status", status, "code", code)))));
     return ordered(
         "description",
         description,

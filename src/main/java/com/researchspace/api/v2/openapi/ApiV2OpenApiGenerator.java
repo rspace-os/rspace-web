@@ -76,6 +76,7 @@ public final class ApiV2OpenApiGenerator {
         .allSchemas()
         .forEach(
             description -> resourceSchemas.put(description.resourceName(), description.schema()));
+    ApiV2OpenApiComponents referenced = new ApiV2OpenApiComponents();
     Set<String> routableNames =
         catalog.routableResources().stream()
             .map(ApiV2ResourceRegistration::resourceName)
@@ -113,7 +114,8 @@ public final class ApiV2OpenApiGenerator {
                     schemas, resource, componentNames.get(resource.resourceName())));
     catalog
         .routableResources()
-        .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+        .forEach(
+            resource -> addPaths(paths, resource, componentNames, resourceSchemas, referenced));
 
     schemas.replaceAll(
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
@@ -122,6 +124,7 @@ public final class ApiV2OpenApiGenerator {
     components.put("responses", standardResponses(text));
     components.put("headers", standardHeaders(text));
     components.put("securitySchemes", securitySchemes());
+    referenced.addTo(components);
 
     return new OpenAPI()
         .openapi("3.1.0")
@@ -145,7 +148,8 @@ public final class ApiV2OpenApiGenerator {
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
       Map<String, String> componentNames,
-      Map<String, ResourceSchema> resourceSchemas) {
+      Map<String, ResourceSchema> resourceSchemas,
+      ApiV2OpenApiComponents referenced) {
     String collectionPath = "/api/v2/" + resource.resourceName();
     String itemPath = collectionPath + "/{id}";
     String countPath = collectionPath + "/count";
@@ -165,7 +169,9 @@ public final class ApiV2OpenApiGenerator {
       if (pathItem.containsKey(method)) {
         throw new IllegalArgumentException("Duplicate OpenAPI operation " + method + " " + path);
       }
-      pathItem.put(method, operations.operation(resource, operation, component, resourceSchemas));
+      pathItem.put(
+          method,
+          operations.operation(resource, operation, component, resourceSchemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
   }

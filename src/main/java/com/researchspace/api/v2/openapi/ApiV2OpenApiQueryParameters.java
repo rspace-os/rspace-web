@@ -22,10 +22,15 @@ import java.util.Set;
 /** Builds the query, path and header parameters of standard resource operations. */
 final class ApiV2OpenApiQueryParameters {
 
+  static final String PARAMETERS = "parameters";
+
   private ApiV2OpenApiQueryParameters() {}
 
+  /** The parameters of a standard operation, as references to components. */
   static List<Map<String, Object>> parameters(
       ResourceOperation operation,
+      String component,
+      ApiV2OpenApiComponents components,
       ResourceSchema schema,
       Map<String, ResourceSchema> resourceSchemas,
       ResourceRegistry registry,
@@ -35,10 +40,14 @@ final class ApiV2OpenApiQueryParameters {
     if (operation == ResourceOperation.READ
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.DELETE) {
-      parameters.add(idParameter(schema, text));
+      parameters.add(components.reference(PARAMETERS, component + "Id", idParameter(schema, text)));
     }
     if (operation == ResourceOperation.LIST) {
-      parameters.add(where(schema, false, resourceSchemas, registry, runtimeFields, text));
+      parameters.add(
+          components.reference(
+              PARAMETERS,
+              component + "Where",
+              where(schema, false, resourceSchemas, registry, runtimeFields, text)));
       Map<String, Object> sort =
           parameter(
               "sort",
@@ -61,59 +70,78 @@ final class ApiV2OpenApiQueryParameters {
               "maximumFields",
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
-      parameters.add(pageParameter(text));
-      parameters.add(limitParameter(text));
+      parameters.add(components.reference(PARAMETERS, "Page", pageParameter(text)));
+      parameters.add(components.reference(PARAMETERS, "Limit", limitParameter(text)));
       parameters.add(
-          parameter(
-              "totals",
-              "query",
-              false,
-              ordered("type", "boolean", "default", false),
-              text.get(Key.PARAMETER_TOTALS)));
+          components.reference(
+              PARAMETERS,
+              "Totals",
+              parameter(
+                  "totals",
+                  "query",
+                  false,
+                  ordered("type", "boolean", "default", false),
+                  text.get(Key.PARAMETER_TOTALS))));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.COUNT) {
       parameters.add(
-          parameter(
-              "max",
-              "query",
-              false,
-              ordered("type", "integer", "minimum", 1, "maximum", 10000),
-              text.get(Key.PARAMETER_MAX)));
+          components.reference(
+              PARAMETERS,
+              "Max",
+              parameter(
+                  "max",
+                  "query",
+                  false,
+                  ordered("type", "integer", "minimum", 1, "maximum", 10000),
+                  text.get(Key.PARAMETER_MAX))));
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
         || operation == ResourceOperation.BULK_DELETE) {
+      boolean required = operation != ResourceOperation.COUNT;
       parameters.add(
-          where(
-              schema,
-              operation != ResourceOperation.COUNT,
-              resourceSchemas,
-              registry,
-              runtimeFields,
-              text));
+          components.reference(
+              PARAMETERS,
+              component + (required ? "WhereRequired" : "Where"),
+              where(schema, required, resourceSchemas, registry, runtimeFields, text)));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.READ) {
       parameters.add(
-          parameter(
-              "depth",
-              "query",
-              false,
-              ordered(
-                  "type",
-                  "integer",
-                  "minimum",
-                  0,
-                  "maximum",
-                  CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH,
-                  "default",
-                  0),
-              text.get(Key.PARAMETER_DEPTH)));
+          components.reference(
+              PARAMETERS,
+              "Depth",
+              parameter(
+                  "depth",
+                  "query",
+                  false,
+                  ordered(
+                      "type",
+                      "integer",
+                      "minimum",
+                      0,
+                      "maximum",
+                      CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH,
+                      "default",
+                      0),
+                  text.get(Key.PARAMETER_DEPTH))));
       parameters.add(
-          fieldset(
-              "fields", schema, resourceSchemas, text.get(Key.PARAMETER_FIELDS, schema.name())));
+          components.reference(
+              PARAMETERS,
+              component + "Fields",
+              fieldset(
+                  "fields",
+                  schema,
+                  resourceSchemas,
+                  text.get(Key.PARAMETER_FIELDS, schema.name()))));
       parameters.add(
-          fieldset(
-              "exclude", schema, resourceSchemas, text.get(Key.PARAMETER_EXCLUDE, schema.name())));
+          components.reference(
+              PARAMETERS,
+              component + "Exclude",
+              fieldset(
+                  "exclude",
+                  schema,
+                  resourceSchemas,
+                  text.get(Key.PARAMETER_EXCLUDE, schema.name()))));
     }
     return parameters;
   }

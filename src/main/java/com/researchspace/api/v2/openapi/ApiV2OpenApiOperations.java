@@ -4,11 +4,13 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.PARAMETERS;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.ifMatchParameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameter;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameters;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.access;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyAccess;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.RESPONSES;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitHeaders;
@@ -43,7 +45,8 @@ final class ApiV2OpenApiOperations {
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
       String component,
-      Map<String, ResourceSchema> resourceSchemas) {
+      Map<String, ResourceSchema> resourceSchemas,
+      ApiV2OpenApiComponents components) {
     ResourceSchema schema = resource.description().schema();
     OpenApiOperationDocumentation documentation = resource.operationDocumentation(operation);
     Map<String, Object> result = new LinkedHashMap<>();
@@ -73,23 +76,30 @@ final class ApiV2OpenApiOperations {
     List<Map<String, Object>> parameters =
         parameters(
             operation,
+            component,
+            components,
             schema,
             resourceSchemas,
             resource.registry(),
             runtimeFields.runtimeFieldsExtension(resource),
             text);
     if (requiresIfMatch(resource, operation)) {
-      parameters.add(ifMatchParameter(text.get(Key.PARAMETER_IF_MATCH)));
+      parameters.add(
+          components.reference(
+              PARAMETERS, "IfMatch", ifMatchParameter(text.get(Key.PARAMETER_IF_MATCH))));
     }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
       parameters.add(
-          parameter(
-              "permanent",
-              "query",
-              false,
-              ordered("type", "boolean", "default", false),
-              text.get(Key.PARAMETER_PERMANENT)));
+          components.reference(
+              PARAMETERS,
+              "Permanent",
+              parameter(
+                  "permanent",
+                  "query",
+                  false,
+                  ordered("type", "boolean", "default", false),
+                  text.get(Key.PARAMETER_PERMANENT))));
     }
     if (!parameters.isEmpty()) {
       result.put("parameters", parameters);
@@ -97,7 +107,7 @@ final class ApiV2OpenApiOperations {
     if (hasRequestBody(operation)) {
       result.put("requestBody", requestBody(operation, component, documentation));
     }
-    result.put("responses", responses(resource, operation, component, documentation));
+    result.put("responses", responses(resource, operation, component, documentation, components));
     result.put("x-rspace-operation", operation.name());
     result.putAll(documentation.extensions());
     return result;
@@ -148,7 +158,8 @@ final class ApiV2OpenApiOperations {
       ApiV2ResourceRegistration<?, ?> resource,
       ResourceOperation operation,
       String component,
-      OpenApiOperationDocumentation documentation) {
+      OpenApiOperationDocumentation documentation,
+      ApiV2OpenApiComponents components) {
     Map<String, Object> responses = new LinkedHashMap<>();
     String successStatus =
         operation == ResourceOperation.CREATE || operation == ResourceOperation.BULK_CREATE
@@ -164,8 +175,7 @@ final class ApiV2OpenApiOperations {
     Map<String, Object> successMedia = new LinkedHashMap<>();
     successMedia.put("schema", successSchema);
     putIfNotNull(successMedia, "example", documentation.responseExample());
-    responses.put(
-        successStatus,
+    Map<String, Object> success =
         ordered(
             "description",
             documentation
@@ -178,16 +188,29 @@ final class ApiV2OpenApiOperations {
             "headers",
             rateLimitHeaders(),
             "content",
-            Map.of(APPLICATION_JSON_VALUE, successMedia)));
+            Map.of(APPLICATION_JSON_VALUE, successMedia));
+    boolean documentedSuccess =
+        documentation.responseExample() != null
+            || documentation.responses().containsKey(Integer.valueOf(successStatus));
+    responses.put(
+        successStatus,
+        operation == ResourceOperation.COUNT && !documentedSuccess
+            ? components.reference(RESPONSES, "CountResult", success)
+            : success);
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
       responses.put(
           "204",
-          ordered(
-              "description",
-              text.get(Key.RESPONSE_PERMANENTLY_REMOVED),
-              "headers",
-              rateLimitHeaders()));
+          sharedUnlessDocumented(
+              components,
+              documentation,
+              204,
+              "PermanentlyRemoved",
+              ordered(
+                  "description",
+                  text.get(Key.RESPONSE_PERMANENTLY_REMOVED),
+                  "headers",
+                  rateLimitHeaders())));
     }
     putStandardResponses(responses, "400", "401", "403", "406", "429", "500");
     if (operation == ResourceOperation.READ
@@ -204,12 +227,17 @@ final class ApiV2OpenApiOperations {
     if (requiresIfMatch(resource, operation)) {
       responses.put(
           "428",
-          problemResponse(
-              text.get(Key.RESPONSE_IF_MATCH_REQUIRED),
+          sharedUnlessDocumented(
+              components,
+              documentation,
               428,
-              resource
-                  .ifMatchRequiredCode()
-                  .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED))));
+              component + "IfMatchRequired",
+              problemResponse(
+                  text.get(Key.RESPONSE_IF_MATCH_REQUIRED),
+                  428,
+                  resource
+                      .ifMatchRequiredCode()
+                      .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED)))));
     }
     documentation.responses().entrySet().stream()
         .filter(entry -> !entry.getValue().errors().isEmpty())
@@ -220,7 +248,8 @@ final class ApiV2OpenApiOperations {
                     problemResponse(
                         entry.getValue().description(),
                         entry.getKey(),
-                        entry.getValue().errors())));
+                        entry.getValue().errors(),
+                        components)));
     documentation
         .responses()
         .forEach(
@@ -233,5 +262,20 @@ final class ApiV2OpenApiOperations {
               }
             });
     return responses;
+  }
+
+  /**
+   * A reference to the shared {@code response}, unless the operation documents that status itself:
+   * its description then replaces the shared one, so the response stays inline.
+   */
+  private static Map<String, Object> sharedUnlessDocumented(
+      ApiV2OpenApiComponents components,
+      OpenApiOperationDocumentation documentation,
+      int status,
+      String name,
+      Map<String, Object> response) {
+    return documentation.responses().containsKey(status)
+        ? response
+        : components.reference(RESPONSES, name, response);
   }
 }
