@@ -7,6 +7,8 @@
  */
 import * as v from 'valibot';
 
+export const ApiV2AuditEvent = v.object({action: v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE']), description: v.nullish(v.string()), domain: v.picklist(['MESSAGING', 'RECORD', 'FOLDER', 'NOTEBOOK', 'MEDIA', 'USER', 'GROUP', 'COMMUNITY', 'FORM', 'AUDIT', 'INV_SAMPLE', 'INV_SUBSAMPLE', 'INV_CONTAINER', 'INV_INSTRUMENT', 'REQUEST', 'WORKSPACE', 'UNKNOWN']), eventId: v.pipe(v.string(), v.check((value) => value.length >= 128 || [...value].length >= 64, 'Invalid length: Expected >=64'), v.check((value) => value.length <= 64 || (value.length <= 128 && [...value].length <= 64), 'Invalid length: Expected <=64')), fullName: v.nullish(v.string()), payload: v.record(v.string(), v.unknown()), target: v.nullish(v.pipe(v.string(), v.description('Stable audited resource identifier'))), timestamp: v.pipe(v.string(), v.isoTimestamp()), username: v.string()});
+
 export const ApiV2ConfigBranding = v.object({bannerImageUrl: v.pipe(v.string(), v.description('Root-relative URL of the deployment banner image.'))});
 
 export const ApiV2ConfigHelpLink = v.object({label: v.pipe(v.string(), v.description('Link label shown to users.')), url: v.pipe(v.string(), v.description('Configured help URL.'))});
@@ -164,6 +166,31 @@ export const GetContainerResponse = ContainersRead
 
 
 /**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */;
+
+export const ListContainerAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListContainerAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.')))
+})
+
+export const ListContainerAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  truncated: v.boolean()
+})
+
+
+/**
  * Returns a paginated view of instruments. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
  * @summary List instruments
  */;
@@ -244,6 +271,31 @@ export const GetInstrumentQueryParams = v.object({
 })
 
 export const GetInstrumentResponse = InstrumentsRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */;
+
+export const ListInstrumentAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListInstrumentAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.')))
+})
+
+export const ListInstrumentAuditEventsResponse = v.object({
+  docs: v.array(ApiV2AuditEvent),
+  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  truncated: v.boolean()
+})
 
 
 /**
@@ -482,5 +534,24 @@ export const GetUserQueryParams = v.object({
 }), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[users]=id,name.')))
 })
 
-export const GetUserResponse = UsersRead;
+export const GetUserResponse = UsersRead
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one users resource
+ */;
+
+export const ListUserAuditEventsParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const ListUserAuditEventsQueryParams = v.object({
+  start: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive earliest event time. The server limits the range to 183 days.'))),
+  end: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.'))),
+  q: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Case-insensitive text contained in the actor, action, safe description, target, or recorded values.'))),
+  actions: v.optional(v.pipe(v.array(v.picklist(['CREATE', 'DELETE', 'DOWNLOAD', 'DUPLICATE', 'EXPORT', 'MOVE', 'READ', 'RENAME', 'REQUEST_APPROVED', 'REQUEST_CANCELLED', 'REQUEST_FULFILLED', 'REQUEST_REJECTED', 'REQUEST_SENT', 'RESTORE', 'SEARCH', 'SHARE', 'SIGN', 'TRANSFER', 'UNSHARE', 'VIEW', 'WITNESSED', 'WRITE'])), v.description('Audit actions to include.')))
+})
+
+export const ListUserAuditEventsResponse = v.object({docs: v.array(ApiV2AuditEvent), endExclusive: v.pipe(v.string(), v.isoTimestamp()), limit: v.pipe(v.number(), v.integer(), v.minValue(1)), start: v.pipe(v.string(), v.isoTimestamp()), truncated: v.boolean()});
 
