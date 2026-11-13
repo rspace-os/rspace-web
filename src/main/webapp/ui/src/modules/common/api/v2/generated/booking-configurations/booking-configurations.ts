@@ -36,6 +36,7 @@ import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import {
+  getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
 } from "../booking-catalogue/booking-catalogue.ts";
@@ -202,6 +203,7 @@ export const getDeleteManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -690,6 +692,7 @@ export const getUpdateManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -841,6 +844,7 @@ export const getCreateBookingConfigurationMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -987,6 +991,7 @@ export const getCreateManyBookingConfigurationsMutationOptions = <
             getCountBookingConfigurationsQueryKey(),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -1491,6 +1496,7 @@ export const getDeleteBookingConfigurationMutationOptions = <
             getSearchBookingCatalogueLocationsQueryKey(),
             getListBookingsQueryKey(),
             getCountBookingsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -2038,6 +2044,7 @@ export const getUpdateBookingConfigurationMutationOptions = <
             getSearchBookingCatalogueLocationsQueryKey(),
             getListBookingsQueryKey(),
             getCountBookingsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
             getSearchBookingConfigurationTargetsQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
@@ -2519,6 +2526,7 @@ export const getReplaceBookingConfigurationAccessMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }
@@ -3044,6 +3052,7 @@ export const getLeaveBookingConfigurationAccessMutationOptions = <
             getListBookingConfigurationAuditEventsQueryKey(variables.id),
             getSearchBookingCatalogueQueryKey(),
             getSearchBookingCatalogueLocationsQueryKey(),
+            getCountBookingCatalogueAvailabilityQueryKey(),
           ].some((queryKey) => matchQuery({ queryKey }, query)),
       });
     }

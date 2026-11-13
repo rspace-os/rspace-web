@@ -8,6 +8,7 @@
 import type { BookingEventKind } from "./bookingEventKind.ts";
 import type { BookingState } from "./bookingState.ts";
 import type { BookingsReadTargetCustomFields } from "./bookingsReadTargetCustomFields.ts";
+import type { ContainersRelationship } from "./containersRelationship.ts";
 import type { InstrumentsRelationship } from "./instrumentsRelationship.ts";
 import type { UsersRelationship } from "./usersRelationship.ts";
 
@@ -23,6 +24,8 @@ export interface BookingsRead {
   end?: string;
   readonly id: number;
   kind?: BookingEventKind;
+  /** The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID. */
+  readonly location?: ContainersRelationship | null;
   readonly privacy?: string;
   /**
    * @maxLength 1000
