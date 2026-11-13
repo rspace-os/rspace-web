@@ -42,6 +42,10 @@ export const confocalTarget: BookableItemOption = {
   allowDoubleBooking: false,
 };
 
+export function confocalTargetWith(overrides: Partial<BookableItemOption> = {}): BookableItemOption {
+  return { ...confocalTarget, ...overrides };
+}
+
 export const editableBooking = {
   id: 41,
   version: 0,
