@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
@@ -13,11 +14,9 @@ import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.util.Date;
@@ -40,9 +39,10 @@ class BookingCalendarManagerTest {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
-      BookingCalendarCreationTransaction creationTransaction) {
+      BookingCalendarCreationTransaction creationTransaction,
+      BookingCalendarPermissionGateDao permissionGate) {
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example/context");
     return new BookingCalendarManagerImpl(
@@ -55,6 +55,7 @@ class BookingCalendarManagerTest {
         accessManager,
         generator,
         creationTransaction,
+        permissionGate,
         new BookingCalendarProperties(100, 10_000, 1),
         properties,
         () -> RAW_TOKEN);
@@ -70,8 +71,6 @@ class BookingCalendarManagerTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(CONFIGURATION_ID);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 101L));
-    configuration.setResourceAccess(
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new Date()));
     return configuration;
   }
 

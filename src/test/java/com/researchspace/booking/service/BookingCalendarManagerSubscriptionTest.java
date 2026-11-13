@@ -148,6 +148,10 @@ class BookingCalendarManagerSubscriptionTest {
             CryptoUtils.hashToken(RAW_TOKEN).getBytes(StandardCharsets.UTF_8),
             storedHash.getBytes(StandardCharsets.UTF_8)));
 
+    InOrder lockOrder = inOrder(configurationDao, accessManager);
+    lockOrder.verify(configurationDao).lockById(CONFIGURATION_ID);
+    lockOrder.verify(accessManager).resolveForMutation(configuration, owner);
+
     URI url = URI.create(created.subscriptionUrl());
     assertEquals("https", url.getScheme());
     assertEquals("rspace.example", url.getHost());
@@ -158,12 +162,75 @@ class BookingCalendarManagerSubscriptionTest {
   }
 
   @Test
+  void activeGateUsesCurrentScalarFactsWhenManagedSubjectStillLooksDisabled() {
+    owner.setEnabled(false);
+    when(permissionGate.hasActiveGate()).thenReturn(true);
+
+    BookingCalendarManager.Created created =
+        manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
+
+    assertTrue(created.status().active());
+    verify(creationTransaction, never()).create(any(), any());
+    verify(accessManager).resolveForMutation(configuration, owner);
+  }
+
+  @Test
+  void activeGateFailsClosedWhenCurrentScalarFactsDenyAStaleEnabledSubject() {
+    when(permissionGate.hasActiveGate()).thenReturn(true);
+    when(accessManager.resolveForMutation(configuration, owner))
+        .thenReturn(ResolvedResourceAccess.none());
+
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+
+    verify(subscriptionDao, never()).saveAndFlush(any(BookableItemCalendarSubscription.class));
+  }
+
+  @Test
+  void suspendedAncestorIsRejectedBeforeAnyCallerStateIsRead() {
+    User subject = mock(User.class);
+    User actor = mock(User.class);
+    doThrow(new IllegalStateException("suspended ancestor"))
+        .when(permissionGate)
+        .assertNoSuspendedAncestor();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> manager.createOrRotate(CONFIGURATION_ID, subject, actor, "\"etag\""));
+    assertThrows(
+        IllegalStateException.class, () -> manager.createOrRotateUser(subject, actor, "\"etag\""));
+
+    verifyNoInteractions(subject, actor);
+  }
+
+  @Test
+  void resetUsesFreshInheritedPermissionFacts() {
+    when(subscriptionDao.deleteByConfigurationId(CONFIGURATION_ID)).thenReturn(3);
+
+    assertEquals(3, manager.resetForConfiguration(CONFIGURATION_ID, owner, owner));
+
+    verify(accessManager).resolveForMutation(configuration, owner);
+    verify(subscriptionDao).deleteByConfigurationId(CONFIGURATION_ID);
+  }
+
+  @Test
   void duplicateItemCreationCannotReplaceTheFirstSuccessfulCredential() {
     BookingCalendarManager.Created created =
         manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\"");
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
     verify(subscriptionDao).saveAndFlush(saved.capture());
+    CurrentItemCalendarSubscription current =
+        new CurrentItemCalendarSubscription(
+            41L,
+            owner.getId(),
+            CONFIGURATION_ID,
+            saved.getValue().getTokenHash(),
+            saved.getValue().getRawToken(),
+            saved.getValue().getUpdatedAt());
+    when(subscriptionDao.lockCurrent(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(Optional.of(current));
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(saved.getValue()));
 
@@ -237,19 +304,25 @@ class BookingCalendarManagerSubscriptionTest {
 
   @ParameterizedTest
   @EnumSource(ConcealedConfiguration.class)
-  void statusAndCreateConcealMissingOrUnreadableConfigurations(ConcealedConfiguration scenario) {
+  void statusAndCreateConcealUnavailableConfigurations(ConcealedConfiguration scenario) {
     if (scenario == ConcealedConfiguration.MISSING) {
       when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
       when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
       when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
     } else {
-      when(accessManager.resolve(configuration.getResourceAccess(), owner))
+      if (scenario == ConcealedConfiguration.ARCHIVED_WITHOUT_ACCESS) {
+        configuration.setState(BookingConfigurationState.ARCHIVED);
+      }
+      when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
+      when(accessManager.resolveForMutation(configuration, owner))
           .thenReturn(ResolvedResourceAccess.none());
     }
 
-    assertThrows(
-        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.status(CONFIGURATION_ID, owner, owner));
+    if (scenario != ConcealedConfiguration.ARCHIVED_WITHOUT_ACCESS) {
+      assertThrows(
+          BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+          () -> manager.status(CONFIGURATION_ID, owner, owner));
+    }
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
         () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
@@ -261,6 +334,26 @@ class BookingCalendarManagerSubscriptionTest {
     String previousHash = existing.getTokenHash();
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.of(existing));
+    CurrentItemCalendarSubscription before =
+        new CurrentItemCalendarSubscription(
+            41L,
+            owner.getId(),
+            CONFIGURATION_ID,
+            previousHash,
+            existing.getRawToken(),
+            existing.getUpdatedAt());
+    CurrentItemCalendarSubscription after =
+        new CurrentItemCalendarSubscription(
+            41L,
+            owner.getId(),
+            CONFIGURATION_ID,
+            CryptoUtils.hashToken(RAW_TOKEN),
+            RAW_TOKEN,
+            new Date());
+    when(subscriptionDao.lockCurrent(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(Optional.of(before), Optional.of(after));
+    when(subscriptionDao.rotateCurrent(eq(before), eq(previousHash), any(), eq(RAW_TOKEN), any()))
+        .thenReturn(after);
 
     String etag = manager.status(CONFIGURATION_ID, owner, owner).etag();
     manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag);
@@ -268,12 +361,57 @@ class BookingCalendarManagerSubscriptionTest {
         BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
         () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, etag));
 
-    ArgumentCaptor<BookableItemCalendarSubscription> saved =
-        ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
-    verify(subscriptionDao).saveAndFlush(saved.capture());
-    assertSame(existing, saved.getValue());
-    assertFalse(previousHash.equals(existing.getTokenHash()));
-    assertEquals(RAW_TOKEN, existing.getRawToken());
+    verify(subscriptionDao)
+        .rotateCurrent(eq(before), eq(previousHash), any(), eq(RAW_TOKEN), any());
+    verify(subscriptionDao, never()).saveAndFlush(any(BookableItemCalendarSubscription.class));
+    assertFalse(previousHash.equals(after.tokenHash()));
+    assertEquals(RAW_TOKEN, after.rawToken());
+  }
+
+  @Test
+  void conditionalRotationConflictUsesTheStableCalendarDomainException() {
+    CurrentItemCalendarSubscription before =
+        new CurrentItemCalendarSubscription(
+            41L,
+            owner.getId(),
+            CONFIGURATION_ID,
+            CryptoUtils.hashToken("before"),
+            "before",
+            new Date());
+    when(subscriptionDao.lockCurrent(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(Optional.of(before));
+    when(subscriptionDao.rotateCurrent(eq(before), eq(before.tokenHash()), any(), any(), any()))
+        .thenThrow(new OptimisticLockException("lost race"));
+
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () ->
+            manager.createOrRotate(
+                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
+  }
+
+  @Test
+  void translatedConditionalRotationConflictUsesTheStableCalendarDomainException() {
+    CurrentItemCalendarSubscription before =
+        new CurrentItemCalendarSubscription(
+            41L,
+            owner.getId(),
+            CONFIGURATION_ID,
+            CryptoUtils.hashToken("before"),
+            "before",
+            new Date());
+    when(subscriptionDao.lockCurrent(owner.getId(), CONFIGURATION_ID))
+        .thenReturn(Optional.of(before));
+    when(subscriptionDao.rotateCurrent(eq(before), eq(before.tokenHash()), any(), any(), any()))
+        .thenThrow(
+            new ObjectOptimisticLockingFailureException(
+                BookableItemCalendarSubscription.class, before.id()));
+
+    assertThrows(
+        BookingCalendarManagerImpl.UserSubscriptionConflictException.class,
+        () ->
+            manager.createOrRotate(
+                CONFIGURATION_ID, owner, owner, "\"" + before.tokenHash() + "\""));
   }
 
   @Test
@@ -288,8 +426,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   @Test
   void revokeConcealsAConfigurationTheCallerCannotRead() {
-    when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(ResolvedResourceAccess.none());
+    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
@@ -300,6 +437,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   private enum ConcealedConfiguration {
     MISSING,
-    UNREADABLE
+    UNREADABLE,
+    ARCHIVED_WITHOUT_ACCESS
   }
 }

@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
@@ -72,6 +73,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final BookingItemPermissions itemPermissions;
   private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   @Autowired
   public BookingConfigurationManagerImpl(
@@ -87,7 +89,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       BookingItemPermissions itemPermissions,
       @Qualifier("bookingCalendarSubscriptionDao")
           BookingCalendarSubscriptionDao calendarSubscriptions,
-      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings) {
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings,
+      BookingCalendarPermissionGateDao permissionGate) {
     this.auditDao = auditDao;
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
@@ -99,6 +102,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.itemPermissions = itemPermissions;
     this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
+    this.permissionGate = permissionGate;
   }
 
   @Override
@@ -177,6 +181,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (creates.size() > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
+    permissionGate.lockShared();
     BookingConfigurationDefaults defaults =
         BookingConfigurationDefaultsManagerImpl.requiredDefaults(defaultsDao);
     Date now = new Date();
