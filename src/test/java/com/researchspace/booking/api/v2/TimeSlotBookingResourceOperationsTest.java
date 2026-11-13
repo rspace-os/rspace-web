@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,10 +23,16 @@ import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingRequesterFilters;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
@@ -35,10 +43,12 @@ import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 
 class TimeSlotBookingResourceOperationsTest {
@@ -72,6 +82,31 @@ class TimeSlotBookingResourceOperationsTest {
             ResourceOperation.CREATE,
             ResourceOperation.UPDATE),
         spec.exposedOperations());
+  }
+
+  @Test
+  void limitsRequesterFiltersToEventsWhoseRequesterTheSubjectMaySee() {
+    when(actor.getId()).thenReturn(7L);
+    ResourceRequest request =
+        new ResourceRequest(
+            new FilterExpression.Comparison("requester.value", Operator.EQUAL, List.of(42L), false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            FieldSelection.all(),
+            IncludeTree.empty());
+    var guarded = BookingRequesterFilters.visibleRequestersOnly(request.filter(), 7L);
+    when(manager.getBookings(any(ResourceRequest.class), eq(actor)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(manager.countBookings(any(ResourceRequest.class), eq(actor))).thenReturn(0L);
+
+    operations.find(request, actor);
+    operations.count(request, actor);
+
+    var captured = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(manager).getBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+    verify(manager).countBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
   }
 
   @Test
@@ -140,7 +175,7 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
-  void derivedPrivateFieldsAreNullableAndNeverQueryable() {
+  void derivedPrivateFieldsAreNullableAndUnsortable() {
     User requester = mock(User.class);
     TimeSlotBooking booking = booking(requester);
 
@@ -151,12 +186,11 @@ class TimeSlotBookingResourceOperationsTest {
     assertEquals("busy", busy.get("privacy"));
     assertEquals(false, busy.get("canEdit"));
     assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
-    assertFalse(
+    assertTrue(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireField("purpose")
             .operators()
-            .iterator()
-            .hasNext());
+            .contains(Operator.CONTAINS));
     assertFalse(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireField("state")
