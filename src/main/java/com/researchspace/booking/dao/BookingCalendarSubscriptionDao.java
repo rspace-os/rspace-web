@@ -3,6 +3,7 @@ package com.researchspace.booking.dao;
 import com.researchspace.dao.GenericDao;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 /** Persistence operations for bookable-item calendar subscriptions. */
@@ -35,6 +36,8 @@ public interface BookingCalendarSubscriptionDao
 
   /** Re-reads and refreshes exactly one newly-created row after its insert has been flushed. */
   CurrentItemCalendarSubscription reconcileCreated(Long userId, Long configurationId);
+
+  List<BookableItemCalendarSubscription> findByUserId(Long userId);
 
   /** Finds a subscription by its one-way token hash. */
   Optional<BookableItemCalendarSubscription> findByTokenHash(String tokenHash);
