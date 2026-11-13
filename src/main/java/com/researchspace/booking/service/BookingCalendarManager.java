@@ -30,6 +30,9 @@ public interface BookingCalendarManager {
    *
    * @param newlyIssued false when create returned the caller's existing link unchanged
    */
+  record Created(Status status, String subscriptionUrl, boolean newlyIssued) {}
+
+  /** One of the caller's item links, as listed alongside their user-wide link. */
   record ItemLink(
       Long configurationId,
       Long targetId,
@@ -86,6 +89,12 @@ public interface BookingCalendarManager {
   /**
    * Returns the caller's link for an active configuration they can subscribe to, issuing one only
    * when none exists. Repeating the call returns the same link.
+   */
+  Created create(Long configurationId, User subject, User actor);
+
+  /**
+   * Replaces the caller's existing link with a new one, only when {@code expectedEtag} matches its
+   * current ETag. Calendars using the old link stop updating.
    */
 
   /** Revokes only the caller's credential for an active configuration the caller can read. */
