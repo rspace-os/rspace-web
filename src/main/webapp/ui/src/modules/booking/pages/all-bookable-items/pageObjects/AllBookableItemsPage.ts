@@ -1,6 +1,6 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
-export class BookableItemsPage {
+export class AllBookableItemsPage {
   get filterButton(): Locator {
     return page.getByRole("button", { name: "Filters, none applied" });
   }
