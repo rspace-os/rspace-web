@@ -9,15 +9,13 @@ import {
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
-import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { searchBookingConfigurationTargets } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
-import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -33,28 +31,23 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
+import { searchBookingTargets } from "./bookingConfigurationTargets";
 
-export async function searchBookingTargets(query: string, signal?: AbortSignal) {
-  return (await searchBookingConfigurationTargets({ q: query.trim(), limit: 20 }, { signal })).docs.map(
-    requireEligibleBookingTarget,
-  );
-}
-
-export const createBookableItemFormSchema = v.intersect([
+const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
   SchedulingSettingsSchema,
 ]);
 
-export const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
+const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
+const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
 
-export const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
-export type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
-
-export const bookingConfigurationTargetSource: RelationshipSource = {
+const bookingConfigurationTargetSource: RelationshipSource = {
   id: "booking-configuration-targets",
   globalIdPrefix: "IN",
   search: (term, signal) => (term.trim().length < 2 ? Promise.resolve([]) : searchBookingTargets(term.trim(), signal)),
+  batchSize: 1,
   resolveMany: async (values, signal) =>
     Object.fromEntries(
       await Promise.all(
@@ -91,19 +84,14 @@ export const bookingConfigurationTargetSource: RelationshipSource = {
   },
 };
 
-export function targetSelection(input: unknown): TargetSelection {
+function targetSelection(input: unknown): TargetSelection {
   if (
     input === undefined ||
     input === null ||
     input === "" ||
-    (typeof input === "object" && Object.keys(input).length === 0)
-  ) {
-    return { type: "empty" };
-  }
-  if (
-    typeof input === "object" &&
-    "value" in input &&
-    (input.value === undefined || input.value === null || input.value === "")
+    (typeof input === "object" &&
+      (Object.keys(input).length === 0 ||
+        ("value" in input && (input.value === undefined || input.value === null || input.value === ""))))
   ) {
     return { type: "empty" };
   }
@@ -151,7 +139,7 @@ export function AddBookableItemForm({
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {
-        await invalidateListBookingConfigurations(queryClient);
+        await queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() });
       }
     },
   });
@@ -162,14 +150,13 @@ export function AddBookableItemForm({
     failedForSelectedTarget
       ? createMutation.error
       : null;
-  const alreadyConfigured = conflict !== null;
-  const canComplete = target.type === "instrument" && !alreadyConfigured;
+  const canComplete = target.type === "instrument" && conflict === null;
   const createFailed = createMutation.isError && failedForSelectedTarget && conflict === null;
 
   return (
     <main className="p-4 sm:p-8">
       <DirtyNavigationGuard dirty={isDirty(form) && !createMutation.isSuccess} />
-      <Heading level={2} as="h1" className="mb-5">
+      <Heading level={3} as="h1" className="mb-5">
         {t("bookableItems.addTitle")}
       </Heading>
       <Separator className="mb-8 h-px bg-gray-300" />
@@ -179,7 +166,7 @@ export function AddBookableItemForm({
             {t("bookableItems.targetSearch.label")}
           </label>
           <RelationshipPicker
-            source={bookingConfigurationTargetSource}
+            sources={[bookingConfigurationTargetSource]}
             value={selectedTargetId === undefined ? "" : `IN${selectedTargetId}`}
             onChange={(globalId) => {
               const id = databaseId(bookingConfigurationTargetSource, globalId);
@@ -199,7 +186,7 @@ export function AddBookableItemForm({
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.instrumentRequired")}
           </p>
-        ) : target.type === "instrument" && alreadyConfigured ? (
+        ) : target.type === "instrument" && conflict !== null ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.alreadyConfigured")}{" "}
             <Link
@@ -233,14 +220,4 @@ export function AddBookableItemForm({
       </Form>
     </main>
   );
-}
-
-export function requireEligibleBookingTarget(target: BookingConfigurationTarget) {
-  if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
-  return {
-    ...target,
-    id: requireBookingValue(target.id, "id"),
-    globalId: requireBookingValue(target.globalId, "globalId"),
-    name: requireBookingValue(target.name, "name"),
-  };
 }
