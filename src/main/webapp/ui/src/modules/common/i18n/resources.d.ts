@@ -4230,7 +4230,9 @@ export default interface Resources {
         "move": {
           "alreadyOnBench": "All items are already on your bench.",
           "confirmOnBench": {
+            "itemsLabel": "The items are:",
             "message": "The items are: <itemList/> Do you want to move them to your bench?",
+            "prompt": "Do you want to move them to your bench?",
             "title": "Some items are in containers that are already on your bench."
           },
           "none": "Nothing to move.",
