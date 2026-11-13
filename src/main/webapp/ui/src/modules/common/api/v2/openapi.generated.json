@@ -215,7 +215,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "BookingConfigurationsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[booking-configurations]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[booking-configurations]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -381,7 +381,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "BookingsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[bookings]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[bookings]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -491,7 +491,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "ContainersFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[containers]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[containers]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -570,7 +570,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "FeatureFlagsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -632,7 +632,7 @@
         "name" : "If-Match",
         "required" : true,
         "schema" : {
-          "pattern" : "^\\\"[0-9]+\\\"$",
+          "pattern" : "^\\\"[!#-~]+\\\"$",
           "type" : "string"
         }
       },
@@ -642,7 +642,7 @@
         "name" : "If-Match",
         "required" : false,
         "schema" : {
-          "pattern" : "^\\\"[0-9]+\\\"$",
+          "pattern" : "^\\\"[!#-~]+\\\"$",
           "type" : "string"
         }
       },
@@ -673,7 +673,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "InstrumentsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[instruments]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[instruments]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -787,7 +787,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "MaintenancesFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -909,7 +909,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "UsersFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[users]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[users]=id,name.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -1309,7 +1309,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "action", "description", "domain", "eventId", "fullName", "payload", "target", "timestamp", "username" ],
+        "required" : [ "action", "domain", "eventId", "payload", "timestamp", "username" ],
         "type" : "object"
       },
       "ApiV2Config" : {
@@ -1385,7 +1385,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "totalDocs", "totalIsLowerBound" ],
+        "required" : [ "totalDocs" ],
         "type" : "object"
       },
       "ApiV2CurrentUser" : {
@@ -1547,6 +1547,38 @@
         "required" : [ "canChangeFeatureFlagBaselines", "canOverrideFeatureFlags", "canUseDevtools", "lastSession", "operatedAs" ],
         "type" : "object"
       },
+      "ApiV2ListResultMapStringObject" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalDocs" : {
+            "description" : "Present only when totals=true.",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "description" : "True when the requested total exceeds max.",
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "ApiV2Problem" : {
         "additionalProperties" : true,
         "properties" : {
@@ -1611,7 +1643,6 @@
             "type" : "integer"
           }
         },
-        "required" : [ "fields", "hasMore", "limit", "page" ],
         "type" : "object"
       },
       "ApiV2RuntimeFieldCatalogEntry" : {
@@ -1656,7 +1687,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "columnSelectable", "id", "jsonType", "label", "operators", "options", "selector", "sortable", "source", "supportsWildcards", "type" ],
         "type" : "object"
       },
       "ApiV2RuntimeFieldCatalogSource" : {
@@ -1668,7 +1698,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "id", "label" ],
         "type" : "object"
       },
       "ApiV2UiToken" : {
@@ -1685,94 +1714,47 @@
         "enum" : [ "CREATE", "DELETE", "DOWNLOAD", "DUPLICATE", "EXPORT", "MOVE", "READ", "RENAME", "REQUEST_APPROVED", "REQUEST_CANCELLED", "REQUEST_FULFILLED", "REQUEST_REJECTED", "REQUEST_SENT", "RESTORE", "SEARCH", "SHARE", "SIGN", "TRANSFER", "UNSHARE", "VIEW", "WITNESSED", "WRITE" ],
         "type" : "string"
       },
-      "BookingAdminSettingsDocument" : {
+      "BookingCalendarSubscriptionCreated" : {
+        "additionalProperties" : false,
         "properties" : {
-          "allowDoubleBooking" : {
+          "active" : {
             "type" : "boolean"
           },
-          "availabilityWindowEnd" : {
+          "subscriptionUrl" : {
+            "format" : "uri",
             "type" : "string"
           },
-          "availabilityWindowStart" : {
-            "type" : "string"
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "active", "subscriptionUrl", "updatedAt" ],
+        "type" : "object"
+      },
+      "BookingCalendarSubscriptionStatus" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
           },
-          "bufferAfterMinutes" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "bufferBeforeMinutes" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "configurationVersion" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "customTimezone" : {
+          "subscriptionUrl" : {
+            "format" : "uri",
             "type" : [ "string", "null" ]
           },
-          "incrementUnit" : {
-            "$ref" : "#/components/schemas/BookingIncrementUnit"
-          },
-          "institutionTimezone" : {
-            "type" : "string"
-          },
-          "maxBookingDurationMinutes" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "openingHours" : {
-            "items" : {
-              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
-            },
-            "type" : "array"
-          },
-          "slotGranularityMinutes" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "timezoneMode" : {
-            "$ref" : "#/components/schemas/BookingTimezoneMode"
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "configurationVersion" ],
+        "required" : [ "active", "subscriptionUrl", "updatedAt" ],
         "type" : "object"
       },
-      "BookingCalendarEventsPage" : {
-        "properties" : {
-          "docs" : {
-            "items" : {
-              "additionalProperties" : { },
-              "allOf" : [ {
-                "$ref" : "#/components/schemas/BookingsRead"
-              } ],
-              "type" : "object"
-            },
-            "type" : "array"
-          },
-          "hasNextPage" : {
-            "type" : "boolean"
-          },
-          "limit" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "page" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "totalDocs" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "totalIsLowerBound" : {
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "docs", "page", "limit", "hasNextPage", "totalDocs", "totalIsLowerBound" ],
-        "type" : "object"
+      "BookingCatalogueCapability" : {
+        "enum" : [ "CREATE_BOOKING", "CREATE_BLOCKOUT" ],
+        "type" : "string"
       },
-      "BookingCatalogueAvailabilityCounts" : {
+      "BookingCatalogueManagerAvailabilityCounts" : {
         "properties" : {
           "availableNow" : {
             "format" : "int64",
@@ -1783,14 +1765,9 @@
             "type" : "integer"
           }
         },
-        "required" : [ "availableNow", "freeLaterToday" ],
         "type" : "object"
       },
-      "BookingCatalogueCapability" : {
-        "enum" : [ "CREATE_BOOKING", "CREATE_BLOCKOUT" ],
-        "type" : "string"
-      },
-      "BookingCatalogueFacets" : {
+      "BookingCatalogueManagerFacets" : {
         "properties" : {
           "types" : {
             "items" : {
@@ -1799,10 +1776,9 @@
             "type" : "array"
           }
         },
-        "required" : [ "types" ],
         "type" : "object"
       },
-      "BookingCatalogueItemDocument" : {
+      "BookingCatalogueManagerItem" : {
         "properties" : {
           "allowDoubleBooking" : {
             "type" : "boolean"
@@ -1837,7 +1813,7 @@
           },
           "location" : {
             "anyOf" : [ {
-              "$ref" : "#/components/schemas/BookingCatalogueLocationDocument"
+              "$ref" : "#/components/schemas/BookingCatalogueManagerLocation"
             }, {
               "type" : "null"
             } ]
@@ -1870,10 +1846,9 @@
             "type" : "string"
           }
         },
-        "required" : [ "configurationId", "configurationVersion", "targetType", "targetId", "globalId", "name", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "effectiveRole", "capabilities", "location" ],
         "type" : "object"
       },
-      "BookingCatalogueLocationDocument" : {
+      "BookingCatalogueManagerLocation" : {
         "properties" : {
           "globalId" : {
             "type" : "string"
@@ -1882,14 +1857,13 @@
             "type" : "string"
           }
         },
-        "required" : [ "globalId", "name" ],
         "type" : "object"
       },
-      "BookingCatalogueLocationPageDocument" : {
+      "BookingCatalogueManagerLocationPage" : {
         "properties" : {
           "items" : {
             "items" : {
-              "$ref" : "#/components/schemas/BookingCatalogueLocationDocument"
+              "$ref" : "#/components/schemas/BookingCatalogueManagerLocation"
             },
             "type" : "array"
           },
@@ -1906,17 +1880,16 @@
             "type" : "integer"
           }
         },
-        "required" : [ "items", "page", "pageSize", "total" ],
         "type" : "object"
       },
-      "BookingCataloguePageDocument" : {
+      "BookingCatalogueManagerPage" : {
         "properties" : {
           "facets" : {
-            "$ref" : "#/components/schemas/BookingCatalogueFacets"
+            "$ref" : "#/components/schemas/BookingCatalogueManagerFacets"
           },
           "items" : {
             "items" : {
-              "$ref" : "#/components/schemas/BookingCatalogueItemDocument"
+              "$ref" : "#/components/schemas/BookingCatalogueManagerItem"
             },
             "type" : "array"
           },
@@ -1933,7 +1906,6 @@
             "type" : "integer"
           }
         },
-        "required" : [ "items", "page", "pageSize", "total", "facets" ],
         "type" : "object"
       },
       "BookingConfigurationCapabilities" : {
@@ -1972,7 +1944,6 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "canEditConfiguration", "canViewAudit", "canViewAccess", "canManageAssignments", "canManageOwners", "canCreateBooking", "canManageOwnBookings", "canManageAllEvents", "canCreateBlockout", "canSubscribeCalendar", "canLeaveConfiguration" ],
         "type" : "object"
       },
       "BookingConfigurationState" : {
@@ -1995,10 +1966,9 @@
             "type" : "string"
           }
         },
-        "required" : [ "id", "globalId", "name", "deleted" ],
         "type" : "object"
       },
-      "BookingConfigurationTargetDirectoryDocument" : {
+      "BookingConfigurationTargetControllerTargetDirectoryDocument" : {
         "properties" : {
           "docs" : {
             "items" : {
@@ -2106,7 +2076,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2143,7 +2112,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2179,7 +2147,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2232,8 +2199,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "bufferAfterMinutes" : {
             "description" : "Unavailable minutes after a booking.",
@@ -2242,8 +2208,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "bufferBeforeMinutes" : {
             "description" : "Unavailable minutes before a booking.",
@@ -2252,8 +2217,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "capabilities" : {
             "allOf" : [ {
@@ -2262,8 +2226,7 @@
             "readOnly" : true,
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "configurationVersion" : {
             "description" : "Optimistic configuration revision.",
@@ -2272,8 +2235,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdAt" : {
             "description" : "Time at which the resource was created.",
@@ -2282,8 +2244,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdBy" : {
             "anyOf" : [ {
@@ -2309,8 +2270,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "effectiveRole" : {
             "maxLength" : 64,
@@ -2318,16 +2278,14 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "enabled" : {
             "description" : "Whether bookings are enabled for the target.",
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable booking-configuration identifier.",
@@ -2337,8 +2295,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "incrementUnit" : {
             "allOf" : [ {
@@ -2348,8 +2305,7 @@
             "example" : "MINUTES",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "location" : {
             "anyOf" : [ {
@@ -2378,8 +2334,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "openingHours" : {
             "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
@@ -2411,7 +2366,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2448,7 +2402,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2484,7 +2437,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2501,8 +2453,7 @@
                 "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
               },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ],
-            "x-rspace-read-guaranteed" : true
+            } ]
           },
           "ownerHealth" : {
             "anyOf" : [ {
@@ -2541,7 +2492,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2574,7 +2524,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2609,7 +2558,6 @@
                 "readAccess" : {
                   "$ref" : "#/components/x-rspace-access-policies/Authenticated"
                 },
-                "readInherited" : true,
                 "readOnly" : false,
                 "requiredOnCreate" : true,
                 "sortable" : false,
@@ -2640,7 +2588,6 @@
                 "readAccess" : {
                   "$ref" : "#/components/x-rspace-access-policies/Authenticated"
                 },
-                "readInherited" : true,
                 "readOnly" : false,
                 "requiredOnCreate" : true,
                 "sortable" : false,
@@ -2671,7 +2618,6 @@
                 "readAccess" : {
                   "$ref" : "#/components/x-rspace-access-policies/Authenticated"
                 },
-                "readInherited" : true,
                 "readOnly" : false,
                 "requiredOnCreate" : true,
                 "sortable" : false,
@@ -2710,7 +2656,6 @@
                 "readAccess" : {
                   "$ref" : "#/components/x-rspace-access-policies/Authenticated"
                 },
-                "readInherited" : true,
                 "readOnly" : false,
                 "requiredOnCreate" : true,
                 "sortable" : false,
@@ -2737,7 +2682,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : false,
               "sortable" : false,
@@ -2751,8 +2695,7 @@
               },
               "writeConstraints" : { },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ],
-            "x-rspace-read-guaranteed" : true
+            } ]
           },
           "slotGranularityMinutes" : {
             "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
@@ -2761,8 +2704,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "state" : {
             "allOf" : [ {
@@ -2771,8 +2713,7 @@
             "description" : "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "target" : {
             "anyOf" : [ {
@@ -2785,7 +2726,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "instruments" : {
@@ -2806,8 +2746,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedAt" : {
             "description" : "Time at which the resource was last updated.",
@@ -2816,8 +2755,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedBy" : {
             "anyOf" : [ {
@@ -2943,7 +2881,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -2980,7 +2917,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3016,7 +2952,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3084,10 +3019,9 @@
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
-        "required" : [ "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "overridden" ],
         "type" : "object"
       },
-      "BookingDisplayPreferencesReplacement" : {
+      "BookingDisplayPreferencesControllerReplacement" : {
         "properties" : {
           "availabilityWindowEnd" : {
             "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
@@ -3154,10 +3088,61 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "hasEffectiveOwner" ],
         "type" : "object"
       },
-      "BookingSettingsDocument" : {
+      "BookingSettingsControllerAdminSettingsDocument" : {
+        "properties" : {
+          "allowDoubleBooking" : {
+            "type" : "boolean"
+          },
+          "availabilityWindowEnd" : {
+            "type" : "string"
+          },
+          "availabilityWindowStart" : {
+            "type" : "string"
+          },
+          "bufferAfterMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bufferBeforeMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "configurationVersion" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "customTimezone" : {
+            "type" : [ "string", "null" ]
+          },
+          "incrementUnit" : {
+            "$ref" : "#/components/schemas/BookingIncrementUnit"
+          },
+          "institutionTimezone" : {
+            "type" : "string"
+          },
+          "maxBookingDurationMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "openingHours" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingOpeningHoursEntry"
+            },
+            "type" : "array"
+          },
+          "slotGranularityMinutes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "timezoneMode" : {
+            "$ref" : "#/components/schemas/BookingTimezoneMode"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingSettingsControllerSettingsDocument" : {
         "properties" : {
           "allowDoubleBooking" : {
             "type" : "boolean"
@@ -3203,10 +3188,9 @@
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
-        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone" ],
         "type" : "object"
       },
-      "BookingSettingsPatch" : {
+      "BookingSettingsControllerSettingsPatch" : {
         "properties" : {
           "allowDoubleBooking" : {
             "type" : [ "boolean", "null" ]
@@ -3341,32 +3325,28 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canCancel" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canEdit" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canViewConfiguration" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdAt" : {
             "format" : "date-time",
@@ -3374,24 +3354,21 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdBy" : {
             "readOnly" : true,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "end" : {
             "format" : "date-time",
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "format" : "int64",
@@ -3399,8 +3376,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "kind" : {
             "allOf" : [ {
@@ -3408,8 +3384,7 @@
             } ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "location" : {
             "anyOf" : [ {
@@ -3436,16 +3411,14 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "purpose" : {
             "maxLength" : 1000,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "requester" : {
             "anyOf" : [ {
@@ -3459,7 +3432,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3473,8 +3445,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "state" : {
             "allOf" : [ {
@@ -3482,8 +3453,7 @@
             } ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "target" : {
             "anyOf" : [ {
@@ -3494,7 +3464,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "instruments" : {
@@ -3513,8 +3482,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedAt" : {
             "format" : "date-time",
@@ -3522,8 +3490,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "version" : {
             "format" : "int64",
@@ -3531,8 +3498,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
@@ -3624,8 +3590,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "name" : {
             "maxLength" : 255,
@@ -3725,7 +3690,6 @@
             }
           }
         },
-        "required" : [ "dayOfWeek", "end", "start" ],
         "type" : "object"
       },
       "DeclaredResourceRoleSource" : {
@@ -3786,7 +3750,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3817,7 +3780,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3848,7 +3810,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3887,7 +3848,6 @@
               "readAccess" : {
                 "$ref" : "#/components/x-rspace-access-policies/Authenticated"
               },
-              "readInherited" : true,
               "readOnly" : false,
               "requiredOnCreate" : true,
               "sortable" : false,
@@ -3946,8 +3906,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "overrideValue" : {
             "description" : "Caller override. Set null to clear the override.",
@@ -4057,8 +4016,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "name" : {
             "description" : "Display name of the instrument.",
@@ -4257,8 +4215,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "message" : {
             "description" : "User-facing maintenance message.",
@@ -4368,7 +4325,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "grantee", "role" ],
         "type" : "object"
       },
       "ResourceAccessCallerCapabilities" : {
@@ -4383,7 +4339,6 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "canLeave", "canManageAssignments", "canManageOwners" ],
         "type" : "object"
       },
       "ResourceAccessCallerDocument" : {
@@ -4404,7 +4359,6 @@
             "type" : "array"
           }
         },
-        "required" : [ "capabilities", "effectiveRole", "granteeKey", "roleSources" ],
         "type" : "object"
       },
       "ResourceAccessDocument" : {
@@ -4429,7 +4383,6 @@
             "type" : "integer"
           }
         },
-        "required" : [ "assignments", "caller", "inherited", "scheme", "version" ],
         "type" : "object"
       },
       "ResourceAccessGrant" : {
@@ -4471,7 +4424,6 @@
             "type" : "array"
           }
         },
-        "required" : [ "available", "detail", "effectiveRole", "id", "key", "kind", "name", "roleSources" ],
         "type" : "object"
       },
       "ResourceAccessReplacement" : {
@@ -4518,7 +4470,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "detail", "id", "key", "kind", "name" ],
         "type" : "object"
       },
       "ResourceGranteeKind" : {
@@ -4528,11 +4479,8 @@
       "ResourceRoleSource" : {
         "properties" : {
           "grantee" : {
-            "anyOf" : [ {
-              "$ref" : "#/components/schemas/ResourceRoleSourceGrantee"
-            }, {
-              "type" : "null"
-            } ]
+            "additionalProperties" : { },
+            "type" : [ "object", "null" ]
           },
           "kind" : {
             "$ref" : "#/components/schemas/ResourceRoleSourceKind"
@@ -4541,30 +4489,43 @@
             "type" : "string"
           }
         },
-        "required" : [ "grantee", "kind", "role" ],
-        "type" : "object"
-      },
-      "ResourceRoleSourceGrantee" : {
-        "properties" : {
-          "id" : {
-            "type" : [ "integer", "string" ]
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "kind" : {
-            "$ref" : "#/components/schemas/ResourceRoleSourceKind"
-          },
-          "name" : {
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "key", "kind", "name" ],
         "type" : "object"
       },
       "ResourceRoleSourceKind" : {
         "enum" : [ "DIRECT", "GROUP", "AUDIENCE", "IMPLICIT" ],
         "type" : "string"
+      },
+      "UserBookingCalendarSubscriptionControllerItemLinkDocument" : {
+        "properties" : {
+          "configurationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "itemGlobalId" : {
+            "type" : "string"
+          },
+          "itemName" : {
+            "type" : "string"
+          },
+          "subscriptionUrl" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UserBookingCalendarSubscriptionControllerItemLinksDocument" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UserBookingCalendarSubscriptionControllerItemLinkDocument"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
       },
       "UsersRead" : {
         "additionalProperties" : false,
@@ -4604,8 +4565,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "lastName" : {
             "description" : "User's family name.",
@@ -5628,7 +5588,7 @@
     }
   },
   "info" : {
-    "description" : "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.",
+    "description" : "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",
     "title" : "RSpace REST API v2",
     "version" : "2.0.0"
   },
@@ -5722,7 +5682,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCalendarEventsPage"
+                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
                 }
               }
             },
@@ -5863,7 +5823,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCataloguePageDocument"
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
                 }
               }
             },
@@ -5981,7 +5941,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCatalogueAvailabilityCounts"
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerAvailabilityCounts"
                 }
               }
             },
@@ -6064,7 +6024,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCataloguePageDocument"
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
                 }
               }
             },
@@ -6150,7 +6110,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCatalogueLocationPageDocument"
+                  "$ref" : "#/components/schemas/BookingCatalogueManagerLocationPage"
                 }
               }
             },
@@ -6212,7 +6172,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingConfigurationTargetDirectoryDocument"
+                  "$ref" : "#/components/schemas/BookingConfigurationTargetControllerTargetDirectoryDocument"
                 }
               }
             },
@@ -6368,7 +6328,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -6786,6 +6746,306 @@
           "$ref" : "#/components/x-rspace-access-policies/Authenticated"
         },
         "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/booking-configurations/{configurationId}/calendar-subscription" : {
+      "delete" : {
+        "operationId" : "revokeBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "The subscription is inactive.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Revoke a calendar subscription",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "get" : {
+        "description" : "Returns the caller's current subscription URL when one exists.",
+        "operationId" : "getBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionStatus"
+                }
+              }
+            },
+            "description" : "Current subscription status.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get calendar subscription status",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "post" : {
+        "description" : "Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.",
+        "operationId" : "createBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The existing subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "A newly issued subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The item is archived."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create a calendar subscription",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate" : {
+      "post" : {
+        "description" : "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.",
+        "operationId" : "rotateBookingCalendarSubscription",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "$ref" : "#/components/parameters/IfMatch"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The new subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The item is archived."
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The subscription is missing or changed."
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "If-Match is required."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace a calendar subscription URL",
+        "tags" : [ "booking-configurations" ],
+        "x-rspace-operation" : "CUSTOM"
       }
     },
     "/api/v2/booking-configurations/{id}" : {
@@ -7495,7 +7755,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingSettingsDocument"
+                  "$ref" : "#/components/schemas/BookingSettingsControllerSettingsDocument"
                 }
               }
             },
@@ -7535,7 +7795,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingAdminSettingsDocument"
+                  "$ref" : "#/components/schemas/BookingSettingsControllerAdminSettingsDocument"
                 }
               }
             },
@@ -7579,7 +7839,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingSettingsPatch"
+                "$ref" : "#/components/schemas/BookingSettingsControllerSettingsPatch"
               }
             }
           },
@@ -7590,7 +7850,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingAdminSettingsDocument"
+                  "$ref" : "#/components/schemas/BookingSettingsControllerAdminSettingsDocument"
                 }
               }
             },
@@ -7706,7 +7966,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -7949,6 +8209,71 @@
           "$ref" : "#/components/x-rspace-access-policies/Authenticated"
         },
         "x-rspace-operation" : "COUNT"
+      }
+    },
+    "/api/v2/bookings/{bookingId}/calendar-file" : {
+      "get" : {
+        "description" : "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's visibility of it. No subscription is created or changed.",
+        "operationId" : "downloadBookingCalendarFile",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "bookingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/calendar" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "The generated calendar file.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "Content-Disposition" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Download a booking as a calendar file",
+        "tags" : [ "bookings" ],
+        "x-rspace-operation" : "CUSTOM"
       }
     },
     "/api/v2/bookings/{id}" : {
@@ -8299,7 +8624,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -8580,7 +8905,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -8951,7 +9276,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -9390,7 +9715,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -10085,7 +10410,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
+                  "required" : [ "docs", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -10212,6 +10537,300 @@
         "x-rspace-operation" : "CUSTOM"
       }
     },
+    "/api/v2/users/me/bookable-item-calendar-subscriptions" : {
+      "get" : {
+        "description" : "Returns each active bookable item the caller still has a calendar link for and can read, with its current URL, ordered by item name.",
+        "operationId" : "listMyBookableItemCalendarSubscriptions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserBookingCalendarSubscriptionControllerItemLinksDocument"
+                }
+              }
+            },
+            "description" : "The caller's item links.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "List the caller's bookable-item calendar links",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-calendar-subscription" : {
+      "delete" : {
+        "operationId" : "revokeUserBookingCalendarSubscription",
+        "responses" : {
+          "204" : {
+            "description" : "The subscription is inactive.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Revoke the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "get" : {
+        "operationId" : "getUserBookingCalendarSubscription",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionStatus"
+                }
+              }
+            },
+            "description" : "Current subscription status.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Get the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      },
+      "post" : {
+        "description" : "Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe. Use the rotate operation to replace a URL.",
+        "operationId" : "createUserBookingCalendarSubscription",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The existing subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "A newly issued subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create the caller's booking calendar subscription",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/users/me/booking-calendar-subscription/rotate" : {
+      "post" : {
+        "description" : "Requires the current status ETag in If-Match. Issues a new URL; calendars using the old one stop updating.",
+        "operationId" : "rotateUserBookingCalendarSubscription",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/IfMatch"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The new subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "schema" : {
+                  "enum" : [ "private, no-store" ],
+                  "type" : "string"
+                },
+                "style" : "simple"
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "412" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The subscription is missing or changed since it was read."
+          },
+          "428" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "If-Match is required."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replace the caller's booking calendar subscription URL",
+        "tags" : [ "users" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
     "/api/v2/users/me/booking-preferences" : {
       "delete" : {
         "description" : "Deletes the logical override so subsequent reads inherit global defaults.",
@@ -10273,7 +10892,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingDisplayPreferencesReplacement"
+                "$ref" : "#/components/schemas/BookingDisplayPreferencesControllerReplacement"
               }
             }
           },

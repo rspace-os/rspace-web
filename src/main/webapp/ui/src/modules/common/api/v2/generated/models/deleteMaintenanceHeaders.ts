@@ -10,7 +10,7 @@ import type { IfMatchOptionalParameter } from "./ifMatchOptionalParameter.ts";
 export type DeleteMaintenanceHeaders = {
   /**
    * Strong entity tag containing the current resource version.
-   * @pattern ^\"[0-9]+\"$
+   * @pattern ^\"[!#-~]+\"$
    */
   "If-Match"?: IfMatchOptionalParameter;
 };
