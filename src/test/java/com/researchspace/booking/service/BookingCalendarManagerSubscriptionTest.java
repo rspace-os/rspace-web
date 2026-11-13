@@ -297,6 +297,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   @Test
   void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
+    BookingCalendarManager.Created created = manager.createUser(owner, owner);
 
     ArgumentCaptor<UserBookingCalendarSubscription> saved =
         ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
@@ -493,6 +494,13 @@ class BookingCalendarManagerSubscriptionTest {
     UNREADABLE,
     ARCHIVED_WITHOUT_ACCESS
   }
+  private UserBookingCalendarSubscription verifySavedUserSubscription() {
+    ArgumentCaptor<UserBookingCalendarSubscription> saved =
+        ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
+    verify(userSubscriptionDao).saveAndFlush(saved.capture());
+    return saved.getValue();
+  }
+
   private BookingConfiguration configuration(long id, long instrumentId) {
     BookingConfiguration value = new BookingConfiguration();
     value.setId(id);

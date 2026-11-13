@@ -104,6 +104,21 @@ public interface BookingCalendarManager {
   /** Returns the caller's user-wide booking calendar subscription. */
   Status userStatus(User subject, User actor);
 
+  /**
+   * Returns the caller's user-wide link, issuing one only when none exists. Repeating the call
+   * returns the same link.
+   */
+  Created createUser(User subject, User actor);
+
+  /**
+   * Replaces the caller's user-wide link, only when {@code expectedEtag} matches its current ETag.
+   */
+  Created rotateUser(User subject, User actor, String expectedEtag);
+
+  /**
+   * Lists the caller's item links for active configurations they can still read, ordered by item
+   * name.
+   */
 
   /** Revokes the caller's user-wide booking calendar credential. */
   void revokeUser(User subject, User actor);
