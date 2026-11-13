@@ -44,10 +44,15 @@ public class LocaleFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
-    Locale locale = resolveLocale(request);
+    String requestPath = contextRelativePath(request);
+    Locale locale = resolveLocale(request, requestPath);
     LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
     LocaleContextHolder.setLocale(locale);
     request.setAttribute(RESOLVED_LOCALE_TAG_REQUEST_ATTRIBUTE, locale.toLanguageTag());
+    if (isApiV2Request(requestPath)) {
+      response.setHeader(HttpHeaders.CONTENT_LANGUAGE, locale.toLanguageTag());
+      response.addHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE);
+    }
 
     HttpSession session = request.getSession(false);
     if (session != null) {
@@ -77,10 +82,9 @@ public class LocaleFilter extends OncePerRequestFilter {
     }
   }
 
-  private Locale resolveLocale(HttpServletRequest request) {
+  private Locale resolveLocale(HttpServletRequest request, String requestPath) {
     Locale configuredLocale = userLocaleService.getLocale();
-    String requestPath = request.getRequestURI().substring(request.getContextPath().length());
-    if ((requestPath.equals("/api/v1") || requestPath.startsWith("/api/v1/"))
+    if ((isApiRequest(requestPath, "/api/v1") || isApiRequest(requestPath, "/api/v2"))
         && request.getHeader(HttpHeaders.ACCEPT_LANGUAGE) != null) {
       Locale requestedLocale = request.getLocale();
       if (configuredLocale.equals(requestedLocale)) {
@@ -88,5 +92,17 @@ public class LocaleFilter extends OncePerRequestFilter {
       }
     }
     return configuredLocale;
+  }
+
+  private static String contextRelativePath(HttpServletRequest request) {
+    return request.getRequestURI().substring(request.getContextPath().length());
+  }
+
+  private static boolean isApiV2Request(String requestPath) {
+    return isApiRequest(requestPath, "/api/v2");
+  }
+
+  private static boolean isApiRequest(String requestPath, String prefix) {
+    return requestPath.equals(prefix) || requestPath.startsWith(prefix + "/");
   }
 }

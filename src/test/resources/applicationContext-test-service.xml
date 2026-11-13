@@ -49,6 +49,7 @@
                  InventoryOperationTransactionRuleTest. -->
             <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
+            <tx:method name="createUiToken" propagation="NOT_SUPPORTED"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

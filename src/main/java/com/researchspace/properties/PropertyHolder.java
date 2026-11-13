@@ -5,6 +5,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.time.Year;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
@@ -63,6 +64,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   @Value("${deployment.helpEmail}")
   private String deploymentHelpEmail;
+
+  @Value("${livechat.enabled}")
+  private boolean liveChatEnabled;
+
+  @Value("${livechat.server.key}")
+  private String liveChatServerKey;
 
   @Value("${sysadmin.delete.user}")
   private String deleteUser;
@@ -389,7 +396,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getDeleteUser()
+   * @see IPropertyHolder#getDeleteUser()
    */
   @Override
   public String getDeleteUser() {
@@ -397,7 +404,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getCloud()
+   * @see IPropertyHolder#getCloud()
    */
   @Override
   public String getCloud() {
@@ -405,7 +412,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#isCloud()
+   * @see IPropertyHolder#isCloud()
    */
   @Override
   public boolean isCloud() {
@@ -413,7 +420,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#isSSO()
+   * @see IPropertyHolder#isSSO()
    */
   @Override
   public Boolean isSSO() {
@@ -456,7 +463,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#isStandalone()
+   * @see IPropertyHolder#isStandalone()
    */
   @Override
   public Boolean isStandalone() {
@@ -464,7 +471,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getUrlPrefix()
+   * @see IPropertyHolder#getUrlPrefix()
    */
   @Override
   public String getUrlPrefix() {
@@ -472,7 +479,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getStandalone()
+   * @see IPropertyHolder#getStandalone()
    */
   @Override
   public String getStandalone() {
@@ -480,7 +487,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getExportFolderLocation()
+   * @see IPropertyHolder#getExportFolderLocation()
    */
   @Override
   public String getExportFolderLocation() {
@@ -488,7 +495,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getNetFileStoresEnabled()
+   * @see IPropertyHolder#getNetFileStoresEnabled()
    */
   @Override
   public String getNetFileStoresEnabled() {
@@ -521,7 +528,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getUserSignup()
+   * @see IPropertyHolder#getUserSignup()
    */
   @Override
   public String getUserSignup() {
@@ -529,7 +536,7 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getEmailUrlPrefix()
+   * @see IPropertyHolder#getEmailUrlPrefix()
    */
   @Override
   public String getServerUrl() {
@@ -660,8 +667,18 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   @Override
+  public boolean isLiveChatEnabled() {
+    return liveChatEnabled;
+  }
+
+  @Override
+  public String getLiveChatServerKey() {
+    return liveChatServerKey;
+  }
+
+  @Override
   public String getCopyrightYear() {
-    return java.time.Year.now().toString();
+    return Year.now().toString();
   }
 
   @Override

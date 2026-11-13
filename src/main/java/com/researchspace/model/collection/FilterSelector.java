@@ -6,6 +6,7 @@ import java.util.Set;
 /** A server-owned mapping from one public filter selector to typed persistence metadata. */
 public sealed interface FilterSelector<T>
     permits FilterSelector.Property,
+        FilterSelector.Alias,
         FilterSelector.RelationshipPart,
         FilterSelector.RelationshipProperty,
         FilterSelector.RuntimeField {
@@ -37,7 +38,6 @@ public sealed interface FilterSelector<T>
 
   record Property<T>(String name, String property, CollectionFieldType<?> type)
       implements FilterSelector<T> {
-
     public Property {
       if (name == null || name.isBlank() || property == null || property.isBlank()) {
         throw new IllegalArgumentException("Filter selector names must not be blank");
@@ -58,6 +58,20 @@ public sealed interface FilterSelector<T>
     @Override
     public boolean supportsWildcards() {
       return type.supportsWildcards();
+    }
+  }
+
+  /** Filter-only current-subject shorthand for a readable relationship target field. */
+  record Alias<T>(String name, String destination) implements FilterSelector<T> {
+    @Override
+    public Set<Operator> operators() {
+      return Set.of(Operator.EQUAL);
+    }
+
+    @Override
+    public Object parse(String value) {
+      if (!"me".equals(value)) throw new IllegalArgumentException("Expected current subject");
+      return value;
     }
   }
 
