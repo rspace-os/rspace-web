@@ -2842,7 +2842,7 @@ export const getReplaceMyBookingPreferencesUrl = () => {
 };
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const replaceMyBookingPreferences = async (
@@ -2927,7 +2927,7 @@ export type ReplaceMyBookingPreferencesMutationError = ErrorType<
 export type ReplaceMyBookingPreferencesMutationVariables = { data: BodyType<BookingDisplayPreferencesReplacement> };
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const useReplaceMyBookingPreferences = <

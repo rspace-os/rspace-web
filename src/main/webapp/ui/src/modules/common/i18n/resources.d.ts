@@ -870,6 +870,7 @@ export default interface Resources {
         "notAvailable": "Not available",
         "notAvailableFrom": "Not available · Available from {time}"
       },
+      "description": "Availability period: {period}. {states}{hasNow, select, yes { {now}} other {}}",
       "emptyWindow": "This display window contains no time on this date because the clocks change.",
       "fullAvailable": "Available for the full period.",
       "label": "{itemName} availability",
@@ -898,7 +899,6 @@ export default interface Resources {
         },
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
-      "summary": "Availability period: {period}. {states}",
       "timezone": "Time zone: {timezone}"
     },
     "availabilityLayout": {
@@ -1283,6 +1283,7 @@ export default interface Resources {
         "maintenanceCancelled": "Maintenance event cancelled.",
         "maintenanceTitle": "Maintenance details",
         "noneProvided": "None provided",
+        "periodWithDuration": "<period><periodText><startTime>{start}</startTime> – <endTime>{end}</endTime></periodText></period><duration> · {duration}</duration>",
         "returnToItemCalendar": "Return to item calendar",
         "returnToMyBookings": "Return to My Bookings",
         "timesShownIn": "Times shown in",
@@ -1997,6 +1998,15 @@ export default interface Resources {
       "preferences": "Preferences",
       "settings": "Settings"
     },
+    "time": {
+      "dateAndRange": "{date}; {period}",
+      "dateTimeRange": "{start} – {end}",
+      "openingRange": "{start} - {end}",
+      "range": "{start}–{end}",
+      "rangeAndEndDate": "{period} · {date}",
+      "rangeWithOffset": "{period} {offset}",
+      "withDayOffset": "{time} ({days})"
+    },
     "timelineEdit": {
       "continuationHint": "Double-click or press Enter to apply.",
       "endAtMidnight": "End at midnight after {date}",
@@ -2127,15 +2137,6 @@ export default interface Resources {
       }
     },
     "apiErrors": {
-      "apiV2": {
-        "httpStatus": "The request failed with status {status}.",
-        "identityChanged": "Your session changed. Reload the page to continue.",
-        "invalidJson": "The request body is not valid JSON.",
-        "invalidRequest": "The request contains an invalid value.",
-        "network": "The server could not be reached. Check your connection and try again.",
-        "sessionEnded": "Your session has ended. Sign in again to continue.",
-        "unexpectedResponse": "The server returned an unexpected response."
-      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
