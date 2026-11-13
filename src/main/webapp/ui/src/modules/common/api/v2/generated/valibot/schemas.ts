@@ -30,6 +30,8 @@ export const BookingConfigurationsCreateSchema = native.BookingConfigurationsCre
 export const BookingConfigurationsReadSchema = native.BookingConfigurationsRead;
 export const BookingConfigurationsReferenceSchema = native.BookingConfigurationsReference;
 export const BookingConfigurationsUpdateSchema = native.BookingConfigurationsUpdate;
+export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
+export const BookingDisplayPreferencesControllerReplacementSchema = native.BookingDisplayPreferencesControllerReplacement;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
 export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
 export const BookingSettingsControllerAdminSettingsDocumentSchema = native.BookingSettingsControllerAdminSettingsDocument;
@@ -102,6 +104,8 @@ export type SchemaModelTypeChecks = {
   BookingConfigurationsRead: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsReadSchema>, Models.BookingConfigurationsRead>>, Assert<Extends<Models.BookingConfigurationsRead, v.InferOutput<typeof BookingConfigurationsReadSchema>>>];
   BookingConfigurationsReference: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsReferenceSchema>, Models.BookingConfigurationsReference>>, Assert<Extends<Models.BookingConfigurationsReference, v.InferOutput<typeof BookingConfigurationsReferenceSchema>>>];
   BookingConfigurationsUpdate: [Assert<Extends<v.InferOutput<typeof BookingConfigurationsUpdateSchema>, Models.BookingConfigurationsUpdate>>, Assert<Extends<Models.BookingConfigurationsUpdate, v.InferOutput<typeof BookingConfigurationsUpdateSchema>>>];
+  BookingDisplayPreferences: [Assert<Extends<v.InferOutput<typeof BookingDisplayPreferencesSchema>, Models.BookingDisplayPreferences>>, Assert<Extends<Models.BookingDisplayPreferences, v.InferOutput<typeof BookingDisplayPreferencesSchema>>>];
+  BookingDisplayPreferencesControllerReplacement: [Assert<Extends<v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>, Models.BookingDisplayPreferencesControllerReplacement>>, Assert<Extends<Models.BookingDisplayPreferencesControllerReplacement, v.InferOutput<typeof BookingDisplayPreferencesControllerReplacementSchema>>>];
   BookingOpeningHoursEntry: [Assert<Extends<v.InferOutput<typeof BookingOpeningHoursEntrySchema>, Models.BookingOpeningHoursEntry>>, Assert<Extends<Models.BookingOpeningHoursEntry, v.InferOutput<typeof BookingOpeningHoursEntrySchema>>>];
   BookingOwnerHealth: [Assert<Extends<v.InferOutput<typeof BookingOwnerHealthSchema>, Models.BookingOwnerHealth>>, Assert<Extends<Models.BookingOwnerHealth, v.InferOutput<typeof BookingOwnerHealthSchema>>>];
   BookingSettingsControllerAdminSettingsDocument: [Assert<Extends<v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>, Models.BookingSettingsControllerAdminSettingsDocument>>, Assert<Extends<Models.BookingSettingsControllerAdminSettingsDocument, v.InferOutput<typeof BookingSettingsControllerAdminSettingsDocumentSchema>>>];
