@@ -392,6 +392,8 @@
     },
     "editTitle": "Edit Booking",
     "errors": {
+      "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
+      "bufferUnknown": "Too close to another booking.",
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
       "dayEndMissing": "This booking would end at {time} on {date}, but that local time does not exist in {timezone}. Change the start time or choose another duration.",
@@ -409,6 +411,7 @@
       "itemRequired": "Select a bookable item.",
       "load": "RSpace could not load this booking.",
       "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
+      "maximumDurationLimit": "This booking exceeds the bookable item's maximum duration of {duration}.",
       "noLongerEditable": "This booking is no longer editable.",
       "nonexistentTime": "This local time does not occur in the selected time zone.",
       "notFound": "This booking was not found or is not visible.",
@@ -419,7 +422,9 @@
       "overlap": "This period overlaps another booking.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
-      "windowRequired": "Enter a valid start and end."
+      "windowRequired": "Enter a valid start and end.",
+      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
+      "bufferBefore": "Too close to another booking. This item needs {before} before each booking."
     },
     "form": {
       "cancel": "Cancel",
