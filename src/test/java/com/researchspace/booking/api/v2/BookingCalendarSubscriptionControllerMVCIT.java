@@ -569,6 +569,20 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   private String create(long configurationId, String apiKey) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(post(path(configurationId)).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Cache-Control", containsString("no-store")))
+            .andExpect(header().string("Cache-Control", containsString("private")))
+            .andExpect(jsonPath("$.active").value(true))
+            .andExpect(jsonPath("$.updatedAt").isString())
+            .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
+            .andReturn();
+    JsonNode document = objectMapper.readTree(result.getResponse().getContentAsByteArray());
+    return document.path("subscriptionUrl").textValue();
+  }
+
     String etag =
         mockMvc
             .perform(get(path(configurationId)).header("apiKey", apiKey))
