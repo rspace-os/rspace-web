@@ -2,15 +2,19 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/common/api/v2";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 
 import {
   calendarApplicationUrls,
-  createOrReplaceCalendarSubscription,
-  createOrReplaceUserCalendarSubscription,
+  createCalendarSubscription,
+  createUserCalendarSubscription,
   fetchCalendarSubscriptionStatus,
+  fetchItemCalendarLinks,
   fetchUserCalendarSubscriptionStatus,
   revokeCalendarSubscription,
   revokeUserCalendarSubscription,
+  rotateCalendarSubscription,
+  rotateUserCalendarSubscription,
   toWebcalUrl,
 } from "../bookableItemCalendarSubscription";
 
@@ -55,6 +59,10 @@ describe("bookable item calendar subscription client", () => {
     server.use(http.get(path, () => HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null })));
     await expect(fetchCalendarSubscriptionStatus(7)).rejects.toThrow();
 
+    // An active link always carries its URL.
+    server.use(http.get(path, () => HttpResponse.json({ active: true, updatedAt: timestamp, subscriptionUrl: null })));
+    await expect(fetchCalendarSubscriptionStatus(7)).rejects.toThrow();
+
     server.use(
       http.get(path, () =>
         HttpResponse.json({ active: true, updatedAt: timestamp, subscriptionUrl: "javascript:alert(1)" }),
@@ -63,27 +71,42 @@ describe("bookable item calendar subscription client", () => {
     await expect(fetchCalendarSubscriptionStatus(7)).rejects.toThrow();
   });
 
-  it("creates or replaces and accepts HTTP or HTTPS context-path URLs", async () => {
+  it("creates without a precondition and accepts HTTP or HTTPS context-path URLs", async () => {
     const bodies: unknown[] = [];
     server.use(
       http.post(path, async ({ request }) => {
         bodies.push(await request.text());
-        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        expect(request.headers.get("If-Match")).toBeNull();
         return HttpResponse.json(
           {
             active: true,
             updatedAt: timestamp,
             subscriptionUrl: "http://localhost:8097/rspace/public/booking/calendars/feed.ics?token=value",
           },
-          { headers: { ETag: '"current"' } },
+          { status: 201, headers: { ETag: '"current"' } },
         );
       }),
     );
 
-    await expect(createOrReplaceCalendarSubscription(7, '"inactive"')).resolves.toMatchObject({
-      active: true,
-    });
+    await expect(createCalendarSubscription(7)).resolves.toMatchObject({ active: true, etag: '"current"' });
     expect(bodies).toEqual([""]);
+  });
+
+  it("rotates through the rotate endpoint with the current ETag", async () => {
+    server.use(
+      http.post(`${path}/rotate`, ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"current"');
+        return HttpResponse.json(
+          { active: true, updatedAt: timestamp, subscriptionUrl: "https://example.test/feed.ics?token=next" },
+          { headers: { ETag: '"next"' } },
+        );
+      }),
+    );
+
+    await expect(rotateCalendarSubscription(7, '"current"')).resolves.toMatchObject({
+      subscriptionUrl: "https://example.test/feed.ics?token=next",
+      etag: '"next"',
+    });
   });
 
   it("rejects malformed creation documents", async () => {
@@ -92,12 +115,18 @@ describe("bookable item calendar subscription client", () => {
         HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: "javascript:alert(1)" }),
       ),
     );
-    await expect(createOrReplaceCalendarSubscription(7, '"inactive"')).rejects.toThrow();
+    await expect(createCalendarSubscription(7)).rejects.toThrow();
   });
 
-  it.each([403])("parses a %s API problem", async (status) => {
+  it("parses a 403 API problem", async () => {
+    const status = 403;
     server.use(
-      http.get(path, () => HttpResponse.json({ status, code: `problem.${status}`, detail: "Safe detail" }, { status })),
+      http.get(path, () =>
+        HttpResponse.json<ApiV2Problem>(
+          { status, title: "Forbidden", code: `problem.${status}`, detail: "Safe detail" },
+          { status },
+        ),
+      ),
     );
     const request = fetchCalendarSubscriptionStatus(7);
     await expect(request).rejects.toEqual(expect.any(ApiV2ProblemError));
@@ -138,7 +167,7 @@ describe("calendar application URLs", () => {
 describe("user booking calendar subscription client", () => {
   const userPath = "/api/v2/users/me/booking-calendar-subscription";
 
-  it("uses the user-scoped endpoint for status, creation, and revocation", async () => {
+  it("uses the user-scoped endpoint for status, creation, rotation, and revocation", async () => {
     const methods: string[] = [];
     server.use(
       http.get(userPath, ({ request }) => {
@@ -150,14 +179,22 @@ describe("user booking calendar subscription client", () => {
       }),
       http.post(userPath, ({ request }) => {
         methods.push(request.method);
-        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        expect(request.headers.get("If-Match")).toBeNull();
         return HttpResponse.json(
           {
             active: true,
             updatedAt: timestamp,
             subscriptionUrl: "https://example.test/feed.ics?token=user",
           },
-          { headers: { ETag: '"subscription-0"' } },
+          { status: 201, headers: { ETag: '"subscription-0"' } },
+        );
+      }),
+      http.post(`${userPath}/rotate`, ({ request }) => {
+        methods.push(`${request.method} rotate`);
+        expect(request.headers.get("If-Match")).toBe('"subscription-0"');
+        return HttpResponse.json(
+          { active: true, updatedAt: timestamp, subscriptionUrl: "https://example.test/feed.ics?token=next" },
+          { headers: { ETag: '"subscription-1"' } },
         );
       }),
       http.delete(userPath, ({ request }) => {
@@ -170,11 +207,32 @@ describe("user booking calendar subscription client", () => {
       active: false,
       etag: '"inactive"',
     });
-    await expect(createOrReplaceUserCalendarSubscription('"inactive"')).resolves.toMatchObject({
+    await expect(createUserCalendarSubscription()).resolves.toMatchObject({
       active: true,
       etag: '"subscription-0"',
     });
+    await expect(rotateUserCalendarSubscription('"subscription-0"')).resolves.toMatchObject({
+      etag: '"subscription-1"',
+    });
     await expect(revokeUserCalendarSubscription()).resolves.toBeUndefined();
-    expect(methods).toEqual(["GET", "POST", "DELETE"]);
+    expect(methods).toEqual(["GET", "POST", "POST rotate", "DELETE"]);
+  });
+
+  it("lists the caller's item links and rejects unsafe URLs", async () => {
+    const itemLinksPath = "/api/v2/users/me/bookable-item-calendar-subscriptions";
+    const link = {
+      configurationId: 7,
+      itemGlobalId: "IN12",
+      itemName: "Confocal",
+      updatedAt: timestamp,
+      subscriptionUrl: "https://example.test/feed.ics?token=item",
+    };
+    server.use(http.get(itemLinksPath, () => HttpResponse.json({ docs: [link] })));
+    await expect(fetchItemCalendarLinks()).resolves.toEqual([link]);
+
+    server.use(
+      http.get(itemLinksPath, () => HttpResponse.json({ docs: [{ ...link, subscriptionUrl: "javascript:alert(1)" }] })),
+    );
+    await expect(fetchItemCalendarLinks()).rejects.toThrow();
   });
 });
