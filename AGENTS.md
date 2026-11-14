@@ -71,6 +71,8 @@ Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> 
 - Other services may use `@Transactional`; `TransactionAdviceStartupCheck` verifies advice at startup.
 - DAOs require an active transaction.
 - Keep imports consistent with this downward dependency flow.
+- Add, remove or move folders and notebooks that have content through `FolderManager`; `Folder.addChild`/`removeChild` update only the child's own ACL.
+- Load and change each record in one pass: queries flush the session and a loaded document usually counts as changed, so a document loaded before a query and changed after it is written twice (see `DevDocs/DeveloperNotes/Transactions.md`).
 </important>
 
 <important if="changing frontend code">

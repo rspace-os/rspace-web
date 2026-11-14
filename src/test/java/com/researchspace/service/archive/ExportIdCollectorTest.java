@@ -11,6 +11,7 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RecordContainerProcessor;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.archive.export.ExportIdCollector;
 import com.researchspace.testutils.TestFactory;
@@ -43,6 +44,10 @@ public class ExportIdCollectorTest {
 
     Mockito.when(folderMgr.getFolder(folder.getId(), user)).thenReturn(folder);
     Mockito.when(folderMgr.getFolder(notebook.getId(), user)).thenReturn(notebook);
+    Mockito.doAnswer(
+            inv -> inv.getArgument(1, RecordContainerProcessor.class).process(inv.getArgument(0)))
+        .when(folderMgr)
+        .process(Mockito.any(), Mockito.any());
 
     Long[] ids = new Long[] {folder.getId(), notebook.getId()};
     String[] types = new String[] {folder.getType(), notebook.getType()};

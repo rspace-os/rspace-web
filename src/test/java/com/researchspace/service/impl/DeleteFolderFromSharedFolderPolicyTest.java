@@ -13,6 +13,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.service.DeletionPlan;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -77,10 +78,12 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     grpSharedFolder.addChild(toDelete, anyUser);
     Notebook nb = createANotebookWithNEntries("nb", anyUser, 2);
     toDelete.addChild(nb, anyUser);
+    Mockito.when(folderDao.getChildren(toDelete)).thenReturn(List.of(nb));
     DeletionPlan plan =
         deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
     assertThat(plan).hasSize(2); // folder and nb but not entries
     assertEquals(toDelete, plan.getFinalElementToRemove());
     assertEquals(nb, plan.iterator().next());
+    Mockito.verify(folderDao, Mockito.never()).getChildren(nb);
   }
 }

@@ -695,7 +695,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   }
 
   private boolean recordExistsInFolder(String newusername, Folder grpFolder) {
-    for (BaseRecord child : grpFolder.getChildrens()) {
+    for (BaseRecord child : folderDao.getChildren(grpFolder)) {
       if (child.getName().equals(newusername)) {
         return true;
       }

@@ -73,7 +73,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
   private void setupFixture() throws InterruptedException {
     logoutAndLoginAs(owner);
     nb = createNotebookWithNEntries(owner.getRootFolder().getId(), "any", 2, owner);
-    notebookentry = (StructuredDocument) nb.getChildren().iterator().next().getRecord();
+    notebookentry = (StructuredDocument) folderDao.getChildren(nb).iterator().next();
     // sharee can't see owner's notebook or entry because it's not shared
     // yet
     logoutAndLoginAs(sharee);
@@ -121,7 +121,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
   }
 
   private StructuredDocument getFirstEntryInNotebook(Notebook nb) {
-    return (StructuredDocument) nb.getChildren().iterator().next().getRecord();
+    return (StructuredDocument) folderDao.getChildren(nb).iterator().next();
   }
 
   @Test

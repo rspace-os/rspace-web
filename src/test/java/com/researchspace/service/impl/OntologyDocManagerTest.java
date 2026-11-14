@@ -266,29 +266,11 @@ public class OntologyDocManagerTest {
 
   @Test
   public void
-      shouldCreateUserOntologyDocumentAndFolderWhenDocumentDoesNotExistAndOntologiesFolderIsDeleted() {
-    Set<String> tags = Set.of("tag1", "tag2", "tag3");
-    setupMocksForWritingDataToOntologyDocument();
-    setUpMocksForUsersOwnOntologyDocumentDoesNotExist();
-    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
-    setupMocksForOntologyFolderAndFileCreation();
-    when(rootFolderMock.getChildrens()).thenReturn(Set.of(ontologyFolderMock));
-    when(ontologyFolderMock.getName()).thenReturn("Ontologies");
-    when(ontologyFolderMock.isDeleted()).thenReturn(true);
-    testee.writeTagsToUsersOntologyTagDoc(userMock, tags);
-    verify(folderManagerMock)
-        .createNewFolder(eq(USER_ROOT_FOLDER_ID), eq("Ontologies"), eq(userMock));
-    verify(recordMgr)
-        .createNewStructuredDocument(eq(ONTOLOGY_FOLDER_ID), eq(ONTOLOGY_FORM_ID), eq(userMock));
-  }
-
-  @Test
-  public void
       shouldCreateUserOntologyDocumentButNotFolderWhenDocumentDoesNotExistButOntologiesFolderExists() {
     Set<String> tags = Set.of("tag1", "tag2", "tag3");
     setupMocksForWritingDataToOntologyDocument();
     setUpMocksForUsersOwnOntologyDocumentDoesNotExist();
-    when(rootFolderMock.getChildrens()).thenReturn(Set.of(ontologyFolderMock));
+    when(folderManagerMock.getSubFolders(rootFolderMock)).thenReturn(List.of(ontologyFolderMock));
     when(ontologyFolderMock.getName()).thenReturn("Ontologies");
     when(ontologyFolderMock.getId()).thenReturn(ONTOLOGY_FOLDER_ID);
     when(recordMgr.createNewStructuredDocument(

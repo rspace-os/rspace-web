@@ -25,7 +25,7 @@ public class DBDataIntegrityCheckerTest extends SpringTransactionalTest {
     initialiseContentWithExampleContent(u);
     Notebook n1 = createNotebookWithNEntries(u.getRootFolder().getId(), "any", 2, u);
     Notebook n2 = createNotebookWithNEntries(u.getRootFolder().getId(), "any", 2, u);
-    folderMgr.addChild(n2.getId(), n1.getChildrens().iterator().next(), u);
+    folderMgr.addChild(n2.getId(), folderDao.getChildren(n1).iterator().next(), u);
     integrityChecker.onAppStartup(applicationContext);
   }
 }

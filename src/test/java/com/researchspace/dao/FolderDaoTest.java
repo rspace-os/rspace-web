@@ -1,6 +1,8 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +13,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.TreeViewItem;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
@@ -29,6 +32,37 @@ public class FolderDaoTest extends SpringTransactionalTest {
   @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  @Test
+  public void contentQueries() {
+    Folder parent = folderDao.save(recordFactory.createFolder("parent", user));
+    Folder otherParent = folderDao.save(recordFactory.createFolder("otherParent", user));
+    Folder plain = recordFactory.createFolder("X", user);
+    Folder system = recordFactory.createSystemCreatedFolder("X", user);
+    Folder deleted = recordFactory.createFolder("deleted", user);
+    deleted.setRecordDeleted(true);
+    for (Folder child : List.of(plain, system, deleted)) {
+      folderDao.save(child);
+      parent.addChild(child, user);
+    }
+    Folder systemElsewhere = folderDao.save(recordFactory.createSystemCreatedFolder("Y", user));
+    otherParent.addChild(systemElsewhere, user).markRecordInFolderDeleted(true);
+    // no unique constraint stops a duplicate edge, e.g. from concurrent adds
+    sessionFactory
+        .getCurrentSession()
+        .persist(new RecordToFolder(plain, parent, user.getUsername()));
+    assertThat(folderDao.getFolderChildrenIds(parent)).hasSize(4);
+
+    assertThat(folderDao.getChildren(parent)).containsExactlyInAnyOrder(plain, system, deleted);
+    assertThat(folderDao.getSubFolders(parent)).containsExactlyInAnyOrder(plain, system);
+    assertEquals(system, folderDao.getSystemSubFolderByName(parent, "X"));
+    assertNull(folderDao.getSystemSubFolderByName(parent, "Y"));
+    assertTrue(folderDao.hasChildren(parent));
+    assertFalse(folderDao.hasChildren(system));
+    assertThat(folderDao.getChildren(otherParent)).containsExactly(systemElsewhere);
+    assertThat(folderDao.getSubFolders(otherParent)).containsExactly(systemElsewhere);
+    assertTrue(folderDao.hasChildren(otherParent));
   }
 
   @Test

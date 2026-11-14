@@ -20,7 +20,6 @@ import com.researchspace.files.service.FileStore;
 import com.researchspace.files.service.InternalFileStore;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
@@ -316,7 +315,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
         exportIDs.add(recordID);
       } else {
         try {
-          Folder fd1 = fMger.getFolder(recordID, user, SearchDepth.INFINITE);
+          Folder fd1 = fMger.getFolder(recordID, user, true);
           if (!permissions.isPermitted(fd1, PermissionType.READ, user)) {
             throw new AuthorizationException(
                 "Unauthorized attempt by :"
@@ -328,7 +327,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
           getIdExtractorForFolder(exportConfig, user, fd1, true)
               .ifPresent(
                   idExtractor -> {
-                    fd1.process(idExtractor);
+                    fMger.process(fd1, idExtractor);
                     // recordToExport here holds both record and folder ids (as idExtractor was
                     // created with 'includeFolderIds' option)
                     exportIDs.addAll(
@@ -357,7 +356,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       ExportOperationDetails exportOpDetails) {
     Set<String> igsnInventoryLinkedItems = new HashSet<>();
     try {
-      Folder fd1 = fMger.getFolder(folderId, user, SearchDepth.INFINITE);
+      Folder fd1 = fMger.getFolder(folderId, user, true);
       if (!permissions.isPermitted(fd1, PermissionType.READ, user)) {
         throw new AuthorizationException(
             "Unauthorized attempt by :"
@@ -369,7 +368,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       getIdExtractorForFolder(exportConfig, user, fd1, false)
           .ifPresent(
               idExtractor -> {
-                fd1.process(idExtractor);
+                fMger.process(fd1, idExtractor);
                 List<GlobalIdentifier> rcdIds =
                     idExtractor.getExportRecordList().getRecordsToExport();
                 for (GlobalIdentifier recordOid : rcdIds) {

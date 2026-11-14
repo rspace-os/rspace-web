@@ -35,15 +35,15 @@ public class CycleAnalyzerTest {
     Folder f7 = TestFactory.createAFolder("f7", u);
     Thread.sleep(1);
     // f1->f2->f3,f1->f4
-    f1.doAddToParentsOnly(f2, u);
-    f1.doAddToParentsOnly(f4, u);
-    f2.doAddToParentsOnly(f3, u);
+    f1.doAdd(f2, u);
+    f1.doAdd(f4, u);
+    f2.doAdd(f3, u);
 
-    f7.doAddToParentsOnly(f1, u);
-    f3.doAddToParentsOnly(f7, u);
+    f7.doAdd(f1, u);
+    f3.doAdd(f7, u);
     boolean addexception = false;
     try {
-      f1.addChild(f6, u, true);
+      f1.addChild(f6, u);
     } catch (IllegalAddChildOperation e) {
       addexception = true;
     }

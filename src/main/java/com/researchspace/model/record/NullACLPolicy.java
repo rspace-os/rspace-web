@@ -8,7 +8,4 @@ public class NullACLPolicy implements ACLPropagationPolicy {
 
   @Override
   public void onRemove(BaseRecord propagationRoot, BaseRecord removed) {}
-
-  @Override
-  public void propagate(BaseRecord propagationRoot) {}
 }

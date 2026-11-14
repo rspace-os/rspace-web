@@ -24,6 +24,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.impl.FolderManagerImpl;
+import com.researchspace.service.impl.MockFolderStructure;
 import com.researchspace.testutils.FolderTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
@@ -52,6 +53,8 @@ public class FolderOrganisationAndApiInboxFolderTest {
   @Mock private FolderManager folderManagerMock;
   @Mock private Folder folderMock;
 
+  private MockFolderStructure structure;
+
   @BeforeEach
   public void setUp() throws Exception {
     recordFactory = new RecordFactory();
@@ -64,7 +67,8 @@ public class FolderOrganisationAndApiInboxFolderTest {
     ReflectionTestUtils.setField(
         folderMgr, "messageSourceUtils", new MessageSourceUtils(new JsonMessageSource()));
 
-    setup = FolderTestUtils.createDefaultFolderStructure(user, folderManagerMock);
+    structure = new MockFolderStructure();
+    setup = FolderTestUtils.createDefaultFolderStructure(structure, user, folderManagerMock);
   }
 
   @AfterEach
@@ -86,21 +90,21 @@ public class FolderOrganisationAndApiInboxFolderTest {
   @Test
   public void testSharedSnippetFoldersCreated() {
     Folder snippet = setup.getSnippet();
-    assertTrue(snippet.getChildrens().size() > 0);
     Folder shared =
-        snippet.getSystemSubFolderByName(SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+        structure.findSystemSubFolder(
+            snippet, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
     assertTrue(shared.isSystemFolder());
     Folder labGroup =
-        shared.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
+        structure.findSystemSubFolder(
+            shared, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
     assertNotNull(labGroup);
     Folder collabGrp =
-        shared.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
+        structure.findSystemSubFolder(
+            shared, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.COLLABORATION_GROUPS_FLDER_NAME);
     assertNotNull(collabGrp);
     Folder indGrp =
-        shared.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.INDIVIDUAL_SHARE_ITEMS_FLDER_NAME);
+        structure.findSystemSubFolder(
+            shared, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.INDIVIDUAL_SHARE_ITEMS_FLDER_NAME);
     assertNotNull(indGrp);
     verify(folderManagerMock)
         .addChild(eq(null), eq(folderMock), eq(user), eq(ACLPropagationPolicy.NULL_POLICY));
@@ -186,11 +190,7 @@ public class FolderOrganisationAndApiInboxFolderTest {
   }
 
   private Folder findGalleryFolder(UserFolderSetup setup, String galleryFolderName) {
-    return (Folder)
-        setup.getMediaRoot().getChildrens().stream()
-            .filter(r -> galleryFolderName.equals(r.getName()))
-            .findFirst()
-            .get();
+    return structure.findSystemSubFolder(setup.getMediaRoot(), galleryFolderName);
   }
 
   @Test

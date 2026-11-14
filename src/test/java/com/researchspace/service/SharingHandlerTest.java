@@ -43,8 +43,7 @@ public class SharingHandlerTest extends SpringTransactionalTest {
     flushDatabaseState();
 
     Record newDoc =
-        recordMgr.createNewStructuredDocument(
-            admin.getRootFolder().getId(), form.getId(), admin, true);
+        recordMgr.createNewStructuredDocument(admin.getRootFolder().getId(), form.getId(), admin);
     assertFalse(newDoc.isShared());
     sharingHandler.shareIntoSharedFolderOrNotebook(admin, sharedFolder, newDoc.getId(), null);
     newDoc = recordMgr.get(newDoc.getId());
@@ -84,7 +83,7 @@ public class SharingHandlerTest extends SpringTransactionalTest {
     assertTrue(sharedNotebook.isShared());
 
     Record newDoc =
-        recordMgr.createNewStructuredDocument(sharedNotebook.getId(), form.getId(), user, true);
+        recordMgr.createNewStructuredDocument(sharedNotebook.getId(), form.getId(), user);
     assertFalse(newDoc.isShared());
     sharingHandler.shareIntoSharedFolderOrNotebook(
         user, sharedNotebook, newDoc.getId(), sharedNotebook.getParent().getId());

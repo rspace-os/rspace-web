@@ -16,9 +16,14 @@ import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserOrGroup;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.permissions.ACLElement;
+import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -31,11 +36,13 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSharingTest extends SpringTransactionalTest {
@@ -278,7 +285,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteRecord(u2SharedFolder.getId(), toShare.getId(), u2Owner);
 
     // now we check that this is unshared:
-    assertThat(folderDao.getIndividualSharedFolderForUsers(u1Owner, u2Owner, null).getChildrens())
+    assertThat(
+            folderDao.getChildren(
+                folderDao.getIndividualSharedFolderForUsers(u1Owner, u2Owner, null)))
         .isEmpty();
     // and that u2 can no longer see it:
     assertFalse(permissionUtils.isPermitted(toShare, PermissionType.READ, u2Owner));
@@ -327,7 +336,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     logoutCurrUserAndLoginAs(other.getUsername(), OTHER_USER_PWD);
     assertTrue(permissionUtils.isPermitted(toShare, PermissionType.READ, other));
     final Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
-    int NUM_CHILDREN_IN_GRPFOLDERS = sharedFolder.getChildren().size();
+    int NUM_CHILDREN_IN_GRPFOLDERS = folderDao.getChildren(sharedFolder).size();
 
     // deletion attempt by non-auth user should throw exception
     Long sharedFolderId = sharedFolder.getId();
@@ -343,11 +352,219 @@ public class RecordSharingTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteRecord(sharedFolder.getId(), toShare.getId(), piUser);
     // is unshared; back to original state.
     assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).doesNotContain(toShare);
-    assertThat(folderDao.getSharedFolderForGroup(group).getChildren())
+    assertThat(folderDao.getChildren(folderDao.getSharedFolderForGroup(group)))
         .hasSize(NUM_CHILDREN_IN_GRPFOLDERS - 1);
     // now, it is unshared, and inaccessible.
     logoutCurrUserAndLoginAs(other.getUsername(), OTHER_USER_PWD);
     assertFalse(permissionUtils.isPermitted(toShare, PermissionType.READ, other));
+  }
+
+  @Test
+  public void shareUnshareAndDeleteDoNotLoadOtherItemsOfGroupFolder() throws Exception {
+    StructuredDocument toShare = setUpOtherUserAndRecordToShare();
+    int alreadyShared = 20;
+    for (int i = 0; i < alreadyShared; i++) {
+      StructuredDocument doc = createBasicDocumentInRootFolderWithText(piUser, "shared" + i);
+      sharingMgr.shareRecord(piUser, doc.getId(), getGrpShareCommand(group, "read"));
+    }
+
+    long docsLoadedOnShare =
+        countStructuredDocumentLoads(
+            () ->
+                sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "read")));
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).hasSize(alreadyShared + 1);
+    long docsLoadedOnUnshare =
+        countStructuredDocumentLoads(
+            () ->
+                sharingMgr.unshareRecord(
+                    piUser, toShare.getId(), getGrpShareCommand(group, "read")));
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).hasSize(alreadyShared);
+    sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "read"));
+    long docsLoadedOnDelete =
+        countStructuredDocumentLoads(
+            () ->
+                recordDeletionMgr.deleteRecord(
+                    piUser.getRootFolder().getId(), toShare.getId(), piUser));
+
+    assertThat(docsLoadedOnShare).isLessThan(alreadyShared);
+    assertThat(docsLoadedOnUnshare).isLessThan(alreadyShared);
+    assertThat(docsLoadedOnDelete).isLessThan(alreadyShared);
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).hasSize(alreadyShared);
+  }
+
+  @Test
+  public void sharedDocumentCanBeMovedAndDeletedInSameTransaction() throws Exception {
+    StructuredDocument doc = setUpOtherUserAndRecordToShare();
+    sharingMgr.shareRecord(piUser, doc.getId(), getGrpShareCommand(group, "write"));
+    Folder groupFolder = folderDao.getSharedFolderForGroup(group);
+    Folder subfolder = folderMgr.createNewFolder(groupFolder.getId(), "sub", piUser);
+
+    assertTrue(
+        recordMgr.move(doc.getId(), subfolder.getId(), groupFolder.getId(), piUser).isSucceeded());
+    assertThat(folderDao.getFolderChildrenIds(subfolder)).containsExactly(doc.getId());
+    assertThat(folderDao.getFolderChildrenIds(groupFolder)).doesNotContain(doc.getId());
+
+    recordDeletionMgr.deleteRecord(subfolder.getId(), doc.getId(), piUser);
+    assertThat(folderDao.getFolderChildrenIds(subfolder)).isEmpty();
+    assertThat(regGrpDao.getRecordsSharedByGroup(group.getId())).isEmpty();
+  }
+
+  @Test
+  public void sharedNotebookCanBeMovedUnsharedAndDeletedInSameTransaction() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    Long rootId = other.getRootFolder().getId();
+    Notebook notebook = createNotebookWithNEntries(rootId, "nb", 1, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    List<ACLElement> unshared = storedAcl(entryId);
+    shareNotebookWithGroup(other, notebook, group, "write");
+    Folder groupFolder = folderDao.getSharedFolderForGroup(group);
+    assertThat(folderDao.getFolderChildrenIds(groupFolder)).contains(notebook.getId());
+    List<ACLElement> fromShare = new ArrayList<>(storedAcl(entryId));
+    fromShare.removeAll(unshared);
+    // from the group folder, so only the descendant walk puts it on the entry
+    assertThat(fromShare)
+        .contains(
+            new ACLElement(
+                group.getUniqueName(),
+                new ConstraintBasedPermission(
+                    PermissionDomain.RECORD, PermissionType.READ, PermissionType.CREATE_FOLDER)));
+
+    Folder dest = folderMgr.createNewFolder(rootId, "dest", other);
+    assertTrue(folderMgr.move(notebook.getId(), dest.getId(), rootId, other).isSucceeded());
+    assertThat(folderDao.getFolderChildrenIds(dest)).containsExactly(notebook.getId());
+    assertThat(storedAcl(entryId)).containsAll(fromShare);
+
+    unshareRecordORNotebookWithGroup(other, notebook, group, "write");
+    assertThat(folderDao.getFolderChildrenIds(groupFolder)).doesNotContain(notebook.getId());
+    assertThat(storedAcl(entryId)).doesNotContainAnyElementsOf(fromShare);
+    recordDeletionMgr.deleteFolder(dest.getId(), notebook.getId(), other);
+    assertTrue(folderDao.get(notebook.getId()).isDeleted());
+    assertTrue(recordMgr.get(entryId).isDeleted());
+  }
+
+  @Test
+  public void sharingNotebookWithGroupWritesEachEntryOnce() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    int entries = 3;
+    Notebook notebook =
+        createNotebookWithNEntries(other.getRootFolder().getId(), "nb", entries, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    List<ACLElement> unshared = storedAcl(entryId);
+    ACLElement groupRead = acl(group, PermissionType.READ);
+    ACLElement groupWrite = acl(group, PermissionType.WRITE);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> shareNotebookWithGroup(other, notebook, group, "read")));
+    assertThat(storedAcl(entryId)).contains(groupRead);
+
+    Long rgsId =
+        regGrpDao.findByRecordAndUserOrGroup(group.getId(), notebook.getId()).get().getId();
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.updatePermissionForRecord(rgsId, "write", other.getUsername())));
+    assertThat(storedAcl(entryId)).contains(groupWrite).doesNotContain(groupRead);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> unshareRecordORNotebookWithGroup(other, notebook, group, "write")));
+    assertThat(storedAcl(entryId)).containsExactlyInAnyOrderElementsOf(unshared);
+  }
+
+  @Test
+  public void sharingNotebookWithUserWritesEachEntryOnce() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    int entries = 3;
+    Notebook notebook =
+        createNotebookWithNEntries(other.getRootFolder().getId(), "nb", entries, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    List<ACLElement> unshared = storedAcl(entryId);
+    ACLElement piWrite = acl(piUser, PermissionType.WRITE);
+    ACLElement piRead = acl(piUser, PermissionType.READ);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> shareNotebookWithGroupMember(other, notebook, piUser)));
+    assertThat(storedAcl(entryId)).contains(piWrite);
+
+    Long rgsId =
+        regGrpDao.findByRecordAndUserOrGroup(piUser.getId(), notebook.getId()).get().getId();
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.updatePermissionForRecord(rgsId, "read", other.getUsername())));
+    assertThat(storedAcl(entryId)).contains(piRead).doesNotContain(piWrite);
+
+    assertEquals(
+        entries,
+        countStructuredDocumentUpdates(
+            () -> unshareNotebookWithGroupMember(other, notebook, piUser)));
+    assertThat(storedAcl(entryId)).containsExactlyInAnyOrderElementsOf(unshared);
+  }
+
+  @Test
+  public void sharingNotebookAlreadyInGroupFolderStillUpdatesEntries() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    Notebook notebook = createNotebookWithNEntries(other.getRootFolder().getId(), "nb", 1, other);
+    Long entryId = folderDao.getFolderChildrenIds(notebook).get(0);
+    Folder groupFolder = folderDao.getSharedFolderForGroup(group);
+    folderMgr.addChild(groupFolder.getId(), notebook, other, ACLPropagationPolicy.NULL_POLICY);
+
+    shareNotebookWithGroup(other, notebook, group, "read");
+    assertThat(storedAcl(entryId)).contains(acl(group, PermissionType.READ));
+  }
+
+  @Test
+  public void publishingAndUnpublishingNotebookDoesNotWriteEntries() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    Notebook notebook = createNotebookWithNEntries(other.getRootFolder().getId(), "nb", 3, other);
+    User anonymous = userMgr.getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
+    ShareConfigElement[] publish = getIndividualShareCommand(anonymous, "read");
+
+    assertEquals(
+        0,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.shareRecord(other, notebook.getId(), publish)));
+    assertTrue(folderDao.get(notebook.getId()).isPublished());
+
+    assertEquals(
+        0,
+        countStructuredDocumentUpdates(
+            () -> sharingMgr.unshareRecord(other, notebook.getId(), publish)));
+    assertFalse(folderDao.get(notebook.getId()).isPublished());
+  }
+
+  private ACLElement acl(UserOrGroup sharee, PermissionType type) {
+    return new ACLElement(
+        sharee.getUniqueName(), new ConstraintBasedPermission(PermissionDomain.RECORD, type));
+  }
+
+  private long countStructuredDocumentUpdates(Executable action) {
+    return entityStatisticsFor(StructuredDocument.class, action).getUpdateCount();
+  }
+
+  private long countStructuredDocumentLoads(Executable action) {
+    return entityStatisticsFor(StructuredDocument.class, action).getLoadCount();
+  }
+
+  @Test
+  public void removingMemberLeavesAclOfGroupsOtherSharedItems() {
+    setUpOtherUserAndRecordToShare();
+    StructuredDocument piDoc = createBasicDocumentInRootFolderWithText(piUser, "pi doc");
+    sharingMgr.shareRecord(piUser, piDoc.getId(), getGrpShareCommand(group, "read"));
+    List<ACLElement> shared = storedAcl(piDoc.getId());
+
+    grpMgr.removeUserFromGroup(other.getUsername(), group.getId(), piUser);
+    assertThat(storedAcl(piDoc.getId())).containsExactlyInAnyOrderElementsOf(shared);
   }
 
   @Test // RSPAC-2032
@@ -356,8 +573,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     setUpOtherUserAndRecordToShare();
 
     // other user can see group folder, PI can see both group and other's folder
-    assertThat(folderDao.getLabGroupFolderForUser(other).getChildren()).hasSize(1);
-    assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildren()).hasSize(2);
+    assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(other))).hasSize(1);
+    assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(piUser))).hasSize(2);
 
     // as other user create two documents, then share with pi individually, and through group
     StructuredDocument userDoc1 = createBasicDocumentInRootFolderWithText(other, "any1");
@@ -381,8 +598,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     grpMgr.removeUserFromGroup(other.getUsername(), group.getId(), piUser);
 
     // other can no longer see group folder, PI can no longer see other's folder
-    assertThat(folderDao.getLabGroupFolderForUser(other).getChildren()).isEmpty();
-    assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(other))).isEmpty();
+    assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(piUser))).hasSize(1);
 
     // verify sharing information and that pi can still view the first document through individual
     // share
@@ -558,7 +775,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            recordCreator.getRootFolder().getId(), anyForm.getId(), recordCreator, true);
+            recordCreator.getRootFolder().getId(), anyForm.getId(), recordCreator);
 
     group = createGroup("grp1", piUser);
     addUsersToGroup(piUser, group, recordCreator);
@@ -605,7 +822,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     RSForm anyForm = formDao.getAll().get(0);
     StructuredDocument recordToShare =
         recordMgr.createNewStructuredDocument(
-            piUser.getRootFolder().getId(), anyForm.getId(), piUser, true);
+            piUser.getRootFolder().getId(), anyForm.getId(), piUser);
     other = createOtherUser();
     initUserFolder(other);
     group = createGroup("grop1", piUser);

@@ -417,9 +417,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
         () -> {
           // now check that grp folder is added to newusers LabGroups folder
           Folder grpFolder = folderDao.getLabGroupFolderForUser(newUser);
-          assertThat(grpFolder.getChildrens()).hasSize(1);
+          assertThat(folderDao.getChildren(grpFolder)).hasSize(1);
           Folder piRoot = folderDao.getLabGroupFolderForUser(piUser);
-          assertThat(piRoot.getChildrens()).hasSize(2); // shared + newUser's home folders
+          assertThat(folderDao.getChildren(piRoot)).hasSize(2); // shared + newUser's home folders
         });
   }
 
@@ -478,10 +478,14 @@ public class GroupControllerMVCIT extends MVCTestBase {
           assertTrue(updatedGrp.getMembers().contains(newUser2), "user should be in group");
           Folder grpFolderU1 = folderDao.getLabGroupFolderForUser(newUser);
           assertEquals(
-              1, grpFolderU1.getChildrens().size(), "labgroup shared folder should be present");
+              1,
+              folderDao.getChildren(grpFolderU1).size(),
+              "labgroup shared folder should be present");
           Folder grpFolderU2 = folderDao.getLabGroupFolderForUser(newUser2);
           assertEquals(
-              1, grpFolderU2.getChildrens().size(), "labgroup shared folder should be present");
+              1,
+              folderDao.getChildren(grpFolderU2).size(),
+              "labgroup shared folder should be present");
         });
   }
 
@@ -529,7 +533,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           Folder otherLabGroupFolder = folderDao.getLabGroupFolderForUser(setup.user);
-          assertThat(otherLabGroupFolder.getChildren()).hasSize(1);
+          assertThat(folderDao.getChildren(otherLabGroupFolder)).hasSize(1);
         });
 
     // now user removes other from group
@@ -540,7 +544,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           Folder otherLabGroupFolder = folderDao.getLabGroupFolderForUser(setup.user);
-          assertThat(otherLabGroupFolder.getChildren()).isEmpty();
+          assertThat(folderDao.getChildren(otherLabGroupFolder)).isEmpty();
         });
 
     logoutAndLoginAs(setup.user);
@@ -1020,7 +1024,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           // assert that member1 has collab group folder appear in his collabGroups folder
-          assertThat(folderDao.getCollaborationGroupsSharedFolderForUser(member1).getChildren())
+          assertThat(
+                  folderDao.getChildren(
+                      folderDao.getCollaborationGroupsSharedFolderForUser(member1)))
               .hasSize(1);
 
           // and assert that member 1.s home folder doesn't NOT appear in other PIs

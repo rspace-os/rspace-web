@@ -28,7 +28,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.ShareRecordMessageOrRequest;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
@@ -44,11 +43,9 @@ import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
-import com.researchspace.model.record.ChildAddPolicy;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
@@ -451,6 +448,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
             .collect(Collectors.toSet());
 
     if (!permsToUpdate.isEmpty()) {
+      List<ACLElement> removedAcls = new ArrayList<>();
       // Remove each of the permissions that needs updating - i.e. when changing
       // the permission of a doc from read to write.  Due to
       // https://researchspace.atlassian.net/browse/RSDEV-863
@@ -460,7 +458,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         // First of all, simply remove that permission.
         Set<Long> originalIds = p.getIdConstraint().getId();
         userOrGroup.removePermission(p);
-        removeACLPermissions(rgs, userOrGroup, p);
+        removedAcls.add(toACLElement(userOrGroup, p));
 
         // If the permission applies to multiple documents, then we
         // must also remove a single-document version of that permission
@@ -488,7 +486,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       ConstraintBasedPermission permToAdd =
           perFactory.createIdPermission(PermissionDomain.RECORD, type, sharedDocId);
       userOrGroup.addPermission(permToAdd);
-      addACLPermissions(rgs, userOrGroup, permToAdd);
+      updateACL(rgs.getShared(), removedAcls, List.of(toACLElement(userOrGroup, permToAdd)));
 
       saveUserOrGroup(userOrGroup);
       // forces other group members to refresh cache
@@ -655,6 +653,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
     /* actual share operation - saving RecordGroupSharing entity */
     RecordGroupSharing rgs = null;
+    List<ACLElement> addedAcls = new ArrayList<>();
     if (!isAlreadyShared) {
       // sharing record and adding permissions for user or group
       rgs = new RecordGroupSharing(toShareWith, docOrNotebook);
@@ -678,15 +677,14 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       permissnUtils.refreshCache();
       ConstraintBasedPermission perm =
           new ConstraintBasedPermission(PermissionDomain.RECORD, permType);
-      ACLElement el = new ACLElement(toShareWith.getUniqueName(), perm);
-      propagateACLAddition(docOrNotebook, el);
+      addedAcls.add(new ACLElement(toShareWith.getUniqueName(), perm));
       if (docOrNotebook.isSnippet()) {
-        ACLElement copy =
+        addedAcls.add(
             new ACLElement(
                 toShareWith.getUniqueName(),
-                new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.COPY));
-        propagateACLAddition(docOrNotebook, copy);
+                new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.COPY)));
       }
+      updateOwnACL(docOrNotebook, List.of(), addedAcls);
       log.info("Added RGS for doc [{}] and [{}]", docOrNotebook.getId(), toShareWith);
     }
     if (docOrNotebook.isTemplate()) {
@@ -697,23 +695,26 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     }
 
     /* adding shared item into shared folder */
+    boolean contentGotNewAcl = false;
     if (selectedTargetFolder != null) {
       ACLPropagationPolicy aclPolicy = ACLPropagationPolicy.DEFAULT_POLICY;
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      // Use skipAddingToChildren=false so the new RecordToFolder is added to
-      // selectedTargetFolder.children (a tracked PersistentSet). We then call
-      // folderDao.save() to cascade-persist the new RTF. The prior true relied on
-      // Hibernate 5's SAVE_UPDATE reachability which no longer exists in Hibernate 6 JPA.
-      selectedTargetFolder.addChild(
-          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, false);
-      folderDao.save(selectedTargetFolder);
-      selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
+      boolean wasInTarget = docOrNotebook.getParentFolders().contains(selectedTargetFolder);
+      folderMgr.addChild(selectedTargetFolder.getId(), docOrNotebook, subject, aclPolicy);
+      // true when addChild's walk already gave the content the new ACL
+      contentGotNewAcl =
+          aclPolicy.propagatesToDescendants()
+              && !wasInTarget
+              && docOrNotebook.getParentFolders().contains(selectedTargetFolder);
       log.info(
           "Added RTF for doc [{}] and folder [{}]",
           docOrNotebook.getId(),
           selectedTargetFolder.getId());
+    }
+    if (!contentGotNewAcl) {
+      updateACLOfContent(docOrNotebook, List.of(), addedAcls);
     }
 
     return List.of(rgs);
@@ -893,29 +894,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       // refreshes the cache (refreshCacheIfNotified) instead of serving the
       // stale grant until restart
       permissnUtils.notifyUserOrGroupToRefreshCache(toUnshareWith);
-      if (toUnshareWith.isUser() && toUnshare.isNotebook()) {
 
-        RecordSharingACL acl = toUnshare.getSharingACL();
-        Set<ACLElement> removed = acl.removeACLsforUserOrGroup(toUnshareWith);
-        for (ACLElement el : removed) {
-          propagateACLRemoval(toUnshare, el);
-        }
-        folderDao.save((Folder) toUnshare);
-
-      } else {
-        ConstraintBasedPermission perm =
-            new ConstraintBasedPermission(PermissionDomain.RECORD, permType);
-        ACLElement el = new ACLElement(toUnshareWith.getUniqueName(), perm);
-        propagateACLRemoval(toUnshare, el);
-        if (toUnshare.isSnippet()) {
-          ConstraintBasedPermission copyPerm =
-              new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.COPY);
-          ACLElement copyEl = new ACLElement(toUnshareWith.getUniqueName(), copyPerm);
-          propagateACLRemoval(toUnshare, copyEl);
-        }
-      }
-
-      // now we remove this shared item from its location in user's/group shared folder
+      // looked up before any ACL change: its queries flush, so changes would be written twice
       Folder sharedTopLevelFolder = null;
       if (toUnshareWith.isUser()) {
         User user = toUnshareWith.asUser();
@@ -931,21 +911,38 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
       RSPath path = toUnshare.getShortestPathToParent(sharedTopLevelFolder);
       Optional<Folder> sharedParent = path.getImmediateParentOf(toUnshare);
+
+      List<ACLElement> removed = new ArrayList<>();
+      if (toUnshareWith.isUser() && toUnshare.isNotebook()) {
+        RecordSharingACL acl = toUnshare.getSharingACL();
+        removed.addAll(acl.removeACLsforUserOrGroup(toUnshareWith));
+      } else {
+        ConstraintBasedPermission perm =
+            new ConstraintBasedPermission(PermissionDomain.RECORD, permType);
+        removed.add(new ACLElement(toUnshareWith.getUniqueName(), perm));
+        if (toUnshare.isSnippet()) {
+          ConstraintBasedPermission copyPerm =
+              new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.COPY);
+          removed.add(new ACLElement(toUnshareWith.getUniqueName(), copyPerm));
+        }
+      }
+
+      // now we remove this shared item from its location in user's/group shared folder
       if (sharedParent.isPresent()) {
-        removeUnsharedChild(sharedParent.get(), toUnshare);
+        // the folder's ACL leaves the content in the same walk as the sharee's
+        removed.addAll(
+            ACLPropagationPolicy.DEFAULT_POLICY.aclsRemovedFromDescendants(
+                sharedParent.get(), toUnshare));
+        folderMgr.removeBaseRecordFromFolder(
+            toUnshare, sharedParent.get().getId(), ACLPropagationPolicy.NULL_POLICY);
         log.info(
             "Removed RTF for doc [{}] and folder [{}]",
             docOrNotebook.getId(),
             sharedParent.get().getId());
       }
+      updateACL(toUnshare, removed, List.of());
     }
     return unshared;
-  }
-
-  private void removeUnsharedChild(Folder sharedParent, BaseRecord toUnshare) {
-    sharedParent.removeChild(toUnshare);
-    folderDao.save(sharedParent);
-    saveRecordOrFolder(toUnshare);
   }
 
   /**
@@ -961,13 +958,10 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       return rc;
     }
     // now see if this notebook has entries shared with other people
-    Notebook n = (Notebook) documentOrNotebook;
-    if (n.getChildren().isEmpty()) {
-      // if notebook has no entries, short-circuit.
+    List<Long> entryIds = folderDao.getFolderChildrenIds((Folder) documentOrNotebook);
+    if (entryIds.isEmpty()) {
       return rc;
     }
-    List<Long> entryIds =
-        TransformerUtils.transform(n.getChildrens(), UniquelyIdentifiable.OBJECT_TO_ID_TRANSFORMER);
 
     List<BaseRecord> sharedEntries =
         groupshareRecordDao.findRecordsSharedWithUserOrGroup(toShareWith.getId(), entryIds);
@@ -1160,34 +1154,36 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     }
   }
 
-  /**
-   * Removes ACLs from subfolders
-   *
-   * @param documentOrNotebook
-   * @param el
-   */
-  private void propagateACLRemoval(BaseRecord documentOrNotebook, ACLElement el) {
-    documentOrNotebook.getSharingACL().removeACLElement(el);
-    saveRecordOrFolder(documentOrNotebook);
-    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)) {
-      for (BaseRecord child : documentOrNotebook.getChildrens()) {
-        propagateACLRemoval(child, el);
+  private void updateACL(
+      BaseRecord recordOrFolder, Collection<ACLElement> removed, Collection<ACLElement> added) {
+    updateOwnACL(recordOrFolder, removed, added);
+    updateACLOfContent(recordOrFolder, removed, added);
+  }
+
+  private void updateOwnACL(
+      BaseRecord recordOrFolder, Collection<ACLElement> removed, Collection<ACLElement> added) {
+    removed.forEach(recordOrFolder.getSharingACL()::removeACLElement);
+    added.forEach(recordOrFolder.getSharingACL()::addACLElement);
+    saveRecordOrFolder(recordOrFolder);
+  }
+
+  // Each item must be loaded and changed by one walk: a content query flushes the session, and a
+  // document is dirty from loading (its delta is cleared), so a second walk would write it twice.
+  private void updateACLOfContent(
+      BaseRecord recordOrFolder, Collection<ACLElement> removed, Collection<ACLElement> added) {
+    List<ACLElement> removedFromContent = withoutAnonymous(removed);
+    List<ACLElement> addedToContent = withoutAnonymous(added);
+    if (recordOrFolder.isFolder() && !(removedFromContent.isEmpty() && addedToContent.isEmpty())) {
+      for (BaseRecord child : folderDao.getChildren((Folder) recordOrFolder)) {
+        updateACL(child, removedFromContent, addedToContent);
       }
     }
   }
 
-  /**
-   * @param recordOrFolder
-   * @param el
-   */
-  private void propagateACLAddition(BaseRecord recordOrFolder, ACLElement el) {
-    recordOrFolder.getSharingACL().addACLElement(el);
-    saveRecordOrFolder(recordOrFolder);
-    if (!el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER)) {
-      for (BaseRecord child : recordOrFolder.getChildrens()) {
-        propagateACLAddition(child, el);
-      }
-    }
+  private static List<ACLElement> withoutAnonymous(Collection<ACLElement> acls) {
+    return acls.stream()
+        .filter(el -> !el.getUserOrGrpUniqueName().equals(RecordGroupSharing.ANONYMOUS_USER))
+        .collect(Collectors.toList());
   }
 
   /**
@@ -1227,32 +1223,13 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     }
   }
 
-  private void removeACLPermissions(
-      RecordGroupSharing rgs,
-      AbstractUserOrGroupImpl userOrGroup,
-      ConstraintBasedPermission toRemove) {
-
-    BaseRecord br = rgs.getShared();
+  private static ACLElement toACLElement(
+      AbstractUserOrGroupImpl userOrGroup, ConstraintBasedPermission perm) {
     // need to create new permission objects as ACL permissions don't have
     // any constraints beyond domain/type - we only want to compare at this level
-    ConstraintBasedPermission oldACLEl =
-        new ConstraintBasedPermission(toRemove.getDomain(), toRemove.getActions());
-    ACLElement toRemoveFromACL = new ACLElement(userOrGroup.getUniqueName(), oldACLEl);
-    propagateACLRemoval(br, toRemoveFromACL);
-  }
-
-  private void addACLPermissions(
-      RecordGroupSharing rgs,
-      AbstractUserOrGroupImpl userOrGroup,
-      ConstraintBasedPermission toAdd) {
-
-    BaseRecord br = rgs.getShared();
-    // need to create new permission objects as ACL permissions don't have
-    // any constraints beyond domain/type - we only want to compare at this level
-    ConstraintBasedPermission newACLEl =
-        new ConstraintBasedPermission(toAdd.getDomain(), toAdd.getActions());
-    ACLElement toAddToACL = new ACLElement(userOrGroup.getUniqueName(), newACLEl);
-    propagateACLAddition(br, toAddToACL);
+    return new ACLElement(
+        userOrGroup.getUniqueName(),
+        new ConstraintBasedPermission(perm.getDomain(), perm.getActions()));
   }
 
   @Override

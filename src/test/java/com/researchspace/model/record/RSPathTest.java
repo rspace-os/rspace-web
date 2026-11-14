@@ -33,9 +33,9 @@ public class RSPathTest {
     middle = createAFolder("middle", user);
     child = createAFolder("child", user);
     record = createAnySD();
-    parent.addChild(middle, user, true);
-    middle.addChild(child, user, true);
-    child.addChild(record, user, true);
+    parent.addChild(middle, user);
+    middle.addChild(child, user);
+    child.addChild(record, user);
     user.setRootFolder(parent);
   }
 
@@ -97,7 +97,7 @@ public class RSPathTest {
     List<BaseRecord> viaToTarget = new ArrayList<>();
     parent.removeChild(middle);
     record.setParents(new HashSet<>());
-    parent.addChild(record, user, true);
+    parent.addChild(record, user);
     srcToVia.add(parent);
     srcToVia.add(record);
     viaToTarget.add(parent);

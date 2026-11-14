@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
 
+import com.researchspace.dao.FolderDao;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.RecordManager;
@@ -23,6 +24,7 @@ public class UserContentUpdaterImpl implements UserContentUpdater {
   private UserFolderCreator userFolderCreator;
 
   @Autowired private RecordManager recordManager;
+  @Autowired private FolderDao folderDao;
 
   @Override // see comments in the Interface and the class comments above
   public void doUserContentUpdates(User subject) {
@@ -32,8 +34,8 @@ public class UserContentUpdaterImpl implements UserContentUpdater {
   private void createSharedSnippetFolder(User subject) {
     Folder snippetFolder =
         recordManager.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, subject);
-    if (snippetFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
+    if (folderDao.getSystemSubFolderByName(
+            snippetFolder, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME)
         == null) {
       userFolderCreator.createSharedSnippetFolder(subject, snippetFolder);
     }

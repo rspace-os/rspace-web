@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
@@ -89,5 +90,15 @@ public class ImageControllerTest extends JakartaValidatorTest {
     final int ATTACH_FILE_LENGTH = 506;
     assertThat(resp.getBody()).hasSize(ATTACH_FILE_LENGTH);
     verify(recordMgr).save(doc, anyUser);
+  }
+
+  @Test
+  public void thumbnailOfRevisionIsNeitherGeneratedNorSaved() throws IOException {
+    EcatDocumentFile revision = setUpThumbnailMocks();
+    when(mediaFactory.getFileSuffixIcon(revision.getFileName())).thenReturn(new byte[] {1});
+
+    imgController.getDocThumbnail(revision.getId(), 2L);
+    verifyNoInteractions(docConverter);
+    verify(recordMgr, never()).save(Mockito.any(), Mockito.any());
   }
 }

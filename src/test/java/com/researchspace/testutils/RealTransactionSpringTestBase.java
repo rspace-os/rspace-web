@@ -272,7 +272,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
    * @throws Exception
    */
   protected StructuredDocument getADocumentFromFolder(Folder root, User user) {
-    for (BaseRecord br : root.getChildrens()) {
+    for (BaseRecord br : folderDao.getChildren(root)) {
       if (br.isStructuredDocument()) {
         return recordMgr.getRecordWithFields(br.getId(), user).asStrucDoc();
       }
@@ -1144,7 +1144,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
 
               if (expectSharing) {
                 assertNotNull(indiSharedItemsFolder);
-                assertTrue(indiSharedItemsFolder.getChildrens().contains(documentOrNotebook));
+                assertTrue(
+                    folderDao
+                        .getFolderChildrenIds(indiSharedItemsFolder)
+                        .contains(documentOrNotebook.getId()));
               } else {
                 assertNull(indiSharedItemsFolder);
               }
@@ -1162,7 +1165,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
               if (grp.isLabGroup()) {
                 Folder groupFolder = folderDao.getSharedFolderForGroup(grp);
                 assertNotNull(groupFolder);
-                assertTrue(groupFolder.getChildrens().contains(documentOrNotebook));
+                assertTrue(
+                    folderDao
+                        .getFolderChildrenIds(groupFolder)
+                        .contains(documentOrNotebook.getId()));
               }
             }
           }

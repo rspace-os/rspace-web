@@ -148,10 +148,12 @@ public class DefaultUserFolderCreator implements UserFolderCreator {
         setUpSharedFolderStructure(
             subject, snippetFolder, UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX);
     Folder labGroup =
-        sharedSnippet.getSystemSubFolderByName(
+        folderDao.getSystemSubFolderByName(
+            sharedSnippet,
             UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
     Folder collabGroup =
-        sharedSnippet.getSystemSubFolderByName(
+        folderDao.getSystemSubFolderByName(
+            sharedSnippet,
             UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX
                 + Folder.COLLABORATION_GROUPS_FLDER_NAME);
     log.info("Folder Shared Snippet Setup {}", sharedSnippet.getName());

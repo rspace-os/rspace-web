@@ -47,7 +47,7 @@ public class ExportIdCollector {
       return null;
     }
     ExportArchiveTreeTraversor traversor = new ExportArchiveTreeTraversor(exportCfg);
-    fd1.process(traversor);
+    folderMgr.process(fd1, traversor);
     return traversor.getExportRecordList();
   }
 }

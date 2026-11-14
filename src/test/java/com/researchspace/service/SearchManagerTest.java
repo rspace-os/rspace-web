@@ -128,7 +128,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertThat(root.getChildren()).isNotEmpty();
+    assertThat(folderDao.getChildren(root)).isNotEmpty();
 
     logoutAndLoginAs(newUser);
 
@@ -215,7 +215,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertTrue(!root.getChildren().isEmpty());
+    assertThat(folderDao.getChildren(root)).isNotEmpty();
 
     logoutAndLoginAs(newUser);
 
