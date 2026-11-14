@@ -39,7 +39,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
               i={i}
               key={i}
               editable={editable}
-              onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
+              onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? `NEW_${i}`, value)}
               onRemove={(b) => removeCustomField(field)(b)}
               forceColumnLayout={!uiStore.isLarge}
               onMove={(index) => activeResult.moveField(field, index)}
