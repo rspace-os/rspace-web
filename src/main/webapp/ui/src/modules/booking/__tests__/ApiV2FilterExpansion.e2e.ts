@@ -8,9 +8,9 @@ import { SYSADMIN, USERS } from "@/__tests__/e2e/users";
 import type { ApiV2RuntimeFieldCatalogEntry } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalogEntry";
 import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import { createBookingConfiguration } from "./bookingE2eFixtures";
 
 type CreatedInstrument = { id: number; globalId: string; name: string; sharingMode?: string };
-type BookingConfiguration = { id: number };
 type BookingConfigurationPage = Required<Pick<ListBookingConfigurations200, "totalDocs" | "limit" | "page">> & {
   docs: Required<Pick<BookingConfigurationsRead, "id">>[];
 };
@@ -46,22 +46,6 @@ async function createInstrument(
   });
   expect(response.ok(), await response.text()).toBe(true);
   return response.json() as Promise<CreatedInstrument>;
-}
-
-async function createBookingConfiguration(
-  apiContext: APIRequestContext,
-  apiKey: string,
-  instrumentId: number,
-): Promise<BookingConfiguration> {
-  const response = await apiContext.post("/api/v2/booking-configurations", {
-    headers: { apiKey },
-    data: {
-      enabled: true,
-      target: { relationTo: "instruments", value: instrumentId },
-    },
-  });
-  expect(response.ok(), await response.text()).toBe(true);
-  return response.json() as Promise<BookingConfiguration>;
 }
 
 async function cleanupFilterExpansionRecords({ configurations, instruments }: FilterExpansionRecords): Promise<void> {
