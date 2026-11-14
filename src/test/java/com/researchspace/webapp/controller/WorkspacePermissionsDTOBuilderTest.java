@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -35,11 +36,14 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -83,6 +87,7 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     parentFolder.addChild(media, user);
     Mockito.when(results.getResults()).thenReturn(records);
+
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -93,7 +98,8 @@ public class WorkspacePermissionsDTOBuilderTest {
     // can't copy or move from workspace
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.COPY));
-    Mockito.verify(recMger, Mockito.never()).canMove(media, parentFolder, user);
+    Mockito.verify(recMger, Mockito.never())
+        .canMove(anyCollection(), any(Folder.class), any(User.class));
   }
 
   @Test
@@ -156,7 +162,8 @@ public class WorkspacePermissionsDTOBuilderTest {
             parentFolder, user, model, results.getResults(), parentFolderId, true);
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.EXPORT));
-    Mockito.verify(recMger, Mockito.never()).canMove(snip, parentFolder, user);
+    Mockito.verify(recMger, Mockito.never())
+        .canMove(anyCollection(), any(Folder.class), any(User.class));
   }
 
   @Test
@@ -171,8 +178,8 @@ public class WorkspacePermissionsDTOBuilderTest {
     parentFolder.addChild(sdoc, user);
     final User other = TestFactory.createAnyUser("other");
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(sdoc), Mockito.eq(parentFolder), any(User.class)))
-        .thenReturn(true);
+    when(recMger.canMove(anyCollection(), Mockito.eq(parentFolder), any(User.class)))
+        .thenReturn(Map.of(DOC_ID, true));
 
     // simulate search results; can delete
     ActionPermissionsDTO result =
@@ -301,7 +308,9 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     parentFolder.addChild(sdoc, user);
     Mockito.when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(sdoc, parentFolder, user)).thenReturn(true);
+    // pinned to the listed folder so the test fails if the builder forwards a different target
+    when(recMger.canMove(anyCollection(), Mockito.eq(parentFolder), Mockito.eq(user)))
+        .thenReturn(Map.of(DOC_ID, true));
 
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
@@ -326,7 +335,9 @@ public class WorkspacePermissionsDTOBuilderTest {
     permFac.setUpACLForUserRoot(user, nb);
     // sdoc is now in notebook
     sdoc.move(parentFolder, nb, user);
-    when(recMger.canMove(sdoc, nb, user)).thenReturn(true);
+    // movable per the batch check, so the SEND=false below proves the notebook-entry override
+    when(recMger.canMove(anyCollection(), Mockito.eq(nb), Mockito.eq(user)))
+        .thenReturn(Map.of(DOC_ID, true));
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -345,12 +356,43 @@ public class WorkspacePermissionsDTOBuilderTest {
     sharedFolder.addType(RecordType.SHARED_GROUP_FOLDER_ROOT);
 
     sharedFolder.addChild(sdoc, user);
-    when(recMger.canMove(sdoc, sharedFolder, user)).thenReturn(true);
+    when(recMger.canMove(anyCollection(), Mockito.eq(sharedFolder), Mockito.eq(user)))
+        .thenReturn(Map.of(DOC_ID, true));
 
     result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             sharedFolder, user, model, results.getResults(), parentFolderId, false);
     assertTrue(can(result, DOC_ID, PermissionType.SEND));
+  }
+
+  @Test
+  public void batchMoveCheckOnlyReceivesMovableCandidates() {
+    final StructuredDocument sdoc = TestFactory.createAnySD();
+    sdoc.setOwner(user);
+    sdoc.setId(DOC_ID);
+    final EcatMediaFile media = TestFactory.createEcatAudio(2L, user);
+    final Snippet snip = TestFactory.createAnySnippet(user);
+    snip.setId(3L);
+    permFac.setUpACLForUserRoot(user, parentFolder);
+    parentFolder.addChild(sdoc, user);
+    parentFolder.addChild(media, user);
+    parentFolder.addChild(snip, user);
+    final List<BaseRecord> records = toList(sdoc, media, snip);
+    when(recMger.canMove(anyCollection(), Mockito.eq(parentFolder), Mockito.eq(user)))
+        .thenReturn(Map.of(DOC_ID, true));
+
+    ActionPermissionsDTO result =
+        dtoBuilder.addCreateAndOptionsMenuPermissions(
+            parentFolder, user, model, records, 1L, false);
+
+    assertTrue(can(result, DOC_ID, PermissionType.SEND));
+    assertFalse(can(result, 2L, PermissionType.SEND));
+    assertFalse(can(result, 3L, PermissionType.SEND));
+    // media and snippets can never be moved, so they are not sent to the batch check
+    ArgumentCaptor<Collection<BaseRecord>> candidates = ArgumentCaptor.forClass(Collection.class);
+    Mockito.verify(recMger)
+        .canMove(candidates.capture(), Mockito.eq(parentFolder), Mockito.eq(user));
+    assertEquals(List.of(sdoc), new ArrayList<>(candidates.getValue()));
   }
 
   private void clearACLs(User user, Folder parentFolder, StructuredDocument sdoc)

@@ -18,6 +18,7 @@ import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.UserSignupException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -212,6 +214,18 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     configureHttpReqAsLoginRequest();
     filter.onAccessDenied(req, resp);
     assertNotNull(getShiroLoginFailureAttr(req));
+  }
+
+  @Test
+  public void testOnAccessDeniedWithoutUsernameDoesNotLookUpUser() throws Exception {
+    configureHttpReqAsLoginRequest();
+    UserManager userMgrMock = Mockito.mock(UserManager.class);
+    filter.setUserMgr(userMgrMock);
+
+    // plain GET of the login page: no username parameter, so no account to lock-check
+    filter.onAccessDenied(req, resp);
+
+    Mockito.verifyNoInteractions(userMgrMock);
   }
 
   private void configureHttpReqAsLoginRequest() {
