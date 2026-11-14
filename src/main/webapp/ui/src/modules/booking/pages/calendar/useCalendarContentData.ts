@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -50,6 +50,16 @@ function andFilters<TDocument>(
   return { kind: "and", children };
 }
 
+function targetFilter(target: string | undefined) {
+  if (!target) return null;
+  return {
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: target,
+  } as const;
+}
+
 function retypeFilter<TFrom, TTo>(expression: FilterExpression<TFrom>): FilterExpression<TTo> {
   if (expression.kind === "comparison") {
     return { ...expression, field: String(expression.field) as SearchSelector<TTo> };
@@ -97,8 +107,9 @@ function filterIssue<TDocument>({
 
 export function useCalendarContentData() {
   const queryClient = useQueryClient();
-  const { date } = useSearch({ from: "/booking/calendar/" });
+  const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
+  const location = useLocation();
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -223,26 +234,35 @@ export function useCalendarContentData() {
   const filtersBlocked =
     itemIssue !== undefined || eventIssue !== undefined || itemRuntimeFields.pending || eventRuntimeFields.pending;
   const scopedEventExpression = eventExpression;
+  const targetItemExpression = React.useMemo(() => targetFilter(target), [target]);
+  const targetEventExpression = React.useMemo(() => targetFilter(target), [target]);
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
+        targetEventExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression],
+    [itemExpression, scopedEventExpression, targetEventExpression],
   );
-  const itemWhereParameter = itemExpression ? serializeRsqlExpression(itemExpression) : undefined;
+  const resourceItemExpression = React.useMemo(
+    () => andFilters([itemExpression, targetItemExpression]),
+    [itemExpression, targetItemExpression],
+  );
+  const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
   const calendarEventWhereParameter = calendarEventExpression
     ? serializeRsqlExpression(calendarEventExpression)
     : undefined;
   const filterScopeSignature = [
     calendarSearch,
+    target ?? "",
     itemWhereParameter ?? "",
     eventWhereParameter ?? "",
     start,
     end,
     mineOnly,
+    myItemsOnly,
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
@@ -327,9 +347,6 @@ export function useCalendarContentData() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  const onItemFiltersChange = (expression: FilterExpression<BookingConfiguration> | null) => {
-    void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
-  };
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     const events = withoutPresets(expression, [eventOwnerPreset]);
     const otherItems = withoutPresets(itemExpression, [ownerPreset]);
@@ -348,7 +365,6 @@ export function useCalendarContentData() {
     navigate,
     calendarSearch,
     setCalendarSearch,
-    currentUser,
     view,
     setView,
     layout,
@@ -369,7 +385,6 @@ export function useCalendarContentData() {
     eventIssue,
     eventRuntimeFields,
     filtersBlocked,
-    itemConfig,
     itemExpression,
     itemIssue,
     itemRuntimeFields,
@@ -377,10 +392,11 @@ export function useCalendarContentData() {
     myItemsOnly,
     setMyItemsOnly,
     onEventFiltersChange,
-    onItemFiltersChange,
     onSearchChange,
     setEventWhere,
     setItemWhere,
     setMineOnly,
+    location,
+    targetItemExpression,
   };
 }

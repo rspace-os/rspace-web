@@ -191,13 +191,10 @@ export function useLoadedBookableItemPageActions({
   }, [active, edit]);
 
   useEffect(() => {
-    if (
-      (tab === "audit" && !configuration.capabilities.canViewAudit) ||
-      (tab === "access" && !configuration.capabilities.canViewAccess)
-    ) {
+    if (tab === "audit" && !configuration.capabilities.canViewAudit) {
       setTab("bookings");
     }
-  }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
+  }, [configuration.capabilities.canViewAudit, tab]);
 
   const cancelEdit = () => {
     setSaveAnnouncement(null);
@@ -215,7 +212,6 @@ export function useLoadedBookableItemPageActions({
   };
 
   return {
-    navigate,
     saveAnnouncement,
     staleEdit,
     archiveOpen,

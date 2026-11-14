@@ -15,6 +15,7 @@ export type CountBookingCatalogueAvailabilityParams = {
   type?: string[];
   location?: string[];
   capability?: CountBookingCatalogueAvailabilityCapability;
+  mine: boolean;
   /** Inclusive interval start. */
   start?: string;
   /** Exclusive interval end. */

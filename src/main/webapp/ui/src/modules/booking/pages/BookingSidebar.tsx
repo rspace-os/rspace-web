@@ -25,7 +25,9 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-const items = (today: string) =>
+// Bookable items lists only the configurations the API lets the user read, so every user can open it.
+// Settings edits institution-wide defaults and stays sysadmin-only.
+const items = (today: string, isSysAdmin: boolean) =>
   [
     {
       key: "dashboard",
@@ -63,8 +65,10 @@ const items = (today: string) =>
       key: "administration",
       icon: SettingsIcon,
       children: [
-        { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
-        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
+        ...(isSysAdmin
+          ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
+          : []),
+        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const,
       ],
     },
   ] as const;
@@ -74,7 +78,7 @@ export function BookingSidebar() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone));
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
@@ -86,16 +90,13 @@ export function BookingSidebar() {
     settings: t("sidebar.settings"),
     bookableItems: t("sidebar.bookableItems"),
   };
-  const visibleItems = currentUser.hasSysAdminRole
-    ? sidebarItems
-    : sidebarItems.filter((item) => item.key !== "administration");
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{t("sidebar.label")}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {visibleItems.map((item) =>
+          {sidebarItems.map((item) =>
             "children" in item ? (
               // shadcn's Base UI sidebar-menu-collapsible example, with the Collapsible rendered as the
               // <li> so the menu stays a valid ul > li list, and Base UI's data-open in place of data-state.

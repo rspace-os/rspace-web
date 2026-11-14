@@ -15,7 +15,7 @@ import { navigationProgressQueryMeta } from "@/modules/common/queries/navigation
 
 export const CALENDAR_BOOKING_FIELDS =
   "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
-export type CalendarEventFilterScope = Pick<SearchCalendarEventsParams, "where" | "q">;
+export type CalendarEventFilterScope = Partial<Pick<SearchCalendarEventsParams, "where" | "q" | "mine">>;
 type CalendarEventRequest = Pick<SearchCalendarEventsParams, "start" | "end"> & {
   signal: AbortSignal;
   targetGlobalIds?: readonly string[];
@@ -29,7 +29,7 @@ function parameters(input: Omit<CalendarEventRequest, "signal">, page = 1) {
     end: input.end,
     where: `start=lt=${input.end};end=gt=${input.start}${targetFilter}${input.scope?.where ? `;(${input.scope.where})` : ""}`,
     q: input.scope?.q?.trim() || undefined,
-    mine: false,
+    mine: input.scope?.mine ?? false,
     page,
     limit: 100,
     fields: {

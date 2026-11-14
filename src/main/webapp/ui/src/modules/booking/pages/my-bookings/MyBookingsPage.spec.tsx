@@ -57,6 +57,31 @@ describe("the My Bookings page", () => {
     await expect.element(pageObj.confocalDetails).toBeVisible();
   });
 
+  test("searches booking purpose and instrument IDs without dropping requester scope", async () => {
+    history.replace("/booking/my-bookings?period=upcoming");
+    const listRequests: URL[] = [];
+    worker.use(...bookingHandlers((url) => listRequests.push(url)));
+    render(<MyBookingsPageStory history={history} />);
+
+    const search = page.getByRole("textbox", { name: "Search Bookings" });
+    await expect.element(search).toBeVisible();
+
+    await search.fill("Scope training");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("purpose")]));
+    const purposeWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("purpose=contains="));
+    expect(purposeWhere?.searchParams.get("where")).toContain("Scope training");
+    expect(purposeWhere?.searchParams.get("where")).toContain("requester.value==84");
+
+    await search.fill("IN123");
+    await expect
+      .poll(() => listRequests.map((url) => url.searchParams.get("where") ?? ""))
+      .toEqual(expect.arrayContaining([expect.stringContaining("target==IN123")]));
+    const globalIdWhere = listRequests.find((url) => url.searchParams.get("where")?.includes("target==IN123"));
+    expect(globalIdWhere?.searchParams.get("where")).toContain("requester.value==84");
+  });
+
   test("shows a tooltip for every icon-only page control", async () => {
     render(<MyBookingsPageStory history={history} />);
     await expect.element(pageObj.upcoming).toHaveAccessibleName("Upcoming 2");

@@ -76,6 +76,7 @@ public class BookingCatalogueController {
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
+      @RequestParam(defaultValue = "false") boolean mine,
       @RequestParam(required = false) String availability,
       @Parameter(description = "Inclusive interval start.") @RequestParam(required = false)
           Instant start,
@@ -100,6 +101,7 @@ public class BookingCatalogueController {
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
         capability,
+        mine,
         category,
         window,
         page,
@@ -127,6 +129,7 @@ public class BookingCatalogueController {
       @RequestParam(name = "type", required = false) List<String> targetTypes,
       @RequestParam(name = "location", required = false) List<String> locations,
       @RequestParam(required = false) BookingCatalogueManager.Capability capability,
+      @RequestParam(defaultValue = "false") boolean mine,
       @Parameter(description = "Inclusive interval start.") @RequestParam(required = false)
           Instant start,
       @Parameter(description = "Exclusive interval end.") @RequestParam(required = false)
@@ -141,6 +144,7 @@ public class BookingCatalogueController {
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
         capability,
+        mine,
         window(start, end, now),
         caller.subject());
   }

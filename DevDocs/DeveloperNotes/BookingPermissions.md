@@ -27,7 +27,7 @@ with its managers.
 
 The generic REST API v2 access routes and editable component remain in place.
 Booking access documents report `inherited: true`, derived caller capabilities
-and no independent assignments. The server rejects assignment, ownership and
+and no independent assignments. `InventoryAccessReadOnly` explains the Inventory source and renders read-only. The server rejects assignment, ownership and
 leave operations for inherited access. Independently managed resources keep
 their existing edit behavior.
 
