@@ -1,3 +1,4 @@
+import { expect } from "@playwright/test";
 import { DocumentsClient } from "@/__tests__/e2e/api/clients/DocumentsClient";
 import { ShareClient } from "@/__tests__/e2e/api/clients/ShareClient";
 import {
@@ -120,6 +121,7 @@ test.describe(`Inventory permissions: access through related records`, { tag: [t
     await bobContainer.expandSection("Access Permissions");
     await bobContainer.accessPermissions().setSharingMode("Only the Owner");
     await bobContainer.saveEdit();
+    expect((await bob.client.getContainer(container.id)).sharingMode).toBe("OWNER_ONLY");
 
     await expectRestrictedAccess(await openRecordAs(charlie, "container", container.id, container.name));
 

@@ -41,6 +41,19 @@ export async function renderWithRealI18n(ui: React.ReactElement, config: RealI18
  */
 export function setupRealAppI18n(): void {
   beforeAll(async () => {
+    await appI18n.loadNamespaces([
+      "about",
+      "admin",
+      "apps",
+      "common",
+      "dashboard",
+      "gallery",
+      "groups",
+      "inventory",
+      "public",
+      "system",
+      "workspace",
+    ]);
     await appI18n.changeLanguage("en-US");
   });
 
