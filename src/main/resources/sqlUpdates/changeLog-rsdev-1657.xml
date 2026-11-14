@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-11-trim-dsw-url-trailing-slash" context="run" author="mrowe-tan">
+    <comment>Remove surrounding whitespace and trailing slashes from saved DSW server URLs
+      (RSDEV-1657). New values are normalised when saved, and DSWClient appends paths that start
+      with a slash. Only rows ending in a slash or whitespace are changed, so it is safe to run
+      again.</comment>
+    <sql>
+      UPDATE AppConfigElement ace
+        JOIN AppConfigElementDescriptor aced ON ace.appConfigElementDescriptor_id = aced.id
+        JOIN PropertyDescriptor pd ON aced.descriptor_id = pd.id
+      SET ace.value = REGEXP_REPLACE(TRIM(ace.value), '[/[:space:]]+$', '')
+      WHERE pd.name = 'DSW_URL'
+        AND ace.value REGEXP '[/[:space:]]$';
+    </sql>
+    <!-- Not reversible: the original trailing slashes and whitespace are not kept. -->
+    <rollback/>
+  </changeSet>
+
+</databaseChangeLog>

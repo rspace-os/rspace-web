@@ -9,6 +9,7 @@ import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.R
 import static com.researchspace.service.raid.impl.RaIDServiceClientAdapterImpl.RAID_OAUTH_CONNECTED;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
+import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_URL;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
@@ -717,6 +718,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     } else {
       options = originalOptions;
     }
+    if (DSW_APP_NAME.equals(appName)) {
+      options = withNormalisedDswUrl(options);
+    }
     if (GITHUB_APP_NAME.equals(appName) && optionsId == null) {
       String accessToken = GitHubPendingToken.get(user.getUsername());
       if (StringUtils.isBlank(accessToken)) {
@@ -768,6 +772,27 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
     saveConfigOptionsForAppsWithMultipleOptionSet(
         user, optionsId, appName, originalOptions, existingAlias);
+  }
+
+  /**
+   * DSWClient appends paths that start with a slash, so the stored URL is trimmed and has trailing
+   * slashes removed. changeLog-rsdev-1657.xml applies the same clean-up to existing rows.
+   */
+  static Map<String, String> withNormalisedDswUrl(Map<String, String> options) {
+    String url = options.get(DSW_URL);
+    if (url == null) {
+      return options;
+    }
+    // A loop rather than a regex, which backtracks on long runs of whitespace.
+    String trimmed = url.strip();
+    int end = trimmed.length();
+    while (end > 0
+        && (trimmed.charAt(end - 1) == '/' || Character.isWhitespace(trimmed.charAt(end - 1)))) {
+      end--;
+    }
+    Map<String, String> normalised = new HashMap<>(options);
+    normalised.put(DSW_URL, trimmed.substring(0, end));
+    return normalised;
   }
 
   private void saveConfigSetCredential(

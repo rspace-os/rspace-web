@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
+import { DSW_MOCK_PATH, DSW_V4_MOCK_PATH } from "./mock";
 
 const INTEGRATION_MODE = env.integrationMode;
 const DSW_ALIAS = INTEGRATION_MODE === "real" ? "real" : "mock";
@@ -10,7 +11,7 @@ const DSW_ALIAS = INTEGRATION_MODE === "real" ? "real" : "mock";
  * provides that state. Distinct aliases keep the menu-item locators unambiguous.
  */
 const DSW_SECOND_ALIAS = `${DSW_ALIAS}-2`;
-const DSW_SERVER_URL = INTEGRATION_MODE === "real" ? env.dswServerUrl : env.mockBackendBaseUrl;
+const DSW_SERVER_URL = INTEGRATION_MODE === "real" ? env.dswServerUrl : `${env.mockBackendBaseUrl}${DSW_MOCK_PATH}`;
 const DSW_API_KEY = INTEGRATION_MODE === "real" ? env.dswApiKey : "mock-dsw-token";
 
 test.describe(`DSW / FAIR Wizard integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
@@ -53,6 +54,42 @@ test.describe(`DSW / FAIR Wizard integration [${INTEGRATION_MODE}]`, { tag: tags
     await expect(pageGallery.sidebar.createButton).toBeVisible();
     await expect(pageGallery.mountedCreateMenu()).toHaveCount(0);
 
+    await pageGallery.openSection("DMPs");
+    await expect(pageGallery.fileCell(planName)).toBeVisible();
+  });
+});
+
+test.describe("DSW / FAIR Wizard integration with a pre-5.0.0 server [mock]", { tag: tags.APPS }, () => {
+  test.skip(INTEGRATION_MODE === "real", "only the mock backend provides a pre-5.0.0 DSW server");
+
+  const DSW_V4_ALIAS = "mock-v4";
+
+  test.beforeEach(async ({ flowSysadminConfig }) => {
+    await flowSysadminConfig.ensureSetting("dsw.available", "ALLOWED");
+  });
+
+  test.beforeEach(async ({ pageApps }) => {
+    await pageApps.setEnabledWithMultiConnection("DSW / FAIR Wizard", {
+      aliasFieldLabel: "Label",
+      aliasValue: DSW_V4_ALIAS,
+      serverUrl: `${env.mockBackendBaseUrl}${DSW_V4_MOCK_PATH}`,
+      apiKey: "mock-dsw-token",
+      configuredFormAriaLabelPrefix: "Configured DSW with label",
+    });
+  });
+
+  // The legacy mock only serves /wizard-api/, so this import succeeds only if RSpace picks it.
+  test("As a user, I can import a project from a pre-5.0.0 DSW server", async ({ pageGallery, componentToasts }) => {
+    await pageGallery.open();
+    await pageGallery.isLoaded();
+
+    await pageGallery.openCreateMenu();
+    const dialog = await pageGallery.clickDSWImport(DSW_V4_ALIAS);
+    const planName = await dialog.selectFirstPlan();
+    await dialog.clickImport();
+    await expect(componentToasts.byVariant("success", planName)).toBeVisible();
+
+    await dialog.dismiss();
     await pageGallery.openSection("DMPs");
     await expect(pageGallery.fileCell(planName)).toBeVisible();
   });

@@ -1,0 +1,23 @@
+{
+  "v5.0.0": {
+    "name": "Engine Wizard",
+    "releaseVersion": "5.0.0",
+    "version": "v5.0.0~f3c60c086",
+    "builtAt": "2026-11-05T16:47:38Z",
+    "metamodelVersions": [
+      { "name": "Knowledge Model", "version": "20" },
+      { "name": "Document Template", "version": "19.0" }
+    ],
+    "components": []
+  },
+  "v4.35.0": {
+    "name": "Wizard Server",
+    "version": "v4.35.0~0000000",
+    "builtAt": "2026-06-01T00:00:00Z",
+    "metamodelVersions": [
+      { "name": "Knowledge Model", "version": "20" },
+      { "name": "Document Template", "version": "18.2" }
+    ],
+    "components": []
+  }
+}
