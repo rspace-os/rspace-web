@@ -1,9 +1,13 @@
 package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.NfsDao;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.record.StructuredDocument;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -125,5 +129,50 @@ public class NfsDaoHibernate implements NfsDao {
     ss.delete(mergedFileSystem);
     ss.flush();
     return true;
+  }
+
+  @Override
+  public List<NfsFieldLink> getFieldLinks(Long fieldId) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from NfsFieldLink where field.id = :fieldId", NfsFieldLink.class)
+        .setParameter("fieldId", fieldId)
+        .list();
+  }
+
+  @Override
+  public void saveFieldLink(NfsFieldLink link) {
+    sessionFactory.getCurrentSession().persist(link);
+  }
+
+  @Override
+  public void deleteFieldLink(NfsFieldLink link) {
+    sessionFactory.getCurrentSession().remove(link);
+  }
+
+  @Override
+  public List<StructuredDocument> getDocumentsLinkingTo(
+      Long fileSystemId, Collection<String> absolutePaths) {
+    if (absolutePaths.isEmpty()) {
+      return List.of();
+    }
+    // the column's collation pads trailing spaces, which S3 keys keep: compare exactly here
+    Set<String> exactPaths = Set.copyOf(absolutePaths);
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "select l.absolutePath, doc from NfsFieldLink l join l.field f"
+                + " join f.structuredDocument doc"
+                + " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)"
+                + " and doc.deleted = false order by doc.id",
+            Object[].class)
+        .setParameter("fsId", fileSystemId)
+        .setParameterList("paths", absolutePaths)
+        .list()
+        .stream()
+        .filter(row -> exactPaths.contains((String) row[0]))
+        .map(row -> (StructuredDocument) row[1])
+        .distinct()
+        .toList();
   }
 }

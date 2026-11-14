@@ -69,6 +69,7 @@ import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryTimeField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.netfiles.ExternalStorageLocation;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.raid.UserRaid;
@@ -286,6 +287,7 @@ public abstract class HibernateTest {
       ExternalStorageLocation.class,
       NfsFileSystem.class,
       NfsFileStore.class,
+      NfsFieldLink.class,
       Folder.class,
       Role.class,
       BaseRecord.class,

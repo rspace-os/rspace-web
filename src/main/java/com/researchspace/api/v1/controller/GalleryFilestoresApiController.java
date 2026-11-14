@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
@@ -24,8 +25,10 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
@@ -69,6 +72,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
   @Autowired S3SidecarFileService s3SidecarFileService;
+  @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   @Value("${gallery.actions.metadata.sidecarFile.enabled}")
   boolean metadataSidecarFileEnabled;
@@ -110,6 +114,71 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     return new ApiGalleryFilestoreAuditInfo(
         filestoreWriteManager.getAuditMetadata(filestoreId, remotePath, user));
+  }
+
+  @Override
+  public List<ApiGalleryFilestoreLinkedDocument> getFilestoreItemLinkedDocuments(
+      @PathVariable Long filestoreId,
+      @RequestParam("remotePath") String remotePath,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    assertItemReadableWithOwnLogin(user, filestoreId, remotePath);
+    return nfsFieldLinkManager.getLinkedDocuments(filestoreId, remotePath, user).stream()
+        .map(ApiGalleryFilestoreLinkedDocument::new)
+        .toList();
+  }
+
+  /**
+   * The link index spans every user's filestores, so on filesystems with per-user logins the
+   * caller's own login must read the item: a folder must list, a file must open. Listing the parent
+   * tells which it is, since some backends (SFTP) list a file the caller cannot open. Filesystems
+   * without per-user logins are gated by their allowlists alone, and an unknown filestore is left
+   * to the lookup's 404.
+   */
+  private void assertItemReadableWithOwnLogin(User user, Long filestoreId, String remotePath) {
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    if (filestore == null
+        || NfsAuthenticationType.NONE.equals(filestore.getFileSystem().getAuthType())) {
+      return;
+    }
+    NfsClient client = getNfsClientForUserAndFilesystem(user, filestore.getFileSystem());
+    String path = StringUtils.removeEnd(filestore.getAbsolutePath(remotePath), "/");
+    try {
+      if (StringUtils.strip(remotePath, "/").isEmpty() || isFolderIn(client, path)) {
+        if (client.queryForNfsFolder(new NfsTarget(path, null)) != null) {
+          return;
+        }
+      } else {
+        NfsTarget target = new NfsTarget(path, null);
+        try (InputStream opened = client.queryNfsFileForDownload(target).getRemoteInputStream()) {
+          if (opened != null) {
+            return;
+          }
+        }
+      }
+    } catch (IOException | RuntimeException e) {
+      log.warn(
+          "Filestore {} item {} not readable for {}: {}",
+          filestoreId,
+          remotePath,
+          user.getUsername(),
+          e.getMessage());
+    }
+    throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
+  }
+
+  /** Whether {@code path} is listed as a folder in its parent; throws if it is not listed. */
+  private static boolean isFolderIn(NfsClient client, String path) throws IOException {
+    int slash = path.lastIndexOf('/');
+    String parentPath = slash < 0 ? "" : slash == 0 ? "/" : path.substring(0, slash);
+    NfsFolderDetails parent = client.queryForNfsFolder(new NfsTarget(parentPath, null));
+    String name = path.substring(slash + 1);
+    return parent.getContent().stream()
+            .filter(item -> name.equals(item.getName()))
+            .findFirst()
+            .orElseThrow(() -> new IOException("not listed in its parent folder"))
+        instanceof NfsFolderDetails;
   }
 
   /**
