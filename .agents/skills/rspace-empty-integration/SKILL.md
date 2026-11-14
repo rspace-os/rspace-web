@@ -10,13 +10,13 @@ blank dialog titled with the integration name.
 
 Get `<Name>` in PascalCase and `<ticket>` for the Liquibase changeset suffix.
 Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
-`YYYY-MM-DD` date. Work from the repository root containing `pom.xml` and `mvnw`.
+`YYYY-MM-DD` date. Work from the repository root containing `build.gradle` and `gradlew`.
 
 ## Workflow
 
 1. Read `DevDocs/DeveloperNotes/EmptyIntegrationSkillPlan.md` for scope;
    consult it again for ambiguous decisions.
-2. Confirm `pom.xml` exists and `<NAME>` is absent from `IntegrationStates` in
+2. Confirm `build.gradle` exists and `<NAME>` is absent from `IntegrationStates` in
    `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`. Stop if it exists.
 3. Follow [REFERENCE.md](REFERENCE.md) to create all nine files and modify all
    eighteen listed files. Preserve alphabetical ordering. Detect existing files
@@ -39,7 +39,7 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 6. Verify backend wiring against a running database:
 
    ```bash
-   mvn test -Dtest=IntegrationControllerMVCIT#getAllIntegrations
+   ./gradlew integrationTest -Dtest=IntegrationControllerMVCIT#getAllIntegrations
    ```
 
    Alternatively, start the app and confirm `<NAME>` in

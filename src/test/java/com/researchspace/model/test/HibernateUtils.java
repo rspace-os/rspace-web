@@ -31,12 +31,20 @@ public class HibernateUtils {
     sessionFactory = configuration.buildSessionFactory(serviceRegistry);
   }
 
+  /** Builds a scratch-database URL on the server used by the Gradle database reset. */
+  static String jdbcUrl(String dbName) {
+    String server =
+        System.getProperty(
+            "jdbc.server.url", System.getProperty("jdbc.url.maven", "jdbc:mysql://localhost:3306"));
+    return server.replaceFirst("/+$", "") + "/" + dbName;
+  }
+
   private static Configuration createConfiguration(String dbName) {
     Configuration configuration = new Configuration();
     // Hibernate settings equivalent to hibernate.cfg.xml's properties
     Properties settings = new Properties();
     settings.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
-    settings.put(Environment.URL, "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false");
+    settings.put(Environment.URL, jdbcUrl(dbName) + "?useSSL=false");
     settings.put(Environment.USER, "rspacedbuser");
     settings.put(Environment.PASS, "rspacedbpwd");
     settings.put("hibernate.search.backend.type", "lucene");

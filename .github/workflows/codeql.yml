@@ -34,29 +34,30 @@ jobs:
             build-mode: none
 
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
-      # build-mode none does not compile, but the Java extractor still resolves
-      # Maven dependencies, so give it the same JDK and ~/.m2 cache as the
-      # other workflows.
-      - name: Set up Java
+      # build-mode none does not compile, but the Java extractor still asks
+      # Gradle for the dependency list (a failure there only degrades the
+      # analysis), so give it the same JDK and Gradle User Home as the other
+      # workflows. It reads the test jobs' cache without saving one of its own.
+      - name: Set up JDK and Gradle
         if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v5.4.0
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          distribution: temurin
           java-version: 17
-          cache: maven
+          cache-key: tests
+          save-cache: 'false'
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.9
+        uses: github/codeql-action/init@v4.39.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4.37.9
+        uses: github/codeql-action/analyze@v4.39.3
         with:
           category: /language:${{ matrix.language }}

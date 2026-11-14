@@ -57,7 +57,7 @@ public class DispatcherServletInitializer implements ServletContextListener {
    * URL to {@code /app/*}, where this dispatcher handles it — but Tomcat resolves a request's
    * multipart configuration from the servlet the request was <em>originally</em> mapped to, not the
    * forward target (Jetty uses the forward target's servlet, which masks this difference under
-   * jetty:run). Without these extra mappings, the original match for a public URL is the
+   * Gradle jettyRun). Without these extra mappings, the original match for a public URL is the
    * container's default servlet, which has no multipart config, so Tomcat silently parses the
    * request as having no parts and every upload fails with "Required part ... is not present".
    *

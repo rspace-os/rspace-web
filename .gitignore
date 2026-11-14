@@ -1,3 +1,4 @@
+# Maven's old output directory, still present in older checkouts
 /target/
 *.DS_Store
 /ApiRequests.txt
@@ -12,7 +13,7 @@
 /FTsearchIndices/
 /LuceneFTsearchIndices/
 # Hibernate Search / Lucene per-entity index directories created at the project
-# root when running via jetty:run (the default index base is unset, so Lucene
+# root when running via jettyRun (the default index base is unset, so Lucene
 # uses the working directory). Runtime artifacts, never committed.
 /com.researchspace.model.*/
 /com.axiope.*/
@@ -57,8 +58,6 @@ shell.nix
 .direnv-aliases
 src/main/webapp/ui/.env
 .mysql
-.nix-mvn-settings.xml
-.nix-mvn-toolchains.xml
 samples/
 
 # Other POSIX
@@ -100,3 +99,8 @@ src/main/resources/deployments/dev/deployment.properties
 # Lucene index written by the HibernateTest-based model tests (Hibernate Search
 # local-filesystem backend rooted at the test db name)
 hibtest*/
+# Gradle build
+/build/
+/.gradle/
+/buildSrc/build/
+/buildSrc/.gradle/

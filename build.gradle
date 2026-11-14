@@ -1,0 +1,1091 @@
+import com.researchspace.build.CurrentUtcTimestamp
+import com.researchspace.build.JUnitXmlSuiteCounts
+import com.researchspace.build.PlaceholderFilter
+import com.researchspace.build.RecreateDatabase
+import com.researchspace.build.TestDatabase
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
+// The RSpace build: compile, test, WAR packaging, formatting and database tooling.
+// See DevDocs/DeveloperNotes/Gradle.md.
+
+plugins {
+  id 'war'
+  id 'com.diffplug.spotless' version '8.11.0'
+  id 'org.gradle.test-retry' version '1.6.6'
+}
+
+group = 'com.github.rspace-os'
+
+// ---------------------------------------------------------------------------------------------
+// Build settings. Every -D<name>=<value> on the command line is a build setting, as Maven user
+// properties were: it overrides the resource-filter property of that name, and reaches every test
+// JVM and the Jetty JVM as a system property. -P<name>=<value> also works for the switches below
+// and the resource-filter defaults.
+// ---------------------------------------------------------------------------------------------
+// The Gradle client sets these itself on every invocation.
+def gradleClientProperties = ['file.encoding', 'user.country', 'user.language', 'user.variant']
+def cliPropertyNames = gradle.startParameter.systemPropertiesArgs.keySet() - gradleClientProperties
+// Read through a provider so that the configuration cache notices added or changed -D values.
+// A bare -D<name> means true, as it did for Maven.
+def cliSystemProperties = new TreeMap<String, String>(
+  providers.systemPropertiesPrefixedBy('').get().findAll { k, v -> k in cliPropertyNames }
+    .collectEntries { k, v -> [(k): v == '' ? 'true' : v] })
+// Settings renamed from their Maven build names. The Maven names still work but are deprecated and
+// will be removed in a later version; the new name wins when both are given.
+def deprecatedMavenNames = [
+  // the database server settings that recreateDatabase and the Hibernate model tests use
+  'jdbc.server.driverClassName': 'jdbc.driverClassName.maven',
+  'jdbc.server.url'            : 'jdbc.url.maven',
+  'jdbc.server.db'             : 'jdbc.db.maven',
+  'jdbc.server.username'       : 'jdbc.username.maven',
+  'jdbc.server.password'       : 'jdbc.password.maven',
+  'testRetries'                : 'surefire.rerunFailingTestsCount',
+  'ignoreTestFailures'         : 'maven.test.failure.ignore',
+]
+deprecatedMavenNames.each { name, legacy ->
+  if (cliSystemProperties.containsKey(legacy) || providers.gradleProperty(legacy).isPresent()) {
+    logger.warn("${legacy} is deprecated and will be removed in a later version; use ${name} instead.")
+  }
+  if (!cliSystemProperties.containsKey(name) && cliSystemProperties.containsKey(legacy)) {
+    cliSystemProperties[name] = cliSystemProperties[legacy]
+  }
+}
+// gradle/jetty.gradle forwards these to the Jetty JVM.
+ext.cliSystemProperties = cliSystemProperties
+
+def setting = { String name ->
+  cliSystemProperties.containsKey(name) ? cliSystemProperties[name]
+    : providers.gradleProperty(name).orElse(providers.gradleProperty(deprecatedMavenNames[name] ?: name)).getOrNull()
+}
+// Maven activated these profiles when the property was defined at all, whatever its value.
+def flag = { String name -> setting(name) != null }
+
+def buildEnvironment = setting('environment')
+def knownEnvironments = [null, 'drop-recreate-db', 'drop-recreate-hibernate-db', 'keepdbintact', 'prodRelease']
+if (!(buildEnvironment in knownEnvironments)) {
+  throw new GradleException("Unknown -Denvironment=${buildEnvironment}; expected one of ${knownEnvironments.drop(1).join(', ')}")
+}
+def prodRelease = buildEnvironment == 'prodRelease'
+// Test tasks (and jettyRun) first drop and recreate the test database.
+def recreatesDatabase = buildEnvironment in ['drop-recreate-db', 'drop-recreate-hibernate-db']
+ext.recreatesDatabase = recreatesDatabase
+
+// As maven-enforcer-plugin's requireJavaVersion did: the JVM running Gradle also runs Spotless and
+// the other plugins, which fail late and cryptically on other versions.
+if (!(JavaVersion.current().majorVersion in ['17', '21'])) {
+  throw new GradleException("RSpace builds on Java 17 or 21, not ${JavaVersion.current()}. Run Gradle with one of those " +
+    '(JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.')
+}
+
+// Stamped into the version and rs.properties. A fixed default keeps resources up to date between
+// local builds; release builds pass -Dtimestamp=<value>, or -Dtimestamp=now.
+// 'now' is read through a value source, which Gradle re-evaluates on every build, so the
+// configuration cache cannot freeze an earlier build's time.
+def buildTimestamp = (setting('timestamp') ?: 'dev').with {
+  it == 'now' ? providers.of(CurrentUtcTimestamp) {}.get() : it
+}
+version = "2.29.0-SNAPSHOT-${buildTimestamp}"
+
+// -Djava-version picks the installed JDK (JAVA_HOME, ~/.m2/toolchains.xml, SDKMAN and the other
+// places Gradle looks) that compiles and runs the tests. Nothing is downloaded. Without it, the JDK
+// running Gradle compiles. RSpace supports Temurin only, so no vendor is selected.
+def javaVersionSetting = setting('java-version')
+java {
+  if (javaVersionSetting != null) {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(javaVersionSetting)
+    }
+  } else {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.release = 17
+  options.encoding = 'UTF-8'
+  options.compilerArgs.add('-parameters')
+}
+
+// ---------------------------------------------------------------------------------------------
+// Dependency versions and scopes, from gradle/pinned-versions.txt. Forcing every module's version
+// replaces Gradle's highest-version conflict resolution with one chosen version per module.
+// ---------------------------------------------------------------------------------------------
+def pinnedModules = [:]
+file('gradle/pinned-versions.txt').eachLine { line ->
+  if (line.isBlank() || line.startsWith('#')) {
+    return
+  }
+  def (ga, rest) = line.split('=', 2)
+  def (version, scope) = rest.trim().split(' ')
+  pinnedModules[ga] = [version: version, scope: scope]
+}
+
+// JaCoCo's own tooling resolves its own versions.
+configurations.matching { !it.name.startsWith('jacoco') }.configureEach {
+  resolutionStrategy.force(pinnedModules.collect { ga, m -> "${ga}:${m.version}".toString() })
+}
+
+// A module stays off the classpaths its pinned scope excludes, even when a dependency of another
+// scope drags it in: spring-test, say, stays off the main classpath. Test classpaths hold every
+// scope.
+def excludePinnedScopes = { Configuration conf, List<String> scopes ->
+  pinnedModules.findAll { ga, m -> m.scope in scopes }.keySet().each { ga ->
+    def (g, a) = ga.split(':')
+    conf.exclude(group: g, module: a)
+  }
+}
+configurations.compileClasspath { excludePinnedScopes(it, ['runtime', 'test']) }
+configurations.runtimeClasspath { excludePinnedScopes(it, ['test', 'provided']) }
+
+dependencies {
+  implementation('org.mnode.ical4j:ical4j:3.0.11') {
+    exclude group: 'org.apache.commons', module: 'commons-collections4'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'com.sun.mail', module: 'javax.mail'
+  }
+  implementation('edu.kit.datamanager:ro-crate-java:2.1.2') {
+    exclude group: 'org.glassfish', module: 'jakarta.json'
+    exclude group: 'com.jayway.jsonpath', module: 'json-path'
+    exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-yaml'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.slf4j', module: 'slf4j-jdk14'
+    exclude group: 'org.freemarker', module: 'freemarker'
+  }
+  implementation 'org.freemarker:freemarker:2.3.35'
+  implementation 'com.mysql:mysql-connector-j:8.4.0'
+  implementation 'commons-beanutils:commons-beanutils:1.11.0'
+  implementation 'org.apache.commons:commons-collections4:4.6.0'
+  implementation('org.apache.commons:commons-dbcp2:2.9.0') {
+    exclude group: 'xerces', module: 'xercesImpl'
+    exclude group: 'commons-collections', module: 'commons-collections'
+  }
+  implementation 'org.apache.commons:commons-exec:1.4.0'
+  implementation 'commons-logging:commons-logging:1.4.0'
+  implementation('commons-fileupload:commons-fileupload:1.6.0') {
+    exclude group: 'commons-io', module: 'commons-io'
+  }
+  implementation 'jakarta.mail:jakarta.mail-api:2.1.3'
+  runtimeOnly 'org.eclipse.angus:angus-mail:2.0.4'
+  providedCompile 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+  providedCompile 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
+  implementation('jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0') {
+    exclude group: 'jakarta.el', module: 'jakarta.el-api'
+  }
+  testImplementation 'jakarta.websocket:jakarta.websocket-client-api:2.1.1'
+  testImplementation 'jakarta.websocket:jakarta.websocket-api:2.1.1'
+  runtimeOnly('org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.0') {
+    exclude group: 'jakarta.el', module: 'jakarta.el-api'
+  }
+  implementation('software.amazon.awssdk:s3:2.53.3') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+  }
+  implementation 'org.apache.httpcomponents.core5:httpcore5:5.4.3'
+  implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.4.3'
+  implementation 'commons-codec:commons-codec:1.22.1'
+  implementation('com.github.rspace-os:snapgene-java-client:2.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+  }
+  testImplementation 'org.reflections:reflections:0.9.12'
+  implementation('org.apache.velocity:velocity-engine-core:2.4.1') {
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'org.apache.velocity:spring-velocity-support:2.4.1'
+  implementation('org.apache.velocity.tools:velocity-tools-generic:3.1') {
+    exclude group: 'org.apache.velocity', module: 'velocity-engine-core'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'org.sitemesh:sitemesh:3.2.2'
+  implementation 'org.aspectj:aspectjweaver:1.9.22.1'
+  implementation 'com.fasterxml.jackson.core:jackson-core:2.22.4'
+  implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.4'
+  implementation('com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.4') {
+    exclude group: 'org.yaml', module: 'snakeyaml'
+  }
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.22.4'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.4'
+  implementation 'org.hibernate.orm:hibernate-jcache:6.4.4.Final'
+  implementation 'javax.cache:cache-api:1.1.1'
+  implementation('org.ehcache:ehcache:3.10.8:jakarta') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  runtimeOnly 'com.mattbertolini:liquibase-slf4j:5.0.0'
+  testImplementation 'org.assertj:assertj-core:3.27.7'
+  testImplementation 'org.hamcrest:hamcrest:3.0'
+  testImplementation 'org.springframework:spring-test:6.2.19'
+  testImplementation 'com.unboundid:unboundid-ldapsdk:7.0.6'
+  implementation('org.springframework.batch:spring-batch-core:5.2.1') {
+    exclude group: 'org.springframework.retry', module: 'spring-retry'
+    exclude group: 'com.thoughtworks.xstream', module: 'xstream'
+  }
+  testImplementation('org.springframework.batch:spring-batch-test:5.2.1') {
+    exclude group: 'commons-collections', module: 'commons-collections'
+    exclude group: 'commons-io', module: 'commons-io'
+  }
+  implementation 'org.springframework:spring-aop:6.2.19'
+  implementation 'org.springframework:spring-jdbc:6.2.19'
+  implementation 'org.springframework:spring-orm:6.2.19'
+  implementation 'org.springframework:spring-context-support:6.2.19'
+  implementation 'org.springframework:spring-webmvc:6.2.19'
+  implementation 'org.springframework.security:spring-security-crypto:6.5.9'
+  implementation 'org.tuckey:urlrewritefilter:5.1.3'
+  implementation('org.apache.tika:tika-parsers-standard-package:3.2.2') {
+    exclude group: 'org.opengis', module: 'geoapi'
+    exclude group: 'org.apache.commons', module: 'commons-compress'
+    exclude group: 'org.apache.commons', module: 'commons-collections4'
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'org.apache.commons', module: 'commons-exec'
+    exclude group: 'com.google.guava', module: 'guava'
+    exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+    exclude group: 'joda-time', module: 'joda-time'
+    exclude group: 'net.sf.ehcache', module: 'ehcache-core'
+    exclude group: 'com.beust', module: 'jcommander'
+    exclude group: 'org.jdom', module: 'jdom2'
+    exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+    exclude group: 'javax.annotation', module: 'javax.annotation-api'
+    exclude group: 'org.apache.pdfbox', module: 'fontbox'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.apache.tika', module: 'tika-core'
+    exclude group: 'org.bouncycastle', module: 'bcutil-jdk15on'
+    exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-api'
+  }
+  implementation('org.apache.tika:tika-core:3.2.2') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'jakarta.ws.rs:jakarta.ws.rs-api:3.1.0'
+  implementation 'org.jdom:jdom2:2.0.6.1'
+  implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+  implementation 'jakarta.el:jakarta.el-api:5.0.1'
+  testImplementation 'org.glassfish.expressly:expressly:5.0.0'
+  compileOnly 'org.projectlombok:lombok:1.18.42'
+  annotationProcessor 'org.projectlombok:lombok:1.18.42'
+  testCompileOnly 'org.projectlombok:lombok:1.18.42'
+  testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
+  testImplementation 'org.jvnet.staxex:stax-ex:1.8'
+  implementation('org.apache.shiro:shiro-core:3.0.0') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation('org.apache.shiro:shiro-web:3.0.0') {
+    exclude group: 'org.apache.shiro', module: 'shiro-core'
+  }
+  implementation('org.apache.shiro:shiro-spring:3.0.0') {
+    exclude group: 'org.apache.shiro', module: 'shiro-web'
+    exclude group: 'org.apache.shiro', module: 'shiro-core'
+  }
+  implementation 'org.apache.lucene:lucene-core:9.8.0'
+  implementation 'org.apache.lucene:lucene-queryparser:9.8.0'
+  implementation('org.apache.xmlgraphics:batik-transcoder:1.19') {
+    exclude group: 'org.apache.xmlgraphics', module: 'xmlgraphics-commons'
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'xalan', module: 'xalan'
+  }
+  implementation 'org.apache.xmlgraphics:batik-i18n:1.19'
+  implementation 'org.apache.xmlgraphics:batik-codec:1.19'
+  implementation 'org.apache.xmlgraphics:batik-constants:1.19'
+  implementation 'xalan:xalan:2.7.3'
+  implementation 'xalan:serializer:2.7.3'
+  implementation('org.apache.xmlgraphics:xmlgraphics-commons:2.7') {
+    exclude group: 'commons-io', module: 'commons-io'
+  }
+  implementation 'org.apache.commons:commons-imaging:1.0-alpha2'
+  implementation 'commons-validator:commons-validator:1.11.0'
+  implementation 'gov.nih.imagej:imagej:1.47'
+  implementation 'org.jsoup:jsoup:1.23.2'
+  implementation('org.quartz-scheduler:quartz:2.5.2') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'net.coobird:thumbnailator:0.4.17'
+  implementation 'org.apache.pdfbox:pdfbox:3.0.5'
+  implementation('com.jayway.jsonpath:json-path:2.10.0') {
+    exclude group: 'org.ow2.asm', module: 'asm'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'commons-httpclient:commons-httpclient:3.1'
+  implementation('org.liquibase:liquibase-core:4.27.0') {
+    exclude group: 'ch.qos.logback', module: 'logback-classic'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+    exclude group: 'org.apache.commons', module: 'commons-text'
+  }
+  implementation 'org.apache.commons:commons-lang3:3.20.0'
+  implementation 'com.ibm.icu:icu4j:78.3'
+  implementation 'org.apache.commons:commons-text:1.14.0'
+  implementation('org.hibernate.search:hibernate-search-mapper-orm:7.0.1.Final') {
+    exclude group: 'org.jboss.logging', module: 'jboss-logging'
+    exclude group: 'org.hibernate.orm', module: 'hibernate-core'
+  }
+  implementation('org.hibernate.search:hibernate-search-backend-lucene:7.0.1.Final') {
+    exclude group: 'org.jboss.logging', module: 'jboss-logging'
+  }
+  implementation('org.hibernate.validator:hibernate-validator:8.0.1.Final') {
+    exclude group: 'org.jboss.logging', module: 'jboss-logging'
+  }
+  implementation 'com.fasterxml:classmate:1.5.1'
+  implementation 'org.hibernate.orm:hibernate-envers:6.4.4.Final'
+  implementation('org.hibernate.orm:hibernate-core:6.4.4.Final') {
+    exclude group: 'org.jboss.logging', module: 'jboss-logging'
+    exclude group: 'com.fasterxml', module: 'classmate'
+  }
+  implementation 'org.javassist:javassist:3.33.0-GA'
+  implementation 'joda-time:joda-time:2.10.14'
+  implementation('com.github.rspace-os:rspace-license-server-entities:1.0.1') {
+    exclude group: 'javax.validation', module: 'validation-api'
+    exclude group: 'commons-io', module: 'commons-io'
+  }
+  implementation 'jaxen:jaxen:1.1.4'
+  implementation 'xml-apis:xml-apis:1.4.01'
+  implementation('jcifs:jcifs:1.3.17') {
+    exclude group: 'javax.servlet', module: 'servlet-api'
+  }
+  implementation('com.hierynomus:smbj:0.11.5') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+  }
+  implementation 'com.github.mwiede:jsch:0.2.0'
+  implementation('com.segment.analytics.java:analytics:3.5.5') {
+    exclude group: 'com.google.code.gson', module: 'gson'
+    exclude group: 'javax.annotation', module: 'javax.annotation-api'
+  }
+  implementation 'org.jetbrains:annotations:26.1.0'
+  implementation('com.box:box-java-sdk:2.21.0') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+  }
+  implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+  implementation 'io.jsonwebtoken:jjwt-impl:0.11.2'
+  implementation 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+  implementation 'com.github.rspace-os:rspace-repository-spi:2.0.0'
+  implementation('com.github.rspace-os:rspace-dataverse-adapter:4.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+  }
+  implementation 'org.codehaus.woodstox:wstx-asl:3.2.6'
+  implementation('com.github.rspace-os:rspace-external-auth:2.0.1') {
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'com.google.guava', module: 'guava'
+    exclude group: 'com.google.code.gson', module: 'gson'
+    exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
+  }
+  implementation 'net.bull.javamelody:javamelody-core:2.5.0'
+  implementation 'org.springframework.ldap:spring-ldap-core:3.3.8'
+  implementation 'org.springframework.retry:spring-retry:2.0.13'
+  implementation 'org.apache.commons:commons-compress:1.28.0'
+  implementation 'com.google.zxing:core:3.5.4'
+  implementation 'com.google.zxing:javase:3.5.4'
+  implementation 'tech.units:indriya:2.0.2'
+  implementation('org.apache.httpcomponents:httpclient:4.5.14') {
+    exclude group: 'org.apache.httpcomponents', module: 'httpcore'
+  }
+  implementation('org.apache.httpcomponents.client5:httpclient5:5.6.4') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'org.apache.httpcomponents:httpcore:4.4.16'
+  implementation 'org.glassfish:jakarta.json:2.0.1'
+  implementation('com.github.rspace-os:rspace-document-conversion-spi:2.0.0') {
+    exclude group: 'commons-io', module: 'commons-io'
+  }
+  implementation('com.github.rspace-os:rspace-figshare-adapter:2.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-repository-spi'
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+  }
+  implementation('com.github.rspace-os:rspace-dryad-adapter:2.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-repository-spi'
+  }
+  implementation('com.github.rspace-os:rspace-zenodo-adapter:1.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-repository-spi'
+  }
+  implementation 'com.github.rspace-os:rda-dmp-common-standard:0.1.2'
+  implementation('com.github.rspace-os:rspace-digital-commons-data-adapter:1.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rda-dmp-common-standard'
+    exclude group: 'com.github.rspace-os', module: 'rspace-repository-spi'
+    exclude group: 'log4j', module: 'log4j'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'com.jayway.jsonpath', module: 'json-path'
+  }
+  implementation 'com.github.rspace-os:protocols-java-client:2.0.0'
+  implementation 'com.github.rspace-os:fieldmark-java-client:4.1.0'
+  implementation('com.github.rspace-os:galaxy-java-client:2.0.0') {
+    exclude group: 'org.jetbrains', module: 'annotations'
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+  }
+  implementation 'com.github.rspace-os:argos-java-client:1.0.1'
+  implementation('com.github.rspace-os:dmptool-java-client:1.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rda-dmp-common-standard'
+  }
+  implementation('com.github.rspace-os:raid-java-client:4.0.0') {
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'org.jetbrains', module: 'annotations'
+    exclude group: 'com.google.guava', module: 'guava'
+  }
+  implementation 'com.github.rspace-os:datacite-java-client:1.4.0'
+  implementation('com.github.rspace-os:rspace-egnyte:2.0.0') {
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'jakarta.el', module: 'jakarta.el-api'
+  }
+  implementation('com.github.rspace-os:rspace-rest-api-utils:2.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'io.github.resilience4j', module: 'resilience4j-all'
+  }
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.3'
+  testImplementation 'org.junit.jupiter:junit-jupiter-engine:6.1.3'
+  testImplementation 'org.junit.jupiter:junit-jupiter-params:6.1.3'
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
+  implementation 'org.apache.logging.log4j:log4j-1.2-api:2.25.5'
+  implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.25.5'
+  implementation 'io.vavr:vavr:0.10.2'
+  implementation('org.irods.jargon:jargon-core:4.3.4.0-RELEASE') {
+    exclude group: 'log4j', module: 'log4j'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-core'
+    exclude group: 'commons-codec', module: 'commons-codec'
+    exclude group: 'commons-io', module: 'commons-io'
+    exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
+  }
+  implementation 'net.sf.supercsv:super-csv:2.4.0'
+  implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
+  implementation 'com.google.code.gson:gson:2.13.2'
+  runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.9'
+  implementation 'org.glassfish.jersey.core:jersey-common:3.1.5'
+  testImplementation 'org.glassfish.jersey.core:jersey-server:3.1.5'
+  implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+  implementation 'com.beetstra.jutf7:jutf7:1.0.0'
+  implementation('com.google.guava:guava:23.4-jre') {
+    exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+  }
+  implementation('com.github.rspace-os:rspace-snapgene-adapter:2.0.0') {
+    exclude group: 'com.github.rspace-os', module: 'rspace-core-util'
+  }
+  implementation 'com.thoughtworks.xstream:xstream:1.4.21'
+  implementation('org.xhtmlrenderer:flying-saucer-pdf:9.7.1') {
+    exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.dom4j', module: 'dom4j'
+  }
+  implementation 'org.springframework:spring-websocket:6.2.19'
+  implementation 'org.springframework:spring-messaging:6.2.19'
+  testImplementation 'org.json:json:20240303'
+  testImplementation 'org.mockito:mockito-core:5.23.0'
+  implementation 'commons-io:commons-io:2.22.0'
+  implementation 'org.slf4j:slf4j-api:2.0.2'
+  implementation('org.apache.logging.log4j:log4j-slf4j-impl:2.25.5') {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+  implementation 'org.apache.logging.log4j:log4j-core:2.25.5'
+  implementation 'org.apache.logging.log4j:log4j-api:2.25.5'
+
+  // provided-scope modules are on the test classpath too
+  testImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+  testImplementation 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.1.3'
+  // Tests compile against runtime-scoped modules too (e.g. json-smart, which
+  // SysAdminControllerMVCIT imports), so put every pinned runtime module on that classpath.
+  pinnedModules.findAll { ga, m -> m.scope == 'runtime' }.each { ga, m ->
+    testCompileOnly("${ga}:${m.version}") { transitive = false }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resource filtering: values for ${name} and @name@ placeholders. Precedence, lowest first:
+// gradle/resource-filter.properties, the -Denvironment profile's values, -P<name>=<value>, and
+// -D<name>=<value>.
+// ---------------------------------------------------------------------------------------------
+def filterProperties = new TreeMap<String, String>()
+file('gradle/resource-filter.properties').withReader('UTF-8') { reader ->
+  def props = new Properties()
+  props.load(reader)
+  props.each { k, v -> filterProperties[k.toString()] = v.toString() }
+}
+def environmentFilterProperties = [
+  // as Maven gave it, ?false=false rather than ?useSSL=false
+  'drop-recreate-db'          : ['context.path': '/', 'ssl.enabled': 'false',
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.server.db}?${ssl.enabled}=false'],
+  'drop-recreate-hibernate-db': ['jdbc.server.db': 'rspace_hib', 'context.path': '/', 'ssl.enabled': 'false',
+                                 'jdbc.url': 'jdbc:mysql://localhost:3306/${jdbc.server.db}?useSSL=false'],
+  'keepdbintact'              : ['context.path': '/', 'ssl.enabled': 'false'],
+  'prodRelease'               : ['context.path': '/'],
+]
+filterProperties.putAll(environmentFilterProperties[buildEnvironment] ?: [:])
+// Placeholders with no default, left for Spring to resolve unless given.
+(filterProperties.keySet() + ['jdbc.url', 'ssl.enabled', 'RS.devlogLevel']).each { name ->
+  def value = providers.gradleProperty(name).orElse(providers.gradleProperty(deprecatedMavenNames[name] ?: name)).getOrNull()
+  if (value != null) {
+    filterProperties[name] = value
+  }
+}
+filterProperties.putAll(cliSystemProperties)
+filterProperties['project.version'] = version.toString()
+filterProperties['version'] = version.toString()
+filterProperties['project.artifactId'] = 'researchspace'
+filterProperties['project.basedir'] = projectDir.absolutePath
+filterProperties['timestamp'] = buildTimestamp
+// resolve values that reference other properties, e.g. propertyFileDirPlaceholder
+5.times {
+  filterProperties.replaceAll { k, v -> v.replaceAll(/\$\{([A-Za-z0-9_.\-]+)}/) { all, name -> filterProperties[name] ?: all } }
+}
+def deployment = filterProperties['deployment']
+
+// Binary files, which filtering would corrupt
+def binaryPatterns = [
+  'zip', 'doc', 'tif', 'tiff', 'jpg', 'png', 'pdf', 'mp3', 'ttf',
+  'jpeg', 'gif', 'docx', 'xlsx', 'odt', 'ods', 'odp', 'cdx', 'mp4', 'flv',
+].collectMany { ["**/*.${it}".toString(), "**/*.${it.toUpperCase()}".toString()] }
+
+sourceSets {
+  main {
+    resources {
+      // only the selected deployment's folder
+      include '*.*', 'formIcons/**', 'META-INF/**', 'sqlUpdates/**', 'scripts/**',
+        'velocityTemplates/**', 'archiveResources/**', 'StartUpData/**', 'inventory/**',
+        "deployments/${deployment}/**", 'deployments/defaultDeployment.properties', 'fonts/*'
+      exclude 'deployments/*/deployment.properties.example'
+    }
+  }
+}
+
+tasks.named('processResources') {
+  inputs.properties(filterProperties)
+  filteringCharset = 'UTF-8'
+  def filterArgs = [properties: new HashMap(filterProperties)]
+  // applicationContext-dao.xml keeps its placeholders for deployment.properties at runtime
+  filesNotMatching(['applicationContext-dao.xml', 'fonts/**', 'com/**', 'org/**', 'i18n/**'] + binaryPatterns) {
+    filter(filterArgs, PlaceholderFilter)
+  }
+  from('src/main/java') { include '**/*.properties' }
+  // shared i18next phrases for JsonMessageSource
+  from('src/main/webapp/ui/src/modules/common/i18n/locales') {
+    include '**/*.json'
+    into 'i18n/locales'
+  }
+}
+
+tasks.named('processTestResources') {
+  inputs.properties(filterProperties)
+  filteringCharset = 'UTF-8'
+  def filterArgs = [properties: new HashMap(filterProperties)]
+  from('src/main/webapp') {
+    include '**/*.xml'
+    exclude 'ui/node/**', 'ui/node_modules/**', 'ui/dist/**', 'ui/storybook-static/**'
+  }
+  filesNotMatching(binaryPatterns) {
+    filter(filterArgs, PlaceholderFilter)
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Test database: -Denvironment=drop-recreate-db reloads it from the baseline schema before the
+// tests; -Denvironment=drop-recreate-hibernate-db leaves rspace_hib empty, for a schema
+// generated from the Hibernate mappings (see liquibaseDiff).
+// ---------------------------------------------------------------------------------------------
+def jdbcDriverScope = configurations.dependencyScope('jdbcDriver')
+def jdbcDriverClasspath = configurations.resolvable('jdbcDriverClasspath') { extendsFrom(jdbcDriverScope.get()) }
+dependencies {
+  jdbcDriver "com.mysql:mysql-connector-j:${pinnedModules['com.mysql:mysql-connector-j'].version}"
+}
+
+tasks.register('recreateDatabase', RecreateDatabase) {
+  description = 'Drops and recreates the test database (-Denvironment=drop-recreate-db or drop-recreate-hibernate-db).'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  driverClasspath.from(jdbcDriverClasspath)
+  driverClassName = filterProperties['jdbc.server.driverClassName']
+  serverUrl = filterProperties['jdbc.server.url']
+  databaseName = filterProperties['jdbc.server.db']
+  username = filterProperties['jdbc.server.username']
+  password = filterProperties['jdbc.server.password']
+  if (buildEnvironment != 'drop-recreate-hibernate-db') {
+    baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
+  }
+}
+
+if (recreatesDatabase) {
+  // Archives and PDFs left in the attachment index folder by earlier runs
+  tasks.named('clean') {
+    delete fileTree(filterProperties['lucene.attachment.searchIndex']) { include 'archive/*', 'pdfs/*' }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------------------------
+def runProfileITs = ['RunConfigWiringTestIT', 'SysAdminConfigControllerMVCIT', 'SysAdminSupportControllerMVCIT']
+def problematicITs = ['ExportApiControllerMVCIT', 'CreateMissingUserFoldersForLabAdminsAndPIsIT']
+
+// With the configuration cache on, Gradle runs a project's tasks in parallel. Test tasks share one
+// database, so they take turns.
+def testDatabase = gradle.sharedServices.registerIfAbsent('testDatabase', TestDatabase) {
+  maxParallelUsages = 1
+}
+
+// -Dtest=<pattern>[,<pattern>...], as Surefire took it: a class name or glob, optionally with
+// #method (or #m1+m2), a !-prefixed pattern to exclude, or a path such as **/FooTest.java. It
+// replaces each test task's own class includes, so -Dtest=FooIT runs FooIT under `test` too.
+def testPatterns = setting('test')?.split(',')*.trim()?.findAll { it } ?: []
+def toGradleTestPatterns = { String pattern ->
+  def (cls, methods) = pattern.contains('#') ? pattern.split('#', 2) as List : [pattern, null]
+  cls = cls.replaceAll(/\.(java|class)$/, '').replace('/', '.').replaceAll(/^(\*\*\.)+/, '*.')
+  methods ? methods.split('\\+').collect { "${cls}.${it}".toString() } : [cls]
+}
+
+def forkCountSetting = setting('forkCount') ?: setting('maxTestForks')
+def testForks = forkCountSetting == null ? null : forkCountSetting.endsWith('C')
+  ? Math.max(1, (forkCountSetting[0..-2].toBigDecimal() * Runtime.runtime.availableProcessors()).intValue())
+  : forkCountSetting.toInteger()
+def rerunFailingTestsCount = (setting('testRetries') ?: '0').toInteger()
+// JUnit tags. Gradle reads -DexcludedTestGroups= (empty, as Surefire's "exclude nothing") the same
+// as a bare -DexcludedTestGroups, which cliSystemProperties turns into 'true', so both mean none.
+def testGroups = { String name, String defaultGroups ->
+  def value = setting(name)
+  value == null ? defaultGroups : (value in ['', 'true'] ? '' : value)
+}
+def fastRun = setting('fast') != null
+def includedTestGroups = testGroups('includedTestGroups', '')
+def excludedTestGroups = testGroups('excludedTestGroups', 'chemistry')
+
+tasks.withType(Test).configureEach {
+  usesService(testDatabase)
+  useJUnitPlatform {
+    if (!includedTestGroups.isBlank()) {
+      includeTags(*includedTestGroups.split(','))
+    }
+    if (!excludedTestGroups.isBlank()) {
+      excludeTags(*excludedTestGroups.split(','))
+    }
+  }
+  maxHeapSize = '1536m'
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED',
+    '--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
+  systemProperties cliSystemProperties
+  if (recreatesDatabase) {
+    dependsOn 'recreateDatabase'
+  }
+  // Only -Dfast runs, which skip every test that needs a database, may be up to date or come from
+  // the build cache. Any other run reads a database whose state Gradle cannot see, so it always
+  // runs, as Maven's did.
+  if (recreatesDatabase || !fastRun) {
+    doNotTrackState('Runs against a database, whose state Gradle cannot track')
+  }
+  if (testForks != null) {
+    maxParallelForks = testForks
+  }
+  ignoreFailures = setting('ignoreTestFailures') == 'true'
+  retry {
+    maxRetries = rerunFailingTestsCount
+    // a test that passes on a rerun counts as flaky, not failed
+    failOnPassedAfterRetry = false
+  }
+  // Report a test that passes on a rerun as Surefire did: one test case with a flakyFailure, and
+  // suite counts that leave it out, so report publishers don't count it as failed.
+  reports.junitXml.mergeReruns = true
+  def junitXmlDir = reports.junitXml.outputLocation
+  doLast { JUnitXmlSuiteCounts.recount(junitXmlDir.get().asFile) }
+  // Files tests read from the source tree rather than the classpath (JSPs, legacy scripts, API
+  // specs, frontend sources), so that a change to one reruns a cacheable (-Dfast) test run.
+  inputs.files(fileTree('src/main/webapp') {
+    exclude 'ui/node_modules/**', 'ui/dist/**', 'ui/storybook-static/**', 'ui/playwright/**', 'ui/.vite/**'
+  }).withPropertyName('webappSources').withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files('src/main/java', 'src/main/resources', 'src/test/resources')
+    .withPropertyName('sourceTreeFiles').withPathSensitivity(PathSensitivity.RELATIVE)
+  if (testPatterns) {
+    setIncludes([])
+    setExcludes([])
+    filter {
+      failOnNoMatchingTests = false
+      testPatterns.each { pattern ->
+        if (pattern.startsWith('!')) {
+          toGradleTestPatterns(pattern.substring(1)).each { excludeTestsMatching it }
+        } else {
+          toGradleTestPatterns(pattern).each { includeTestsMatching it }
+        }
+      }
+    }
+  }
+  testLogging {
+    events 'failed'
+    exceptionFormat = TestExceptionFormat.FULL
+  }
+}
+
+tasks.named('test') {
+  if (!testPatterns) {
+    include '**/Test*.class', '**/*Test.class', '**/*Tests.class', '**/*TestCase.class'
+  }
+}
+
+def registerItTask = { String name, String desc, Closure configure ->
+  tasks.register(name, Test) {
+    description = desc
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    mustRunAfter tasks.named('test'), tasks.named('war')
+    if (!testPatterns) {
+      configure.delegate = it
+      configure()
+    }
+  }
+}
+
+def integrationTest = registerItTask('integrationTest', 'Runs the *IT tests, apart from the two groups below.') {
+  include '**/*IT.class'
+  (runProfileITs + problematicITs).each { exclude "**/${it}.class" }
+}
+def integrationTestRun = registerItTask('integrationTestRun', 'Runs the run-profile *IT tests.') {
+  runProfileITs.each { include "**/${it}.class" }
+}
+def integrationTestProblematic = registerItTask('integrationTestProblematic', 'Runs the problematic *IT tests.') {
+  problematicITs.each { include "**/${it}.class" }
+}
+integrationTestRun.configure { mustRunAfter integrationTest }
+integrationTestProblematic.configure { mustRunAfter integrationTestRun }
+
+def integrationTests = tasks.register('integrationTests') {
+  description = 'Runs integrationTest, integrationTestRun and integrationTestProblematic, in that order.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  dependsOn integrationTest, integrationTestRun, integrationTestProblematic
+}
+tasks.named('check') { dependsOn integrationTests }
+tasks.register('verify') {
+  description = 'Runs the unit and Spring tests, builds the WAR, then runs the integration tests.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  dependsOn tasks.named('test'), tasks.named('war'), integrationTests
+}
+
+// -DenableTestCoverage: JaCoCo agents on every test task, and XML, CSV and HTML reports after
+// `test` (jacocoTestReport) and after the integration tests (jacocoIntegrationTestReport).
+// jacocoMergedReport combines every build/jacoco/*.exec file, including ones copied in from
+// other CI jobs.
+if (flag('enableTestCoverage')) {
+  apply plugin: 'jacoco'
+  jacoco {
+    toolVersion = '0.8.15'
+  }
+  tasks.named('jacocoTestReport', JacocoReport) {
+    reports {
+      xml.required = true
+      csv.required = true
+      html.required = true
+    }
+  }
+  def jacocoIntegrationTestReport = tasks.register('jacocoIntegrationTestReport', JacocoReport) {
+    description = 'Writes the coverage report for the integration tests.'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    def itTasks = [integrationTest, integrationTestRun, integrationTestProblematic]
+    mustRunAfter itTasks
+    // a task skipped by -Dtest leaves no exec file
+    executionData.from(files(itTasks.collect { t -> t.map { it.extensions.getByType(JacocoTaskExtension).destinationFile } })
+      .filter { it.exists() })
+    sourceSets sourceSets.main
+    def outDir = layout.buildDirectory.dir('reports/jacoco/integrationTests')
+    reports {
+      xml.required = true
+      xml.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.xml') }
+      csv.required = true
+      csv.outputLocation = outDir.map { it.file('jacocoIntegrationTestReport.csv') }
+      html.required = true
+      html.outputLocation = outDir.map { it.dir('html') }
+    }
+  }
+  tasks.register('jacocoMergedReport', JacocoReport) {
+    description = 'Writes one coverage report from every exec file in build/jacoco.'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    executionData.from(fileTree(layout.buildDirectory.dir('jacoco')) { include '*.exec' })
+    sourceSets sourceSets.main
+    def outDir = layout.buildDirectory.dir('reports/jacoco/merged')
+    reports {
+      xml.required = true
+      xml.outputLocation = outDir.map { it.file('jacoco.xml') }
+      csv.required = true
+      csv.outputLocation = outDir.map { it.file('jacoco.csv') }
+      html.required = true
+      html.outputLocation = outDir.map { it.dir('html') }
+    }
+  }
+  tasks.named('test') { finalizedBy 'jacocoTestReport' }
+  [integrationTest, integrationTestRun, integrationTestProblematic].each { t ->
+    t.configure { finalizedBy jacocoIntegrationTestReport }
+  }
+}
+
+apply from: 'gradle/ci-tests.gradle'
+
+// ---------------------------------------------------------------------------------------------
+// Frontend bundle (-DgenerateReactDist) and Storybook (-DgenerateStorybook=true), skipped when
+// their inputs have not changed.
+// ---------------------------------------------------------------------------------------------
+def uiDir = layout.projectDirectory.dir('src/main/webapp/ui')
+def uiSources = uiDir.asFileTree.matching {
+  include 'src/**', 'public/**', '.storybook/**', '*.json', '*.ts', '*.js', '*.mjs', '*.cjs', '*.html',
+    '.browserslistrc', '.env', '.env.*', '.npmrc'
+}
+// The pnpm workspace, its lockfile and the build scripts live at the repository root.
+def frontendRootInputs = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']
+def pnpmInstall = tasks.register('pnpmInstall', Exec) {
+  description = 'Installs frontend dependencies.'
+  workingDir = projectDir
+  commandLine(['pnpm'] + (setting('frontend.dependencies.install.arg') ?: 'install --frozen-lockfile').split(' ').toList())
+  inputs.files(frontendRootInputs + ['src/main/webapp/ui/package.json'].findAll { file(it).exists() })
+  outputs.dir(uiDir.dir('node_modules'))
+}
+// Bundle reuse across runners needs explicit caching, beyond local up-to-date checks.
+def frontendToolVersions = ['node': ['pnpm', 'exec', 'node', '--version'], 'pnpm': ['pnpm', '--version']]
+def configureFrontendCache = { Exec task ->
+  task.outputs.cacheIf('Frontend bundle inputs include source, config, environment and tool versions') { true }
+  frontendToolVersions.each { name, command ->
+    task.inputs.property(name + 'Version', providers.exec { commandLine command }.standardOutput.asText.map { it.trim() })
+  }
+  task.inputs.property('viteEnvironment', providers.environmentVariablesPrefixedBy('VITE_'))
+  task.inputs.property('storybookEnvironment', providers.environmentVariablesPrefixedBy('STORYBOOK_'))
+  ['NODE_ENV', 'NODE_OPTIONS', 'FRONTEND_BUILD_STATS', 'VITEST', 'CI', 'BROWSERSLIST', 'BROWSERSLIST_ENV', 'BROWSERSLIST_CONFIG', 'SOURCE_DATE_EPOCH'].each { name ->
+    task.inputs.property(name, providers.environmentVariable(name).orElse(''))
+  }
+  task.inputs.property('platform', System.getProperty('os.name') + '/' + System.getProperty('os.arch'))
+  task.inputs.files('scripts').withPathSensitivity(PathSensitivity.RELATIVE)
+}
+def buildFrontend = tasks.register('buildFrontend', Exec) {
+  description = 'Builds the React/Vite bundle into src/main/webapp/ui/dist.'
+  dependsOn pnpmInstall
+  workingDir = projectDir
+  commandLine 'pnpm', 'run', 'build'
+  inputs.property('buildCommand', 'pnpm run build')
+  configureFrontendCache(delegate)
+  inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
+  outputs.dir(uiDir.dir('dist'))
+}
+def buildStorybook = tasks.register('buildStorybook', Exec) {
+  description = 'Builds Storybook into src/main/webapp/ui/storybook-static.'
+  dependsOn pnpmInstall
+  workingDir = projectDir
+  commandLine 'pnpm', 'run', 'storybook:build'
+  inputs.property('buildCommand', 'pnpm run storybook:build')
+  configureFrontendCache(delegate)
+  inputs.files(uiSources).withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.files(frontendRootInputs).withPathSensitivity(PathSensitivity.RELATIVE)
+  outputs.dir(uiDir.dir('storybook-static'))
+}
+
+// ---------------------------------------------------------------------------------------------
+// -Denvironment=prodRelease: release checks and htmlDocs, as the old prodRelease profile did.
+// ---------------------------------------------------------------------------------------------
+// Resolve the Markdown renderer only when the release-only htmlDocs task runs.
+sourceSets {
+  markdownRenderer { java.srcDir('src/markdownRenderer/java') }
+}
+dependencies.add('markdownRendererImplementation', 'com.vladsch.flexmark:flexmark-profile-pegdown:0.64.8')
+
+// DevDocs/public rendered to HTML. Nothing in this repository reads them; release tooling may.
+def htmlDocs = tasks.register('htmlDocs', com.researchspace.build.MarkdownToHtml) {
+  description = 'Renders DevDocs/public/*.md to build/htmlDocs/*.html (run by -Denvironment=prodRelease).'
+  source = layout.projectDirectory.dir('DevDocs/public')
+  outputDir = layout.buildDirectory.dir('htmlDocs')
+  rendererClasspath.from(sourceSets.markdownRenderer.runtimeClasspath)
+}
+
+// A Maven snapshot version: ends in SNAPSHOT, or is a deployed snapshot such as 1.0-20260101.120000-1
+def isSnapshot = { String v -> v.endsWith('SNAPSHOT') || v ==~ /^.*-\d{8}\.\d{6}-\d+$/ }
+def checkReleaseDependencies = tasks.register('checkReleaseDependencies') {
+  description = 'Fails if the build or any dependency is a snapshot version (run by -Denvironment=prodRelease).'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  def projectVersion = version.toString()
+  def resolved = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath'].collect { name ->
+    configurations.named(name).flatMap { it.incoming.artifacts.resolvedArtifacts }.map { arts ->
+      arts.collect { it.id.componentIdentifier }.findAll { it instanceof ModuleComponentIdentifier }
+        .collect { "${it.group}:${it.module}:${it.version}".toString() }
+    }
+  }
+  doLast {
+    // The -<timestamp> suffix makes 2.29.0-SNAPSHOT-<timestamp> a release version, as it was for
+    // the enforcer's requireReleaseVersion rule.
+    if (isSnapshot(projectVersion)) {
+      throw new GradleException("Release builds need a release version, not ${projectVersion}")
+    }
+    def snapshots = resolved.collectMany { it.get() }.unique().sort().findAll { isSnapshot(it.split(':')[2]) }
+    if (snapshots) {
+      throw new GradleException("Release builds cannot depend on snapshots:\n  ${snapshots.join('\n  ')}")
+    }
+  }
+}
+
+if (prodRelease) {
+  tasks.named('processResources') { dependsOn htmlDocs }
+  tasks.named('war') { dependsOn checkReleaseDependencies }
+}
+
+tasks.named('war') {
+  archiveFileName = "researchspace-${project.version}.war"
+  exclude 'ui/node/**', 'ui/node_modules/**', 'ui/dist/stats.json', 'ui/dist/stats.html', 'ui/stats.html', 'ui/storybook-static/**'
+  inputs.properties(filterProperties)
+  def filterArgs = [properties: new HashMap(filterProperties)]
+  filesMatching(['META-INF/**', 'WEB-INF/security.xml']) {
+    filter(filterArgs, PlaceholderFilter)
+  }
+  if (flag('generateReactDist')) {
+    dependsOn buildFrontend
+  }
+  if (setting('generateStorybook') == 'true') {
+    // under WEB-INF, so the deployment property controls access to it
+    from(buildStorybook) { into 'WEB-INF/storybook' }
+  }
+}
+
+tasks.register('printVersion') {
+  description = 'Prints the project version.'
+  def v = version.toString()
+  doLast { println v }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Formatting: spotlessApply and spotlessCheck (under `check`). -DspotlessStrict adds CleanThat;
+// -DspotlessFiles=<regex>[,<regex>...] limits both to files whose absolute path matches one.
+// ---------------------------------------------------------------------------------------------
+def spotlessFiles = setting('spotlessFiles')?.split(',')*.trim()?.findAll { it }
+spotless {
+  java {
+    target 'src/**/*.java', 'buildSrc/src/**/*.java'
+    if (spotlessFiles) {
+      target(sourceSets.main.allJava.plus(sourceSets.test.allJava).plus(sourceSets.markdownRenderer.allJava).plus(fileTree('buildSrc/src') { include '**/*.java' }).filter { f ->
+        spotlessFiles.any { f.absolutePath.matches(it) }
+      })
+    }
+    toggleOffOn()
+    if (flag('spotlessStrict')) {
+      // Off by default because it rewrites more than formatting
+      cleanthat().sourceCompatibility('1.7')
+    }
+    removeUnusedImports()
+    googleJavaFormat('1.28.0').reflowLongStrings()
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// liquibaseDiff: writes the changes that would bring the rspace database's schema in line with
+// rspace_hib's to generatedDBChangeSets/diffChangeset-<timestamp>.xml. Connection settings come
+// from sqlUpdates/liquibaseConfig/liquibase.properties; override one with -Dliquibase.<key>.
+// ---------------------------------------------------------------------------------------------
+def liquibaseScope = configurations.dependencyScope('liquibase')
+def liquibaseClasspath = configurations.resolvable('liquibaseClasspath') { extendsFrom(liquibaseScope.get()) }
+dependencies {
+  liquibase "org.liquibase:liquibase-core:${pinnedModules['org.liquibase:liquibase-core'].version}"
+  liquibase "com.mysql:mysql-connector-j:${pinnedModules['com.mysql:mysql-connector-j'].version}"
+  // the command line's parser, which liquibase-core does not bring along
+  liquibase "info.picocli:picocli:${pinnedModules['info.picocli:picocli'].version}"
+}
+tasks.register('liquibaseDiff', JavaExec) {
+  description = 'Writes a Liquibase changelog of the schema differences between rspace and rspace_hib.'
+  group = 'database'
+  classpath = files(liquibaseClasspath)
+  mainClass = 'liquibase.integration.commandline.LiquibaseCommandLine'
+  def lbProperties = new Properties()
+  file('src/main/resources/sqlUpdates/liquibaseConfig/liquibase.properties').withReader('UTF-8') { lbProperties.load(it) }
+  def lb = { String key -> cliSystemProperties["liquibase.${key}".toString()] ?: lbProperties.getProperty(key) }
+  // Liquibase writes to a fixed file, renamed when the task runs to diffChangeset-<stamp>.xml.
+  // The stamp is -Dtimestamp, or the time the task runs: computed at configuration time, the
+  // configuration cache would reuse it and later diffs would overwrite the first.
+  def fixedStamp = setting('timestamp')
+  def changeSetsDir = layout.projectDirectory.dir('generatedDBChangeSets').asFile
+  def outFile = layout.projectDirectory.file('generatedDBChangeSets/diffChangeset-inprogress.xml')
+  def password = lb('password')
+  def referencePassword = lb('referencePassword')
+  args '--show-banner=false', '--log-level=WARNING',
+    "--driver=${lb('driver')}", "--url=${lb('url')}", "--username=${lb('username')}",
+    "--reference-url=${lb('referenceUrl')}", "--reference-username=${lb('referenceUsername')}",
+    "--changelog-file=${outFile.asFile.absolutePath}", 'diff-changelog'
+  // kept out of the command line, which other users of the machine can read
+  environment 'LIQUIBASE_COMMAND_PASSWORD', password
+  environment 'LIQUIBASE_COMMAND_REFERENCE_PASSWORD', referencePassword
+  outputs.upToDateWhen { false }
+  doFirst {
+    changeSetsDir.mkdirs()
+    outFile.asFile.delete()
+  }
+  doLast { task ->
+    def stamp = fixedStamp ?: CurrentUtcTimestamp.FORMAT.format(ZonedDateTime.now(ZoneOffset.UTC))
+    def target = new File(changeSetsDir, "diffChangeset-${stamp}.xml")
+    if (outFile.asFile.exists()) {
+      java.nio.file.Files.move(outFile.asFile.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+      task.logger.lifecycle("Wrote ${target}")
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Dependency checks
+// ---------------------------------------------------------------------------------------------
+def classpathNames = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath']
+def resolvedModules = { String name ->
+  configurations.named(name).flatMap { it.incoming.artifacts.resolvedArtifacts }.map { arts ->
+    arts.collect { it.id.componentIdentifier }
+      .findAll { it instanceof ModuleComponentIdentifier }
+      .collect { "${it.group}:${it.module}:${it.version}".toString() }
+      .unique().sort()
+  }
+}
+
+// Writes resolved module coordinates per classpath to build/classpaths, to diff before and after
+// a dependency change.
+tasks.register('dumpClasspaths') {
+  description = 'Writes the modules on each classpath to build/classpaths/<classpath>.txt.'
+  def classpaths = classpathNames.collectEntries { [(it): resolvedModules(it)] }
+  def outDir = layout.buildDirectory.dir('classpaths')
+  outputs.dir(outDir)
+  doLast {
+    classpaths.each { name, coords -> outDir.get().file("${name}.txt").asFile.text = coords.get().join('\n') + '\n' }
+  }
+}
+
+// Every module on a classpath needs a pin, so that its version is chosen deliberately, and every
+// pin needs a module, so the list does not rot.
+tasks.register('checkPinnedVersions') {
+  description = 'Checks that gradle/pinned-versions.txt lists exactly the modules on the classpaths, at the declared versions.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  def classpaths = classpathNames.collect { resolvedModules(it) }
+  def pinned = pinnedModules.keySet()
+  def pinVersions = pinnedModules.collectEntries { ga, m -> [(ga): m.version] }
+  // Versions written in the dependencies blocks, which the forced pins silently override. The jetty
+  // configurations are left out: gradle/jetty.gradle clears the pins there on purpose.
+  def declared = configurations.matching { !it.name.startsWith('jetty') }.collectMany { conf ->
+    conf.dependencies.withType(ExternalModuleDependency).matching { it.version }
+      .collect { "${conf.name} ${it.group}:${it.name} ${it.version}".toString() }
+  }.unique()
+  inputs.file('gradle/pinned-versions.txt')
+  doLast {
+    def mismatched = declared.findAll { line ->
+      def (conf, ga, version) = line.split(' ')
+      pinVersions[ga] != null && pinVersions[ga] != version
+    }.collect { line ->
+      def (conf, ga, version) = line.split(' ')
+      "${ga}: declared ${version} in ${conf}, pinned ${pinVersions[ga]}"
+    }.unique()
+    if (mismatched) {
+      throw new GradleException('Declared dependency versions differ from gradle/pinned-versions.txt, ' +
+        'whose versions win. Make them equal:\n  ' + mismatched.sort().join('\n  '))
+    }
+    def resolved = classpaths.collectMany { it.get() }.collect { it.split(':')[0..1].join(':') }.toSet()
+    // Gradle-only: JUnit's launcher, and the bnd/OSGi annotations log4j's Gradle metadata adds
+    def unpinned = (resolved - pinned).findAll { !(it ==~ /org\.junit\.platform:junit-platform-launcher|biz\.aQute\.bnd:.*|org\.osgi:.*/) }
+    def unused = (pinned - resolved).findAll { it != 'com.squareup.okio:okio' }
+    if (unpinned || unused) {
+      throw new GradleException('gradle/pinned-versions.txt is out of step with the classpaths.' +
+        (unpinned ? "\nAdd a pin for:\n  ${unpinned.sort().join('\n  ')}" : '') +
+        (unused ? "\nRemove the pin for:\n  ${unused.sort().join('\n  ')}" : ''))
+    }
+  }
+}
+tasks.named('check') { dependsOn 'checkPinnedVersions' }
+
+apply from: 'gradle/jetty.gradle'

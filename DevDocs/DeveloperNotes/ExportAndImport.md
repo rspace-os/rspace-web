@@ -308,5 +308,5 @@ history; another user's edit lock blocks the update. Conversion errors leave the
 existing document content unchanged. Removed images remain in the Gallery;
 obsolete field attachment links are marked deleted and retained for revision history.
 
-Focused regression checks: `mvn test -Dfast=true -Dtest=StructuredDocumentControllerTest,MSWordExporterTest,RSpaceDocumentCreatorTest`
-and, with a test database, `mvn test -Dtest=WordHTML2RspaceTest`.
+Focused regression checks: `./gradlew test -Dfast=true -Dtest=StructuredDocumentControllerTest,MSWordExporterTest,RSpaceDocumentCreatorTest`
+and, with a test database, `./gradlew test -Dtest=WordHTML2RspaceTest`.
