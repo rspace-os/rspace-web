@@ -1103,4 +1103,53 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.close();
     });
   });
+
+  test(`As a user, I can batch-edit the Requestable field of multiple Samples at once`, async ({
+    pageInventory,
+    clientInventory,
+    componentToasts,
+    page,
+    flowSampleRequestsAvailable,
+  }) => {
+    void flowSampleRequestsAvailable;
+    const baseName = uniqueName("e2e-sample-batch-requestable");
+    const sampleNames = [0, 1].map((i) => `${baseName}-${i}`);
+
+    for (const name of sampleNames) {
+      // New Samples start non-requestable by default (Sample.requestable is a boolean field),
+      // so there's nothing to opt out of for this test to exercise opting in. Registered with
+      // createdRequestableSamples so afterEach resets requestable=false even if a later
+      // assertion fails, the same as every other sample this file marks requestable.
+      const sample = await clientInventory.createSample({ name });
+      createdRequestableSamples.push({ client: clientInventory, id: sample.id });
+    }
+
+    const form = await test.step("When I select both and open Batch Edit", async () => {
+      await page.goto("/inventory/search?resultType=SAMPLE");
+      await pageInventory.isLoaded();
+      await pageInventory.searchPanel.search(baseName);
+      for (const name of sampleNames) {
+        await pageInventory.searchPanel.selectItem(name);
+      }
+      return pageInventory.searchPanel.batchActions.openBatchEdit();
+    });
+
+    await test.step("Then the Requestable switch starts disabled, until I opt the field in and enable it", async () => {
+      await expect(form.requestableSwitch).toBeDisabled();
+      await form.setRequestable(true);
+      await expect(form.requestableSwitch).toBeEnabled();
+      await expect(form.requestableSwitch).toBeChecked();
+    });
+
+    await form.save();
+    await expect(componentToasts.byVariant("success", "successfully updated")).toBeVisible();
+
+    await test.step("Then each Sample is now individually requestable", async () => {
+      for (const name of sampleNames) {
+        await pageInventory.searchPanel.search(name);
+        await pageInventory.searchPanel.open(name);
+        await expect(pageInventory.detailsPanel.requestableSwitch()).toBeChecked();
+      }
+    });
+  });
 });
