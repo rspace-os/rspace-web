@@ -47,13 +47,13 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Implementation of UserManager interface. */
 @Service("userManager")
@@ -61,23 +61,45 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
-  private UserDao userDao;
+  private final UserDao userDao;
 
-  public UserManagerImpl(@Autowired UserDao userDao) {
-    this.dao = userDao;
+  private final CacheManager cacheManager;
+
+  private final CommunityDao communityDao;
+  private final RoleDao roleDao;
+  private final UserAccountEventDao accountEventDao;
+  private final IPermissionUtils permissnUtils;
+  private final AnalyticsManager analyticsManager;
+  private final IPropertyHolder properties;
+  private final IVerificationPasswordValidator verificationPasswordValidator;
+  private final MessageSourceUtils messages;
+  private final RSpacePasswordEncoder passwordEncoder;
+
+  public UserManagerImpl(
+      UserDao userDao,
+      CacheManager cacheManager,
+      CommunityDao communityDao,
+      RoleDao roleDao,
+      UserAccountEventDao accountEventDao,
+      IPermissionUtils permissnUtils,
+      AnalyticsManager analyticsManager,
+      IPropertyHolder properties,
+      IVerificationPasswordValidator verificationPasswordValidator,
+      MessageSourceUtils messages,
+      RSpacePasswordEncoder passwordEncoder) {
     this.userDao = userDao;
+    this.cacheManager = cacheManager;
+    this.dao = userDao;
+    this.communityDao = communityDao;
+    this.roleDao = roleDao;
+    this.accountEventDao = accountEventDao;
+    this.permissnUtils = permissnUtils;
+    this.analyticsManager = analyticsManager;
+    this.properties = properties;
+    this.verificationPasswordValidator = verificationPasswordValidator;
+    this.messages = messages;
+    this.passwordEncoder = passwordEncoder;
   }
-
-  private @Autowired CommunityDao communityDao;
-  private @Autowired RoleDao roleDao;
-  private @Autowired UserAccountEventDao accountEventDao;
-  private @Autowired IPermissionUtils permissnUtils;
-  private @Autowired AnalyticsManager analyticsManager;
-  @Autowired private IPropertyHolder properties;
-
-  private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
-  private @Autowired MessageSourceUtils messages;
-  private @Autowired RSpacePasswordEncoder passwordEncoder;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -329,10 +351,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   @Override
-  @CachePut(
-      value = "com.researchspace.model.UserPreference",
-      key = "#username + #preference.name()")
-  @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#username + #preference.name()")
   public UserPreference setPreference(Preference preference, String value, String username) {
     User subject = getUserByUsername(username, true);
     Validate.notNull(preference, "preference can't be null");
@@ -341,16 +359,24 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     if (validationException != null) {
       throw validationException;
     }
-    UserPreference userPreference = new UserPreference(preference, subject, value);
-    subject.setPreference(userPreference);
-    save(subject);
-    return userPreference;
+    UserPreference stored = userDao.upsertPreference(subject, preference, value);
+    String key = username + preference.name();
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            cacheManager.getCache(CacheNames.USER_PREFERENCE).evict(key);
+            cacheManager.getCache(CacheNames.INTEGRATION_INFO).evict(key);
+          }
+        });
+    return stored;
   }
 
   @Override
   @Cacheable(
-      value = "com.researchspace.model.UserPreference",
-      key = "#user.username + #preference.name()")
+      value = CacheNames.USER_PREFERENCE,
+      key = "#user.username + #preference.name()",
+      cacheResolver = "userPreferenceCacheResolver")
   public UserPreference getPreferenceForUser(User user, Preference preference) {
     user = get(user.getId());
     return user.getValueForPreference(preference);

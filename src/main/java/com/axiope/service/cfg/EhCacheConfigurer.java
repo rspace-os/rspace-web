@@ -68,8 +68,7 @@ class EhCacheConfigurer {
     applyOverride(
         cacheManager, baseRecordMaxElementsInMemory, "com.researchspace.model.record.BaseRecord");
     applyOverride(cacheManager, userGroupMaxElementsInMemory, "com.researchspace.model.UserGroup");
-    applyOverride(
-        cacheManager, userPreferenceMaxElementsInMemory, "com.researchspace.model.UserPreference");
+    applyOverride(cacheManager, userPreferenceMaxElementsInMemory, CacheNames.USER_PREFERENCE);
   }
 
   private void applyOverride(CacheManager cacheManager, String value, String cacheName) {

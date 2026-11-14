@@ -47,15 +47,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
 
-  private @InjectMocks UserManagerImpl userManager;
+  private UserManagerImpl userManager;
   private @InjectMocks RoleManagerImpl roleManager;
   private @Mock UserDao userDao;
+  private @Mock CacheManager cacheManager;
   private @Mock RoleDao roleDao;
   private @Mock CommunityDao communityDao;
   private @Mock UserAccountEventDao accountEventDao;
@@ -67,19 +68,19 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @BeforeEach
   public void setUp() throws Exception {
-    ReflectionTestUtils.setField(
-        userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
-    // UserManagerImpl declares a UserDao constructor, so @InjectMocks satisfies it by
-    // constructor injection and does not also field-inject. Wire its @Autowired fields by hand.
-    ReflectionTestUtils.setField(userManager, "communityDao", communityDao);
-    ReflectionTestUtils.setField(userManager, "roleDao", roleDao);
-    ReflectionTestUtils.setField(userManager, "accountEventDao", accountEventDao);
-    ReflectionTestUtils.setField(userManager, "permissnUtils", permissionUtils);
-    ReflectionTestUtils.setField(userManager, "analyticsManager", analyticsManager);
-    ReflectionTestUtils.setField(userManager, "properties", properties);
-    ReflectionTestUtils.setField(
-        userManager, "verificationPasswordValidator", verificationPasswordValidator);
-    ReflectionTestUtils.setField(userManager, "passwordEncoder", passwordEncoder);
+    userManager =
+        new UserManagerImpl(
+            userDao,
+            cacheManager,
+            communityDao,
+            roleDao,
+            accountEventDao,
+            permissionUtils,
+            analyticsManager,
+            properties,
+            verificationPasswordValidator,
+            new MessageSourceUtils(new JsonMessageSource()),
+            passwordEncoder);
   }
 
   @Test

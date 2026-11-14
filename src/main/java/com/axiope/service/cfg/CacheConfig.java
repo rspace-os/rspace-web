@@ -10,8 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheResolver;
+import org.springframework.cache.interceptor.SimpleCacheResolver;
 import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
+import org.springframework.cache.transaction.TransactionAwareCacheManagerProxy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -54,6 +57,11 @@ public class CacheConfig {
     } else {
       return new NoOpCacheManager();
     }
+  }
+
+  @Bean
+  public CacheResolver userPreferenceCacheResolver(CacheManager cacheManager) {
+    return new SimpleCacheResolver(new TransactionAwareCacheManagerProxy(cacheManager));
   }
 
   @Bean

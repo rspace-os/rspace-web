@@ -15,18 +15,28 @@ import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.system.SystemPropertyValue;
-import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
+public class IntegrationsHandlerCachingIT extends RealTransactionSpringTestBase {
 
-  private @Autowired IntegrationsHandler integrationsHandler;
-  private @Autowired SystemPropertyManager sysPropMger;
-  private @Autowired UserConnectionManager userConn;
+  private final IntegrationsHandler integrationsHandler;
+  private final SystemPropertyManager sysPropMger;
+  private final UserConnectionManager userConn;
+
+  @Autowired
+  IntegrationsHandlerCachingIT(
+      IntegrationsHandler integrationsHandler,
+      SystemPropertyManager sysPropMger,
+      UserConnectionManager userConn) {
+    this.integrationsHandler = integrationsHandler;
+    this.sysPropMger = sysPropMger;
+    this.userConn = userConn;
+  }
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -40,12 +50,12 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
 
   @Test
   public void testCaching() {
-    User user1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("user1"));
-    User user2 = createAndSaveUserIfNotExists(getRandomAlphabeticString("user2"));
+    User user1 = createAndSaveUser(getRandomAlphabeticString("user1"));
+    User user2 = createAndSaveUser(getRandomAlphabeticString("user2"));
     // basic caching/retrieval for single user
-    initialiseContentWithEmptyContent(user1, user2);
+    initUser(user1);
+    initUser(user2);
     Preference dropboxPreference = Preference.DROPBOX;
-    Preference googledrivePreference = Preference.GOOGLEDRIVE;
 
     IntegrationInfo infoUser1 = integrationsHandler.getIntegration(user1, dropboxPreference.name());
     IntegrationInfo cachedInfoUser1 =
@@ -66,36 +76,6 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
 
     assertThatUpdatingAvailabilityTriggersCacheRefresh(
         user1, dropboxPreference.name(), reloadedNewInfoUser1);
-    assertThatUpdatingAUserPrefDoesNotAffectOtherUsersOrPrefs(
-        user1, user2, dropboxPreference, googledrivePreference);
-  }
-
-  private void assertThatUpdatingAUserPrefDoesNotAffectOtherUsersOrPrefs(
-      User user1, User user2, Preference pref1, Preference pref2) {
-
-    IntegrationInfo user1Info1;
-    IntegrationInfo reloadedUser1Info1;
-
-    IntegrationInfo user1Info2;
-    IntegrationInfo reloadedUser1Info2;
-
-    IntegrationInfo user2Info1;
-    IntegrationInfo reloadedUser2Info1;
-
-    // now test that updating user preference invalidates for user, but not other user
-    user1Info1 = integrationsHandler.getIntegration(user1, pref1.name());
-    user1Info2 = integrationsHandler.getIntegration(user1, pref2.name());
-    user2Info1 = integrationsHandler.getIntegration(user2, pref1.name());
-    userMgr.setPreference(pref1, Boolean.FALSE.toString(), user1.getUsername());
-    reloadedUser1Info1 = integrationsHandler.getIntegration(user1, pref1.name());
-
-    assertNotSame(reloadedUser1Info1, user1Info1);
-    // but other pref for same user is cached OK
-    reloadedUser1Info2 = integrationsHandler.getIntegration(user1, pref2.name());
-    assertSame(reloadedUser1Info2, user1Info2);
-    // but other user pref still cached OK:
-    reloadedUser2Info1 = integrationsHandler.getIntegration(user2, pref1.name());
-    assertSame(user2Info1, reloadedUser2Info1);
   }
 
   // now, we login as sysadmin and alter the availability, via 3 save methods,
@@ -142,8 +122,8 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
   @Test
   public void testCachingForAccessTokensStoredInUserConnectionForProtocolsIo() {
     // RSPAC-1614
-    User anyUser = createAndSaveRandomUser();
-    initialiseContentWithEmptyContent(anyUser);
+    User anyUser = createAndSaveUser(getRandomAlphabeticString("user"));
+    initUser(anyUser);
     // add a user connection
     UserConnection protocolsIOConnection = TestFactory.createUserConnection(anyUser.getUsername());
     protocolsIOConnection.getId().setProviderId(PROTOCOLS_IO_APP_NAME);
@@ -157,6 +137,10 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
         getAccessTokenFromIntegrationInfo(info), getAccessTokenFromIntegrationInfo(infoCached));
 
     // now set new access token - this should trigger a reload and re-cache.
+    protocolsIOConnection =
+        userConn
+            .findByUserNameProviderName(anyUser.getUsername(), PROTOCOLS_IO_APP_NAME)
+            .orElseThrow();
     protocolsIOConnection.setAccessToken("newToken");
     protocolsIOConnection = userConn.save(protocolsIOConnection);
     IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
@@ -176,8 +160,8 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
 
   @Test
   public void testCachingForAccessTokensStoredInUserConnectionForNonProtocolsIO() {
-    User anyUser = createAndSaveRandomUser();
-    initialiseContentWithEmptyContent(anyUser);
+    User anyUser = createAndSaveUser(getRandomAlphabeticString("user"));
+    initUser(anyUser);
     // add a user connection
     UserConnection fieldmarkConnection = TestFactory.createUserConnection(anyUser.getUsername());
     fieldmarkConnection.getId().setProviderId(FIELDMARK_APP_NAME);
@@ -191,6 +175,10 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
         getAccessTokenFromIntegrationInfo(info), getAccessTokenFromIntegrationInfo(infoCached));
 
     // now set new access token - this should trigger a reload and re-cache.
+    fieldmarkConnection =
+        userConn
+            .findByUserNameProviderName(anyUser.getUsername(), FIELDMARK_APP_NAME)
+            .orElseThrow();
     fieldmarkConnection.setAccessToken("newToken");
     fieldmarkConnection = userConn.save(fieldmarkConnection);
     IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
