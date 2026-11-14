@@ -287,7 +287,7 @@
     },
     "message": {
       "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
-      "bookingCreated": "A booking is created or changed on an instrument I subscribe to",
+      "bookingCreated": "A booking is created, restored or changed on an instrument I subscribe to",
       "delivery": {
         "label": "Preferred delivery method"
       },

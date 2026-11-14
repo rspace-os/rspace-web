@@ -394,7 +394,7 @@ export const BookingDisplayPreferencesControllerReplacement = v.object({
   availabilityWindowEnd: v.pipe(v.string(), v.regex(new RegExp('^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$'))),
   availabilityWindowStart: v.pipe(v.string(), v.regex(new RegExp('^(?:[01]\\d|2[0-3]):[0-5]\\d$'))),
   customTimezone: v.nullish(v.pipe(v.string(), v.minLength(0), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Required only when timezoneMode is CUSTOM; must be a valid IANA timezone.'))),
-  timeFormat: v.nullish(v.pipe(v.picklist(['AUTOMATIC', 'H12', 'H24']), v.description('AUTOMATIC (default when omitted) follows the browser region in the UI and the language\'s usual clock in email; H12 and H24 force a 12- or 24-hour clock.'))),
+  timeFormat: v.pipe(v.picklist(['AUTOMATIC', 'H12', 'H24']), v.description('AUTOMATIC follows the browser region in the UI and the language\'s usual clock in email; H12 and H24 force a 12- or 24-hour clock.')),
   timezoneMode: v.picklist(['BROWSER', 'INSTITUTION', 'CUSTOM'])
 })
 
@@ -501,6 +501,7 @@ export const BookingsRead = v.object({
   canCancel: v.optional(v.boolean()),
   canEdit: v.optional(v.boolean()),
   canViewConfiguration: v.optional(v.boolean()),
+  cancellationReason: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 500 || (value.length <= 1000 && [...value].length <= 500), 'Invalid length: Expected <=500'))),
   createdAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
   createdBy: v.nullish(v.string()),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
@@ -540,6 +541,7 @@ export const BookingsReference = v.object({
 })
 
 export const BookingsUpdate = v.object({
+  cancellationReason: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 500 || (value.length <= 1000 && [...value].length <= 500), 'Invalid length: Expected <=500'))),
   end: v.optional(v.pipe(v.string(), v.isoTimestamp())),
   purpose: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 1000 || (value.length <= 2000 && [...value].length <= 1000), 'Invalid length: Expected <=1000'))),
   start: v.optional(v.pipe(v.string(), v.isoTimestamp())),
@@ -1215,7 +1217,7 @@ export const GetBookingResponse = BookingsRead
 
 
 /**
- * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
+ * Updates or cancels one booking. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const UpdateBookingParams = v.object({
@@ -1829,7 +1831,7 @@ export const GetMyBookingPreferencesResponse = BookingDisplayPreferences
 
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. timeFormat is required.
  * @summary Replace Booking display preferences
  */
 export const ReplaceMyBookingPreferencesBody = BookingDisplayPreferencesControllerReplacement

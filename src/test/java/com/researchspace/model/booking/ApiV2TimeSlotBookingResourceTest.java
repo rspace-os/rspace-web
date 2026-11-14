@@ -36,11 +36,17 @@ class ApiV2TimeSlotBookingResourceTest {
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.CREATE)));
     assertEquals(
-        List.of("start", "end", "state", "purpose"),
+        List.of("start", "end", "state", "cancellationReason", "purpose"),
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
     for (String privateField :
-        List.of("bookedBy", "createdBy", "privacy", "canEdit", "canViewConfiguration")) {
+        List.of(
+            "bookedBy",
+            "createdBy",
+            "privacy",
+            "canEdit",
+            "canViewConfiguration",
+            "cancellationReason")) {
       assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField(privateField).sortable());
       assertFalse(
           ApiV2TimeSlotBookingResource.DESCRIPTION
@@ -61,6 +67,8 @@ class ApiV2TimeSlotBookingResourceTest {
     var calendar =
         ApiV2TimeSlotBookingResource.calendarFilterDescription(AccessFunction.authenticated());
     new RsqlFilterParser(calendar).parse("timezone==UTC");
+    // "Booked by" is the only people filter; item filters reused as event filters may name a
+    // location, which the Booking services resolve before compiling.
     assertEquals(
         List.of("requester", "target", "location"),
         ApiV2TimeSlotBookingResource.DESCRIPTION.relationships().stream()
@@ -69,7 +77,7 @@ class ApiV2TimeSlotBookingResourceTest {
     assertTrue(calendar.findField("requesterUsername").isEmpty());
     assertTrue(calendar.findField("requesterFirstName").isEmpty());
     assertTrue(calendar.findField("requesterLastName").isEmpty());
-    new RsqlFilterParser(calendar).parse("requester.value==42");
+    new RsqlFilterParser(calendar).parse("requester.value==42;location==IC12");
     new RsqlFilterParser(calendar)
         .parse(
             "purpose=contains=scope;bookedBy=contains=ada;privacy==full;"
@@ -101,7 +109,7 @@ class ApiV2TimeSlotBookingResourceTest {
                 """
                 {"target":{"relationTo":"instruments","value":12},
                  "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
-                 "bookedBy":"forged"}
+                 "kind":"BOOKING","bookedBy":"forged"}
                 """,
                 WriteOperation.CREATE));
     assertThrows(
@@ -110,6 +118,21 @@ class ApiV2TimeSlotBookingResourceTest {
     assertThrows(
         DocumentValidationException.class,
         () -> parse("{\"kind\":\"MAINTENANCE\"}", WriteOperation.UPDATE));
+    ParsedDocument cancellation =
+        parse(
+            "{\"state\":\"CANCELLED\",\"cancellationReason\":\"Needs recalibration\"}",
+            WriteOperation.UPDATE);
+    assertEquals("Needs recalibration", cancellation.values().get("cancellationReason"));
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            parse(
+                "{\"target\":{\"relationTo\":\"instruments\",\"value\":12},"
+                    + "\"start\":\"2026-10-25T00:30:00Z\","
+                    + "\"end\":\"2026-10-25T02:30:00Z\","
+                    + "\"kind\":\"BOOKING\","
+                    + "\"cancellationReason\":\"forged\"}",
+                WriteOperation.CREATE));
   }
 
   @Test
@@ -146,23 +169,25 @@ class ApiV2TimeSlotBookingResourceTest {
     User requester = new User("ada");
     requester.setFirstName("Ada");
     requester.setLastName("Lovelace");
-    requester.setId(42L);
     TimeSlotBooking booking = booking(requester);
     booking.setCreatedBy(requester);
 
+    requester.setId(42L);
     Map<String, Object> busy = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("busy", busy.get("privacy"));
     assertNull(busy.get("purpose"));
+    assertNull(busy.get("cancellationReason"));
     assertNull(busy.get("bookedBy"));
     var requesterRelationship =
         ApiV2TimeSlotBookingResource.DESCRIPTION.requireRelationship("requester");
     assertNull(requesterRelationship.binding().read(booking));
+    assertEquals(false, busy.get("canEdit"));
+    assertEquals(false, busy.get("canViewConfiguration"));
+    assertEquals("Secret", booking.getPurpose());
     var calendar =
         ApiV2TimeSlotBookingResource.calendarFilterDescription(AccessFunction.authenticated());
     Map<String, Object> busyFacets = calendar.toDocument(booking);
     assertNull(busyFacets.get("bookedBy"));
-    assertEquals(false, busy.get("canViewConfiguration"));
-    assertEquals("Secret", booking.getPurpose());
 
     booking.prepareView(BookingPrivacy.FULL, true, true);
     Map<String, Object> full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
@@ -171,11 +196,23 @@ class ApiV2TimeSlotBookingResourceTest {
         new ResourceReference<>("users", 42L), requesterRelationship.binding().read(booking));
     assertEquals("Ada Lovelace", calendar.toDocument(booking).get("bookedBy"));
     assertEquals("Secret", full.get("purpose"));
+    booking.setCancellationReason("Needs recalibration");
+    full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
+    assertEquals("Needs recalibration", full.get("cancellationReason"));
     assertEquals("Ada Lovelace", full.get("bookedBy"));
     assertEquals("Ada Lovelace", full.get("createdBy"));
     assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
     assertEquals(true, full.get("canViewConfiguration"));
+  }
+
+  @Test
+  void recordsTheBookedItemInTheAuditSnapshot() {
+    TimeSlotBooking booking = booking(new User("ada"));
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), booking.getAuditTarget());
+    booking.setBookingConfiguration(null);
+    assertNull(booking.getAuditTarget());
   }
 
   @Test

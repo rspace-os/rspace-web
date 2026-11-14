@@ -9,6 +9,7 @@ import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.Request;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.testutils.TestFactory;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,6 +39,20 @@ class AuditLogLineFormatTest {
         Arguments.of("alice", "CREATE", ""),
         Arguments.of("alice", "COPY", "Legacy copy"),
         Arguments.of("alice", "WRITE", "Removed [user9]."));
+  }
+
+  @Test
+  void preservesMultilineBookingCancellationReasonsInJsonSnapshots() {
+    String line =
+        "01 Jan 2026 12:00:00,000 - domain:BOOKING action:WRITE"
+            + " [{\"data\":{\"id\":\"bookings:41\","
+            + "\"state\":\"CANCELLED\","
+            + "\"cancellationReason\":\"First line\\nSecond line\"}}]"
+            + " alice(Alice Example)";
+    var parsed = AuditLogLineFormat.parse(line, malformed -> fail(malformed)).orElseThrow();
+    assertEquals(
+        "First line\nSecond line",
+        AuditData.fromJson(parsed.data()).getData().get("cancellationReason"));
   }
 
   @ParameterizedTest

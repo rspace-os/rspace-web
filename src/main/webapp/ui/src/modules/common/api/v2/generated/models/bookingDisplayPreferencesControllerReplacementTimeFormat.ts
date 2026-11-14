@@ -7,10 +7,9 @@
  */
 
 /**
- * AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.
- * @nullable
+ * AUTOMATIC follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.
  */
-export type BookingDisplayPreferencesControllerReplacementTimeFormat = typeof BookingDisplayPreferencesControllerReplacementTimeFormat[keyof typeof BookingDisplayPreferencesControllerReplacementTimeFormat] | null;
+export type BookingDisplayPreferencesControllerReplacementTimeFormat = typeof BookingDisplayPreferencesControllerReplacementTimeFormat[keyof typeof BookingDisplayPreferencesControllerReplacementTimeFormat];
 
 
 export const BookingDisplayPreferencesControllerReplacementTimeFormat = {

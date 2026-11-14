@@ -1,4 +1,4 @@
-import { mapBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { browserTimeZone, mapBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -8,11 +8,13 @@ import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import {
   customNewYorkBookingPreferences,
   institutionBookingPreferences,
 } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { CalendarPageStory } from "./CalendarPage.story";
 import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
@@ -123,7 +125,12 @@ describe("Calendar page", () => {
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
         ifMatch = request.headers.get("If-Match");
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(<CalendarPageStory history={history} />);
@@ -152,12 +159,80 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar");
   });
 
+  test("shows both intervals and requires confirmation before replacing a conflicting interval", async () => {
+    let serverBooking: typeof ownBooking = ownBooking;
+    const saves: { ifMatch: string | null; payload: Record<string, unknown> }[] = [];
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...serverBooking, cancellationReason: null })),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        const ifMatch = request.headers.get("If-Match");
+        const payload = (await request.json()) as Record<string, unknown>;
+        saves.push({ ifMatch, payload });
+        if (ifMatch !== `"${serverBooking.version}"`) {
+          return HttpResponse.json<ApiV2Problem>(
+            { status: 412, title: "Precondition failed", code: "errors.api.v2.preconditionFailed" },
+            { status: 412 },
+          );
+        }
+        serverBooking = { ...serverBooking, ...payload, version: serverBooking.version + 1 };
+        return HttpResponse.json({ ...serverBooking, cancellationReason: null });
+      }),
+    );
+    render(<CalendarPageStory history={history} />);
+
+    await calendar.showEventDetails("Confocal microscope").click();
+    const card = page.getByRole("dialog").filter({ hasText: "Confocal microscope" });
+    await calendar.editBooking.click();
+    const purpose = card.getByRole("textbox", { name: "Purpose" });
+    await purpose.fill("Updated cell imaging");
+    serverBooking = {
+      ...serverBooking,
+      purpose: "Changed elsewhere",
+      start: "2026-08-17T12:00:00Z",
+      end: "2026-08-17T13:00:00Z",
+      version: 1,
+    };
+    await card.getByRole("button", { name: "Save changes" }).click();
+
+    await expect
+      .element(
+        card.getByText(
+          `Server interval: ${formatBookingDateTime(serverBooking.start, browserTimeZone() ?? "UTC")} to ${formatBookingDateTime(serverBooking.end, browserTimeZone() ?? "UTC")}`,
+          { exact: true },
+        ),
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        card.getByText(
+          `Your interval: ${formatBookingDateTime(ownBooking.start, browserTimeZone() ?? "UTC")} to ${formatBookingDateTime(ownBooking.end, browserTimeZone() ?? "UTC")}`,
+          { exact: true },
+        ),
+      )
+      .toBeVisible();
+    const save = card.getByRole("button", { name: "Save changes" });
+    await expect.element(save).toBeDisabled();
+    await card.getByRole("button", { name: "Use my interval against this server version" }).click();
+    await save.click();
+    await expect.poll(() => saves.length).toBe(2);
+    expect(saves[1]).toEqual({
+      ifMatch: '"1"',
+      payload: { start: ownBooking.start, end: ownBooking.end, purpose: "Updated cell imaging" },
+    });
+  });
+
   test("warns before saving a compact edit that overlaps another booking", async () => {
     let updatedPayload: Record<string, unknown> | undefined;
     worker.use(
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(
@@ -183,6 +258,41 @@ describe("Calendar page", () => {
     await expect.element(card.getByText("Booking #42", { exact: false })).toBeVisible();
     await expect.element(save).toBeDisabled();
     expect(updatedPayload).toBeUndefined();
+  });
+
+  test.each(["Resources", "Time grid"])("aligns the inline editor with its overlap lane in %s", async (layout) => {
+    const earlier = {
+      ...ownBooking,
+      id: 46,
+      start: "2026-08-17T07:00:00Z",
+      end: "2026-08-17T09:00:00Z",
+      purpose: "Earlier calibration",
+    };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([earlier, ownBooking]))),
+    );
+    render(
+      <CalendarPageStory history={history} preferences={mapBookingDisplayPreferences(institutionBookingPreferences)} />,
+    );
+    await page.getByRole("button", { name: layout, exact: true }).click();
+    await calendar.day.click();
+    const event = calendar.event("Cell imaging");
+    await expect.element(event).toBeVisible();
+    const lane = event.element().closest<HTMLElement>("[data-event-id]");
+    if (!lane) throw new Error("Booking must have a timeline lane");
+    expect(Number(lane.dataset.lane)).toBeGreaterThan(0);
+    await event.getByRole("button", { name: "Show details", exact: false }).click();
+    await calendar.editBooking.click();
+    const overlay = page.getByTestId("timeline-window-editor");
+    await expect.element(page.getByRole("button", { name: "Move booking time" })).toBeVisible();
+    await expect
+      .poll(() => Math.abs(overlay.element().getBoundingClientRect().top - event.element().getBoundingClientRect().top))
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() =>
+        Math.abs(overlay.element().getBoundingClientRect().height - event.element().getBoundingClientRect().height),
+      )
+      .toBeLessThanOrEqual(1);
   });
 
   test("moves and resizes a booking on the day timeline", async () => {
@@ -224,7 +334,7 @@ describe("Calendar page", () => {
   });
 
   test("opens a full event, edits it on its canonical page, and refreshes the readout", async () => {
-    let details = { ...ownBooking, createdBy: "Ada Lovelace (ada)" };
+    let details = { ...ownBooking, cancellationReason: null, createdBy: "Ada Lovelace" };
     worker.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(details)),
       http.patch("/api/v2/bookings/41", async ({ request }) => {

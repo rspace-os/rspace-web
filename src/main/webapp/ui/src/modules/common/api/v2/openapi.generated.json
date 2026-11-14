@@ -9,6 +9,22 @@
           "title" : "The interval is free but falls inside the buffer around another booking or maintenance event. The problem's conflict, bufferBeforeMinutes, and bufferAfterMinutes members describe it."
         }
       },
+      "errors.api.v2.booking.cancellationReason.length" : {
+        "summary" : "The cancellation reason must not exceed 500 characters.",
+        "value" : {
+          "code" : "errors.api.v2.booking.cancellationReason.length",
+          "status" : 400,
+          "title" : "The cancellation reason must not exceed 500 characters."
+        }
+      },
+      "errors.api.v2.booking.cancellationReason.requiresCancel" : {
+        "summary" : "A cancellation reason can only be supplied when cancelling a booking.",
+        "value" : {
+          "code" : "errors.api.v2.booking.cancellationReason.requiresCancel",
+          "status" : 400,
+          "title" : "A cancellation reason can only be supplied when cancelling a booking."
+        }
+      },
       "errors.api.v2.booking.concurrentModification" : {
         "summary" : "The schedule changed while the booking was being created.",
         "value" : {
@@ -381,7 +397,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -415,7 +431,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -3206,16 +3222,16 @@
             "type" : [ "string", "null" ]
           },
           "timeFormat" : {
-            "description" : "AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
-            "enum" : [ "AUTOMATIC", "H12", "H24", null ],
-            "type" : [ "string", "null" ]
+            "description" : "AUTOMATIC follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
+            "enum" : [ "AUTOMATIC", "H12", "H24" ],
+            "type" : "string"
           },
           "timezoneMode" : {
             "enum" : [ "BROWSER", "INSTITUTION", "CUSTOM" ],
             "type" : "string"
           }
         },
-        "required" : [ "availabilityWindowEnd", "availabilityWindowStart", "timezoneMode" ],
+        "required" : [ "availabilityWindowEnd", "availabilityWindowStart", "timeFormat", "timezoneMode" ],
         "type" : "object"
       },
       "BookingNotificationSubscriptionControllerLookup" : {
@@ -3618,6 +3634,13 @@
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             }
           },
+          "cancellationReason" : {
+            "maxLength" : 500,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
           "createdAt" : {
             "format" : "date-time",
             "readOnly" : true,
@@ -3868,6 +3891,13 @@
       "BookingsUpdate" : {
         "additionalProperties" : false,
         "properties" : {
+          "cancellationReason" : {
+            "maxLength" : 500,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            }
+          },
           "end" : {
             "format" : "date-time",
             "type" : "string",
@@ -8855,7 +8885,7 @@
         "x-rspace-operation" : "READ"
       },
       "patch" : {
-        "description" : "Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
+        "description" : "Updates or cancels one booking. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.",
         "operationId" : "updateBooking",
         "parameters" : [ {
           "$ref" : "#/components/parameters/BookingsId"
@@ -8865,6 +8895,10 @@
         "requestBody" : {
           "content" : {
             "application/json" : {
+              "example" : {
+                "cancellationReason" : "Instrument needs recalibration",
+                "state" : "CANCELLED"
+              },
               "schema" : {
                 "$ref" : "#/components/schemas/BookingsUpdate"
               }
@@ -8895,6 +8929,12 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.cancellationReason.length" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.cancellationReason.length"
+                  },
+                  "errors.api.v2.booking.cancellationReason.requiresCancel" : {
+                    "$ref" : "#/components/examples/errors.api.v2.booking.cancellationReason.requiresCancel"
+                  },
                   "errors.api.v2.booking.duration" : {
                     "$ref" : "#/components/examples/errors.api.v2.booking.duration"
                   },
@@ -8913,7 +8953,7 @@
                 }
               }
             },
-            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes."
+            "description" : "The interval violates the scheduling policy. The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 527040 elapsed minutes. The cancellation reason must not exceed 500 characters. A cancellation reason can only be supplied when cancelling a booking."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"
@@ -11554,7 +11594,7 @@
         "x-rspace-operation" : "CUSTOM"
       },
       "put" : {
-        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.",
+        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. timeFormat is required.",
         "operationId" : "replaceMyBookingPreferences",
         "requestBody" : {
           "content" : {

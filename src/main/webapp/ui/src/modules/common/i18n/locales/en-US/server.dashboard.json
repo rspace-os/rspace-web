@@ -154,6 +154,8 @@
     "archiveExportCompleted": "Export Completed",
     "bookingCancelled": "Booking Cancelled",
     "bookingCreated": "Booking Created",
+    "bookingRestored": "Booking Restored",
+    "bookingRestoredSubject": "Booking Restored: {0}",
     "documentDeleted": "Document Deleted",
     "documentEdited": "Document Edited",
     "documentShared": "Document Shared",
