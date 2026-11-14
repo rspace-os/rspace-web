@@ -92,19 +92,11 @@ afterAll(() => {
   restoreStderr();
 });
 
-/*
- * Polyfill for TextEncoder and TextDecoder in Vitest tests.
- *
- * These classes are available in browsers but not in Node.js by default.
- * Some dependencies (such as MUI, emotion, or others) may require TextEncoder/TextDecoder
- * for encoding/decoding text, even in test environments.
- * This ensures tests that rely on these APIs do not fail with "ReferenceError: TextEncoder is not defined".
- */
+// Provide encoding APIs when jsdom does not expose them on its global object.
 if (typeof globalThis.TextEncoder !== "function") {
   globalThis.TextEncoder = TextEncoder;
 }
 if (typeof globalThis.TextDecoder !== "function") {
-  // @ts-expect-error Only needed for mocking
   globalThis.TextDecoder = TextDecoder;
 }
 
