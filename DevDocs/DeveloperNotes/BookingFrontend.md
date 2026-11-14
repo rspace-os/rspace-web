@@ -248,7 +248,7 @@ and prevents submission until the matching adjustment is acknowledged. Keep
 that bridge shared when adding another form consumer.
 
 The browsed-day query uses raw confirmed bookings from `fetchDayBookings`.
-It follows `hasNextPage`, requesting `page + 1` without totals, and rejects a target
+It follows `hasNextPage` with a keyset cursor on page 1 without totals, and rejects a target
 batch exceeding ten pages or 1,000 bookings rather than displaying a partial schedule.
 Availability checks stay in the owning page and cover the entire committed
 draft, independently of the browsed date or whether the narrow-layout schedule
@@ -297,6 +297,16 @@ problem extensions in domain code. See [the API v2 frontend client guide](RestAp
 
 Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
 non-string values) and use their normal display-timezone defaults.
+
+## Settings access and draft stability
+
+`BookingSettingsRoutePage` checks sysadmin access before requesting settings. A 403 produces
+the not-permitted state. Settings and item queries use `retryUnlessClientError` from
+`modules/common/queries/queryRetry.ts`: permanent 4xx responses do not retry, except 408/429;
+network failures and 5xx responses retain three retries. Clean Settings forms adopt a
+refreshed baseline. Dirty forms and failed saves retain input, including weekday editing history.
+A successful save or explicit reload adopts server values and starts a new editing session.
+Item configuration and notification editors likewise retain drafts through background refreshes.
 
 The Booking API scheduling-timezone write behavior is described in
 [Booking](Booking.md#scheduling-timezone-writes).
@@ -378,3 +388,11 @@ returned records and companion lists, including when `docs` is empty. Callers
 joining a refetch already started by generated mutation options pass
 `{ cancelRefetch: false }` as the fourth argument to await the
 existing request without cancelling and restarting it.
+
+Configuration saves submit fields changed from the opening baseline. After a 412, the form waits for the refreshed configuration version, reapplies user-only changes, and requires a choice for fields changed by both editors. Unchanged `enabled` is omitted.
+
+The inline editor fetches the booking after a 412 or an uncertain save result. A matching uncertain save is complete. Otherwise it shows the server and draft intervals and requires confirmation before submitting both endpoints against the refreshed version.
+
+Create intents carry an `Idempotency-Key`. Retrying an unchanged payload retains the key; changing the submitted payload or completing a create starts a new intent. The backend's stored request fingerprint remains authoritative.
+
+Dashboard and day-schedule requests use keyset paging on `(start, id)`, with pages of at most 100. The cursor preserves the server's serialized `start`, including fractional seconds, and uses the existing RSQL comparison operators.

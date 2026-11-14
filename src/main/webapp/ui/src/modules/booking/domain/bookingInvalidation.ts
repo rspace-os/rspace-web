@@ -12,12 +12,14 @@ import { getSearchBookingConfigurationAccessGranteesQueryKey } from "@/modules/c
 const window = { start: "1970-01-01T00:00:00Z", end: "1970-01-02T00:00:00Z", mine: false, page: 1, limit: 1 };
 const operationPaths = {
   targets: getSearchBookingConfigurationTargetsQueryKey({})[0],
-  availabilityCounts: getCountBookingCatalogueAvailabilityQueryKey({ mine: false })[0],
   catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 1 })[0],
   locations: getSearchBookingCatalogueLocationsQueryKey({ page: 1, limit: 1 })[0],
   calendarCatalogue: getSearchCalendarCatalogueQueryKey(window)[0],
+  availabilityCounts: getCountBookingCatalogueAvailabilityQueryKey({ mine: false })[0],
   calendarEvents: getSearchCalendarEventsQueryKey(window)[0],
 };
+
+/** Refresh every parameter variant of a list operation, including its aggregate queries. */
 export async function invalidateBookingListOperation(
   queryClient: QueryClient,
   operation: keyof typeof operationPaths | { accessGrantees: number },

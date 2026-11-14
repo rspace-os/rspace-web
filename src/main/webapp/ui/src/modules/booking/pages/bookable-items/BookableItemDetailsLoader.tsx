@@ -25,12 +25,17 @@ export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string;
     target === undefined ||
     target.globalId !== globalId
   ) {
+    const notFound = !configuration.isError || isPermanentClientError(configuration.error);
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">
           <EmptyHeader>
-            <EmptyTitle>{t("bookableItemDetails.error.title")}</EmptyTitle>
-            <EmptyDescription>{t("bookableItemDetails.error.description")}</EmptyDescription>
+            <EmptyTitle>
+              {notFound ? t("bookableItemDetails.notFound.title") : t("bookableItemDetails.error.title")}
+            </EmptyTitle>
+            <EmptyDescription>
+              {notFound ? t("bookableItemDetails.notFound.description") : t("bookableItemDetails.error.description")}
+            </EmptyDescription>
           </EmptyHeader>
           <Button type="button" variant="outline" onClick={() => void configuration.refetch()}>
             {commonT("actions.retry")}

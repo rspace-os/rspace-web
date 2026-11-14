@@ -74,8 +74,10 @@ export function setupPage() {
   } as ReturnType<typeof useCurrentUserQuery>);
 }
 
-export function renderPage(initialEntry = "/booking/bookable-items/IN123") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+export function renderPage(
+  initialEntry = "/booking/bookable-items/IN123",
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });

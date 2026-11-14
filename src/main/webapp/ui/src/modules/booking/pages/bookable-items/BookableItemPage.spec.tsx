@@ -1,3 +1,5 @@
+import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -783,4 +785,42 @@ describe("BookableItemPage", () => {
       for (const day of days) expect(contentHeight(day), `${day} weekday content height after edit`).toBe(sharedHeight);
     });
   });
+});
+
+test("resolves overlapping configuration edits before saving only changed fields", async () => {
+  let current = { ...bookableItemFixtures[0], configurationVersion: Number(0) };
+  const bodies: unknown[] = [];
+  worker.use(
+    http.get("/api/v2/booking-configurations", () =>
+      HttpResponse.json({
+        docs: [current],
+        page: 1,
+        limit: 100,
+        hasNextPage: false,
+      }),
+    ),
+    http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+      bodies.push(await request.json());
+      if (bodies.length === 1) {
+        current = { ...current, configurationVersion: 1, maxBookingDurationMinutes: 120, allowDoubleBooking: true };
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", code: "errors.api.v2.unexpected", status: 412 },
+          { status: 412 },
+        );
+      }
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  render(<BookableItemPageStory history={history} />);
+  await pageObj.openEditor();
+  await userEvent.fill(pageObj.maximumDuration, "60");
+  await pageObj.save.click();
+  const keep = page.getByRole("button", { name: "Keep my value" });
+  await expect.element(keep).toBeVisible();
+  await expect.element(page.getByText(`Server value: ${formatDurationMinutes(120)}`, { exact: true })).toBeVisible();
+  await expect.element(pageObj.save).toBeDisabled();
+  await keep.click();
+  await pageObj.save.click();
+  await expect.poll(() => bodies.length).toBe(2);
+  expect(bodies[1]).toEqual({ maxBookingDurationMinutes: 60 });
 });
