@@ -5,6 +5,13 @@
     "get": "getContainer",
     "audit": "listContainerAuditEvents"
   },
+  "feature-flags": {
+    "list": "listFeatureFlags",
+    "count": "countFeatureFlags",
+    "get": "getFeatureFlag",
+    "update": "updateFeatureFlag",
+    "audit": "listFeatureFlagAuditEvents"
+  },
   "instruments": {
     "list": "listInstruments",
     "count": "countInstruments",
