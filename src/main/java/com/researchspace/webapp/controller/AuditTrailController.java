@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -184,6 +185,7 @@ public class AuditTrailController extends BaseController {
     }
     ISearchResults<AuditTrailSearchResult> res =
         auditTrailHandler.searchAuditTrail(inputSearchConfig, pgCrit, subject);
+    BookingAuditDetails.addTo(res.getResults(), messages, LocaleContextHolder.getLocale());
     return new AjaxReturnObject<>(res, null);
   }
 

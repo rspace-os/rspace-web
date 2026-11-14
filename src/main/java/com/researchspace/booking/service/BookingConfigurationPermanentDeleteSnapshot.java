@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
@@ -8,7 +9,7 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import java.time.Instant;
 
 /** Immutable audit payload captured before a booking configuration is permanently removed. */
-@AuditTrailData
+@AuditTrailData(auditDomain = AuditDomain.BOOKING)
 public record BookingConfigurationPermanentDeleteSnapshot(
     long configurationId,
     long configurationVersion,

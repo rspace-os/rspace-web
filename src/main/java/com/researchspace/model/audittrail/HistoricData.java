@@ -24,6 +24,9 @@ public class HistoricData {
   private Date timestamp;
   @Setter private String description;
 
+  /** Readable details of the recorded data for display; not part of the logged event. */
+  @Setter private String details;
+
   /**
    * @param domain A non-null {@link AuditDomain}
    * @param action A non-null AuditAction

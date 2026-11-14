@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -31,10 +32,12 @@ public final class BookableTargetReference implements Serializable {
     this.id = Objects.requireNonNull(id, "Target id");
   }
 
+  @JsonProperty("type")
   public BookableTargetType type() {
     return type;
   }
 
+  @JsonProperty("id")
   public Long id() {
     return id;
   }
