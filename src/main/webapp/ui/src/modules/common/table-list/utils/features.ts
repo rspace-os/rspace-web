@@ -20,6 +20,7 @@ import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import type { TableListCardFieldLayout } from "../types";
 
 export type ColumnMeta = {
+  widthMode?: "fill" | "content";
   labelKey: string;
   label?: string;
   derivedLabel?: LabelText;

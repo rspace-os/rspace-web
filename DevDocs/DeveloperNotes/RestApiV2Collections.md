@@ -729,11 +729,11 @@ Offsets beyond Blaze's integer limit return an empty slice without querying. `pa
 
 Booking and booking-configuration lists retain the counted entity path. Their documents include
 caller-specific privacy, capabilities, role sources and owner health prepared from access
-aggregates. The ordered page query selects IDs, then fetches the selected entities with their to-one
-actors and access aggregate in one ID-scoped query; assignments and instrument targets are resolved
-in batches. Moving these lists to scalar read documents also requires projecting those access inputs
-and preserving their caller-specific preparation. Until then, these lists count internally even
-without `totals=true`.
+aggregates. The ordered page query selects IDs. A second query fetches only those entities with
+their to-one actors and configuration. Actor columns stay out of the paginated sort. Assignments and
+instrument targets are resolved in batches. Moving these lists to scalar read documents also
+requires projecting those access inputs and preserving their caller-specific preparation. Until
+then, these lists count internally even without `totals=true`.
 
 The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is needed to preserve
 sort order.
@@ -962,6 +962,18 @@ when moving controllers or documentation.
 
 Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are introduced in the
 layers that first require them.
+
+## API v2 conventions
+
+Every list returns `{docs: [...]}`. Paged lists add paging members. Bounded lookups return `docs`
+alone (D4).
+
+Writes requiring a current version use `ETag` on reads and `If-Match` on writes, without a body
+version. Missing headers return 428, stale versions return 412, and business conflicts return 409
+(D5).
+
+Free-text search uses `q`. Time windows use inclusive `start` and exclusive `end` (D6). A feature
+switched off returns 404 for reads and writes (D7).
 
 ## OpenAPI tags
 

@@ -33,26 +33,22 @@ Unrelated OpenAPI properties and extensions do not need table-specific validatio
 
 Use this procedure for most new tables.
 
-### 1. Define the document schema
+### 1. Use the generated read schema
 
-Sparse REST API v2 responses omit unselected fields. Make these fields optional in the schema.
-
-Keep the ID and title fields required when every table request selects them.
+Import the model and component schema generated from the backend contract. For an
+instrument table, these are:
 
 ```ts
-import * as v from "valibot";
-
-export const ExperimentSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  owner: v.optional(v.string()),
-  ownerId: v.optional(v.number()),
-  enabled: v.optional(v.boolean()),
-  modifiedAt: v.optional(v.string()),
-});
-
-export type Experiment = v.InferOutput<typeof ExperimentSchema>;
+import type { InstrumentsRead } from "@/modules/common/api/v2/generated/models";
+import { InstrumentsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 ```
+
+Generated reads permit sparse responses. The adapter requires the selected fields at
+runtime with `v.required(v.pick(...))`; do not duplicate the response schema. A domain
+row type with different values or relationships supplies an explicit `mapDocument`.
+
+The fictional configuration below assumes an `ExperimentsRead` model generated after
+adding that backend resource. Real tables import their resource's generated model.
 
 ### 2. Define one collection configuration
 
@@ -116,7 +112,7 @@ export const experimentConfig = {
       readOnly: true,
     },
   ],
-} satisfies CollectionConfig<Experiment>;
+} satisfies CollectionConfig<ExperimentsRead>;
 ```
 
 The adapter replaces field capabilities with the generated API rules. The table cannot offer an unsupported sort or filter.
@@ -207,12 +203,12 @@ You can split large configuration parts into files. Keep the final exported valu
 ```ts
 export const experimentFields = [
   // Field entries.
-] satisfies CollectionConfig<Experiment>["fields"];
+] satisfies CollectionConfig<ExperimentsRead>["fields"];
 
 export const experimentConfig = {
   // Collection settings.
   fields: experimentFields,
-} satisfies CollectionConfig<Experiment>;
+} satisfies CollectionConfig<ExperimentsRead>;
 ```
 
 ### 3. Add custom renderers when required
@@ -265,7 +261,7 @@ and `dataScope`, never cache keys. Identity changes reload through the token pro
 
 The hook loads `/api/v2/openapi.json` through the shared query cache and reads the resource fields,
 filters, sort rules, and limits. It creates REST API v2 query parameters, sends the collection request
-through its registry entry, and returns mapped rows and a row count.
+through its generated registry operation, and returns mapped rows and a row count.
 
 OpenAPI metadata stays fresh for the application session. A deployment starts a new browser session with new assets and metadata.
 
@@ -311,6 +307,11 @@ Set `form: false` for a field that the form must omit. A field form configuratio
 description, widget, width, or display condition. `RenderFields` also supports row and section
 layout entries.
 
+In WebKit only, the shared `Input` hides native time text for empty, controlled time fields
+while unfocused, so Safari's stand-in current time cannot look like a selected time. Other
+engines keep their `--:--` hint. Focus restores the native editor, and a half-typed time
+(`validity.badInput`) stays visible after blur. See the `DesignSystem/Input` time stories.
+
 A relationship field uses `relationshipSources` when its target has a registered remote source.
 Otherwise, pass static choices through `relationshipOptions`. Pass
 `relationshipOptionAvailability` when another record can make an option unavailable.
@@ -333,8 +334,11 @@ and [Table List data sources](./TableListDataSources.md) for rows already in the
 endpoints.
 
 API v2 tables load count-free pages and request `totals=true` separately once per
-filter/sort combination. The total uses the generated collection key with `totals: true` and a fixed first page.
-Generated invalidation refreshes both page and total queries.
+filter/sort combination. The total uses the same `api-v2` resource, endpoint and
+authorization prefix as page queries, without paging or column projection in its
+key. Invalidate that prefix after writes to refresh both the current page and its
+total. Until the total arrives, pagination shows “of many”; next-page availability
+always follows the page response's `hasNextPage`.
 
 When wire and domain objects differ, pass `mapDocument` with the generated schema.
 The adapter validates `v.required(v.pick(schema, selected))` before invoking the mapper.

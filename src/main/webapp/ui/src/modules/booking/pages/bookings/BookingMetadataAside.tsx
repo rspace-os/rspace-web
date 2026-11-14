@@ -11,7 +11,7 @@ export function BookingMetadataAside({
   booking: BookingDetails;
   displayTimeZone: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return (
     <Panel
@@ -30,7 +30,7 @@ export function BookingMetadataAside({
           <dt className="text-muted-foreground">{t("bookings.details.created")}</dt>
           <dd>
             <time dateTime={booking.createdAt}>
-              {formatBookingDateTime(booking.createdAt, displayTimeZone, i18n.language, timeFormat)}
+              {formatBookingDateTime(booking.createdAt, displayTimeZone, undefined, timeFormat)}
             </time>
           </dd>
         </div>
@@ -38,7 +38,7 @@ export function BookingMetadataAside({
           <dt className="text-muted-foreground">{t("bookings.details.lastUpdated")}</dt>
           <dd>
             <time dateTime={booking.updatedAt}>
-              {formatBookingDateTime(booking.updatedAt, displayTimeZone, i18n.language, timeFormat)}
+              {formatBookingDateTime(booking.updatedAt, displayTimeZone, undefined, timeFormat)}
             </time>
           </dd>
         </div>

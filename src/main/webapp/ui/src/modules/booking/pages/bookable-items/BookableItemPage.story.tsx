@@ -11,6 +11,7 @@ import {
 import { Suspense } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
+import { BookingNoticesProvider } from "@/modules/booking/feedback/BookingNotices";
 import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
@@ -64,7 +65,15 @@ export function BookableItemPageStory({
       </NuqsAdapter>
     ),
   });
-  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const bookingRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/booking",
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+      </BookingNoticesProvider>
+    ),
+  });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([

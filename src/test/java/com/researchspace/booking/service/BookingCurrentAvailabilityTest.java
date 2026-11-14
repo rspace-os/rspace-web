@@ -84,7 +84,7 @@ class BookingCurrentAvailabilityTest {
 
   @ParameterizedTest
   @CsvSource({"10, 20", "20, 10"})
-  void widensEventsByTheSharedBufferGap(int before, int after) {
+  void widensBookingsByTheSumOfTheDirectionalGaps(int before, int after) {
     BookingConfiguration buffered = configuration("UTC");
     buffered.setBufferBeforeMinutes(before);
     buffered.setBufferAfterMinutes(after);
@@ -94,11 +94,43 @@ class BookingCurrentAvailabilityTest {
         List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z"));
     // The buffer ends at 09:00 exactly, and intervals are half-open.
     List<EventInterval> endedAtTwentyToNine =
-        List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:40:00Z"));
+        List.of(event(BookingEventKind.BOOKING, "2026-08-17T08:00:00Z", "2026-08-17T08:30:00Z"));
 
     assertEquals(LATER, classify(buffered, startsAtQuarterPastNine, UTC_DAY_AT_NINE));
     assertEquals(LATER, classify(buffered, endedAtQuarterToNine, UTC_DAY_AT_NINE));
     assertEquals(NOW, classify(buffered, endedAtTwentyToNine, UTC_DAY_AT_NINE));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false", "true"})
+  void maintenanceUsesTheBookingGapFacingItWithUnequalGaps(boolean doubleBooking) {
+    BookingConfiguration item = configuration("UTC");
+    item.setBufferBeforeMinutes(7);
+    item.setBufferAfterMinutes(13);
+    item.setAllowDoubleBooking(doubleBooking);
+    var preceding =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T08:00:00Z", "2026-08-17T08:53:00Z"));
+    assertEquals(LATER, classify(item, preceding, atUtc("2026-08-17T08:59:00Z")));
+    assertEquals(NOW, classify(item, preceding, UTC_DAY_AT_NINE));
+    var following =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T09:13:00Z", "2026-08-17T10:00:00Z"));
+    assertEquals(LATER, classify(item, following, UTC_DAY_AT_NINE));
+  }
+
+  @Test
+  void keepsMaintenanceBuffersOccupiedUntilTheirHalfOpenBoundary() {
+    BookingConfiguration buffered = configuration("UTC");
+    buffered.setBufferBeforeMinutes(15);
+    buffered.setBufferAfterMinutes(15);
+    buffered.setAllowDoubleBooking(true);
+    List<EventInterval> events =
+        List.of(
+            event(BookingEventKind.MAINTENANCE, "2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z"));
+
+    assertEquals(LATER, classify(buffered, events, atUtc("2026-08-17T08:59:00Z")));
+    assertEquals(NOW, classify(buffered, events, UTC_DAY_AT_NINE));
   }
 
   @Test

@@ -6,6 +6,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -23,7 +24,6 @@ import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks
 import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { noParentBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
-import { currentUser } from "./calendarFixtures";
 import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 
 // Register before this file's browserSetup beforeAll starts the per-file worker. Firefox can
@@ -552,34 +552,22 @@ describe("Calendar page", () => {
     });
   });
 
-  test("renders visible booking identities as user badges without leaking busy identities", async () => {
+  test("renders compact booking initials with the supplied display name without leaking busy identities", async () => {
     render(<CalendarPageStory history={history} />);
     await calendar.chooseView("Time grid");
     await calendar.chooseView("Week");
 
-    const visibleIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
-    await expect.element(visibleIdentity).toBeVisible();
-    expect(visibleIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
-    await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
+    const event = calendar.event("Confocal microscope");
+    const initials = event.getByTitle("Ada Lovelace", { exact: true }).filter({ hasText: /^AL$/ });
+    await expect.element(initials).toBeVisible();
+    await expect.element(initials).toHaveTextContent("AL");
+    await expect.element(initials).toHaveAttribute("title", ownBooking.bookedBy);
+    await expect.element(calendar.event("Busy").getByTitle("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
 
     await calendar.chooseView("Month");
-    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    await expect
-      .poll(() => {
-        const event = calendar.event("Confocal microscope").element();
-        const badge = event.querySelector<HTMLElement>('[data-slot="user-badge"]');
-        const title = Array.from(event.querySelectorAll<HTMLElement>("span")).find(
-          (element) => element.textContent === "Confocal microscope",
-        );
-        const badgeBox = badge?.getBoundingClientRect();
-        const titleBox = title?.getBoundingClientRect();
-        return {
-          badgeIsCompact: (badge?.getBoundingClientRect().height ?? Infinity) <= 20,
-          contentFits: event.scrollHeight <= event.clientHeight + 1,
-          identityOnSeparateLine: badgeBox !== undefined && titleBox !== undefined && badgeBox.top >= titleBox.bottom,
-        };
-      })
-      .toEqual({ badgeIsCompact: true, contentFits: true, identityOnSeparateLine: true });
+    await expect.element(event).toBeVisible();
+    await expect.element(initials).toBeVisible();
+    await expect.poll(() => event.element().scrollHeight <= event.element().clientHeight + 1).toBe(true);
     await expectNoAxeViolations();
   });
 
@@ -594,9 +582,12 @@ describe("Calendar page", () => {
     await calendar.chooseView("Time grid");
     await expect.element(calendar.timeGrid).toBeVisible();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
-    const compactIdentity = calendar.event("Confocal microscope").getByText("Ada Lovelace", { exact: true });
+    const compactIdentity = calendar
+      .event("Confocal microscope")
+      .getByTitle("Ada Lovelace", { exact: true })
+      .filter({ hasText: /^AL$/ });
     await expect.element(compactIdentity).toBeVisible();
-    expect(compactIdentity.element().closest('[data-slot="user-badge"]')).not.toBeNull();
+    await expect.element(compactIdentity).toHaveTextContent("AL");
     await expect.element(calendar.event("Busy")).toBeVisible();
     await expect.element(calendar.event("Busy").getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
     await expect.poll(() => bookingPageRequests.calendarBookingRequests.length).toBe(3);
@@ -717,6 +708,39 @@ describe("Calendar page", () => {
     await expect.element(calendar.timeGridCanvas).toHaveAttribute("data-creation-disabled", "true");
   });
 
+  test("caps a Time grid creation drag at the item maximum", async () => {
+    const confocal = bookableItemFixtures.find((fixture) => fixture.target.globalId === "IN123");
+    if (!confocal) throw new Error("Missing confocal fixture");
+    worker.use(
+      http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, () =>
+        HttpResponse.json({
+          items: [
+            {
+              ...bookableItemOption(confocal),
+              configurationVersion: confocal.configurationVersion,
+              targetType: "INSTRUMENT",
+              effectiveRole: confocal.effectiveRole,
+              capabilities: confocal.capabilities,
+              maxBookingDurationMinutes: 60,
+              location: null,
+            },
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+          facets: { types: ["INSTRUMENT"] },
+        }),
+      ),
+    );
+    history.replace("/booking/calendar?date=2026-08-17&target=IN123&layout=time-grid");
+    render(<CalendarPageStory history={history} />);
+    await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "false");
+    await expect.element(calendar.timeGridCanvas).not.toHaveAttribute("data-creation-disabled");
+    await calendar.dragTimeGridRange(12 * 60, 14 * 60);
+    await expect.element(calendar.bookingDialog.getByLabelText("Start time")).toHaveValue("12:00");
+    await expect.element(calendar.bookingDialog.getByLabelText("End time")).toHaveValue("13:00");
+  });
+
   test("keeps the Time grid free of drag creation when several bookable items are in scope", async () => {
     history.replace("/booking/calendar?date=2026-08-17&layout=time-grid");
     render(<CalendarPageStory history={history} />);
@@ -744,7 +768,12 @@ describe("Calendar page", () => {
                 ...bookableItemOption(confocal),
                 configurationVersion: confocal.configurationVersion,
                 targetType: "INSTRUMENT",
-                openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+                openingHours: bookableItemOption(confocal).openingHours.map((entry) => ({
+                  ...entry,
+                  start: "00:00",
+                  end: "24:00",
+                })),
+
                 effectiveRole: confocal.effectiveRole,
                 capabilities: confocal.capabilities,
                 location: {
@@ -784,7 +813,11 @@ describe("Calendar page", () => {
       const scrollerBounds = scroller.element().getBoundingClientRect();
       const dayLengthMinutes = 25 * 60;
       const positionAt = (minute: number) => ({
-        x: canvasBounds.left - scrollerBounds.left + (minute / dayLengthMinutes) * canvasBounds.width,
+        x:
+          canvasBounds.left -
+          scrollerBounds.left -
+          scroller.element().clientLeft +
+          (minute / dayLengthMinutes) * canvasBounds.width,
         y: canvasBounds.top - scrollerBounds.top + 60,
       });
       // Target the viewport so Playwright does not center the oversized canvas and hide the drag origin.
@@ -960,8 +993,8 @@ describe("Calendar page", () => {
     const dialog = await calendar.openTargetlessBookingDialog();
     const timeFormatter = new Intl.DateTimeFormat(undefined, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
     const clock = (hour: number) => timeFormatter.format(new Date(Date.UTC(2026, 7, 18, hour)));
-    const viewerHours = `${clock(2)} - ${clock(11)}`;
-    const instrumentHours = `${clock(8)} - ${clock(17)}`;
+    const viewerHours = `${clock(2)}–${clock(11)}`;
+    const instrumentHours = `${clock(8)}–${clock(17)}`;
     // A Berlin item seen from New York: the viewer's own hours for the date, with no timezone named.
     await expect.element(dialog.getByText(`Open on this date: ${viewerHours}`, { exact: true })).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
@@ -1056,6 +1089,47 @@ describe("Calendar page", () => {
     await confirmation.getByRole("button", { name: "Discard changes" }).click();
     await expect.element(dirtyDialog).not.toBeInTheDocument();
     await expect.poll(() => history.location.search).toContain("date=2026-08-16");
+  });
+
+  test("preserves the previous history entry when Back cancels a pending event focus", async () => {
+    const originalUrl = window.location.href;
+    const previousUrl = "/booking/calendar?date=2026-08-16&layout=agenda&calendar-resources.q=previous";
+    window.history.replaceState({}, "", previousUrl);
+    const browserHistory = createBrowserHistory();
+    let release = () => {};
+    let started = false;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("where")?.includes("IN123")) {
+          started = true;
+          await held;
+        }
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const rendered = render(<CalendarPageStory history={browserHistory} />);
+    try {
+      await expect.element(calendar.heading).toBeVisible();
+      browserHistory.push(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=pending-back",
+      );
+      await expect.poll(() => started).toBe(true);
+      browserHistory.back();
+      await expect.poll(() => window.location.pathname + window.location.search).toBe(previousUrl);
+      release();
+      await expect.element(calendar.search).toHaveValue("previous");
+      expect(window.location.pathname + window.location.search).toBe(previousUrl);
+      browserHistory.forward();
+      await expect.poll(() => new URLSearchParams(window.location.search).get("date")).toBe("2026-08-17");
+    } finally {
+      release();
+      rendered.unmount();
+      browserHistory.destroy();
+      window.history.replaceState({}, "", originalUrl);
+    }
   });
 
   test("keeps beforeunload protection after cancelling a dirty discard dialog", async () => {
@@ -1226,6 +1300,8 @@ describe("Calendar page", () => {
     );
     const newBooking = page.getByRole("button", { name: "New Booking" });
     const moreCreationOptions = page.getByRole("button", { name: "More event creation options" });
+    await expect.element(newBooking).toBeVisible();
+    await expect.element(moreCreationOptions).toBeVisible();
     await expect
       .poll(() => {
         const bookingElement = newBooking.element();

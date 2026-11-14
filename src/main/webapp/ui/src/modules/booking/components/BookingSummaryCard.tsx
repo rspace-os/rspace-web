@@ -4,7 +4,7 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatBookingAgendaDateTime } from "@/modules/booking/domain/bookingAgenda";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingLocale } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
 import type { TableListCardField } from "@/modules/common/table-list/components/TableListCardView";
 import { TableListCard } from "@/modules/common/table-list/components/TableListCardView";
 import { buttonVariants } from "@/modules/common/ui/button";
@@ -35,7 +35,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
   });
   const detailsLabel = t("dashboard.agenda.bookingDetails");
   const formatDateTime = (value: string) =>
-    formatBookingAgendaDateTime(value, booking.start, booking.end, timeZone, bookingLocale(), timeFormat);
+    formatBookingAgendaDateTime(value, booking.start, booking.end, timeZone, bookingDateTimeLocale(), timeFormat);
 
   const dateFields = [
     {

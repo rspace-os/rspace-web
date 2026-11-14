@@ -1,7 +1,12 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle, formatInstantRange, instrumentZoneDiffers } from "@/modules/booking/domain/bookingTime";
+import {
+  bookingDateTimeLocale,
+  bookingHourCycle,
+  formatInstantRange,
+  instrumentZoneDiffers,
+} from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -24,7 +29,7 @@ export function BookingInstrumentTimeTooltip({
   trigger,
   children,
 }: BookingInstrumentTimeTooltipProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const browserZone = browserTimeZone();
   const timeFormat = useBookingTimeFormat();
 
@@ -36,7 +41,7 @@ export function BookingInstrumentTimeTooltip({
 
   if (!showTooltip && !trigger) return children ?? null;
 
-  const formatter = new Intl.DateTimeFormat(i18n.language, {
+  const formatter = new Intl.DateTimeFormat(bookingDateTimeLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -49,7 +54,7 @@ export function BookingInstrumentTimeTooltip({
   const dateTime =
     time ??
     (start && end
-      ? formatInstantRange(formatter, new Date(start), new Date(end), " – ")
+      ? formatInstantRange(formatter, new Date(start), new Date(end))
       : start
         ? formatter.format(new Date(start))
         : "");

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { MyBookingsPageStory, myBookingsStoryUrl } from "./MyBookingsPage.story";
 import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
@@ -45,6 +46,21 @@ afterEach(() => {
 });
 
 describe("the My Bookings page", () => {
+  test.each([1280, 1376])("keeps row actions on one line at %s px", async (width) => {
+    await withViewport(width, async () => {
+      render(<MyBookingsPageStory history={history} />);
+      await expect.element(pageObj.confocalMoreActions).toBeVisible();
+      const controls = [
+        pageObj.confocalItemCalendar,
+        pageObj.confocalDetails,
+        pageObj.confocalEdit,
+        pageObj.confocalMoreActions,
+      ];
+      const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+      expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
+    });
+  });
+
   test("searches booking purpose and instrument IDs without dropping requester scope", async () => {
     history.replace("/booking/my-bookings?period=upcoming");
     const listRequests: URL[] = [];
@@ -304,4 +320,87 @@ test("keeps all row actions visible at common desktop widths", async () => {
   }
   await pageObj.confocalMoreActions.click();
   await expect.element(pageObj.cancelMenuItem).toBeVisible();
+});
+
+test.each([1280, 1376])("fits the table and purpose beside sticky actions at %s pixels", async (width) => {
+  await page.viewport(width, 795);
+  const purpose =
+    "Extended imaging session to compare the complete set of samples across multiple acquisition settings and export the resulting measurements for the weekly analysis meeting.";
+  const name = "Live-cell confocal microscope with environmental control and automated high-resolution imaging";
+  worker.use(
+    ...bookingHandlers(undefined, undefined, [
+      {
+        ...upcomingBooking,
+        purpose,
+        target: { ...upcomingBooking.target, value: { ...upcomingBooking.target.value, name } },
+      },
+    ]),
+  );
+  render(
+    <div style={{ width: width - 346 }}>
+      <MyBookingsPageStory history={history} />
+    </div>,
+  );
+  await expect.element(pageObj.confocalDetails).toBeVisible();
+  const table = page.getByRole("table");
+  await expect
+    .poll(() => {
+      const element = table.element();
+      return element.scrollWidth <= (element.parentElement?.clientWidth ?? 0);
+    })
+    .toBe(true);
+  const itemName = page.getByRole("link", { name, exact: true });
+  await expect.element(itemName).toBeVisible();
+  const link = itemName.element();
+  const cell = link.closest("td");
+  if (!cell) throw new Error("Expected item table cell");
+  expect(link.closest("[title]")).toBeNull();
+  const style = getComputedStyle(link);
+  const lineHeight = Number.parseFloat(style.lineHeight);
+  expect(link.getBoundingClientRect().height).toBeCloseTo(2 * lineHeight, 0);
+  expect(link.scrollHeight).toBeGreaterThan(link.clientHeight);
+  expect(style.webkitLineClamp).toBe("2");
+  expect(style.overflow).toBe("hidden");
+  const controls = [
+    pageObj.confocalItemCalendar,
+    pageObj.confocalDetails,
+    pageObj.confocalEdit,
+    pageObj.confocalMoreActions,
+  ];
+  const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+  expect(tops).toEqual(controls.map(() => tops[0]));
+  link.focus();
+  await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
+  await itemName.hover();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
+  await userEvent.keyboard("{Tab}");
+  await page.getByRole("heading", { name: "My Bookings", exact: true }).hover();
+  await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
+  await page.getByRole("button", { name: purpose, exact: true }).hover();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(purpose);
+});
+
+test("makes a long non-link item name's full tooltip accessible by keyboard after role loss", async () => {
+  const name = "Live-cell confocal microscope with environmental control and automated high-resolution imaging";
+  worker.use(
+    ...bookingHandlers(undefined, undefined, [
+      {
+        ...upcomingBooking,
+        canViewConfiguration: false,
+        canEdit: false,
+        canCancel: false,
+        target: { ...upcomingBooking.target, value: { ...upcomingBooking.target.value, name } },
+      },
+    ]),
+  );
+  render(<MyBookingsPageStory history={history} />);
+  const trigger = page.getByRole("button", { name, exact: true });
+  await expect.element(trigger).toBeVisible();
+  await expect.element(page.getByRole("link", { name, exact: true })).not.toBeInTheDocument();
+  expect(trigger.element().closest("[title]")).toBeNull();
+  trigger.element().focus();
+  await userEvent.keyboard("{Tab}{Shift>}{Tab}{/Shift}");
+  await expect.element(trigger).toHaveFocus();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent(name);
 });

@@ -4,6 +4,7 @@ import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
 import { monthlyDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Card, CardContent } from "@/modules/common/ui/card";
@@ -32,7 +33,7 @@ export function AtAGlanceWidget({
   timeZone: string;
   today: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const [month, setMonth] = useState(() => monthStartForTimeZone(timeZone));
   const [openDayKey, setOpenDayKey] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export function AtAGlanceWidget({
         : new Map<string, readonly BookingListDocument[]>(),
     [interval.dates, query.data, query.isSuccess, timeZone],
   );
-  const displayLocale = i18n.resolvedLanguage ?? i18n.language;
+  const displayLocale = bookingDateTimeLocale();
   const monthLabel = new Intl.DateTimeFormat(displayLocale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(month.getFullYear(), month.getMonth(), 1)),
   );

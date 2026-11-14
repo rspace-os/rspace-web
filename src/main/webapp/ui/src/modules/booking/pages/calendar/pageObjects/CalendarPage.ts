@@ -1,7 +1,8 @@
+import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 import { bookableItemHeading } from "../../bookable-items/pageObjects/bookableItemLocators";
 
-type CalendarViewOption = "Time grid" | "By Item" | "Agenda" | "Day" | "Week" | "Month";
+type CalendarViewOption = "Time grid" | "By Item" | "Agenda" | "Availability" | "Day" | "Week" | "Month";
 
 export class CalendarPage {
   get inlineSave(): Locator {
@@ -18,7 +19,7 @@ export class CalendarPage {
   readonly reset: Locator = this.toolbar.getByRole("button", {
     name: "Reset filters, sorting, and columns to defaults",
   });
-  readonly filters: Locator = this.toolbar.getByRole("button", { name: /^Filters(?:,| )/ });
+  readonly filters: Locator = this.toolbar.getByRole("button", { name: /^Filters(?:$|[ ,])/ });
   readonly dateControls: Locator = page.getByRole("group", { name: "Calendar date controls" });
   readonly viewMenu: Locator = this.toolbar.getByRole("button", { name: /^View: / });
   readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });
@@ -42,6 +43,7 @@ export class CalendarPage {
     await this.viewMenu.click();
     await this.viewOption(name).click();
     await userEvent.keyboard("{Escape}");
+    await vi.waitUntil(() => page.getByRole("menu", { includeHidden: true }).query() === null);
   }
 
   /** A quick filter switch in the open Filters menu. */

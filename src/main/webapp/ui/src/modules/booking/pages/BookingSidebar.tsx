@@ -25,9 +25,8 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-// Settings edits institution-wide defaults and stays sysadmin-only.
-const items = (today: string, isSysAdmin: boolean) =>
-  [
+const items = (today: string, isSysAdmin: boolean) => {
+  return [
     {
       key: "dashboard",
       icon: LayoutDashboardIcon,
@@ -43,7 +42,7 @@ const items = (today: string, isSysAdmin: boolean) =>
     {
       key: "allItems",
       icon: LibraryBigIcon,
-      link: <Link {...linkOptions({ to: "/booking/all-items", search: {} })} />,
+      link: <Link {...linkOptions({ to: "/booking/all-items" })} />,
     },
     {
       key: "addBooking",
@@ -70,13 +69,11 @@ const items = (today: string, isSysAdmin: boolean) =>
         ]
       : []),
   ] as const;
+};
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
   const { t } = useTranslation("booking");
-  const { data: currentUser } = useCurrentUserQuery();
-  const preferences = useBookingDisplayPreferences();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
@@ -87,6 +84,9 @@ export function BookingSidebar() {
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
   };
+  const { data: currentUser } = useCurrentUserQuery();
+  const preferences = useBookingDisplayPreferences();
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
 
   return (
     <SidebarGroup>
@@ -107,8 +107,7 @@ export function BookingSidebar() {
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
-                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
+                        <SidebarMenuSubButton render={child.link}>
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -118,10 +117,7 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  tooltip={labels[item.key]}
-                  render={"link" in item ? item.link : <button type="button" />}
-                >
+                <SidebarMenuButton tooltip={labels[item.key]} render={item.link}>
                   <item.icon />
                   <span>{labels[item.key]}</span>
                 </SidebarMenuButton>

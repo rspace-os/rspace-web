@@ -134,7 +134,8 @@ class ApiV2QuerySupportTest {
             ApiV2ResourceRequestParser.bulk(
                 "target.name=contains=confocal",
                 ApiV2BookingConfigurationResource.DESCRIPTION,
-                registry));
+                registry,
+                RuntimeFieldContext.empty()));
   }
 
   @Test
@@ -163,7 +164,10 @@ class ApiV2QuerySupportTest {
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.bulk(
-                "createdBy.value==me", ApiV2BookingConfigurationResource.DESCRIPTION, registry));
+                "createdBy.value==me",
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                registry,
+                RuntimeFieldContext.empty()));
   }
 
   @Test
@@ -182,7 +186,11 @@ class ApiV2QuerySupportTest {
 
     ResourceRequest includedRequest =
         ApiV2ResourceRequestParser.item(
-            0, included, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY);
+            0,
+            included,
+            ApiV2MaintenanceResource.DESCRIPTION,
+            REGISTRY,
+            RuntimeFieldContext.empty());
     includedFields.put("maintenances", "startDate");
     ResourceRenderer renderer = new ResourceRenderer(REGISTRY);
     assertEquals(
@@ -194,7 +202,11 @@ class ApiV2QuerySupportTest {
             includedRequest.includes()));
     ResourceRequest excludedRequest =
         ApiV2ResourceRequestParser.item(
-            0, excluded, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY);
+            0,
+            excluded,
+            ApiV2MaintenanceResource.DESCRIPTION,
+            REGISTRY,
+            RuntimeFieldContext.empty());
     Map<String, Object> excludedDocument =
         renderer.render(
             maintenance,
@@ -205,7 +217,8 @@ class ApiV2QuerySupportTest {
         List.of("id", "version", "startDate", "endDate", "stopUserLoginDate", "canUserLoginNow"),
         List.copyOf(excludedDocument.keySet()));
     ResourceRequest emptyRequest =
-        ApiV2ResourceRequestParser.item(0, empty, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY);
+        ApiV2ResourceRequestParser.item(
+            0, empty, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY, RuntimeFieldContext.empty());
     assertEquals(
         Map.of("id", 42L),
         renderer.render(
@@ -228,27 +241,47 @@ class ApiV2QuerySupportTest {
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.item(
-                0, mixed, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY));
+                0,
+                mixed,
+                ApiV2MaintenanceResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
     assertThrows(
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.item(
-                0, unknown, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY));
+                0,
+                unknown,
+                ApiV2MaintenanceResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
     assertThrows(
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.item(
-                0, unknownType, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY));
+                0,
+                unknownType,
+                ApiV2MaintenanceResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
     assertThrows(
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.item(
-                0, nestedBrackets, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY));
+                0,
+                nestedBrackets,
+                ApiV2MaintenanceResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
     assertThrows(
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.item(
-                0, duplicate, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY));
+                0,
+                duplicate,
+                ApiV2MaintenanceResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
   }
 
   private static ApiV2FieldsetQuery fields(Map<String, String> fields) {

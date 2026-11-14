@@ -1,17 +1,22 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { skipToken } from "@tanstack/react-query";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
-import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
+import {
+  getSearchBookingConfigurationTargetsQueryOptions,
+  searchBookingConfigurationTargets,
+} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
   getListBookingConfigurationsQueryOptions,
   listBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import type { BookingConfigurationTarget } from "@/modules/common/api/v2/generated/models/bookingConfigurationTarget";
+import type { BookingConfigurationTargetControllerTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetControllerTargetDirectoryDocument";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
-import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
 export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
   await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
@@ -27,7 +32,6 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
-
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
@@ -136,6 +140,42 @@ export function bookingRouteTargetQuery(globalId: string | undefined) {
       ...(globalId === undefined ? { queryFn: skipToken } : {}),
       enabled: globalId !== undefined,
       select: mapBookingTargetDirectory,
+    },
+  });
+}
+
+export const MINIMUM_TARGET_QUERY_LENGTH = 2;
+
+export function mapBookingTargetDirectory(
+  response: BookingConfigurationTargetControllerTargetDirectoryDocument,
+): BookingConfigurationTarget[] {
+  return response.docs.map((target) => {
+    if (target.deleted !== false) throw new Error("An eligible booking target must not be deleted");
+    return {
+      ...target,
+      id: requireBookingValue(target.id, "id"),
+      globalId: requireBookingValue(target.globalId, "globalId"),
+      name: requireBookingValue(target.name, "name"),
+    };
+  });
+}
+export async function searchBookingTargets(query: string, signal?: AbortSignal): Promise<BookingConfigurationTarget[]> {
+  const q = query.trim();
+  return mapBookingTargetDirectory(
+    await searchBookingConfigurationTargets(
+      { q: q.length >= MINIMUM_TARGET_QUERY_LENGTH ? q : undefined, limit: 20 },
+      { signal },
+    ),
+  );
+}
+
+export function bookingConfigurationPickerTargetQuery(globalId: string | undefined) {
+  return getListBookingConfigurationsQueryOptions<BookingConfiguration>(parameters(globalId ?? ""), {
+    query: {
+      ...(globalId === undefined ? { queryFn: skipToken } : {}),
+      enabled: globalId !== undefined,
+      retry: false,
+      select: (result) => oneConfiguration(globalId ?? "", result.docs.map(mapBookingConfiguration)),
     },
   });
 }

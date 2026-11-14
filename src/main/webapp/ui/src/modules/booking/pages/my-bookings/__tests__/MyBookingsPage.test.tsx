@@ -180,7 +180,7 @@ describe("My Bookings page", () => {
     );
     await waitFor(() => expect(counts).toHaveLength(1));
     const countWhere = counts[0].searchParams.get("where");
-    expect(countWhere).toMatch(/^requester.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
+    expect(countWhere).toMatch(/^requester\.value==84;kind==BOOKING;state==CONFIRMED;end=gt=.+Z$/);
     expect(countWhere).not.toContain("confocal");
     expect(countWhere).not.toContain("target.name");
     expect([...counts[0].searchParams.keys()]).toEqual(["where", "max"]);

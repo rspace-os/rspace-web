@@ -20,6 +20,13 @@ class BookingAuditDetailsTest {
   private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Test
+  void labelsTheDirectionalBookingGap() {
+    assertEquals(
+        "Gap before (minutes): 15",
+        BookingAuditDetails.format(Map.of("bufferBeforeMinutes", 15), messages, Locale.US));
+  }
+
+  @Test
   void formatsIndependentHoursAndKeepsUnknownHistoricalSchedulesVisible() {
     AuditData data =
         AuditData.fromJson(
@@ -32,6 +39,27 @@ class BookingAuditDetailsTest {
     AuditData unknown = AuditData.fromJson("{\"data\":{\"openingHours\":null}}");
     assertEquals(
         "Opening hours: —", BookingAuditDetails.format(unknown.getData(), messages, Locale.US));
+  }
+
+  @Test
+  void incrementUnitIsLabelledAfterTheIncrement() {
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"incrementUnit\":\"DAYS\","
+                + "\"maxBookingDurationMinutes\":0,\"slotGranularityMinutes\":1440}}");
+
+    // Both labels live in the booking namespace that the item's audit history also renders.
+    assertEquals(
+        "Time increment (minutes): 1440; "
+            + label("incrementUnit")
+            + ": DAYS; "
+            + "Maximum duration (minutes): 0",
+        BookingAuditDetails.format(data.getData(), messages, Locale.US));
+  }
+
+  private String label(String key) {
+    return messages.getMessageForLocale(
+        "booking:bookableItemDetails.audit.values." + key, Locale.US);
   }
 
   @Test
@@ -158,6 +186,17 @@ class BookingAuditDetailsTest {
     assertEquals("IN7", booking.getEvent().getDisplayName());
     assertNull(record.getEvent().getDetails());
     assertNull(record.getEvent().getDisplayName());
+  }
+
+  @Test
+  void wordsIncrementUnitsForDisplay() {
+    AuditTrailSearchResult booking = result(AuditDomain.BOOKING, "bookings:1");
+    booking.getEvent().getData().getData().put("incrementUnit", "DAYS");
+
+    BookingAuditDetails.addTo(List.of(booking), messages, Locale.US);
+
+    assertEquals(
+        "Status: Active; " + label("incrementUnit") + ": Days", booking.getEvent().getDetails());
   }
 
   private static AuditTrailSearchResult result(AuditDomain domain, String id) {

@@ -3,6 +3,7 @@ import { isEqual, pick } from "es-toolkit";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import {
   SchedulingSettingsFields,
   SchedulingSettingsSchema,
@@ -55,7 +56,10 @@ type EditableField = (typeof editableFields)[number];
 
 type ConfigurationInput = ReturnType<typeof configurationInput>;
 
-function configurationPatch(baseline: ConfigurationInput, draft: ConfigurationInput): Partial<ConfigurationInput> {
+function configurationPatch(
+  baseline: ConfigurationInput,
+  draft: ConfigurationInput,
+): Partial<BookingConfigurationsUpdate> {
   return Object.fromEntries(
     editableFields.filter((key) => !isEqual(baseline[key], draft[key])).map((key) => [key, draft[key]]),
   );
@@ -89,13 +93,15 @@ export function BookableItemConfigurationForm({
   onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
   const serverValue = (field: EditableField): string => {
     switch (String(field)) {
       case "enabled":
       case "allowDoubleBooking":
         return baseline[field] ? t("common:actions.yes") : t("common:actions.no");
       case "slotGranularityMinutes":
-        return formatDurationMinutes(baseline.slotGranularityMinutes);
+      case "incrementUnit":
+        return formatIncrement(baseline, bookingT);
       case "openingHours":
         if (baseline.openingHours.length === 0) return t("bookableItemDetails.openingHours.closed");
         return baseline.openingHours
@@ -120,7 +126,7 @@ export function BookableItemConfigurationForm({
     input: BookingConfigurationsUpdate;
     version: number;
   } | null>(null);
-  // Remount on discard so remembered weekday hours do not outlive the draft.
+  // Remount on discard so remembered day hours do not outlive the draft.
   const [draftGeneration, setDraftGeneration] = useState(0);
   const form = useForm({
     schema: bookableItemConfigurationFormSchema,

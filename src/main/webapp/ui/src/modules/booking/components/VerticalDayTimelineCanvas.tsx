@@ -5,7 +5,11 @@ import {
   hiddenEdgeLabel,
   resizeDisabledReason,
 } from "@/modules/booking/creation/timelineEditText";
-import { type BookingTimeFormat, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingDateTimeLocale,
+  instantToDayMinute,
+} from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
 import { CLOSED_HOURS_CLASS_NAME, formatMinuteWithDayOffset } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
@@ -95,10 +99,7 @@ export function VerticalDayTimelineCanvas({
 }: VerticalDayTimelineCanvasProps) {
   const { t } = useTranslation("booking");
   const dayHeight = (dayMinutes / 60) * PIXELS_PER_HOUR;
-  const hourTicks = React.useMemo(
-    () => Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, index) => index),
-    [dayMinutes],
-  );
+  const hourTicks = Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, index) => index);
   const draftHeight =
     draftVisible && draftSegment ? (draftSegment.endMinute - draftSegment.startMinute) * PIXELS_PER_MINUTE : 0;
   const committedDraftSegment = editingRange ? clipRangeToDay(editingRange, date, timezone, dayMinutes) : undefined;
@@ -114,7 +115,8 @@ export function VerticalDayTimelineCanvas({
   const hiddenEdgeHandle = (edge: "start" | "end") => {
     const action = adjuster?.hiddenEdge(edge);
     if (!action) return null;
-    const description = hiddenEdgeDescription(edge, action, date, timezone, t);
+    const locale = bookingDateTimeLocale(timeFormat);
+    const description = hiddenEdgeDescription(edge, action, date, timezone, t, locale);
     const apply = () => {
       if (action.kind === "enabled") commitRange(action.range);
     };
@@ -123,7 +125,7 @@ export function VerticalDayTimelineCanvas({
         <button
           type="button"
           data-testid={`vertical-day-timeline-${edge}-continuation`}
-          aria-label={hiddenEdgeLabel(edge, date, t)}
+          aria-label={hiddenEdgeLabel(edge, date, t, locale)}
           aria-describedby={`${instructionsId}-${edge}-continuation`}
           aria-disabled={action.kind === "disabled" || undefined}
           title={description}

@@ -6,9 +6,11 @@ import "@/__tests__/__mocks__/useWebSocketNotifications";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-
+import { I18nextProvider } from "react-i18next";
 import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import axios from "@/common/axios";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
 import { SimplePageWithAppBar } from "./index.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -27,7 +29,7 @@ function stubEndpoints(visibleTabs?: Partial<VisibleTabs>) {
  */
 async function waitForLoaded() {
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: "common:appBar.accountMenu" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" })).toBeEnabled();
   });
 }
 
@@ -92,6 +94,17 @@ describe("App Bar", () => {
     expect(heading).toHaveTextContent("Test Page");
   });
 
+  test("account name includes the visible initial and the user's full name", async () => {
+    const i18n = await createTestI18n({ common }, "common");
+    render(
+      <I18nextProvider i18n={i18n}>
+        <SimplePageWithAppBar variant="page" />
+      </I18nextProvider>,
+    );
+    const account = await screen.findByRole("button", { name: "Account Menu user user (u)" });
+    expect(account).toHaveTextContent("u");
+  });
+
   test("Booking is not a main AppBar link", async () => {
     render(<SimplePageWithAppBar variant="page" />);
     await waitForLoaded();
@@ -104,10 +117,10 @@ describe("App Bar", () => {
     render(<SimplePageWithAppBar variant="page" currentPage="Test Page" />);
     await waitForLoaded();
 
-    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
 
     const accountMenu = await screen.findByRole("menu", {
-      name: "common:appBar.accountMenu",
+      name: "common:appBar.accountMenuAccessible",
     });
     expect(accountMenu).toMatchTextContent("user user");
     const logoutOption = await screen.findByRole("menuitem", {
@@ -202,8 +215,8 @@ describe("App Bar", () => {
       });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
-      await screen.findByRole("menu", { name: "common:appBar.accountMenu" });
+      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
+      await screen.findByRole("menu", { name: "common:appBar.accountMenuAccessible" });
       expect(screen.queryByRole("menuitem", { name: "common:appBar.published" })).toBe(null);
       /*
        * The published page is another piece of functionality that the sysadmin
@@ -218,7 +231,7 @@ describe("App Bar", () => {
       stubEndpoints({ published: true });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenuAccessible" }));
 
       await user.click(await screen.findByRole("menuitem", { name: "common:appBar.published" }));
 
@@ -231,7 +244,7 @@ describe("App Bar", () => {
     await waitForLoaded();
 
     const accountMenuButton = screen.getByRole("button", {
-      name: "common:appBar.accountMenu",
+      name: "common:appBar.accountMenuAccessible",
     });
     expect(accountMenuButton).toBeVisible();
     const helpMenuButton = screen.getByRole("button", { name: "common:helpDocs.openHelp" });

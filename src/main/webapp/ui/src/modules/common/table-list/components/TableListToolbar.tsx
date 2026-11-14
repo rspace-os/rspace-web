@@ -244,8 +244,7 @@ export function TableListToolbar<TDocument>({
             onClick={() => onPanelChange("filters")}
           >
             <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
-            {t("tableList.toolbar.filters")}
-            {filterCount > 0 ? <CountBadge count={filterCount} /> : null}
+            {t("tableList.toolbar.filters")} {filterCount > 0 ? <CountBadge count={filterCount} /> : null}
           </Button>
         ) : null}
         {features.sorting !== false ? (
@@ -263,8 +262,7 @@ export function TableListToolbar<TDocument>({
             onClick={() => onPanelChange("sorting")}
           >
             <ArrowDownUpIcon aria-hidden="true" data-icon="inline-start" />
-            {t("tableList.toolbar.sorting")}
-            {sortingCount > 0 ? <CountBadge count={sortingCount} /> : null}
+            {t("tableList.toolbar.sorting")} {sortingCount > 0 ? <CountBadge count={sortingCount} /> : null}
           </Button>
         ) : null}
         {features.columns !== false ? (
@@ -354,8 +352,7 @@ function FiltersMenu({
         }
       >
         <ListFilterIcon aria-hidden="true" data-icon="inline-start" />
-        {t("tableList.toolbar.filters")}
-        {appliedCount > 0 ? <CountBadge count={appliedCount} /> : null}
+        {t("tableList.toolbar.filters")} {appliedCount > 0 ? <CountBadge count={appliedCount} /> : null}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 gap-3 p-3">
         <fieldset className="flex flex-col gap-3">

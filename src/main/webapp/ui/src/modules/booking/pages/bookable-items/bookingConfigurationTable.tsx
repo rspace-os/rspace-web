@@ -6,7 +6,6 @@ import {
   browserTimeZone,
   useBookingTimeFormat,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow, CollectionTranslationKey } from "@/modules/common/collection/config";
@@ -124,14 +123,6 @@ export const bookingConfigurationConfig = {
       form: false,
     },
     {
-      name: "incrementUnit",
-      type: "select",
-      options: INCREMENT_UNITS,
-      labelKey: "booking:settings.fields.incrementUnit",
-      list: false,
-      form: false,
-    },
-    {
       name: "openingHours",
       type: "array",
       labelKey: "booking:bookableItemDetails.fields.openingHours" satisfies CollectionTranslationKey,
@@ -200,9 +191,9 @@ export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" |
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
 
 function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
-  const { i18n, t } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return value
-    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", i18n.language, timeFormat)
+    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", undefined, timeFormat)
     : t("bookableItemDetails.notAvailable");
 }

@@ -9,11 +9,13 @@ beforeBookingCatalog(async () => {
   );
 });
 
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import i18n from "@/modules/common/i18n";
 import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
+  bookingAddedNoticeValues,
+  bookingDateTimeFormatter,
   bookingDateTimeLocale,
   bookingHourCycle,
   bookingLocale,
@@ -39,6 +41,50 @@ import {
 } from "../bookingTime";
 
 describe("bookingTime", () => {
+  test("keeps recently used formatters and evicts the least recently used at capacity", () => {
+    const options = { timeZone: "UTC", year: "numeric" } as const;
+    const oldest = bookingDateTimeFormatter("en-US-x-oldest", options);
+    const recent = bookingDateTimeFormatter("en-US-x-recent", options);
+    for (let i = 0; i < 126; i++) bookingDateTimeFormatter(`en-US-x-${i}`, options);
+    expect(bookingDateTimeFormatter("en-US-x-recent", options)).toBe(recent);
+    bookingDateTimeFormatter("en-US-x-overflow", options);
+    expect(bookingDateTimeFormatter("en-US-x-oldest", options)).not.toBe(oldest);
+    expect(bookingDateTimeFormatter("en-US-x-recent", options)).toBe(recent);
+    expect(bookingDateTimeFormatter("en-US", { timeZone: "UTC" })).not.toBe(
+      bookingDateTimeFormatter("en-US", { timeZone: "Europe/Berlin" }),
+    );
+  });
+
+  test("isolates cached day bounds by zone and protects them from caller mutation", () => {
+    const berlin = zonedDayBounds("2026-03-29", "Europe/Berlin");
+    berlin.start = "changed";
+    expect(zonedDayBounds("2026-03-29", "Europe/Berlin").elapsedMinutes).toBe(1380);
+    expect(zonedDayBounds("2026-03-29", "Europe/Berlin").start).toBe("2026-03-28T23:00:00Z");
+    expect(zonedDayBounds("2026-03-29", "UTC").elapsedMinutes).toBe(1440);
+  });
+
+  test.each(["en-US", "en-GB", "de-DE"])("caches equivalent options and distinguishes %s hour cycles", (locale) => {
+    for (const timeZone of ["UTC", "Europe/Berlin", "America/New_York"]) {
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone,
+        dateStyle: "medium",
+        timeStyle: "long",
+        hourCycle: "h23",
+      };
+      const formatter = bookingDateTimeFormatter(locale, options);
+      expect(
+        bookingDateTimeFormatter(locale, { hourCycle: "h23", timeStyle: "long", dateStyle: "medium", timeZone }),
+      ).toBe(formatter);
+      const twelveHour = bookingDateTimeFormatter(locale, { ...options, hourCycle: "h12" });
+      expect(twelveHour).not.toBe(formatter);
+      const instant = new Date("2026-11-01T18:30:00Z");
+      expect(twelveHour.format(instant)).not.toBe(formatter.format(instant));
+    }
+    expect(bookingDateTimeFormatter("en-US", { timeZone: "UTC" })).not.toBe(
+      bookingDateTimeFormatter("de-DE", { timeZone: "UTC" }),
+    );
+  });
+
   test("validates and adds calendar dates", () => {
     expect(isPlainDate("2026-02-28")).toBe(true);
     expect(isPlainDate("2026-02-30")).toBe(false);
@@ -159,7 +205,19 @@ describe("bookingTime", () => {
   test("shows a shared timezone only once in an agenda period", () => {
     const period = formatAgendaPeriod("2026-08-18T08:00:00Z", "2026-08-18T09:00:00Z", "Europe/Berlin", "en-GB");
 
-    expect(period.split("GMT+2")).toHaveLength(2);
+    expect(period).not.toContain("GMT");
+    expect(period).toBe("10:00–11:00");
+  });
+
+  test("writes regional dates in booking notices", () => {
+    const values = bookingAddedNoticeValues("2026-11-02T13:00:00Z", "2026-11-02T15:00:00Z", "Europe/London", "H24");
+    expect(values.date).toBe(
+      new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "Europe/London" }).format(
+        new Date("2026-11-02T13:00:00Z"),
+      ),
+    );
+    expect(values.start).toBe("13:00");
+    expect(values.end).toBe("15:00");
   });
 
   test("names the date in a booking period, even when two bookings share the times", () => {
@@ -171,19 +229,17 @@ describe("bookingTime", () => {
     );
   });
 
-  test.each([
-    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "UTC"],
-    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "Europe/Berlin"],
-    ["2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z", "Europe/Berlin"],
-  ])("uses display-zone dates in native ordinary-day ranges: %s to %s in %s", (start, end, timeZone) => {
-    expect(formatBookingPeriod(start, end, timeZone, "en-GB", "H24")).toBe(
-      new Intl.DateTimeFormat("en-GB", {
-        timeZone,
-        dateStyle: "medium",
-        timeStyle: "short",
-        hourCycle: "h23",
-      }).formatRange(new Date(start), new Date(end)),
+  test("prints both dates when a booking crosses midnight in the display zone", () => {
+    expect(formatBookingPeriod("2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "UTC", "en-GB", "H24")).toBe(
+      "6 Nov 2026, 23:00–7 Nov 2026, 01:00",
     );
+  });
+
+  test.each([
+    ["2026-11-06T23:00:00Z", "2026-11-07T01:00:00Z", "7 Nov 2026, 00:00–02:00"],
+    ["2026-11-06T22:00:00Z", "2026-11-06T23:00:00Z", "6 Nov 2026, 23:00–7 Nov 2026, 00:00"],
+  ])("uses display-zone dates to elide the end date: %s to %s", (start, end, expected) => {
+    expect(formatBookingPeriod(start, end, "Europe/Berlin", "en-GB", "H24")).toBe(expected);
   });
 
   describe("dated times on a clock-change day", () => {
@@ -204,16 +260,16 @@ describe("bookingTime", () => {
       expect(later).toBe(`${dateTime("2026-10-25T01:30:00Z")} +01:00`);
       expect(dateTime("2026-10-25T00:30:00Z")).toBe(dateTime("2026-10-25T01:30:00Z"));
       expect(formatBookingPeriod("2026-10-25T00:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${earlier} – 3:30 AM +01:00`,
+        `${earlier}–3:30 AM +01:00`,
       );
       expect(formatBookingPeriod("2026-10-25T01:30:00Z", "2026-10-25T02:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${later} – 3:30 AM +01:00`,
+        `${later}–3:30 AM +01:00`,
       );
     });
 
     test("names the offsets either side of a skipped hour", () => {
       expect(formatBookingPeriod("2026-03-29T00:30:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin", "en-US")).toBe(
-        `${dateTime("2026-03-29T00:30:00Z")} +01:00 – 3:30 AM +02:00`,
+        `${dateTime("2026-03-29T00:30:00Z")} +01:00–3:30 AM +02:00`,
       );
     });
 
@@ -222,12 +278,7 @@ describe("bookingTime", () => {
         dateTime("2026-10-08T04:00:00Z"),
       );
       expect(formatBookingPeriod("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z", "Europe/Berlin", "en-US")).toBe(
-        new Intl.DateTimeFormat("en-US", {
-          dateStyle: "medium",
-          timeStyle: "short",
-          hourCycle: bookingHourCycle("AUTOMATIC"),
-          timeZone: "Europe/Berlin",
-        }).formatRange(new Date("2026-10-08T04:00:00Z"), new Date("2026-10-08T05:00:00Z")),
+        `${dateTime("2026-10-08T04:00:00Z")}–7:00 AM`,
       );
     });
   });
@@ -265,6 +316,37 @@ describe("bookingTime", () => {
     expect(formatAgendaPeriod("2026-08-18T13:00:00Z", "2026-08-18T14:00:00Z", "UTC", "en-GB")).toMatch(
       /^13:00\s?–\s?14:00/,
     );
+  });
+
+  test("refreshes the regional locale and automatic hour cycle when the browser region changes", () => {
+    const OriginalDateTimeFormat = Intl.DateTimeFormat;
+    const formatter = bookingDateTimeFormatter();
+    // Cached-instance spies assume the 128-entry LRU does not evict them mid-test.
+    const staleRegion = vi.spyOn(formatter, "resolvedOptions").mockReturnValue({
+      ...formatter.resolvedOptions(),
+      locale: "en-US",
+    });
+    let browserLocale = "en-US";
+    // biome-ignore lint/complexity/useArrowFunction: Intl.DateTimeFormat is called with new.
+    const formatterConstructor = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locale, options) {
+      return new OriginalDateTimeFormat(locale ?? browserLocale, options);
+    });
+    try {
+      for (const [locale, hourCycle] of [
+        ["en-GB", "h23"],
+        ["en-US", "h12"],
+        ["en-GB", "h23"],
+      ] as const) {
+        browserLocale = locale;
+        expect(bookingDateTimeFormatter()).toBe(formatter);
+        expect(formatter.resolvedOptions().locale).toBe("en-US");
+        expect(bookingDateTimeLocale()).toBe(locale);
+        expect(bookingHourCycle()).toBe(hourCycle);
+      }
+    } finally {
+      formatterConstructor.mockRestore();
+      staleRegion.mockRestore();
+    }
   });
 
   test("an explicit Time format replaces the browser region's clock but not its date order", () => {

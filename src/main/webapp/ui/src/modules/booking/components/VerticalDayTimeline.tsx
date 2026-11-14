@@ -9,8 +9,12 @@ import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHou
 import {
   addCalendarDays,
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   currentWallClock,
   instantToDayMinute,
+  isPlainDate,
+  resolveWallClock,
+  wallClockInstant,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { elapsedNowMinute, useBookingNow } from "@/modules/booking/domain/useBookingNow";
@@ -60,7 +64,7 @@ export type VerticalDayTimelineProps = {
 };
 
 function scrollTopForMinute(minute: number): number {
-  return Math.max(0, minute * PIXELS_PER_MINUTE - PIXELS_PER_HOUR * 2);
+  return Math.max(0, minute * PIXELS_PER_MINUTE);
 }
 
 function openingSegments(
@@ -93,10 +97,10 @@ export function VerticalDayTimeline({
   editing,
   scheduleWindow,
 }: VerticalDayTimelineProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const now = useBookingNow();
   const pastMinute = elapsedNowMinute(now, date, timezone);
-  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;
@@ -135,21 +139,23 @@ export function VerticalDayTimeline({
     () => openingSegments(date, timezone, scheduleWindow),
     [date, scheduleWindow, timezone],
   );
-  const closedHours = React.useMemo(() => closedSegments(openSegments, dayMinutes), [dayMinutes, openSegments]);
+  const closedHours = closedSegments(openSegments, dayMinutes);
   const positionedEvents = React.useMemo(() => layoutVerticalTimelineEvents(events, dayMinutes), [events, dayMinutes]);
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
-  const dateHeading = React.useMemo(
-    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" }),
-    [date, i18n.language],
-  );
-  const compactDateHeading = React.useMemo(
-    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" }),
-    [date, i18n.language],
-  );
-  const resolvedDraftDay = editingRange ? currentWallClock(editingRange.start, timezone).date : undefined;
+  const dateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), { dateStyle: "full" });
+  const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(bookingDateTimeLocale(), {
+    dateStyle: "medium",
+  });
+  const draft = editing?.draft;
+  const draftStart =
+    editingRange?.start ??
+    (draft && isPlainDate(draft.startDate) && /^([01]\d|2[0-3]):[0-5]\d$/.test(draft.startTime)
+      ? wallClockInstant(resolveWallClock(draft.startDate, draft.startTime, timezone), draft.startOccurrence)
+      : undefined);
+  const resolvedDraftDay = draftStart ? currentWallClock(draftStart, timezone).date : undefined;
   const isDraftDay = !resolvedDraftDay || resolvedDraftDay === date;
-  const draftStartMinute = editingRange ? instantToDayMinute(editingRange.start, date, timezone) : 0;
+  const draftStartMinute = draftStart ? instantToDayMinute(draftStart, date, timezone) : 0;
   React.useEffect(() => {
     setExpandedEventId(null);
   }, [date, timezone]);
@@ -172,7 +178,7 @@ export function VerticalDayTimeline({
       JSON.stringify(scheduleWindow?.openingHours ?? []),
     ].join("|");
     const draftKey = `${contextKey}|draft`;
-    if (editingRange && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
+    if (draftStart && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
       const start = Math.max(0, Math.min(dayMinutes, draftStartMinute));
       scroller.scrollTop = scrollTopForMinute(start);
       lastAutoScrollContext.current = draftKey;
@@ -187,6 +193,7 @@ export function VerticalDayTimeline({
     date,
     dayMinutes,
     draftStartMinute,
+    draftStart,
     editing,
     editingRange,
     openSegments,
@@ -275,7 +282,7 @@ export function VerticalDayTimeline({
                 </time>
               </h2>
               <p className="truncate text-xs text-muted-foreground">
-                {itemName ? `${timezone} · ${itemName}` : timezone}
+                {itemName ? t("dayTimeline.vertical.timezoneAndItem", { timezone, item: itemName }) : timezone}
               </p>
             </div>
             <Button

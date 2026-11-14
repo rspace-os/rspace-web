@@ -1,3 +1,4 @@
+import "./__mocks__/resizeObserver";
 import { TextDecoder, TextEncoder } from "node:util";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 // Use the bare matchers entry point: the /vitest entry's module augmentation

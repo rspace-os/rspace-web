@@ -12,6 +12,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.NotificationConfig;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
@@ -59,8 +60,31 @@ public class BookingNotificationService {
     notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_RESTORED, true);
   }
 
+  /** Notifies subscribers of a time change, retaining the interval before the edit. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyChanged(
+      TimeSlotBooking booking, User actor, Instant previousStart, Instant previousEnd) {
+    notify(
+        booking,
+        actor,
+        NotificationType.NOTIFICATION_BOOKING_CHANGED,
+        false,
+        previousStart.toString(),
+        previousEnd.toString());
+  }
+
   private void notify(
       TimeSlotBooking booking, User actor, NotificationType notificationType, boolean restored) {
+    notify(booking, actor, notificationType, restored, null, null);
+  }
+
+  private void notify(
+      TimeSlotBooking booking,
+      User actor,
+      NotificationType notificationType,
+      boolean restored,
+      String previousStart,
+      String previousEnd) {
     if (booking == null || booking.getKind() != BookingEventKind.BOOKING || actor == null) {
       return;
     }
@@ -77,6 +101,8 @@ public class BookingNotificationService {
     for (BookingNotificationRecipient recipient : recipients) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
       data.setRestored(restored);
+      data.setPreviousStartTime(previousStart);
+      data.setPreviousEndTime(previousEnd);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
       data.setEmailTimeFormat(recipient.timeFormat());
       NotificationConfig config = new NotificationConfig();

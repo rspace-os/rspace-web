@@ -23,7 +23,12 @@ import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/c
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
+import {
+  expectNoAlertMessage,
+  expectStatusMessage,
+  renderPage,
+  useDefaultBookingPreferencesHandlers,
+} from "./bookingPreferencesPageTestUtils";
 
 function BookingPreferencesQueryProbe() {
   const queryClient = useQueryClient();
@@ -47,7 +52,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let document = inheritedBrowserBookingPreferences;
     server.use(
-      oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(document),
       ),
@@ -69,10 +73,6 @@ describe("BookingPreferencesPage", () => {
     let body: unknown;
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
         "/api/v2/users/me/booking-preferences",
         async ({ request }) => {
@@ -102,7 +102,7 @@ describe("BookingPreferencesPage", () => {
     const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
     await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
     expect(saveButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     await user.click(saveButton);
     expect(writes).toBe(1);
     expect(body).toEqual({
@@ -125,7 +125,6 @@ describe("BookingPreferencesPage", () => {
   it("saves an explicit time format, keeping the other preferences", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(customNewYorkBookingPreferences),
       ),
@@ -172,7 +171,6 @@ describe("BookingPreferencesPage", () => {
   it("shows the custom timezone field only in Custom mode and restores the last custom zone", async () => {
     const bodies: unknown[] = [];
     server.use(
-      oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(customNewYorkBookingPreferences),
       ),
@@ -207,7 +205,7 @@ describe("BookingPreferencesPage", () => {
     expect(custom).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: "booking:preferences.timezone.institution" }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlertMessage("booking:preferences.errors.invalid");
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
 
     await waitFor(() => expect(bodies).toHaveLength(1));
@@ -217,7 +215,6 @@ describe("BookingPreferencesPage", () => {
   it("uses 00:00 for end of day while storing 24:00", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json({ ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "24:00" }),
       ),
@@ -253,15 +250,59 @@ describe("BookingPreferencesPage", () => {
     const saveButton = screen.getByRole("button", { name: "booking:preferences.actions.saved" });
     await waitFor(() => expect(saveButton).toHaveClass("bg-emerald-600"));
     expect(saveButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(body).toMatchObject({ availabilityWindowEnd: "24:00" });
+  });
+
+  it("restores the custom availability window when Show all day is turned off", async () => {
+    let body: unknown;
+    server.use(
+      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-preferences",
+        async ({ request }) => {
+          body = await request.json();
+          return HttpResponse.json({
+            ...inheritedBrowserBookingPreferences,
+            ...(body as BookingDisplayPreferencesControllerReplacement),
+            overridden: true,
+          });
+        },
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const allDay = await screen.findByRole("checkbox", { name: "booking:preferences.availabilityWindow.allDay" });
+    const start = screen.getByLabelText("booking:preferences.availabilityWindow.start");
+    const end = screen.getByLabelText("booking:preferences.availabilityWindow.end");
+    expect(start).toHaveValue("08:00");
+    expect(end).toHaveValue("18:00");
+
+    await user.click(allDay);
+    expect(allDay).toBeChecked();
+    expect(start).toHaveValue("00:00");
+    expect(end).toHaveValue("00:00");
+    expect(start).toBeDisabled();
+    expect(end).toBeDisabled();
+
+    await user.click(allDay);
+    expect(allDay).not.toBeChecked();
+    expect(start).toHaveValue("08:00");
+    expect(end).toHaveValue("18:00");
+    expect(start).toBeEnabled();
+    expect(end).toBeEnabled();
+
+    await user.click(allDay);
+    await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
+    await waitFor(() =>
+      expect(body).toMatchObject({ availabilityWindowStart: "00:00", availabilityWindowEnd: "24:00" }),
+    );
   });
 
   it("resets an override and immediately caches the current global document", async () => {
     let reads = 0;
     let deletes = 0;
     server.use(
-      oauthTokenHandler(true),
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () => {
         reads += 1;
         return HttpResponse.json(reads === 1 ? customNewYorkBookingPreferences : inheritedBrowserBookingPreferences);
@@ -276,7 +317,7 @@ describe("BookingPreferencesPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "booking:preferences.actions.reset" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    await expectStatusMessage("booking:preferences.resetComplete");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
     expect(queryClient.getQueryData(getGetMyBookingPreferencesQueryKey())).toEqual({
@@ -309,7 +350,7 @@ describe("BookingPreferencesPage", () => {
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.reset" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    expect(await screen.findByText("booking:preferences.resetComplete")).toHaveAttribute("role", "status");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
     expect(start).toHaveValue("08:00");
@@ -506,10 +547,6 @@ describe("BookingPreferencesPage", () => {
   it("keeps invalid windows client-side and reports network failures", async () => {
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
-        HttpResponse.json(inheritedBrowserBookingPreferences),
-      ),
       http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
         "/api/v2/users/me/booking-preferences",
         () => {
@@ -527,14 +564,14 @@ describe("BookingPreferencesPage", () => {
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     await user.clear(start);
     await user.type(start, "19:00");
-    expect(screen.getByRole("alert")).toHaveTextContent("booking:preferences.errors.invalid");
+    expect(screen.getByText("booking:preferences.errors.invalid")).toHaveAttribute("role", "alert");
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeDisabled();
     expect(writes).toBe(0);
 
     await user.clear(start);
     await user.type(start, "09:00");
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:preferences.errors.save");
+    expect(await screen.findByText("booking:preferences.errors.save")).toHaveAttribute("role", "alert");
     expect(writes).toBe(1);
     expect(start).toHaveValue("09:00");
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();

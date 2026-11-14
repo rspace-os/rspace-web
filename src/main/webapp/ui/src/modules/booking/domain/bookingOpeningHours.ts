@@ -50,7 +50,7 @@ export const ALWAYS_OPEN: OpeningSchedule = {
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
 };
 
-/** A localized weekday name; 2024-01-01 is a Monday. */
+/** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
 export function formatIsoWeekday(
   dayOfWeek: number,
   width: "long" | "short" = "long",
@@ -151,7 +151,10 @@ export function longestOpeningMinutes(settings: OpeningSchedule): number {
   );
 }
 
-/** Matches Java's compatible DST resolution; 24:00 is the next date's midnight. */
+/**
+ * A scheduling-zone wall-clock boundary as an instant, matching Java's `LocalDateTime.atZone`: the earlier
+ * offset in a repeated hour, and a nonexistent time shifted forward by the gap. `24:00` is the next date's start.
+ */
 export function resolveSchedulingBoundary(date: string, time: string, timezone: string): Temporal.Instant {
   const plainDate = Temporal.PlainDate.from(date);
   const [boundaryDate, boundaryTime] = time === "24:00" ? [plainDate.add({ days: 1 }), "00:00"] : [plainDate, time];
@@ -169,7 +172,11 @@ function earlierInstant(first: Temporal.Instant, second: Temporal.Instant): Temp
   return Temporal.Instant.compare(first, second) <= 0 ? first : second;
 }
 
-/** Sorted, clipped openings in an absolute interval, merging touching weekdays. */
+/**
+ * The opening intervals intersecting `[interval.start, interval.end)`, clipped to it, sorted, and with touching
+ * intervals merged so consecutive all-day openings are continuous. Throws a `RangeError` for a reversed interval
+ * or one longer than the absolute booking limit, rather than truncating it.
+ */
 export function openingIntervals(
   settings: OpeningSchedule,
   timezone: string,
@@ -206,10 +213,11 @@ export function openingIntervals(
   return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
 }
 
-/** Every instant of a non-empty booking window must be open. */
+/** Whether every instant in the non-empty half-open interval falls within opening hours. */
 export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
   if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
   const openings = openingIntervals(settings, timezone, interval);
+  // Openings are clipped to the interval, so full coverage is exactly one opening spanning all of it.
   return (
     openings.length === 1 &&
     Temporal.Instant.compare(openings[0].start, interval.start) === 0 &&

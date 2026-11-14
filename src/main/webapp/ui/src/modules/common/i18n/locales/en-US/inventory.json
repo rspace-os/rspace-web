@@ -526,7 +526,7 @@
     "accessPermissions": {
       "addGroup": "Add group",
       "editFirst": "You need to be in Edit mode to edit permissions.",
-      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
+      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some information may be more widely shared.",
       "explicitAccess": {
         "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
         "title": "Explicit access list"

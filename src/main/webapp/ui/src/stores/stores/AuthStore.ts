@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2IdentityChangedError } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
 import { isPublicDocumentView, mintUiToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
@@ -115,6 +116,8 @@ export default class AuthStore {
       .then(() => {})
       .catch(
         action((error: unknown) => {
+          // The token provider reloads the page itself after an identity change; never send it to /login.
+          if (error instanceof ApiV2IdentityChangedError) throw error;
           this.isSynchronizing = false;
           if (this.isSigningOut) return;
           const validityMs = storedTokenValidityMs();

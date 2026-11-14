@@ -28,17 +28,17 @@ class CommunicationEmailContentGenerator {
 
   EmailContent generate(Communication communication) {
     if (communication instanceof Notification notification
+        && BookingNotificationMessageFormatter.isBookingNotification(
+            notification.getNotificationType())
         && notification.getNotificationDataObject() instanceof BookingNotificationData data) {
-      var model = velocityModelFor(communication);
+      String eventKey = NotificationTypeMessages.keyFor(notification.getNotificationType());
+      Map<String, Object> model = velocityModelFor(communication);
       model.put(
           "bookingTimestamp",
           BookingNotificationMessageFormatter.formatEmailTimestamp(
               Instant.now(), data, contentGenerator.getLocale()));
       return contentGenerator.render(
-          NotificationTypeMessages.keyFor(notification.getNotificationType()) + "Subject",
-          new Object[] {data.getInstrumentName()},
-          "notification.vm",
-          model);
+          eventKey + "Subject", new Object[] {data.getInstrumentName()}, "notification.vm", model);
     }
     if (communication.isNotification()) {
       return contentGenerator.render(

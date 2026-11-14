@@ -85,7 +85,7 @@ function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
     elapsedMinutes: (Date.parse(end) - Date.parse(start)) / 60_000,
   };
   return classifyCurrentDayAvailability(
-    rowAvailabilityIntervals(row, bounds, parsedAvailabilityBookings),
+    rowAvailabilityIntervals({ ...row, eventKind: "BOOKING" }, bounds, parsedAvailabilityBookings),
     new Date(start),
     new Date(end),
     new Date(url.searchParams.get("now") ?? start),

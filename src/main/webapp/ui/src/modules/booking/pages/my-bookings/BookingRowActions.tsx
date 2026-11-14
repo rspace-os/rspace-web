@@ -69,7 +69,7 @@ export function BookingRowActions({
   const moreActionsLabel = t("myBookings.actions.more");
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex w-max flex-nowrap gap-1">
       {row.canViewConfiguration && row.target ? (
         <TooltipIconLink label={itemCalendarLabel} icon={<CalendarClockIcon aria-hidden="true" />}>
           <Link

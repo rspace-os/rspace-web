@@ -16,24 +16,9 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { server } from "@/__tests__/mswServer";
 import BookingSettingsRoutePage from "@/modules/booking/pages/bookable-items/BookingSettingsRoutePage";
+import { bookingSettingsFixture } from "./bookingSettingsTestHarness";
 
-const settings = {
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
-  bufferBeforeMinutes: 3,
-  bufferAfterMinutes: 7,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  availabilityWindowStart: "08:00",
-  availabilityWindowEnd: "18:00",
-  timezoneMode: "BROWSER" as const,
-  customTimezone: null,
-  institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
-  configurationVersion: 0,
-  state: "ACTIVE",
-};
+const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
 
 let adminSettingsRequests = 0;
 

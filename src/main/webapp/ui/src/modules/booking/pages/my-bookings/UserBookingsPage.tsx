@@ -54,6 +54,7 @@ const projection = {
     "id",
     "version",
     "target",
+    "requester",
     "canViewConfiguration",
     "timezone",
     "start",
@@ -159,29 +160,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       queryString: { parameterPrefix: "my-bookings", tableId: "booking-my-bookings" },
     },
   });
-  const upcomingCount = useQuery(
-    getCountBookingsQueryOptions(
-      {
-        where: upcomingBookingWhere(requesterId, asOfDate.toISOString()),
-        max: 100,
-      },
-      {
-        query: {
-          select: (result) => {
-            if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return { ...result, totalDocs: result.totalDocs };
-          },
-        },
-      },
-    ),
-  );
+  const upcomingCount = useQuery({
+    ...upcomingBookingCountQuery(requesterId, asOfDate),
+  });
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
-      width: 200,
-      minWidth: 200,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <BookingRowActions row={row} timeZone={preferences.timeZone} timeFormat={preferences.timeFormat} />
       ),
@@ -242,6 +228,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                       }
                     >
+                      {" "}
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound")
                         : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
@@ -289,3 +276,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     </TooltipProvider>
   );
 }
+
+export const upcomingBookingCountQuery = (requesterId: number, asOf: Date) =>
+  getCountBookingsQueryOptions(
+    { where: upcomingBookingWhere(requesterId, asOf.toISOString()), max: 100 },
+    {
+      query: {
+        select: (result) => {
+          if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
+          return { ...result, totalDocs: result.totalDocs };
+        },
+      },
+    },
+  );

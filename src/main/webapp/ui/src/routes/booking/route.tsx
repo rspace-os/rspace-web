@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { bookingDisplayPreferencesQueryOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import BookingPage from "@/modules/booking/pages/BookingPage";
 import { BookingSidebar } from "@/modules/booking/pages/BookingSidebar";
 import { BookingSidebarSkeleton } from "@/modules/booking/pages/BookingSidebarSkeleton";
@@ -25,5 +26,9 @@ export const Route = createFileRoute("/booking")({
       },
     ],
   }),
+  loader: ({ context }) => {
+    // Start data before rendering without holding navigation or moving errors out of the component boundary.
+    void context.queryClient.ensureQueryData(bookingDisplayPreferencesQueryOptions()).catch(() => undefined);
+  },
   component: BookingPage,
 });

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getListBookingConfigurationAuditEventsQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { CollectionTranslationKey } from "@/modules/common/collection/config";
@@ -110,7 +111,7 @@ function requestError(error: unknown): RequestError | null {
 }
 
 export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
 
   const [today] = useState(() => new Date());
   const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
@@ -222,11 +223,13 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const formattedResultDate =
     resultDate === undefined
       ? null
-      : new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: "UTC" }).format(
+      : new Intl.DateTimeFormat(bookingDateTimeLocale(), { dateStyle: "medium", timeZone: "UTC" }).format(
           new Date(`${resultDate}T00:00:00Z`),
         );
   const truncatedText = audit.data?.truncated
-    ? t("bookableItemDetails.audit.truncated", { limit: audit.data.limit })
+    ? t("bookableItemDetails.audit.truncated", {
+        limit: audit.data.limit,
+      })
     : "";
   const statusText = audit.isPending
     ? t("bookableItemDetails.audit.status.loading")

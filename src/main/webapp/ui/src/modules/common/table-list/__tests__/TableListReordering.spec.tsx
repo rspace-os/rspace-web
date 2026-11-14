@@ -1,8 +1,16 @@
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { commands, page } from "vitest/browser";
+import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { TableListReorderingPage } from "./pageObjects/TableListReorderingPage";
 import { reorderingStorageKey, reorderingWhere, TableListReorderingStory } from "./TableListReordering.story";
+
+declare module "vitest/browser" {
+  interface BrowserCommands {
+    resizeTableColumn(label: string, delta: number): Promise<boolean>;
+  }
+}
 
 const reorderedFilters = [...Array.from({ length: 11 }, (_, index) => `rule-${index + 2}`), "rule-1"].join(",");
 const initialFilters = Array.from({ length: 12 }, (_, index) => `rule-${index + 1}`).join(",");
@@ -207,6 +215,149 @@ describe("TableList drag and drop", () => {
 });
 
 describe("TableList column resizing", () => {
+  beforeEach(async () => {
+    await page.viewport(1280, 800);
+  });
+  test("keeps sticky Actions at the container edge when the fill column reaches its maximum", async () => {
+    render(<TableListReorderingStory intrinsicWidths maxWidth={240} />);
+    const table = new TableListReorderingPage();
+    await table.resizeColumnWithKeyboard("Owner", "{ArrowRight}");
+    await expectNoAxeViolations();
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(240, 0);
+    const actions = page.getByRole("columnheader", { name: "Actions", exact: true });
+    expect(getComputedStyle(actions.element()).position).toBe("sticky");
+    await expect
+      .poll(() => {
+        const container = page.getByRole("table").element().parentElement;
+        if (!container) throw new Error("Table container unavailable");
+        return actions.element().getBoundingClientRect().right - container.getBoundingClientRect().right;
+      })
+      .toBeCloseTo(0, 0);
+  });
+
+  test("refits the fill after clicking its handle without movement", async () => {
+    render(<TableListReorderingStory intrinsicWidths />);
+    const table = new TableListReorderingPage();
+    await table.resizeHandle("Title").click();
+    const before = table.columnWidth("Title");
+    await page.viewport(800, 800);
+    await expect.poll(() => table.columnWidth("Title")).toBeLessThan(before);
+  });
+
+  test("cancels capture when a rendered header is missing", async () => {
+    render(<TableListReorderingStory intrinsicWidths />);
+    const table = new TableListReorderingPage();
+    const owner = page.getByRole("columnheader", { name: "Owner", exact: true }).element();
+    const id = owner.getAttribute("data-column-id");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      owner.removeAttribute("data-column-id");
+      const before = table.columnWidth("Title");
+      await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+      expect(warn).toHaveBeenCalledWith("Missing rendered header for column owner; cancelling column resize");
+      expect(table.columnWidth("Title")).toBe(before);
+      expect(page.getByRole("table").element()).toHaveClass("table-auto");
+    } finally {
+      if (id) owner.setAttribute("data-column-id", id);
+      warn.mockRestore();
+    }
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+    expect(page.getByRole("table").element()).toHaveClass("table-fixed");
+  });
+
+  test("keeps a user-shrunk fill width and starts the next resize there", async () => {
+    render(<TableListReorderingStory intrinsicWidths />);
+    const table = new TableListReorderingPage();
+    const initial = table.columnWidth("Title");
+    await table.resizeColumnWithKeyboard("Title", "{ArrowLeft}");
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(initial - 16, 0);
+    await table.resizeColumnWithKeyboard("Title", "{ArrowLeft}".repeat(20));
+    const element = page.getByRole("table").element();
+    expect(element.getBoundingClientRect().width).toBe(element.parentElement?.clientWidth);
+    const before = table.columnWidth("Title");
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(before + 16, 0);
+  });
+
+  test("refits an untouched fill on container shrink but preserves a user-sized fill", async () => {
+    render(<TableListReorderingStory intrinsicWidths contentWidths />);
+    const table = new TableListReorderingPage();
+    await table.resizeColumnWithKeyboard("Owner", "{ArrowRight}");
+    const before = table.columnWidth("Title");
+    await page.viewport(800, 800);
+    await expect.poll(() => table.columnWidth("Title")).toBeLessThan(before);
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+    const chosen = table.columnWidth("Title");
+    await page.viewport(700, 800);
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(chosen, 0);
+  });
+
+  test.each(["keyboard", "touch"] as const)("captures fitted widths on a fresh %s resize", async (input) => {
+    render(<TableListReorderingStory intrinsicWidths />);
+    const table = new TableListReorderingPage();
+    const before = table.columnWidth("Title");
+    if (input === "keyboard") await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+    else await table.resizeColumnWithTouch("Title", 16);
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(before + 16, 0);
+  });
+
+  test("native pointer resize focuses the handle and preserves widths after hiding the fill column", async () => {
+    render(<TableListReorderingStory intrinsicWidths />);
+    const table = new TableListReorderingPage();
+    const before = table.columnWidth("Title");
+    expect(await commands.resizeTableColumn("Title", 64)).toBe(true);
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(before + 64, 0);
+    await table.openColumns();
+    await page.getByRole("button", { name: "Hide Title column", exact: true }).click();
+    await page.getByRole("button", { name: /^Columns/ }).click();
+    const actions = page.getByRole("columnheader", { name: "Actions", exact: true });
+    const tableElement = page.getByRole("table").element();
+    expect(actions.element().getBoundingClientRect().right).toBeCloseTo(
+      tableElement.parentElement?.getBoundingClientRect().right ?? 0,
+      0,
+    );
+    expect(page.getByRole("columnheader").all()).toHaveLength(3);
+
+    const ownerBefore = table.columnWidth("Owner");
+    await commands.resizeTableColumn("Owner", 32);
+    await expect.poll(() => table.columnWidth("Owner")).toBeCloseTo(ownerBefore + 32, 0);
+    await table.resizeColumnWithKeyboard("Owner", "{ArrowLeft}{ArrowLeft}{ArrowLeft}");
+    const element = page.getByRole("table").element();
+    expect(element.getBoundingClientRect().width).toBeGreaterThanOrEqual(element.parentElement?.clientWidth ?? 0);
+    await table.resizeColumnWithKeyboard("Owner", "{Enter}");
+    expect(element).toHaveClass("table-auto");
+    const resetWidth = table.columnWidth("Owner");
+    await table.resizeColumnWithKeyboard("Owner", "{ArrowRight}");
+    await expect.poll(() => table.columnWidth("Owner")).toBeCloseTo(resetWidth + 16, 0);
+  });
+
+  test("honours rendered widths when resizing fill and content columns", async () => {
+    render(<TableListReorderingStory intrinsicWidths contentWidths />);
+    const table = new TableListReorderingPage();
+    const titleBefore = table.columnWidth("Title");
+    await table.startMouseColumnResize("Title");
+    await table.moveMouseColumnResize(64);
+    await table.finishMouseColumnResize();
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(titleBefore + 64, 0);
+
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}{ArrowRight}{ArrowLeft}");
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(titleBefore + 80, 0);
+    await table.resizeColumnWithTouch("Owner", -300);
+    await expect.poll(() => table.columnWidth("Owner")).toBeCloseTo(120, 0);
+    const actionsBefore = table.columnWidth("Actions");
+    await table.resizeColumnWithKeyboard("Actions", "{ArrowRight}");
+    await expect.poll(() => table.columnWidth("Actions")).toBeCloseTo(actionsBefore + 16, 0);
+    const element = page.getByRole("table").element();
+    expect(element.getBoundingClientRect().width).toBeGreaterThanOrEqual(element.parentElement?.clientWidth ?? 0);
+    await table.resizeColumnWithKeyboard("Title", "{Enter}");
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(titleBefore, 0);
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}{ }");
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(titleBefore, 0);
+    await table.resizeColumnWithKeyboard("Title", "{ArrowRight}");
+    await table.resizeHandle("Title").dblClick();
+    await expect.poll(() => table.columnWidth("Title")).toBeCloseTo(titleBefore, 0);
+  });
+
   test("resizes field and React columns without persisting their widths", async () => {
     const table = await renderStory(true);
     const searchBefore = window.location.search;

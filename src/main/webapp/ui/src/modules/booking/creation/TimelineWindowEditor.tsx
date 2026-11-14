@@ -2,8 +2,10 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { formatMinuteWithDayOffset } from "@/modules/booking/components/DayTimelineEvent";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   dayMinuteToZonedTime,
   instantToDayMinute,
   wallClockDraftFromInstants,
@@ -54,6 +56,7 @@ export function TimelineWindowEditor({
   abovePopovers?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const descriptionId = React.useId();
   const canvas = canvasFor(anchor);
   const dayMinutes = zonedDayBounds(date, timezone).elapsedMinutes;
@@ -134,6 +137,7 @@ export function TimelineWindowEditor({
     const next = adjuster.step(edge, event.key === "ArrowLeft" ? "previous" : "next");
     if (next) commit(next);
   };
+  const locale = bookingDateTimeLocale(timeFormat);
   // Double-click or Enter/Space applies; a single click only focuses, so a stray click never changes the draft.
   const hiddenEdgeHandle = (edge: "start" | "end") => {
     const action = adjuster.hiddenEdge(edge);
@@ -142,13 +146,13 @@ export function TimelineWindowEditor({
       if (action.kind === "enabled") commit(action.range);
     };
     const id = `${descriptionId}-${edge}-continuation`;
-    const description = hiddenEdgeDescription(edge, action, date, timezone, t);
+    const description = hiddenEdgeDescription(edge, action, date, timezone, t, locale);
     return (
       <>
         <button
           type="button"
           data-testid={`${testId}-${edge}-continuation`}
-          aria-label={hiddenEdgeLabel(edge, date, t)}
+          aria-label={hiddenEdgeLabel(edge, date, t, locale)}
           aria-describedby={id}
           aria-disabled={action.kind === "disabled" || undefined}
           title={description}
@@ -219,7 +223,10 @@ export function TimelineWindowEditor({
   const verticalStyle = verticalAnchor
     ? { top: verticalAnchor.offsetTop, height: verticalAnchor.offsetHeight }
     : { top: 32, bottom: 0 };
-  const period = `${formatMinuteWithDayOffset(date, timezone, startMinute)}–${formatMinuteWithDayOffset(date, timezone, endMinute)}`;
+  const period = t("time.range", {
+    start: formatMinuteWithDayOffset(date, timezone, startMinute, timeFormat),
+    end: formatMinuteWithDayOffset(date, timezone, endMinute, timeFormat),
+  });
 
   return createPortal(
     <div

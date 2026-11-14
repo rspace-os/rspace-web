@@ -433,8 +433,8 @@ class BookingCatalogueManagerImplTest {
     verify(bookings)
         .findConfirmedEventIntervals(
             List.of(1L, 2L, 3L),
-            Date.from(NINE_UTC.start().minusSeconds(20 * 60)),
-            Date.from(NINE_UTC.end().plusSeconds(20 * 60)));
+            Date.from(NINE_UTC.start().minusSeconds(30 * 60)),
+            Date.from(NINE_UTC.end().plusSeconds(30 * 60)));
   }
 
   @Test

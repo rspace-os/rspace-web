@@ -80,7 +80,17 @@ function filterOrder(expression: FilterExpression<ReorderingRecord> | null): str
   return rules.flatMap((rule) => (rule.kind === "comparison" ? [String(rule.value)] : [])).join(",");
 }
 
-function Demo({ persist }: { persist: boolean }) {
+function Demo({
+  persist,
+  intrinsicWidths,
+  contentWidths,
+  maxWidth,
+}: {
+  persist: boolean;
+  intrinsicWidths: boolean;
+  contentWidths: boolean;
+  maxWidth?: number;
+}) {
   const [filters, setFilters] = useState<FilterState<ReorderingRecord>>({
     search: "",
     expression: initialExpression,
@@ -91,9 +101,23 @@ function Demo({ persist }: { persist: boolean }) {
   const commitCounts = `${commits.filters},${commits.sorting},${commits.columns}`;
 
   return (
-    <div className="mx-auto w-180 max-w-full p-4">
+    <div className="mx-auto max-w-full p-4" style={{ width: intrinsicWidths ? 1000 : 720 }}>
       <TableList
-        config={config}
+        config={
+          intrinsicWidths
+            ? {
+                ...config,
+                fields: config.fields.map((field) =>
+                  field.name === "title"
+                    ? {
+                        ...field,
+                        list: { minWidth: 180, maxWidth, widthMode: "fill" },
+                      }
+                    : field,
+                ),
+              }
+            : config
+        }
         rows={rows}
         getRowId={(row) => row.id}
         clientSide
@@ -102,6 +126,7 @@ function Demo({ persist }: { persist: boolean }) {
           {
             id: "actions",
             label: "Actions",
+            widthMode: contentWidths ? "content" : undefined,
             width: 120,
             minWidth: 96,
             renderCell: (row) => <button type="button" aria-label={`View ${row.title}`} />,
@@ -146,10 +171,20 @@ function Demo({ persist }: { persist: boolean }) {
   );
 }
 
-export function TableListReorderingStory({ persist = false }: { persist?: boolean }) {
+export function TableListReorderingStory({
+  persist = false,
+  intrinsicWidths = false,
+  contentWidths = false,
+  maxWidth,
+}: {
+  persist?: boolean;
+  intrinsicWidths?: boolean;
+  contentWidths?: boolean;
+  maxWidth?: number;
+}) {
   return (
     <NuqsAdapter>
-      <Demo persist={persist} />
+      <Demo persist={persist} intrinsicWidths={intrinsicWidths} contentWidths={contentWidths} maxWidth={maxWidth} />
     </NuqsAdapter>
   );
 }

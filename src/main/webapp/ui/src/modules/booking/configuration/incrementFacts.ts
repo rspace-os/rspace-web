@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { INCREMENT_UNIT_MINUTES, type IncrementSettings } from "@/modules/booking/domain/bookingIncrement";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 
+/** The increment in its stored unit: "90 minutes", "1.5 hours", "24 hours" or "1 day", never re-derived. */
 export function formatIncrement(
   settings: Pick<IncrementSettings, "slotGranularityMinutes" | "incrementUnit">,
   t: TFunction<"booking">,
@@ -15,6 +16,7 @@ export function formatIncrement(
   }[settings.incrementUnit];
 }
 
+/** Elapsed length for minute/hour rules; local calendar length for day rules. */
 export function formatBookingLength(
   unit: IncrementSettings["incrementUnit"],
   window: { start: string; end: string },
@@ -30,4 +32,9 @@ export function formatBookingLength(
   const localStart = start.toZonedDateTimeISO(timezone).toPlainDateTime();
   const localEnd = end.toZonedDateTimeISO(timezone).toPlainDateTime();
   return formatDurationMinutes(localStart.until(localEnd, { largestUnit: "minute" }).minutes, locale);
+}
+
+/** Label and value for the increment. */
+export function incrementFacts(settings: IncrementSettings, t: TFunction<"booking">): Array<[string, string]> {
+  return [[t("bookableItemDetails.fields.granularity"), formatIncrement(settings, t)]];
 }

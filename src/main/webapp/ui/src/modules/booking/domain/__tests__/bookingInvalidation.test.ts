@@ -7,6 +7,10 @@ import {
   getSearchBookingCatalogueQueryKey,
   getSearchCalendarCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+import {
+  getGetBookingConfigurationAccessQueryKey,
+  getSearchBookingConfigurationAccessGranteesQueryKey,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getGetBookingQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { invalidateBookingListOperation } from "../bookingInvalidation";
 
@@ -39,3 +43,21 @@ it.each(["catalogue", "locations", "calendarCatalogue", "availabilityCounts", "c
     client.clear();
   },
 );
+
+it("refreshes every grantee search for the selected record and leaves other records and operations alone", async () => {
+  const client = new QueryClient();
+  const variants = [
+    getSearchBookingConfigurationAccessGranteesQueryKey(7, { q: "Ada" }),
+    getSearchBookingConfigurationAccessGranteesQueryKey(7, { q: "Grace", limit: 10 }),
+  ];
+  const unrelated = [
+    getSearchBookingConfigurationAccessGranteesQueryKey(8, { q: "Ada" }),
+    getGetBookingConfigurationAccessQueryKey(7),
+    keys.catalogue,
+  ];
+  for (const key of [...variants, ...unrelated]) client.setQueryData(key, {});
+  await invalidateBookingListOperation(client, { accessGrantees: 7 });
+  for (const key of variants) expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  for (const key of unrelated) expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+  client.clear();
+});

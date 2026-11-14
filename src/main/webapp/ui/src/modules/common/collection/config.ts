@@ -45,10 +45,13 @@ export type FieldCapabilities = {
 export type ResolvedFieldCapabilities = Required<FieldCapabilities>;
 
 export type FieldListConfig<TDocument> = {
+  /** Fill the available width, or size to unwrapped cell content. */
+  widthMode?: "fill" | "content";
   /** Initial column width in CSS pixels. */
   width?: number;
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
+  maxWidth?: number;
   descriptionKey?: string;
   description?: string;
   renderHeader?: HeaderRenderer<TDocument>;

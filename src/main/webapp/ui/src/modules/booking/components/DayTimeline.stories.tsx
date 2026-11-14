@@ -147,7 +147,7 @@ export const Sub15MinuteEvents: Story = {
       expect(time).not.toBeNull();
       expect(eventDate).toBeNull();
       const { startMinute, endMinute } = denseBookings[index];
-      expect(timeRange).toHaveTextContent(`${clock(startMinute)} - ${clock(endMinute)}`);
+      expect(timeRange).toHaveTextContent(`${clock(startMinute)}–${clock(endMinute)}`);
       if (!card || !time || !timeRange) throw new Error("Timeline card content is missing");
       expect(card).toHaveAttribute("title");
       expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
@@ -162,7 +162,7 @@ export const Sub15MinuteEvents: Story = {
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
     expect(timelineCanvas.getBoundingClientRect().height).toBeCloseTo(heightBeforeOpening, 0);
     const popover = within(document.body);
-    expect(popover.getByText(densePeriod(0))).toBeInTheDocument();
+    expect(popover.getByRole("dialog", { name: densePeriod(0) })).toBeInTheDocument();
     expect(popover.getByText("Sample check 1.")).toBeInTheDocument();
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "false");

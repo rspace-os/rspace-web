@@ -5,7 +5,10 @@ import {
   bookingDateTimeLocale,
   formatBookingDateTime,
 } from "@/modules/booking/domain/bookingTime";
-import { listBookingConfigurationAuditEvents } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import {
+  getListBookingConfigurationAuditEventsQueryOptions,
+  listBookingConfigurationAuditEvents,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { ApiV2AuditEvent } from "@/modules/common/api/v2/generated/models/apiV2AuditEvent";
 import type { ApiV2AuditEventAction } from "@/modules/common/api/v2/generated/models/apiV2AuditEventAction";
 import type { ListBookingConfigurationAuditEventsParams } from "@/modules/common/api/v2/generated/models/listBookingConfigurationAuditEventsParams";
@@ -106,16 +109,9 @@ export async function fetchBookingConfigurationAudit(
     signal?: AbortSignal;
   },
 ) {
-  const result = await listBookingConfigurationAuditEvents(
-    input.configurationId,
-    {
-      q: input.q?.trim() || undefined,
-      start: input.start,
-      end: input.end,
-      actions: input.actions ? [...input.actions] : undefined,
-    },
-    { signal: input.signal },
-  );
+  const result = await listBookingConfigurationAuditEvents(input.configurationId, auditParameters(input), {
+    signal: input.signal,
+  });
   return mapBookingConfigurationAudit(result);
 }
 
@@ -166,10 +162,10 @@ function openingValue(key: string, value: unknown, locale: string, timeLocale: s
       return formatList(
         exceptions
           .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
-          .map((exception) =>
+          .map((entry) =>
             i18n.t("booking:bookableItemDetails.audit.weekdayRange", {
-              day: formatIsoWeekday(exception.dayOfWeek, "long", locale),
-              hours: formatOpeningRange(exception, timeLocale),
+              day: formatIsoWeekday(entry.dayOfWeek, "long", locale),
+              hours: formatOpeningRange(entry, timeLocale),
               lng: locale,
             }),
           ),
@@ -185,13 +181,14 @@ function openingValue(key: string, value: unknown, locale: string, timeLocale: s
 export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
 
 const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
+const ENUMERATED_KEYS = new Set(["state", "kind", "incrementUnit"]);
 
-/** Booleans as Yes/No, states and kinds by their labels, and a bookable-item target by its global ID. */
+/** Booleans as Yes/No, states, kinds and increment units by their labels, and a target by its global ID. */
 function wordValue(key: string, value: unknown, words: RecordedValueWords): string | undefined {
   if (typeof value === "boolean" || (BOOLEAN_KEYS.has(key) && (value === "true" || value === "false"))) {
     return value === true || value === "true" ? words.yes : words.no;
   }
-  if ((key === "state" || key === "kind") && typeof value === "string") return words.values[value];
+  if (ENUMERATED_KEYS.has(key) && typeof value === "string") return words.values[value];
   if (key === "target") {
     const target = parsedArray(value);
     if (
@@ -221,7 +218,12 @@ export function recordedValues(
       if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
         const date = new Date(value);
         if (Number.isFinite(date.getTime())) {
-          return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+          return [
+            key,
+            formatBookingDateTime(date.toISOString(), "UTC", bookingDateTimeLocale(timeFormat), timeFormat, {
+              timeStyle: "long",
+            }),
+          ];
         }
       }
       const opening = openingValue(key, value, locale, bookingDateTimeLocale(timeFormat));
@@ -241,4 +243,23 @@ export function recordedValues(
         value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value),
       ];
     });
+}
+
+function auditParameters(input: Parameters<typeof fetchBookingConfigurationAudit>[0]) {
+  return {
+    q: input.q?.trim() || undefined,
+    start: input.start,
+    end: input.end,
+    actions: input.actions ? [...input.actions] : undefined,
+  };
+}
+export function bookingConfigurationAuditQuery(
+  input: Parameters<typeof fetchBookingConfigurationAudit>[0],
+  _generation: number,
+) {
+  return getListBookingConfigurationAuditEventsQueryOptions<Awaited<ReturnType<typeof fetchBookingConfigurationAudit>>>(
+    input.configurationId,
+    auditParameters(input),
+    { query: { select: mapBookingConfigurationAudit, retry: false } },
+  );
 }

@@ -2,13 +2,13 @@ import { GlobeIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { type WeekdayOpening, weeklyOpeningHours } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   bookingDateTimeLocale,
-  currentWallClock,
   formatDurationMinutes,
   isPlainDate,
   sameTimeZone,
@@ -81,8 +81,14 @@ function WeeklyOpeningHours({
     const [first] = week;
     return first?.hours && week.every((day) => day.hours === first.hours) ? first.hours : null;
   };
-  const dayLine = (dayOfWeek: number, hours: string | null) => {
-    const day = formatIsoWeekday(dayOfWeek);
+  const dayLine = (dayOfWeek: number, hours: string | null, lastDay = dayOfWeek) => {
+    const day =
+      dayOfWeek === lastDay
+        ? formatIsoWeekday(dayOfWeek)
+        : t("time.openingRange", {
+            start: formatIsoWeekday(dayOfWeek, "short"),
+            end: formatIsoWeekday(lastDay, "short"),
+          });
     return hours === null
       ? t("bookings.itemInformation.closedDay", { day })
       : t("bookings.itemInformation.day", { day, hours });
@@ -125,13 +131,28 @@ function WeeklyOpeningHours({
       </ul>
     );
   }
+  const groups: WeekdayOpening[][] = [];
+  for (const day of days) {
+    const previous = groups.at(-1)?.at(-1);
+    const itemHours = (weekday: number) => itemDays?.days.find((entry) => entry.dayOfWeek === weekday)?.hours;
+    if (
+      previous &&
+      previous.dayOfWeek + 1 === day.dayOfWeek &&
+      previous.hours === day.hours &&
+      itemHours(previous.dayOfWeek) === itemHours(day.dayOfWeek)
+    )
+      groups.at(-1)?.push(day);
+    else groups.push([day]);
+  }
   return (
     <ul className={listClassName}>
-      {days.map(({ dayOfWeek, hours: dayHours }) => {
+      {groups.map((group) => {
+        const { dayOfWeek, hours: dayHours } = group[0];
+        const lastDay = group.at(-1)?.dayOfWeek ?? dayOfWeek;
         const itemHours = itemDays?.days.find((candidate) => candidate.dayOfWeek === dayOfWeek)?.hours ?? null;
         return line(
           dayOfWeek,
-          dayLine(dayOfWeek, dayHours),
+          dayLine(dayOfWeek, dayHours, lastDay),
           dayHours === null || itemHours === null ? null : itemHours,
         );
       })}
@@ -152,31 +173,27 @@ export function BookingItemInformationContent({
   displayTimezone: string;
   date?: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
-  const referenceDate =
-    date && isPlainDate(date) ? date : currentWallClock(new Date().toISOString(), displayTimezone).date;
+  const referenceDate = date && isPlainDate(date) ? date : todayInTimeZone(displayTimezone);
+  const allDayLabel = t("settings.openingHours.openAllDay");
+  const week = (timezone: string) =>
+    weeklyOpeningHours(item, timezone, referenceDate, bookingDateTimeLocale(timeFormat), allDayLabel);
   const facts: Array<[string, ReactNode]> = [
     [
       t("bookings.itemInformation.open"),
       <WeeklyOpeningHours
         key="open"
-        days={weeklyOpeningHours(item, displayTimezone, referenceDate, bookingDateTimeLocale(timeFormat))}
+        days={week(displayTimezone)}
         displayTimezone={displayTimezone}
         itemDays={
           sameTimeZone(item.timezone, displayTimezone)
             ? undefined
-            : {
-                timezone: item.timezone,
-                days: weeklyOpeningHours(item, item.timezone, referenceDate, bookingDateTimeLocale(timeFormat)),
-              }
+            : { timezone: item.timezone, days: week(item.timezone) }
         }
       />,
     ],
-    [
-      t("bookableItemDetails.fields.granularity"),
-      t("bookableItemDetails.minutes", { count: item.slotGranularityMinutes }),
-    ],
+    [t("bookableItemDetails.fields.granularity"), formatIncrement(item, t)],
     [
       t("bookableItemDetails.fields.maximumDuration"),
       item.maxBookingDurationMinutes === 0
@@ -188,14 +205,8 @@ export function BookingItemInformationContent({
       item.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),
     ],
   ];
-  const buffer: string[] = [];
-  if (item.bufferBeforeMinutes > 0) {
-    buffer.push(t("bookings.itemInformation.bufferBefore", { count: item.bufferBeforeMinutes }));
-  }
-  if (item.bufferAfterMinutes > 0) {
-    buffer.push(t("bookings.itemInformation.bufferAfter", { count: item.bufferAfterMinutes }));
-  }
-  if (buffer.length > 0) facts.push([t("bookings.itemInformation.buffer"), formatList(buffer, i18n.resolvedLanguage)]);
+  facts.push([t("bookableItemDetails.fields.bufferBefore"), formatDurationMinutes(item.bufferBeforeMinutes)]);
+  facts.push([t("bookableItemDetails.fields.bufferAfter"), formatDurationMinutes(item.bufferAfterMinutes)]);
 
   return (
     <>
@@ -211,7 +222,7 @@ export function BookingItemInformationContent({
       </CardContent>
       <Separator className="h-px" />
       <CardContent className="py-4">
-        <dl className="grid grid-cols-2 items-baseline gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[minmax(0,1fr)_max-content] items-baseline gap-x-4 gap-y-2 text-sm">
           {facts.map(([label, value]) => (
             <div className="contents" key={label}>
               <dt className="text-muted-foreground">{label}</dt>

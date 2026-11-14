@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished as restoreA
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
 import { createUiOAuthToken } from "@/modules/common/api/v2/generated/oauth/oauth";
-import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
+import { ApiV2IdentityChangedError, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
@@ -268,4 +268,29 @@ describe("AuthStore initialization", () => {
       if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
     }
   });
+});
+
+it("does not replace a provider identity reload with the login page", async () => {
+  const location = { href: "http://localhost:3000/inventory", origin: "http://localhost:3000", reload: vi.fn() };
+  vi.stubGlobal("location", location);
+  JwtService.saveToken(tokenExpiringIn(60));
+  const changed = new ApiV2IdentityChangedError();
+  const restore = setApiV2TokenProvider({
+    getToken: async () => {
+      JwtService.destroyToken();
+      location.reload();
+      throw changed;
+    },
+    recover: async () => {
+      throw changed;
+    },
+  });
+  try {
+    const authStore = new AuthStore({} as RootStore);
+    await expect(authStore.authenticate()).rejects.toBe(changed);
+    expect(location.reload).toHaveBeenCalledOnce();
+    expect(location.href).toBe("http://localhost:3000/inventory");
+  } finally {
+    restore();
+  }
 });

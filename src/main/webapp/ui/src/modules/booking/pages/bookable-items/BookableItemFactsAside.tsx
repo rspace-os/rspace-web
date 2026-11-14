@@ -14,7 +14,7 @@ export function BookableItemFactsAside({
   configuration: BookingConfiguration;
   displayTimeZone: string;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const headingId = useId();
   const target = configuration.target;
@@ -47,7 +47,7 @@ export function BookableItemFactsAside({
       label: t("bookableItemDetails.fields.createdAt"),
       value: configuration.createdAt ? (
         <time dateTime={configuration.createdAt}>
-          {formatBookingDateTime(configuration.createdAt, displayTimeZone, i18n.language, timeFormat)}
+          {formatBookingDateTime(configuration.createdAt, displayTimeZone, undefined, timeFormat)}
         </time>
       ) : (
         t("bookableItemDetails.notAvailable")

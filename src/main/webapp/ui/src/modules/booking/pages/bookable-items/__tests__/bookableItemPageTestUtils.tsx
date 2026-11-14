@@ -1,3 +1,4 @@
+import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
 import type { BookingNotificationSubscriptionControllerSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerSubscriptionStatus";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
@@ -26,6 +27,8 @@ export const configuration = {
   ...bookableItemFixtures[0],
   configurationVersion: 0,
   timezone: "UTC",
+  slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:30" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
@@ -35,7 +38,7 @@ export const configuration = {
   createdAt: "2026-08-17T00:00:00Z",
   createdByName: "Grace Hopper",
   updatedAt: null,
-};
+} satisfies BookingConfigurationsRead;
 export const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
 
 export function setupPage() {

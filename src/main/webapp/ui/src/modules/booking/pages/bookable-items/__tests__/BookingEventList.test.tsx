@@ -1,6 +1,8 @@
 import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { getListBookingsQueryKey, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import appI18n from "@/modules/common/i18n";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import { bookableItemEventsQuery } from "../bookableItemEvents";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,7 +18,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BookingEventList } from "../BookingEventList";
 import { bookableItemEventResponse, booking, busyBooking, maintenanceBooking } from "./bookableItemEventFixtures";
@@ -25,6 +27,10 @@ const fullBooking = { ...booking, purpose: "Cell imaging" };
 
 const _changeTimezoneLabel = "Change timezone";
 const changeTargetLabel = "Change target";
+
+beforeAll(() => {
+  appI18n.addResourceBundle("en-US", "booking", bookingEnglish);
+});
 
 function renderList(options: { controls?: boolean } = {}) {
   function Page() {
@@ -147,6 +153,7 @@ describe("BookingEventList", () => {
       ]),
     ).toBe(2);
   });
+
   it.each([["clock preference", "Change time format", /AM|am/]] as const)(
     "reformats the mounted event table when the %s changes without refetching",
     async (_, buttonLabel, expected) => {

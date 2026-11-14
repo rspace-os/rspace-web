@@ -8,6 +8,7 @@ import type { CollectionConfig, CollectionTranslationKey } from "@/modules/commo
 import i18n from "@/modules/common/i18n";
 import { Badge } from "@/modules/common/ui/badge";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { BookingListDocument } from "../../domain/booking";
 
@@ -20,7 +21,9 @@ function dateTime(
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
       {/* On a clock-change day the offset tells the two occurrences of a repeated hour apart. */}
-      <time dateTime={value}>{formatBookingDateTime(value, timeZone, i18n.language, timeFormat)}</time>
+      <time className="whitespace-normal" dateTime={value}>
+        {formatBookingDateTime(value, timeZone, undefined, timeFormat)}
+      </time>
     </BookingInstrumentTimeTooltip>
   );
 }
@@ -89,20 +92,26 @@ export function bookingListConfig(
         hasMany: false,
         labelKey: "booking:myBookings.fields.target" satisfies CollectionTranslationKey,
         list: {
-          // The item name identifies the row, so it gets the width the other columns can spare.
-          width: 260,
+          width: 200,
           minWidth: 200,
           renderCell: ({ row }) =>
             row.target ? (
               <InventoryItem
                 name={
-                  row.canViewConfiguration ? (
-                    <BookableItemName name={row.target.value.name} globalId={row.target.globalId} />
-                  ) : (
-                    row.target.value.name
-                  )
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={row.canViewConfiguration ? <span /> : <button type="button" className="text-left" />}
+                    >
+                      {row.canViewConfiguration ? (
+                        <BookableItemName name={row.target.value.name} globalId={row.target.globalId} />
+                      ) : (
+                        row.target.value.name
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent role="tooltip">{row.target.value.name}</TooltipContent>
+                  </Tooltip>
                 }
-                nameTitle={row.target.value.name}
+                nameClassName="whitespace-normal [&_a]:line-clamp-2 [&_button]:line-clamp-2"
                 globalId={row.target.globalId}
                 href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
                 idLinkLabel={
@@ -113,7 +122,7 @@ export function bookingListConfig(
                 compact
                 compactIdPlacement="below"
                 size="xs"
-                className={row.state === "CANCELLED" ? "text-muted-foreground" : undefined}
+                className={`min-w-48 ${row.state === "CANCELLED" ? "text-muted-foreground" : ""}`}
               />
             ) : (
               <UnknownItem size="xs" />
@@ -138,16 +147,15 @@ export function bookingListConfig(
           },
         ],
         labelKey: "booking:myBookings.fields.state" satisfies CollectionTranslationKey,
-        list: { width: 120, renderCell: ({ row }) => <BookingStateBadge state={row.state} /> },
+        list: { width: 100, renderCell: ({ row }) => <BookingStateBadge state={row.state} /> },
       },
       {
         name: "start",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.start" satisfies CollectionTranslationKey,
-        // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
         list: {
-          width: 185,
-          minWidth: 180,
+          width: 160,
+          minWidth: 150,
           renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone, timeFormat),
         },
       },
@@ -155,10 +163,9 @@ export function bookingListConfig(
         name: "end",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.end" satisfies CollectionTranslationKey,
-        // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
         list: {
-          width: 185,
-          minWidth: 180,
+          width: 160,
+          minWidth: 150,
           renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone, timeFormat),
         },
       },
@@ -166,6 +173,25 @@ export function bookingListConfig(
         name: "purpose",
         type: "text",
         labelKey: "booking:myBookings.fields.purpose" satisfies CollectionTranslationKey,
+        list: {
+          widthMode: "fill",
+          renderCell: ({ row }) =>
+            row.purpose ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      className="block min-w-24 text-left whitespace-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  }
+                >
+                  <span className="line-clamp-2 break-words">{row.purpose}</span>
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{row.purpose}</TooltipContent>
+              </Tooltip>
+            ) : null,
+        },
       },
       {
         name: "timezone",

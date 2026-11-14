@@ -13,6 +13,8 @@ import com.researchspace.booking.service.InvalidBookingSchedulingSettingsExcepti
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Locale;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
@@ -49,11 +51,24 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
     String code = ex.reason().errorCode();
+    Locale locale = LocaleContextHolder.getLocale();
+    if (ex.missingDayEnd().isPresent()) {
+      BookingPolicyException.MissingDayEnd missing = ex.missingDayEnd().get();
+      return problems.problem(
+          HttpStatus.BAD_REQUEST,
+          code,
+          new Object[] {
+            missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
+            missing
+                .date()
+                .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)),
+            missing.zone().getId()
+          });
+    }
     if (ex.maximumDurationMinutes().isEmpty()) {
       return problem(HttpStatus.BAD_REQUEST, code);
     }
     long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
-    Locale locale = LocaleContextHolder.getLocale();
     return problems.problem(
         HttpStatus.BAD_REQUEST,
         code,
