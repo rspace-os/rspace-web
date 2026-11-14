@@ -443,12 +443,14 @@ function GalleryFileInFolder() {
    */
   async function fetchFileDetails(hasBeenSuperseded: () => boolean) {
     try {
-      const token = await getToken();
-      const { data } = await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } =
+        typeof versionParam === "undefined"
+          ? await axios.get<unknown>(`/gallery/ajax/item/${fileIdParam}`)
+          : await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
+              headers: {
+                Authorization: `Bearer ${await getToken()}`,
+              },
+            });
       if (hasBeenSuperseded()) return;
       setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
       const folderId = Parsers.objectPath(["parentFolderId"], data).flatMap(Parsers.isNumber).elseThrow();

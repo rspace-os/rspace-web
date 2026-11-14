@@ -88,6 +88,9 @@ users as each users has their open separate Gallery.
 /gallery/item/{id}/{version}          # Same, pinned to a past version (read-only)
 ```
 
+Live item resolution supports snippets and prefers the owner's folder for owners.
+Recipients use a parent in their own Gallery, falling back to the owner's folder when readable.
+
 Every route also needs a matching rule in
 [urlrewrite.xml](../../../WEB-INF/urlrewrite.xml), which forwards it to the SPA
 shell before Spring MVC sees it. The rules are anchored regexes, so a new URL
