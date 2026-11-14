@@ -1639,6 +1639,63 @@ public class RecordManagerTest extends SpringTransactionalTest {
     filter = new GalleryFilterCriteria(images[0].getGlobalIdentifier());
     results = listGallery(images, filter, user);
     assertThat(results.getResults()).as("should get single search hit for global Id").hasSize(1);
+    assertEquals(images[0], results.getFirstResult());
+
+    Long imageFolderId = images[0].getParent().getId();
+    Folder documents =
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME, user);
+    assertThat(
+            recordMgr
+                .getGalleryItems(
+                    documents.getId(), pgCrit, filter, RecordTypeFilter.GALLERY_FILTER, user)
+                .getResults())
+        .as("an image ID must not match in the Documents section")
+        .isEmpty();
+    Folder otherFolder = createFolder("other images", images[0].getParent(), user);
+    assertThat(
+            recordMgr
+                .getGalleryItems(
+                    otherFolder.getId(), pgCrit, filter, RecordTypeFilter.GALLERY_FILTER, user)
+                .getResults())
+        .as("an image ID must not match in another folder in Images")
+        .isEmpty();
+
+    for (RecordTypeFilter typeFilter :
+        List.of(
+            new RecordTypeFilter(EnumSet.of(RecordType.FOLDER), true),
+            new RecordTypeFilter(
+                EnumSet.of(RecordType.MEDIA_FILE), EnumSet.of(RecordType.MEDIA_FILE)))) {
+      assertThat(
+              recordMgr
+                  .getGalleryItems(imageFolderId, pgCrit, filter, typeFilter, user)
+                  .getResults())
+          .as("the requested type filter must apply to exact ID searches")
+          .isEmpty();
+    }
+    assertThat(
+            recordMgr
+                .getGalleryItems(
+                    imageFolderId,
+                    pgCrit,
+                    filter,
+                    new RecordTypeFilter(EnumSet.of(RecordType.MEDIA_FILE), true),
+                    user)
+                .getResults())
+        .containsExactly(images[0]);
+
+    logoutAndLoginAs(anotherUser);
+    results = listGallery(images, filter, anotherUser);
+    assertThat(results.getResults())
+        .as("READ permission is required even in the right folder")
+        .isEmpty();
+    logoutAndLoginAs(user);
+
+    RecordToFolder imageRelation = images[0].getParents().iterator().next();
+    imageRelation.markRecordInFolderDeleted(true);
+    results = listGallery(images, filter, user);
+    assertThat(results.getResults()).as("a deleted parent relation must not match").isEmpty();
+    imageRelation.markRecordInFolderDeleted(false);
+    assertThat(listGallery(images, filter, user).getResults()).containsExactly(images[0]);
 
     // search by non-gallery global id fails gracefully
     filter = new GalleryFilterCriteria("SD12345");
