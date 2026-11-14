@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -133,8 +134,7 @@ public class DocConverterProdConfig {
     delegates.add(baseCfg.pdfToImageConverter());
     String licensePath = getLicensePath();
     if (useDummyConverter) {
-      delegates.add(new DummyConversionService());
-      log.info("Using dummy conversion service returning sample files.");
+      delegates.add(dummyOrNullService());
     } else if (asposeEnabled) {
       if (!StringUtils.isBlank(asposeWebAppUrl)) {
         delegates.add(asposeWebAppService());
@@ -162,6 +162,23 @@ public class DocConverterProdConfig {
     }
     composite.setDelegates(delegates);
     return composite;
+  }
+
+  // a bean, so Spring fills the dummy's sample.* paths; lazy, as only the dummy flag needs it
+  @Bean
+  @Lazy
+  DummyConversionService dummyConversionService() {
+    return new DummyConversionService();
+  }
+
+  private DocumentConversionService dummyOrNullService() {
+    DummyConversionService dummy = dummyConversionService();
+    if (!dummy.hasReadableSamples()) {
+      warnNoConversions();
+      return nullService();
+    }
+    log.info("Using dummy conversion service returning sample files.");
+    return dummy;
   }
 
   @Bean
