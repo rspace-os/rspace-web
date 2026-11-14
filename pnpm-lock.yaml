@@ -354,14 +354,14 @@ importers:
         specifier: 1.9.4
         version: 1.9.4
       mobx:
-        specifier: 6.16.1
-        version: 6.16.1
+        specifier: 7.1.4
+        version: 7.1.4
       mobx-react:
-        specifier: 9.2.2
-        version: 9.2.2(@types/react@19.3.0)(mobx@6.16.1)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
+        specifier: 10.0.3
+        version: 10.0.3(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
       mobx-react-lite:
-        specifier: 4.1.1
-        version: 4.1.1(@types/react@19.3.0)(mobx@6.16.1)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
+        specifier: 5.1.2
+        version: 5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
       pdfjs-dist:
         specifier: 6.3.289
         version: 6.3.289
@@ -5677,46 +5677,34 @@ packages:
   mkdirp-classic@0.5.3:
     resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
 
-  mobx-react-lite@4.1.1:
-    resolution: {integrity: sha512-iUxiMpsvNraCKXU+yPotsOncNNmyeS2B5DKL+TL6Tar/xm+wwNJAubJmtRSeAoYawdZqwv8Z/+5nPRHeQxTiXg==}
+  mobx-react-lite@5.1.2:
+    resolution: {integrity: sha512-40ZukD+RmKT1up5J1rHcPU8wJSB++Wf37lkV6wIHdQtRTt9wCYf9swfYUbfcW+Mz94xImQBwQ7jAr0aP0KeATA==}
     peerDependencies:
       '@types/mobx': '*'
       '@types/react': '*'
-      mobx: ^6.9.0
-      react: ^16.8.0 || ^17 || ^18 || ^19
-      react-dom: '*'
-      react-native: '*'
+      mobx: ^7.0.0
+      react: ^18 || ^19
     peerDependenciesMeta:
       '@types/mobx':
         optional: true
       '@types/react':
         optional: true
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
 
-  mobx-react@9.2.2:
-    resolution: {integrity: sha512-ShszmQzR/VrhU3M0cQ7DA/s8qNcLcF2emSuudJ/TnDILS3C1Im48mdaG6CpyjZHy8+WqgXUCC9mPqSRIwPPMuQ==}
+  mobx-react@10.0.3:
+    resolution: {integrity: sha512-RScxD1PRJh1jtmQqiKWDHIG78xhi3eI8iwSmR9HPKx2Czfa+gK+d86pFTYEhdhl+DdMW2vi+7dPzcSEPjrH1DA==}
     peerDependencies:
       '@types/mobx': '*'
       '@types/react': '*'
-      mobx: ^6.9.0
-      react: ^16.8.0 || ^17 || ^18 || ^19
-      react-dom: '*'
-      react-native: '*'
+      mobx: ^7.0.0
+      react: ^18 || ^19
     peerDependenciesMeta:
       '@types/mobx':
         optional: true
       '@types/react':
         optional: true
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
 
-  mobx@6.16.1:
-    resolution: {integrity: sha512-syNcDdX3KT+Jq3je6eGjBhuc24Z68td2VG0zNFqRswaE433D9SNH5VRy/xrGbJsUixfppLLccXhAW9JSf6n+SQ==}
+  mobx@7.1.4:
+    resolution: {integrity: sha512-2G9WcLqXGKe4e5usnMabjz06mqO5hQmad3qagY7/n5MmKS7t281+XtmYxnPYqVmSnCEGAKJkrdRfDhOjn3UNJg==}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -12899,25 +12887,22 @@ snapshots:
   mkdirp-classic@0.5.3:
     optional: true
 
-  mobx-react-lite@4.1.1(@types/react@19.3.0)(mobx@6.16.1)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1):
+  mobx-react-lite@5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1):
     dependencies:
-      mobx: 6.16.1
-      react: 19.3.1
-      use-sync-external-store: 1.6.0(@types/react@19.3.0)(react@19.3.1)
-    optionalDependencies:
-      '@types/react': 19.3.0
-      react-dom: 19.3.1(@types/react@19.3.0)(react@19.3.1)
-
-  mobx-react@9.2.2(@types/react@19.3.0)(mobx@6.16.1)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1):
-    dependencies:
-      mobx: 6.16.1
-      mobx-react-lite: 4.1.1(@types/react@19.3.0)(mobx@6.16.1)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
+      mobx: 7.1.4
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
-      react-dom: 19.3.1(@types/react@19.3.0)(react@19.3.1)
 
-  mobx@6.16.1: {}
+  mobx-react@10.0.3(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1):
+    dependencies:
+      mobx: 7.1.4
+      mobx-react-lite: 5.1.2(@types/react@19.3.0)(mobx@7.1.4)(react@19.3.1)
+      react: 19.3.1
+    optionalDependencies:
+      '@types/react': 19.3.0
+
+  mobx@7.1.4: {}
 
   mrmime@2.0.1: {}
 
