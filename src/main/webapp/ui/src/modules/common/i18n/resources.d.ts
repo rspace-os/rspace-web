@@ -884,6 +884,7 @@ export default interface Resources {
     "appBar": {
       "aboutRSpace": "About RSpace",
       "accountMenu": "Account Menu",
+      "accountMenuAccessible": "{label} {name} ({initials})",
       "apps": "Apps",
       "brandingAlt": "branding",
       "closeSidebar": "close sidebar",
