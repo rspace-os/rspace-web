@@ -8,6 +8,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import EmailValidator from "email-validator";
+import { produce } from "immer";
 import React from "react";
 import Select from "react-select";
 import axios from "@/common/axios";
@@ -30,6 +31,19 @@ class createGroupStep3 extends React.Component<any, any> {
     this.handleDelete = this.handleDelete.bind(this);
   }
 
+  addInvitedMember = (email: string, arrayName: "existingUsers" | "newUsers") => {
+    const normalizedEmail = email.trim().toLowerCase();
+    this.setState((prevState: { existingUsers: string[]; newUsers: string[] }) => {
+      const alreadyInvited = [...prevState.existingUsers, ...prevState.newUsers].some(
+        (invitedEmail) => invitedEmail.trim().toLowerCase() === normalizedEmail,
+      );
+      if (alreadyInvited) return null;
+      return produce(prevState, (draft) => {
+        draft[arrayName].push(email);
+      });
+    });
+  };
+
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleBlur = (event: any) => {
     if (this.state.newUserEmailCheck === false || event.target.value === "") {
@@ -39,10 +53,7 @@ class createGroupStep3 extends React.Component<any, any> {
     const email = event.target.value;
     const arrayName = event.target.name;
 
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      [arrayName]: [...prevState[arrayName], email],
-    }));
+    this.addInvitedMember(email, arrayName);
 
     event.target.value = "";
   };
@@ -57,10 +68,7 @@ class createGroupStep3 extends React.Component<any, any> {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSelect = (user: any) => {
     const email = user.value;
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      existingUsers: [...prevState.existingUsers, email],
-    }));
+    this.addInvitedMember(email, "existingUsers");
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
