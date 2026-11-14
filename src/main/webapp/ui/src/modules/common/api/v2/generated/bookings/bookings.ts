@@ -32,6 +32,11 @@ import type {
   UseSuspenseQueryResult
 } from '@tanstack/react-query';
 
+import {
+  getSearchBookingCatalogueLocationsQueryKey,
+  getSearchBookingCatalogueQueryKey
+} from '../booking-catalogue/booking-catalogue.ts';
+
 import type {
   ApiV2Problem,
   AuditEventsResponse,
@@ -365,7 +370,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof createBooking>>, variables: CreateBookingMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingsQueryKey(), getCountBookingsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingsQueryKey(), getCountBookingsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -872,7 +877,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof updateBooking>>, variables: UpdateBookingMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingsQueryKey(), getCountBookingsQueryKey(), getGetBookingQueryKey(variables.id), getListBookingAuditEventsQueryKey(variables.id)].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingsQueryKey(), getCountBookingsQueryKey(), getGetBookingQueryKey(variables.id), getListBookingAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };

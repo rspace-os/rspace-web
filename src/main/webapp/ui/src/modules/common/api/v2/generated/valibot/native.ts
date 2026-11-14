@@ -83,6 +83,15 @@ export const ApiV2CurrentUser = v.object({
   workbenchId: v.nullable(v.pipe(v.number(), v.integer(), v.description('Inventory workbench identifier.')))
 })
 
+export const ApiV2ListResultMapStringObject = v.object({
+  docs: v.optional(v.array(v.record(v.string(), v.unknown()))),
+  hasNextPage: v.optional(v.boolean()),
+  limit: v.optional(v.pipe(v.number(), v.integer())),
+  page: v.optional(v.pipe(v.number(), v.integer())),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.')))
+})
+
 export const ApiV2ProblemInvalidParam = v.object({
   name: v.string(),
   reason: v.string()
@@ -587,6 +596,23 @@ export const UsersCreate = v.object({})
 export const UsersUpdate = v.object({})
 
 /**
+ * @summary Search visible calendar events
+ */
+export const SearchCalendarEventsQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request.'))),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer()),
+  fields: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as fields[resource]=id,name.'))),
+  exclude: v.optional(v.pipe(v.record(v.string(), v.string()), v.description('Comma-separated nested field paths by resource type, using square-bracket keys such as exclude[resource]=id,name.')))
+})
+
+export const SearchCalendarEventsResponse = ApiV2ListResultMapStringObject
+
+
+/**
  * @summary Search the Booking catalogue
  */
 export const SearchBookingCatalogueQueryParams = v.object({
@@ -601,6 +627,22 @@ export const SearchBookingCatalogueQueryParams = v.object({
 })
 
 export const SearchBookingCatalogueResponse = BookingCatalogueManagerPage
+
+
+/**
+ * @summary Search bookable instruments in a calendar interval
+ */
+export const SearchCalendarCatalogueQueryParams = v.object({
+  start: v.pipe(v.string(), v.isoTimestamp(), v.description('Inclusive interval start.')),
+  end: v.pipe(v.string(), v.isoTimestamp(), v.description('Exclusive interval end.')),
+  where: v.optional(v.pipe(v.string(), v.description('RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.'))),
+  eventWhere: v.optional(v.pipe(v.string(), v.description('RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups.'))),
+  q: v.optional(v.string()),
+  page: v.pipe(v.number(), v.integer()),
+  limit: v.pipe(v.number(), v.integer())
+})
+
+export const SearchCalendarCatalogueResponse = BookingCatalogueManagerPage
 
 
 /**

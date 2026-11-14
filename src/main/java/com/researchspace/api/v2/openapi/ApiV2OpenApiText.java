@@ -147,7 +147,8 @@ public final class ApiV2OpenApiText {
     AUDIT_UNAVAILABLE("audit.unavailable"),
     AUDIT_SUMMARY("audit.summary"),
     PARAMETER_IDEMPOTENCY_KEY("parameters.idempotencyKey"),
-    RESPONSE_CREATE_RETRY("responses.createRetry");
+    RESPONSE_CREATE_RETRY("responses.createRetry"),
+    PARAMETER_GENERIC_FIELDSET("parameters.genericFieldset");
 
     static final String PREFIX = "api.v2.openapi.";
 

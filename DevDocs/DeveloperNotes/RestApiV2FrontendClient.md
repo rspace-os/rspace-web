@@ -111,7 +111,8 @@ queries by ID.
 
 Cross-resource effects are explicit entries in
 `src/modules/common/api/v2/crossResourceInvalidation.ts`, using `onMutations` and `invalidates`
-targets with `query` and optional `params`. The builder supplies each cross-tag target's generated `file`
+targets with `query` and optional `params`. Booking writes affecting catalogue availability or
+calendar events use these extra rules. The builder supplies each cross-tag target's generated `file`
 path. Config tests check mutation coverage, target operation names and generated target files.
 
 Bulk `createMany*`, `updateMany*` and `deleteMany*` rules refresh list and count queries. Their

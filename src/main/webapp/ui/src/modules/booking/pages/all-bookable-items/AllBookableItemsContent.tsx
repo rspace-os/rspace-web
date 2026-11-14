@@ -337,9 +337,9 @@ export async function invalidateBookableItemRecords(
 ) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: getListBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueLocationsQueryKey() }),
+    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueLocationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getCountBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }),
+    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
     ...docs.flatMap(({ id }) =>
       id === undefined
         ? []

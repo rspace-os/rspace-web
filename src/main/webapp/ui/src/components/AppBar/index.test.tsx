@@ -92,6 +92,13 @@ describe("App Bar", () => {
     expect(heading).toHaveTextContent("Test Page");
   });
 
+  test("Booking is not a main AppBar link", async () => {
+    render(<SimplePageWithAppBar variant="page" />);
+    await waitForLoaded();
+
+    expect(screen.queryByRole("link", { name: "common:appBar.sections.booking.title" })).not.toBeInTheDocument();
+  });
+
   test("When the user avatar is clicked, a menu should appear with profile and logout options", async () => {
     const user = userEvent.setup();
     render(<SimplePageWithAppBar variant="page" currentPage="Test Page" />);
