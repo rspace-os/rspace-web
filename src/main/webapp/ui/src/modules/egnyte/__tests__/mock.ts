@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw/http";
 
 export const MOCK_EGNYTE_ACCESS_TOKEN = "mock-egnyte-access-token";
 export const MOCK_EGNYTE_FILE_NAME = "mock-egnyte-file.txt";
+export const MOCK_EGNYTE_SECOND_FILE_NAME = "mock-egnyte-second-file.txt";
 export const MOCK_EGNYTE_FOLDER_NAME = "Mock Folder";
 
 function appBaseUrl(): string {
@@ -31,7 +32,7 @@ export const egnyteHandlers = [
   http.get("/pubapi/v1/fs/", () =>
     HttpResponse.json(
       {
-        count: 1,
+        count: 2,
         offset: 0,
         path: "/",
         name: "Shared",
@@ -44,6 +45,12 @@ export const egnyteHandlers = [
             group_id: "mock-file-group-id",
             is_folder: false,
             size: 42,
+          },
+          {
+            name: MOCK_EGNYTE_SECOND_FILE_NAME,
+            group_id: "mock-second-file-group-id",
+            is_folder: false,
+            size: 84,
           },
         ],
       },
