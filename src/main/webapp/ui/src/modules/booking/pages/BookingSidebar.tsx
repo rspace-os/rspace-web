@@ -25,7 +25,10 @@ const items = () =>
     {
       key: "administration",
       icon: SettingsIcon,
-      children: [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> }],
+      children: [
+        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
+        { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
+      ],
     },
   ] as const;
 
@@ -38,6 +41,7 @@ export function BookingSidebar() {
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
+    bookableItems: t("sidebar.bookableItems"),
   };
   const visibleItems = currentUser.hasSysAdminRole
     ? sidebarItems

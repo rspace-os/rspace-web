@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import * as v from "valibot";
 import { expect } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingSettingsControllerAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerAdminSettingsDocument";
 import type { BookingSettingsControllerSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerSettingsPatch";
 import { BookingSettingsControllerAdminSettingsDocumentSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
@@ -47,7 +48,11 @@ export function serveBookingSettings(
       const body = await request.json();
       expect(body).not.toHaveProperty("configurationVersion");
       submitted.push(body);
-      if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
+      if (!saveSucceeds())
+        return HttpResponse.json<ApiV2Problem>(
+          { title: "Request failed", code: "errors.api.v2.unexpected", status: 500 },
+          { status: 500 },
+        );
       current = v.parse(BookingSettingsControllerAdminSettingsDocumentSchema, {
         ...current,
         ...body,

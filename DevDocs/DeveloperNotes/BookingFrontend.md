@@ -44,6 +44,11 @@ Callers that explicitly reset the form must also remount `SchedulingSettingsFiel
 editing session. Availability-window, timezone, default sharing, granularity and buffer settings
 remain separate from the weekly schedule.
 
+Item creation copies the full institution schedule into its draft. Item edits submit the full
+`openingHours` value, including unchanged weekdays. Cancelling restores all entries from the
+configuration, while a failed or stale save keeps the current draft and its closed-day history.
+Item details show every weekday independently, including closed days, in the scheduling timezone.
+
 Booking clients call generated operations under `modules/common/api/v2/generated/`.
 Their `apiV2Fetch` mutator handles authentication and JSON validation; HTTP failures
 raise `ApiV2ProblemError` from `modules/common/api/v2/`. See [the API v2 frontend client guide](RestApiV2FrontendClient.md).
