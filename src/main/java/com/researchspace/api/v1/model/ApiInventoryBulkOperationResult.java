@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.apiutils.ApiError;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -88,6 +91,21 @@ public class ApiInventoryBulkOperationResult {
     result.error = error;
     errorCount++;
     successCount--;
+    resetSuccessCountBeforeFirstError();
+  }
+
+  /**
+   * Puts results produced out of request order back into request order.
+   *
+   * @param requestIndices the request index of each result, in the order the results were added
+   */
+  public void sortResultsByRequestIndex(List<Integer> requestIndices) {
+    results =
+        IntStream.range(0, results.size())
+            .boxed()
+            .sorted(Comparator.comparing(requestIndices::get))
+            .map(results::get)
+            .collect(Collectors.toCollection(ArrayList::new));
     resetSuccessCountBeforeFirstError();
   }
 

@@ -556,15 +556,28 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
+    return changeApiInstrumentOwner(apiInstrument, user, user);
+  }
+
+  @Override
+  public ApiInstrument changeApiInstrumentOwner(
+      ApiInstrument apiInstrument, User subject, User actor) {
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrument(apiInstrument.getId(), user);
+    assertUserCanTransferInstrument(apiInstrument.getId(), subject);
     Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
-    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, subject);
     try {
-      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      dbInstrument =
+          instrumentDao
+              .lockById(dbInstrument.getId())
+              .orElseThrow(() -> new NotFoundException("Instrument not found"));
       User originalOwner = dbInstrument.getOwner();
+      boolean hasCurrentGroupAuthority =
+          instrumentDao.hasLockedTransferAuthority(subject, originalOwner);
+      invPermissions.assertUserCanTransferInventoryRecord(
+          dbInstrument, subject, hasCurrentGroupAuthority);
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
         Validate.isTrue(
@@ -575,14 +588,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbInstrument, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbInstrument, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbInstrument, user);
+        unlockItemAfterEdit(dbInstrument, subject);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    return getInstrumentById(dbInstrument.getId(), subject);
   }
 
   @Override

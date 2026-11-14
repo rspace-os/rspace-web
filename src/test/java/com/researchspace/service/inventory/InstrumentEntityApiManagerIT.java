@@ -19,9 +19,15 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
+
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
+  }
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {
@@ -202,6 +208,27 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     Long transferredId = transferred.getId();
     assertThrows(
         Exception.class, () -> instrumentApiMgr.assertUserCanEditInstrument(transferredId, owner));
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_piOfOwnerGroupTransfersUnderLockedAuthority()
+      throws Exception {
+    setUpUserWithoutCustomContent(piUser);
+    User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(owner);
+    User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(newOwner);
+    createGroupForPiAndUsers(piUser, new User[] {piUser, owner});
+    ApiInstrument created = createBasicInstrumentForUser(owner, "pi-transfer");
+    created.setOwner(new ApiUser(newOwner));
+
+    ApiInstrument transferred =
+        doInTransaction(
+            () ->
+                instrumentApiMgr.changeApiInstrumentOwner(
+                    created, userMgr.getUserByUsername(piUser.getUsername())));
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
   }
 
   @Test
