@@ -17,8 +17,7 @@ export default class ExtraFieldModel implements ExtraField {
   type: ExtraFieldType;
   // @ts-expect-error Set by the call to setAttributes
   name: string;
-  // @ts-expect-error Set by the call to setAttributes
-  content: string;
+  content = "";
   // @ts-expect-error Set by the call to setAttributes
   editable: boolean;
   // @ts-expect-error Set by the call to setAttributes
@@ -77,6 +76,7 @@ export default class ExtraFieldModel implements ExtraField {
 
   setAttributes(attrs: Record<string, unknown>) {
     Object.assign(this, attrs);
+    this.content ??= "";
   }
 
   setEditing(editing: boolean) {
