@@ -29,6 +29,7 @@ export function PyratDialogStory({ onInsert }: { onInsert?: (html: string) => vo
               }}
               editor={{
                 id: "rtf_1",
+                on: () => {},
                 ui: {
                   registry: {
                     addButton: () => {},

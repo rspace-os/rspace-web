@@ -8,6 +8,7 @@ export type TinyMceEditor = {
 
 /** The parts of a TinyMCE editor that the React-based document editor plugins register against. */
 export type TinyMcePluginEditor = {
+  on(name: string, callback: () => void): void;
   id: string; // the id of the current document field, prefixed with "rtf_"
   execCommand: (command: string, ui: boolean, value?: string) => void;
   ui: {
