@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.OwnerBookingNotificationData;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -15,6 +17,8 @@ import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class EmailContentGeneratorTest {
@@ -123,6 +127,31 @@ class EmailContentGeneratorTest {
         .contains("Actor &lt;script&gt;", "href=\"https://rspace.example/userform?userId=7\"")
         .doesNotContain("Actor <script>");
     assertThat(content.plainTextContent()).contains("Actor <script>");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "NOTIFICATION_BOOKING_CREATED,Booking Created: Microscope",
+    "NOTIFICATION_BOOKING_CANCELLED,Booking Cancelled: Microscope",
+    "NOTIFICATION_BOOKING_CHANGED,Booking Changed: Microscope"
+  })
+  void usesOwnerEmailContextForBookingSubjectsAndHeaders(NotificationType type, String subject) {
+    setDeploymentLocale("en-US");
+    var originator = TestFactory.createAnyUser("actor");
+    originator.setId(7L);
+    originator.setFirstName("Actor <script>");
+    var notification = TestFactory.createANotification(originator);
+    notification.setNotificationType(type);
+    notification.setNotificationDataObject(
+        new OwnerBookingNotificationData("Microscope", "Pacific/Auckland"));
+    EmailContent content =
+        new CommunicationEmailContentGenerator(generator, "https://rspace.example")
+            .generate(notification);
+    assertEquals(subject, content.subject());
+    assertThat(content.htmlContent())
+        .contains("Pacific/Auckland", "Actor &lt;script&gt;")
+        .doesNotContain("Actor <script>");
+    assertThat(content.plainTextContent()).contains("Pacific/Auckland");
   }
 
   private void setDeploymentLocale(String languageTag) {

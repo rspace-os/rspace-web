@@ -7,6 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.booking.config.BookingTimeConfig;
@@ -17,11 +22,19 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import jakarta.persistence.LockModeType;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -38,6 +51,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -237,6 +254,63 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
   }
 
   @Test
+  void startPassingWhileTheConfigurationLockIsHeldRejectsTheBooking() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Past-start lock wait");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    Instant start = sevenDaysFromNow();
+    var now = new AtomicReference<>(start.minusSeconds(1));
+    CountDownLatch validated = new CountDownLatch(1);
+    CountDownLatch locked = new CountDownLatch(1);
+    Clock advancing = mock(Clock.class);
+    when(advancing.instant())
+        .thenAnswer(
+            ignored -> {
+              Instant result = now.get();
+              validated.countDown();
+              return result;
+            });
+    Object managerTarget = AopTestUtils.getUltimateTargetObject(bookingManager);
+    Clock original = (Clock) ReflectionTestUtils.getField(managerTarget, "clock");
+    ReflectionTestUtils.setField(managerTarget, "clock", advancing);
+    ExecutorService workers = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> holder =
+          workers.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            configurationDao.lockById(setup.configurationId()).orElseThrow();
+                            locked.countDown();
+                            await(validated);
+                            now.set(start);
+                          }));
+      assertTrue(locked.await(20, TimeUnit.SECONDS));
+      Future<?> create =
+          workers.submit(
+              () ->
+                  bookingManager.createBooking(
+                      new TimeSlotBookingManager.Create(
+                          new ResolvedBookableTarget(setup.target(), setup.instrument()),
+                          Date.from(start),
+                          Date.from(start.plus(1, ChronoUnit.HOURS)),
+                          null),
+                      owner,
+                      owner));
+      holder.get(20, TimeUnit.SECONDS);
+      var failure = assertThrows(ExecutionException.class, () -> create.get(20, TimeUnit.SECONDS));
+      assertInstanceOf(BookingStartInPastException.class, failure.getCause());
+      assertEquals(Integer.valueOf(0), countLiveBookings(setup.configurationId()));
+    } finally {
+      validated.countDown();
+      workers.shutdownNow();
+      workers.awaitTermination(20, TimeUnit.SECONDS);
+      ReflectionTestUtils.setField(managerTarget, "clock", original);
+    }
+  }
+
+  @Test
   void configurationLockDoesNotLockItsAuditActor() throws Exception {
     User owner = createInitAndLoginAnyUser();
     User actor = getSysAdminUser();
@@ -414,6 +488,136 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
       competingCreateCommitted.countDown();
       pool.shutdownNow();
       assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
+    }
+  }
+
+  @Test
+  void bulkArchiveWaitsForCreateTargetsBeforeLockingConfigurations() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    User admin = getSysAdminUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Bulk archive lock order");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    var target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start = sevenDaysFromNow();
+    var existing =
+        bookingManager.createBooking(
+            new TimeSlotBookingManager.Create(
+                target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
+            owner,
+            owner);
+    var daoTarget = AopTestUtils.getUltimateTargetObject(configurationDao);
+    var originalInstruments =
+        (InstrumentDao) ReflectionTestUtils.getField(daoTarget, "instruments");
+    var originalFactory =
+        (SessionFactory) ReflectionTestUtils.getField(daoTarget, "sessionFactory");
+    var creator = new AtomicReference<Thread>();
+    var archiver = new AtomicReference<Thread>();
+    CountDownLatch createTargetsLocked = new CountDownLatch(1);
+    CountDownLatch letCreateContinue = new CountDownLatch(1);
+    CountDownLatch bulkRequestsTargetLock = new CountDownLatch(1);
+    var instrumentSpy =
+        spy((InstrumentDao) AopTestUtils.getUltimateTargetObject(originalInstruments));
+    doAnswer(
+            call -> {
+              Object locked = call.callRealMethod();
+              if (Thread.currentThread() == creator.get()) {
+                createTargetsLocked.countDown();
+                await(letCreateContinue);
+              }
+              return locked;
+            })
+        .when(instrumentSpy)
+        .lockById(created.getId());
+    var observedFactory = mock(SessionFactory.class);
+    when(observedFactory.getCurrentSession())
+        .thenAnswer(
+            call -> {
+              var actual = originalFactory.getCurrentSession();
+              if (Thread.currentThread() != archiver.get()) return actual;
+              var observed =
+                  (Session)
+                      Proxy.newProxyInstance(
+                          SessionImplementor.class.getClassLoader(),
+                          new Class<?>[] {SessionImplementor.class},
+                          (proxy, method, args) -> {
+                            if (method.getName().equals("createNativeQuery")
+                                && args.length == 2
+                                && args[0] instanceof String sql
+                                && args[1] == Long.class
+                                && sql.startsWith("select id from InstrumentEntity")
+                                && sql.contains("for update")) bulkRequestsTargetLock.countDown();
+                            try {
+                              return method.invoke(actual, args);
+                            } catch (InvocationTargetException failure) {
+                              throw failure.getCause();
+                            }
+                          });
+              return observed;
+            });
+    ReflectionTestUtils.setField(daoTarget, "instruments", instrumentSpy);
+    ReflectionTestUtils.setField(daoTarget, "sessionFactory", observedFactory);
+    ExecutorService workers = Executors.newFixedThreadPool(2);
+    try {
+      Future<TimeSlotBooking> create =
+          workers.submit(
+              () -> {
+                creator.set(Thread.currentThread());
+                return bookingManager.createBooking(
+                    new TimeSlotBookingManager.Create(
+                        target,
+                        Date.from(start.plus(2, ChronoUnit.HOURS)),
+                        Date.from(start.plus(3, ChronoUnit.HOURS)),
+                        null),
+                    owner,
+                    owner);
+              });
+      assertTrue(createTargetsLocked.await(20, TimeUnit.SECONDS));
+      Future<?> archive =
+          workers.submit(
+              () -> {
+                archiver.set(Thread.currentThread());
+                var request =
+                    new ResourceRequest(
+                        new FilterExpression.Comparison(
+                            "id", Operator.EQUAL, List.of(setup.configurationId()), false),
+                        List.of(),
+                        new ResourceRequest.Page(1, 100),
+                        FieldSelection.all(),
+                        IncludeTree.empty());
+                return configurationManager.archiveConfigurations(request, admin, admin);
+              });
+      if (!bulkRequestsTargetLock.await(20, TimeUnit.SECONDS)) {
+        if (archive.isDone()) archive.get();
+        fail("Archive thread: " + Arrays.toString(archiver.get().getStackTrace()));
+      }
+      // The creator owns the target. Bulk archive must wait there and leave the configuration free.
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(
+              ignored ->
+                  sessionFactory
+                      .getCurrentSession()
+                      .createNativeQuery(
+                          "select id from BookingConfiguration where id = :id for update nowait",
+                          Long.class)
+                      .setParameter("id", setup.configurationId())
+                      .getSingleResult());
+      letCreateContinue.countDown();
+      var saved = create.get(20, TimeUnit.SECONDS);
+      archive.get(20, TimeUnit.SECONDS);
+      new TransactionTemplate(getTxMger())
+          .executeWithoutResult(
+              ignored -> {
+                for (Long id : List.of(existing.getId(), saved.getId()))
+                  assertEquals(
+                      BookingState.CANCELLED,
+                      sessionFactory.getCurrentSession().get(TimeSlotBooking.class, id).getState());
+              });
+    } finally {
+      letCreateContinue.countDown();
+      workers.shutdownNow();
+      workers.awaitTermination(30, TimeUnit.SECONDS);
+      ReflectionTestUtils.setField(daoTarget, "instruments", originalInstruments);
+      ReflectionTestUtils.setField(daoTarget, "sessionFactory", originalFactory);
     }
   }
 

@@ -32,4 +32,9 @@ export interface BookingConfigurationsCreate {
   slotGranularityMinutes?: number;
   /** Instrument to which this booking configuration applies. */
   target: BookingConfigurationsCreateTarget;
+  /**
+     * Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.
+     * @maxLength 255
+     */
+  timezone?: string;
 }

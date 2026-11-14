@@ -90,7 +90,7 @@ export function BookableItemConfigurationForm({
         }}
       >
         <RenderFields
-          fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
+          fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}
           form={form}
           disabled={pending}
           layout="inline"

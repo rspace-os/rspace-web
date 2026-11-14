@@ -22,7 +22,8 @@
         "generatedNotification": "<a href=\"{0}\">{1}</a> generated a notification for you on {2} at {3}.",
         "generatedNotificationWithType": "<a href=\"{0}\">{1}</a> generated a notification for you of type [{2}] on {3} at {4}.",
         "moreDetails": "More details:",
-        "notificationFromRSpace": "Notification from RSpace"
+        "notificationFromRSpace": "Notification from RSpace",
+        "generatedBookingNotificationWithType": "<a href=\"{0}\">{1}</a> generated a notification for you of type [{2}] on {3}."
       },
       "raidUpdateCompleteNotification": {
         "doiNotFound": "Your research output recently deposited on \"{0}\" with the DOI <a href=\"{1}\">{1}</a> could not be added to your RAiD record <a href=\"{2}\">{3}</a>.<br/>RAiD refused the DOI because it could not find it. This RAiD instance only accepts DOIs that are already published.",

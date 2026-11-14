@@ -248,7 +248,8 @@ export const BookingConfigurationsCreate = v.object({
   slotGranularityMinutes: v.optional(v.pipe(v.number(), v.integer(), v.description('Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.'))),
   target: v.pipe(v.intersect([InstrumentsReference, v.object({
   globalId: v.optional(v.pipe(v.string(), v.regex(new RegExp('^IN\\d+$'))))
-})]), v.description('Instrument to which this booking configuration applies.'))
+})]), v.description('Instrument to which this booking configuration applies.')),
+  timezone: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.')))
 })
 
 export const UsersReference = v.object({
@@ -349,7 +350,7 @@ export const BookingConfigurationsRead = v.object({
   value: InstrumentsRead
 })]), v.null()]), v.description('Instrument to which this booking configuration applies.'))),
   'target.customFields': v.optional(v.record(v.string(), v.unknown())),
-  timezone: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Read-only scheduling timezone used for opening hours and booking policy.'))),
+  timezone: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('Named IANA scheduling timezone used for browser-based opening hours and booking policy. Java-only IDs, numeric offsets, SystemV IDs, and browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT are not accepted. Set only on create; defaults to the institution timezone.'))),
   updatedAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time at which the resource was last updated.'))),
   updatedBy: v.optional(v.pipe(v.union([v.union([UsersReference, v.object({
   relationTo: v.literal('users'),

@@ -39,7 +39,9 @@ Do not roll back to independent ACL authorization without reconciling Inventory
 permission changes. Destructive cleanup of legacy rows is a later migration.
 
 Booking writes take a shared lock on the singleton calendar permission gate
-before target, configuration and subscription locks. Permission-source writers
+before target, configuration and subscription locks. Bulk configuration archive first
+locks all instrument targets in id order, then their owners in id order, then configurations
+in id order. Cancellations and notification selection follow while those locks are held. Permission-source writers
 take its exclusive lock through `BookingCalendarRevocationCoordinator`. An outer
 writer entry point must register with the coordinator before its first query,
 lock, DML statement or possible Hibernate autoflush. A transaction must not try

@@ -1,5 +1,7 @@
 <h2>$msg.getMessage("email.notification.notification.notificationFromRSpace")</h2>
-#if ($cmm.notification)
+#if ($bookingTimestamp)
+$msg.format("email.notification.notification.generatedBookingNotificationWithType", ["$baseURL/userform?userId=$cmm.originator.id", $esc.html($cmm.originator.fullName), $msg.getMessage($notificationTypeKey), $esc.html($bookingTimestamp)])
+#elseif ($cmm.notification)
 $msg.format("email.notification.notification.generatedNotificationWithType", ["$baseURL/userform?userId=$cmm.originator.id", $esc.html($cmm.originator.fullName), $msg.getMessage($notificationTypeKey), $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 #else
 $msg.format("email.notification.notification.generatedNotification", ["$baseURL/userform?userId=$cmm.originator.id", $esc.html($cmm.originator.fullName), $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])

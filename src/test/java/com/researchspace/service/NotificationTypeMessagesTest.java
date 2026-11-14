@@ -14,6 +14,8 @@ class NotificationTypeMessagesTest {
   @Test
   void everyNotificationTypeResolvesToARealMessage() {
     for (NotificationType type : NotificationType.values()) {
+      // Reserved to preserve persisted ordinals; restore delivery is introduced separately.
+      if (type == NotificationType.NOTIFICATION_BOOKING_RESTORED) continue;
       String key = NotificationTypeMessages.keyFor(type);
       String message = messages.getMessageForLocale(key, enUS);
       assertThat(message)

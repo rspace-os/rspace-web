@@ -14,14 +14,18 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import jakarta.persistence.LockModeType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.hibernate.SessionFactory;
@@ -245,8 +249,67 @@ public class BookingConfigurationDaoHibernate
   public List<BookingConfiguration> lockResources(
       ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
     permissionGate.lockShared();
+    List<BookingConfiguration> selected =
+        collectionQuery.listById(
+            criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
+    List<Long> targetIds =
+        selected.stream()
+            .map(BookingConfiguration::getTarget)
+            .filter(Objects::nonNull)
+            .filter(target -> target.type() == BookableTargetType.INSTRUMENT)
+            .map(BookableTargetReference::id)
+            .distinct()
+            .sorted()
+            .toList();
+    targetIds.forEach(
+        id ->
+            getSession()
+                .createNativeQuery(
+                    "select id from InstrumentEntity where id = :id for update", Long.class)
+                .setParameter("id", id)
+                .getResultList());
+    if (!targetIds.isEmpty()) {
+      List<Long> ownerIds =
+          getSession()
+              .createNativeQuery(
+                  "select distinct owner_id from InstrumentEntity where id in (:ids) order by"
+                      + " owner_id",
+                  Long.class)
+              .setParameterList("ids", targetIds)
+              .getResultList();
+      if (!ownerIds.isEmpty())
+        getSession()
+            .createNativeQuery(
+                "select id from User where id in (:ids) order by id for update", Long.class)
+            .setParameterList("ids", ownerIds)
+            .getResultList();
+    }
+    // Selection is an unlocked snapshot. Evict it before the locking entity read so a
+    // concurrent PATCH is not compared with a stale managed version.
+    List<Long> selectedIds = selected.stream().map(BookingConfiguration::getId).toList();
+    selected.forEach(getSession()::evict);
+    List<BookingConfiguration> locked =
+        selectedIds.stream().sorted().map(this::lockById).flatMap(Optional::stream).toList();
+    if (locked.isEmpty()) return locked;
+    var ids =
+        new FilterExpression.Comparison(
+            "id",
+            Operator.IN,
+            new ArrayList<Object>(locked.stream().map(BookingConfiguration::getId).toList()),
+            false);
+    FilterExpression filter =
+        request.filter() == null ? ids : new FilterExpression.And(List.of(request.filter(), ids));
+    var currentRequest =
+        new ResourceRequest(
+            filter,
+            request.serverConstraint(),
+            request.sort(),
+            request.page(),
+            request.fieldSelections(),
+            request.includes(),
+            request.runtime());
     return collectionQuery.listByIdForUpdate(
-        criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
+        criteriaBuilderFactory, getSession(), currentRequest, limit, relationshipAccess);
   }
 
   @Override

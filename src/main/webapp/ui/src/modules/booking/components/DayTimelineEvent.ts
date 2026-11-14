@@ -9,6 +9,9 @@ type BaseEvent = {
   startMinute: number;
   /** Same coordinates as startMinute; preserve off-day bounds and clip only for rendering. */
   endMinute: number;
+  startInstant?: string;
+  endInstant?: string;
+  instrumentTimeZone?: string | null;
 };
 
 export type DayTimelineItem = {

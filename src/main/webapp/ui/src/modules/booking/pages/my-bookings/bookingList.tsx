@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
@@ -7,13 +8,15 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { BookingListDocument } from "../../domain/booking";
 
-function dateTime(value: BookingListDocument["start"], timeZone: string): ReactNode {
+function dateTime(value: BookingListDocument["start"], timeZone: string, instrumentTimeZone: string | null): ReactNode {
   return (
-    <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
-        new Date(value),
-      )}
-    </time>
+    <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
+      <time dateTime={value}>
+        {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
+          new Date(value),
+        )}
+      </time>
+    </BookingInstrumentTimeTooltip>
   );
 }
 
@@ -78,13 +81,13 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         name: "start",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.start",
-        list: { renderCell: ({ row }) => dateTime(row.start, timeZone) },
+        list: { renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone) },
       },
       {
         name: "end",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.end",
-        list: { renderCell: ({ row }) => dateTime(row.end, timeZone) },
+        list: { renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone) },
       },
       {
         name: "purpose",
