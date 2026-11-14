@@ -14,6 +14,13 @@ import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAt
 import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
 import type InventoryBaseRecord from "./InventoryBaseRecord";
 
+const formatTime = (content: Date): string =>
+  content.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
 const formatOption = (option: OptionValue): Option => ({
   value: option,
   label: option,
@@ -260,6 +267,7 @@ export default class FieldModel implements Field {
 
   get renderContentAsString(): string {
     if (hasOptions(this.type)) return formatList(this.selectedOptions ?? [], i18n.resolvedLanguage ?? i18n.language);
+    if (this.type === "time" && this.content instanceof Date) return formatTime(this.content);
     return this.content.toString() ?? "";
   }
 
@@ -297,12 +305,7 @@ export default class FieldModel implements Field {
           };
         break;
       case "time":
-        if (this.content instanceof Date)
-          ret.content = this.content.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          });
+        if (this.content instanceof Date) ret.content = formatTime(this.content);
         ret.content = ret.content ?? "";
         break;
       case "date":
