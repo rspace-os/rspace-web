@@ -26,12 +26,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AuditEventsResponse,
+  AuditInvalidRequestResponse,
+  AuditUnavailableResponse,
   BadRequestResponse,
   ContainersRead,
   CountContainersParams,
   CountResultResponse,
   ForbiddenResponse,
   GetContainerParams,
+  ListContainerAuditEventsParams,
   ListContainers200,
   ListContainersParams,
   NotAcceptableResponse,
@@ -686,6 +690,227 @@ export function useGetContainerSuspense<TData = Awaited<ReturnType<typeof getCon
  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetContainerSuspenseQueryOptions(id,params,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getListContainerAuditEventsUrl = (id: number,
+    params?: ListContainerAuditEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["actions"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/containers/${id}/audit?${stringifiedParams}` : `/api/v2/containers/${id}/audit`
+}
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export const listContainerAuditEvents = async (id: number,
+    params?: ListContainerAuditEventsParams, options?: Parameters<typeof apiV2Fetch>[1]): Promise<AuditEventsResponse> => {
+
+  return apiV2Fetch<AuditEventsResponse>(getListContainerAuditEventsUrl(id,params),
+  {
+      operationId: 'listContainerAuditEvents',
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListContainerAuditEventsQueryKey = (id: number,
+    params?: ListContainerAuditEventsParams,) => {
+    return [
+    `/api/v2/containers/${id}/audit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListContainerAuditEventsQueryOptions = <TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContainerAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContainerAuditEvents>>> = ({ signal }) => listContainerAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListContainerAuditEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listContainerAuditEvents>>>
+export type ListContainerAuditEventsQueryError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params: undefined |  ListContainerAuditEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContainerAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listContainerAuditEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContainerAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listContainerAuditEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEvents<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListContainerAuditEventsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useListContainerAuditEvents} query
+ */
+export const invalidateListContainerAuditEvents = async (
+ queryClient: QueryClient, id: number,
+    params?: ListContainerAuditEventsParams, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getListContainerAuditEventsQueryKey(id,params) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getListContainerAuditEventsSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContainerAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContainerAuditEvents>>> = ({ signal }) => listContainerAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type ListContainerAuditEventsSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof listContainerAuditEvents>>>
+export type ListContainerAuditEventsSuspenseQueryError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params: undefined |  ListContainerAuditEventsParams, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one containers resource
+ */
+export function useListContainerAuditEventsSuspense<TData = Awaited<ReturnType<typeof listContainerAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListContainerAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listContainerAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListContainerAuditEventsSuspenseQueryOptions(id,params,options)
 
   const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

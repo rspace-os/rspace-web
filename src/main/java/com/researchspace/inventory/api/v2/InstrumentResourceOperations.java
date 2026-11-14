@@ -1,6 +1,7 @@
 package com.researchspace.inventory.api.v2;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceAuditPolicy;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.resource.ScalarReader;
 import com.researchspace.dao.ExtraFieldDao;
@@ -88,6 +89,7 @@ public class InstrumentResourceOperations
             ApiV2InstrumentResource.description(readAccess), this, Long::valueOf)
         .scalarReader(this)
         .runtimeFields(List.of(customFields, extraFields))
+        .audit(ResourceAuditPolicy.standard(this))
         .tagDocumentation(
             "Inventory instruments and their scheduling and access metadata.", "Inventory")
         .build();

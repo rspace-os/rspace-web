@@ -27,6 +27,9 @@ import type {
 
 import type {
   ApiV2RuntimeFieldCatalog,
+  AuditEventsResponse,
+  AuditInvalidRequestResponse,
+  AuditUnavailableResponse,
   BadRequestResponse,
   CountInstrumentsParams,
   CountResultResponse,
@@ -34,6 +37,7 @@ import type {
   GetInstrumentParams,
   GetInstrumentRuntimeFieldsParams,
   InstrumentsRead,
+  ListInstrumentAuditEventsParams,
   ListInstruments200,
   ListInstrumentsParams,
   NotAcceptableResponse,
@@ -865,6 +869,227 @@ export function useGetInstrumentSuspense<TData = Awaited<ReturnType<typeof getIn
  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetInstrumentSuspenseQueryOptions(id,params,options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getListInstrumentAuditEventsUrl = (id: number,
+    params?: ListInstrumentAuditEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["actions"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/instruments/${id}/audit?${stringifiedParams}` : `/api/v2/instruments/${id}/audit`
+}
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export const listInstrumentAuditEvents = async (id: number,
+    params?: ListInstrumentAuditEventsParams, options?: Parameters<typeof apiV2Fetch>[1]): Promise<AuditEventsResponse> => {
+
+  return apiV2Fetch<AuditEventsResponse>(getListInstrumentAuditEventsUrl(id,params),
+  {
+      operationId: 'listInstrumentAuditEvents',
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListInstrumentAuditEventsQueryKey = (id: number,
+    params?: ListInstrumentAuditEventsParams,) => {
+    return [
+    `/api/v2/instruments/${id}/audit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListInstrumentAuditEventsQueryOptions = <TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInstrumentAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInstrumentAuditEvents>>> = ({ signal }) => listInstrumentAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListInstrumentAuditEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listInstrumentAuditEvents>>>
+export type ListInstrumentAuditEventsQueryError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEvents<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params: undefined |  ListInstrumentAuditEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInstrumentAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listInstrumentAuditEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEvents<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInstrumentAuditEvents>>,
+          TError,
+          Awaited<ReturnType<typeof listInstrumentAuditEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEvents<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEvents<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListInstrumentAuditEventsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useListInstrumentAuditEvents} query
+ */
+export const invalidateListInstrumentAuditEvents = async (
+ queryClient: QueryClient, id: number,
+    params?: ListInstrumentAuditEventsParams, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getListInstrumentAuditEventsQueryKey(id,params) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getListInstrumentAuditEventsSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInstrumentAuditEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInstrumentAuditEvents>>> = ({ signal }) => listInstrumentAuditEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type ListInstrumentAuditEventsSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof listInstrumentAuditEvents>>>
+export type ListInstrumentAuditEventsSuspenseQueryError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>
+
+
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEventsSuspense<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params: undefined |  ListInstrumentAuditEventsParams, options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEventsSuspense<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEventsSuspense<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.
+ * @summary List audit events for one instruments resource
+ */
+export function useListInstrumentAuditEventsSuspense<TData = Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError = ErrorType<AuditInvalidRequestResponse | UnauthenticatedResponse | ForbiddenResponse | NotFoundResponse | NotAcceptableResponse | TooManyRequestsResponse | UnexpectedErrorResponse | AuditUnavailableResponse>>(
+ id: number,
+    params?: ListInstrumentAuditEventsParams, options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof listInstrumentAuditEvents>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListInstrumentAuditEventsSuspenseQueryOptions(id,params,options)
 
   const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
