@@ -104,7 +104,7 @@ Identity changes reload the page through the provider.
 
 `orval.config.ts` builds `mutationInvalidates` rules through `scripts/api-v2-invalidation/`. Every
 non-GET operation invalidates its resource's list and count queries across all parameter sets by
-prefix. A mutation path containing `{id}` also invalidates that record's get query by ID.
+prefix. A mutation path containing `{id}` also invalidates that record's get and access queries by ID.
 
 Cross-resource effects are explicit entries in
 `src/modules/common/api/v2/crossResourceInvalidation.ts`, using `onMutations` and `invalidates`

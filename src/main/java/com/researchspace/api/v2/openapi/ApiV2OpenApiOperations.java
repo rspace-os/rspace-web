@@ -83,10 +83,14 @@ final class ApiV2OpenApiOperations {
             resource.registry(),
             runtimeFields.runtimeFieldsExtension(resource),
             text);
-    if (requiresIfMatch(resource, operation)) {
+    if (resource.mutationPolicy().version().field().isPresent()
+        && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
+      boolean required = requiresIfMatch(resource, operation);
       parameters.add(
           components.reference(
-              PARAMETERS, "IfMatch", ifMatchParameter(text.get(Key.PARAMETER_IF_MATCH))));
+              PARAMETERS,
+              required ? "IfMatch" : "IfMatchOptional",
+              ifMatchParameter(required, text.get(Key.PARAMETER_IF_MATCH))));
     }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
@@ -236,8 +240,26 @@ final class ApiV2OpenApiOperations {
                   text.get(Key.RESPONSE_IF_MATCH_REQUIRED),
                   428,
                   resource
-                      .ifMatchRequiredCode()
+                      .mutationPolicy()
+                      .version()
+                      .missingCode()
                       .orElse(ApiV2ErrorCodes.messageKeyFor(HttpStatus.PRECONDITION_REQUIRED)))));
+    }
+    if (resource.mutationPolicy().version().field().isPresent()
+        && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
+      responses.put(
+          "412",
+          sharedUnlessDocumented(
+              components,
+              documentation,
+              412,
+              "VersionChanged",
+              problemResponse(
+                  text.get(Key.RESPONSE_VERSION_CHANGED), 412, "errors.concurrentChange")));
+    }
+    if (operation == ResourceOperation.DELETE && documentation.responses().containsKey(204)) {
+      responses.remove("200");
+      responses.put("204", Map.of("description", documentation.responses().get(204).description()));
     }
     documentation.responses().entrySet().stream()
         .filter(entry -> !entry.getValue().errors().isEmpty())

@@ -147,7 +147,7 @@ class ApiV2QuerySupportTest {
             excludedRequest.fields(),
             excludedRequest.includes());
     assertEquals(
-        List.of("id", "startDate", "endDate", "stopUserLoginDate", "canUserLoginNow"),
+        List.of("id", "version", "startDate", "endDate", "stopUserLoginDate", "canUserLoginNow"),
         List.copyOf(excludedDocument.keySet()));
     ResourceRequest emptyRequest =
         ApiV2ResourceRequestParser.item(0, empty, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY);

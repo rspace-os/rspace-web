@@ -151,6 +151,35 @@ export const InstrumentsReference = v.object({
 
 export const InstrumentsUpdate = v.object({})
 
+export const MaintenancesCreate = v.object({
+  endDate: v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.')),
+  message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))),
+  startDate: v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.')),
+  stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.')))
+})
+
+export const MaintenancesRead = v.object({
+  canUserLoginNow: v.optional(v.pipe(v.boolean(), v.description('Whether ordinary users can log in at the current server time.'))),
+  endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.'))),
+  id: v.pipe(v.number(), v.integer(), v.description('Stable maintenance identifier.')),
+  message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))),
+  startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.'))),
+  stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.'))),
+  version: v.optional(v.pipe(v.number(), v.integer(), v.description('Version for conditional updates and deletes.')))
+})
+
+export const MaintenancesReference = v.object({
+  relationTo: v.literal('maintenances'),
+  value: v.pipe(v.number(), v.integer())
+})
+
+export const MaintenancesUpdate = v.object({
+  endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('End of the maintenance window.'))),
+  message: v.nullish(v.pipe(v.string(), v.check((value) => value.length <= 255 || (value.length <= 510 && [...value].length <= 255), 'Invalid length: Expected <=255'), v.description('User-facing maintenance message.'))),
+  startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description('Beginning of the maintenance window.'))),
+  stopUserLoginDate: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description('Time after which ordinary users may no longer log in.')))
+})
+
 export const ResourceRoleSource = v.object({
   grantee: v.nullish(v.record(v.string(), v.unknown())),
   kind: v.optional(v.picklist(['DIRECT', 'GROUP', 'AUDIENCE', 'IMPLICIT'])),
@@ -209,6 +238,10 @@ export const ResourceGranteeDirectoryEntry = v.object({
   key: v.optional(v.string()),
   kind: v.optional(v.picklist(['USER', 'GROUP', 'AUDIENCE'])),
   name: v.optional(v.string())
+})
+
+export const ResourceGranteeDirectoryDocument = v.object({
+  docs: v.array(ResourceGranteeDirectoryEntry)
 })
 
 export const UsersCreate = v.object({})
@@ -378,6 +411,149 @@ export const GetInstrumentQueryParams = v.object({
 })
 
 export const GetInstrumentResponse = InstrumentsRead
+
+
+/**
+ * Deletes every maintenances matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.
+ * @summary Delete matching maintenances
+ */
+export const DeleteManyMaintenancesQueryParams = v.object({
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))
+})
+
+export const DeleteManyMaintenancesResponse = v.object({
+  docs: v.array(MaintenancesRead)
+})
+
+
+/**
+ * Returns a paginated view of maintenances. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.
+ * @summary List maintenances
+ */
+export const ListMaintenancesQueryParams = v.object({
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))),
+  sort: v.optional(v.pipe(v.string(), v.description('Comma-separated sortable fields; prefix descending fields with \'-\'. At most 5 fields.'))),
+  page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.description('One-based page number.')), 1),
+  limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100), v.description('Maximum documents per page.')), 20),
+  totals: v.optional(v.pipe(v.boolean(), v.description('Include totalDocs and totalIsLowerBound. Defaults to false.')), false),
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.'))),
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  maintenances: v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  maintenances: v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[maintenances]=id,name.')))
+})
+
+export const ListMaintenancesResponse = v.object({
+  docs: v.array(MaintenancesRead),
+  hasNextPage: v.optional(v.boolean()),
+  limit: v.pipe(v.number(), v.integer()),
+  page: v.pipe(v.number(), v.integer()),
+  totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description('Present only when totals=true.'))),
+  totalIsLowerBound: v.optional(v.pipe(v.boolean(), v.description('True when the requested total exceeds max.')))
+})
+
+
+/**
+ * Updates every maintenances matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.
+ * @summary Update matching maintenances
+ */
+export const UpdateManyMaintenancesQueryParams = v.object({
+  where: v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.'))
+})
+
+export const UpdateManyMaintenancesBody = MaintenancesUpdate
+
+export const UpdateManyMaintenancesResponse = v.object({
+  docs: v.array(MaintenancesRead)
+})
+
+
+/**
+ * Creates one maintenances from the documented create schema.
+ * @summary Create one maintenances
+ */
+export const CreateMaintenanceBody = MaintenancesCreate
+
+export const CreateMaintenanceResponse = MaintenancesRead
+
+
+/**
+ * Creates the supplied maintenances documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.
+ * @summary Create many maintenances
+ */
+export const CreateManyMaintenancesBody = v.object({
+  docs: v.pipe(v.array(MaintenancesCreate), v.minLength(1))
+})
+
+export const CreateManyMaintenancesResponse = v.object({
+  docs: v.array(MaintenancesRead)
+})
+
+
+/**
+ * Counts maintenances matching the optional bounded filter.
+ * @summary Count maintenances
+ */
+export const CountMaintenancesQueryParams = v.object({
+  max: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10000), v.description('Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.'))),
+  where: v.optional(v.pipe(v.string(), v.check((value) => value.length <= 32768 || (value.length <= 65536 && [...value].length <= 32768), 'Invalid length: Expected <=32768'), v.description('Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject\'s numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.')))
+})
+
+export const CountMaintenancesResponse = ApiV2CountResult
+
+
+/**
+ * Deletes one maintenances and returns the deleted document.
+ * @summary Delete one maintenances
+ */
+export const DeleteMaintenanceParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const DeleteMaintenanceHeader = v.object({
+  'If-Match': v.optional(v.pipe(v.string(), v.regex(new RegExp('^\\"[0-9]+\\"$')), v.description('Strong entity tag containing the current resource version.')))
+})
+
+
+/**
+ * Returns one visible maintenances. A resource that is absent or not readable is reported as not found.
+ * @summary Get one maintenances
+ */
+export const GetMaintenanceParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const GetMaintenanceQueryParams = v.object({
+  depth: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10), v.description('Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.')), 0),
+  fields: v.optional(v.pipe(v.object({
+  maintenances: v.optional(v.string())
+}), v.description('Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.'))),
+  exclude: v.optional(v.pipe(v.object({
+  maintenances: v.optional(v.string())
+}), v.description('Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[maintenances]=id,name.')))
+})
+
+export const GetMaintenanceResponse = MaintenancesRead
+
+
+/**
+ * Partially updates one maintenances and returns the updated document.
+ * @summary Update one maintenances
+ */
+export const UpdateMaintenanceParams = v.object({
+  id: v.pipe(v.number(), v.integer(), v.description('Resource identifier.'))
+})
+
+export const UpdateMaintenanceHeader = v.object({
+  'If-Match': v.optional(v.pipe(v.string(), v.regex(new RegExp('^\\"[0-9]+\\"$')), v.description('Strong entity tag containing the current resource version.')))
+})
+
+export const UpdateMaintenanceBody = MaintenancesUpdate
+
+export const UpdateMaintenanceResponse = MaintenancesRead
 
 
 /**

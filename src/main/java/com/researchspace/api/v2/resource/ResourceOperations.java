@@ -69,7 +69,8 @@ public interface ResourceOperations<T, ID> {
     return Optional.empty();
   }
 
-  default T create(ParsedDocument document, ApiV2Caller caller) {
+  default CreateResult<T> create(
+      ParsedDocument document, ApiV2Caller caller, String idempotencyKey) {
     throw readOnly("create");
   }
 

@@ -16,6 +16,11 @@ export interface ApiV2OperationSet {
   count?: ApiV2ReadOperation;
   get?: ApiV2ReadOperation;
   create?: ApiV2AsyncFunction;
+  update?: ApiV2AsyncFunction;
+  delete?: ApiV2AsyncFunction;
+  createMany?: ApiV2AsyncFunction;
+  updateMany?: ApiV2AsyncFunction;
+  deleteMany?: ApiV2AsyncFunction;
   runtimeFields?: ApiV2ReadOperation;
 }
 
