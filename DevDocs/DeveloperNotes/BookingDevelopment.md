@@ -37,22 +37,60 @@ They use reserved IDs and bypass Envers, so they create no audit revisions. See 
 for execution guards, and their [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
 and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
 The legacy `ResourceAccess` and role rows in the static SQL seed do not grant current Booking access.
+
 ## Service-created development fixtures
 
+Booking development data comes from
+`BookingFixturesAppInitialiser`, registered in `TestAppConfig` and `ProductionConfig`.
+It runs only when `deployment.test.fb.instance=true` and `GlobalInitManager`
+identifies the first deployment. The property defaults to `false` and supports
+`run`, `prod`, and `prod-test`, including AWS feature-branch deployments using
+`prod`. Set it in the instance's external `deployment.properties` or as the JVM
+argument `-Ddeployment.test.fb.instance=true`. The fixture users must already
+exist with their initial fixture credentials. After checking all required users,
+the fixture initializes missing user content and creates only the lab-group
+relationship required for `user1a` to be PI of `user2b`, if that relationship is
+absent. It does not run the broader developer group setup in production. Existing databases are not reseeded
+on restart, even with the flag enabled. After the outer startup transaction
+completes successfully and its booking state is cleared, it creates inventory
+and booking data in two new transactions. Rollback does not schedule fixtures.
+A fixture failure is logged but does not stop startup, and later restarts do not
+retry it, so rebuild the database if seeding fails part-way.
+
+`BookingFixturesProductionPermissionsIT` exercises the real production-profile
+startup and its viewer permissions. Run it only against a fresh, isolated database
+with `liquibase.context=run,dev-test` and `-Drspace.booking.fixture.integration=true`.
+The test retains that database rather than running the shared cleanup that removes
+seed data.
+
+Sources: [`TestAppConfig`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java),
+[`ProductionConfig`](../../src/main/java/com/axiope/service/cfg/ProductionConfig.java),
+[`BookingFixturesAppInitialiser`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java),
+[`BookingFixturesProductionPermissionsIT`](../../src/test/java/com/researchspace/service/impl/BookingFixturesProductionPermissionsIT.java).
+
+The initializer is idempotent. It finds fixture users, instruments, and
+containers by stable names plus the fixture description, creates missing
+objects through inventory managers, creates or updates booking configurations
+through `BookingConfigurationManager`, and creates bookings through
+`TimeSlotBookingManager`. Booking dates are calculated relative to the current
+date at first deployment. The bulk dataset contains 500 instruments and 1,003
+events across the next full Monday-to-Sunday week. Three events are named
+Aurora, Beacon, and Comet to test Calendar event-name search.
+
+See the annotated fixture catalogue in
 [`BookingFixturesAppInitialiser`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
-is registered in the `run` profile's
-[`TestAppConfig`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java).
-It requires `user1a`, `user2b`, `user3c` and `sysadmin1` and their fixture credentials.
-It finds instruments and containers by stable names plus the fixture description,
-creates missing inventory through managers, creates or updates configurations
-through `BookingConfigurationManager`, and creates events through
-`TimeSlotBookingManager`. Booking dates use the following calendar date in
-Europe/Berlin, so new examples start in the future even after a late-day startup.
-Its stable-key checks prevent duplicate fixtures on repeat startup.
+for the smaller access and scheduling examples. They use the next calendar date, so new bookings
+start in the future even if the stack starts late in the day. Bookings that depend on an open
+weekday use the first open day on or after the fixture date, because that date floats.
+
+See the [fixture initializer](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
+and [Docker quick start](../../docker/dev/README.md#quick-start) for setup.
+
+New service-created configurations inherit current Inventory access. See
+[Booking permissions](BookingPermissions.md) for authorization behavior.
 
 Keep service-created fixtures for data that depends on ownership, sharing,
-validation or audit behavior. Raw SQL has to supply those effects itself. See
-[the Docker quick start](../../docker/dev/README.md#quick-start) for local setup.
+validation or audit behavior. Raw SQL has to supply those effects itself.
 
 ## Catalogue search and SQL fixtures
 

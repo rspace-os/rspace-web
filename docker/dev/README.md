@@ -116,10 +116,8 @@ or feature-flag API. The Docker stack does not force its value. Flags set in
 `docker/dev/feature-flags.properties` are read-only in the UI and API. See
 [Feature flags](../../DevDocs/DeveloperNotes/FeatureFlags.md) for override behavior.
 
-The development profile creates service-backed Booking examples at startup.
-The separate `dev-test` Liquibase seed supplies static examples on a fresh database.
-See [Booking development](../../DevDocs/DeveloperNotes/BookingDevelopment.md) for
-fixture behavior and catalogue search notes.
+For opt-in startup Booking fixtures and their prerequisites, follow
+[Service-created development fixtures](../../DevDocs/DeveloperNotes/BookingDevelopment.md#service-created-development-fixtures).
 
 Subsequent `up`s reuse the existing database and are much faster.
 
