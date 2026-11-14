@@ -1,22 +1,8 @@
-import { useQueryState } from "nuqs";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { myBookingsPeriodParser } from "./search";
-import { UserBookingsPage, type UserBookingsPageProps } from "./UserBookingsPage";
-
-export function MyBookingsRoutePage({ requesterId, title }: Pick<UserBookingsPageProps, "requesterId" | "title">) {
-  const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
-  return (
-    <UserBookingsPage
-      requesterId={requesterId}
-      title={title}
-      period={period}
-      onPeriodChange={(nextPeriod) => void setPeriod(nextPeriod)}
-    />
-  );
-}
+import { UserBookingsPage } from "./UserBookingsPage";
 
 export default function MyBookingsPage() {
   return (
@@ -47,7 +33,5 @@ function MyBookingsSkeleton() {
 function MyBookingsContent() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
-  return <MyBookingsRoutePage requesterId={currentUser.id} title={t("myBookings.title")} />;
+  return <UserBookingsPage requesterId={currentUser.id} title={t("myBookings.title")} />;
 }
-
-export type { UserBookingsPageProps } from "@/modules/booking/pages/my-bookings/UserBookingsPage";

@@ -10,11 +10,12 @@ import {
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
   useCreateBookingConfiguration,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { type BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
+import type { BookingConfigurationsCreate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsCreate";
 import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
@@ -24,7 +25,7 @@ import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigatio
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { type RelationshipSource } from "@/modules/common/relationship-picker/sources";
+import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
@@ -32,21 +33,21 @@ import { Heading } from "@/modules/common/ui/typography";
 import { bookingConfigurationFields } from "./bookingConfiguration";
 import { searchBookingTargets } from "./bookingConfigurationTargets";
 
-export const createBookableItemFormSchema = v.intersect([
+const createBookableItemFormSchema = v.intersect([
   v.object({ ...BookingConfigurationsCreateSchema.entries, enabled: v.boolean(), ...schedulingSettingsEntries }),
   SchedulingSettingsSchema,
 ]);
 
-export const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
+const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
+const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
 
-export const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
-export type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
-
-export const bookingConfigurationTargetSource: RelationshipSource = {
+const bookingConfigurationTargetSource: RelationshipSource = {
   id: "booking-configuration-targets",
   globalIdPrefix: "IN",
   search: (term, signal) => (term.trim().length < 2 ? Promise.resolve([]) : searchBookingTargets(term.trim(), signal)),
+  batchSize: 1,
   resolveMany: async (values, signal) =>
     Object.fromEntries(
       await Promise.all(
@@ -83,19 +84,14 @@ export const bookingConfigurationTargetSource: RelationshipSource = {
   },
 };
 
-export function targetSelection(input: unknown): TargetSelection {
+function targetSelection(input: unknown): TargetSelection {
   if (
     input === undefined ||
     input === null ||
     input === "" ||
-    (typeof input === "object" && Object.keys(input).length === 0)
-  ) {
-    return { type: "empty" };
-  }
-  if (
-    typeof input === "object" &&
-    "value" in input &&
-    (input.value === undefined || input.value === null || input.value === "")
+    (typeof input === "object" &&
+      (Object.keys(input).length === 0 ||
+        ("value" in input && (input.value === undefined || input.value === null || input.value === ""))))
   ) {
     return { type: "empty" };
   }
@@ -143,7 +139,7 @@ export function AddBookableItemForm({
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {
-        await invalidateListBookingConfigurations(queryClient);
+        await queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationTargetsQueryKey() });
       }
     },
   });
@@ -154,8 +150,7 @@ export function AddBookableItemForm({
     failedForSelectedTarget
       ? createMutation.error
       : null;
-  const alreadyConfigured = conflict !== null;
-  const canComplete = target.type === "instrument" && !alreadyConfigured;
+  const canComplete = target.type === "instrument" && conflict === null;
   const createFailed = createMutation.isError && failedForSelectedTarget && conflict === null;
 
   return (
@@ -171,7 +166,7 @@ export function AddBookableItemForm({
             {t("bookableItems.targetSearch.label")}
           </label>
           <RelationshipPicker
-            source={bookingConfigurationTargetSource}
+            sources={[bookingConfigurationTargetSource]}
             value={selectedTargetId === undefined ? "" : `IN${selectedTargetId}`}
             onChange={(globalId) => {
               const id = databaseId(bookingConfigurationTargetSource, globalId);
@@ -191,7 +186,7 @@ export function AddBookableItemForm({
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.instrumentRequired")}
           </p>
-        ) : target.type === "instrument" && alreadyConfigured ? (
+        ) : target.type === "instrument" && conflict !== null ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.alreadyConfigured")}{" "}
             <Link

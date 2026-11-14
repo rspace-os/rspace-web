@@ -1,3 +1,5 @@
+import { createMemoryHistory, createRootRoute, createRouter, RouterContextProvider } from "@tanstack/react-router";
+import type { PropsWithChildren } from "react";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
 
@@ -14,14 +16,27 @@ import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
-import { type DayTimelineViewState } from "@/modules/booking/components/DayTimelineEvent";
-import { DayTimelineEventCard } from "@/modules/booking/components/DayTimelineEventCard";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import { DayTimeline } from "./DayTimeline";
+import { DayTimeline, DayTimelineEventCard, type DayTimelineViewState } from "./DayTimeline";
 import { dayTimelineEvents, LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
+
+async function timelineWrapper() {
+  const I18nWrapper = await createRealI18nWrapper({
+    resources: { booking: bookingEnglish, common: commonEnglish },
+    defaultNS: "common",
+  });
+  const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+  return function TimelineWrapper({ children }: PropsWithChildren) {
+    return (
+      <RouterContextProvider router={router}>
+        <I18nWrapper>{children}</I18nWrapper>
+      </RouterContextProvider>
+    );
+  };
+}
 
 describe("DayTimeline table row", () => {
   it("synchronizes differently sized rows in either direction without React renders or scroll echoes", async () => {
@@ -72,62 +87,96 @@ describe("DayTimeline table row", () => {
     expect(onRender).not.toHaveBeenCalled();
   });
 
-  it("reuses the expandable event card outside the timeline", async () => {
-    const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+  it.each([true, false, undefined])(
+    "gates expanded item links on configuration access (%s)",
+    async (canViewConfiguration) => {
+      const user = userEvent.setup();
+      const wrapper = await timelineWrapper();
 
+      render(
+        <DayTimelineEventCard
+          date="2026-08-17"
+          event={{
+            id: "flow-card",
+            kind: "booking",
+            privacy: "full",
+            title: "Confocal microscope",
+            bookedBy: "Ada",
+            item: {
+              name: "Confocal microscope",
+              canViewConfiguration,
+              globalId: "IN123",
+              location: { name: "Imaging lab", globalId: "IC123" },
+            },
+            canEdit: false,
+            notes: "Cell imaging",
+            startMinute: 480,
+            endMinute: 540,
+          }}
+        />,
+        { wrapper },
+      );
+
+      expect(screen.queryByText("17-08-2026")).not.toBeInTheDocument();
+      expect(screen.getByText("08:00 - 09:00")).toBeVisible();
+      const details = screen.getByRole("button", {
+        name: "Show details for Confocal microscope · Ada, 08:00–09:00",
+      });
+      details.focus();
+      await user.keyboard("{Enter}");
+
+      expect(details).toHaveAttribute("aria-expanded", "true");
+      const popup = screen.getByRole("dialog", { name: "08:00–09:00" });
+      expect(within(popup).getByText("17-08-2026")).toBeVisible();
+      expect(within(popup).queryByText("Start")).not.toBeInTheDocument();
+      expect(within(popup).queryByText("End")).not.toBeInTheDocument();
+      expect(within(popup).getByText("Cell imaging")).toBeVisible();
+      expect(within(popup).getByText("Ada")).toBeVisible();
+      if (canViewConfiguration) {
+        expect(within(popup).getByRole("link", { name: "Confocal microscope" })).toHaveAttribute(
+          "href",
+          "/booking/bookable-items/IN123",
+        );
+        expect(within(popup).getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
+          "href",
+          "/globalId/IN123",
+        );
+      } else {
+        expect(within(popup).getByText("Confocal microscope")).toBeVisible();
+        expect(within(popup).queryByRole("link", { name: "Confocal microscope" })).not.toBeInTheDocument();
+        expect(within(popup).queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+      }
+      expect(within(popup).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC123");
+    },
+  );
+
+  it("elides the next-day date when a compact booking ends at midnight", async () => {
+    const wrapper = await timelineWrapper();
     render(
       <DayTimelineEventCard
         date="2026-08-17"
+        timezone="UTC"
         event={{
-          id: "flow-card",
+          id: "midnight-card",
           kind: "booking",
           privacy: "full",
-          title: "Confocal microscope",
+          title: "Evening acquisition",
           bookedBy: "Ada",
-          item: {
-            name: "Confocal microscope",
-            globalId: "IN123",
-            location: { name: "Imaging lab", globalId: "IC123" },
-          },
+          item: { name: "Microscope", globalId: "IN123" },
           canEdit: false,
-          notes: "Cell imaging",
-          startMinute: 480,
-          endMinute: 540,
+          startMinute: 23 * 60,
+          endMinute: 24 * 60,
         }}
       />,
       { wrapper },
     );
-
-    expect(screen.getByText("17-08-2026")).toBeVisible();
-    expect(screen.getByText("08:00 - 09:00")).toBeVisible();
-    const details = screen.getByRole("button", { name: "Show details for Confocal microscope · Ada, 08:00–09:00" });
-    details.focus();
-    await user.keyboard("{Enter}");
-
-    expect(details).toHaveAttribute("aria-expanded", "true");
-    const popup = screen.getByRole("dialog", { name: "08:00–09:00" });
-    expect(within(popup).getByText("17-08-2026")).toBeVisible();
-    expect(within(popup).queryByText("Start")).not.toBeInTheDocument();
-    expect(within(popup).queryByText("End")).not.toBeInTheDocument();
-    expect(within(popup).getByText("Cell imaging")).toBeVisible();
-    expect(within(popup).getByText("Ada")).toBeVisible();
-    expect(within(popup).getByRole("link", { name: "Open inventory record IN123" })).toHaveAttribute(
-      "href",
-      "/globalId/IN123",
-    );
-    expect(within(popup).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC123");
+    expect(screen.queryByText("17-08-2026 - 18-08-2026")).not.toBeInTheDocument();
+    expect(screen.getByText("23:00 - 00:00 (+1)")).toBeVisible();
   });
 
   it("shows both dates and day offsets for an event crossing the displayed day", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimelineEventCard
@@ -164,10 +213,7 @@ describe("DayTimeline table row", () => {
   });
 
   it("uses the item name in its accessible label and hides detail controls", async () => {
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
 
     render(
       <DayTimeline
@@ -192,10 +238,7 @@ describe("DayTimeline table row", () => {
 
   it("closes event details when another card or the surrounding page is clicked", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     render(
       <DayTimeline
         date="2026-08-17"
@@ -256,10 +299,7 @@ describe("DayTimeline table row", () => {
 
   it("renders clock-change bookings with distinct offsets and selectable elapsed positions", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
     render(
       <DayTimeline
@@ -317,10 +357,7 @@ describe("DayTimeline table row", () => {
 
   it("snaps drag selection to the resource increment and disables creation while leased", async () => {
     const user = userEvent.setup();
-    const wrapper = await createRealI18nWrapper({
-      resources: { booking: bookingEnglish, common: commonEnglish },
-      defaultNS: "common",
-    });
+    const wrapper = await timelineWrapper();
     const onRangeSelect = vi.fn();
     const { rerender } = render(
       <DayTimeline

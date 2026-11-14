@@ -21,7 +21,7 @@ import {
   invalidateGetAdminBookingSettings,
   invalidateGetBookingSettings,
 } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import { type BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import { invalidateGetMyBookingPreferences } from "@/modules/common/api/v2/generated/users/users";
 import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
@@ -37,6 +37,7 @@ export function BookingSettingsContent() {
   const queryClient = useQueryClient();
   const loadedSettings = useSuspenseQuery(bookingAdminSettingsQuery()).data;
   const [settings, setSettings] = useState(loadedSettings);
+  const [editorVersion, setEditorVersion] = useState(0);
   const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesControllerReplacement>({
     availabilityWindowStart: settings.availabilityWindowStart,
     availabilityWindowEnd: settings.availabilityWindowEnd,
@@ -44,8 +45,6 @@ export function BookingSettingsContent() {
     customTimezone: settings.customTimezone,
   });
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
-  // Adopting a baseline ends the edit session, including retained closed-day drafts and custom-hour history.
-  const [editorVersion, setEditorVersion] = useState(0);
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(

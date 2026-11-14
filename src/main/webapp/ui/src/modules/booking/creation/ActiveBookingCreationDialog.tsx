@@ -2,11 +2,21 @@ import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { BookingForm, type BookingFormState } from "@/modules/booking/creation/BookingForm";
+import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
+import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
+import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import {
-  calendarAvailabilityRow,
-  useCalendarAvailability,
-} from "@/modules/booking/pages/calendar/calendarAvailability";
+  bookingProblemFeedback,
+  isBookingConflictError,
+  isBookingOutcomeUncertain,
+  useCreateBooking,
+} from "@/modules/booking/creation/useCreateBooking";
+import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
+import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,17 +30,6 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@/modules/common/ui/popover";
-import { BookingForm, type BookingFormState } from "./BookingForm";
-import { type BookingCreationDraft } from "./bookingCreationDraft";
-import { type BookingCreationContext, useBookingCreationStore } from "./bookingCreationStore";
-import { DraftMarker } from "./DraftMarker";
-import { timelinePolicy } from "./timelineRange";
-import {
-  bookingProblemFeedback,
-  isBookingConflictError,
-  isBookingOutcomeUncertain,
-  useCreateBooking,
-} from "./useCreateBooking";
 
 export function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationContext }) {
   const { t } = useTranslation("booking");
@@ -47,11 +46,10 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const closingRef = React.useRef(false);
   const previousPathname = React.useRef(pathname);
   const shouldBlock = React.useCallback(() => dirty && !closingRef.current, [dirty]);
-  const enableBeforeUnload = React.useCallback(() => dirty && !closingRef.current, [dirty]);
   const blocker = useBlocker({
     shouldBlockFn: shouldBlock,
     withResolver: true,
-    enableBeforeUnload,
+    enableBeforeUnload: shouldBlock,
   });
 
   const closeCreation = React.useCallback(() => {
@@ -75,7 +73,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
     if (!dirty) {
       finish();
       blocker.proceed();
-      return;
     }
   }, [blocker, dirty, finish]);
 
@@ -158,7 +155,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const availabilityViolation = Boolean(
     availability.isSuccess &&
       availabilityTarget &&
-      availability.data.get(availabilityTarget.globalId)?.some(() => true),
+      (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
   );
 
   const problem = bookingProblemFeedback(mutation.error, t, {

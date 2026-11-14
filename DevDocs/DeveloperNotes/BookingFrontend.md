@@ -134,6 +134,13 @@ the content and facts columns. Keep these placeholders aligned when changing a
 page layout. Availability-filter counts reserve space before their values arrive
 so they do not wrap the narrow-screen toolbar on completion.
 
+Before mounting the Booking shell or sidebar, AppShell waits for feature flags. Disabled or
+unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
+When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
+does not include a separate Booking link.
+Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
+non-string values) and use their normal display-timezone defaults.
+
 The resource-week skeleton shares its date headers and column sizing with the
 loaded grid. It reserves four anonymous rows before the catalogue arrives, then
 uses the authorized resource names while their events are still loading.
@@ -161,6 +168,17 @@ raise `ApiV2ProblemError` from `modules/common/api/v2/`. See [the API v2 fronten
 
 The Booking API scheduling-timezone write behavior is described in
 [Booking](Booking.md#scheduling-timezone-writes).
+
+Bookable-item event tables cache totals separately from page requests under the bookings query prefix. Page navigation uses `hasNextPage`, and pagination shows "of many" until the total is available. The upcoming-bookings badge uses `/api/v2/bookings/count?max=100` and displays `99+` when the server marks the total as a lower bound.
+
+
+Below the sm breakpoint, expanded calendar events use a full-width bottom panel.
+The compact editor scrolls its fields above sticky actions, and timeline handles
+stay below the panel. Escape returns focus to the event trigger.
+
+Instrument names link to the bookable-item view when configuration access permits it.
+Separate global-ID badges open Inventory records. Table action columns stay pinned
+while other columns scroll, and icon actions expose labels on hover and keyboard focus.
 
 
 ## Generated API operations

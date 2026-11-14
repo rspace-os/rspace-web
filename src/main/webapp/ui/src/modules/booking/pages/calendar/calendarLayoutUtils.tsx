@@ -1,6 +1,7 @@
+import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
-import { type DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
-import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import type { DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
   addCalendarDays,
   sliceAcrossZonedDay,
@@ -11,13 +12,9 @@ import i18n from "@/modules/common/i18n";
 import { BookingActions } from "./BookingEventActions";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
-
 export type CalendarLayout = (typeof calendarLayouts)[number];
-
 export const calendarViews = ["day", "week", "month"] as const;
-
 export type CalendarView = (typeof calendarViews)[number];
-
 export type BookingCalendarResource = BookingListDocument["target"] & {
   location?: { name: string; globalId: string } | null;
 };
@@ -37,7 +34,8 @@ export function firstOfMonth(date: string): string {
 }
 
 export function startOfWeek(date: string): string {
-  return addCalendarDays(date, -((utcDate(date).getUTCDay() + 6) % 7));
+  const value = Temporal.PlainDate.from(date);
+  return value.subtract({ days: value.dayOfWeek - 1 }).toString();
 }
 
 export function monthGridStart(date: string): string {
@@ -45,8 +43,7 @@ export function monthGridStart(date: string): string {
 }
 
 export function monthDayCount(date: string): number {
-  const value = utcDate(firstOfMonth(date));
-  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth() + 1, 0)).getUTCDate();
+  return Temporal.PlainDate.from(firstOfMonth(date)).daysInMonth;
 }
 
 export function datesFrom(start: string, count: number): readonly string[] {
@@ -90,8 +87,7 @@ export function nextFreeRange(
 export function shiftDate(date: string, view: CalendarView, delta: number): string {
   if (view === "day") return addCalendarDays(date, delta);
   if (view === "week") return addCalendarDays(date, delta * 7);
-  const value = utcDate(date);
-  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth() + delta, 1)).toISOString().slice(0, 10);
+  return Temporal.PlainDate.from(date).with({ day: 1 }).add({ months: delta }).toString();
 }
 
 export function occursOn(event: BookingListDocument, date: string, timezone: string): boolean {
@@ -157,7 +153,12 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
       id: String(event.id),
       kind: "blockout",
       title: i18n.t("booking:bookings.maintenanceLabel"),
-      item: { name: event.target.value.name, globalId: event.target.globalId, location },
+      item: {
+        name: event.target.value.name,
+        globalId: event.target.globalId,
+        canViewConfiguration: event.canViewConfiguration,
+        location,
+      },
       createdBy: event.createdBy ?? undefined,
       notes: event.purpose ?? undefined,
       ...slice,
@@ -172,6 +173,7 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     item: {
       name: event.target.value.name,
       globalId: event.target.globalId,
+      canViewConfiguration: event.canViewConfiguration,
       location,
     },
     notes: event.purpose ?? undefined,
@@ -179,16 +181,8 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     ...slice,
   };
 }
-
 export function actionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
-  return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
-    const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
-  };
-}
-
-export function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
-  return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
+  return (timelineEvent: Pick<DayTimelineEvent, "id">) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
     return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
   };

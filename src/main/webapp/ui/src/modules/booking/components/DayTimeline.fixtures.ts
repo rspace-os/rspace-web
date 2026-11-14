@@ -1,4 +1,4 @@
-import type { DayTimelineEvent } from "@/modules/booking/components/DayTimelineEvent";
+import type { DayTimelineEvent } from "./DayTimeline";
 
 export const LONG_ITEM_NAME =
   "Confocal microscope with an intentionally long descriptive inventory name for truncation coverage";

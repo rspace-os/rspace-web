@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
-import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import { DraftMarker } from "../DraftMarker";
 import { type TimelinePolicy, unrestrictedTimelinePolicy } from "../timelineRange";
 
 function mockTimelineBounds() {

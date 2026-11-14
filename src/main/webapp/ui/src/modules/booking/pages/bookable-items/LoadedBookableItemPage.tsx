@@ -1,6 +1,7 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { PencilIcon } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import type { ReactNode } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -36,28 +37,18 @@ import { BookableItemSpotlightHeader } from "./BookableItemSpotlightHeader";
 import { BookingConfigurationActionsMenu } from "./BookingConfigurationActionsMenu";
 import { BookingEventList } from "./BookingEventList";
 import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
-import { type BookingConfiguration } from "./bookingConfiguration";
+import type { BookingConfiguration } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 import { type BookableItemTab, useLoadedBookableItemPageActions } from "./useLoadedBookableItemPageActions";
 
-export const itemPageClassName = detailPageClassName;
-
-export const itemColumnsClassName = detailColumnsClassName;
+export type { BookableItemTab } from "./useLoadedBookableItemPageActions";
 
 export function bookableItemTab(tab: string | undefined): BookableItemTab {
   return tab === "details" || tab === "audit" || tab === "access" ? tab : "bookings";
 }
 
-export function PageTab({
-  value,
-  disabled,
-  children,
-}: {
-  value: BookableItemTab;
-  disabled: boolean;
-  children: ReactNode;
-}) {
+function PageTab({ value, disabled, children }: { value: BookableItemTab; disabled: boolean; children: ReactNode }) {
   return (
     <Tabs.Tab
       value={value}
@@ -91,47 +82,43 @@ export function LoadedBookableItemPage({
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const {
-    actionsButtonRef,
-    active,
-    archiveMutation,
-    archiveOpen,
-    canEdit,
-    cancelEdit,
-    editButtonRef,
-    editing,
-    handleLifecycleAction,
-    leaveMutation,
-    leaveOpen,
     navigate,
-    permanentDeleteConfirmation,
-    permanentDeleteMutation,
-    permanentDeleteOpen,
-    restoreMutation,
     saveAnnouncement,
-    saveButtonRef,
-    setArchiveOpen,
-    setEdit,
-    setLeaveOpen,
-    setPermanentDeleteConfirmation,
-    setPermanentDeleteOpen,
-    setTab,
     staleEdit,
+    archiveOpen,
+    setArchiveOpen,
+    permanentDeleteOpen,
+    setPermanentDeleteOpen,
+    permanentDeleteConfirmation,
+    setPermanentDeleteConfirmation,
+    leaveOpen,
+    setLeaveOpen,
+    editButtonRef,
+    saveButtonRef,
+    actionsButtonRef,
+    canEdit,
+    active,
+    editing,
+    setEdit,
+    setTab,
     updateMutation,
+    archiveMutation,
+    restoreMutation,
+    permanentDeleteMutation,
+    leaveMutation,
+    cancelEdit,
+    handleLifecycleAction,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab });
-
   const [cutoff] = useState(() => new Date().toISOString());
-
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
-
   const target = configuration.target;
-
   const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
 
   if (target === null) return null;
 
   return (
-    <main className={itemPageClassName}>
+    <main className={detailPageClassName}>
       {readError ? (
         <Alert variant="destructive">
           <AlertDescription>
@@ -149,8 +136,7 @@ export function LoadedBookableItemPage({
           value={tab}
           onValueChange={(value) => {
             if (updateMutation.isPending) return;
-            const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
-            setTab(nextTab);
+            setTab(bookableItemTab(value));
           }}
           className="min-w-0 space-y-6"
         >
@@ -219,7 +205,7 @@ export function LoadedBookableItemPage({
             ) : null}
           </Tabs.List>
 
-          <div className={itemColumnsClassName}>
+          <div className={detailColumnsClassName}>
             <div className="min-w-0">
               <Tabs.Panel value="bookings" className="space-y-8 outline-none">
                 <section className="space-y-4" aria-labelledby="upcoming-events-heading">

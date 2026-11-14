@@ -2,22 +2,23 @@ import { matchQuery, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { delay, HttpResponse, http } from "msw";
 import { Suspense, useState } from "react";
-import { type EditableBooking } from "@/modules/booking/creation/BookingForm";
-import { type BookingListDocument } from "@/modules/booking/domain/booking";
+import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { getListBookingsQueryKey, useListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
-import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
-import { type ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
-import { type ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
+import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
-import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { bookingTarget, collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { InlineBookingEditor } from "../InlineBookingEditor";
 
 export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) {
   const event: BookingListDocument & EditableBooking = {
     ...ownBooking,
+    target: bookingTarget(123, "Confocal microscope"),
     kind: "BOOKING",
     start: "2030-10-07T10:00:00Z",
     end: "2030-10-07T11:00:00Z",

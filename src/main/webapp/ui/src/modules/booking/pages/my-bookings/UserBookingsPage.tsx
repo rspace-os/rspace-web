@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClockIcon, HistoryIcon, RefreshCwIcon } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,10 +11,11 @@ import {
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
-import { type FilterExpression } from "@/modules/common/table-list/types";
+import type { FilterExpression } from "@/modules/common/table-list/types";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
@@ -21,9 +23,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modu
 import { Heading } from "@/modules/common/ui/typography";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { bookingListConfig } from "./bookingList";
-import { type MyBookingsPeriod } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
-export const bookingListResource = {
+const bookingListResource = {
   ...apiV2Resources.bookings,
   list: {
     ...apiV2Resources.bookings.list,
@@ -43,7 +45,7 @@ export const bookingListResource = {
   },
 } satisfies typeof apiV2Resources.bookings;
 
-export const projection = {
+const projection = {
   fixed: [
     "id",
     "version",
@@ -62,8 +64,7 @@ export const projection = {
     "updatedAt",
   ],
 } as const;
-
-export const emptyDescriptionKeys = {
+const emptyDescriptionKeys = {
   upcoming: "myBookings.empty.upcoming",
   past: "myBookings.empty.past",
 } as const satisfies Record<MyBookingsPeriod, string>;
@@ -71,26 +72,26 @@ export const emptyDescriptionKeys = {
 export type UserBookingsPageProps = {
   requesterId: number;
   title: string;
-  period: MyBookingsPeriod;
-  onPeriodChange: (period: MyBookingsPeriod) => void;
 };
 
 export async function fetchUpcomingBookingCount(
   requesterId: number,
   asOf: Date,
   signal?: AbortSignal,
-): Promise<number> {
+): Promise<ApiV2CountResult & { totalDocs: number }> {
   const result = await countBookings(
     {
       where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
+      max: 100,
     },
     { signal },
   );
   if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-  return result.totalDocs;
+  return { ...result, totalDocs: result.totalDocs };
 }
 
-export function UserBookingsPage({ requesterId, title, period, onPeriodChange }: UserBookingsPageProps) {
+export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
+  const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const preferences = useBookingDisplayPreferences();
@@ -155,12 +156,13 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     getCountBookingsQueryOptions(
       {
         where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOfDate.toISOString()}`,
+        max: 100,
       },
       {
         query: {
           select: (result) => {
             if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return result.totalDocs;
+            return { ...result, totalDocs: result.totalDocs };
           },
         },
       },
@@ -189,7 +191,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const selectPeriod = (nextPeriod: "upcoming" | "past") => {
     if (nextPeriod === period) return;
     table.setPage({ ...table.state.page, pageIndex: 0 });
-    onPeriodChange(nextPeriod);
+    void setPeriod(nextPeriod);
   };
 
   return (
@@ -213,7 +215,9 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                 upcomingCount.isSuccess
                   ? t("myBookings.period.withCount", {
                       label: t("myBookings.period.upcoming"),
-                      count: upcomingCount.data,
+                      count: upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : upcomingCount.data.totalDocs,
                     })
                   : t("myBookings.period.upcoming")
               }
@@ -226,9 +230,16 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                 <Badge
                   variant={period === "upcoming" ? "secondary" : "outline"}
                   className="pointer-events-none min-w-5 px-1"
-                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+                  aria-label={
+                    upcomingCount.data.totalIsLowerBound
+                      ? t("myBookings.count.lowerBoundAccessible")
+                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
+                  }
                 >
-                  {upcomingCount.data}
+                  {" "}
+                  {upcomingCount.data.totalIsLowerBound
+                    ? t("myBookings.count.lowerBound")
+                    : upcomingCount.data.totalDocs}
                 </Badge>
               )}
               {upcomingCount.isPending && (

@@ -22,12 +22,13 @@ function PopoverContent({
   collisionPadding,
   sticky,
   portalContainer,
+  positionerClassName,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
     "align" | "anchor" | "collisionBoundary" | "collisionPadding" | "side" | "sideOffset" | "sticky"
-  > & { portalContainer?: HTMLElement | null }) {
+  > & { portalContainer?: HTMLElement | null; positionerClassName?: string }) {
   return (
     <PopoverPrimitive.Portal container={portalContainer}>
       <PopoverPrimitive.Positioner
@@ -38,7 +39,7 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         sticky={sticky}
-        className="isolate z-50"
+        className={cn("isolate z-50", positionerClassName)}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

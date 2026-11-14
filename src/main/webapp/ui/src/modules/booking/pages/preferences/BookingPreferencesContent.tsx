@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
+  type BookingDisplayPreferencesDocument,
   bookingDisplayPreferencesQueryOptions,
   browserTimeZone,
   isValidTimeZone,
@@ -11,7 +12,7 @@ import {
   useReplaceBookingDisplayPreferences,
   useResetBookingDisplayPreferences,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { type BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Button } from "@/modules/common/ui/button";
@@ -20,12 +21,12 @@ import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "./BookingDisplaySettingsFields";
 import { UserCalendarSubscription } from "./UserCalendarSubscription";
 
-export function inputFrom(document: {
-  availabilityWindowStart: string;
-  availabilityWindowEnd: string;
-  timezoneMode: BookingDisplayPreferencesControllerReplacement["timezoneMode"];
-  customTimezone: string | null;
-}): BookingDisplayPreferencesControllerReplacement {
+function inputFrom(
+  document: Pick<
+    BookingDisplayPreferencesDocument,
+    "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone"
+  >,
+): BookingDisplayPreferencesControllerReplacement {
   return {
     availabilityWindowStart: document.availabilityWindowStart,
     availabilityWindowEnd: document.availabilityWindowEnd,

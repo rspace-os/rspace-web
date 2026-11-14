@@ -1,8 +1,9 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 import { loadCalendarAvailability } from "../calendarAvailability";
 
@@ -83,13 +84,14 @@ describe("calendar availability", () => {
     const result = await loadCalendarAvailability(
       [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, allowDoubleBooking: true }],
       "2026-08-17",
+
       new AbortController().signal,
     );
     expect(result.get("IN1")).toEqual([
       expect.objectContaining({
         kind: "blockout",
         startsAt: new Date("2026-08-17T09:50:00Z"),
-        endsAt: new Date("2026-08-17T11:00:00Z"),
+        endsAt: new Date("2026-08-17T11:10:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
@@ -115,6 +117,7 @@ describe("calendar availability", () => {
         { globalId: "IN2", timezone: "America/New_York", ...schedule },
       ],
       "2026-03-29",
+
       new AbortController().signal,
     );
 
@@ -130,6 +133,8 @@ describe("calendar availability", () => {
   });
 
   it("splits 1,000 target IDs into request-safe batches", async () => {
+    const token = "t".repeat(2500);
+    onTestFinished(setApiV2TokenProvider({ getToken: async () => token, recover: async () => token }));
     const requests: { url: URL; authorization: string | null; requestedWith: string | null }[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
@@ -151,13 +156,14 @@ describe("calendar availability", () => {
 
     expect(result.size).toBe(1000);
     expect(requests.length).toBeGreaterThan(2);
-    for (const { url } of requests) {
+    for (const { url, authorization, requestedWith } of requests) {
       const targetList = url.searchParams.get("where")?.split("target=in=(")[1]?.split(")")[0] ?? "";
       const targetIds = targetList ? targetList.split(",") : [];
       expect(targetIds.length).toBeGreaterThan(0);
       expect(targetIds.length).toBeLessThanOrEqual(500);
-      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n\r\n`;
-      expect(new TextEncoder().encode(requestLine).length).toBeLessThanOrEqual(6000);
+      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n`;
+      const headers = `authorization: ${authorization}\r\nx-requested-with: ${requestedWith}\r\n\r\n`;
+      expect(new TextEncoder().encode(`${requestLine}${headers}`).length).toBeLessThanOrEqual(6000);
     }
   });
 
@@ -222,6 +228,7 @@ describe("calendar availability", () => {
     const result = await loadCalendarAvailability(
       [{ globalId: "IN1", timezone: "UTC", ...schedule }],
       "2026-08-17",
+
       new AbortController().signal,
     );
 
@@ -279,6 +286,7 @@ describe("calendar availability", () => {
         { globalId: "IN2", timezone: "America/Los_Angeles", ...schedule },
       ],
       interval,
+
       new AbortController().signal,
     );
 
@@ -309,6 +317,7 @@ describe("calendar availability", () => {
         },
       ],
       interval,
+
       new AbortController().signal,
     );
 
@@ -344,7 +353,12 @@ describe("calendar availability", () => {
       allowDoubleBooking: false,
     };
 
-    const unavailable = await loadCalendarAvailability([restricted], "2026-08-17", new AbortController().signal);
+    const unavailable = await loadCalendarAvailability(
+      [restricted],
+      "2026-08-17",
+
+      new AbortController().signal,
+    );
     expect(unavailable.get("IN1")).toEqual([
       sourced(
         closureId("IN1", "2026-08-17T00:00:00Z", "2026-08-17T08:00:00Z"),
@@ -361,7 +375,7 @@ describe("calendar availability", () => {
       sourced(
         "booking:1",
         "booking",
-        "2026-08-17T09:50:00Z",
+        "2026-08-17T09:40:00Z",
         "2026-08-17T11:20:00Z",
         "2026-08-17T10:00:00Z",
         "2026-08-17T11:00:00Z",
@@ -371,9 +385,56 @@ describe("calendar availability", () => {
     const available = await loadCalendarAvailability(
       [{ ...restricted, allowDoubleBooking: true }],
       "2026-08-17",
+
       new AbortController().signal,
     );
     expect(available.get("IN1")?.filter(({ kind }) => kind === "booking")).toEqual([]);
+  });
+
+  it("uses the shared maximum gap in query bounds and allows its exact boundary", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(
+          collectionResponse([
+            booking(1, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:40:00Z"),
+            booking(2, "IN1", "2026-08-17T09:00:00Z", "2026-08-17T09:41:00Z"),
+            booking(3, "IN1", "2026-08-17T11:19:00Z", "2026-08-17T12:00:00Z"),
+            booking(4, "IN1", "2026-08-17T11:20:00Z", "2026-08-17T12:00:00Z"),
+          ]),
+        );
+      }),
+    );
+    const result = await loadCalendarAvailability(
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, bufferAfterMinutes: 20 }],
+      displayInterval("2026-08-17", "UTC", "10:00", "11:00"),
+
+      new AbortController().signal,
+    );
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].searchParams.get("where")).toBe(
+      "target=in=(IN1);start<2026-08-17T11:20:00Z;end>2026-08-17T09:40:00Z;state==CONFIRMED",
+    );
+    expect(result.get("IN1")).toEqual([
+      sourced(
+        "booking:2",
+        "booking",
+        "2026-08-17T10:00:00Z",
+        "2026-08-17T10:01:00Z",
+        "2026-08-17T09:00:00Z",
+        "2026-08-17T09:41:00Z",
+      ),
+      sourced(
+        "booking:3",
+        "booking",
+        "2026-08-17T10:59:00Z",
+        "2026-08-17T11:00:00Z",
+        "2026-08-17T11:19:00Z",
+        "2026-08-17T12:00:00Z",
+      ),
+    ]);
   });
 
   it("honors cancellation before starting a batch", async () => {
@@ -381,7 +442,12 @@ describe("calendar availability", () => {
     controller.abort();
 
     await expect(
-      loadCalendarAvailability([{ globalId: "IN1", timezone: "UTC", ...schedule }], "2026-08-17", controller.signal),
+      loadCalendarAvailability(
+        [{ globalId: "IN1", timezone: "UTC", ...schedule }],
+        "2026-08-17",
+
+        controller.signal,
+      ),
     ).rejects.toThrow();
   });
 
@@ -475,6 +541,7 @@ describe("calendar availability", () => {
         },
       ],
       date,
+
       new AbortController().signal,
     );
     expect(result.get("IN1")).toEqual(

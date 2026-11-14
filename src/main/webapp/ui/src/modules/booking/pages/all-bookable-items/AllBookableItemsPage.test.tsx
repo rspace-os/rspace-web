@@ -26,7 +26,6 @@ import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import { mutateBookableItems } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
@@ -39,6 +38,7 @@ import {
   collectionPage,
   ownerBookingAccess,
 } from "../bookable-items/mocks/bookableItemsMocks";
+import { mutateBookableItems } from "./AllBookableItemsContent";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 

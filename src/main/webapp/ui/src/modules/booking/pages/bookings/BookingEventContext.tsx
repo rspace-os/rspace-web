@@ -1,5 +1,5 @@
 import { createContext, type Dispatch, type ReactNode, type RefObject, type SetStateAction, useContext } from "react";
-import { type BookingDetails } from "@/modules/booking/domain/booking";
+import type { BookingDetails } from "@/modules/booking/domain/booking";
 
 export type BookingEventContextValue = {
   booking: BookingDetails;
@@ -48,7 +48,7 @@ export function Panel({
   );
 }
 
-export function formatDateTime(value: string, timeZone: string, language: string): string {
+export function formatBookingEventDateTime(value: string, timeZone: string, language: string): string {
   return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
     new Date(value),
   );

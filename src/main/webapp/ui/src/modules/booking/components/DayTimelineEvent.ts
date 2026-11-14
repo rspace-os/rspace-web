@@ -1,16 +1,20 @@
+import type { ReactNode } from "react";
 import { dayMinuteToZonedTime, parsePlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 
-export const DAY_MINUTES = 24 * 60;
+const DAY_MINUTES = 24 * 60;
 
-export type BaseEvent = {
+type BaseEvent = {
   id: string;
+  /** Elapsed minutes from the displayed day's start in its display timezone; see instantToDayMinute. */
   startMinute: number;
+  /** Same coordinates as startMinute; preserve off-day bounds and clip only for rendering. */
   endMinute: number;
 };
 
 export type DayTimelineItem = {
   name: string;
   globalId: string;
+  canViewConfiguration?: boolean;
   location?: { name: string; globalId: string };
 };
 
@@ -38,10 +42,17 @@ export type DayTimelineEvent =
 
 export type DayTimelineViewState = {
   zoom: number;
+  /** Viewport center in the same elapsed-minute coordinates as BaseEvent.startMinute. */
   centerMinute: number;
 };
 
+/** Both bounds use BaseEvent's elapsed-minute coordinates, preserving off-day values until rendering. */
 export type DayTimelineRange = Readonly<{ startMinute: number; endMinute: number }>;
+
+export type DayTimelineActionRenderers = {
+  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => ReactNode;
+  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => ReactNode;
+};
 
 export function formatMinute(date: string, timezone: string, minute: number) {
   return dayMinuteToZonedTime(date, timezone, minute).toPlainTime().toString({ smallestUnit: "minute" });
@@ -65,8 +76,13 @@ export function formatMinuteWithDayOffset(date: string, timezone: string, minute
   return `${time.toPlainTime().toString({ smallestUnit: "minute" })}${zoneLabel}${dayLabel}`;
 }
 
-export function period(range: DayTimelineRange, date: string, timezone: string) {
-  const start = formatMinuteWithDayOffset(date, timezone, range.startMinute);
-  const end = formatMinuteWithDayOffset(date, timezone, range.endMinute);
-  return `${start}–${end}`;
+export function period(
+  eventOrRange: DayTimelineEvent | DayTimelineRange,
+  date: string,
+  timezone: string,
+  separator = "–",
+) {
+  const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute);
+  const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute);
+  return `${start}${separator}${end}`;
 }

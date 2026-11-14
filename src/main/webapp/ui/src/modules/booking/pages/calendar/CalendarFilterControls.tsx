@@ -10,7 +10,7 @@ import {
   shiftDate,
 } from "./calendarLayoutUtils";
 
-export function SegmentedControl<Option extends string>({
+function SegmentedControl<Option extends string>({
   legend,
   options,
   value,

@@ -1,24 +1,25 @@
 import { getSearchBookingConfigurationTargetsQueryOptions } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
-  deleteManyBookingConfigurations,
+  deleteBookingConfiguration as generatedDeleteBookingConfiguration,
+  updateBookingConfiguration as generatedUpdateBookingConfiguration,
   getListBookingConfigurationsQueryOptions,
   listBookingConfigurations,
-  updateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
-import { bulkParameters } from "../all-bookable-items/AllBookableItemsContent";
-import { type BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
 import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
-export async function mutateBookableItems(
-  action: BookableItemsBulkAction,
-  selectedRowIds: readonly string[],
-): Promise<void> {
-  const params = bulkParameters(selectedRowIds);
-  if (action === "archive") await deleteManyBookingConfigurations(params);
-  else await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
+export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
+}
+
+export async function restoreBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedUpdateBookingConfiguration(id, { state: "ACTIVE" }, { "If-Match": `"${version}"` });
+}
+
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` }, { permanent: true });
 }
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
@@ -45,14 +46,12 @@ function parameters(globalId: string) {
     }),
   };
 }
-
 function oneConfiguration(globalId: string, documents: BookingConfiguration[]): BookingConfiguration {
   if (documents.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
   if (documents.length === 0 || documents[0].target?.globalId !== globalId)
     throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   return documents[0];
 }
-
 export async function fetchBookingConfigurationByTarget(
   globalId: string,
   signal?: AbortSignal,
@@ -62,14 +61,12 @@ export async function fetchBookingConfigurationByTarget(
     (await listBookingConfigurations(parameters(globalId), { signal })).docs.map(mapBookingConfiguration),
   );
 }
-
 export function fetchBookingConfigurationDetailsByTarget(
   globalId: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
   return fetchBookingConfigurationByTarget(globalId, signal);
 }
-
 export async function findBookingConfigurationByTarget(
   globalId: string,
   signal?: AbortSignal,
@@ -80,7 +77,6 @@ export async function findBookingConfigurationByTarget(
   if (documents.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
   return documents[0] ?? null;
 }
-
 export function bookingConfigurationTargetQuery(globalId: string) {
   return getListBookingConfigurationsQueryOptions<BookingConfiguration>(parameters(globalId), {
     query: {
@@ -101,6 +97,7 @@ export function findBookingConfigurationQueryOptions(globalId: string) {
   });
 }
 
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
 export async function fetchBookingOwnershipCandidates(
   globalIds: readonly string[],
 

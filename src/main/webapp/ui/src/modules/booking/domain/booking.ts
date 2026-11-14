@@ -93,10 +93,16 @@ export function mapBookingSummary(input: BookingsRead) {
 }
 
 function mapPrivacy(input: BookingsRead) {
-  const management: { createdAt: string; updatedAt: string; createdBy?: string | null } = {
+  const management: {
+    createdAt: string;
+    updatedAt: string;
+    createdBy?: string | null;
+    canViewConfiguration?: boolean;
+  } = {
     createdAt: required(input.createdAt, "createdAt"),
     updatedAt: required(input.updatedAt, "updatedAt"),
     createdBy: input.createdBy,
+    canViewConfiguration: input.canViewConfiguration,
   };
   if (input.privacy === "busy") {
     if (input.purpose !== null || input.bookedBy !== null || input.canEdit !== false || input.canCancel !== false)

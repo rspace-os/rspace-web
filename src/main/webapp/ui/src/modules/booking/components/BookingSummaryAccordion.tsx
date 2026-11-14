@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
@@ -21,6 +22,7 @@ type BookingSummaryAccordionProps = {
   purpose: string | null;
   maintenance?: boolean;
   item?: BookingSummaryItem;
+  canViewConfiguration?: boolean;
   actor?: string | null;
   detailsBookingId?: number;
 };
@@ -33,6 +35,7 @@ export function BookingSummaryAccordion({
   purpose,
   maintenance = false,
   item,
+  canViewConfiguration = false,
   actor,
   detailsBookingId,
 }: BookingSummaryAccordionProps) {
@@ -47,8 +50,8 @@ export function BookingSummaryAccordion({
         >
           <BookingKindIcon maintenance={maintenance} />
           <span className="min-w-0 flex-1">
-            <span className="block text-xs font-medium">{summaryLabel ?? heading}</span>
-            <span className="block text-[11px] text-muted-foreground">{period}</span>
+            <span className="block truncate text-xs font-medium">{summaryLabel ?? heading}</span>
+            <span className="block truncate text-[11px] text-muted-foreground">{period}</span>
           </span>
           <ChevronRightIcon
             className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
@@ -62,10 +65,14 @@ export function BookingSummaryAccordion({
                 <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
                 <dd>
                   <InventoryItem
-                    name={item.name}
+                    name={
+                      canViewConfiguration ? <BookableItemName name={item.name} globalId={item.globalId} /> : item.name
+                    }
                     globalId={item.globalId}
-                    href={`/globalId/${item.globalId}`}
-                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
+                    href={canViewConfiguration ? `/globalId/${item.globalId}` : undefined}
+                    idLinkLabel={
+                      canViewConfiguration ? t("dayTimeline.expanded.openItem", { globalId: item.globalId }) : undefined
+                    }
                     idPlacement="title"
                     className="p-0"
                   >

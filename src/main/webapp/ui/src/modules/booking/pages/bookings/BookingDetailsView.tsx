@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
@@ -9,7 +9,7 @@ import {
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { formatDateTime, Panel, useBookingEvent } from "./BookingEventContext";
+import { formatBookingEventDateTime, Panel, useBookingEvent } from "./BookingEventContext";
 
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
@@ -19,9 +19,11 @@ export function BookingDetailsView() {
     [
       t("bookings.details.when"),
       <span key="when">
-        <time dateTime={booking.start}>{formatDateTime(booking.start, displayTimeZone, i18n.language)}</time>
+        <time dateTime={booking.start}>
+          {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language)}
+        </time>
         {" – "}
-        <time dateTime={booking.end}>{formatDateTime(booking.end, displayTimeZone, i18n.language)}</time>
+        <time dateTime={booking.end}>{formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language)}</time>
         <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],

@@ -1,7 +1,7 @@
-import { type BookingFormState } from "./BookingForm";
-import { type BookingCreationContext } from "./bookingCreationStore";
-import { TimelineWindowEditor } from "./TimelineWindowEditor";
-import { type TimelinePolicy, unrestrictedTimelinePolicy } from "./timelineRange";
+import type { BookingFormState } from "@/modules/booking/creation/BookingForm";
+import type { BookingCreationContext } from "@/modules/booking/creation/bookingCreationStore";
+import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import { type TimelinePolicy, unrestrictedTimelinePolicy } from "@/modules/booking/creation/timelineRange";
 
 export function DraftMarker({
   creation,
@@ -30,6 +30,7 @@ export function DraftMarker({
       onChange={onChange}
       tone={creation.eventKind === "MAINTENANCE" ? "maintenance" : "booking"}
       testId="compact-booking-draft-marker"
+      abovePopovers={false}
     />
   );
 }

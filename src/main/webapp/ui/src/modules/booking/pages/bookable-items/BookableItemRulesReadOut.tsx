@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import {
@@ -6,7 +6,7 @@ import {
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
-import { type BookingConfiguration } from "./bookingConfiguration";
+import type { BookingConfiguration } from "./bookingConfiguration";
 
 export function BookableItemRulesReadOut({ configuration }: { configuration: BookingConfiguration }) {
   const { t } = useTranslation("booking");
