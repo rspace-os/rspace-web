@@ -452,6 +452,12 @@ var sketchDialog = {
   },
 
   insert: function (ed) {
+    // repeated Insert clicks must not save the same sketch more than once
+    if (sketchDialog.insertInProgress) {
+      return;
+    }
+    sketchDialog.insertInProgress = true;
+
     var prefix = tinymceDialogUtils.getContextPath();
     var sketchId = $('.sketchId').attr('data-id');
 
@@ -499,27 +505,29 @@ var sketchDialog = {
       templateUrl = "/fieldTemplates/ajax/annotatedImageLink";
     }
 
-    var jxqr = $.post(url, data,
-      function (result) {
-        $.get(templateUrl, function (htmlTemplate) {
-          var props = {
-            id: compositeId || result.data.id,
-            annotationId: result.data.id,
-            height: result.data.height,
-            width: result.data.width,
-            unused: milliseconds
-          };
-          var html = Mustache.render(htmlTemplate, props);
-          if (html != "") {
-            ed.execCommand('mceInsertContent', false, html);
-          }
-          // close the front most window (dialog.htm)
-          ed.windowManager.close();
-        });
-      });
-    jxqr.fail(function () {
+    var onFailure = function () {
+      sketchDialog.insertInProgress = false;
       tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.saveFailed"));
-    });
+    };
+
+    // fetch the template before saving, so a failed fetch leaves no saved annotation behind
+    $.get(templateUrl).done(function (htmlTemplate) {
+      $.post(url, data).done(function (result) {
+        var props = {
+          id: compositeId || result.data.id,
+          annotationId: result.data.id,
+          height: result.data.height,
+          width: result.data.width,
+          unused: milliseconds
+        };
+        var html = Mustache.render(htmlTemplate, props);
+        if (html != "") {
+          ed.execCommand('mceInsertContent', false, html);
+        }
+        // close the front most window (dialog.htm)
+        ed.windowManager.close();
+      }).fail(onFailure);
+    }).fail(onFailure);
   }
 
 };
