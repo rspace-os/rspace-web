@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { disabledFeatureFlags } from "@/featureFlags/schema";
 import { getGetApiV2ConfigQueryKey } from "@/modules/common/api/v2/generated/config/config";
+import { getListFeatureFlagsQueryKey } from "@/modules/common/api/v2/generated/feature-flags/feature-flags";
 import { getListMaintenancesQueryKey } from "@/modules/common/api/v2/generated/maintenances/maintenances";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import type { ListMaintenances200 } from "@/modules/common/api/v2/generated/models/listMaintenances200";
@@ -50,6 +52,7 @@ export function AppBarStory() {
     enabled: false,
     initialData: { docs: [], limit: 1, page: 1 } satisfies ListMaintenances200,
   });
+  queryClient.setQueryData([...getListFeatureFlagsQueryKey({ limit: 100 }), "featureFlags"], disabledFeatureFlags());
   queryClient.setQueryData(getGetCurrentUserQueryKey(), storyUser);
   queryClient.setQueryData(getGetApiV2ConfigQueryKey(), {
     version: "2.99.1",

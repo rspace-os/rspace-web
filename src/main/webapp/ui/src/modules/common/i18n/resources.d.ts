@@ -756,6 +756,115 @@ export default interface Resources {
       "insertButton": "Insert"
     }
   },
+  "booking": {
+    "bookableItemDetails": {
+      "fields": {
+        "bufferAfter": "Gap after",
+        "bufferBefore": "Gap before",
+        "createdAt": "Created at",
+        "createdBy": "Created by",
+        "doubleBooking": "Allow double booking",
+        "granularity": "Slot granularity",
+        "location": "Location",
+        "maximumDuration": "Maximum duration",
+        "openingHours": "Opening hours",
+        "timezone": "Timezone",
+        "updatedAt": "Last updated"
+      },
+      "openingHours": {
+        "closed": "Closed"
+      }
+    },
+    "preferences": {
+      "actions": {
+        "reset": "Reset to global defaults",
+        "save": "Save"
+      },
+      "availabilityWindow": {
+        "description": "The times shown on each day's availability bars and timelines.",
+        "end": "End time",
+        "endOfDay": "End of day (24:00)",
+        "legend": "Default availability window",
+        "start": "Start time"
+      },
+      "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
+      "errors": {
+        "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "save": "Booking preferences could not be saved."
+      },
+      "resetComplete": "Global Booking defaults restored.",
+      "saved": "Booking preferences saved.",
+      "timezone": {
+        "browser": "Use Browser Timezone ({timezone})",
+        "custom": "Use Custom Timezone",
+        "customLabel": "Custom timezone",
+        "institution": "Use Institution Timezone ({timezone})",
+        "legend": "Default timezone"
+      },
+      "title": "Booking preferences"
+    },
+    "settings": {
+      "actions": {
+        "save": "Save settings"
+      },
+      "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
+      "displayDefaults": {
+        "description": "These defaults apply to users who have not saved their own Booking preferences.",
+        "title": "Booking display defaults"
+      },
+      "errors": {
+        "buffer": "Enter a whole number from 0 to 10,080.",
+        "granularity": "Choose 1, 5, 10, or 15 minutes.",
+        "incrementDaysNeedFullWeek": "Day increments require continuous availability, 24 hours a day, seven days a week.",
+        "incrementOpening": "The increment must fit within one continuous opening period.",
+        "incrementRange": "Enter an increment from 1 minute to 527,040 minutes.",
+        "incrementWholeDays": "Enter a whole number of days.",
+        "incrementWholeMinutes": "The increment must be a whole number of minutes.",
+        "maximumDuration": "Use 0, or a multiple of the time increment ({increment}). The system limit is 366 days.",
+        "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
+        "openingHours": "Use an opening start before the end, or select Open all day.",
+        "save": "RSpace could not save the booking settings. Try again.",
+        "stale": "These settings changed after you opened this page. Copy your changes, then refresh the page before editing again."
+      },
+      "fields": {
+        "allowDoubleBooking": "Allow concurrent bookings",
+        "buffer": "Buffer before and after bookings (minutes)",
+        "bufferAfter": "Gap after (minutes)",
+        "bufferBefore": "Gap before (minutes)",
+        "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
+        "fullDay": "Open all day",
+        "granularity": "Time increment",
+        "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+        "incrementDays": "Days",
+        "incrementDaysUnavailable": "Select Open all day on every day to use Days.",
+        "incrementHours": "Hours",
+        "incrementMinutes": "Minutes",
+        "incrementUnit": "Time increment unit",
+        "legend": "Scheduling rules",
+        "maximumDuration": "Maximum booking duration",
+        "maximumDurationDescription": "Use 0 for no item limit. A day is 24 elapsed hours. The system limit is 366 days.",
+        "maximumDurationUnit": "Maximum duration unit",
+        "openingEnd": "Opening end",
+        "openingStart": "Opening start"
+      },
+      "openingHours": {
+        "errors": {
+          "noDays": "Select at least one open day."
+        },
+        "midnightEnd": "An end of {midnight} closes at midnight at the end of this day.",
+        "openAllDay": "Open all day",
+        "openAllDaySelected": "Open all day selected."
+      },
+      "saved": "Booking settings saved.",
+      "title": "Booking Settings"
+    },
+    "sidebar": {
+      "administration": "Administration",
+      "label": "Booking",
+      "preferences": "Preferences",
+      "settings": "Settings"
+    }
+  },
   "common": {
     "accessibilityTips": {
       "buttonLabel": "Accessibility tips",
@@ -918,6 +1027,10 @@ export default interface Resources {
       "published": "Published",
       "release": "Release",
       "sections": {
+        "booking": {
+          "subheader": "Reserve instruments and equipment",
+          "title": "Booking"
+        },
         "gallery": {
           "subheader": "Your files in RSpace and connected filestores",
           "title": "Gallery"
@@ -5917,6 +6030,7 @@ export default interface Resources {
         "uploadImage": "Change Image"
       },
       "preferences": {
+        "bookingDisplayPreferences": "Booking display preferences",
         "box": "Box",
         "boxLinkType": "Box Link Type",
         "chemistry": "Chemistry",

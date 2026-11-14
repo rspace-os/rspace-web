@@ -6,8 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 import {
+  matchQuery,
   queryOptions as queryOptionsBuilder,
+  useMutation,
   useQuery,
+  useQueryClient,
   useSuspenseQuery
 } from '@tanstack/react-query';
 import type {
@@ -15,10 +18,14 @@ import type {
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
   InvalidateOptions,
+  MutationFunction,
+  MutationFunctionContext,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryOptions,
@@ -31,6 +38,8 @@ import type {
   AuditInvalidRequestResponse,
   AuditUnavailableResponse,
   BadRequestResponse,
+  BookingDisplayPreferences,
+  BookingDisplayPreferencesControllerReplacement,
   CountResultResponse,
   CountUsersParams,
   ForbiddenResponse,
@@ -47,11 +56,31 @@ import type {
 } from '../models';
 
 import { apiV2Fetch } from '../../apiV2Fetch.ts';
-import type { ErrorType } from '../../apiV2Fetch.ts';
+import type { ErrorType , BodyType } from '../../apiV2Fetch.ts';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
 
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -670,7 +699,363 @@ export function useGetCurrentUserSuspense<TData = Awaited<ReturnType<typeof getC
 
 
 
-export const getGetCurrentUserProfileImageUrl = () => {
+export const getResetMyBookingPreferencesUrl = () => {
+
+
+
+
+  return `/api/v2/users/me/booking-preferences`
+}
+
+/**
+ * Deletes the logical override so subsequent reads inherit global defaults.
+ * @summary Reset Booking display preferences
+ */
+export const resetMyBookingPreferences = async ( options?: Parameters<typeof apiV2Fetch>[1]): Promise<void> => {
+
+  return apiV2Fetch<void>(getResetMyBookingPreferencesUrl(),
+  {
+      operationId: 'resetMyBookingPreferences',
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getResetMyBookingPreferencesMutationKey = () => ['resetMyBookingPreferences'] as const;
+
+export const getResetMyBookingPreferencesMutationOptions = <TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetMyBookingPreferences>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof apiV2Fetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetMyBookingPreferences>>, TError,void, TContext> => {
+
+const mutationKey = getResetMyBookingPreferencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetMyBookingPreferences>>, void> = () => {
+
+
+          return  resetMyBookingPreferences(requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof resetMyBookingPreferences>>, variables: void, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ predicate: (query) => [getListUsersQueryKey(), getCountUsersQueryKey(), getGetMyBookingPreferencesQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type ResetMyBookingPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof resetMyBookingPreferences>>>
+
+    export type ResetMyBookingPreferencesMutationError = ErrorType<UnauthenticatedResponse | NotFoundResponse>
+
+
+    /**
+ * Deletes the logical override so subsequent reads inherit global defaults.
+ * @summary Reset Booking display preferences
+ */
+export const useResetMyBookingPreferences = <TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetMyBookingPreferences>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resetMyBookingPreferences>>,
+        TError,
+        void,
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getResetMyBookingPreferencesMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getGetMyBookingPreferencesUrl = () => {
+
+
+
+
+  return `/api/v2/users/me/booking-preferences`
+}
+
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export const getMyBookingPreferences = async ( options?: Parameters<typeof apiV2Fetch>[1]): Promise<BookingDisplayPreferences> => {
+
+  return apiV2Fetch<BookingDisplayPreferences>(getGetMyBookingPreferencesUrl(),
+  {
+      operationId: 'getMyBookingPreferences',
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBookingPreferencesQueryKey = () => {
+    return [
+    `/api/v2/users/me/booking-preferences`
+    ] as const;
+    }
+
+
+export const getGetMyBookingPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBookingPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBookingPreferences>>> = ({ signal }) => getMyBookingPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyBookingPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBookingPreferences>>>
+export type GetMyBookingPreferencesQueryError = ErrorType<UnauthenticatedResponse | NotFoundResponse>
+
+
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferences<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyBookingPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof getMyBookingPreferences>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferences<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyBookingPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof getMyBookingPreferences>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferences<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferences<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyBookingPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Invalidates the {@link useGetMyBookingPreferences} query
+ */
+export const invalidateGetMyBookingPreferences = async (
+ queryClient: QueryClient,  options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: getGetMyBookingPreferencesQueryKey() }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetMyBookingPreferencesSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>( options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBookingPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBookingPreferences>>> = ({ signal }) => getMyBookingPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
+}
+
+export type GetMyBookingPreferencesSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBookingPreferences>>>
+export type GetMyBookingPreferencesSuspenseQueryError = ErrorType<UnauthenticatedResponse | NotFoundResponse>
+
+
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.
+ * @summary Get resolved Booking display preferences
+ */
+export function useGetMyBookingPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingPreferences>>, TError = ErrorType<UnauthenticatedResponse | NotFoundResponse>>(
+  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient
+ ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyBookingPreferencesSuspenseQueryOptions(options)
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getReplaceMyBookingPreferencesUrl = () => {
+
+
+
+
+  return `/api/v2/users/me/booking-preferences`
+}
+
+/**
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * @summary Replace Booking display preferences
+ */
+export const replaceMyBookingPreferences = async (bookingDisplayPreferencesControllerReplacement: BookingDisplayPreferencesControllerReplacement, options?: Parameters<typeof apiV2Fetch>[1]): Promise<BookingDisplayPreferences> => {
+
+  return apiV2Fetch<BookingDisplayPreferences>(getReplaceMyBookingPreferencesUrl(),
+  {
+      operationId: 'replaceMyBookingPreferences',
+    ...options,
+    method: 'PUT',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(bookingDisplayPreferencesControllerReplacement)
+  }
+);}
+
+
+
+
+
+export const getReplaceMyBookingPreferencesMutationKey = () => ['replaceMyBookingPreferences'] as const;
+
+export const getReplaceMyBookingPreferencesMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse>,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingPreferences>>, TError,ReplaceMyBookingPreferencesMutationVariables, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof apiV2Fetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingPreferences>>, TError,ReplaceMyBookingPreferencesMutationVariables, TContext> => {
+
+const mutationKey = getReplaceMyBookingPreferencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replaceMyBookingPreferences>>, ReplaceMyBookingPreferencesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  replaceMyBookingPreferences(data,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof replaceMyBookingPreferences>>, variables: ReplaceMyBookingPreferencesMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ predicate: (query) => [getListUsersQueryKey(), getCountUsersQueryKey(), getGetMyBookingPreferencesQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type ReplaceMyBookingPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof replaceMyBookingPreferences>>>
+    export type ReplaceMyBookingPreferencesMutationBody = BodyType<BookingDisplayPreferencesControllerReplacement>
+    export type ReplaceMyBookingPreferencesMutationError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse>
+    export type ReplaceMyBookingPreferencesMutationVariables = {data: BodyType<BookingDisplayPreferencesControllerReplacement>}
+
+    /**
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * @summary Replace Booking display preferences
+ */
+export const useReplaceMyBookingPreferences = <TError = ErrorType<BadRequestResponse | UnauthenticatedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingPreferences>>, TError,ReplaceMyBookingPreferencesMutationVariables, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof apiV2Fetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof replaceMyBookingPreferences>>,
+        TError,
+        ReplaceMyBookingPreferencesMutationVariables,
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getReplaceMyBookingPreferencesMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getGetCurrentUserProfileImageUrl = () => {
 
 
 

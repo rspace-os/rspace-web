@@ -14,12 +14,12 @@ export interface BookingSettingsControllerSettingsPatch {
   allowDoubleBooking?: boolean | null;
   /**
      * @nullable
-     * @pattern (?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)
+     * @pattern ^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$
      */
   availabilityWindowEnd?: string | null;
   /**
      * @nullable
-     * @pattern (?:[01]\d|2[0-3]):[0-5]\d
+     * @pattern ^(?:[01]\d|2[0-3]):[0-5]\d$
      */
   availabilityWindowStart?: string | null;
   /**

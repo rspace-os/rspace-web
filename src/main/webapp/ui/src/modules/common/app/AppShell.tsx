@@ -1,8 +1,17 @@
 import { useIsFetching } from "@tanstack/react-query";
-import { CatchBoundary, HeadContent, Outlet, useMatches, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  CatchBoundary,
+  HeadContent,
+  Navigate,
+  Outlet,
+  useMatches,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
+import { useFeatureFlags } from "@/featureFlags/queries";
 import { navigationProgressQueryFilters } from "@/modules/common/queries/navigationProgress";
 import {
   Sidebar,
@@ -13,7 +22,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/modules/common/ui/sidebar";
-import { ContentLoadingSpinner } from "@/modules/common/ui/spinner";
+import { ContentLoadingSpinner, ViewportLoadingSpinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
 import AuthenticatedAppBar, { PublicAppBar } from "./AppBar";
 import type { AppBarConfig } from "./AppBar.types";
@@ -64,8 +73,31 @@ export default function AppShell() {
       ),
   });
   const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace", authenticated: false };
-  const renderSidebar = context.sidebar;
+  return appBarConfig !== false && appBarConfig.currentPage === "booking" ? (
+    <React.Suspense fallback={<ViewportLoadingSpinner />}>
+      <BookingAppShell appBarConfig={appBarConfig} renderSidebar={context.sidebar} />
+    </React.Suspense>
+  ) : (
+    <LoadedAppShell appBarConfig={appBarConfig} renderSidebar={context.sidebar} />
+  );
+}
 
+type LoadedAppShellProps = {
+  appBarConfig: AppBarConfig | false;
+  renderSidebar: AppBarRouteContext["sidebar"];
+};
+
+function BookingAppShell(props: LoadedAppShellProps) {
+  const flags = useFeatureFlags();
+  // Gate the entire shell: the Booking sidebar also fetches booking preferences.
+  if (flags.isPlaceholderData && !flags.isError) return <ViewportLoadingSpinner />;
+  if (!flags.data?.flags.bookingEnabled.value || flags.isError) {
+    return <Navigate from="/booking" href="/workspace" reloadDocument replace />;
+  }
+  return <LoadedAppShell {...props} />;
+}
+
+function LoadedAppShell({ appBarConfig, renderSidebar }: LoadedAppShellProps) {
   const appBarProps = appBarConfig !== false && {
     ...appBarConfig,
     renderHamburger:

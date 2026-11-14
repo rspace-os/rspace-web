@@ -1,0 +1,40 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createBrowserHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { NuqsAdapter } from "nuqs/adapters/react";
+import { Suspense } from "react";
+import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
+
+/** Fetches preferences so reload persistence is observable. */
+export function BookingPreferencesPageStory() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+
+  const root = createRootRoute({ component: Outlet });
+  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
+  const router = createRouter({
+    routeTree: root.addChildren([
+      booking.addChildren([
+        createRoute({ getParentRoute: () => booking, path: "/preferences/", component: BookingPreferencesPage }),
+      ]),
+    ]),
+    history: createBrowserHistory(),
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NuqsAdapter>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </NuqsAdapter>
+    </QueryClientProvider>
+  );
+}

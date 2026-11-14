@@ -57,6 +57,9 @@ export const apiV2Operations: Record<string, { public?: true; session?: true; re
 ["listUsers"]: {responses: {["200"]: {["application/json"]: native.ListUsersResponse}}},
 ["countUsers"]: {responses: {["200"]: {["application/json"]: native.CountUsersResponse}}},
 ["getCurrentUser"]: {responses: {["200"]: {["application/json"]: native.GetCurrentUserResponse}}},
+["resetMyBookingPreferences"]: {responses: {}},
+["getMyBookingPreferences"]: {responses: {["200"]: {["application/json"]: native.GetMyBookingPreferencesResponse}}},
+["replaceMyBookingPreferences"]: {request: native.ReplaceMyBookingPreferencesBody, responses: {["200"]: {["application/json"]: native.ReplaceMyBookingPreferencesResponse}}},
 ["getCurrentUserProfileImage"]: {responses: {}},
 ["getUser"]: {responses: {["200"]: {["application/json"]: native.GetUserResponse}}},
 ["listUserAuditEvents"]: {responses: {["200"]: {["application/json"]: native.ListUserAuditEventsResponse}}}
