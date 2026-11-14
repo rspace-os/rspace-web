@@ -78,7 +78,9 @@ declare global {
 }
 const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
   const { t } = useTranslation("common");
-  const { notificationCount, messageCount, specialMessageCount } = useWebSocketNotifications(`${currentUser.id}`);
+  const { notificationCount, messageCount } = useWebSocketNotifications(`${currentUser.id}`);
+  // Special messages, such as Project Group invitations, are presented by their own popup instead.
+  const total = notificationCount + messageCount;
   return (
     <Box
       sx={{
@@ -90,7 +92,7 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
       aria-label={t("appBar.notificationsAndMessages")}
     >
       <Badge
-        badgeContent={notificationCount + messageCount + specialMessageCount}
+        badgeContent={total}
         color="error"
         sx={{
           [`& .${badgeClasses.badge}`]: {
@@ -105,13 +107,7 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
           sx={{
             cursor: "pointer",
           }}
-          icon={
-            notificationCount + messageCount + specialMessageCount > 0 ? (
-              <NotificationsIcon />
-            ) : (
-              <NotificationsNoneIcon />
-            )
-          }
+          icon={total > 0 ? <NotificationsIcon /> : <NotificationsNoneIcon />}
           title={t("appBar.notifications")}
         />
       </Badge>
