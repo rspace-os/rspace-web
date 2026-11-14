@@ -32,6 +32,7 @@ export function DayTimelineEventCard({
   onExpandedChange,
   collisionBoundary,
   expandedCardClassName,
+  portalContainer,
   renderEventActions,
   renderBlockoutActions,
 }: {
@@ -44,6 +45,7 @@ export function DayTimelineEventCard({
   onExpandedChange?: (expanded: boolean) => void;
   collisionBoundary?: HTMLElement | null;
   expandedCardClassName?: string;
+  portalContainer?: HTMLElement | null;
 } & DayTimelineActionRenderers) {
   const { t } = useTranslation("booking");
   const detailsId = `${React.useId()}-details`;
@@ -237,6 +239,7 @@ export function DayTimelineEventCard({
       {compactCard}
       <PopoverContent
         positionerClassName="max-sm:fixed! max-sm:inset-x-0! max-sm:top-auto! max-sm:bottom-0! max-sm:transform-none! max-sm:z-[70]"
+        portalContainer={portalContainer}
         id={detailsId}
         align="start"
         side="bottom"

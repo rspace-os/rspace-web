@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
-import { monthDayCount, shiftDate, startOfWeek, toTimelineEvent } from "../calendarLayoutUtils";
+import { monthDayCount, shiftDate, startOfWeek } from "../calendarLayoutUtils";
 
 describe("calendar date layout", () => {
   it("keeps a retained booking while omitting its redacted target", () => {

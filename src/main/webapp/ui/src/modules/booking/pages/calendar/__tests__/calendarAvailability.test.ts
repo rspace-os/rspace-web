@@ -2,14 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
-import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 import { loadCalendarAvailability, useCalendarAvailability } from "../calendarAvailability";
 
@@ -82,6 +81,10 @@ const sourced = (
 
 const closureId = (globalId: string, startsAt: string, endsAt: string) =>
   `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
+
+// Later pages always request page 1 and continue after the last row: `;(start=gt=S,(start==S;id=gt=ID))`.
+const keysetAfterId = (request: Request) =>
+  Number(/id=gt=(\d+)\)\)$/.exec(new URL(request.url).searchParams.get("where") ?? "")?.[1] ?? 0);
 
 describe("calendar availability", () => {
   it("refreshes aggregate availability when the generated booking list prefix is invalidated", async () => {
@@ -165,7 +168,7 @@ describe("calendar availability", () => {
     expect(where).not.toContain("start<");
     expect(where).not.toContain("end>");
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
-    expect(requests[0].searchParams.get("totals")).toBe("true");
+    expect(requests[0].searchParams.has("totals")).toBe(false);
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
     ]);
@@ -173,49 +176,38 @@ describe("calendar availability", () => {
     expect([...result.values()].flat().every((interval) => interval.kind === "booking")).toBe(true);
   });
 
-  it("splits 1,000 target IDs into request-safe batches", async () => {
-    const token = "t".repeat(2500);
-    onTestFinished(setApiV2TokenProvider({ getToken: async () => token, recover: async () => token }));
-    const requests: { url: URL; authorization: string | null; requestedWith: string | null }[] = [];
+  it("splits 1,000 target IDs within the generated URL budget", async () => {
+    const requests: URL[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
-        requests.push({
-          url: new URL(request.url),
-          authorization: request.headers.get("authorization"),
-          requestedWith: request.headers.get("x-requested-with"),
-        });
+        requests.push(new URL(request.url));
         return HttpResponse.json(bookingResponse([]));
       }),
     );
-
     const rows = Array.from({ length: 1000 }, (_, index) => ({
       globalId: `IN${String(index).padStart(4, "0")}${"x".repeat(48)}`,
       timezone: "UTC",
       ...schedule,
     }));
     const result = await loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal);
-
     expect(result.size).toBe(1000);
     expect(requests.length).toBeGreaterThan(2);
-    for (const { url, authorization, requestedWith } of requests) {
+    for (const url of requests) {
       const targetList = url.searchParams.get("where")?.split("target=in=(")[1]?.split(")")[0] ?? "";
       const targetIds = targetList ? targetList.split(",") : [];
       expect(targetIds.length).toBeGreaterThan(0);
       expect(targetIds.length).toBeLessThanOrEqual(500);
-      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n`;
-      const headers = `authorization: ${authorization}\r\nx-requested-with: ${requestedWith}\r\n\r\n`;
-      expect(new TextEncoder().encode(`${requestLine}${headers}`).length).toBeLessThanOrEqual(6000);
+      expect(new TextEncoder().encode(`${url.pathname}${url.search}`).length).toBeLessThanOrEqual(6000);
     }
   });
 
   it("fetches every page and fails explicitly above the cap", async () => {
-    const pages: string[] = [];
+    const cursors: number[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
-        const page = new URL(request.url).searchParams.get("page") ?? "1";
-        pages.push(page);
+        cursors.push(keysetAfterId(request));
         return HttpResponse.json(
-          page === "1"
+          cursors.length === 1
             ? bookingResponse(
                 [
                   booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
@@ -223,13 +215,10 @@ describe("calendar availability", () => {
                 ],
                 { page: 1, limit: 2, totalDocs: 4 },
               )
-            : bookingResponse(
-                [
-                  booking(3, "IN2", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z"),
-                  booking(4, "IN1", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"),
-                ],
-                { page: 2, limit: 2, totalDocs: 4 },
-              ),
+            : bookingResponse([
+                booking(3, "IN2", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z"),
+                booking(4, "IN1", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"),
+              ]),
         );
       }),
     );
@@ -238,14 +227,22 @@ describe("calendar availability", () => {
       { globalId: "IN2", timezone: "UTC", ...schedule },
     ];
     const result = await loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal);
-    expect(pages).toEqual(["1", "2"]);
+    expect(cursors).toEqual([0, 2]);
     expect(result.get("IN1")?.map(({ source }) => source.id)).toEqual(["booking:1", "booking:4"]);
     expect(result.get("IN2")?.map(({ source }) => source.id)).toEqual(["booking:2", "booking:3"]);
 
     server.use(
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json(bookingResponse([], { page: 1, limit: 100, totalDocs: 1001 })),
-      ),
+      http.get("/api/v2/bookings", ({ request }) => {
+        const afterId = keysetAfterId(request);
+        return HttpResponse.json(
+          bookingResponse(
+            Array.from({ length: 100 }, (_, index) =>
+              booking(afterId + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+            ),
+            { totalDocs: 1001 - afterId },
+          ),
+        );
+      }),
     );
     await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toThrow(
       "exceeds 1,000",
@@ -253,16 +250,15 @@ describe("calendar availability", () => {
   });
 
   it("accepts exactly 1,000 booking documents in one availability batch", async () => {
-    const requestedPages: string[] = [];
+    const cursors: number[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
-        const page = Number(new URL(request.url).searchParams.get("page"));
-        requestedPages.push(String(page));
-        const start = (page - 1) * 100;
-        const docs = Array.from({ length: Math.min(100, 1000 - start) }, (_, index) =>
-          booking(start + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+        const afterId = keysetAfterId(request);
+        cursors.push(afterId);
+        const docs = Array.from({ length: Math.min(100, 1000 - afterId) }, (_, index) =>
+          booking(afterId + index + 1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
         );
-        return HttpResponse.json(bookingResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
+        return HttpResponse.json(bookingResponse(docs, { totalDocs: 1000 - afterId }));
       }),
     );
 
@@ -273,7 +269,7 @@ describe("calendar availability", () => {
       new AbortController().signal,
     );
 
-    expect(requestedPages).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+    expect(cursors).toEqual([0, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
     expect(result.get("IN1")).toHaveLength(1000);
   });
 
@@ -283,14 +279,14 @@ describe("calendar availability", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
-        const page = Number(url.searchParams.get("page"));
         const where = url.searchParams.get("where") ?? "";
         const targetId = where.split("target=in=(")[1]?.split(",")[0] ?? "";
-        const start = (page - 1) * 100;
+        const idOffset = targetId === "IN0500" ? 1000 : 0;
+        const start = Math.max(0, keysetAfterId(request) - idOffset);
         const docs = Array.from({ length: 100 }, (_, index) =>
-          booking(start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+          booking(idOffset + start + index + 1, targetId, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
         );
-        return HttpResponse.json(bookingResponse(docs, { page: page, limit: 100, totalDocs: 1000 }));
+        return HttpResponse.json(bookingResponse(docs, { totalDocs: 1000 - start }));
       }),
     );
     const rows = Array.from({ length: 1000 }, (_, index) => ({

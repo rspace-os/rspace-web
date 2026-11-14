@@ -55,40 +55,49 @@ describe("ZonedBookingWindowFields", () => {
         density === "compact" ? "booking:bookings.form.date" : "booking:bookings.form.startDate",
       );
       await user.click(date);
-      fireEvent.change(date, { target: { value: "" } });
+      await user.clear(date);
       expect(date).toHaveFocus();
-      fireEvent.change(date, { target: { value: "2026-08-18" } });
+      await user.type(date, "2026-08-18");
       expect(date).toHaveFocus();
       expect(date).toHaveValue("2026-08-18");
     },
   );
 
-  it("uses one date for both endpoints in compact mode", () => {
+  it("uses one date for both endpoints in compact mode", async () => {
+    const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <ZonedBookingWindowFields
-        displayTimezone="Europe/Berlin"
-        schedulingTimezone="Europe/Berlin"
-        slotGranularityMinutes={5}
-        maxBookingDurationMinutes={0}
-        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
-        density="compact"
-        value={{
-          startDate: "2026-08-17",
-          startTime: "09:00",
-          endDate: "2026-08-17",
-          endTime: "10:00",
-        }}
-        onChange={onChange}
-      />,
-    );
+    function Form() {
+      const [value, setValue] = useState<BookingWindowDraft>({
+        startDate: "2026-08-17",
+        startTime: "09:00",
+        endDate: "2026-08-17",
+        endTime: "10:00",
+      });
+      return (
+        <ZonedBookingWindowFields
+          displayTimezone="Europe/Berlin"
+          schedulingTimezone="Europe/Berlin"
+          slotGranularityMinutes={5}
+          maxBookingDurationMinutes={0}
+          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+          density="compact"
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    render(<Form />);
 
     const date = screen.getByLabelText("booking:bookings.form.date");
     expect(screen.getAllByDisplayValue("2026-08-17")).toHaveLength(1);
     expect(screen.getByLabelText("booking:bookings.form.startTime")).toBeVisible();
     expect(screen.getByLabelText("booking:bookings.form.endTime")).toBeVisible();
 
-    fireEvent.change(date, { target: { value: "2026-08-18" } });
+    await user.clear(date);
+    await user.type(date, "2026-08-18");
 
     expect(onChange).toHaveBeenLastCalledWith({
       startDate: "2026-08-18",
