@@ -19,12 +19,6 @@ import SynchroniseFormSections from "../../components/Stepper/SynchroniseFormSec
 import InstrumentForm from "../Form";
 import InstrumentNewRecordForm from "../NewRecordForm";
 
-class ResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-
 vi.mock("../../components/Fields/Attachments/Attachments", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -86,7 +80,6 @@ function renderForm(FormComponent: () => ReactNode, activeResult: InventoryRecor
 }
 
 describe("Instrument forms' Access Permissions section", () => {
-  window.ResizeObserver = ResizeObserver;
   window.scrollTo = vi.fn();
 
   test("is shown when viewing an instrument with full access", () => {

@@ -1,5 +1,4 @@
 import "@/__tests__/__mocks__/matchMedia";
-import "@/__tests__/__mocks__/resizeObserver";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw/http";

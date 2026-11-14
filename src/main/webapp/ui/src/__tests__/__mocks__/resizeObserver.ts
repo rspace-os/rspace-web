@@ -1,7 +1,6 @@
 /*
- * jest-dom does not define ResizeObserver so we have to define a mock that can
- * be used in tests that depend on components that make use of the browser
- * API.
+ * jsdom does not define ResizeObserver, so setup.ts installs this mock for
+ * every jsdom test.
  */
 import { vi } from "vitest";
 

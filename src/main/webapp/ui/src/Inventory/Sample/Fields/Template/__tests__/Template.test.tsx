@@ -2,7 +2,9 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { delay } from "es-toolkit";
+import type { AxiosResponse } from "@/common/axios";
 import ApiService from "../../../../../common/InvApiService";
 import { fieldAttrs } from "../../../../../stores/models/__tests__/FieldModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
@@ -11,9 +13,6 @@ import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootSt
 import { storesContext } from "../../../../../stores/stores-context";
 import materialTheme from "../../../../../theme";
 import Template from "../Template";
-import "@/__tests__/__mocks__/resizeObserver";
-import userEvent from "@testing-library/user-event";
-import type { AxiosResponse } from "@/common/axios";
 
 vi.mock("../../../../../common/InvApiService", () => ({
   default: {
