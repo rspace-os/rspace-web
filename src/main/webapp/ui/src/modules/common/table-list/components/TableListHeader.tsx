@@ -11,6 +11,7 @@ export function TableListHeader<TDocument>({
   onCreate,
   createAction,
   createLabel,
+  headingClassName,
   divided,
 }: {
   config: ResolvedCollectionConfig<TDocument>;
@@ -18,6 +19,7 @@ export function TableListHeader<TDocument>({
   onCreate?: () => void;
   createAction?: ReactNode;
   createLabel?: string;
+  headingClassName?: string;
   divided: boolean;
 }) {
   const { t } = useTranslation("common");
@@ -26,7 +28,7 @@ export function TableListHeader<TDocument>({
   return (
     <header className={cn("flex flex-col justify-between gap-5 sm:flex-row sm:items-end", divided && "border-b pb-5")}>
       <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">{collectionLabel}</h1>
+        <h1 className={cn("font-heading text-3xl font-bold tracking-tight", headingClassName)}>{collectionLabel}</h1>
         {config.labels.descriptionKey ? (
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{translate(config.labels.descriptionKey)}</p>
         ) : null}

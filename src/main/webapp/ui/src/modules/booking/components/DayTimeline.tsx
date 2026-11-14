@@ -335,6 +335,7 @@ export function DayTimeline({
               minHeight: eventAreaTop + 16 + laneCount * EVENT_LANE_PITCH,
             }}
             data-testid="day-timeline-canvas"
+            data-timeline-date={date}
             data-hour-width={densityHourWidth}
             data-creation-disabled={creationDisabled || undefined}
             onPointerDown={(event) => {

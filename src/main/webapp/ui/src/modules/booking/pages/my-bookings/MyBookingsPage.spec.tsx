@@ -1,5 +1,5 @@
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import "@/modules/common/styles/index.css";
+import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
@@ -7,7 +7,7 @@ import { type Locator, page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { MyBookingsPageStory } from "./MyBookingsPage.story";
+import { MyBookingsPageStory, myBookingsStoryUrl } from "./MyBookingsPage.story";
 import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
 
@@ -28,20 +28,23 @@ function registerHandlers() {
   );
 }
 
+let history: RouterHistory;
+let browserUrl: string;
+
 beforeEach(() => {
-  worker.use(oauthTokenHandler(true));
-  window.history.replaceState({}, "", "/");
+  history = createMemoryHistory({ initialEntries: [myBookingsStoryUrl] });
+  browserUrl = window.location.href;
   registerHandlers();
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
+  expect(window.location.href).toBe(browserUrl);
 });
 
 describe("the My Bookings page", () => {
   test("shows a tooltip for every icon-only page control", async () => {
-    render(<MyBookingsPageStory />);
+    render(<MyBookingsPageStory history={history} />);
     await expect.element(pageObj.upcoming).toHaveAccessibleName("Upcoming 2");
 
     const controls = [
@@ -62,31 +65,44 @@ describe("the My Bookings page", () => {
     }
   });
 
+  test("shows the upcoming count inside its period button", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.upcomingCount).toBeVisible();
+    const buttonRect = pageObj.upcoming.element().getBoundingClientRect();
+    const badgeRect = pageObj.upcomingCount.element().getBoundingClientRect();
+
+    expect(badgeRect.left).toBeGreaterThanOrEqual(buttonRect.left);
+    expect(badgeRect.top).toBeGreaterThanOrEqual(buttonRect.top);
+    expect(badgeRect.right).toBeLessThanOrEqual(buttonRect.right);
+    expect(badgeRect.bottom).toBeLessThanOrEqual(buttonRect.bottom);
+  });
+
   test("navigates from a booking row to the bookable item details page", async () => {
-    render(<MyBookingsPageStory />);
+    render(<MyBookingsPageStory history={history} />);
 
     await expect.element(pageObj.confocalItemCalendar).toBeVisible();
     clickWithoutDriverWait(pageObj.confocalItemCalendar);
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
     await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
-    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
+    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
   test("navigates from View details to the booking event", async () => {
-    render(<MyBookingsPageStory />);
+    render(<MyBookingsPageStory history={history} />);
 
     await expect.element(pageObj.confocalDetails).toBeVisible();
     clickWithoutDriverWait(pageObj.confocalDetails);
 
-    await expect.poll(() => window.location.pathname).toBe("/booking/calendar/bookings/41");
+    await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41");
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
   });
 });
 
 test("keeps all row actions visible at common desktop widths", async () => {
   await page.viewport(1376, 795);
-  render(<MyBookingsPageStory />);
+  render(<MyBookingsPageStory history={history} />);
   for (const control of [
     pageObj.confocalItemCalendar,
     pageObj.confocalDetails,

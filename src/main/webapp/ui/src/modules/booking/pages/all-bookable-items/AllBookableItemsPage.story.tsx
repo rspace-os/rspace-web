@@ -1,55 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
-import { Suspense } from "react";
-import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
-import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
-import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import type { RouterHistory } from "@tanstack/react-router";
+import { BookableItemPageStory } from "../bookable-items/BookableItemPage.story";
 
-export function AllBookableItemsStory() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: Outlet });
-  const bookingRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/booking",
-    component: Outlet,
-  });
-  const routeTree = rootRoute.addChildren([
-    bookingRoute.addChildren([
-      createRoute({
-        getParentRoute: () => bookingRoute,
-        path: "/config/bookable-items/",
-        component: AllBookableItemsPage,
-      }),
-      createRoute({
-        getParentRoute: () => bookingRoute,
-        path: "/bookable-items/$globalId/{-$tab}/",
-        validateSearch: bookableItemSearch,
-        component: BookableItemPage,
-      }),
-    ]),
-  ]);
-  const router = createRouter({
-    routeTree,
-    history: createMemoryHistory({
-      initialEntries: [`/booking/config/bookable-items${window.location.search}`],
-    }),
-  });
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
-    </QueryClientProvider>
-  );
+export function AllBookableItemsStory({ history }: { history?: RouterHistory } = {}) {
+  return <BookableItemPageStory initialPath="/booking/config/bookable-items" history={history} />;
 }

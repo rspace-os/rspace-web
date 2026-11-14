@@ -180,16 +180,16 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
   };
 }
 
-export function actionsFor(events: readonly BookingListDocument[], timezone: string) {
+export function actionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
   };
 }
 
-export function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string) {
+export function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
   };
 }

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { Booking } from "@/modules/booking/domain/booking";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
@@ -101,6 +102,8 @@ type BookingFormCommonProps = {
   // Hides the time zone fields; the form stays in the display timezone.
   fixedTimezone?: boolean;
   formId?: string;
+  windowAdjustment?: BookingWindowDraft;
+  showMobileItemInformation?: boolean;
   showRulesSummary?: boolean;
   onCancel?: () => void;
   onMoreOptions?: () => void;
@@ -219,6 +222,7 @@ export function BookingForm(props: BookingFormProps) {
     () => convertDraft(draft, formTimezones, displayTimezone),
     [draft, formTimezones, displayTimezone],
   );
+  const appliedWindowAdjustment = useRef<BookingWindowDraft | undefined>(undefined);
   const [attemptedAt, setAttemptedAt] = useState<number>();
   const attempted = attemptedAt !== undefined;
   const form = useForm({
@@ -241,6 +245,12 @@ export function BookingForm(props: BookingFormProps) {
   });
   const busy = props.pending || submitting;
   const [previousInitialTarget, setPreviousInitialTarget] = useState(initialTarget);
+  useEffect(() => {
+    const adjustment = props.windowAdjustment;
+    if (!adjustment || adjustment === appliedWindowAdjustment.current) return;
+    appliedWindowAdjustment.current = adjustment;
+    setDraft((current) => (sameWindowDraft(adjustment, current) ? current : adjustment));
+  }, [props.windowAdjustment]);
   if (initialTarget !== previousInitialTarget) {
     setPreviousInitialTarget(initialTarget);
     if (!editing && !target && initialTarget) {
@@ -362,17 +372,17 @@ export function BookingForm(props: BookingFormProps) {
     setTimezoneChoice(next);
     applyTimezones({ start: next, end: endTimezoneChoice ?? next });
   };
-  const windowFields = target ? (
+  const windowFields = (
     <ZonedBookingWindowFields
       displayTimezone={formTimezones.start}
       endTimezone={formTimezones.end}
       onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
-      schedulingTimezone={target.timezone}
-      slotGranularityMinutes={eventKind === "MAINTENANCE" ? 1 : target.slotGranularityMinutes}
-      incrementUnit={eventKind === "MAINTENANCE" ? "MINUTES" : target.incrementUnit}
-      maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes}
-      openingHours={target.openingHours}
-      enforceOpeningHours={eventKind !== "MAINTENANCE"}
+      schedulingTimezone={target?.timezone ?? formTimezone}
+      slotGranularityMinutes={eventKind === "MAINTENANCE" ? 1 : (target?.slotGranularityMinutes ?? 1)}
+      incrementUnit={eventKind === "MAINTENANCE" ? "MINUTES" : (target?.incrementUnit ?? "MINUTES")}
+      maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
+      openingHours={target?.openingHours ?? []}
+      enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
       value={draft}
       onChange={setDraft}
       allowPolicyMismatch={allowPolicyMismatch}
@@ -383,7 +393,7 @@ export function BookingForm(props: BookingFormProps) {
       showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
       startErrorId={bookingInPast ? pastStartErrorId : undefined}
     />
-  ) : null;
+  );
 
   return (
     <Form
@@ -407,64 +417,67 @@ export function BookingForm(props: BookingFormProps) {
             />
           </div>
         ) : fixedTarget ? null : (
-          <BookableItemPicker value={target} onChange={selectTarget} disabled={busy} eventKind={eventKind} />
+          <div className="space-y-2">
+            <BookableItemPicker value={target} onChange={selectTarget} disabled={busy} eventKind={eventKind} />
+            {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
+          </div>
         )}
-        {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
-        {target && (
+        {target && props.showMobileItemInformation && !compact && !inline ? (
+          <div className="@2xl:hidden">
+            <BookingItemInformationCard as="section" item={target} displayTimezone={displayTimezone} />
+          </div>
+        ) : null}
+        {target && eventKind === "BOOKING" && props.showRulesSummary !== false && !inline ? (
           <>
-            {eventKind === "BOOKING" && props.showRulesSummary !== false && !inline ? (
-              <>
-                {uniformHours ? (
-                  <p className="text-sm text-muted-foreground">
-                    {target.timezone === displayTimezone
-                      ? t("bookings.form.openingHours", { start: uniformHours.start, end: uniformHours.end })
-                      : t("bookings.form.openingHoursDifferentTimezone", {
-                          start: uniformHours.start,
-                          end: uniformHours.end,
-                          timezone: target.timezone,
-                        })}
-                  </p>
-                ) : (
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground text-sm">
-                    {[
-                      ...openingHoursFacts(target, t),
-                      [t("bookableItemDetails.fields.timezone"), target.timezone] as const,
-                    ].map(([label, value]) => (
-                      <div key={label} className="contents">
-                        <dt>{label}</dt>
-                        <dd>{value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-                {target.maxBookingDurationMinutes > 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t("bookings.form.maximumDuration", {
-                      count: target.maxBookingDurationMinutes,
+            {uniformHours ? (
+              <p className="text-sm text-muted-foreground">
+                {target.timezone === displayTimezone
+                  ? t("bookings.form.openingHours", { start: uniformHours.start, end: uniformHours.end })
+                  : t("bookings.form.openingHoursDifferentTimezone", {
+                      start: uniformHours.start,
+                      end: uniformHours.end,
+                      timezone: target.timezone,
                     })}
-                  </p>
-                ) : null}
-              </>
-            ) : null}
-            {inline ? (
-              <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
-                <div className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
-                  <div className="@md:col-span-2">{windowFields}</div>
-                </div>
-              </div>
-            ) : (
-              windowFields
-            )}
-            {allowPolicyMismatch && validation?.policyInvalid && (
-              <p role="status" className="text-sm text-muted-foreground">
-                {eventKind === "MAINTENANCE"
-                  ? t("bookings.form.policyMismatchNotes")
-                  : t("bookings.form.policyMismatchPurpose")}
               </p>
+            ) : (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground text-sm">
+                {[
+                  ...openingHoursFacts(target, t),
+                  [t("bookableItemDetails.fields.timezone"), target.timezone] as const,
+                ].map(([label, value]) => (
+                  <div key={label} className="contents">
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
             )}
-            {bookingInPast && <FieldError id={pastStartErrorId}>{t("bookings.warnings.past")}</FieldError>}
+            {target.maxBookingDurationMinutes > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t("bookings.form.maximumDuration", {
+                  count: target.maxBookingDurationMinutes,
+                })}
+              </p>
+            ) : null}
           </>
+        ) : null}
+        {inline ? (
+          <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
+            <div className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
+              <div className="@md:col-span-2">{windowFields}</div>
+            </div>
+          </div>
+        ) : (
+          windowFields
         )}
+        {allowPolicyMismatch && validation?.policyInvalid && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {eventKind === "MAINTENANCE"
+              ? t("bookings.form.policyMismatchNotes")
+              : t("bookings.form.policyMismatchPurpose")}
+          </p>
+        )}
+        {bookingInPast && <FieldError id={pastStartErrorId}>{t("bookings.warnings.past")}</FieldError>}
         {props.error && (
           <div className="space-y-2">
             <FieldError>{props.error}</FieldError>

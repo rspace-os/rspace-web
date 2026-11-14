@@ -28,6 +28,8 @@ export type AvailabilityBarProps = {
   periodStart: Date;
   periodEnd?: Date;
   now?: Date;
+  /** Show the item and actor rows when a standard booking is expanded. */
+  showBookingContextDetails?: boolean;
   showCurrentAvailability?: boolean;
   showPeriodLabels?: boolean;
   timeZone: string;
@@ -80,11 +82,13 @@ function BookingSourceAccordion({
   accordionName,
   item,
   period,
+  showBookingContextDetails,
   source,
 }: {
   accordionName: string;
   item: AvailabilityBarProps["item"];
   period: string;
+  showBookingContextDetails: boolean;
   source: DetailedBookingSource;
 }) {
   const { t } = useTranslation("booking");
@@ -105,8 +109,8 @@ function BookingSourceAccordion({
       period={period}
       purpose={source.booking.purpose ?? null}
       maintenance={maintenance}
-      item={maintenance ? item : undefined}
-      actor={maintenance ? actor : undefined}
+      item={maintenance || showBookingContextDetails ? item : undefined}
+      actor={maintenance || showBookingContextDetails ? actor : undefined}
       detailsBookingId={source.booking.id}
     />
   );
@@ -117,6 +121,7 @@ export function AvailabilityBar({
   periodStart,
   periodEnd,
   now,
+  showBookingContextDetails = true,
   showCurrentAvailability = false,
   showPeriodLabels = false,
   timeZone,
@@ -385,6 +390,7 @@ export function AvailabilityBar({
                           accordionName={accordionName}
                           item={item}
                           period={formatTimeRange(source)}
+                          showBookingContextDetails={showBookingContextDetails}
                           source={source}
                         />
                       ) : (

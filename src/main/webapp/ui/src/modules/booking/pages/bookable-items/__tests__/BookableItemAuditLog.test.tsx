@@ -54,21 +54,31 @@ function renderAudit() {
 }
 
 describe("BookableItemAuditLog", () => {
-  it("labels the permanent-deletion timestamp and retains other recorded field names", async () => {
+  it("labels the permanent-deletion timestamp and retains unknown recorded field names", async () => {
+    const user = userEvent.setup();
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () =>
         HttpResponse.json(
-          auditPage([{ ...event, action: "DELETE", payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true } }]),
+          auditPage([
+            {
+              ...event,
+              action: "DELETE",
+              payload: { deletedAt: "2026-08-25T10:42:18Z", enabled: true, customField: "retained" },
+            },
+          ]),
         ),
       ),
     );
     renderAudit();
 
-    const table = within(await screen.findByRole("table"));
-    expect(await table.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
-    expect(table.getByText("2026-08-25T10:42:18Z")).toBeVisible();
-    expect(table.getByText("enabled")).toBeVisible();
-    expect(table.queryByText("deletedAt")).not.toBeInTheDocument();
+    const item = within(await screen.findByRole("article"));
+    await user.click(item.getByRole("button", { name: "common:actions.expand" }));
+    expect(await item.findByText("booking:bookableItemDetails.audit.values.deletedAt")).toBeVisible();
+    expect(item.getByText("2026-08-25T10:42:18Z")).toBeVisible();
+    expect(item.getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    expect(item.getByText("customField")).toBeVisible();
+    expect(item.getByText("retained")).toBeVisible();
+    expect(item.queryByText("deletedAt")).not.toBeInTheDocument();
   });
 
   it("loads a capped completed-day result and renders exact duplicates as separate rows", async () => {
@@ -96,12 +106,97 @@ describe("BookableItemAuditLog", () => {
     await expectAccessible(container);
   });
 
+  it("keeps recorded values collapsed and places Changed by beside ID", async () => {
+    const user = userEvent.setup();
+    server.use(http.get("/api/v2/booking-configurations/7/audit", () => HttpResponse.json(auditPage([event]))));
+    const { container } = renderAudit();
+
+    const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
+    expect(within(item).getByText("booking:bookableItemDetails.audit.fields.actor")).toBeVisible();
+    expect(within(item).getByText("booking:bookableItems.fields.id")).toBeVisible();
+    expect(within(item).queryByText("booking:bookableItemDetails.audit.fields.values")).not.toBeInTheDocument();
+
+    const expand = within(item).getByRole("button", { name: "common:actions.expand" });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    await user.click(expand);
+
+    expect(within(item).getByRole("button", { name: "common:actions.collapse" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(within(item).getByText("booking:bookableItemDetails.audit.fields.values")).toBeVisible();
+    expect(within(item).getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    await expectAccessible(container);
+  });
+
+  it("sends free-text searches to the audit endpoint before paging", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
+        return HttpResponse.json(auditPage([event]));
+      }),
+    );
+    renderAudit();
+    await screen.findAllByText("common:values.userWithUsername");
+
+    const input = screen.getByRole("textbox", { name: "common:tableList.search.label" });
+    await user.type(input, "PayloadMarker");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    expect(requests[1].searchParams.get("q")).toBe("PayloadMarker");
+    expect(requests[1].searchParams.has("page")).toBe(false);
+    expect(requests[1].searchParams.has("snapshotFingerprint")).toBe(false);
+  });
+
+  it("combines the action facet with search and starts a fresh page set", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
+        return HttpResponse.json(auditPage(Array.from({ length: 21 }, () => event)));
+      }),
+    );
+    renderAudit();
+    await screen.findAllByText("common:values.userWithUsername");
+
+    expect(screen.queryByRole("button", { name: "common:tableList.toolbar.filters" })).not.toBeInTheDocument();
+    const search = screen.getByRole("textbox", { name: "common:tableList.search.label" });
+    await user.type(search, "PayloadMarker");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
+    await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(1));
+    expect(requests).toHaveLength(2);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "booking:bookableItemDetails.audit.fields.action" }),
+      "WRITE",
+    );
+    await waitFor(() => expect(requests).toHaveLength(3));
+    expect(Object.fromEntries(requests[2].searchParams)).toMatchObject({
+      q: "PayloadMarker",
+      actions: "WRITE",
+    });
+    expect(requests[2].searchParams.has("snapshotFingerprint")).toBe(false);
+  });
+
   it("applies inclusive presets as a new result set", async () => {
     const user = userEvent.setup();
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
-        requests.push(new URL(request.url));
+        const url = new URL(request.url);
+        requests.push(url);
+        if (url.searchParams.has("search")) return new HttpResponse(null, { status: 400 });
         return HttpResponse.json(auditPage([event]));
       }),
     );

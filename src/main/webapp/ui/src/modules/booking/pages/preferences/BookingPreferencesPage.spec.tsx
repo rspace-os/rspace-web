@@ -1,6 +1,7 @@
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
 import "@/modules/common/styles/index.css";
+import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
@@ -40,26 +41,20 @@ function registerHandlers() {
   );
 }
 
-function navigate(path: string) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
 registerHandlers();
 
 beforeEach(() => {
   stored = inheritedBrowserBookingPreferences;
-  window.history.replaceState({}, "", "/booking/preferences");
   registerHandlers();
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
 });
 
 describe("Booking display preferences", () => {
   test("a custom preference survives reload and remains authoritative across Booking routes", async () => {
+    const browserUrl = window.location.href;
     const first = render(<BookingPreferencesPageStory />);
     await expect.element(preferences.heading).toBeVisible();
     await preferences.start.fill("09:00");
@@ -77,14 +72,23 @@ describe("Booking display preferences", () => {
     });
 
     first.unmount();
-    render(<BookingPreferencesPageStory />);
+    const history = createMemoryHistory({ initialEntries: ["/booking/preferences"] });
+    render(<BookingPreferencesPageStory history={history} />);
     await expect.element(preferences.custom).toBeChecked();
     await expect.element(preferences.customTimezone).toHaveValue("America/New_York");
 
-    navigate("/booking/calendar?date=2026-08-17");
-    await expect.element(page.getByLabelText("Time zone: America/New_York")).toBeVisible();
+    history.push("/booking/calendar?date=2026-08-17");
+    await expect
+      .element(
+        page.getByRole("region", {
+          name: "24-hour calendar for Confocal microscope on Monday, August 17, 2026 in America/New_York",
+          exact: true,
+        }),
+      )
+      .toBeVisible();
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
     await expectNoAxeViolations();
+    expect(window.location.href).toBe(browserUrl);
   });
 });

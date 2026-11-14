@@ -18,13 +18,18 @@ import {
   getListBookingConfigurationAuditEventsQueryKey,
   getListBookingConfigurationsQueryKey,
   getSearchBookingConfigurationAccessGranteesQueryKey,
+  invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
   listBookingConfigurations,
   updateBookingConfiguration as patchBookingConfiguration,
   useDeleteManyBookingConfigurations,
   useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import {
+  getCountBookingsQueryKey,
+  getListBookingsQueryKey,
+  invalidateListBookings,
+} from "@/modules/common/api/v2/generated/bookings/bookings";
 import {
   getGetUserBookingCalendarSubscriptionQueryKey,
   getListMyBookableItemCalendarSubscriptionsQueryKey,
@@ -172,11 +177,22 @@ export function AllBookableItemsContent() {
     (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version),
     [],
   );
-  const onChanged = useCallback(() => void invalidateListBookingConfigurations(queryClient), [queryClient]);
+  const onChanged = useCallback(
+    async (configurationId?: number) => {
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient),
+        invalidateListBookings(queryClient),
+        ...(configurationId === undefined
+          ? []
+          : [invalidateGetBookingCalendarSubscription(queryClient, configurationId)]),
+      ]);
+    },
+    [queryClient],
+  );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: onChanged,
+    onSuccess: (_data, configuration) => onChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -294,6 +310,7 @@ export function AllBookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        headingClassName="text-2xl font-semibold"
         status={
           table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
             ? "error"

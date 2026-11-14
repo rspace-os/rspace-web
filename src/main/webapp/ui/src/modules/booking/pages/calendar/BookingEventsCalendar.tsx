@@ -1,26 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck2Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
-import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import { type BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
-import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
+import { type BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import {
-  getUpdateBookingMutationOptions,
-  invalidateGetBooking,
-  invalidateListBookings,
-} from "@/modules/common/api/v2/generated/bookings/bookings";
-import { type BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
+import { BookingEditorsContext } from "@/modules/booking/pages/calendar/InlineBookingEditor";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { Button } from "@/modules/common/ui/button";
-import { Skeleton } from "@/modules/common/ui/skeleton";
 import { type BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
@@ -28,12 +16,25 @@ import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarRe
 import { CalendarTimeGrid } from "./CalendarTimeGrid";
 import { type BookingCalendarResource, type CalendarLayout, type CalendarView } from "./calendarLayoutUtils";
 
+function additionalEventResourceCount(
+  events: readonly BookingListDocument[],
+  resources: readonly BookingCalendarResource[] | undefined,
+): number {
+  if (!resources) return 0;
+  const pageResourceIds = new Set(resources.map((resource) => resource.globalId));
+  const additionalResourceIds = new Set<string>();
+  for (const event of events) {
+    if (!pageResourceIds.has(event.target.globalId)) additionalResourceIds.add(event.target.globalId);
+  }
+  return additionalResourceIds.size;
+}
+
 const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
   idField: "id",
   useAsTitle: "purpose",
   defaultColumns: ["purpose"],
-  listSearchableFields: ["target.name", "purpose", "bookedBy"],
+  listSearchableFields: ["target.name", "target.globalId", "purpose", "bookedBy"],
   labels: {
     singularKey: "booking:calendar.event",
     pluralKey: "booking:calendar.title",
@@ -69,157 +70,19 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
     { name: "timezone", type: "text", labelKey: "booking:calendar.fields.timezone" },
     { name: "start", type: "dateTime", labelKey: "booking:calendar.fields.start" },
     { name: "end", type: "dateTime", labelKey: "booking:calendar.fields.end" },
-    { name: "state", type: "select", options: ["CONFIRMED", "CANCELLED"], labelKey: "booking:calendar.fields.state" },
+    {
+      name: "kind",
+      type: "select",
+      options: ["BOOKING", "MAINTENANCE"],
+      labelKey: "booking:bookableItemDetails.events.kind",
+      list: false,
+      form: false,
+    },
     { name: "canEdit", type: "boolean", labelKey: "booking:calendar.fields.editable", list: false },
     { name: "createdAt", type: "dateTime", labelKey: "booking:calendar.fields.createdAt", list: false },
     { name: "updatedAt", type: "dateTime", labelKey: "booking:calendar.fields.updatedAt", list: false },
   ],
 });
-
-export const BookingEditorsContext = React.createContext<
-  | {
-      setEditors: React.Dispatch<React.SetStateAction<Map<string, BookingListDocument>>>;
-      positions: ReadonlyMap<number, BookingListDocument>;
-    }
-  | undefined
->(undefined);
-
-export function InlineBookingEditor({
-  event: initialEvent,
-  timezone,
-  onClose,
-}: {
-  event: BookingListDocument & EditableBooking;
-  timezone: string;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation(["booking", "common"]);
-  const queryClient = useQueryClient();
-  const [event, setEvent] = React.useState(initialEvent);
-  const [formEvent, setFormEvent] = React.useState(initialEvent);
-  const anchorEvent = React.useRef(initialEvent).current;
-  const editorId = React.useId();
-  const setEditors = React.useContext(BookingEditorsContext)?.setEditors;
-  React.useEffect(() => {
-    setEditors?.((current) => new Map(current).set(editorId, anchorEvent));
-    return () =>
-      setEditors?.((current) => {
-        const next = new Map(current);
-        next.delete(editorId);
-        return next;
-      });
-  }, [editorId, anchorEvent, setEditors]);
-  const configuration = useBookableItemConfiguration(event.target.globalId);
-  const updateOptions = getUpdateBookingMutationOptions(queryClient);
-  const mutation = useMutation({
-    mutationFn: (submission: BookingFormSubmission) => {
-      const patch: BookingsUpdate = {
-        ...(submission.window.start !== event.start ? { start: submission.window.start } : {}),
-        ...(submission.window.end !== event.end ? { end: submission.window.end } : {}),
-        ...(submission.purpose !== event.purpose ? { purpose: submission.purpose } : {}),
-      };
-      return Object.keys(patch).length === 0 ? Promise.resolve(event) : updateBooking(event.id, event.version, patch);
-    },
-    onSuccess: async (updated, _variables, onMutateResult, mutationContext) => {
-      if (updated) {
-        await updateOptions.onSuccess?.(
-          updated,
-          { id: event.id, data: {}, headers: { "If-Match": `"${event.version}"` } },
-          onMutateResult,
-          mutationContext,
-        );
-      }
-      await Promise.all([
-        invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
-        invalidateGetBooking(queryClient, event.id, undefined, { cancelRefetch: false }),
-      ]);
-      onClose();
-    },
-    onError: async (error) => {
-      if (
-        isBookingOutcomeUncertain(error) ||
-        (error instanceof ApiV2ProblemError &&
-          (error.status === 412 ||
-            error.code === "errors.api.v2.booking.concurrentModification" ||
-            error.code === "errors.api.v2.forbidden" ||
-            error.code === "errors.api.v2.booking.state.transition"))
-      ) {
-        await Promise.all([invalidateListBookings(queryClient), invalidateGetBooking(queryClient, event.id)]);
-      }
-      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await invalidateListBookingConfigurations(queryClient);
-      }
-    },
-  });
-  const mutationHasError = React.useRef(false);
-  if (event !== initialEvent && !mutation.isPending) {
-    setEvent(initialEvent);
-    if (!isBookingOutcomeUncertain(mutation.error)) setFormEvent(initialEvent);
-  }
-  mutationHasError.current = mutation.isError;
-  const resetMutation = mutation.reset;
-  const clearMutationErrorOnChange = React.useCallback(() => {
-    if (!mutationHasError.current) return;
-    mutationHasError.current = false;
-    resetMutation();
-  }, [resetMutation]);
-
-  if (configuration.isPending) {
-    return (
-      <div className="space-y-4 border-border border-t p-4" aria-busy="true">
-        <p role="status" className="sr-only">
-          {t("bookings.loadingConfiguration")}
-        </p>
-        <Skeleton aria-hidden="true" className="h-12 w-full" />
-        <Skeleton aria-hidden="true" className="h-24 w-full" />
-      </div>
-    );
-  }
-  if (configuration.isError || !configuration.data) {
-    return (
-      <div className="space-y-3 border-border border-t p-4">
-        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
-            {t("common:actions.retry")}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {t("bookings.form.cancel")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
-      <BookingForm
-        key={formEvent.version}
-        mode="edit"
-        density="compact"
-        displayTimezone={timezone}
-        booking={formEvent}
-        configuration={configuration.data}
-        pending={mutation.isPending}
-        error={
-          mutation.error
-            ? t(
-                isBookingOutcomeUncertain(mutation.error)
-                  ? "bookings.errors.outcomeUncertain"
-                  : bookingProblemKey(mutation.error),
-              )
-            : undefined
-        }
-        submissionBlocked={isBookingOverlapError(mutation.error)}
-        onStateChange={clearMutationErrorOnChange}
-        onCancel={() => {
-          mutation.reset();
-          onClose();
-        }}
-        onSubmit={(submission) => mutation.mutateAsync(submission)}
-      />
-    </div>
-  );
-}
 
 export function BookingEventsCalendar({
   date,
@@ -241,6 +104,8 @@ export function BookingEventsCalendar({
   creationAction,
   resourceConfigurations,
   resourceTableProps,
+  searchControl,
+  onEventScopeChange,
   creationDisabled = false,
   onResourceRangeSelect,
 }: {
@@ -265,6 +130,8 @@ export function BookingEventsCalendar({
   creationAction?: React.ReactNode;
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
+  searchControl?: { value: string; onChange: (search: string) => void };
+  onEventScopeChange?: (isFiltered: boolean) => void;
   creationDisabled?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -299,6 +166,26 @@ export function BookingEventsCalendar({
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
   });
+  const eventFiltering = table.tableProps.features.filtering;
+  const eventSearch = searchControl?.value ?? (eventFiltering !== false ? eventFiltering.value.search : "");
+  const eventScopeIsFiltered =
+    mineOnly || (eventFiltering !== false && (eventSearch.trim() !== "" || eventFiltering.value.expression !== null));
+  React.useEffect(() => {
+    onEventScopeChange?.(eventScopeIsFiltered);
+  }, [eventScopeIsFiltered, onEventScopeChange]);
+  const calendarFeatures =
+    !searchControl || eventFiltering === false
+      ? table.tableProps.features
+      : {
+          ...table.tableProps.features,
+          filtering: {
+            value: { ...eventFiltering.value, search: searchControl.value },
+            onChange: (filters: typeof eventFiltering.value) => {
+              eventFiltering.onChange(filters);
+              searchControl.onChange(filters.search);
+            },
+          },
+        };
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
       {isLoading && !isError && (
@@ -317,6 +204,9 @@ export function BookingEventsCalendar({
       {!isError && (
         <TableList
           {...table.tableProps}
+          features={calendarFeatures}
+          debounceSearch={resourceTableProps !== undefined}
+          headingClassName="text-2xl font-semibold"
           createAction={creationAction}
           filterButtons={{
             legend: t("calendar.quickFilters.legend"),
@@ -367,33 +257,53 @@ export function BookingEventsCalendar({
                 (resourceTableProps ? (
                   <TableList
                     {...resourceTableProps}
+                    features={{
+                      ...resourceTableProps.features,
+                      filtering: false,
+                      pagination:
+                        eventScopeIsFiltered && resourceTableProps.rows.length === 0
+                          ? false
+                          : resourceTableProps.features.pagination,
+                    }}
                     status={resourceTableProps.status === "loading" ? "idle" : resourceTableProps.status}
-                    renderRowsWhenEmpty={resourceTableProps.status === "loading"}
+                    renderRowsWhenEmpty={
+                      resourceTableProps.status === "loading" || (eventScopeIsFiltered && filteredEvents.length > 0)
+                    }
                     hideHeader
                     // The resource fetch honours only the search term, so a filter panel here
                     // would build an expression nothing reads.
                     hideFilterPanel
                     variant="transparent"
-                    renderRows={() =>
-                      resourceTableProps.status === "loading" ? (
-                        <ResourceScheduleSkeleton period={{ date, view }} />
-                      ) : (
-                        <CalendarResourceSchedule
-                          date={date}
-                          view={view}
-                          events={filteredEvents}
-                          resources={resources}
-                          timezone={timezone}
-                          today={todayValue}
-                          availabilityStartMinute={availabilityStartMinute}
-                          availabilityEndMinute={availabilityEndMinute}
-                          resourceConfigurations={resourceConfigurations}
-                          creationDisabled={creationDisabled}
-                          isLoading={isLoading}
-                          onResourceRangeSelect={onResourceRangeSelect}
-                        />
-                      )
-                    }
+                    renderRows={() => {
+                      if (resourceTableProps.status === "loading") {
+                        return <ResourceScheduleSkeleton period={{ date, view }} />;
+                      }
+                      const extraEventResourceCount = additionalEventResourceCount(filteredEvents, resources);
+                      return (
+                        <>
+                          {extraEventResourceCount > 0 && (
+                            <p className="border-b px-3 py-2 text-sm text-muted-foreground">
+                              {t("calendar.additionalEventResources", { count: extraEventResourceCount })}
+                            </p>
+                          )}
+                          <CalendarResourceSchedule
+                            date={date}
+                            view={view}
+                            events={filteredEvents}
+                            resources={resources}
+                            timezone={timezone}
+                            today={todayValue}
+                            availabilityStartMinute={availabilityStartMinute}
+                            availabilityEndMinute={availabilityEndMinute}
+                            resourceConfigurations={resourceConfigurations}
+                            creationDisabled={creationDisabled}
+                            includeEventResources={eventScopeIsFiltered}
+                            isLoading={isLoading}
+                            onResourceRangeSelect={onResourceRangeSelect}
+                          />
+                        </>
+                      );
+                    }}
                   />
                 ) : (
                   <CalendarResourceSchedule
@@ -407,6 +317,7 @@ export function BookingEventsCalendar({
                     availabilityEndMinute={availabilityEndMinute}
                     resourceConfigurations={resourceConfigurations}
                     creationDisabled={creationDisabled}
+                    includeEventResources={eventScopeIsFiltered}
                     isLoading={isLoading}
                     onResourceRangeSelect={onResourceRangeSelect}
                   />
