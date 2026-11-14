@@ -14,6 +14,7 @@ import { BookingItemInformationCard } from "@/modules/booking/creation/BookingIt
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking } from "@/modules/booking/domain/booking";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
   ALWAYS_OPEN,
@@ -21,9 +22,12 @@ import {
   type OpeningSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
+  type BookingTimeFormat,
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   bookingLocale,
   currentWallClock,
+  formatWallClockTime,
   isPlainDate,
   sameDraft,
   sameTimeZone,
@@ -33,6 +37,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import type { BookingsReadKind } from "@/modules/common/api/v2/generated/models/bookingsReadKind";
+
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import {
@@ -65,6 +70,7 @@ function openingHoursSummary(
   target: BookableItemOption,
   date: string,
   displayTimezone: string,
+  timeFormat: BookingTimeFormat,
   t: TFunction<"booking">,
 ): string {
   const first = target.openingHours[0];
@@ -74,14 +80,16 @@ function openingHoursSummary(
     target.openingHours.every((entry) => entry.start === first.start && entry.end === first.end);
   if (uniform && first.start === "00:00" && first.end === "24:00") return t("bookings.form.openAllDay");
   if (uniform && sameTimeZone(target.timezone, displayTimezone)) {
-    // Read-outs print a closing midnight as 00:00, as formatOpeningRange does.
-    const end = first.end === "24:00" ? "00:00" : first.end;
-    return t("bookings.form.openingHours", { start: first.start, end });
+    const locale = bookingDateTimeLocale(timeFormat);
+    return t("bookings.form.openingHours", {
+      start: formatWallClockTime(first.start, locale),
+      end: formatWallClockTime(first.end, locale),
+    });
   }
   if (coversInterval(target, target.timezone, zonedDayBounds(date, displayTimezone))) {
     return t("bookings.form.openAllDayOnDate");
   }
-  const windows = openingWindowsOnDate(date, displayTimezone, target);
+  const windows = openingWindowsOnDate(date, displayTimezone, target, timeFormat);
   if (windows.length === 0) return t("bookings.form.closedOnDate");
   return t("bookings.form.openingWindowsOnDate", {
     hours: formatList(
@@ -242,6 +250,7 @@ function convertDraft(draft: BookingWindowDraft, from: EndpointTimezones, to: En
 }
 export function BookingForm(props: BookingFormProps) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const editing = props.mode === "edit";
   const fixedTarget = props.mode === "edit" ? props.configuration : props.lockTarget ? props.initialTarget : undefined;
   const initialTarget = props.mode === "add" ? props.initialTarget : undefined;
@@ -513,6 +522,7 @@ export function BookingForm(props: BookingFormProps) {
                   ? draft.startDate
                   : currentWallClock(new Date().toISOString(), formTimezone).date,
                 formTimezone,
+                timeFormat,
                 t,
               )}
             </p>

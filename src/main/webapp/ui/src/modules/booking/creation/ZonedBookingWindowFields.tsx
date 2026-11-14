@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
-import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingTimeZoneOptions, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   type IncrementSettings,
   type IncrementViolation,
@@ -14,6 +14,7 @@ import {
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   formatPlainDate,
   formatWallClockTime,
   sameDraft,
@@ -22,7 +23,6 @@ import {
   wallClockEndpointFromInstant,
   wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
-import i18n from "@/modules/common/i18n";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
@@ -94,6 +94,7 @@ export function ZonedBookingWindowFields({
   onTimezoneChange?: (name: "start" | "end", timezone: string) => void;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const fieldId = `booking-window-${useId()}`;
   const windowErrorId = `${fieldId}-errors`;
   const resolvedDisplayTimezone = displayTimezone ?? "UTC";
@@ -133,7 +134,7 @@ export function ZonedBookingWindowFields({
     policyInvalid,
   } = result;
   const increment = formatIncrement({ slotGranularityMinutes, incrementUnit }, t);
-  const locale = i18n.resolvedLanguage ?? i18n.language ?? "en-US";
+  const locale = bookingDateTimeLocale(timeFormat);
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
   const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
     {},
@@ -451,7 +452,10 @@ export function ZonedBookingWindowFields({
   // tells the repeated hour's two occurrences apart.
   const instrumentTime = (instant: string, enteredDate: string) => {
     const local = Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone);
-    let time = formatWallClockTime(local.toPlainTime().toString({ smallestUnit: "minute" }));
+    let time = formatWallClockTime(
+      local.toPlainTime().toString({ smallestUnit: "minute" }),
+      bookingDateTimeLocale(timeFormat),
+    );
     if (local.hoursInDay !== 24) time += ` (UTC${local.offset})`;
     const date = local.toPlainDate().toString();
     return date === enteredDate ? time : `${formatPlainDate(date)} ${time}`;

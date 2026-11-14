@@ -110,7 +110,13 @@ export function BookingEventContent() {
   };
   const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");
-  const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
+  const period = formatAgendaPeriod(
+    document.start,
+    document.end,
+    preferences.timeZone,
+    undefined,
+    preferences.timeFormat,
+  );
 
   return (
     <main className={detailPageClassName}>
@@ -176,7 +182,13 @@ export function BookingEventContent() {
               bookingId={document.id}
               bookingVersion={document.version}
               itemName={eventName}
-              period={formatBookingPeriod(document.start, document.end, preferences.timeZone)}
+              period={formatBookingPeriod(
+                document.start,
+                document.end,
+                preferences.timeZone,
+                undefined,
+                preferences.timeFormat,
+              )}
               eventKind={document.kind}
               onDeleted={() => {
                 requestAnimationFrame(() => stateBadgeRef.current?.focus());

@@ -69,6 +69,27 @@ class BookingDisplaySettingsTest {
     assertNull(merged.customTimezone());
   }
 
+  @Test
+  void timeFormatDefaultsToAutomaticAndPatchesOnlyWhenGiven() {
+    BookingDisplaySettings current =
+        new BookingDisplaySettings(
+            "09:00", "17:00", BookingTimezoneMode.BROWSER, null, BookingTimeFormat.H12);
+
+    assertEquals(
+        BookingTimeFormat.AUTOMATIC,
+        new BookingDisplaySettings("09:00", "17:00", BookingTimezoneMode.BROWSER, null)
+            .timeFormat());
+    assertEquals(BookingTimeFormat.AUTOMATIC, BookingDisplaySettings.defaults().timeFormat());
+    assertEquals(
+        BookingTimeFormat.H12,
+        new BookingDisplaySettings.Patch(null, "18:00", null, null).merge(current).timeFormat());
+    assertEquals(
+        BookingTimeFormat.H24,
+        new BookingDisplaySettings.Patch(null, null, null, null, BookingTimeFormat.H24)
+            .merge(current)
+            .timeFormat());
+  }
+
   private static BookingDisplaySettings settings(String start, String end) {
     return new BookingDisplaySettings(start, end, BookingTimezoneMode.BROWSER, null);
   }

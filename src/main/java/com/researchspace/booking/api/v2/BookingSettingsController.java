@@ -12,6 +12,7 @@ import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,6 +68,7 @@ public final class BookingSettingsController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       @Schema(nullable = true) String customTimezone,
+      BookingTimeFormat timeFormat,
       String institutionTimezone) {
 
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
@@ -82,6 +84,7 @@ public final class BookingSettingsController {
           defaults.getAvailabilityWindowEnd(),
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
+          defaults.getTimeFormat(),
           institutionClock.getZone().getId());
     }
   }
@@ -98,6 +101,7 @@ public final class BookingSettingsController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       @Schema(nullable = true) String customTimezone,
+      BookingTimeFormat timeFormat,
       String institutionTimezone,
       long configurationVersion) {
 
@@ -115,6 +119,7 @@ public final class BookingSettingsController {
           defaults.getAvailabilityWindowEnd(),
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
+          defaults.getTimeFormat(),
           institutionClock.getZone().getId(),
           defaults.getConfigurationVersion());
     }
@@ -195,7 +200,11 @@ public final class BookingSettingsController {
           @Schema(
               types = {"string", "null"},
               nullable = true)
-          String customTimezone) {
+          String customTimezone,
+      @Schema(
+              types = {"string", "null"},
+              nullable = true)
+          BookingTimeFormat timeFormat) {
 
     @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
     public boolean isCustomTimezoneValid() {
@@ -238,7 +247,7 @@ public final class BookingSettingsController {
 
     BookingDisplaySettings.Patch displayPatch() {
       return new BookingDisplaySettings.Patch(
-          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone);
+          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, timeFormat);
     }
   }
 

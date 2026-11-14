@@ -5,6 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
+import type { BookingDisplayPreferencesTimeFormat } from './bookingDisplayPreferencesTimeFormat.ts';
 import type { BookingDisplayPreferencesTimezoneMode } from './bookingDisplayPreferencesTimezoneMode.ts';
 
 export interface BookingDisplayPreferences {
@@ -16,5 +17,6 @@ export interface BookingDisplayPreferences {
   readonly institutionTimezone?: string;
   /** Whether these values come from an explicit user override. */
   readonly overridden?: boolean;
+  timeFormat?: BookingDisplayPreferencesTimeFormat;
   timezoneMode?: BookingDisplayPreferencesTimezoneMode;
 }

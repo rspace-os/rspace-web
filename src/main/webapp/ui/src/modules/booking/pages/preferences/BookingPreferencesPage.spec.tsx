@@ -27,9 +27,11 @@ function registerHandlers() {
     http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
       "/api/v2/users/me/booking-preferences",
       async ({ request }) => {
+        const input = await request.json();
         stored = {
           ...inheritedBrowserBookingPreferences,
-          ...(await request.json()),
+          ...input,
+          timeFormat: input.timeFormat ?? "AUTOMATIC",
           overridden: true,
         };
         return HttpResponse.json(stored);

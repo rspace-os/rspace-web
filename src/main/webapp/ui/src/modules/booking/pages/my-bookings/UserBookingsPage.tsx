@@ -115,7 +115,10 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const { t: commonT } = useTranslation("common");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
+  const listConfig = useMemo(
+    () => bookingListConfig(preferences.timeZone, preferences.timeFormat),
+    [preferences.timeFormat, preferences.timeZone],
+  );
   const asOf = useAlignedMinute();
   const asOfDate = useMemo(() => new Date(asOf), [asOf]);
   const baseFilter = useMemo<FilterExpression<BookingListDocument>>(
@@ -226,6 +229,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         <BookingRowActions
           row={row}
           timeZone={preferences.timeZone}
+          timeFormat={preferences.timeFormat}
           onCancelled={(cancelled) => {
             // The dialog has already refetched the bookings; another refetch would re-mount the rows and drop focus.
             setCancelAnnouncement(

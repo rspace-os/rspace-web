@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createContext, createElement, type ReactNode, useContext } from "react";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
 import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
@@ -12,15 +13,35 @@ import {
 } from "@/modules/common/api/v2/generated/users/users";
 import { requireBookingValue } from "./bookingMapping";
 import { validOpeningHours } from "./bookingOpeningHours";
+import type { BookingTimeFormat } from "./bookingTime";
 
-export type BookingDisplayPreferencesDocument = Required<BookingDisplayPreferences>;
+export type BookingDisplayPreferencesDocument = Required<Omit<BookingDisplayPreferences, "timeFormat">> &
+  Pick<BookingDisplayPreferences, "timeFormat">;
 export type ResolvedBookingDisplayPreferences = {
   availabilityWindow: { start: string; end: string; startMinute: number; endMinute: number };
   timeZone: string;
   timezoneMode: BookingDisplayPreferencesTimezoneMode;
+  timeFormat: BookingTimeFormat;
   institutionTimezone: string;
   overridden: boolean;
 };
+
+const BookingTimeFormatContext = createContext<BookingTimeFormat>("AUTOMATIC");
+
+/** The current route's display choice; standalone components use Automatic when no provider is present. */
+export function useBookingTimeFormat(): BookingTimeFormat {
+  return useContext(BookingTimeFormatContext);
+}
+
+export function BookingTimeFormatProvider({
+  timeFormat,
+  children,
+}: {
+  timeFormat: BookingTimeFormat;
+  children: ReactNode;
+}) {
+  return createElement(BookingTimeFormatContext.Provider, { value: timeFormat }, children);
+}
 
 export function hasValidAvailabilityWindow({
   availabilityWindowStart,
@@ -59,6 +80,7 @@ export function mapBookingDisplayPreferences(input: BookingDisplayPreferences): 
     availabilityWindowEnd: requireBookingValue(input.availabilityWindowEnd, "availabilityWindowEnd"),
     timezoneMode: requireBookingValue(input.timezoneMode, "timezoneMode"),
     customTimezone: input.customTimezone ?? null,
+    timeFormat: input.timeFormat ?? "AUTOMATIC",
     institutionTimezone: requireBookingValue(input.institutionTimezone, "institutionTimezone"),
     overridden: requireBookingValue(input.overridden, "overridden"),
   };
@@ -128,13 +150,20 @@ export function resolveBookingDisplayPreferences(
     },
     timeZone,
     timezoneMode: document.timezoneMode,
+    timeFormat: document.timeFormat ?? "AUTOMATIC",
     institutionTimezone: document.institutionTimezone,
     overridden: document.overridden,
   };
 }
 
 export function useBookingDisplayPreferences(): ResolvedBookingDisplayPreferences {
-  return resolveBookingDisplayPreferences(useSuspenseQuery(bookingDisplayPreferencesQueryOptions()).data);
+  return resolveBookingDisplayPreferences(
+    useSuspenseQuery(
+      getGetMyBookingPreferencesSuspenseQueryOptions<BookingDisplayPreferencesDocument>({
+        query: { select: mapBookingDisplayPreferences, staleTime: Infinity },
+      }),
+    ).data,
+  );
 }
 
 export function useReplaceBookingDisplayPreferences() {

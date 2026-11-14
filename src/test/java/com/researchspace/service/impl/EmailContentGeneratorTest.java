@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mockStatic;
 
 import com.researchspace.booking.service.BookingNotificationMessageFormatter;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.EmailContent;
@@ -151,13 +152,14 @@ class EmailContentGeneratorTest {
     var data = new BookingNotificationData();
     data.setInstrumentName("Microscope <script>");
     data.setEmailDisplayTimezone("Asia/Tokyo");
+    data.setEmailTimeFormat(BookingTimeFormat.H24);
     data.setBookingId("42");
     data.setInstrumentGlobalIdentifier("IN12");
     data.setStartTime("2026-01-02T03:04:05Z");
     data.setEndTime("2026-01-02T04:04:05Z");
     notification.setNotificationMessage(
         new BookingNotificationMessageFormatter(new JsonMessageSource(), "https://rspace.example/")
-            .formatForEmail(type, data, ZoneId.of("Asia/Tokyo"), Locale.US));
+            .formatForEmail(type, data, ZoneId.of("Asia/Tokyo"), Locale.US, BookingTimeFormat.H24));
     notification.setNotificationDataObject(data);
     var fixedNow = Instant.parse("2026-01-15T21:17:00Z");
     EmailContent content;
@@ -169,7 +171,9 @@ class EmailContentGeneratorTest {
     }
     String header =
         content.htmlContent().split("https://rspace.example/booking/calendar/bookings/42", 2)[0];
-    assertThat(header).contains("Jan 16, 2026", "6:17 AM", "Asia/Tokyo, UTC+09:00");
+    assertThat(header)
+        .contains("Jan 16, 2026", "06:17", "Asia/Tokyo, UTC+09:00")
+        .doesNotContain(" AM", " PM");
     assertEquals(subject, content.subject());
     assertThat(content.htmlContent())
         .contains("Asia/Tokyo", "Actor &lt;script&gt;", "Microscope &lt;script&gt;")

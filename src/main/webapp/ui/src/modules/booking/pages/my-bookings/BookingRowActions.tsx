@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingCalendarFileDownload } from "@/modules/booking/components/BookingCalendarFileButton";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/config";
 import { buttonVariants } from "@/modules/common/ui/button";
@@ -51,11 +52,13 @@ const iconButtonClassName = cn(buttonVariants({ size: "icon-lg", variant: "outli
 export function BookingRowActions({
   row,
   timeZone,
+  timeFormat = "AUTOMATIC",
   onCancelled,
 }: {
   row: BookingRow;
 
   timeZone: string;
+  timeFormat?: BookingTimeFormat;
   onCancelled: (cancelled: CancelledBookingRow) => void | Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
@@ -64,9 +67,10 @@ export function BookingRowActions({
   const positionRef = useRef<BookingRowPosition>(undefined);
   const [cancelOpen, setCancelOpen] = useState(false);
   const itemName = row.target?.value.name ?? t("common:values.unknownItem");
-  const period = formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone);
+  const period = formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone, undefined, timeFormat);
   // The cancel confirmation and its announcement name the date too, since rows on other days can share the times.
-  const datedPeriod = row.start && row.end ? formatBookingPeriod(row.start, row.end, timeZone) : "";
+  const datedPeriod =
+    row.start && row.end ? formatBookingPeriod(row.start, row.end, timeZone, undefined, timeFormat) : "";
   const calendarFile = useBookingCalendarFileDownload({ bookingId: row.id, itemName, period });
   const canDownload = row.canViewConfiguration && row.target !== null && row.state === "CONFIRMED";
   const itemCalendarLabel = t("myBookings.actions.itemCalendar");
