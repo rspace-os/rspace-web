@@ -6,15 +6,18 @@ import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
+import com.researchspace.booking.service.BookingNotificationSubscriptionConflictException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -77,5 +80,15 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
     return problem(
         HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingCalendar.subscriptionConflict");
+  }
+
+  @ExceptionHandler(BookingNotificationSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingNotificationSubscriptionConflict(
+      HttpServletRequest request) {
+    return problem(
+        request.getHeader(HttpHeaders.IF_MATCH) == null
+            ? HttpStatus.CONFLICT
+            : HttpStatus.PRECONDITION_FAILED,
+        "errors.api.v2.bookingNotifications.subscriptionConflict");
   }
 }

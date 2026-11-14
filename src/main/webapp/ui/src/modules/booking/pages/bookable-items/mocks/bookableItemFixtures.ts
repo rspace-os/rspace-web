@@ -15,6 +15,7 @@ export const ownerBookingAccess = {
     canCreateBlockout: true,
     canSubscribeCalendar: true,
     canLeaveConfiguration: false,
+    canManageNotificationSubscription: true,
   },
   ownerHealth: { hasEffectiveOwner: true },
 } as const;
@@ -34,6 +35,7 @@ export const bookerBookingAccess = {
     canCreateBlockout: false,
     canSubscribeCalendar: true,
     canLeaveConfiguration: false,
+    canManageNotificationSubscription: false,
   },
 } as const;
 

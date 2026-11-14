@@ -17,6 +17,7 @@ import {
   getGetBookingCalendarSubscriptionQueryKey,
   getGetBookingConfigurationAccessQueryKey,
   getGetBookingConfigurationQueryKey,
+  getGetMyBookingNotificationSubscriptionQueryKey,
   getListBookingConfigurationAuditEventsQueryKey,
   getListBookingConfigurationsQueryKey,
   getSearchBookingConfigurationAccessGranteesQueryKey,
@@ -297,6 +298,7 @@ async function invalidateBookableItemRecords(
             queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getListBookingConfigurationAuditEventsQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getGetBookingCalendarSubscriptionQueryKey(id) }),
+            queryClient.invalidateQueries({ queryKey: getGetMyBookingNotificationSubscriptionQueryKey(id) }),
           ],
     ),
     ...(action === "archive"

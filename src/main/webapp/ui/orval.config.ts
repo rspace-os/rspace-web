@@ -8,6 +8,8 @@ const spec: Document = JSON.parse(
 );
 // Historical names are harmless at later layers: only operations present in the spec become overrides.
 const headersOperations = new Set([
+  "getMyBookingNotificationSubscription",
+  "replaceMyBookingNotificationSubscription",
   "createOrReplaceBookingCalendarSubscription",
   "createOrReplaceUserBookingCalendarSubscription",
   "getBookingCalendarSubscription",

@@ -334,6 +334,18 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
         endExclusive: "2026-08-26T00:00:00Z",
       });
     }),
+    http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+      HttpResponse.json(
+        {
+          configurationId: 7,
+          enabled: false,
+          createdEnabled: true,
+          cancelledEnabled: true,
+          emailEnabled: false,
+        },
+        { headers: { ETag: '"vabsent-000"' } },
+      ),
+    ),
     http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
       HttpResponse.json<BookingCalendarSubscriptionStatus>(
         { active: false, updatedAt: null, subscriptionUrl: null },

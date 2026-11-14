@@ -29,6 +29,7 @@ import com.researchspace.testutils.TestFactory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -333,6 +334,26 @@ class FeatureFlagManagerImplTest {
 
     assertTrue(featureFlagManager.isFeatureFlagEnabled(FLAG, user));
     assertFalse(featureFlagManager.isFeatureFlagEnabled(FLAG, (User) null));
+  }
+
+  @Test
+  void currentReadUsesPersistedRowsInsteadOfTheRuntimeBaseline() {
+    initialiseRuntime(Map.of(FLAG, true), false);
+    User user = TestFactory.createAnyUser("current-flag");
+    user.setId(7L);
+    when(featureFlagDao.getCurrentBaseline(FLAG)).thenReturn(Optional.of(false));
+    when(featureFlagDao.getCurrentOverride(FLAG, user.getId())).thenReturn(Optional.empty());
+    assertFalse(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, user));
+    when(featureFlagDao.getCurrentOverride(FLAG, user.getId())).thenReturn(Optional.of(true));
+    assertTrue(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, user));
+  }
+
+  @Test
+  void currentReadPreservesForcedValueWithoutReadingPersistedRows() {
+    initialiseRuntime(Map.of(FLAG, false), true);
+    clearInvocations(featureFlagDao);
+    assertTrue(featureFlagManager.isFeatureFlagEnabledWithCurrentReads(FLAG, null));
+    verifyNoInteractions(featureFlagDao);
   }
 
   @Test
