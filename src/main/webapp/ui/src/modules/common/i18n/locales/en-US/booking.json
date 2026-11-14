@@ -25,6 +25,41 @@
       }
     }
   },
+  "allBookableItems": {
+    "actions": {
+      "access": "Access",
+      "book": "Book",
+      "settings": "Settings",
+      "viewDetails": "View details",
+      "nextDay": "Next day",
+      "previousDay": "Previous day",
+      "today": "Today"
+    },
+    "fields": {
+      "actions": "Actions"
+    },
+    "filters": {
+      "location": "Location",
+      "locationOption": "{name} ({globalId})"
+    },
+    "plural": "All Bookable Items",
+    "singular": "Bookable item",
+    "title": "All Bookable Items",
+    "toolbar": "All Bookable Items controls",
+    "date": "Date",
+    "dateControls": "Availability date controls",
+    "dateNavigation": "Availability date navigation",
+    "jumpToDate": "Jump to date",
+    "quickFilters": {
+      "availableNow": "Available now",
+      "error": "Could not find available items.",
+      "freeLaterToday": "Free later today",
+      "legend": "Quick filters",
+      "loading": "Finding bookable items…",
+      "retry": "Retry",
+      "scope": "Availability uses the selected display date and timezone."
+    }
+  },
   "availabilityBar": {
     "current": {
       "available": "Available",
@@ -394,6 +429,8 @@
     "editTitle": "Edit Booking",
     "errors": {
       "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
+      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
+      "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
       "bufferUnknown": "Too close to another booking.",
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
@@ -423,9 +460,7 @@
       "overlap": "This period overlaps another booking.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
-      "windowRequired": "Enter a valid start and end.",
-      "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
-      "bufferBefore": "Too close to another booking. This item needs {before} before each booking."
+      "windowRequired": "Enter a valid start and end."
     },
     "form": {
       "cancel": "Cancel",
@@ -726,6 +761,7 @@
   "sidebar": {
     "addBooking": "Add Booking",
     "administration": "Administration",
+    "allItems": "All items",
     "calendar": "Calendar",
     "label": "Booking",
     "myBookings": "My Bookings",

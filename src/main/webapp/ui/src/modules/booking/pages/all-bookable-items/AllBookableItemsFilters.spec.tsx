@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { storyUser } from "../bookable-items/BookableItemPage.story";
 import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { BookableItemsStory } from "./AllBookableItemsPage.story";
+import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
 const pageObj = new AllBookableItemsPage();
@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe("the bookable items table", () => {
   test("reaches the instrument's custom fields through the field dropdown only", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openFilters();
 
@@ -49,7 +49,7 @@ describe("the bookable items table", () => {
   });
 
   test("filters on a text custom field with a value the user types", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -70,7 +70,7 @@ describe("the bookable items table", () => {
   });
 
   test("keeps a value picker for a custom field that publishes its own options", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -89,7 +89,7 @@ describe("the bookable items table", () => {
   });
 
   test("offers a custom field as a column from the rule that filters on it", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -108,7 +108,7 @@ describe("the bookable items table", () => {
   });
 
   test("lists target fields as optional hidden columns", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openColumns();
 
@@ -119,7 +119,7 @@ describe("the bookable items table", () => {
   });
 
   test("offers a target field that cannot be filtered on as a column only", async () => {
-    render(<BookableItemsStory />);
+    render(<AllBookableItemsStory />);
 
     await pageObj.openColumns();
     await expect.element(pageObj.hiddenGlobalId).toBeVisible();

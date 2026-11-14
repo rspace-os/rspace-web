@@ -42,7 +42,8 @@ function mapParentContainer(input: InstrumentsRead["parentContainer"]) {
     },
   };
 }
-type MappedInstrument = Omit<InstrumentsRead, "name" | "deleted" | "parentContainer"> & {
+type MappedInstrument = Omit<Partial<InstrumentsRead>, "id" | "name" | "deleted" | "parentContainer"> & {
+  id: number;
   name: string;
   deleted: boolean;
   parentContainer?: ReturnType<typeof mapParentContainer>;
@@ -92,7 +93,7 @@ export function mapBookingSummary(input: BookingsRead) {
 }
 
 function mapPrivacy(input: BookingsRead) {
-  const management: { createdAt: string; updatedAt: string } & Pick<BookingsRead, "createdBy"> = {
+  const management: { createdAt: string; updatedAt: string; createdBy?: string | null } = {
     createdAt: required(input.createdAt, "createdAt"),
     updatedAt: required(input.updatedAt, "updatedAt"),
     createdBy: input.createdBy,

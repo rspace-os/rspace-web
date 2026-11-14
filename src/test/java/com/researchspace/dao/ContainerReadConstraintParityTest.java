@@ -7,6 +7,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
@@ -27,6 +28,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.inventory.ContainerReadAccess;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,13 +37,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class ContainerReadConstraintParityTest extends SpringTransactionalTest {
 
+  private final ApiV2ResourceCatalog catalog;
   private final InstrumentDao instrumentDao;
   private final CriteriaBuilderFactory criteria;
   private final ContainerReadAccess access;
 
   @Autowired
   ContainerReadConstraintParityTest(
-      InstrumentDao instrumentDao, CriteriaBuilderFactory criteria, ContainerReadAccess access) {
+      InstrumentDao instrumentDao,
+      CriteriaBuilderFactory criteria,
+      ContainerReadAccess access,
+      ApiV2ResourceCatalog catalog) {
+    this.catalog = catalog;
     this.instrumentDao = instrumentDao;
     this.criteria = criteria;
     this.access = access;
@@ -205,6 +212,13 @@ class ContainerReadConstraintParityTest extends SpringTransactionalTest {
             .map(Container::getId)
             .collect(Collectors.toSet());
     assertEquals(containerDao.getReadableActiveContainerIds(ids, user), actual);
+    assertEquals(
+        actual,
+        catalog
+            .find("containers")
+            .orElseThrow()
+            .resolveReadable(new HashSet<Object>(ids), user)
+            .keySet());
     return actual;
   }
 

@@ -65,6 +65,7 @@
       "value" : "<value>",
       "globalId" : "<globalId>"
     },
+    "location" : null,
     "createdBy" : null,
     "updatedBy" : null
   } ],
@@ -154,6 +155,7 @@
       },
       "globalId" : "<globalId>"
     },
+    "location" : null,
     "createdBy" : null,
     "updatedBy" : null
   } ],
@@ -199,6 +201,11 @@
       "relationTo" : "instruments",
       "value" : "<value>",
       "globalId" : "<globalId>"
+    },
+    "location" : {
+      "relationTo" : "containers",
+      "value" : "<value>",
+      "globalId" : "<globalId>"
     }
   } ],
   "bookings-0-false-true" : [ ],
@@ -241,6 +248,17 @@
           "value" : "<value>",
           "globalId" : "<globalId>"
         }
+      },
+      "globalId" : "<globalId>"
+    },
+    "location" : {
+      "relationTo" : "containers",
+      "value" : {
+        "id" : "<id>",
+        "globalId" : "<globalId>",
+        "name" : "WB <user>",
+        "containerType" : "WORKBENCH",
+        "deleted" : false
       },
       "globalId" : "<globalId>"
     }

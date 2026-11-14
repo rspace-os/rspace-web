@@ -33,6 +33,7 @@ import type {
 } from '@tanstack/react-query';
 
 import {
+  getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey
 } from '../booking-catalogue/booking-catalogue.ts';
@@ -189,7 +190,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof deleteManyBookingConfigurations>>, variables: DeleteManyBookingConfigurationsMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -489,7 +490,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof updateManyBookingConfigurations>>, variables: UpdateManyBookingConfigurationsMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -571,7 +572,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof createBookingConfiguration>>, variables: CreateBookingConfigurationMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -653,7 +654,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof createManyBookingConfigurations>>, variables: CreateManyBookingConfigurationsMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -944,7 +945,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof deleteBookingConfiguration>>, variables: DeleteBookingConfigurationMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getListBookingsQueryKey(), getCountBookingsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getListBookingsQueryKey(), getCountBookingsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1252,7 +1253,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof updateBookingConfiguration>>, variables: UpdateBookingConfigurationMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getListBookingsQueryKey(), getCountBookingsQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getListBookingsQueryKey(), getCountBookingsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey(), getSearchBookingConfigurationTargetsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1502,7 +1503,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof replaceBookingConfigurationAccess>>, variables: ReplaceBookingConfigurationAccessMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1768,7 +1769,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   const onSuccess = (data: Awaited<ReturnType<typeof leaveBookingConfigurationAccess>>, variables: LeaveBookingConfigurationAccessMutationVariables, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
+        queryClient.invalidateQueries({ predicate: (query) => [getListBookingConfigurationsQueryKey(), getCountBookingConfigurationsQueryKey(), getGetBookingConfigurationQueryKey(variables.id), getGetBookingConfigurationAccessQueryKey(variables.id), getListBookingConfigurationAuditEventsQueryKey(variables.id), getSearchBookingCatalogueQueryKey(), getSearchBookingCatalogueLocationsQueryKey(), getCountBookingCatalogueAvailabilityQueryKey()].some((queryKey) => matchQuery({ queryKey }, query)) });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
