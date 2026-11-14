@@ -13,7 +13,9 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.2.1</version>
+    <!-- Pinned to the unreleased commit for maven-enforcer-plugin 3.7.0; switch to 3.2.2 once
+         rspace-os/rspace-parent tags it. -->
+    <version>1e627a6c07</version>
   </parent>
 
   <repositories>
