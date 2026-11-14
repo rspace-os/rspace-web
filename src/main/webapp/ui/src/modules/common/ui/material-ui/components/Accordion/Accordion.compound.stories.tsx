@@ -9,6 +9,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Surfaces/Accordion/Composition",
+  tags: ["autodocs"],
   component: Accordion,
   parameters: { a11y: { test: "error" } },
   argTypes: { disabled: { control: "boolean" }, disableGutters: { control: "boolean" }, children: { control: false } },

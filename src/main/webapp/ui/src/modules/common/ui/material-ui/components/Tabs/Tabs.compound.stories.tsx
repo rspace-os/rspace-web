@@ -22,6 +22,7 @@ function ScrollButton(props: TabScrollButtonProps) {
 
 const meta = {
   title: "Material UI/Navigation/Tabs/Composition",
+  tags: ["autodocs"],
   component: Tabs,
   parameters: { a11y: { test: "error" } },
   argTypes: {
