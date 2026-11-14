@@ -24,6 +24,10 @@ function registerHandlers() {
     http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
       HttpResponse.json(stored),
     ),
+    http.get<never, never, BookingNotificationSubscriptionManagerPreferences | ApiV2Problem>(
+      "/api/v2/users/me/booking-notification-preferences",
+      () => HttpResponse.json({ autoSubscribeOwnedItems: true }),
+    ),
     http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
       "/api/v2/users/me/booking-preferences",
       async ({ request }) => {
