@@ -41,13 +41,6 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
     );
   }),
 }));
-class ResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-window.ResizeObserver = ResizeObserver as any;
 const mockRootStore = (mockedStores?: MockStores): [StoreContainer, ContainerModel] => {
   const activeResult = makeMockContainer({
     cType: "IMAGE",

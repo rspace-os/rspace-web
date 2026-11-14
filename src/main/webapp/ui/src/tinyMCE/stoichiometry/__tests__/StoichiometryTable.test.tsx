@@ -5,9 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
-// The inventory picker's Searchbar uses ResizeObserver via useIsTextWiderThanField.
-// eslint-disable-next-line vitest/no-mocks-import
-import "@/__tests__/__mocks__/resizeObserver";
 // useOauthToken: needed by the static read-only table and the editable hook.
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/useOauthToken";

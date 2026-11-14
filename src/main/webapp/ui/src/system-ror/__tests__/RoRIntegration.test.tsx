@@ -9,8 +9,6 @@ import rorNotFound from "./json/rorNotFound.json";
 import rorUpdateSucess from "./json/rorUpdateSuccess.json";
 import v2ROR from "./json/v2Ror.json";
 
-import "@/__tests__/__mocks__/resizeObserver";
-
 type HTMLElementWithRorRoot = HTMLElement & {
   rorRoot?: { unmount: () => void };
 };
