@@ -28,13 +28,11 @@ item links, with URLs, for active items they can still read. The Booking
 preferences page shows only the user-wide link; item links are managed from
 each bookable item's page.
 
+Ordinary create and rotate use `BookingCalendarCreationTransaction` at `READ_COMMITTED`.
 Item writes compare the credential fingerprint under the configuration lock; user writes
 compare the version under the user lock. A create waiting on either lock sees the first
-committed link and returns it.
-
-Item create and rotate read current inherited Inventory permissions in
-`BookingCalendarCreationTransaction` at `READ_COMMITTED`. For the permission gate,
-writer registration and mixed source-transaction requirements, see
+committed link and returns it. Item writes authorize current inherited Inventory access.
+The permission gate, lock order and mixed source-transaction rules are in
 [Booking permissions](BookingPermissions.md).
 
 MariaDB supports these operations with `innodb_snapshot_isolation` either off or
@@ -55,7 +53,7 @@ inside the changing transaction. Revoked item links are deleted, so restoring
 access requires a new subscription. Group/community changes revalidate existing
 item subscriptions in batches per subscriber because they can also change
 access through an item's owner. This work grows with the number of item
-subscriptions; keep it outside ordinary feed reads.
+subscriptions, so keep it outside ordinary feed reads.
 
 A user's own bookings remain readable after losing item access. Personal feeds
 use "Unknown item" for these events and omit item details and links. Item feeds

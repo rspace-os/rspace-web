@@ -1,6 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
+<%@ taglib prefix="f" uri="http://researchspace.com/functions"%>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 <%--
@@ -35,7 +36,7 @@ Reusable tag for incorporating a notifications section into a page.
 			</div>
 
 			<c:forEach items="${notificationList}" var="notification">
-				<c:set var="bookingNotificationMessage" value="${bookingNotificationMessages[notification.id]}" />
+				<c:set var="hasBookingNotificationMessage" value="${not empty bookingNotificationMessages[notification.id]}" />
 				<table class="messageTable" cellspacing="0" style="width: 100%">
 					<tr class="notificationRow" id="notificnID_${notification.id}">
 						<td width="120" valign="top" class="leftInfo"
@@ -48,10 +49,11 @@ Reusable tag for incorporating a notifications section into a page.
 						</td>
 						<td id="mid" valign="top" class="mainMessage" style="word-wrap:break-word;">
 						<div>
-							<div class="msgContent<c:if test='${not empty bookingNotificationMessage}'> bookingNotificationMessage</c:if>" >
+							<div class="msgContent<c:if test='${hasBookingNotificationMessage}'> bookingNotificationMessage</c:if>" >
 								<c:choose>
-									<c:when test="${not empty bookingNotificationMessage}">
-										<c:out value="${bookingNotificationMessage}" escapeXml="false" />
+									<c:when test="${hasBookingNotificationMessage}">
+										<%-- Undo only the EL resolver escaping; the formatter escapes user values. --%>
+										<c:out value="${f:unescapeXml(bookingNotificationMessages[notification.id])}" escapeXml="false" />
 									</c:when>
 									<c:when test="${not empty notification.notificationMessage}">
 						  ${notification.notificationMessage}

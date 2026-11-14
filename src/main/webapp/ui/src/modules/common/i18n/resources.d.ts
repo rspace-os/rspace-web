@@ -805,17 +805,23 @@ export default interface Resources {
         "locationOption": "{name} ({globalId})"
       },
       "jumpToDate": "Jump to date",
+      "location": {
+        "description": "Where this instrument is stored in Inventory.",
+        "workbenchDescription": "Where this instrument is stored in Inventory. WB = workbench."
+      },
       "plural": "All Bookable Items",
       "quickFilters": {
         "availableNow": "Available now",
+        "availableNowDescription": "Free at this moment",
         "error": "Could not find available items.",
-        "freeLaterToday": "Free later today",
+        "freeLaterToday": "Busy now, free later",
+        "freeLaterTodayDescription": "Busy now, free again later today",
         "legend": "Quick filters",
         "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
         "myItems": "Owned Items",
         "retry": "Retry",
-        "scope": "Availability uses the selected display date and timezone."
+        "scope": "Availability uses the selected display date and time zone."
       },
       "singular": "Bookable item",
       "title": "All Bookable Items",
@@ -847,10 +853,10 @@ export default interface Resources {
       "nowBeforeWindow": "Current time {time} is before the displayed window.",
       "ranges": {
         "available": "Available: {ranges}.",
-        "blockout": "Blocked out: {ranges}.",
+        "blockout": "Unavailable: {ranges}.",
         "booking": "Booked: {ranges}.",
         "gap": "Gap before or after a booking: {ranges}.",
-        "overlap": "Booked and blocked out: {ranges}."
+        "overlap": "Booked and unavailable: {ranges}."
       },
       "slice": {
         "bookedBy": "Booked by {user}",
@@ -861,9 +867,9 @@ export default interface Resources {
           "openingHours": "Outside opening hours"
         },
         "states": {
-          "blockout": "Blocked out",
+          "blockout": "Unavailable",
           "booking": "Booked",
-          "overlap": "Booked and blocked out"
+          "overlap": "Booked and unavailable"
         },
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
@@ -885,12 +891,21 @@ export default interface Resources {
       },
       "archived": "Archived",
       "audit": {
+        "actions": {
+          "cancelled": "Cancelled",
+          "changed": "Changed",
+          "changedOrCancelled": "Changed or cancelled",
+          "created": "Created",
+          "deleted": "Deleted",
+          "restored": "Restored"
+        },
         "allActions": "All actions",
         "apply": "Load audit events",
         "descriptionParts": "{description}; {part}",
         "descriptionWithSubject": "{description}; On behalf of {name}",
         "empty": "No recorded changes in this period.",
-        "emptyStable": "This period starts after the latest completed UTC day, so its stable daily snapshot is empty.",
+        "emptyStable": "The log updates daily, and this period starts after the latest update. Today's changes appear tomorrow.",
+        "emptyThroughSnapshot": "No recorded changes through {date} (UTC). The log updates daily, so today's changes appear tomorrow.",
         "error": {
           "description": "Try refreshing the audit log.",
           "title": "Could not load audit events"
@@ -919,10 +934,10 @@ export default interface Resources {
         "previous": "Previous",
         "previousPage": "Previous, page {page, number}",
         "refresh": "Refresh",
-        "resultsThrough": "Results through {date}",
+        "resultsThrough": "Updated daily. Showing events through {date} (UTC); today's changes appear tomorrow.",
         "singular": "Audit event",
         "status": {
-          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Results through {date}.",
+          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Updated daily; showing events through {date} (UTC).",
           "loading": "Loading audit events.",
           "refreshing": "Updating audit events."
         },
@@ -1032,7 +1047,7 @@ export default interface Resources {
         "loading": "Loading events.",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Event pages",
-        "purpose": "Purpose",
+        "purpose": "Purpose / notes",
         "requester": "Requester"
       },
       "fields": {
@@ -1041,12 +1056,12 @@ export default interface Resources {
         "createdAt": "Created at",
         "createdBy": "Created by",
         "doubleBooking": "Allow double booking",
-        "granularity": "Slot granularity",
+        "granularity": "Time increment",
         "location": "Location",
         "maximumDuration": "Maximum duration",
+        "openOn": "Open on",
         "openingHours": "Opening hours",
-        "timezone": "Timezone",
-        "updatedAt": "Last updated"
+        "timezone": "Time zone"
       },
       "hours": "{count, plural, one {# hour} other {# hours}}",
       "leaveDialog": {
@@ -1064,7 +1079,8 @@ export default interface Resources {
       "no": "No",
       "notAvailable": "Not available",
       "openingHours": {
-        "closed": "Closed"
+        "closed": "Closed",
+        "everyDay": "Every day"
       },
       "past": "Past events",
       "permanentDeleteDialog": {
@@ -1163,6 +1179,7 @@ export default interface Resources {
         "enabled": "Enabled",
         "id": "ID",
         "state": "State",
+        "status": "Status",
         "target": "Bookable item",
         "targetName": "Bookable item name",
         "timezone": "Time zone",
@@ -1188,6 +1205,9 @@ export default interface Resources {
         "title": "Permanently delete configuration?"
       },
       "plural": "Bookable Items",
+      "primer": {
+        "description": "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing."
+      },
       "singular": "Bookable item",
       "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
       "states": {
@@ -1196,6 +1216,7 @@ export default interface Resources {
       "targetSearch": {
         "error": "Eligible instruments could not be searched.",
         "label": "Instrument",
+        "noEligible": "No unconfigured instruments you can manage. Create an instrument in Inventory first.",
         "results": "Eligible instruments",
         "search": "Search"
       }
@@ -1213,6 +1234,8 @@ export default interface Resources {
       "addTitle": "Add Booking",
       "cancelDialog": {
         "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
+        "keep": "Keep booking",
+        "keepMaintenance": "Keep maintenance event",
         "title": "Cancel booking?"
       },
       "compact": {
@@ -1221,7 +1244,7 @@ export default interface Resources {
         "discardDescription": "Your unsaved event changes will be lost.",
         "discardTitle": "Discard this event?",
         "keepEditing": "Keep editing",
-        "maintenanceDescription": "Choose a bookable item and time for the maintenance blockout.",
+        "maintenanceDescription": "Choose a bookable item and time for the maintenance event.",
         "maintenanceTitle": "New Maintenance Event"
       },
       "deleteDialog": {
@@ -1269,6 +1292,7 @@ export default interface Resources {
         "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
         "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
         "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
+        "bufferSummary": "This period is within the buffer time of:",
         "bufferUnknown": "Too close to another booking.",
         "checkExistingBookings": "Check My Bookings",
         "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
@@ -1292,7 +1316,7 @@ export default interface Resources {
         "nonexistentTime": "This local time does not occur in the selected time zone.",
         "notFound": "This booking was not found or is not visible.",
         "occurrenceRequired": "Select which occurrence of this local time to use.",
-        "openingHours": "This booking must be within the bookable item's opening hours.",
+        "openingHours": "This booking is outside the bookable item's opening hours.",
         "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
         "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
         "overlap": "This period overlaps another booking or a maintenance event.",
@@ -1308,6 +1332,7 @@ export default interface Resources {
       "form": {
         "cancel": "Cancel",
         "changeTimezone": "Change Time Zone",
+        "closedOnDate": "Closed on this date",
         "date": "Date",
         "earlierOccurrence": "Earlier occurrence ({offset})",
         "end": "End",
@@ -1330,9 +1355,11 @@ export default interface Resources {
         "notes": "Notes",
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
+        "openAllDay": "Open all day",
         "openItem": "Open {globalId}",
         "openingHours": "Open: {start} - {end}",
         "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
+        "openingHoursOnDate": "Open on this date: {hours}",
         "policyMismatchNotes": "This booking does not meet the current booking rules. You can update its maintenance notes without changing its reserved times. Changing those times requires following the current rules.",
         "policyMismatchPurpose": "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
         "previousItems": "Previous",
@@ -1350,9 +1377,10 @@ export default interface Resources {
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
+        "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
         "timezone": "Times shown in {timezone}.",
         "type": "Booking type",
-        "typeBlockout": "Maintenance blockout",
+        "typeBlockout": "Maintenance",
         "typeBooking": "Booking"
       },
       "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
@@ -1360,12 +1388,16 @@ export default interface Resources {
         "buffer": "Buffer",
         "bufferAfter": "{count}m after",
         "bufferBefore": "{count}m before",
+        "closedDay": "{day}: closed",
+        "day": "{day}:",
         "doubleBookingAllowed": "Double booking allowed",
+        "everyDay": "Every day: {hours}",
+        "open": "Open",
         "title": "Item information"
       },
       "loading": "Loading booking.",
       "loadingConfiguration": "Loading bookable item settings.",
-      "maintenanceLabel": "Maintenance blockout",
+      "maintenanceLabel": "Maintenance",
       "warnings": {
         "availabilityUnknown": "Availability could not be checked. The server will validate this booking when you submit.",
         "past": "Choose a start time in the future."
@@ -1453,6 +1485,7 @@ export default interface Resources {
         "day": "Day",
         "legend": "Period",
         "month": "Month",
+        "monthUnavailableInResources": "Month isn't available in Resources. Use Time grid or Agenda for a month overview.",
         "week": "Week"
       },
       "periodNavigation": "Calendar period navigation",
@@ -1470,10 +1503,19 @@ export default interface Resources {
       "resourceSchedule": "Resource booking schedule",
       "retry": "Retry",
       "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
+      "targetFilter": {
+        "label": "Bookable item: {name} ({globalId})",
+        "labelWithoutName": "Bookable item: {globalId}",
+        "remove": "Remove bookable item filter"
+      },
       "title": "Calendar",
       "today": "Today",
       "toolbar": "Calendar controls",
       "unavailable": "Booking events are unavailable.",
+      "weekGrid": {
+        "more": "+{count, number} more",
+        "moreLabel": "{count, plural, one {Show # more booking} other {Show # more bookings}} on {date}"
+      },
       "windowEditor": {
         "end": "Change booking end time",
         "move": "Move booking time",
@@ -1489,13 +1531,13 @@ export default interface Resources {
       },
       "calendar": {
         "bookingCount": "{count, plural, one {# booking} other {# bookings}}",
-        "dayLabel": "{date}: {count, plural, one {# booking} other {# bookings}}",
-        "empty": "No confirmed bookings in this month.",
+        "dayLabel": "{date}: {count, plural, one {you have # confirmed booking} other {you have # confirmed bookings}}",
+        "empty": "You have no confirmed bookings this month.",
         "error": {
           "description": "RSpace could not load bookings for this month.",
           "title": "Bookings unavailable"
         },
-        "loading": "Loading bookings for {month}.",
+        "loading": "Loading your bookings for {month}.",
         "next": "Next bookings",
         "nextMonth": "Go to next month",
         "previous": "Previous bookings",
@@ -1671,10 +1713,15 @@ export default interface Resources {
     },
     "myBookings": {
       "actions": {
+        "downloadCalendarFile": "Download .ics file",
         "edit": "Edit",
         "itemCalendar": "View item calendar",
         "label": "Actions",
+        "more": "More actions",
         "viewDetails": "View details"
+      },
+      "cancelled": {
+        "announcement": "Cancelled the {itemName} booking for {period}. It is now listed under Cancelled."
       },
       "count": {
         "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
@@ -1685,7 +1732,8 @@ export default interface Resources {
       },
       "description": "View and manage bookings requested by this user.",
       "empty": {
-        "past": "No past or cancelled bookings found.",
+        "cancelled": "No cancelled bookings found.",
+        "past": "No past bookings found.",
         "upcoming": "No upcoming bookings found."
       },
       "fields": {
@@ -1694,10 +1742,12 @@ export default interface Resources {
         "kind": "Event type",
         "purpose": "Purpose",
         "start": "Start",
+        "state": "Status",
         "target": "Bookable item",
         "timezone": "Time zone"
       },
       "period": {
+        "cancelled": "Cancelled",
         "legend": "Booking period",
         "past": "Past",
         "upcoming": "Upcoming",
@@ -1716,14 +1766,19 @@ export default interface Resources {
         "bothEventsDisabled": "Both booking events are off in My Profile.",
         "cancellations": "Booking cancellations",
         "conflict": "This subscription changed elsewhere. The latest choice has been loaded; try again if needed.",
-        "description": "Receive notifications when someone else creates or cancels a booking. The corresponding booking events must also be enabled in My Profile. Its email preference controls email delivery only.",
+        "description": "Receive notifications when someone else creates or cancels a booking on this instrument.",
         "disabledInProfile": "Paused by My Profile",
+        "effective": {
+          "cancelled": "On. You'll be notified when bookings are cancelled.",
+          "created": "On. You'll be notified when bookings are created.",
+          "paused": "Paused: booking notifications are off in Booking preferences."
+        },
         "emailDisabled": "Email is off. Notifications arrive in RSpace only.",
         "label": "Receive booking notifications",
         "loadError": "The notification subscription could not be loaded.",
         "newBookings": "New bookings",
         "offSummary": "Notifications are off for this instrument.",
-        "profileLink": "Manage My Profile preferences",
+        "preferencesLink": "Manage booking notification preferences",
         "retry": "Retry",
         "rspaceAndEmail": "RSpace and email",
         "rspaceOnly": "RSpace only",
@@ -1744,8 +1799,18 @@ export default interface Resources {
           "label": "Automatically subscribe to new instruments I own"
         },
         "cancel": "Cancel",
+        "emailDelivery": {
+          "change": "Change email delivery in My Profile",
+          "off": "Email delivery is off: booking notifications appear in RSpace only.",
+          "on": "Email delivery is on: booking notifications are also sent by email."
+        },
+        "events": {
+          "cancelled": "Notify me when bookings are cancelled",
+          "created": "Notify me when bookings are created",
+          "description": "For instruments you're subscribed to. These are the same settings as the booking notifications in My Profile."
+        },
         "existingSubscriptions": {
-          "description": "Unsubscribe from every instrument. This keeps your automatic default and My Profile settings."
+          "description": "Unsubscribe from every instrument. Your notification settings above stay as they are."
         },
         "ownActions": {
           "description": "Applies to instruments you are subscribed to. Your booking-created and booking-cancelled notification choices still apply.",
@@ -1758,7 +1823,7 @@ export default interface Resources {
         "title": "Booking notifications",
         "unsubscribeAll": "Unsubscribe from all instruments",
         "unsubscribeError": "Subscriptions could not be removed. Try again.",
-        "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your automatic default and My Profile settings are unchanged."
+        "unsubscribed": "Unsubscribed from {count, plural, one {# instrument} other {# instruments}}. Your notification settings are unchanged."
       }
     },
     "preferences": {
@@ -1770,7 +1835,7 @@ export default interface Resources {
       "availabilityWindow": {
         "description": "The times shown on each day's availability bars and timelines.",
         "end": "End time",
-        "endOfDay": "00:00 means midnight at the end of the day.",
+        "endOfDay": "{midnight} means midnight at the end of the day.",
         "legend": "Default availability window",
         "start": "Start time"
       },
@@ -1847,7 +1912,7 @@ export default interface Resources {
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
       "fields": {
-        "allowDoubleBooking": "Allow concurrent bookings",
+        "allowDoubleBooking": "Allow double booking",
         "buffer": "Buffer before and after bookings (minutes)",
         "bufferAfter": "Gap after (minutes)",
         "bufferBefore": "Gap before (minutes)",
@@ -1864,7 +1929,7 @@ export default interface Resources {
         "maximumDurationDescription": "Use 0 for no item limit. A day is 24 elapsed hours. The system limit is 366 days.",
         "maximumDurationUnit": "Maximum duration unit",
         "openingEnd": "Opening end",
-        "openingEndDescription": "Enter 00:00 to close at midnight (the end of the day).",
+        "openingEndDescription": "Enter {midnight} to close at midnight (the end of the day).",
         "openingStart": "Opening start"
       },
       "openingHours": {
@@ -7685,9 +7750,9 @@ export default interface Resources {
       }
     },
     "bookingNotifications": {
-      "cancelled": "Booking {0} for instrument {1} ({2}) was cancelled. It was scheduled from {3} to {4}.",
-      "changed": "Booking {0} for instrument {1} ({2}) was changed to {3} to {4}.",
-      "created": "Booking {0} was created for instrument {1} ({2}) from {3} to {4}."
+      "cancelled": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was cancelled. It was scheduled from {3} to {4}.",
+      "changed": "Booking <a href=\"{5}\">{0}</a> for instrument <a href=\"{6}\">{1} ({2})</a> was changed to {3} to {4}.",
+      "created": "Booking <a href=\"{5}\">{0}</a> was created for instrument <a href=\"{6}\">{1} ({2})</a> from {3} to {4}."
     }
   },
   "server.core": {

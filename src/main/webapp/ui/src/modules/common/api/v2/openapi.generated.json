@@ -3230,11 +3230,17 @@
           "autoSubscribeOwnedItems" : {
             "type" : "boolean"
           },
+          "notifyOnCancelled" : {
+            "type" : "boolean"
+          },
+          "notifyOnCreated" : {
+            "type" : "boolean"
+          },
           "notifyOwnActions" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "autoSubscribeOwnedItems", "notifyOwnActions" ],
+        "required" : [ "autoSubscribeOwnedItems", "notifyOnCancelled", "notifyOnCreated", "notifyOwnActions" ],
         "type" : "object"
       },
       "BookingNotificationSubscriptionControllerStatusList" : {
@@ -3290,6 +3296,15 @@
       "BookingNotificationSubscriptionManagerPreferences" : {
         "properties" : {
           "autoSubscribeOwnedItems" : {
+            "type" : "boolean"
+          },
+          "emailDelivery" : {
+            "type" : "boolean"
+          },
+          "notifyOnCancelled" : {
+            "type" : "boolean"
+          },
+          "notifyOnCreated" : {
             "type" : "boolean"
           },
           "notifyOwnActions" : {
@@ -11345,6 +11360,7 @@
     },
     "/api/v2/users/me/booking-notification-preferences" : {
       "get" : {
+        "description" : "Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.",
         "operationId" : "getMyBookingNotificationPreferences",
         "responses" : {
           "200" : {
@@ -11355,7 +11371,7 @@
                 }
               }
             },
-            "description" : "Current automatic subscription default."
+            "description" : "Current booking notification preferences."
           }
         },
         "security" : [ {
@@ -11368,6 +11384,7 @@
         "x-rspace-operation" : "CUSTOM"
       },
       "put" : {
+        "description" : "Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.",
         "operationId" : "replaceMyBookingNotificationPreferences",
         "requestBody" : {
           "content" : {
@@ -11388,7 +11405,7 @@
                 }
               }
             },
-            "description" : "Saved automatic subscription default."
+            "description" : "Saved booking notification preferences."
           }
         },
         "security" : [ {
@@ -11396,7 +11413,7 @@
         }, {
           "bearerAuth" : [ ]
         } ],
-        "summary" : "Change personal notification preferences without changing existing subscriptions",
+        "summary" : "Replace the caller's booking notification preferences",
         "tags" : [ "users" ],
         "x-rspace-operation" : "CUSTOM"
       }

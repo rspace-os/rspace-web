@@ -11,9 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.core.util.JacksonUtil;
-import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
-import com.researchspace.service.UserManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.util.Map;
@@ -105,31 +103,6 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
   }
 
   @Test
-  void ownActionPreferenceDefaultsTrueIsRequiredAndPersists() throws Exception {
-    mockMvc
-        .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.notifyOwnActions").value(true));
-    mockMvc
-        .perform(
-            put(DEFAULTS)
-                .header("apiKey", fixture.userKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":true}"))
-        .andExpect(status().isBadRequest());
-    mockMvc
-        .perform(
-            put(DEFAULTS)
-                .header("apiKey", fixture.userKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":true,\"notifyOwnActions\":false}"))
-        .andExpect(status().isOk());
-    mockMvc
-        .perform(get(DEFAULTS).header("apiKey", fixture.userKey()))
-        .andExpect(jsonPath("$.notifyOwnActions").value(false));
-  }
-
-  @Test
   void readableAdminCanManageOnlyTheirOwnSubscription() throws Exception {
     long id =
         fixture.bookingConfiguration(
@@ -179,8 +152,14 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             put(DEFAULTS)
                 .header("apiKey", key)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":false}"))
-        .andExpect(status().isOk());
+                .content(
+                    "{\"autoSubscribeOwnedItems\":false,\"notifyOwnActions\":true,\"notifyOnCreated\":true,"
+                        + "\"notifyOnCancelled\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false))
+        .andExpect(jsonPath("$.notifyOnCreated").value(true))
+        .andExpect(jsonPath("$.notifyOnCancelled").value(false))
+        .andExpect(jsonPath("$.emailDelivery").isBoolean());
     long second =
         fixture.bookingConfiguration(fixture.instrument(fixture.user(), "New instrument"), "UTC");
     String etag =
@@ -227,6 +206,11 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JacksonUtil.toJson(Map.of("enabled", true))))
         .andExpect(status().isOk());
+    // The event choices are the My Profile preferences that gate each item's delivery.
+    mockMvc
+        .perform(get(itemPath(first)).header("apiKey", key))
+        .andExpect(jsonPath("$.createdEnabled").value(true))
+        .andExpect(jsonPath("$.cancelledEnabled").value(false));
     mockMvc.perform(delete(SUBSCRIPTIONS).header("apiKey", key)).andExpect(status().isOk());
     mockMvc
         .perform(get(itemPath(first)).header("apiKey", key))
@@ -236,7 +220,16 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
         .andExpect(jsonPath("$.enabled").value(false));
     mockMvc
         .perform(get(DEFAULTS).header("apiKey", key))
-        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false));
+        .andExpect(jsonPath("$.autoSubscribeOwnedItems").value(false))
+        .andExpect(jsonPath("$.notifyOnCreated").value(true))
+        .andExpect(jsonPath("$.notifyOnCancelled").value(false));
+    mockMvc
+        .perform(
+            put(DEFAULTS)
+                .header("apiKey", key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"autoSubscribeOwnedItems\":false}"))
+        .andExpect(status().isBadRequest());
   }
 
   private void setBookingEnabled(boolean enabled) {
@@ -256,12 +249,10 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             fixture.instrument(fixture.user(), "Preference validator"), "UTC");
     String key = fixture.userKey();
     var manager = wac.getBean(BookingNotificationSubscriptionManager.class);
-    var userPreferences = wac.getBean(UserManager.class);
-    manager.replacePreferences(true, true, fixture.user(), fixture.user());
-    userPreferences.setPreference(
-        Preference.NOTIFICATION_BOOKING_CREATED_PREF, "true", fixture.user().getUsername());
-    userPreferences.setPreference(
-        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, "true", fixture.user().getUsername());
+    manager.replacePreferences(
+        new BookingNotificationSubscriptionManager.PreferenceChanges(true, true, true, true),
+        fixture.user(),
+        fixture.user());
     String tag =
         mockMvc
             .perform(get(itemPath(id)).header("apiKey", key))
@@ -270,11 +261,10 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             .getResponse()
             .getHeader("ETag");
     assertTrue(tag.endsWith("-111\""));
-    manager.replacePreferences(true, true, fixture.user(), fixture.user());
-    userPreferences.setPreference(
-        Preference.NOTIFICATION_BOOKING_CREATED_PREF, "false", fixture.user().getUsername());
-    userPreferences.setPreference(
-        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, "true", fixture.user().getUsername());
+    manager.replacePreferences(
+        new BookingNotificationSubscriptionManager.PreferenceChanges(true, true, false, true),
+        fixture.user(),
+        fixture.user());
     mockMvc
         .perform(
             put(itemPath(id))

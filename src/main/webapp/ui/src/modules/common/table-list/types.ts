@@ -146,6 +146,8 @@ export type TableListFilterButtons = {
   buttons: readonly {
     id: string;
     label: ReactNode;
+    /** Explains what the button filters; shown as a tooltip and exposed via aria-describedby. */
+    description?: string;
     icon?: ReactNode;
     pressed: boolean;
     /** This preset is already represented in this table's counted expression. */

@@ -1320,6 +1320,7 @@ export const useRotateUserBookingCalendarSubscription = <TError = BadRequestResp
 }
 
 /**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
  * @summary Get the caller's booking notification preferences
  */
 export const getMyBookingNotificationPreferences = async ( options?: Parameters<typeof apiV2Fetch>[1]): Promise<BookingNotificationSubscriptionManagerPreferences> => {
@@ -1367,7 +1368,10 @@ export type GetMyBookingNotificationPreferencesQueryResult = NonNullable<Awaited
 export type GetMyBookingNotificationPreferencesQueryError = ErrorType<unknown>
 
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1378,7 +1382,10 @@ export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnTyp
       >, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1389,12 +1396,18 @@ export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnTyp
       >, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferences<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
@@ -1445,22 +1458,34 @@ export type GetMyBookingNotificationPreferencesSuspenseQueryResult = NonNullable
 export type GetMyBookingNotificationPreferencesSuspenseQueryError = ErrorType<unknown>
 
 
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
   ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary Get the caller's booking notification preferences */
+/**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
+ * @summary Get the caller's booking notification preferences
+ */
 export function useGetMyBookingNotificationPreferencesSuspense<TData = Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getMyBookingNotificationPreferences>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient
@@ -1487,7 +1512,8 @@ export const getReplaceMyBookingNotificationPreferencesUrl = () => {
 }
 
 /**
- * @summary Change personal notification preferences without changing existing subscriptions
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
  */
 export const replaceMyBookingNotificationPreferences = async (bookingNotificationSubscriptionControllerPreferenceReplacement: BookingNotificationSubscriptionControllerPreferenceReplacement, options?: Parameters<typeof apiV2Fetch>[1]): Promise<BookingNotificationSubscriptionManagerPreferences> => {
 
@@ -1544,7 +1570,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReplaceMyBookingNotificationPreferencesMutationError = ErrorType<unknown>
     export type ReplaceMyBookingNotificationPreferencesMutationVariables = {data: BodyType<BookingNotificationSubscriptionControllerPreferenceReplacement>}
 
-    /** @summary Change personal notification preferences without changing existing subscriptions */
+    /**
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
+ */
 export const useReplaceMyBookingNotificationPreferences = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMyBookingNotificationPreferences>>, TError,ReplaceMyBookingNotificationPreferencesMutationVariables, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof apiV2Fetch>}
  , queryClient?: QueryClient): UseMutationResult<
