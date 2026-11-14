@@ -1,16 +1,19 @@
 # Transactions
 
-This document describes how database transactions are he handled in
-RSpace.
+This document describes how RSpace defines database transaction boundaries.
 
 ## Transaction declarations
 
-Transactions are normally declared using Spring AOP configuration to wrap all
-service classes matching the pointcut
+Spring AOP configuration wraps service methods in transactions. The main
+manager pointcut is:
+
+```xml
+pointcut="execution(* *..service.*Manager.*(..))"
 ```
-pointcut="execution(* *..service.**Manager.**(..))" '
-```
-with a TransactionManager.
+
+Separate pointcuts cover managers in the archive, inventory, and fieldmark
+packages, as well as selected validators and adapters. See
+`src/main/resources/applicationContext-service.xml` for the complete rules.
 
 When writing a new service interface in `com.researchspace.service`, prefer the
 `Manager` suffix so it is covered by this pointcut automatically.
@@ -53,8 +56,8 @@ Older programmatic uses exist in `AbstractCustomLiquibaseUpdater` and
 
 ### Transaction behaviour
 
-Uses Spring defaults which is `Transaction.REQUIRED`. This enables service
-methods to call each other without generating new transactions.
+The default propagation is `REQUIRED`. Service methods join the caller's
+transaction when one exists.
 
 ## Creating transactions
 
@@ -111,6 +114,23 @@ unit test in `TransactionScopedVersionBumpGuardTest`.
 
 Never call `increaseVersion()` on an inventory record directly; route bumps
 through the helper.
+
+## Notification delivery
+
+`CommunicationManager` saves notifications in the caller's transaction and
+delivers their effects only after that transaction commits:
+
+- **Commit-only delivery.** Broadcasts and unread-count updates run after
+  commit. A rollback suppresses them. Nested transactions deliver independently.
+- **One recount per user per transaction.** Each affected recipient's unread
+  count is recounted once, from committed data, in a new transaction.
+  Mark-read operations join the same batch.
+- **No stale overwrite.** A recount or login never replaces a count published
+  after its query started.
+- **No database work under a lock.** The tracker's per-user lock covers only
+  in-memory publication, never a query or connection acquisition.
+- **Isolated failures.** A failed broadcast or recount is logged at WARN and
+  cannot fail the committed request or skip other recipients.
 
 ## Transactions in tests
 

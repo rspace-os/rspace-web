@@ -22,9 +22,11 @@ import com.researchspace.service.impl.MessageAndNotificationTracker;
 import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpSession;
 import java.util.Calendar;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -81,8 +83,6 @@ public class LoginHelperTest {
     assertEquals(Boolean.FALSE, secondSession.getAttribute(SessionAttributeUtils.FIRST_LOGIN));
     assertEquals(Boolean.TRUE, secondSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
 
-    assertEquals(Boolean.TRUE, secondSession.getAttribute(BaseLoginHelperImpl.RECENT_SIGNUP_ATTR));
-
     // these are false for a new user
     assertEquals(
         Boolean.FALSE, secondSession.getAttribute(BaseLoginHelperImpl.AUTOSHARE_ENABLED_ATTR));
@@ -93,7 +93,6 @@ public class LoginHelperTest {
   public void testOldUserPostLoginHappyCase() {
     User user = Mockito.spy(createAnyUser("any"));
     user.setId(1L);
-    Mockito.when(commGr.getNotificationStatus(user)).thenReturn(new NotificationStatus(1, 1, 1));
 
     Calendar cal = Calendar.getInstance();
     cal.add(Calendar.DAY_OF_MONTH, -1);
@@ -149,7 +148,9 @@ public class LoginHelperTest {
 
     verify(analMgr).userLoggedIn(any, req);
     verify(timezoneAdjuster).setUserTimezoneInSession(req, session);
-    verify(tracker).initCount(Mockito.anyLong(), Mockito.any(NotificationStatus.class));
+    ArgumentCaptor<Supplier<NotificationStatus>> statusQuery = ArgumentCaptor.captor();
+    verify(tracker).initCount(Mockito.eq(any.getId()), statusQuery.capture());
+    assertNotNull(statusQuery.getValue().get());
     verify(userMgr).saveUserAccountEvent(Mockito.any(UserAccountEvent.class));
   }
 }

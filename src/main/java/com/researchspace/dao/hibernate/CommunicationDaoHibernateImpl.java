@@ -126,8 +126,23 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   @Override
+  public int getUnreadNotificationCount(Long userId) {
+    return Math.toIntExact(
+        getSession()
+            .createQuery(
+                "select count(distinct n.id) from Notification n "
+                    + "join n.recipients ct join ct.recipient recipient "
+                    + "join n.originator originator "
+                    + "where ct.status = :status and recipient.id = :userId",
+                Long.class)
+            .setParameter("status", CommunicationStatus.NEW)
+            .setParameter("userId", userId)
+            .uniqueResult());
+  }
+
+  @Override
   public NotificationStatus getNotificationStatus(User user) {
-    int notificationCount = getNewNotificationDistinctCTIds(user, null).size();
+    int notificationCount = getUnreadNotificationCount(user.getId());
     int messageCount =
         getActiveMessageOrRequestDistinctCTIds(
                 user, MessageTypeFilter.DEFAULT_MESSAGE_LISTING, null)
