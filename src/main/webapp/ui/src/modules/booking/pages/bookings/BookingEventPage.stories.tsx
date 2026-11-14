@@ -8,9 +8,8 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { getListBookingConfigurationsQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import { getGetBookingQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -56,17 +55,7 @@ function BookingEventPageStory({ edit = false }: { edit?: boolean }) {
     defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
   });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(
-    getGetBookingQueryKey(booking.id, {
-      depth: 2,
-      fields: {
-        bookings: BOOKING_READ_FIELDS,
-        instruments: "id,globalId,name,deleted,parentContainer",
-        containers: "id,globalId,name",
-      },
-    }),
-    booking,
-  );
+  queryClient.setQueryData(bookingQueryOptions(booking.id).queryKey, booking);
   queryClient.setQueryData(
     getListBookingConfigurationsQueryKey({ where: `target==${booking.target.globalId}`, depth: 2, limit: 2 }),
     { docs: [bookableItemFixtures[0]], limit: 2, page: 1 } satisfies ListBookingConfigurations200,

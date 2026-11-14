@@ -23,7 +23,7 @@ import {
 import i18n from "@/modules/common/i18n";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
-import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
+import { FieldDescription, FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
@@ -576,11 +576,18 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
+  const timezoneDescription = (
+    <FieldDescription className="mb-2">
+      {t("bookings.form.timezone", { timezone: resolvedDisplayTimezone })}
+    </FieldDescription>
+  );
+
   if (density === "compact" && value.startDate === value.endDate && incrementUnit !== "DAYS") {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate || Boolean(startErrorId);
     return (
       <div className="space-y-4">
+        {timezoneDescription}
         <div className="space-y-2">
           <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
           <Input
@@ -616,6 +623,7 @@ export function ZonedBookingWindowFields({
 
   return (
     <div className="space-y-4">
+      {timezoneDescription}
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
       {instrumentTimes}

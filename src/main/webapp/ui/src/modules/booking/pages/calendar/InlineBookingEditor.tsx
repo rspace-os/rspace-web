@@ -12,9 +12,12 @@ import {
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
 import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
+import { bookingConflicts } from "@/modules/booking/domain/availability";
 import { type BookingListDocument, isBookingOverlapError, updateBooking } from "@/modules/booking/domain/booking";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
+import { getSearchCalendarCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
   getUpdateBookingMutationOptions,
@@ -22,6 +25,7 @@ import {
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
+
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
@@ -79,7 +83,7 @@ export function InlineBookingEditor({
       flushSync(onClose);
       if (updated) {
         await updateOptions.onSuccess?.(
-          updated,
+          { id: updated.id },
           { id: event.id, data: {}, headers: { "If-Match": `"${event.version}"` } },
           onMutateResult,
           mutationContext,
@@ -88,6 +92,8 @@ export function InlineBookingEditor({
       await Promise.all([
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
         invalidateGetBooking(queryClient, event.id, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchCalendarEventsQueryKey() }, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }, { cancelRefetch: false }),
       ]);
     },
     onError: async (error) => {
@@ -99,7 +105,12 @@ export function InlineBookingEditor({
             error.code === "errors.api.v2.forbidden" ||
             error.code === "errors.api.v2.booking.state.transition"))
       ) {
-        await Promise.all([invalidateListBookings(queryClient), invalidateGetBooking(queryClient, event.id)]);
+        await Promise.all([
+          invalidateListBookings(queryClient),
+          invalidateGetBooking(queryClient, event.id),
+          queryClient.invalidateQueries({ queryKey: getSearchCalendarEventsQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }),
+        ]);
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await invalidateListBookingConfigurations(queryClient);
@@ -130,7 +141,8 @@ export function InlineBookingEditor({
           event.kind === "MAINTENANCE"
             ? [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
             : configuration.data.openingHours,
-        allowDoubleBooking: event.kind === "MAINTENANCE" ? false : configuration.data.allowDoubleBooking,
+        // Fetch overlaps even when double booking is allowed, so the form can explain them.
+        allowDoubleBooking: false,
       })
     : undefined;
   const availabilityInterval = formState?.window
@@ -150,6 +162,15 @@ export function InlineBookingEditor({
     availability.isSuccess &&
       availability.data.get(event.target.globalId)?.some((interval) => interval.source.id !== `booking:${event.id}`),
   );
+  const conflicts = availabilityViolation
+    ? bookingConflicts(availability.data?.get(event.target.globalId) ?? [], timezone, event.id)
+    : [];
+  const canOverlapBookings =
+    event.kind === "BOOKING" &&
+    configuration.data?.allowDoubleBooking === true &&
+    conflicts.length > 0 &&
+    conflicts.every(({ kind }) => kind === "BOOKING");
+  const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
 
   if (configuration.isPending) {
     return (
@@ -208,7 +229,7 @@ export function InlineBookingEditor({
           configuration={configuration.data}
           pending={mutation.isPending}
           error={
-            availabilityViolation
+            availabilityViolation && conflicts.length === 0
               ? t("bookings.errors.overlap")
               : mutation.error
                 ? t(
@@ -218,7 +239,9 @@ export function InlineBookingEditor({
                   )
                 : undefined
           }
-          submissionBlocked={checkingAvailability || availabilityViolation || isBookingOverlapError(mutation.error)}
+          conflicts={conflicts}
+          conflictSeverity={canOverlapBookings && !isBookingOverlapError(mutation.error) ? "warning" : "error"}
+          submissionBlocked={checkingAvailability || conflictBlocksSubmission || isBookingOverlapError(mutation.error)}
           windowAdjustment={windowAdjustment}
           onStateChange={clearMutationErrorOnChange}
           onCancel={() => {

@@ -8,7 +8,13 @@ import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOp
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
-import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import {
+  invalidateCountBookingConfigurations,
+  invalidateGetBookingConfiguration,
+  invalidateGetBookingConfigurationAccess,
+  invalidateListBookingConfigurationAuditEvents,
+  invalidateListBookingConfigurations,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
   getCreateBookingMutationOptions,
   invalidateCountBookings,
@@ -46,6 +52,7 @@ export function isBookingConflictError(error: unknown): boolean {
 }
 
 const BOOKING_PROBLEM_KEYS = {
+  "errors.api.v2.booking.startInPast": "bookings.errors.startInPast",
   "errors.api.v2.booking.window": "bookings.errors.window",
   "errors.api.v2.booking.duration": "bookings.errors.duration",
   [MAXIMUM_DURATION_CODE]: "bookings.errors.maximumDuration",
@@ -176,7 +183,7 @@ export function useCreateBooking() {
         result,
         context,
       ),
-    onError: (error) => {
+    onError: (error, submission) => {
       if (
         isBookingOutcomeUncertain(error) ||
         isBookingConflictError(error) ||
@@ -187,12 +194,19 @@ export function useCreateBooking() {
           invalidateCountBookings(queryClient),
           invalidateBookingListOperation(queryClient, "catalogue"),
           invalidateBookingListOperation(queryClient, "locations"),
+          invalidateBookingListOperation(queryClient, "calendarCatalogue"),
+          invalidateBookingListOperation(queryClient, "calendarEvents"),
         ]);
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         void Promise.all([
           invalidateListBookingConfigurations(queryClient),
+          invalidateCountBookingConfigurations(queryClient),
+          invalidateGetBookingConfiguration(queryClient, submission.target.configurationId),
+          invalidateGetBookingConfigurationAccess(queryClient, submission.target.configurationId),
+          invalidateListBookingConfigurationAuditEvents(queryClient, submission.target.configurationId),
           invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "calendarCatalogue"),
         ]);
       }
     },

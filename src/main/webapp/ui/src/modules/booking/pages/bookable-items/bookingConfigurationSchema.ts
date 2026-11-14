@@ -22,6 +22,7 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
   const policy = v.parse(SchedulingSettingsSchema, input);
   return {
     ...input,
+    ...input,
     id: input.id,
     configurationVersion: required(input.configurationVersion, "configurationVersion"),
     target: input.target === null ? null : mapBookingTarget(input.target),

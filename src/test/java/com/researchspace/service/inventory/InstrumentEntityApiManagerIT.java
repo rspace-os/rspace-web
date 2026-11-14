@@ -212,12 +212,11 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
   }
 
   @Test
-  public void changeApiInstrumentOwner_canTransferBookingConfigurationOwnershipTogether()
-      throws Exception {
-    withBookingEnabled(this::transferBookingConfigurationOwnershipTogether);
+  public void changeApiInstrumentOwner_bookingOwnershipFollowsInventoryOwner() throws Exception {
+    withBookingEnabled(this::bookingOwnershipFollowsInventoryOwner);
   }
 
-  private void transferBookingConfigurationOwnershipTogether() throws Exception {
+  private void bookingOwnershipFollowsInventoryOwner() throws Exception {
     User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithoutCustomContent(owner);
     User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
@@ -227,8 +226,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     BookingConfiguration configuration = bookingConfigurationFor(created, owner);
 
     created.setOwner(new ApiUser(newOwner));
-    ApiInstrument transferred =
-        instrumentApiMgr.changeApiInstrumentOwner(created, owner, owner, true);
+    ApiInstrument transferred = instrumentApiMgr.changeApiInstrumentOwner(created, owner, owner);
 
     assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
     assertEquals(

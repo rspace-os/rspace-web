@@ -7,6 +7,7 @@ import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/config";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
+import { cn } from "@/modules/common/utils/cn";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 
 export type BookingRow = CollectionRow<
@@ -14,7 +15,7 @@ export type BookingRow = CollectionRow<
   "id" | "target" | "timezone" | "canViewConfiguration" | "state"
 >;
 
-const iconButtonClassName = buttonVariants({ size: "icon-lg", variant: "outline" });
+const iconButtonClassName = cn(buttonVariants({ size: "icon-lg", variant: "outline" }));
 
 export function BookingRowActions({
   row,
@@ -77,6 +78,7 @@ export function BookingRowActions({
           itemName={itemName}
           period={formatAgendaPeriod(row.start ?? "", row.end ?? "", timeZone)}
           iconOnly
+          triggerVariant="outline"
           onDeleted={onCancelled}
         />
       ) : null}

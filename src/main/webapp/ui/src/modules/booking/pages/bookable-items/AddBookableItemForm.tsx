@@ -10,6 +10,7 @@ import {
   schedulingSettingsEntries,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
   invalidateListBookingConfigurations,
@@ -134,7 +135,10 @@ export function AddBookableItemForm({
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationsCreate) => createOperation.mutateAsync({ data: input }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+      ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
