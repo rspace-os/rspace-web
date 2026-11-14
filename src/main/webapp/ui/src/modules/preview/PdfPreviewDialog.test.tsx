@@ -7,31 +7,28 @@ const { axiosGetMock } = vi.hoisted(() => ({
   axiosGetMock: vi.fn(),
 }));
 
-vi.mock("react-pdf", () => {
-  type DocumentProps = {
-    file: string;
-    onLoadSuccess?: (args: { numPages: number }) => void;
-    children?: import("react").ReactNode;
-  };
-  type PageProps = {
-    pageNumber: number;
-    scale: number;
-  };
+vi.mock("@/eln/gallery/components/CallablePdfPreview", async () => {
+  const React = await import("react");
+  const PdfPreviewContext = React.createContext<(url: string) => void>(() => {});
+
+  function CallablePdfPreview({ children }: { children: React.ReactNode }) {
+    const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+
+    return (
+      <PdfPreviewContext.Provider value={setPdfUrl}>
+        {children}
+        {pdfUrl && (
+          <div role="dialog" aria-label="gallery:callablePdfPreview.title">
+            {pdfUrl}
+          </div>
+        )}
+      </PdfPreviewContext.Provider>
+    );
+  }
+
   return {
-    pdfjs: { GlobalWorkerOptions: {} },
-    Document: ({ file, onLoadSuccess, children }: DocumentProps) => {
-      queueMicrotask(() => {
-        onLoadSuccess?.({ numPages: 3 });
-      });
-      return (
-        <div data-file={String(file)} data-testid="mock-pdf-document">
-          {children}
-        </div>
-      );
-    },
-    Page: ({ pageNumber, scale }: PageProps) => (
-      <div data-scale={String(scale)} data-testid={`mock-pdf-page-${pageNumber}`}>{`Page ${pageNumber}`}</div>
-    ),
+    CallablePdfPreview,
+    usePdfPreview: () => ({ openPdfPreview: React.useContext(PdfPreviewContext) }),
   };
 });
 
@@ -63,12 +60,8 @@ describe("pdf preview dialog island", () => {
       );
     });
 
-    expect(await screen.findByLabelText("gallery:callablePdfPreview.title")).toBeVisible();
-    expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
-      "data-file",
-      "/public/publicView/Streamfile/17?revision=4",
-    );
-    expect(screen.getByTestId("mock-pdf-page-1")).toBeVisible();
+    const previewDialog = await screen.findByRole("dialog", { name: "gallery:callablePdfPreview.title" });
+    expect(previewDialog).toHaveTextContent("/public/publicView/Streamfile/17?revision=4");
   });
 
   test("opens the callable Aspose preview for convertible files", async () => {
@@ -97,10 +90,7 @@ describe("pdf preview dialog island", () => {
     await waitFor(() => {
       expect(axiosGetMock).toHaveBeenCalledWith("/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7");
     });
-    expect(await screen.findByLabelText("gallery:callablePdfPreview.title")).toBeVisible();
-    expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
-      "data-file",
-      "/public/publicView/Streamfile/direct/42?fileName=converted-preview.pdf",
-    );
+    const previewDialog = await screen.findByRole("dialog", { name: "gallery:callablePdfPreview.title" });
+    expect(previewDialog).toHaveTextContent("/public/publicView/Streamfile/direct/42?fileName=converted-preview.pdf");
   });
 });

@@ -15,10 +15,12 @@ overrides:
   # @sa11y/vitest 8.x declares a hard vitest ^4 dependency, which installs a
   # second vitest whose expect our tests never use. Share the root vitest
   # until sa11y supports Vitest 5.
-  '@sa11y/vitest>vitest': 5.0.5
+  '@sa11y/vitest>vitest': 5.1.0
+  # Keep React-PDF's API on the same version as the bundled PDF.js worker.
+  react-pdf>pdfjs-dist: 5.7.284
   # @jupyter-kit/katex and rehype-katex still ask for katex ^0.16, which is
-  # below the patched 0.18.2 line.
-  katex@<0.18.2: 0.18.4
+  # below the patched release used by this project.
+  katex@<0.19.1: 0.19.1
 
 # Each entry declares a dependency the package imports but doesn't declare.
 # Version-pinned keys stop matching silently after an upgrade; retarget them.
@@ -27,16 +29,12 @@ packageExtensions:
   '@replit/codemirror-css-color-picker@6.3.0':
     dependencies:
       '@lezer/common': ^1.5.2
-  # scalar/scalar#10765
-  '@scalar/schemas@0.14.0':
-    dependencies:
-      '@scalar/types': 0.24.0
   # dromru/react-photoswipe-gallery#1495
   react-photoswipe-gallery:
     peerDependencies:
       react-dom: '*'
   # xiaoluoboding/vue-sonner#167
-  vue-sonner@1.3.2:
+  vue-sonner@2.0.9:
     peerDependencies:
       vue: ^3.0.0
   # epam/ketcher#11911: without `events` the editor fails with

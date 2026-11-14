@@ -110,6 +110,7 @@ describe("CallableSnippetPreview", () => {
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       expect(await screen.findByText("gallery:snippetPreview.loading")).toBeVisible();
+      expect(await screen.findByText("Test snippet content", {}, { timeout: 5_000 })).toBeVisible();
     });
 
     test("Should display snippet content after loading", async () => {

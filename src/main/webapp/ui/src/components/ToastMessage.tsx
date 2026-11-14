@@ -37,7 +37,7 @@ type ToastMessageProps = Pick<ToastConfig, "callback" | "id" | "open" | "variant
   closeToast: (id: ToastConfig["id"]) => void;
 };
 
-type CloseHandler = (event?: React.SyntheticEvent<unknown> | Event, reason?: SnackbarCloseReason) => void;
+type CloseHandler = (event?: React.SyntheticEvent<unknown> | Event | null, reason?: SnackbarCloseReason) => void;
 
 let nextToastId = 0;
 

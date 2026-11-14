@@ -134,7 +134,7 @@ describe("TreeView", () => {
       await user.click(treeItemContentByType("image"));
 
       await waitFor(() => {
-        expect(treeItemByType("image")).toHaveAttribute("aria-checked", "true");
+        expect(treeItemByType("image")).toHaveAttribute("aria-selected", "true");
       });
     });
   });
@@ -179,7 +179,7 @@ describe("TreeView", () => {
       await user.keyboard("{ }");
 
       await waitFor(() => {
-        expect(treeItemByType("image")).toHaveAttribute("aria-checked", "true");
+        expect(treeItemByType("image")).toHaveAttribute("aria-selected", "true");
       });
     });
   });
@@ -199,7 +199,7 @@ describe("TreeView", () => {
       await waitFor(() => {
         const selectedItems = screen
           .getAllByRole("treeitem")
-          .filter((item) => item.getAttribute("aria-checked") === "true");
+          .filter((item) => item.getAttribute("aria-selected") === "true");
         expect(selectedItems.length).toBeGreaterThanOrEqual(1);
       });
     });

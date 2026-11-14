@@ -56,6 +56,7 @@ export const Playground: Story = {
     arrow: false,
     enterDelay: 100,
     leaveDelay: 0,
+    describeChild: true,
     children: <Button>Hover me</Button>,
   },
 };
@@ -63,6 +64,7 @@ export const Playground: Story = {
 export const Default: Story = {
   args: {
     title: "Default Tooltip",
+    describeChild: true,
     children: <Button>Hover me</Button>,
   },
 };
@@ -89,10 +91,10 @@ export function Positions() {
 export function Arrow() {
   return (
     <Stack direction="row" spacing={2}>
-      <Tooltip title="With Arrow" arrow>
+      <Tooltip title="With Arrow" arrow describeChild>
         <Button>Arrow</Button>
       </Tooltip>
-      <Tooltip title="Without Arrow">
+      <Tooltip title="Without Arrow" describeChild>
         <Button>No Arrow</Button>
       </Tooltip>
     </Stack>
@@ -129,7 +131,7 @@ export const InteractionTest: Story = {
   },
   render: () => (
     <Stack direction="row" spacing={2} sx={{ p: 4 }}>
-      <Tooltip title="Hover tooltip text" arrow>
+      <Tooltip title="Hover tooltip text" arrow describeChild>
         <Button>Hover Me</Button>
       </Tooltip>
       <Tooltip title="Delete item" placement="top">
@@ -142,7 +144,7 @@ export const InteractionTest: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const trigger = canvas.getByRole("button", { name: "Hover tooltip text" });
+    const trigger = canvas.getByRole("button", { name: "Hover Me" });
     await userEvent.hover(trigger);
     const page = within(canvasElement.ownerDocument.body);
     await expect(await page.findByRole("tooltip")).toHaveTextContent("Hover tooltip text");
@@ -150,7 +152,8 @@ export const InteractionTest: Story = {
     await waitFor(() => expect(page.queryByRole("tooltip")).not.toBeInTheDocument());
     trigger.focus();
     await userEvent.keyboard("{Tab}");
-    await expect(await page.findByRole("tooltip")).toHaveTextContent("Delete item");
+    // Focusing the first trigger can reopen its tooltip, which may still be closing after the Tab.
+    await expect(await page.findByRole("tooltip", { name: "Delete item" })).toBeVisible();
   },
 };
 

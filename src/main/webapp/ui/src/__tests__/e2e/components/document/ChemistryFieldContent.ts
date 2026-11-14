@@ -5,6 +5,9 @@ import { StoichiometryDialogComponent } from "@/modules/stoichiometry/__tests__/
 // Matches a chemistry image in both edit-mode (FrameLocator) and view-mode (plain Locator) field HTML.
 export const CHEM_IMAGE_SELECTOR = 'img[src*="sourceType=CHEM"]';
 
+/** Excludes the copy TinyMCE keeps in its offscreen container while a non-editable node is selected. */
+export const OUTSIDE_FAKE_SELECTION = ":not(.mce-offscreen-selection *)";
+
 export class ChemistryFieldContent {
   constructor(
     private readonly page: Page,
@@ -17,7 +20,7 @@ export class ChemistryFieldContent {
   }
 
   get standaloneStoichiometryTableElement(): Locator {
-    return this.frame.locator('[data-stoichiometry-table-only="true"]');
+    return this.frame.locator(`[data-stoichiometry-table-only="true"]${OUTSIDE_FAKE_SELECTION}`);
   }
 
   /** Waits until a newly inserted standalone table has received its persisted table id. */
