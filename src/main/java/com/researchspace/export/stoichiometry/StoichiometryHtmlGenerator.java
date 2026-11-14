@@ -11,6 +11,7 @@ import com.researchspace.service.UserLocaleService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.SneakyThrows;
 import org.apache.velocity.app.VelocityEngine;
@@ -48,7 +49,7 @@ public class StoichiometryHtmlGenerator {
       for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
         molecules.add(new StoichiometryTableData(moleculeDTO));
       }
-      java.util.Locale locale = userLocaleService.getLocaleFor(exporter);
+      Locale locale = userLocaleService.getLocaleFor(exporter);
       Map<String, Object> context = new HashMap<>();
       context.put("molecules", molecules);
       context.put("msg", new LocaleBoundMessages(messages, locale));

@@ -2,6 +2,7 @@ package com.researchspace.model.stoichiometry;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.researchspace.model.RSChemElement;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,10 +49,7 @@ public class StoichiometryMolecule {
   @JoinColumn(name = "rs_chem_id", nullable = false)
   private RSChemElement rsChemElement;
 
-  @OneToOne(
-      mappedBy = "stoichiometryMolecule",
-      cascade = jakarta.persistence.CascadeType.ALL,
-      orphanRemoval = true)
+  @OneToOne(mappedBy = "stoichiometryMolecule", cascade = CascadeType.ALL, orphanRemoval = true)
   private StoichiometryInventoryLink inventoryLink;
 
   @Enumerated(EnumType.STRING)

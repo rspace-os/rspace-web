@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -102,9 +103,9 @@ class InventoryOperationsErrorCatalogTest {
                 + " codes scanned, expected "
                 + MINIMUM_CODES_RAISED
                 + ": "
-                + new java.util.TreeSet<>(raised));
+                + new TreeSet<>(raised));
 
-    Set<String> missing = new java.util.TreeSet<>(raised);
+    Set<String> missing = new TreeSet<>(raised);
     missing.removeAll(loadServerCatalogs());
     assertTrue(
         missing.isEmpty(),
@@ -131,7 +132,7 @@ class InventoryOperationsErrorCatalogTest {
 
   @Test
   void everyCodeRaisedBySharedInventoryValidationHasACatalogEntry() throws IOException {
-    Set<String> raised = new java.util.TreeSet<>();
+    Set<String> raised = new TreeSet<>();
     for (Path source : SHARED_INVENTORY_VALIDATION_SOURCES) {
       Matcher matcher = RAISED_CODE.matcher(Files.readString(source));
       while (matcher.find()) {
@@ -140,7 +141,7 @@ class InventoryOperationsErrorCatalogTest {
     }
     assertTrue(raised.size() >= 15, () -> "only " + raised.size() + " codes scanned: " + raised);
 
-    Set<String> missing = new java.util.TreeSet<>(raised);
+    Set<String> missing = new TreeSet<>(raised);
     missing.removeAll(loadServerCatalogs());
     assertTrue(
         missing.isEmpty(),
@@ -172,7 +173,7 @@ class InventoryOperationsErrorCatalogTest {
     Set<String> catalog = new HashSet<>();
     flatten(
         "", new ObjectMapper().readTree(CATALOG_DIR.resolve("inventory.json").toFile()), catalog);
-    Set<String> missing = new java.util.TreeSet<>(referenced);
+    Set<String> missing = new TreeSet<>(referenced);
     missing.removeAll(catalog);
     assertTrue(
         missing.isEmpty(), "operation field labels with no entry in inventory.json: " + missing);

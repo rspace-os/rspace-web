@@ -29,6 +29,7 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -182,7 +183,7 @@ class InventoryIdentifiersApiControllerTest {
    */
   @Test
   void deleteAllowsB2instClosedReviewStates() {
-    for (String state : java.util.List.of("declined", "cancelled", "expired")) {
+    for (String state : List.of("declined", "cancelled", "expired")) {
       ApiInventoryDOI doi = new ApiInventoryDOI();
       doi.setDoiType("PIDINST_B2INST");
       doi.setState(state);
@@ -196,7 +197,7 @@ class InventoryIdentifiersApiControllerTest {
 
   @Test
   void deleteRejectsB2instOpenOrPublishedStates() {
-    for (String state : java.util.List.of("submitted", "created", "accepted")) {
+    for (String state : List.of("submitted", "created", "accepted")) {
       ApiInventoryDOI doi = new ApiInventoryDOI();
       doi.setDoiType("PIDINST_B2INST");
       doi.setState(state);

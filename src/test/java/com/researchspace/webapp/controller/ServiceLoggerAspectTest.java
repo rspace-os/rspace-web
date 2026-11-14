@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
+import com.researchspace.model.User;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import java.lang.reflect.Method;
@@ -54,7 +55,7 @@ public class ServiceLoggerAspectTest {
             String.class,
             String.class,
             boolean.class,
-            com.researchspace.model.User.class);
+            User.class);
     ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
     MethodSignature methodSignature = mock(MethodSignature.class);
     when(joinPoint.getSignature()).thenReturn(methodSignature);

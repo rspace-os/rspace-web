@@ -11,6 +11,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.LocaleBoundMessages;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -53,7 +54,7 @@ public class RequestEmailTemplateRenderTest {
 
   private String render(String template, Map<String, Object> model) {
     VelocityContext context = new VelocityContext(model);
-    java.io.StringWriter writer = new java.io.StringWriter();
+    StringWriter writer = new StringWriter();
     velocity.mergeTemplate(template, "UTF-8", context, writer);
     return writer.toString();
   }

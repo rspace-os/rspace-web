@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.ui.ExtendedModelMap;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,7 +91,7 @@ public class NfsSysAdminControllerTest {
     when(userMgr.getUserByUsername("alice")).thenReturn(sysadmin);
     when(userMgr.getUserByUsername("bob")).thenReturn(null);
     when(userMgr.getUserByUsername("carol"))
-        .thenThrow(new org.springframework.orm.ObjectRetrievalFailureException("User", "carol"));
+        .thenThrow(new ObjectRetrievalFailureException("User", "carol"));
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 

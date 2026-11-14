@@ -208,7 +208,7 @@ public class HTMLStringGeneratorTest {
     String documentAsHtml = documentData.getDocumentAsHtml();
     assertThat(documentAsHtml).contains("http://demo.researchspace.com");
     // check metadata elements are added
-    org.jsoup.nodes.Document htmlDoc = Jsoup.parse(documentAsHtml);
+    Document htmlDoc = Jsoup.parse(documentAsHtml);
     assertThat(htmlDoc.getElementsByTag("meta")).hasSize(EXPECTED_FIXED_META_COUNT);
 
     assertEquals(
@@ -228,7 +228,7 @@ public class HTMLStringGeneratorTest {
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     String documentAsHtml = input.getDocumentAsHtml();
     // check metadata elements are added
-    org.jsoup.nodes.Document htmlDoc = Jsoup.parse(documentAsHtml);
+    Document htmlDoc = Jsoup.parse(documentAsHtml);
     assertThat(htmlDoc.getElementsByTag("meta")).hasSize(EXPECTED_FIXED_META_COUNT + 1);
     assertThat(htmlDoc.getElementsByTag("meta"))
         .anyMatch(el -> el.attr("content").contains(OrcidId));
