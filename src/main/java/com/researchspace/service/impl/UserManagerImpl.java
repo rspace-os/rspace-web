@@ -74,6 +74,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private final IVerificationPasswordValidator verificationPasswordValidator;
   private final MessageSourceUtils messages;
   private final RSpacePasswordEncoder passwordEncoder;
+  private final LoginBookkeeping loginBookkeeping;
 
   public UserManagerImpl(
       UserDao userDao,
@@ -86,7 +87,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       IPropertyHolder properties,
       IVerificationPasswordValidator verificationPasswordValidator,
       MessageSourceUtils messages,
-      RSpacePasswordEncoder passwordEncoder) {
+      RSpacePasswordEncoder passwordEncoder,
+      LoginBookkeeping loginBookkeeping) {
     this.userDao = userDao;
     this.cacheManager = cacheManager;
     this.dao = userDao;
@@ -99,6 +101,21 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     this.verificationPasswordValidator = verificationPasswordValidator;
     this.messages = messages;
     this.passwordEncoder = passwordEncoder;
+    this.loginBookkeeping = loginBookkeeping;
+  }
+
+  @Override
+  public void recordLoginSuccess(User subject) {
+    User state = loginBookkeeping.recordSuccess(subject.getUsername());
+    subject.setLastLogin(state.getLastLogin());
+    subject.setLoginFailure(state.getLoginFailure());
+    subject.setNumConsecutiveLoginFailures(state.getNumConsecutiveLoginFailures());
+    subject.setAccountLocked(state.isAccountLocked());
+  }
+
+  @Override
+  public void recordLoginFailure(String usernameOrAlias) {
+    loginBookkeeping.recordFailure(usernameOrAlias);
   }
 
   /** {@inheritDoc} */

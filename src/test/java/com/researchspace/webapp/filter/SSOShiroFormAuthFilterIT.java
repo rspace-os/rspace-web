@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,7 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.RSpaceTestUtils;
-import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.SignupController;
 import com.researchspace.webapp.controller.WorkspaceController;
@@ -28,7 +29,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
+/** Login bookkeeping commits in its own transaction, so test accounts must be committed. */
+public class SSOShiroFormAuthFilterIT extends RealTransactionSpringTestBase {
 
   private SSOShiroFormAuthFilterExt filter;
 
@@ -49,7 +51,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   private LoginHelper loginHelper;
 
   @BeforeEach
-  public void setUp() {
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
     this.remoteUserPolicy = new MockRemoteUserPolicy();
     filter = new SSOShiroFormAuthFilterExt(remoteUserPolicy);
     filter.setUserMgr(userMgr);
@@ -62,8 +66,10 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  @Override
+  public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
+    super.tearDown();
   }
 
   @Test
@@ -77,7 +83,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     assertTrue(hasRemoteUserUsernameSet());
 
     // can login using usernameAlias
-    user.setUsernameAlias("testAlias");
+    user.setUsernameAlias(getRandomName(10));
     userMgr.saveUser(user);
     logoutAndResetMockRequestResponse();
     remoteUserPolicy.setUsername(user.getUsernameAlias());
@@ -162,7 +168,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   public void ssoRemoteUsernameMatchingUserWhoAlsoHasAnAliasRedirectedToErrorPage()
       throws UserExistsException {
     User u = createAndSaveSsoTestUser();
-    u.setUsernameAlias("testAlias");
+    u.setUsernameAlias(getRandomName(10));
     userMgr.saveUser(u);
 
     remoteUserPolicy.setUsername(u.getUsername());
@@ -184,6 +190,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
       throws UserExistsException {
     User u = createAndSaveSsoTestUser();
     u.setSignupSource(SignupSource.SSO_BACKDOOR);
+    userMgr.saveUser(u);
     remoteUserPolicy.setUsername(u.getUsername());
     req.setRequestURI("/login");
     assertFalse(filter.isAccessAllowed(req, resp, null));
@@ -202,23 +209,23 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     assertFalse(u.isAllowedPiRole());
     remoteUserPolicy.setUsername(u.getUsername());
     assertTrue(filter.isAccessAllowed(req, resp, null));
-    assertFalse(u.isAllowedPiRole());
+    assertFalse(userMgr.get(u.getId()).isAllowedPiRole());
 
     // logout, set isAllowePiRole property to true, login again
     SecurityUtils.getSubject().logout();
     remoteUserPolicy.setIsAllowedPiRole("true");
     assertTrue(filter.isAccessAllowed(req, resp, null));
-    assertTrue(u.isAllowedPiRole());
+    assertTrue(userMgr.get(u.getId()).isAllowedPiRole());
 
     // logout, set isAllowePiRole property to false, login again
     SecurityUtils.getSubject().logout();
     remoteUserPolicy.setIsAllowedPiRole("false");
     assertTrue(filter.isAccessAllowed(req, resp, null));
-    assertFalse(u.isAllowedPiRole());
+    assertFalse(userMgr.get(u.getId()).isAllowedPiRole());
   }
 
   private User createAndSaveSsoTestUser() throws UserExistsException {
-    User u = TestFactory.createAnyUser("ssoTestUser");
+    User u = TestFactory.createAnyUser(getRandomName(10));
     u.setEmail(u.getUsername() + "@rs.com");
     u.setPassword(SSO_DUMMY_PASSWORD);
     u = userMgr.saveNewUser(u);
