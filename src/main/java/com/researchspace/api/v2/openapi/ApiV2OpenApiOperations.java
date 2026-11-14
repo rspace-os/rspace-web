@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.putIfNotNull;
@@ -10,10 +11,12 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.param
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiQueryParameters.parameters;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.access;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResourceAccessDocs.applyAccess;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.PROBLEM_JSON;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.RESPONSES;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.problemResponse;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.putStandardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.rateLimitHeaders;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiResponses.standardResponses;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.bulkResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiResultSchemas.listResult;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -21,6 +24,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiText.Key;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.api.v2.resource.IdempotencyPolicy;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.AccessDocumentation;
@@ -46,6 +50,7 @@ final class ApiV2OpenApiOperations {
       ResourceOperation operation,
       String component,
       Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents components) {
     ResourceSchema schema = resource.description().schema();
     OpenApiOperationDocumentation documentation = resource.operationDocumentation(operation);
@@ -83,6 +88,27 @@ final class ApiV2OpenApiOperations {
             resource.registry(),
             runtimeFields.runtimeFieldsExtension(resource),
             text);
+    if (operation == ResourceOperation.CREATE
+        && resource.mutationPolicy().idempotency() == IdempotencyPolicy.CREATOR_SCOPED) {
+      parameters.add(
+          components.reference(
+              PARAMETERS,
+              "IdempotencyKey",
+              parameter(
+                  "Idempotency-Key",
+                  "header",
+                  false,
+                  ordered(
+                      "type",
+                      "string",
+                      "minLength",
+                      1,
+                      "maxLength",
+                      64,
+                      "pattern",
+                      "^[A-Za-z0-9._:-]+$"),
+                  text.get(Key.PARAMETER_IDEMPOTENCY_KEY))));
+    }
     if (resource.mutationPolicy().version().field().isPresent()
         && (operation == ResourceOperation.UPDATE || operation == ResourceOperation.DELETE)) {
       boolean required = requiresIfMatch(resource, operation);
@@ -111,7 +137,8 @@ final class ApiV2OpenApiOperations {
     if (hasRequestBody(operation)) {
       result.put("requestBody", requestBody(operation, component, documentation));
     }
-    result.put("responses", responses(resource, operation, component, documentation, components));
+    result.put(
+        "responses", responses(resource, operation, component, documentation, schemas, components));
     result.put("x-rspace-operation", operation.name());
     result.putAll(documentation.extensions());
     return result;
@@ -163,6 +190,7 @@ final class ApiV2OpenApiOperations {
       ResourceOperation operation,
       String component,
       OpenApiOperationDocumentation documentation,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents components) {
     Map<String, Object> responses = new LinkedHashMap<>();
     String successStatus =
@@ -201,6 +229,18 @@ final class ApiV2OpenApiOperations {
         operation == ResourceOperation.COUNT && !documentedSuccess
             ? components.reference(RESPONSES, "CountResult", success)
             : success);
+    if (operation == ResourceOperation.CREATE
+        && resource.mutationPolicy().idempotency() == IdempotencyPolicy.CREATOR_SCOPED) {
+      responses.put(
+          "200",
+          ordered(
+              "description",
+              text.get(Key.RESPONSE_CREATE_RETRY),
+              "headers",
+              rateLimitHeaders(),
+              "content",
+              Map.of(APPLICATION_JSON_VALUE, successMedia)));
+    }
     if (operation == ResourceOperation.DELETE
         && resource.mutationPolicy().delete().permanentOption()) {
       responses.put(
@@ -282,6 +322,29 @@ final class ApiV2OpenApiOperations {
                 mutable.put("description", responseDocumentation.description());
                 responses.put(String.valueOf(status), mutable);
               }
+            });
+    documentation
+        .problemSchemas()
+        .forEach(
+            (status, type) -> {
+              Object existing = responses.get(String.valueOf(status));
+              if (existing == null)
+                throw new IllegalArgumentException(
+                    "Problem schema needs a documented response: " + status);
+              Map<String, Object> response = new LinkedHashMap<>(mutableObjectMap(existing));
+              if (response.containsKey("$ref")) {
+                String name =
+                    response.remove("$ref").toString().replace("#/components/responses/", "");
+                response.putAll(mutableObjectMap(standardResponses(text).get(name)));
+              }
+              Map<String, Object> content =
+                  new LinkedHashMap<>(mutableObjectMap(response.get("content")));
+              Map<String, Object> media =
+                  new LinkedHashMap<>(mutableObjectMap(content.get(PROBLEM_JSON)));
+              media.put("schema", ApiV2OpenApiSchemas.responseSchemaFor(type, schemas));
+              content.put(PROBLEM_JSON, media);
+              response.put("content", content);
+              responses.put(String.valueOf(status), response);
             });
     return responses;
   }

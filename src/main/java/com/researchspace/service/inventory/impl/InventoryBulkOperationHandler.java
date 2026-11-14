@@ -26,10 +26,12 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
+import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.model.User;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Getter;
@@ -108,7 +110,13 @@ public class InventoryBulkOperationHandler {
         return runOperationForWholeBulkList(bulkOpConfig, this::moveAllRecordsFromList);
       case CHANGE_OWNER:
         return runOperationForEachRecordFromBulkList(
-            bulkOpConfig, this::changeInventoryRecordOwner);
+            bulkOpConfig,
+            (record, user) ->
+                changeInventoryRecordOwner(
+                    record,
+                    user,
+                    bulkOpConfig.getActor(),
+                    bulkOpConfig.isTransferBookingConfigurationOwnership()));
       default:
         throw new IllegalStateException("unhandled operation for type: " + operationType);
     }
@@ -175,12 +183,19 @@ public class InventoryBulkOperationHandler {
     if (cause instanceof BindException bindException) {
       return apiControllerAdvice.getApiErrorFromBindException(bindException);
     }
+    // These carry message keys, not text, so resolve them rather than echoing the key or enum.
+    String detail = messages.getExceptionChainMessage(e);
+    if (cause instanceof ResourceAccessException access) {
+      detail = messages.getMessage(access.reason().messageKey());
+    } else if (cause instanceof BookingConfigurationLifecycleException) {
+      detail = messages.getMessage(BookingConfigurationLifecycleException.MESSAGE_KEY);
+    }
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
         messages.getMessage("api.errors.detected", new Object[] {1}),
         findApiErrorCode(e),
-        messages.getExceptionChainMessage(e));
+        detail);
   }
 
   /** The frontend picks tailored alerts for some failures by this code. */
@@ -328,7 +343,10 @@ public class InventoryBulkOperationHandler {
   }
 
   private ApiInventoryRecordInfo changeInventoryRecordOwner(
-      ApiInventoryRecordInfo recInfo, User user) {
+      ApiInventoryRecordInfo recInfo,
+      User user,
+      User actor,
+      boolean transferBookingConfigurationOwnership) {
     ApiInventoryRecordType recInfoType = recInfo.getType();
     BindException errors = new BindException(recInfo, "record");
 
@@ -345,7 +363,12 @@ public class InventoryBulkOperationHandler {
               recInfo.getId(), (ApiContainer) recInfo, errors, user);
         case INSTRUMENT:
           return instrumentsApiController.changeInstrumentOwner(
-              recInfo.getId(), (ApiInstrument) recInfo, errors, user);
+              recInfo.getId(),
+              (ApiInstrument) recInfo,
+              errors,
+              user,
+              actor,
+              transferBookingConfigurationOwnership);
         case INSTRUMENT_TEMPLATE:
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
               recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);

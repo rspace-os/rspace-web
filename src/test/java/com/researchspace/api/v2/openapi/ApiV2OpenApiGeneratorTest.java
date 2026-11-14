@@ -1,0 +1,759 @@
+package com.researchspace.api.v2.openapi;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
+import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.DeletePolicy;
+import com.researchspace.api.v2.resource.IdempotencyPolicy;
+import com.researchspace.api.v2.resource.MutationPolicy;
+import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceAccessSpec;
+import com.researchspace.api.v2.resource.ResourceAuditPolicy;
+import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.api.v2.resource.VersionPolicy;
+import com.researchspace.featureflags.ApiV2FeatureFlagResource;
+import com.researchspace.featureflags.FeatureFlagResource;
+import com.researchspace.inventory.model.ApiV2ContainerResource;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
+import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
+import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
+import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
+import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
+import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.OpenAPI;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+
+class ApiV2OpenApiGeneratorTest {
+
+  private ApiV2OpenApiGenerator generator;
+
+  @BeforeEach
+  void setUp() {
+    ResourceOperations<ScheduledMaintenance, Long> maintenanceOperations = operationsMock();
+    ResourceOperations<User, Long> userOperations = operationsMock();
+    ResourceOperations<BookingConfiguration, Long> bookingOperations = operationsMock();
+    ResourceOperations<TimeSlotBooking, Long> timeSlotBookingOperations = operationsMock();
+    @SuppressWarnings("unchecked")
+    ResourceOperations<FeatureFlagResource, String> featureFlagOperations =
+        mock(ResourceOperations.class);
+    ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance =
+        ApiV2ResourceSpec.builder(
+                ApiV2MaintenanceResource.DESCRIPTION, maintenanceOperations, Long::valueOf)
+            .mutationErrors("create-error", "update-error")
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
+            .documentation(
+                ResourceOperation.LIST,
+                OpenApiOperationDocumentation.builder()
+                    .summary("Browse maintenance windows")
+                    .description("Developer-supplied list documentation.")
+                    .tag("Operations")
+                    .responseDescription(200, "Documented maintenance page.")
+                    .extension("x-rspace-audience", "operators")
+                    .build())
+            .errorMappings(
+                ResourceOperation.CREATE,
+                List.of(
+                    ApiV2ErrorMapping.forException(ExampleConflictException.class)
+                        .status(HttpStatus.CONFLICT)
+                        .documentedError("errors.example.conflict", "The resource conflicts.")
+                        .build(),
+                    ApiV2ErrorMapping.forException(SecondConflictException.class)
+                        .status(HttpStatus.CONFLICT)
+                        .documentedError(
+                            "errors.example.second-conflict", "The resource has another conflict.")
+                        .build()))
+            .build();
+    ApiV2ResourceSpec<User, Long> users =
+        ApiV2ResourceSpec.builder(ApiV2UserResource.DESCRIPTION, userOperations, Long::valueOf)
+            .mutationErrors("create-error", "update-error")
+            .audit(ResourceAuditPolicy.standard(userOperations))
+            .build();
+    ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurations =
+        ApiV2ResourceSpec.builder(
+                ApiV2BookingConfigurationResource.DESCRIPTION, bookingOperations, Long::valueOf)
+            .mutationPolicy(
+                new MutationPolicy(
+                    VersionPolicy.required(
+                        "configurationVersion",
+                        "errors.api.v2.bookingConfiguration.ifMatchRequired",
+                        ResourceOperation.UPDATE,
+                        ResourceOperation.DELETE),
+                    DeletePolicy.SOFT.withPermanentOption(),
+                    IdempotencyPolicy.NONE))
+            .mutationErrors("create-error", "update-error")
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
+            .resourceAccess(new ResourceAccessSpec<>(protectedAccess()))
+            .build();
+    ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
+        ApiV2ResourceSpec.builder(
+                ApiV2TimeSlotBookingResource.DESCRIPTION, timeSlotBookingOperations, Long::valueOf)
+            .mutationErrors("create-error", "update-error")
+            .expose(EnumSet.range(ResourceOperation.LIST, ResourceOperation.BULK_DELETE))
+            .build();
+    ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
+        ApiV2ResourceSpec.builder(
+                ApiV2FeatureFlagResource.DESCRIPTION, featureFlagOperations, Function.identity())
+            .mutationErrors("create-error", "update-error")
+            .expose(EnumSet.of(ResourceOperation.LIST, ResourceOperation.READ))
+            .build();
+    ApiV2ResourceSpec<Instrument, Long> instruments =
+        ApiV2ResourceSpec.builder(
+                ApiV2InstrumentResource.DESCRIPTION, operationsMock(), Long::valueOf)
+            .mutationErrors("create-error", "update-error")
+            .expose(Set.of())
+            .build();
+    generator =
+        new ApiV2OpenApiGenerator(
+            new ApiV2ResourceCatalog(
+                List.of(
+                    maintenance,
+                    users,
+                    bookingConfigurations,
+                    timeSlotBookings,
+                    featureFlags,
+                    instruments,
+                    ApiV2ResourceSpec.builder(
+                            ApiV2ContainerResource.DESCRIPTION, operationsMock(), Long::valueOf)
+                        .mutationErrors("create-error", "update-error")
+                        .expose(Set.of())
+                        .build())),
+            com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+            "Test API",
+            "2.0.0");
+  }
+
+  private static final class ExampleConflictException extends RuntimeException {}
+
+  private static final class SecondConflictException extends RuntimeException {}
+
+  @SuppressWarnings("unchecked")
+  private static ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess() {
+    return mock(ProtectedResourceAccess.class);
+  }
+
+  @Test
+  void generatesConcretePathsForExposedOperations() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+
+    assertEquals("3.1.0", document.get("openapi"));
+    assertTrue(paths.containsKey("/api/v2/maintenances"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/count"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/bulk"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/{id}"));
+    assertFalse(paths.containsKey("/api/v2/maintenances/{id}/audit"));
+    assertFalse(paths.containsKey("/api/v2/{resource}"));
+    assertFalse(paths.containsKey("/api/v2/instruments"));
+
+    Map<String, Object> securitySchemes =
+        objectMap(objectMap(document.get("components")).get("securitySchemes"));
+    assertEquals(Set.of("apiKey", "bearerAuth", "browserSession"), securitySchemes.keySet());
+
+    Map<String, Object> users = objectMap(paths.get("/api/v2/users"));
+    assertTrue(users.containsKey("get"));
+    assertTrue(users.containsKey("post"));
+    assertTrue(users.containsKey("patch"));
+    assertTrue(users.containsKey("delete"));
+
+    Map<String, Object> schemas = schemas(document);
+    assertTrue(schemas.containsKey("InstrumentsRead"));
+    assertTrue(schemas.containsKey("InstrumentsReference"));
+    assertTrue(schemas.containsKey("InstrumentsCreate"));
+  }
+
+  @Test
+  void documentsAccessOnlyForRegisteredProtectedResources() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    String accessPath = "/api/v2/booking-configurations/{id}/access";
+
+    assertEquals(Set.of("get", "put"), objectMap(paths.get(accessPath)).keySet());
+    assertTrue(paths.containsKey(accessPath + "/me"));
+    assertTrue(paths.containsKey(accessPath + "/grantees"));
+    assertFalse(paths.containsKey("/api/v2/maintenances/{id}/access"));
+
+    Map<String, Object> schemas = schemas(document);
+    assertTrue(schemas.containsKey("ResourceAccessDocument"));
+    assertTrue(schemas.containsKey("ResourceAccessReplacement"));
+    Map<String, Object> readProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsRead")).get("properties"));
+    assertEquals(
+        "#/components/schemas/BookingConfigurationCapabilities",
+        objectMap(readProperties.get("capabilities")).get("$ref"));
+    assertEquals(
+        "#/components/schemas/DeclaredResourceRoleSource",
+        objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+  }
+
+  @Test
+  void publishesIndependentBookingHoursAndDeclaredRoleSourceChildren() {
+    Map<String, Object> schemas = schemas(document());
+    for (String variant : List.of("Read", "Create", "Update")) {
+      Map<String, Object> properties =
+          objectMap(objectMap(schemas.get("BookingConfigurations" + variant)).get("properties"));
+      assertFalse(properties.containsKey("openingStart"));
+      assertFalse(properties.containsKey("openingEnd"));
+      Map<String, Object> hours = objectMap(properties.get("openingHours"));
+      assertEquals("array", hours.get("type"), variant);
+      assertEquals(1, hours.get("minItems"), variant);
+      assertEquals(7, hours.get("maxItems"), variant);
+      Map<String, Object> row = objectMap(hours.get("items"));
+      if (variant.equals("Read")) {
+        assertEquals("#/components/schemas/DeclaredBookingOpeningHoursEntry", row.get("$ref"));
+        row = objectMap(schemas.get("DeclaredBookingOpeningHoursEntry"));
+      }
+      assertEquals(false, row.get("additionalProperties"), variant);
+      Map<String, Object> children = objectMap(row.get("properties"));
+      assertEquals(Set.of("dayOfWeek", "start", "end"), children.keySet(), variant);
+      assertEquals("integer", objectMap(children.get("dayOfWeek")).get("type"), variant);
+      assertEquals(BigDecimal.ONE, objectMap(children.get("dayOfWeek")).get("minimum"), variant);
+      assertEquals(
+          BigDecimal.valueOf(7), objectMap(children.get("dayOfWeek")).get("maximum"), variant);
+      assertEquals(
+          BookingOpeningHoursCodec.WALL_TIME_PATTERN,
+          objectMap(children.get("start")).get("pattern"),
+          variant);
+      assertEquals(
+          BookingOpeningHoursCodec.CLOSING_TIME_PATTERN,
+          objectMap(children.get("end")).get("pattern"),
+          variant);
+      if (!variant.equals("Read")) {
+        assertEquals(
+            Set.of("dayOfWeek", "start", "end"),
+            Set.copyOf((List<?>) row.get("required")),
+            variant);
+      }
+    }
+
+    Map<String, Object> roleSource = objectMap(schemas.get("DeclaredResourceRoleSource"));
+    assertEquals(false, roleSource.get("additionalProperties"));
+    Map<String, Object> children = objectMap(roleSource.get("properties"));
+    assertEquals(Set.of("kind", "role", "grantee"), children.keySet());
+    Map<String, Object> grantee = objectMap(children.get("grantee"));
+    assertEquals(false, grantee.get("additionalProperties"));
+    Map<String, Object> granteeChildren = objectMap(grantee.get("properties"));
+    assertEquals(Set.of("kind", "key", "id", "name"), granteeChildren.keySet());
+    assertEquals(List.of("integer", "string"), objectMap(granteeChildren.get("id")).get("type"));
+  }
+
+  @Test
+  void documentsVersionedArchiveAndExplicitPermanentDelete() {
+    Map<String, Object> paths = objectMap(document().get("paths"));
+    Map<String, Object> delete =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations/{id}")).get("delete"));
+    List<Map<String, Object>> parameters = objectMapList(delete.get("parameters"));
+
+    assertEquals("Archive one booking-configurations", delete.get("summary"));
+    assertTrue(
+        parameters.stream()
+            .anyMatch(
+                parameter ->
+                    parameter.get("name").equals("If-Match")
+                        && parameter.get("in").equals("header")
+                        && parameter.get("required").equals(true)));
+    Map<String, Object> permanent =
+        parameters.stream()
+            .filter(parameter -> parameter.get("name").equals("permanent"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(false, objectMap(permanent.get("schema")).get("default"));
+    assertTrue(objectMap(delete.get("responses")).containsKey("204"));
+
+    Map<String, Object> bulkDelete =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("delete"));
+    assertEquals("Archive matching booking-configurations", bulkDelete.get("summary"));
+    assertFalse(
+        objectMapList(bulkDelete.get("parameters")).stream()
+            .anyMatch(parameter -> parameter.get("name").equals("permanent")));
+  }
+
+  @Test
+  void documentsInstrumentParentAsAContainerRelationship() {
+    Map<String, Object> properties =
+        objectMap(objectMap(schemas(document()).get("InstrumentsRead")).get("properties"));
+    assertTrue(properties.containsKey("parentContainer"));
+  }
+
+  @Test
+  void generatesOperationSpecificSchemasSecurityAndQueryMetadata() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> collection = objectMap(paths.get("/api/v2/maintenances"));
+    Map<String, Object> list = objectMap(collection.get("get"));
+    Map<String, Object> create = objectMap(collection.get("post"));
+    Map<String, Object> bulkCreate =
+        objectMap(objectMap(paths.get("/api/v2/maintenances/bulk")).get("post"));
+
+    assertEquals(List.of(), list.get("security"));
+    assertEquals(2, ((List<?>) create.get("security")).size());
+    assertEquals("createManyMaintenances", bulkCreate.get("operationId"));
+    assertTrue(objectMap(bulkCreate.get("responses")).containsKey("201"));
+    Map<String, Object> conflict = objectMap(objectMap(create.get("responses")).get("409"));
+    assertEquals(
+        "The resource conflicts. The resource has another conflict.", conflict.get("description"));
+    Map<String, Object> conflictMedia =
+        objectMap(objectMap(conflict.get("content")).get("application/problem+json"));
+    Map<String, Object> conflictExamples = objectMap(conflictMedia.get("examples"));
+    assertEquals(
+        Set.of("errors.example.conflict", "errors.example.second-conflict"),
+        conflictExamples.keySet());
+    assertEquals(
+        "errors.example.conflict",
+        objectMap(objectMap(conflictExamples.get("errors.example.conflict")).get("value"))
+            .get("code"));
+    Map<String, Object> bulkRequestSchema =
+        objectMap(
+            objectMap(
+                    objectMap(objectMap(bulkCreate.get("requestBody")).get("content"))
+                        .get("application/json"))
+                .get("schema"));
+    assertEquals(List.of("docs"), bulkRequestSchema.get("required"));
+    assertEquals(false, bulkRequestSchema.get("additionalProperties"));
+    Map<String, Object> docs =
+        objectMap(objectMap(bulkRequestSchema.get("properties")).get("docs"));
+    assertEquals(1, docs.get("minItems"));
+    assertEquals(
+        "#/components/schemas/MaintenancesCreate", objectMap(docs.get("items")).get("$ref"));
+    assertNotNull(list.get("x-rspace-access"));
+    assertEquals("Browse maintenance windows", list.get("summary"));
+    assertEquals("Developer-supplied list documentation.", list.get("description"));
+    assertEquals(List.of("Operations"), list.get("tags"));
+    assertEquals("operators", list.get("x-rspace-audience"));
+
+    List<Map<String, Object>> parameters = objectMapList(list.get("parameters"));
+    Map<String, Object> where =
+        parameters.stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> filter = objectMap(where.get("x-rspace-filter"));
+    assertEquals(32768, objectMap(where.get("schema")).get("maxLength"));
+    assertEquals(50, filter.get("maximumComparisons"));
+    assertEquals(10, filter.get("maximumLikeComparisons"));
+    assertEquals(1000, filter.get("maximumArguments"));
+    assertTrue(objectMap(filter.get("selectors")).containsKey("message"));
+    assertFalse(objectMap(filter.get("selectors")).containsKey("canUserLoginNow"));
+    Map<String, Object> messageFilter =
+        objectMap(objectMap(filter.get("selectors")).get("message"));
+    assertTrue(((List<?>) messageFilter.get("operators")).contains("=like="));
+    assertFalse(((List<?>) messageFilter.get("operators")).contains("LIKE"));
+
+    Map<String, Object> sort =
+        parameters.stream()
+            .filter(parameter -> parameter.get("name").equals("sort"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(List.of("startDate", "id"), objectMap(sort.get("x-rspace-sort")).get("default"));
+    assertFalse(
+        ((List<?>) objectMap(sort.get("x-rspace-sort")).get("fields")).contains("canUserLoginNow"));
+    assertEquals(
+        1, parameters.stream().filter(parameter -> parameter.get("name").equals("fields")).count());
+
+    Map<String, Object> bookingList =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
+    Map<String, Object> bookingWhere =
+        objectMapList(bookingList.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookingWhere.get("x-rspace-filter")).get("selectors"));
+    String bookingWhereDescription = (String) bookingWhere.get("description");
+    assertTrue(bookingWhereDescription.contains("createdBy.value==me"));
+    assertTrue(bookingWhereDescription.contains("authenticated effective subject"));
+    assertTrue(bookingSelectors.containsKey("target.name"));
+    assertTrue(bookingSelectors.containsKey("target.deleted"));
+    assertEquals(List.of("=="), objectMap(bookingSelectors.get("target.deleted")).get("operators"));
+    assertTrue(bookingSelectors.containsKey("createdBy.username"));
+    assertTrue(bookingSelectors.containsKey("updatedBy.username"));
+
+    assertTrue(
+        bookingSelectors
+            .keySet()
+            .containsAll(List.of("target.id", "target.name", "target.globalId", "target.deleted")));
+    Map<String, Object> name = objectMap(bookingSelectors.get("target.name"));
+    assertEquals("Name", name.get("title"));
+    assertTrue(((List<?>) name.get("operators")).contains("=contains="));
+    Map<String, Object> globalId = objectMap(bookingSelectors.get("target.globalId"));
+    assertEquals("Global ID", globalId.get("title"));
+    assertEquals(List.of(), globalId.get("operators"));
+    assertEquals(false, globalId.get("wildcards"));
+    assertFalse(objectMap(bookingSelectors.get("target.value")).containsKey("viaTitle"));
+    assertFalse(objectMap(bookingSelectors.get("target.relationTo")).containsKey("viaTitle"));
+
+    Map<String, Object> timeSlotBookingList =
+        objectMap(objectMap(paths.get("/api/v2/bookings")).get("get"));
+    List<Map<String, Object>> timeSlotBookingParameters =
+        objectMapList(timeSlotBookingList.get("parameters"));
+    Map<String, Object> timeSlotBookingWhere =
+        timeSlotBookingParameters.stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> timeSlotBookingSelectors =
+        objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
+    Map<String, Object> requesterValue = objectMap(timeSlotBookingSelectors.get("requester.value"));
+    assertEquals("integer", objectMap(requesterValue.get("schema")).get("type"));
+    assertTrue(((List<?>) requesterValue.get("operators")).contains("=="));
+    Map<String, Object> timeSlotBookingSort =
+        timeSlotBookingParameters.stream()
+            .filter(parameter -> parameter.get("name").equals("sort"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(
+        ((List<?>) objectMap(timeSlotBookingSort.get("x-rspace-sort")).get("fields"))
+            .contains("requester.value"));
+
+    Map<String, Object> schemas = schemas(document);
+    Map<String, Object> readProperties =
+        objectMap(objectMap(schemas.get("MaintenancesRead")).get("properties"));
+    Map<String, Object> createProperties =
+        objectMap(objectMap(schemas.get("MaintenancesCreate")).get("properties"));
+    assertTrue(readProperties.containsKey("id"));
+    assertTrue(readProperties.containsKey("canUserLoginNow"));
+    assertFalse(createProperties.containsKey("id"));
+    assertFalse(createProperties.containsKey("canUserLoginNow"));
+    assertFalse(readProperties.containsKey("property"));
+    assertTrue(schemas.containsKey("ApiV2Problem"));
+    // No ApiV2BulkError: bulk operations are atomic, so a per-document error list was always empty
+    // and only ever produced dead branches in a generated client.
+    assertFalse(schemas.containsKey("ApiV2BulkError"));
+    assertTrue(schemas.containsKey("ApiV2AuditEvent"));
+    assertEquals(
+        "Stable maintenance identifier.", objectMap(readProperties.get("id")).get("description"));
+    assertEquals(42L, objectMap(readProperties.get("id")).get("example"));
+    assertEquals(List.of(43L), objectMap(readProperties.get("id")).get("examples"));
+
+    Map<String, Object> userProperties =
+        objectMap(objectMap(schemas.get("UsersRead")).get("properties"));
+    assertEquals("idn-email", objectMap(userProperties.get("email")).get("format"));
+    assertTrue(userProperties.containsKey("createdAt"));
+    assertFalse(userProperties.containsKey("updatedBy"));
+    assertTrue((Boolean) objectMap(userProperties.get("createdAt")).get("readOnly"));
+    assertFalse(readProperties.containsKey("createdAt"));
+
+    Map<String, Object> bookingProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsCreate")).get("properties"));
+    assertFalse(bookingProperties.containsKey("timezone"));
+    assertFalse(bookingProperties.containsKey("timeZone"));
+    Map<String, Object> target = objectMap(bookingProperties.get("target"));
+    assertEquals("Booking target", target.get("title"));
+    assertNotNull(target.get("allOf"));
+    List<?> createTargetParts = (List<?>) target.get("allOf");
+    assertTrue(
+        objectMap(objectMap(createTargetParts.get(1)).get("properties")).containsKey("globalId"));
+    assertFalse(bookingProperties.containsKey("createdAt"));
+
+    Map<String, Object> bookingReadProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsRead")).get("properties"));
+    assertTrue(bookingReadProperties.containsKey("createdAt"));
+    assertTrue(bookingReadProperties.containsKey("updatedAt"));
+    assertTrue(bookingReadProperties.containsKey("createdBy"));
+    assertTrue(bookingReadProperties.containsKey("updatedBy"));
+    assertTrue((Boolean) objectMap(bookingReadProperties.get("updatedBy")).get("readOnly"));
+    assertTrue(bookingReadProperties.containsKey("timezone"));
+    assertFalse(bookingReadProperties.containsKey("timeZone"));
+    List<?> nullableTargetOutput =
+        (List<?>) objectMap(bookingReadProperties.get("target")).get("anyOf");
+    assertEquals("null", objectMap(nullableTargetOutput.get(1)).get("type"));
+    List<?> targetOutputVariants = (List<?>) objectMap(nullableTargetOutput.get(0)).get("oneOf");
+    Map<String, Object> targetReference = objectMap(targetOutputVariants.get(0));
+    List<?> targetReferenceParts = (List<?>) targetReference.get("allOf");
+    assertEquals(
+        "#/components/schemas/InstrumentsReference",
+        objectMap(targetReferenceParts.get(0)).get("$ref"));
+    Map<String, Object> targetReferenceProperties =
+        objectMap(objectMap(targetReferenceParts.get(1)).get("properties"));
+    assertEquals("string", objectMap(targetReferenceProperties.get("globalId")).get("type"));
+    assertEquals("^IN\\d+$", objectMap(targetReferenceProperties.get("globalId")).get("pattern"));
+    Map<String, Object> instrumentReferenceProperties =
+        objectMap(objectMap(schemas.get("InstrumentsReference")).get("properties"));
+    assertEquals("integer", objectMap(instrumentReferenceProperties.get("value")).get("type"));
+
+    Map<String, Object> timeSlotBookingReadProperties =
+        objectMap(objectMap(schemas.get("BookingsRead")).get("properties"));
+    assertTrue(timeSlotBookingReadProperties.containsKey("requester"));
+    assertFalse(timeSlotBookingReadProperties.containsKey("requesterId"));
+
+    Map<String, Object> bookingUpdateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    assertFalse(bookingUpdateProperties.containsKey("target"));
+
+    Map<String, Object> components = objectMap(document.get("components"));
+    Map<String, Object> badRequest =
+        objectMap(objectMap(components.get("responses")).get("BadRequest"));
+    Map<String, Object> problemMedia =
+        objectMap(objectMap(badRequest.get("content")).get("application/problem+json"));
+    Map<String, Object> example = objectMap(problemMedia.get("example"));
+    assertEquals(List.of("title", "status", "code"), example.keySet().stream().toList());
+    assertTrue(objectMap(components.get("headers")).containsKey("RateLimitRemaining"));
+  }
+
+  @Test
+  void documentsDailyAuditSnapshotContract() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> audit =
+        objectMap(objectMap(paths.get("/api/v2/users/{id}/audit")).get("get"));
+    assertEquals("listUserAuditEvents", audit.get("operationId"));
+    assertEquals(2, ((List<?>) audit.get("security")).size());
+    assertTrue(objectMap(audit.get("responses")).containsKey("404"));
+    List<Map<String, Object>> auditParameters = objectMapList(audit.get("parameters"));
+    assertEquals(
+        List.of("id", "start", "end", "q", "actions"),
+        auditParameters.stream().map(parameter -> parameter.get("name")).toList());
+    Map<String, Object> auditResponses = objectMap(audit.get("responses"));
+    assertEquals(
+        List.of("200", "400", "401", "403", "404", "406", "429", "500", "503"),
+        auditResponses.keySet().stream().toList());
+    Map<String, Object> auditPage =
+        objectMap(
+            objectMap(objectMap(auditResponses.get("200")).get("content")).get("application/json"));
+    Map<String, Object> auditPageSchema = objectMap(auditPage.get("schema"));
+    assertFalse(((List<?>) auditPageSchema.get("required")).contains("totalDocs"));
+    assertEquals(
+        Set.of("docs", "limit", "truncated", "start", "endExclusive"),
+        Set.copyOf((List<?>) auditPageSchema.get("required")));
+    assertTrue(String.valueOf(audit.get("description")).contains("half-open"));
+  }
+
+  @Test
+  void publishesEnumsFromTheirEnforcingSource() {
+    Map<String, Object> document = document();
+    Map<String, Object> schemas = schemas(document);
+    List<String> states = List.of("ACTIVE", "ARCHIVED");
+    for (String variant : List.of("Read", "Update")) {
+      assertEquals(
+          states,
+          property(schemas, "BookingConfigurations" + variant, "state").get("enum"),
+          variant);
+    }
+    assertEquals(
+        states, whereSelector(document, "/api/v2/booking-configurations", "state").get("enum"));
+
+    assertEquals(
+        List.of("DEFAULT", "DATABASE", "USER_OVERRIDE", "PROPERTIES_FILE"),
+        property(schemas, "FeatureFlagsRead", "source").get("enum"));
+    assertFalse(
+        whereSelector(document, "/api/v2/feature-flags", "source").containsKey("enum"),
+        "allowed String values are not enforced on where literals");
+  }
+
+  @Test
+  void publishesWriteConstraintsOnBodiesButNotOnFilters() {
+    CollectionDescription<Widget> widgets =
+        new CollectionDescription<>(
+            "widgets",
+            Widget.class,
+            List.of(
+                Field.readOnly("id", "id", positiveId(), Widget::id),
+                Field.writable(
+                    "code",
+                    "code",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, 2, Pattern.compile("^[A-Z]"), null)),
+                    Widget::code,
+                    (widget, value) -> {}),
+                Field.writable(
+                        "kind",
+                        "kind",
+                        CollectionFieldTypes.constrained(
+                            CollectionFieldTypes.text(),
+                            new Constraints(null, null, null, null, List.of("A1", "B2"))),
+                        Widget::kind,
+                        (widget, value) -> {})
+                    .allowNull(),
+                Field.writable(
+                        "phase",
+                        "phase",
+                        CollectionFieldTypes.enumeration(Phase.class),
+                        Widget::phase,
+                        (widget, value) -> {})
+                    .allowNull(),
+                Relationship.polymorphicToOne(
+                    "gadget",
+                    positiveId(),
+                    List.of(new RelationshipTarget<>("gadgets", "GADGET", "GD", Gadget.class)),
+                    new SplitReferenceBinding<>(Widget::gadget, "gadgetType", "gadgetId"))),
+            "id",
+            List.of(new Sort("id", true)));
+    CollectionDescription<Gadget> gadgets =
+        new CollectionDescription<>(
+            "gadgets",
+            Gadget.class,
+            List.of(Field.readOnly("id", "id", positiveId(), Gadget::id)),
+            "id",
+            List.of(new Sort("id", true)));
+    ResourceOperations<Widget, Long> widgetOperations = operationsMock();
+    Map<String, Object> document =
+        documentMap(
+            new ApiV2OpenApiGenerator(
+                    new ApiV2ResourceCatalog(
+                        List.of(
+                            ApiV2ResourceSpec.builder(widgets, widgetOperations, Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .build(),
+                            ApiV2ResourceSpec.builder(gadgets, operationsMock(), Long::valueOf)
+                                .mutationErrors("create-error", "update-error")
+                                .expose(Set.of())
+                                .build())),
+                    com.researchspace.api.v2.openapi.ApiV2OpenApiTestText.english(),
+                    "Test API",
+                    "2.0.0")
+                .generate());
+    Map<String, Object> schemas = schemas(document);
+
+    for (String variant : List.of("Read", "Create", "Update")) {
+      assertEquals(2, property(schemas, "Widgets" + variant, "code").get("minLength"), variant);
+      assertEquals(
+          "^[A-Z]", property(schemas, "Widgets" + variant, "code").get("pattern"), variant);
+      assertEquals(
+          Arrays.asList("A1", "B2", null),
+          property(schemas, "Widgets" + variant, "kind").get("enum"),
+          variant);
+      assertEquals(
+          Arrays.asList("OPEN", "CLOSED", null),
+          property(schemas, "Widgets" + variant, "phase").get("enum"),
+          variant);
+    }
+    assertEquals(BigDecimal.ONE, property(schemas, "WidgetsRead", "id").get("minimum"));
+    assertEquals(BigDecimal.ONE, property(schemas, "GadgetsRead", "id").get("minimum"));
+    assertFalse(property(schemas, "GadgetsReference", "value").containsKey("minimum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "code").containsKey("pattern"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "kind").containsKey("enum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "id").containsKey("minimum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "gadget.value").containsKey("minimum"));
+    Map<String, Object> idParameter =
+        objectMapList(
+                objectMap(
+                        objectMap(objectMap(document.get("paths")).get("/api/v2/widgets/{id}"))
+                            .get("get"))
+                    .get("parameters"))
+            .stream()
+            .filter(parameter -> parameter.get("name").equals("id"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(objectMap(idParameter.get("schema")).containsKey("minimum"));
+    for (String variant : List.of("Read", "Create", "Update")) {
+      assertFalse(
+          String.valueOf(property(schemas, "Widgets" + variant, "gadget")).contains("minimum"),
+          "relationship values carry no write constraints");
+    }
+  }
+
+  private static CollectionFieldType<Long> positiveId() {
+    return CollectionFieldTypes.constrained(
+        CollectionFieldTypes.longNumber(), new Constraints(BigDecimal.ONE, null, null, null, null));
+  }
+
+  private enum Phase {
+    OPEN,
+    CLOSED
+  }
+
+  private record Widget(
+      Long id, String code, String kind, Phase phase, ResourceReference<String, Long> gadget) {}
+
+  private record Gadget(Long id) {}
+
+  private static Map<String, Object> property(
+      Map<String, Object> schemas, String component, String name) {
+    return objectMap(objectMap(objectMap(schemas.get(component)).get("properties")).get(name));
+  }
+
+  private static Map<String, Object> where(Map<String, Object> document, String path) {
+    return objectMapList(
+            objectMap(objectMap(objectMap(document.get("paths")).get(path)).get("get"))
+                .get("parameters"))
+        .stream()
+        .filter(parameter -> parameter.get("name").equals("where"))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private static Map<String, Object> whereSelector(
+      Map<String, Object> document, String path, String selector) {
+    return objectMap(
+        objectMap(
+                objectMap(objectMap(where(document, path).get("x-rspace-filter")).get("selectors"))
+                    .get(selector))
+            .get("schema"));
+  }
+
+  private static Map<String, Object> schemas(Map<String, Object> document) {
+    return objectMap(objectMap(document.get("components")).get("schemas"));
+  }
+
+  private Map<String, Object> document() {
+    return documentMap(generator.generate());
+  }
+
+  private static Map<String, Object> objectMap(Object value) {
+    if (!(value instanceof Map<?, ?> map)
+        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
+      throw new AssertionError("Expected an object with string keys");
+    }
+    Map<String, Object> result = new LinkedHashMap<>();
+    map.forEach((key, item) -> result.put((String) key, item));
+    return result;
+  }
+
+  private static List<Map<String, Object>> objectMapList(Object value) {
+    if (!(value instanceof List<?> list)) {
+      throw new AssertionError("Expected an array");
+    }
+    return list.stream().map(ApiV2OpenApiGeneratorTest::objectMap).toList();
+  }
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private static <T> ResourceOperations<T, Long> operationsMock() {
+    return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
+  }
+
+  /**
+   * The generated document as a map, with its component references (other than schemas) resolved.
+   */
+  private static Map<String, Object> documentMap(OpenAPI openApi) {
+    return Json31.mapper()
+        .convertValue(
+            ApiV2OpenApiTestRefs.dereferenced(Json31.mapper().valueToTree(openApi)),
+            new TypeReference<LinkedHashMap<String, Object>>() {});
+  }
+}

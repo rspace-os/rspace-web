@@ -80,7 +80,7 @@ describe("collection resource registry emitter", () => {
     expect(invoke(spec(op("CUSTOM"))).value).toEqual({});
     const resources = invoke(document).value;
     expect(resources.maintenances).not.toHaveProperty("audit");
-    expect(Object.keys(resources)).toHaveLength(5);
+    expect(Object.keys(resources)).toHaveLength(7);
   });
   it("groups operations by tag instead of guessing from the route", () => {
     expect(invoke(spec(op("LIST"), "/api/v2/different")).value).toEqual({ examples: { list: "example" } });

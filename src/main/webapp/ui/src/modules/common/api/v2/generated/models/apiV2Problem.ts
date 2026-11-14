@@ -9,9 +9,11 @@ import type { ApiV2ProblemInvalidParam } from './apiV2ProblemInvalidParam.ts';
 
 export interface ApiV2Problem {
   code: string;
+  /** Optional explanation specific to this occurrence. */
   detail?: string;
   invalidParams?: ApiV2ProblemInvalidParam[];
   status: number;
+  /** Stable summary for this problem code. */
   title: string;
   [key: string]: unknown;
  }

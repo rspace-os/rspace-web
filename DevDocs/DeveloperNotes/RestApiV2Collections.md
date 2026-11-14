@@ -8,6 +8,8 @@ Use a concrete controller for an operation outside collection CRUD, such as `/ap
 query compilation, authentication and request limits, see [REST API v2 queries and
 access](RestApiV2QueriesAndAccess.md).
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ## Add a field type
 
 Collection field implementations live in `model.collection.types`. Each implements
@@ -706,6 +708,14 @@ extra row at the original page offset with counting disabled, trims that row, an
 Offsets beyond Blaze's integer limit return an empty slice without querying. `page` and
 `projectedPage` retain their counted-page behavior.
 
+Booking and booking-configuration lists retain the counted entity path. Their documents include
+caller-specific privacy, capabilities, role sources and owner health prepared from access
+aggregates. The ordered page query selects IDs, then fetches the selected entities with their to-one
+actors and access aggregate in one ID-scoped query; assignments and instrument targets are resolved
+in batches. Moving these lists to scalar read documents also requires projecting those access inputs
+and preserving their caller-specific preparation. Until then, these lists count internally even
+without `totals=true`.
+
 The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is needed to preserve
 sort order.
 
@@ -837,9 +847,10 @@ the collection parser's type rules and decimal-node handling while limiting docu
 strings to 2 MiB, token counts to 100,000 and nesting depth to 100. The shared MVC mapper and other
 endpoints' `JsonNode` bindings keep their existing configuration.
 
-Register each fixed-shape request record in the single `ApiV2JsonMappers.register` call in
-`WebConfig.extendMessageConverters` at the layer that introduces it. The error advice reads that
-converter registration to identify strict bodies.
+Add each fixed-shape request record to an `ApiV2JsonBodyTypes` bean in the layer that introduces it.
+`WebConfig.extendMessageConverters` collects these beans and passes all their types to
+`ApiV2JsonMappers.register`. The error advice reads that converter registration to identify strict
+bodies.
 
 Fixed-shape request records use strict binding. Unknown fields and scalar coercions fail. This
 includes floating-point tokens such as `15.0` for integral fields. Collection field codecs retain
@@ -898,6 +909,34 @@ identity, size or modification-time changes invalidate reuse unless append certi
 every appended event is outside the completed-day window. Failed and retried scans are not cached.
 Successful searches, including truncated results, cache hits and empty results, emit an audit
 `SEARCH` event after certification.
+
+## Adding a feature to v2
+
+Shared `api/v2` code never names a feature. Features register errors, endpoint specs, JSON body
+types and docs through the v2 hooks. `WebConfig` follows the same rule. `ApiV2FeatureIsolationTest`
+enforces it against source identifiers and string literals.
+
+Feature controllers live in their feature package. Add that package to the dispatcher context's
+component scan in `dispatcher-servlet.xml`; the root context scan alone does not register MVC
+request mappings.
+
+H1 (errors): scope feature advice with `@ControllerAdvice(basePackages = "<feature package>")` and
+order it ahead of the shared advice. Inherit the shared transport handlers so generic binding,
+authentication and unexpected failures keep the v2 problem contract. For resource operations served
+by the generic CRUD controller, contribute `ApiV2ErrorMapping` entries through `ApiV2ResourceSpec`;
+package-scoped advice cannot handle those operations.
+
+H4 (JSON bodies): expose an `ApiV2JsonBodyTypes` bean containing the feature's strict request
+records. `WebConfig` accepts these beans through Spring injection and registers all contributed
+types on each JSON converter. Do not add feature imports to `WebConfig`.
+
+H5 (docs): document feature routes with `@Operation` and `@ApiResponse` on their controllers. The
+merged `/api/v2/openapi.json` includes those declarations; do not add feature paths, error keys or
+tags to `ApiV2OpenApiGenerator`. Verify the merged document and compare its routes and responses
+when moving controllers or documentation.
+
+Problem extensions (H2) and feature-owned endpoint catalog contributions (H3) are introduced in the
+layers that first require them.
 
 ## OpenAPI tags
 

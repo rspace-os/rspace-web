@@ -111,6 +111,16 @@ When you see Jetty report the app has started, open the URL printed by
 `rspace-dev up` (e.g. `http://localhost:8080`). Log in with `user1a` /
 `user1234`, or `sysadmin1` / `sysWisc23!`.
 
+Booking defaults to disabled. Enable `bookingEnabled` through the Devtools panel
+or feature-flag API. The Docker stack does not force its value. Flags set in
+`docker/dev/feature-flags.properties` are read-only in the UI and API. See
+[Feature flags](../../DevDocs/DeveloperNotes/FeatureFlags.md) for override behavior.
+
+The development profile creates service-backed Booking examples at startup.
+The separate `dev-test` Liquibase seed supplies static examples on a fresh database.
+See [Booking development](../../DevDocs/DeveloperNotes/BookingDevelopment.md) for
+fixture behavior and catalogue search notes.
+
 Subsequent `up`s reuse the existing database and are much faster.
 
 To run the Playwright suite against local third-party integration mocks, enable

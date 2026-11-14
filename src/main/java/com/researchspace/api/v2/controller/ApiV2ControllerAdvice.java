@@ -29,6 +29,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +69,8 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 @ControllerAdvice(
     basePackageClasses = ApiV2ControllerAdvice.class,
     assignableTypes = ApiV2OpenApiController.class)
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Primary
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Slf4j
 public class ApiV2ControllerAdvice {
 
@@ -160,26 +162,27 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(ThrottlingException.class)
+  public ResponseEntity<ApiV2Problem> handleThrottling() {
+    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
+  }
+
   @ExceptionHandler(ApiV2AuditUnavailableException.class)
   public ResponseEntity<ApiV2Problem> handleAuditUnavailable(ApiV2AuditUnavailableException ex) {
     log.warn("REST API v2 audit snapshot is unavailable", ex.getCause());
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
   }
 
-  @ExceptionHandler(ThrottlingException.class)
-  public ResponseEntity<ApiV2Problem> handleThrottling() {
-    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
-  }
-
   @ExceptionHandler(ApiV2ResourceException.class)
   public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
-    return problems.problem(ex.status(), ex.errorCode(), ex.arguments());
+    return problems.problem(ex.status(), ex.errorCode(), ex.extensions(), ex.arguments());
   }
 
   @ExceptionHandler(ResourceAccessException.class)
   public ResponseEntity<ApiV2Problem> handleResourceAccess(
       ResourceAccessException ex, HttpServletRequest request) {
-    if (ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+    if ((ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+            || ex.reason() == ResourceAccessException.Reason.INHERITED_READ_ONLY)
         && ("PUT".equals(request.getMethod()) || "DELETE".equals(request.getMethod()))) {
       ApiV2Caller caller = ApiV2Caller.from(request);
       SECURITY_LOG.warn(
@@ -194,7 +197,7 @@ public class ApiV2ControllerAdvice {
     HttpStatus status =
         switch (ex.reason()) {
           case NOT_FOUND -> HttpStatus.NOT_FOUND;
-          case FORBIDDEN -> HttpStatus.FORBIDDEN;
+          case FORBIDDEN, INHERITED_READ_ONLY -> HttpStatus.FORBIDDEN;
           case OWNER_REQUIRED, SELF_REMOVAL_REQUIRES_LEAVE -> HttpStatus.CONFLICT;
           case STALE -> HttpStatus.PRECONDITION_FAILED;
           case INVALID_GRANTEE, INVALID_ROLE, DUPLICATE_GRANTEE, ASSIGNMENT_LIMIT ->

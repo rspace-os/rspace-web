@@ -6098,6 +6098,7 @@ export default interface Resources {
             "exclude": "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[{0}]=id,name.",
             "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name.",
             "id": "Resource identifier.",
+            "idempotencyKey": "Creator-scoped request identity, retained for the resource lifetime.",
             "ifMatch": "Strong entity tag containing the current resource version.",
             "limit": "Maximum documents per page.",
             "max": "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
@@ -6135,6 +6136,7 @@ export default interface Resources {
           "responses": {
             "badRequest": "The request is invalid.",
             "bulkLimit": "The bulk operation exceeds the configured limit.",
+            "createRetry": "Current resource returned for an identical create retry.",
             "failure": "Request failed.",
             "forbidden": "The caller is not authorized.",
             "ifMatchRequired": "A strong If-Match header is required.",
@@ -6462,6 +6464,39 @@ export default interface Resources {
       "noResults": "Your search returned no results"
     }
   },
+  "server.booking": {
+    "bookingFixtures": {
+      "containers": {
+        "cryoEmSuite": "Cryo-EM suite",
+        "deletedInstrumentRoom": "Deleted instrument room",
+        "imagingLab": "Imaging lab",
+        "longCellAnalysisFacility": "Cell analysis facility with a deliberately long location name",
+        "restrictedInstrumentRoom": "Restricted instrument room"
+      },
+      "description": "Docker development booking fixture",
+      "instruments": {
+        "bookingCardArchived": "Booking card: Open (archived)",
+        "bookingCardBook": "Booking card: Book",
+        "bookingCardDisabled": "Booking card: Open (disabled)",
+        "bookingCardSetup": "Booking card: Set up booking",
+        "confocal": "Confocal microscope",
+        "deletedLocationSequencer": "Deleted-location sequencer",
+        "electronMicroscope": "Electron microscope",
+        "flowCytometer": "Flow cytometer",
+        "massSpectrometer": "Mass spectrometer",
+        "noParentCentrifuge": "No-parent centrifuge",
+        "restrictedLocationPlateReader": "Restricted-location plate reader"
+      },
+      "purposes": {
+        "calibrationRun": "Calibration run",
+        "cellImaging": "Cell imaging",
+        "cellSorting": "Cell sorting",
+        "overnightAnalysis": "Overnight analysis",
+        "proteomicsRun": "Proteomics run",
+        "ultrastructureImaging": "Ultrastructure imaging"
+      }
+    }
+  },
   "server.core": {
     "api": {
       "errors": {
@@ -6494,6 +6529,11 @@ export default interface Resources {
           }
         }
       }
+    },
+    "duration": {
+      "days": "{0, plural, one {# day} other {# days}}",
+      "hours": "{0, plural, one {# hour} other {# hours}}",
+      "minutes": "{0, plural, one {# minute} other {# minutes}}"
     },
     "errors": {
       "ajax": {
@@ -6528,6 +6568,74 @@ export default interface Resources {
             "unavailable": "The audit trail is temporarily unavailable. Try again later."
           },
           "authenticationRequired": "Authentication is required.",
+          "booking": {
+            "buffer": "The selected time is too close to another booking (buffer).",
+            "concurrentModification": "The event changed while it was being edited.",
+            "create": "The booking is invalid.",
+            "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
+            "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
+            "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
+            "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
+            "idempotencyKey": {
+              "conflict": "This Idempotency-Key was already used for a different booking request.",
+              "invalid": "Idempotency-Key must contain 1 to 64 ASCII letters, digits, dots, underscores, colons or hyphens."
+            },
+            "ifMatchRequired": "The current booking version is required.",
+            "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
+            "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
+            "openingHours": "The booking must remain within this bookable item's opening hours.",
+            "overlap": "The selected time overlaps another booking.",
+            "patch": "The booking patch is invalid.",
+            "purpose": {
+              "length": "Purpose must not exceed 1,000 characters."
+            },
+            "state": {
+              "transition": "The requested booking state transition is not permitted."
+            },
+            "target": {
+              "unavailable": "The selected target is not available for booking."
+            },
+            "window": "Start time must be in the future and end time must be after start time."
+          },
+          "bookingConfiguration": {
+            "buffer": {
+              "invalid": "Booking buffers must be between 0 and 10,080 minutes."
+            },
+            "concurrentModification": "The booking configuration changed. Reload it and try again.",
+            "create": "The booking configuration is invalid.",
+            "defaultSharing": {
+              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
+            },
+            "granularity": {
+              "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
+            },
+            "ifMatchRequired": "The current booking configuration version is required.",
+            "lifecycleConflict": "Restore the archived booking configuration before changing it.",
+            "maximumDuration": {
+              "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day."
+            },
+            "openingHours": {
+              "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+            },
+            "patch": "The booking configuration patch is invalid.",
+            "stale": "The booking settings changed after this page was loaded. Reload and try again.",
+            "target": {
+              "conflict": "The selected target already has a booking configuration.",
+              "invalid": "The selected target is not available for booking."
+            },
+            "timeZone": {
+              "invalid": "The time zone must be a valid IANA time zone.",
+              "required": "A time zone is required."
+            }
+          },
+          "bookingDisplayPreferences": {
+            "availabilityWindow": {
+              "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."
+            },
+            "timeZone": {
+              "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
+            }
+          },
           "bulk": {
             "filter": {
               "required": "A where filter is required for bulk operations."

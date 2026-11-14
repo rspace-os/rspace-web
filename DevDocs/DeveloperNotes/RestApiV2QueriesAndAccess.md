@@ -20,6 +20,8 @@ A global ID in a relationship filter or write is a prefix and an unversioned ID.
 negative, as in seeded and baseline rows such as `US-3`. The API rejects versioned IDs such as
 `IN12v2`.
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ### Inventory container read constraints
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
@@ -306,13 +308,15 @@ resource's generated module. Callers inject these alongside the registry entry, 
 in the generated rules. The common access-operation types depend on the shared generated access
 models, so a collection can opt in at a later layer.
 
-The React `ResourceAccessEditor` keeps its draft within one resource. Changing the resource starts a
-fresh editor. Access documents and grantee search results use generated operation query keys without
-bearer tokens or identity scopes. A failed background or conflict refresh keeps the loaded document,
-unsaved draft and navigation guard mounted. After a stale replacement, Retry loading latest remains
-available and saving stays blocked until recovery succeeds. A successful Leave closes its
-confirmation even if the caller retains inherited access. Its optional navigation callback runs only
-while the editor session that initiated the request remains mounted.
+The React `ResourceAccessEditor` keeps its draft within one resource. Its registry entry supplies
+generated access, replacement, leave and grantee-search operations and query keys. Replacement sends
+the quoted `version` from the draft's original access document as `If-Match`. Generated mutation
+options invalidate the resource list, count, record, access and audit queries. These keys contain no
+identity scopes or bearer tokens. The shared token provider reloads the page when the identity
+changes. Structured error details come from `ApiV2ProblemError.problem`, which may be absent for an
+unstructured HTTP failure. A stale replacement refreshes the latest document and merges the draft,
+keeping saving blocked until recovery succeeds. Successful Leave closes its confirmation, and its
+optional navigation callback runs only while that editor session remains mounted.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
@@ -585,9 +589,11 @@ Repeated content is published once under `components` and referenced with `$ref`
 resolve local references before inspecting a parameter, response, or extension. Standard sections
 hold shared query parameters (`<Resource>Where`, `<Resource>WhereRequired`, `<Resource>Fields`,
 `<Resource>Exclude`, `<Resource>Id`, and the resource-independent `Page`, `Limit`, `Totals`,
-`Max`, `Depth`, `IfMatch`, `IfMatchOptional`, and `Permanent`), shared responses (`CountResult`,
-`PermanentlyRemoved`, `VersionChanged`, and `<Resource>IfMatchRequired`), and documented problem
-examples named by error code. Two custom sections hold extension values: `x-rspace-filters.<Resource>` is the
+`Max`, `Depth`, `IfMatch`, `IfMatchOptional`, `IdempotencyKey`, and `Permanent`), shared responses
+(`CountResult`, `PermanentlyRemoved`, `VersionChanged`, and `<Resource>IfMatchRequired`), and
+documented problem examples named by error code. Audit operations share the `AuditStart`,
+`AuditEnd`, `AuditSearch`, and `AuditActions` parameters and the `AuditEvents`,
+`AuditInvalidRequest`, and `AuditUnavailable` responses. Two custom sections hold extension values: `x-rspace-filters.<Resource>` is the
 `x-rspace-filter` catalogue of that resource's `where` parameters, and
 `x-rspace-access-policies.<Name>` holds each `x-rspace-access` object and `x-rspace-fields` access
 policy under the name its `AccessDocumentation` declares, such as `Authenticated` or
@@ -624,7 +630,7 @@ Declare each non-standard error in the resource spec. Each mapping:
 | 3. | Adds the error response to OpenAPI. |
 
 `ApiV2ErrorMapping.forException(type).status(status).documentedError(code, description)` starts a
-typed builder. The optional `arguments` extractor customizes the mapping before `build()`.
+typed builder. Optional `arguments` and `code` extractors customize the mapping before `build()`.
 Keep runtime translation and the documented response on the same mapping.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
@@ -732,3 +738,15 @@ may check behavior without `LocaleFilter`.
 | 10. | [ ] Each relationship target is registered. |
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
+
+## Generated frontend access and relationship clients
+
+Resource-access and relationship-picker requests use registry entries backed by the generated Orval
+client. The shared transport supplies authorization, validates generated request and response
+schemas, and handles HTTP problems. Callers do not supply a token. See [the frontend client
+guide](RestApiV2FrontendClient.md).
+
+Picker sources keep display-label mapping and load selected IDs in bounded batches. Search keys
+contain the source ID and term; option and batch caches contain the source ID and canonical selected
+IDs. These display-option caches are the documented exception to generated operation keys and
+contain no identity scope. Selected display documents retain their 15-second freshness check.

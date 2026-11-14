@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,9 +44,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
@@ -65,6 +69,39 @@ class ApiV2AuditStrictSearchTest {
     sysadmin = TestFactory.createAnyUser("sysadmin");
     sysadmin.addRole(Role.SYSTEM_ROLE);
     visibility = new AuditTrailActorVisibility(Mockito.mock(UserManager.class));
+  }
+
+  @Test
+  void reusedConfigurationIdCannotExposeAnotherTargetsHistory() throws IOException {
+    String own =
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            .replace("\"name\":\"item\"", "\"target\":{\"type\":\"INSTRUMENT\",\"id\":552}");
+    write("RSLogs.txt", own.replace("552", "910100009") + "\n" + own + "\n");
+    var scanner = search(ReadObserver.NONE);
+    var original = request(1);
+    for (String id : List.of("552", "910100009")) {
+      var restricted =
+          new Request(
+              original.fromInclusive(),
+              original.toExclusive(),
+              original.domains(),
+              original.actions(),
+              original.oid(),
+              original.requestedUsernames(),
+              original.actor(),
+              1,
+              false,
+              null,
+              Set.of(),
+              Set.of(),
+              Map.of("target.type", "INSTRUMENT", "target.id", id));
+      var results =
+          scanner
+              .search(restricted, FieldSelection.all(), ApiV2AuditStrictSearchTest::project)
+              .docs();
+      assertEquals(1, results.size());
+      assertTrue(results.get(0).payload().toString().contains(id));
+    }
   }
 
   @Test
@@ -897,6 +934,179 @@ class ApiV2AuditStrictSearchTest {
 
     assertEquals(1, results.size());
     assertEquals(description, results.get(0).description());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bookings:41", "booking-configurations:12"})
+  void sameDomainEventsMustMatchTheDecodedTopLevelIdentifier(String identifier) throws IOException {
+    String unrelated = event("01 Jan 2026 12:00:00,000", "bookings:42");
+    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    String nested =
+        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+    String parent =
+        unrelated.replace("\"name\":\"item\"", "\"bookingConfigurationId\":\"" + identifier + "\"");
+    String direct = event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"));
+    write("RSLogs.txt", purpose + "\n" + nested + "\n" + parent + "\n" + direct + "\n");
+    Request request =
+        new Request(
+            FROM,
+            TO,
+            Set.of(AuditDomain.UNKNOWN),
+            Set.of(AuditAction.CREATE),
+            identifier,
+            Set.of(),
+            sysadmin,
+            1,
+            true);
+
+    List<ApiV2AuditEvent> results =
+        search(ReadObserver.NONE)
+            .search(request, FieldSelection.all(), ApiV2AuditStrictSearchTest::project)
+            .docs();
+
+    assertEquals(1, results.size());
+    assertEquals(identifier, results.get(0).payload().get("id"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 2, 3})
+  void capBoundariesAndCertifiedCacheRetainTruncation(int count) throws IOException {
+    StringBuilder lines = new StringBuilder();
+    for (int index = 0; index < count; index++)
+      lines.append(event("01 Jan 2026 12:00:00,000", "BC1")).append("\n");
+    write("RSLogs.txt", lines.toString());
+    AtomicInteger scans = new AtomicInteger();
+    var scanner =
+        search(
+            new ReadObserver() {
+              @Override
+              public void afterManifest(int attempt, List<FileManifest> files) {
+                scans.incrementAndGet();
+              }
+            });
+    var first =
+        scanner.search(request(2), FieldSelection.all(), ApiV2AuditStrictSearchTest::project);
+    assertEquals(Math.min(count, 2), first.docs().size());
+    assertEquals(count > 2, first.truncated());
+    assertEquals(
+        first,
+        scanner.search(request(2), FieldSelection.all(), ApiV2AuditStrictSearchTest::project));
+    assertEquals(1, scans.get());
+    scanner.search(
+        request(2), FieldSelection.include(Set.of("name")), ApiV2AuditStrictSearchTest::project);
+    assertEquals(2, scans.get());
+  }
+
+  @Test
+  void malformedEligibleDataAfterTheCapStillFails() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + event("01 Jan 2026 13:00:00,000", "BC1")
+            + "\n"
+            + "01 Jan 2026 14:00:00,000 - domain:UNKNOWN action:CREATE [{bad}] admin(Admin)\n"
+            + event("01 Jan 2026 15:00:00,000", "BC1")
+            + "\n");
+    assertThrows(
+        StrictReadException.class,
+        () ->
+            search(ReadObserver.NONE)
+                .search(request(1), FieldSelection.all(), ApiV2AuditStrictSearchTest::project));
+  }
+
+  @Test
+  void ordersVariablePrecisionTimestampsChronologicallyBeforeApplyingTheCap() throws IOException {
+    write(
+        "RSLogs.txt",
+        String.join(
+                "\n",
+                event("01 Jan 2026 12:00:01,000", "BC1"),
+                event("01 Jan 2026 12:00:00,000", "BC1"),
+                event("01 Jan 2026 12:00:00,100", "BC1"),
+                event("01 Jan 2026 12:00:00,999", "BC1"))
+            + "\n");
+    var result =
+        search(ReadObserver.NONE)
+            .search(request(2), FieldSelection.all(), ApiV2AuditStrictSearchTest::project);
+    assertEquals(
+        List.of("2026-01-01T12:00:01Z", "2026-01-01T12:00:00.999Z"),
+        result.docs().stream().map(ApiV2AuditEvent::timestamp).toList());
+    assertTrue(result.truncated());
+  }
+
+  @Test
+  void sameMillisecondEventsSortByDescendingEventIdAndExactDuplicatesRemain() throws IOException {
+    var alpha = Map.<String, Object>of("id", "BC1", "name", "Alpha");
+    var beta = Map.<String, Object>of("id", "BC1", "name", "Beta");
+    write(
+        "RSLogs.txt",
+        String.join(
+                "\n",
+                event("01 Jan 2026 12:00:00,000", beta),
+                event("01 Jan 2026 12:00:00,000", alpha),
+                event("01 Jan 2026 12:00:00,000", alpha))
+            + "\n");
+    var first = expectedEvent(alpha);
+    var second = expectedEvent(beta);
+    var expected = List.of(first, first, second);
+    var result =
+        search(ReadObserver.NONE)
+            .search(request(3), FieldSelection.all(), ApiV2AuditStrictSearchTest::project);
+    assertEquals(expected, result.docs());
+    assertFalse(result.truncated());
+  }
+
+  private static ApiV2AuditEvent expectedEvent(Map<String, Object> payload) {
+    var event =
+        new ApiV2AuditEvent(
+            null,
+            "2026-01-01T12:00:00Z",
+            "alice",
+            "Alice Example",
+            AuditDomain.UNKNOWN,
+            AuditAction.CREATE,
+            null,
+            payload);
+    return event.withEventId(ApiV2AuditLog.eventId(event));
+  }
+
+  @Test
+  void publicProjectionDeterminesEqualTimestampCutoffAcrossFiles() throws IOException {
+    write(
+        "RSLogs-z.txt",
+        event("01 Jan 2026 12:00:00,000", Map.of("id", "BC1", "name", "Alpha", "secret", "a"))
+            + "\n");
+    write(
+        "RSLogs-a.txt",
+        event("01 Jan 2026 12:00:00,000", Map.of("id", "BC1", "name", "Beta", "secret", "b"))
+            + "\n"
+            + event("01 Jan 2026 12:00:00,000", Map.of("id", "BC1", "name", "Alpha", "secret", "c"))
+            + "\n");
+    Function<AuditTrailSearchResult, ApiV2AuditEvent> redact =
+        raw -> {
+          var full = project(raw);
+          var visible =
+              new ApiV2AuditEvent(
+                  null,
+                  full.timestamp(),
+                  full.username(),
+                  full.fullName(),
+                  full.domain(),
+                  full.action(),
+                  null,
+                  Map.of("name", full.payload().get("name")));
+          return visible.withEventId(ApiV2AuditLog.eventId(visible));
+        };
+    var scanner = search(ReadObserver.NONE);
+    var all = scanner.search(request(10), FieldSelection.all(), redact);
+    var capped = scanner.search(request(2), FieldSelection.all(), redact);
+    var alpha = expectedEvent(Map.of("name", "Alpha"));
+    var beta = expectedEvent(Map.of("name", "Beta"));
+    var expected = List.of(alpha, alpha, beta);
+    assertEquals(expected, all.docs());
+    assertEquals(expected.subList(0, 2), capped.docs());
+    assertTrue(capped.truncated());
   }
 
   private static ApiV2AuditEvent project(AuditTrailSearchResult raw) {

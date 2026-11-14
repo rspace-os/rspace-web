@@ -64,6 +64,18 @@ public class LuceneSrchCfg {
     }
   }
 
+  /** Caller-relative Booking filter copied from an Inventory search configuration. */
+  public Boolean getBookable() {
+    return delegate instanceof InventorySearchConfig inventory ? inventory.getBookable() : null;
+  }
+
+  /** Database identifiers that satisfy the caller-relative Booking predicate. */
+  public Set<Long> getBookableInstrumentIds() {
+    return delegate instanceof InventorySearchConfig inventory
+        ? inventory.getBookableInstrumentIds()
+        : Set.of();
+  }
+
   public int getMaxResults() {
     return delegate.getMaxResults();
   }

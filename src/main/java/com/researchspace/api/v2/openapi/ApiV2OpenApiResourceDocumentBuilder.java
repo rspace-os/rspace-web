@@ -64,8 +64,8 @@ final class ApiV2OpenApiResourceDocumentBuilder {
 
   static void addStandardSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.responseSchemaFor(ApiV2Problem.class, schemas);
-    ApiV2OpenApiSchemas.responseSchemaFor(ApiV2AuditEvent.class, schemas);
     ApiV2OpenApiSchemas.responseSchemaFor(ApiV2CountResult.class, schemas);
+    ApiV2OpenApiSchemas.responseSchemaFor(ApiV2AuditEvent.class, schemas);
   }
 
   private static Map<String, Object> referenceSchema(ResourceSchema resource) {

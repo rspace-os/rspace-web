@@ -1,7 +1,9 @@
 package com.researchspace.dao.query;
 
+import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.inventory.model.InventorySharingReadFilters;
+import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
@@ -166,6 +168,13 @@ final class RsqlExpressionCompiler {
     FilterSelector<?> selector = description.findFilterSelector(comparison.field()).orElse(null);
     if (selector == null) {
       return relationships.compileRelationshipField(comparison, state);
+    }
+    if (selector instanceof FilterSelector.Alias<?> shorthand) {
+      return state.merge(
+          BookingItemQuery.ownedBy(
+              (User) comparison.values().get(0),
+              alias + "." + shorthand.destination(),
+              state.targets));
     }
     Operator operator = comparison.operator();
     if (!selector.operators().contains(operator)) {

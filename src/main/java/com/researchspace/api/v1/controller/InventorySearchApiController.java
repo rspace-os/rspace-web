@@ -72,7 +72,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
 
     /* proceed with search */
     ApiInventorySearchResult apiSearchResult;
-    if (parentOid != null && StringUtils.isBlank(searchQuery)) {
+    if (parentOid != null && StringUtils.isBlank(searchQuery) && srchConfig.getBookable() == null) {
       apiSearchResult =
           runSearchByParentOidWithNoSearchTerm(
               user, srchConfig.getOwnedBy(), apiPgCrit, searchType, deletedItemsOption, parentOid);
@@ -86,6 +86,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
               parentOid,
               srchConfig.getOwnedBy(),
               deletedItemsOption,
+              srchConfig.getBookable(),
               pgCrit,
               user);
     }

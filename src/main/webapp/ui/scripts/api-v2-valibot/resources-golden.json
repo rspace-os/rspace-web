@@ -1,4 +1,28 @@
 {
+  "booking-configurations": {
+    "list": "listBookingConfigurations",
+    "count": "countBookingConfigurations",
+    "get": "getBookingConfiguration",
+    "create": "createBookingConfiguration",
+    "update": "updateBookingConfiguration",
+    "delete": "deleteBookingConfiguration",
+    "createMany": "createManyBookingConfigurations",
+    "updateMany": "updateManyBookingConfigurations",
+    "deleteMany": "deleteManyBookingConfigurations",
+    "access": "getBookingConfigurationAccess",
+    "replaceAccess": "replaceBookingConfigurationAccess",
+    "leaveAccess": "leaveBookingConfigurationAccess",
+    "grantees": "searchBookingConfigurationAccessGrantees",
+    "audit": "listBookingConfigurationAuditEvents"
+  },
+  "bookings": {
+    "list": "listBookings",
+    "count": "countBookings",
+    "get": "getBooking",
+    "create": "createBooking",
+    "update": "updateBooking",
+    "audit": "listBookingAuditEvents"
+  },
   "containers": {
     "list": "listContainers",
     "count": "countContainers",

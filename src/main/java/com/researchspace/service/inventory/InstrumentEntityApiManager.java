@@ -141,6 +141,15 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   /** Changes the owner of the instrument. */
   ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user);
 
+  /**
+   * Changes Inventory ownership and optionally coordinates the associated Booking ownership change.
+   */
+  ApiInstrument changeApiInstrumentOwner(
+      ApiInstrument apiInstrument,
+      User subject,
+      User actor,
+      boolean transferBookingConfigurationOwnership);
+
   /** Changes the owner of the instrument template. */
   ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
       ApiInstrumentTemplate apiTemplate, User user);

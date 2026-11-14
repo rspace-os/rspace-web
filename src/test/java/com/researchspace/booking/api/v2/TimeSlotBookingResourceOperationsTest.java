@@ -1,0 +1,269 @@
+package com.researchspace.booking.api.v2;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.booking.service.BookingConcurrentModificationException;
+import com.researchspace.booking.service.BookingCreateExecutor;
+import com.researchspace.booking.service.TimeSlotBookingManager;
+import com.researchspace.featureflags.FeatureFlags;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingRequesterFilters;
+import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResolvedResourceReference;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.testutils.BookingResourceTestFixtures;
+import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
+
+class TimeSlotBookingResourceOperationsTest {
+
+  private final TimeSlotBookingManager manager = mock(TimeSlotBookingManager.class);
+  private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
+  private final BookingCreateExecutor creates = mock(BookingCreateExecutor.class);
+  private final TimeSlotBookingResourceOperations operations =
+      new TimeSlotBookingResourceOperations(
+          manager,
+          featureFlags,
+          ApiV2TimeSlotBookingResource.DESCRIPTION,
+          mock(MessageSourceUtils.class),
+          creates);
+  private final User actor = mock(User.class);
+
+  @BeforeEach
+  void enableBooking() {
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(true);
+  }
+
+  @Test
+  void exposesOnlyTheFirstSliceOperations() {
+    ApiV2ResourceSpec<TimeSlotBooking, Long> spec = operations.timeSlotBookingApiV2Resource();
+
+    assertEquals(
+        EnumSet.of(
+            ResourceOperation.LIST,
+            ResourceOperation.COUNT,
+            ResourceOperation.READ,
+            ResourceOperation.CREATE,
+            ResourceOperation.UPDATE),
+        spec.exposedOperations());
+  }
+
+  @Test
+  void limitsRequesterFiltersToEventsWhoseRequesterTheSubjectMaySee() {
+    when(actor.getId()).thenReturn(7L);
+    ResourceRequest request =
+        new ResourceRequest(
+            new FilterExpression.Comparison("requester.value", Operator.EQUAL, List.of(42L), false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            FieldSelection.all(),
+            IncludeTree.empty());
+    var guarded = BookingRequesterFilters.visibleRequestersOnly(request.filter(), 7L);
+    when(manager.getBookings(any(ResourceRequest.class), eq(actor)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(manager.countBookings(any(ResourceRequest.class), eq(actor))).thenReturn(0L);
+
+    operations.find(request, actor);
+    operations.count(request, actor);
+
+    var captured = ArgumentCaptor.forClass(ResourceRequest.class);
+    verify(manager).getBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+    verify(manager).countBookings(captured.capture(), eq(actor));
+    assertEquals(guarded, captured.getValue().filter());
+  }
+
+  @Test
+  void mapsSchedulingConflictsForBothCreateAndUpdate() {
+    var spec = operations.timeSlotBookingApiV2Resource();
+    BookingConcurrentModificationException conflict = new BookingConcurrentModificationException();
+    Map.of(
+            ResourceOperation.CREATE, HttpStatus.CONFLICT,
+            ResourceOperation.UPDATE, HttpStatus.PRECONDITION_FAILED)
+        .forEach(
+            (operation, status) -> {
+              var mapping =
+                  spec.errorMappings().get(operation).stream()
+                      .filter(
+                          error ->
+                              error.exceptionType() == BookingConcurrentModificationException.class)
+                      .findFirst()
+                      .orElseThrow();
+              assertEquals(status, mapping.translate(conflict).status());
+            });
+  }
+
+  @Test
+  void translatesCreateAndPresenceAwarePatchCommands() {
+    ResolvedResourceReference<BookableTargetType, Long> target =
+        BookingResourceTestFixtures.resolved(12L);
+    ParsedDocument create =
+        new ParsedDocument(
+            WriteOperation.CREATE,
+            Map.of(
+                "target",
+                target,
+                "start",
+                start(),
+                "end",
+                end(),
+                "purpose",
+                "Image plate 4",
+                "kind",
+                BookingEventKind.MAINTENANCE));
+    TimeSlotBooking booking = new TimeSlotBooking();
+    TimeSlotBookingManager.Create command =
+        new TimeSlotBookingManager.Create(
+            new ResolvedBookableTarget(
+                new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+                target.entityAs(Instrument.class)),
+            start(),
+            end(),
+            "Image plate 4",
+            BookingEventKind.MAINTENANCE);
+    when(manager.createBooking(command, actor, actor)).thenReturn(booking);
+
+    assertEquals(booking, operations.create(create, ApiV2Caller.direct(actor), null).resource());
+    verify(manager).createBooking(command, actor, actor);
+    when(creates.create(command, "retry-intent", actor, actor))
+        .thenReturn(new BookingCreateExecutor.Result(booking, true));
+    var replay = operations.create(create, ApiV2Caller.direct(actor), "retry-intent");
+    assertEquals(booking, replay.resource());
+    assertTrue(replay.replayed());
+
+    ParsedDocument patch = ParsedDocument.update(Map.of("purpose", "", "end", end()));
+    operations.update(41L, patch, null, ApiV2Caller.direct(actor));
+    verify(manager)
+        .updateBooking(
+            41L, new TimeSlotBookingManager.Patch(null, end(), true, "", null), actor, actor);
+  }
+
+  @Test
+  void derivedPrivateFieldsAreNullableAndUnsortable() {
+    User requester = mock(User.class);
+    TimeSlotBooking booking = booking(requester);
+
+    Map<String, Object> busy = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
+
+    assertEquals(null, busy.get("purpose"));
+    assertEquals(null, busy.get("bookedBy"));
+    assertEquals("busy", busy.get("privacy"));
+    assertEquals(false, busy.get("canEdit"));
+    assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
+    assertTrue(
+        ApiV2TimeSlotBookingResource.DESCRIPTION
+            .requireField("purpose")
+            .operators()
+            .contains(Operator.CONTAINS));
+    assertFalse(
+        ApiV2TimeSlotBookingResource.DESCRIPTION
+            .requireField("state")
+            .writableOn(WriteOperation.CREATE));
+    assertFalse(
+        ApiV2TimeSlotBookingResource.DESCRIPTION
+            .requireRelationship("target")
+            .writableOn(WriteOperation.UPDATE));
+  }
+
+  @Test
+  void auditReadUsesTheOrdinaryLookupAndKeepsCapabilityCheckSeparate() {
+    TimeSlotBooking booking = booking(actor);
+    when(manager.getBooking(41L, actor)).thenReturn(Optional.of(booking));
+
+    assertEquals(
+        Optional.of(booking),
+        operations
+            .timeSlotBookingApiV2Resource()
+            .audit()
+            .orElseThrow()
+            .findByIdForAudit(41L, actor));
+    operations
+        .timeSlotBookingApiV2Resource()
+        .audit()
+        .orElseThrow()
+        .requireAuditAccess(booking, actor);
+
+    verify(manager).getBooking(41L, actor);
+    verify(manager).requireCanViewAudit(booking, actor);
+  }
+
+  @Test
+  void featureFlagSuppressesReadsAndRefusesWrites() {
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(false);
+    ResourceRequest request = ResourceRequest.unpaged(null);
+
+    assertEquals(0, operations.find(request, actor).total());
+    assertEquals(0, operations.count(request, actor));
+    assertEquals(Optional.empty(), operations.findById(1L, actor));
+    assertEquals(
+        Optional.empty(),
+        operations
+            .timeSlotBookingApiV2Resource()
+            .audit()
+            .orElseThrow()
+            .findByIdForAudit(1L, actor));
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            operations
+                .create(
+                    new ParsedDocument(WriteOperation.CREATE, Map.of()),
+                    ApiV2Caller.direct(actor),
+                    null)
+                .resource());
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            operations.update(
+                1L, ParsedDocument.update(Map.of()), null, ApiV2Caller.direct(actor)));
+    verifyNoInteractions(manager);
+  }
+
+  private static TimeSlotBooking booking(User requester) {
+    return BookingResourceTestFixtures.booking(requester, start(), end(), start(), start());
+  }
+
+  private static Date start() {
+    return Date.from(Instant.parse("2026-10-25T07:30:00Z"));
+  }
+
+  private static Date end() {
+    return Date.from(Instant.parse("2026-10-25T09:00:00Z"));
+  }
+}
