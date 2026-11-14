@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -68,11 +69,11 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
             "or ("
                 + relatedItemPrefix
                 + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST"
-                + " and "
+                + " and concat('&', "
                 + relatedItemPrefix
-                + "sharingACL.acl LIKE :userGroupUniqueName"
+                + "sharingACL.acl) LIKE :userGroupUniqueName"
                 + i
-                + ") ";
+                + " escape '!') ";
       }
       ownedAndPermittedItemsFragment += ") ";
     }
@@ -139,9 +140,19 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
         baseQuery.setParameterList("userGroupMembers", userGroupMembers);
       }
       for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        baseQuery.setParameter("userGroupUniqueName" + i, "%" + userGroupsUniqueNames.get(i) + "%");
+        baseQuery.setParameter(
+            "userGroupUniqueName" + i, aclEntryPattern(userGroupsUniqueNames.get(i)));
       }
     }
     return baseQuery;
+  }
+
+  /**
+   * A LIKE pattern matching an ACL whose entries include {@code uniqueName} exactly. ACL strings
+   * are {@code name1=PERMS&name2=PERMS}, so with a leading {@code &} prepended every entry reads
+   * {@code &name=}; % and _ in the name are taken literally.
+   */
+  static String aclEntryPattern(String uniqueName) {
+    return "%&" + LikeEscaper.escape(uniqueName) + "=%";
   }
 }
