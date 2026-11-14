@@ -105,8 +105,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
+  window.history.replaceState({}, "", "/");
 });
 
 describe("BookableItemPage", () => {

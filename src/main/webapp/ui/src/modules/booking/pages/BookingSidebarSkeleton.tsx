@@ -16,7 +16,7 @@ export function BookingSidebarSkeleton() {
       </p>
       <SidebarGroupContent aria-hidden="true">
         <SidebarMenu>
-          {[0, 1].map((row) => (
+          {[0, 1, 2, 3, 4, 5].map((row) => (
             <SidebarMenuItem key={row}>
               <SidebarMenuSkeleton showIcon />
             </SidebarMenuItem>

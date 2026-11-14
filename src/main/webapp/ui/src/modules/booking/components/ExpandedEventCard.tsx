@@ -3,8 +3,8 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingDetailRows } from "./BookingDetailRows";
 import {
   type DayTimelineEvent,
   dateForMinute,
@@ -125,27 +125,14 @@ export function ExpandedEventCard({
             </InventoryItem>
           </dd>
         </div>
-        {event.kind === "booking" ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.bookedBy} />
-            </dd>
-          </div>
-        ) : event.createdBy ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.createdBy} />
-            </dd>
-          </div>
-        ) : null}
-        <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-          <dt className="text-muted-foreground text-xs">
-            {t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-          </dt>
-          <dd className="text-xs leading-4">{event.notes}</dd>
-        </div>
+        <BookingDetailRows
+          actor={event.kind === "booking" ? event.bookedBy : event.createdBy}
+          showActor={event.kind === "booking" || Boolean(event.createdBy)}
+          actorLabel={t(event.kind === "booking" ? "dayTimeline.expanded.bookedBy" : "dayTimeline.expanded.createdBy")}
+          detailsLabel={t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
+          details={event.notes}
+          rowClassName="grid grid-cols-[4.5rem_1fr] gap-2 py-2"
+        />
       </dl>
 
       {actions}

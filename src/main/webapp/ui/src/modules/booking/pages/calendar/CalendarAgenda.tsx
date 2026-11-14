@@ -1,8 +1,10 @@
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { type BookingListDocument } from "@/modules/booking/domain/booking";
 import { Badge } from "@/modules/common/ui/badge";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingEditorsContext } from "./BookingEventsCalendar";
 import { CalendarEventCard } from "./CalendarEventCard";
 import { type CalendarView, eventsOn, formatDate, periodDates, useScrollToToday } from "./calendarLayoutUtils";
 
@@ -22,6 +24,7 @@ export function CalendarAgenda({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = periodDates(date, view);
   const dateRailRef = useScrollToToday(date, view, today);
   return (
@@ -68,7 +71,7 @@ export function CalendarAgenda({
             </div>
           ) : (
             dates.flatMap((day) => {
-              const dayEvents = eventsOn(events, day, timezone);
+              const dayEvents = eventsOn(events, day, timezone, editorPositions);
               if (dayEvents.length === 0) return [];
               return [
                 <section key={day} className="space-y-2">

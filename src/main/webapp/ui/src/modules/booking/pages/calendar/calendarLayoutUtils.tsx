@@ -1,8 +1,14 @@
 import * as React from "react";
 import { type DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
 import { type BookingListDocument } from "@/modules/booking/domain/booking";
-import { addCalendarDays, sliceAcrossZonedDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  addCalendarDays,
+  sliceAcrossZonedDay,
+  wallClockToDayMinute,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import i18n from "@/modules/common/i18n";
+import { BookingActions } from "./BookingEventActions";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 
@@ -58,6 +64,29 @@ export function periodDates(date: string, view: CalendarView): readonly string[]
   return datesFrom(firstOfMonth(date), monthDayCount(date));
 }
 
+export function nextFreeRange(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  startWindow: number,
+  endWindow: number,
+  increment: number,
+): { startMinute: number; endMinute: number } | undefined {
+  startWindow = wallClockToDayMinute(date, timezone, startWindow);
+  endWindow = wallClockToDayMinute(date, timezone, endWindow);
+  if (endWindow <= startWindow) return undefined;
+  const duration = Math.min(60, endWindow - startWindow);
+  const firstStart = Math.ceil(startWindow / increment) * increment;
+  const occupied = events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone));
+  for (let startMinute = firstStart; startMinute + duration <= endWindow; startMinute += increment) {
+    const endMinute = startMinute + duration;
+    if (!occupied.some((event) => event.startMinute < endMinute && event.endMinute > startMinute)) {
+      return { startMinute, endMinute };
+    }
+  }
+  return undefined;
+}
+
 export function shiftDate(date: string, view: CalendarView, delta: number): string {
   if (view === "day") return addCalendarDays(date, delta);
   if (view === "week") return addCalendarDays(date, delta * 7);
@@ -70,10 +99,28 @@ export function occursOn(event: BookingListDocument, date: string, timezone: str
   return Date.parse(event.start) < Date.parse(bounds.end) && Date.parse(event.end) > Date.parse(bounds.start);
 }
 
-export function eventsOn(events: readonly BookingListDocument[], date: string, timezone: string) {
+export function eventsOn(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  editors?: ReadonlyMap<number, BookingListDocument>,
+) {
   return events
-    .filter((event) => occursOn(event, date, timezone))
+    .filter((event) => occursOn(editors?.get(event.id) ?? event, date, timezone))
     .toSorted((left, right) => left.start.localeCompare(right.start));
+}
+
+export function timelineEditorPositions(
+  editors: ReadonlyMap<number, BookingListDocument> | undefined,
+  date: string,
+  timezone: string,
+) {
+  return new Map(
+    [...(editors?.values() ?? [])].map((event) => [
+      String(event.id),
+      sliceAcrossZonedDay(event.start, event.end, date, timezone),
+    ]),
+  );
 }
 
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
@@ -130,5 +177,19 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     notes: event.purpose ?? undefined,
     canEdit: event.canEdit,
     ...slice,
+  };
+}
+
+export function actionsFor(events: readonly BookingListDocument[], timezone: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+  };
+}
+
+export function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
   };
 }

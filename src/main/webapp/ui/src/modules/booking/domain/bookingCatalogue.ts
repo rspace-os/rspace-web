@@ -88,13 +88,14 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
   };
 }
 
-type CatalogueSearch = Partial<Pick<SearchBookingCatalogueParams, "q" | "target" | "page">> & {
+type CatalogueSearch = Partial<Pick<SearchBookingCatalogueParams, "q" | "target" | "page" | "capability">> & {
   types?: readonly string[];
   locations?: readonly string[];
   pageSize?: number;
 };
 function parameters(search: CatalogueSearch) {
   return {
+    capability: search.capability,
     q: search.q?.trim() || undefined,
     target: search.target,
     type: search.types ? [...search.types] : undefined,

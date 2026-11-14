@@ -1,6 +1,6 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Temporal } from "@js-temporal/polyfill";
-import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
+import { CalendarClockIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,11 +11,10 @@ import {
   timestamp,
 } from "@/modules/booking/domain/availability";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverContent, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
+import { BookingSummaryAccordion } from "./BookingSummaryAccordion";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 
@@ -94,79 +93,23 @@ function BookingSourceAccordion({
   const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
 
   return (
-    <li className="min-w-0 overflow-hidden rounded-sm border bg-background">
-      <details name={accordionName} className="group">
-        <summary
-          aria-label={t("dayTimeline.event.showDetails", {
-            title: maintenance ? t("bookings.maintenanceLabel") : item.name,
-            period,
-          })}
-          className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden"
-        >
-          <span
-            className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-              maintenance
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-            )}
-          >
-            {maintenance ? (
-              <WrenchIcon className="size-4" aria-hidden="true" />
-            ) : (
-              <CalendarClockIcon className="size-4" aria-hidden="true" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-medium">
-              {maintenance ? t("bookings.maintenanceLabel") : t("availabilityBar.slice.sources.booking")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">{period}</span>
-          </span>
-          <ChevronRightIcon
-            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
-            aria-hidden="true"
-          />
-        </summary>
-        <div className="border-border border-t">
-          <dl className="divide-y divide-border px-2 text-sm">
-            <div className="py-2">
-              <dt className="sr-only">{t("dayTimeline.expanded.item")}</dt>
-              <dd>
-                <InventoryItem
-                  name={item.name}
-                  globalId={item.globalId}
-                  href={`/globalId/${item.globalId}`}
-                  idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: item.globalId })}
-                  idPlacement="title"
-                  className="p-0"
-                >
-                  {item.location ? (
-                    <InventoryLocationLink name={item.location.name} globalId={item.location.globalId} />
-                  ) : null}
-                </InventoryItem>
-              </dd>
-            </div>
-            {actor ? (
-              <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-                <dt className="text-xs text-muted-foreground">
-                  {t(maintenance ? "dayTimeline.expanded.createdBy" : "dayTimeline.expanded.bookedBy")}
-                </dt>
-                <dd className="min-w-0">
-                  <UserBadge name={actor} />
-                </dd>
-              </div>
-            ) : null}
-            <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-              <dt className="text-xs text-muted-foreground">
-                {t(maintenance ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-              </dt>
-              <dd className="text-xs leading-4">{source.booking.purpose ?? t("bookings.details.noneProvided")}</dd>
-            </div>
-          </dl>
-        </div>
-      </details>
-    </li>
+    <BookingSummaryAccordion
+      accordionName={accordionName}
+      heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
+      summaryLabel={
+        maintenance
+          ? t("bookings.maintenanceLabel")
+          : actor
+            ? t("availabilityBar.slice.bookedBy", { user: actor })
+            : t("availabilityBar.slice.sources.booking")
+      }
+      period={period}
+      purpose={source.booking.purpose ?? null}
+      maintenance={maintenance}
+      item={maintenance ? item : undefined}
+      actor={maintenance ? actor : undefined}
+      detailsBookingId={source.booking.id}
+    />
   );
 }
 

@@ -1,0 +1,183 @@
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { server } from "@/__tests__/mswServer";
+import { cancelBooking, createBooking, fetchBooking, updateBooking } from "@/modules/booking/domain/booking";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+
+const document = {
+  id: 41,
+  version: 0,
+  target: {
+    relationTo: "instruments",
+    value: { id: 12, name: "Scope", deleted: false },
+    globalId: "IN12",
+  },
+  timezone: "Europe/Berlin",
+  canViewConfiguration: true,
+  start: "2026-10-25T00:30:00Z",
+  end: "2026-10-25T02:30:00Z",
+  state: "CONFIRMED",
+  privacy: "full",
+  purpose: null,
+  bookedBy: "Ada Lovelace",
+  canEdit: true,
+  canCancel: true,
+  createdAt: "2026-08-17T00:00:00Z",
+  updatedAt: "2026-08-17T00:00:00Z",
+} satisfies BookingsRead;
+
+const mutationDocument = {
+  ...document,
+  target: { relationTo: "instruments", value: 12, globalId: "IN12" },
+} satisfies BookingsRead;
+
+describe("booking API", () => {
+  it("uses strict read, POST, and PATCH contracts", async () => {
+    const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
+    server.use(
+      http.get("/api/v2/bookings/41", ({ request }) => {
+        const url = new URL(request.url);
+        if (
+          url.searchParams.get("depth") !== "2" ||
+          url.searchParams.get("fields[instruments]") !== "id,globalId,name,deleted,parentContainer" ||
+          url.searchParams.get("fields[containers]") !== "id,globalId,name"
+        )
+          return new HttpResponse(null, { status: 400 });
+        requests.push({ method: request.method, url });
+        return HttpResponse.json<BookingsRead>(document);
+      }),
+      http.post("/api/v2/bookings", async ({ request }) => {
+        requests.push({ method: request.method, url: new URL(request.url), body: await request.json() });
+        return HttpResponse.json<BookingsRead>(mutationDocument);
+      }),
+      http.patch("/api/v2/bookings/41", async ({ request }) => {
+        requests.push({ method: request.method, url: new URL(request.url), body: await request.json() });
+        return HttpResponse.json<BookingsRead>(mutationDocument);
+      }),
+    );
+
+    await fetchBooking(41, new AbortController().signal);
+    await createBooking({
+      target: { relationTo: "instruments", value: 12 },
+      start: document.start,
+      end: document.end,
+      purpose: null,
+    });
+    await updateBooking(41, 0, { start: document.start, end: document.end, purpose: "Plate" });
+
+    expect(
+      requests.map((request) => [request.method, request.url.pathname, request.url.searchParams.get("depth")]),
+    ).toEqual([
+      ["GET", "/api/v2/bookings/41", "2"],
+      ["POST", "/api/v2/bookings", null],
+      ["PATCH", "/api/v2/bookings/41", null],
+    ]);
+    expect(requests[1].body).toEqual({
+      target: { relationTo: "instruments", value: 12 },
+      start: document.start,
+      end: document.end,
+      purpose: null,
+    });
+    expect(requests[2].body).toEqual({ start: document.start, end: document.end, purpose: "Plate" });
+    expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
+      "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+    );
+    expect(requests[0].url.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted,parentContainer");
+    expect(requests[0].url.searchParams.get("fields[containers]")).toBe("id,globalId,name");
+    expect(requests[2].url.pathname).toBe("/api/v2/bookings/41");
+  });
+
+  it("rejects malformed success data and exposes stable problem codes", async () => {
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, target: null })));
+    await expect(fetchBooking(41)).rejects.toThrow();
+
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json<ApiV2Problem>(
+          { title: "Booking request failed", status: 409, code: "errors.api.v2.booking.overlap", detail: "Overlap" },
+          { status: 409 },
+        ),
+      ),
+    );
+    await expect(fetchBooking(41)).rejects.toEqual(
+      expect.objectContaining({ status: 409, code: "errors.api.v2.booking.overlap" }),
+    );
+  });
+
+  it("rejects a concealed busy document from the details read", async () => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          privacy: "busy",
+          purpose: null,
+          bookedBy: null,
+          canEdit: false,
+          canCancel: false,
+        }),
+      ),
+    );
+
+    await expect(fetchBooking(41)).rejects.toThrow();
+  });
+
+  it.each([
+    ["an invalid start timestamp", { start: "tomorrow" }],
+    ["an invalid end timestamp", { end: "later" }],
+    ["an empty interval", { end: document.start }],
+    ["a reversed interval", { end: "2026-10-24T23:30:00Z" }],
+  ])("rejects %s in the details read", async (_label, change) => {
+    const invalid = { ...document, requester: { relationTo: "users", value: 5 }, ...change };
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(invalid)));
+
+    await expect(fetchBooking(41)).rejects.toThrow();
+  });
+
+  it("honors an aborted read", async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(fetchBooking(41, controller.signal)).rejects.toThrow();
+  });
+
+  it("cancels with the exact authenticated PATCH contract", async () => {
+    let request: Request | undefined;
+    server.use(
+      http.patch("/api/v2/bookings/41", ({ request: nextRequest }) => {
+        request = nextRequest;
+        return HttpResponse.json({ ...document, state: "CANCELLED" });
+      }),
+    );
+
+    const result = await cancelBooking(41, 0);
+
+    expect(request?.method).toBe("PATCH");
+    expect(new URL(request?.url ?? "http://localhost").searchParams.get("depth")).toBeNull();
+    expect(await request?.json()).toEqual({ state: "CANCELLED" });
+    expect(request?.headers.get("Authorization")).toMatch(/^Bearer .+/);
+    expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(request?.headers.get("If-Match")).toBe('"0"');
+    expect(result.state).toBe("CANCELLED");
+  });
+
+  it("preserves cancellation problem status and code", async () => {
+    server.use(
+      http.patch("/api/v2/bookings/41", () =>
+        HttpResponse.json<ApiV2Problem>(
+          {
+            title: "Booking request failed",
+            status: 409,
+            code: "errors.api.v2.booking.state.transition",
+            detail: "stale",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    await expect(cancelBooking(41, 0)).rejects.toEqual(
+      expect.objectContaining({ status: 409, code: "errors.api.v2.booking.state.transition" }),
+    );
+  });
+});

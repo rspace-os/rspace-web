@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
@@ -75,9 +76,11 @@ export function BookableItemPageStory({ hasSysAdminRole = true }: { hasSysAdminR
   return (
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
+        <BookingCreationStoreProvider>
+          <Suspense fallback={null}>
+            <RouterProvider router={router as never} />
+          </Suspense>
+        </BookingCreationStoreProvider>
       </NuqsAdapter>
     </QueryClientProvider>
   );
