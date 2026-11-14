@@ -44,7 +44,6 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -155,25 +154,30 @@ public final class BookingConfigurationResourceOperations
                     "Creates booking configuration for an instrument. Each instrument may have "
                         + "only one booking configuration.")
                 .requestExample(
-                    Map.of(
-                        "enabled",
-                        true,
-                        "slotGranularityMinutes",
-                        15,
-                        "incrementUnit",
-                        "MINUTES",
-                        "openingHours",
-                        List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
-                        "bufferBeforeMinutes",
-                        15,
-                        "bufferAfterMinutes",
-                        15,
-                        "maxBookingDurationMinutes",
-                        120,
-                        "allowDoubleBooking",
-                        false,
-                        "target",
-                        Map.of("relationTo", ApiV2InstrumentResource.RESOURCE_NAME, "value", 123)))
+                    Map.ofEntries(
+                        Map.entry("enabled", true),
+                        Map.entry("slotGranularityMinutes", 15),
+                        Map.entry("incrementUnit", "MINUTES"),
+                        Map.entry(
+                            "openingHours",
+                            List.of(
+                                Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 2, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 3, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 4, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 5, "start", "08:00", "end", "18:00"),
+                                Map.of("dayOfWeek", 6, "start", "10:00", "end", "16:00"))),
+                        Map.entry("bufferBeforeMinutes", 15),
+                        Map.entry("bufferAfterMinutes", 15),
+                        Map.entry("maxBookingDurationMinutes", 120),
+                        Map.entry("allowDoubleBooking", false),
+                        Map.entry(
+                            "target",
+                            Map.of(
+                                "relationTo",
+                                ApiV2InstrumentResource.RESOURCE_NAME,
+                                "value",
+                                123))))
                 .build())
         .errorMappings(ResourceOperation.CREATE, writeErrors)
         .errorMappings(ResourceOperation.BULK_CREATE, writeErrors)
@@ -244,42 +248,6 @@ public final class BookingConfigurationResourceOperations
       return Optional.empty();
     }
     return manager.getConfiguration(id, actor);
-  }
-
-  public Map<String, String> requiredAuditFields(BookingConfiguration configuration) {
-    return Map.of(
-        "target.type",
-        configuration.getTarget().type().name(),
-        "target.id",
-        configuration.getTarget().id().toString());
-  }
-
-  public Optional<BookingConfiguration> findByIdForAudit(Long id, User actor) {
-    return enabled(actor) ? manager.getConfigurationForAudit(id, actor) : Optional.empty();
-  }
-
-  public Instant relatedAuditFallbackFrom(BookingConfiguration configuration) {
-    return configuration.getCreatedAt() == null ? null : configuration.getCreatedAt().toInstant();
-  }
-
-  public Set<String> relatedAuditFields() {
-    return Set.of(
-        "bookingConfigurationId",
-        "start",
-        "end",
-        "kind",
-        "state",
-        "purpose",
-        "deleted",
-        "deletedAt");
-  }
-
-  public Set<String> relatedAuditIdentifierFields() {
-    return Set.of("bookingConfigurationId");
-  }
-
-  public boolean auditBypassesActorDirectory() {
-    return true;
   }
 
   @Override

@@ -7,11 +7,8 @@
  */
 
 export type SearchBookingConfigurationTargetsParams = {
-  /**
-   * Case-insensitive search text.
-   * @minLength 2
-   */
-  q: string;
+  /** Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming. */
+  q?: string;
   /**
    * Maximum results to return.
    * @minimum 1

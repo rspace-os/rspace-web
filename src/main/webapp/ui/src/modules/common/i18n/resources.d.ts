@@ -945,6 +945,7 @@ export default interface Resources {
           "availabilityWindowStart": "Availability window start",
           "bufferAfter": "Buffer after (minutes)",
           "bufferBefore": "Buffer before (minutes)",
+          "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
           "customTimezone": "Custom time zone",
@@ -968,7 +969,8 @@ export default interface Resources {
           "state": "Status",
           "target": "Bookable item",
           "targetName": "Bookable item name",
-          "timezone": "Scheduling timezone",
+          "timeFormat": "Time format",
+          "timezone": "Scheduling time zone",
           "timezoneMode": "Time zone mode"
         }
       },
@@ -7774,7 +7776,7 @@ export default interface Resources {
             "ifMatchRequired": "The current booking version is required.",
             "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
             "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
-            "openingHours": "The booking must remain within this bookable item's opening hours.",
+            "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
             "overlap": "The selected time overlaps another booking.",
             "patch": "The booking patch is invalid.",
             "purpose": {
@@ -7811,6 +7813,12 @@ export default interface Resources {
             "lifecycleConflict": "Restore the archived booking configuration before changing it.",
             "maximumDuration": {
               "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day."
+            },
+            "openDays": {
+              "invalid": "Open days must list one to seven different weekdays, numbered 1 (Monday) to 7 (Sunday)."
+            },
+            "openingExceptions": {
+              "invalid": "Each day with different hours must be a different open weekday, with HH:mm hours where start is before end, or 00:00–24:00 for the full day."
             },
             "openingHours": {
               "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."

@@ -24,6 +24,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -31,10 +32,12 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
@@ -309,6 +312,7 @@ class TimeSlotBookingSchedulingTest {
                     instant("2026-10-25T00:30:00Z"),
                     instant("2026-10-25T01:31:00Z")));
     assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
+    assertEquals(OptionalLong.of(60), failure.maximumDurationMinutes());
   }
 
   @Test
@@ -573,6 +577,83 @@ class TimeSlotBookingSchedulingTest {
                 actor));
 
     verify(configurationDao, never()).lockActiveByTarget(any());
+  }
+
+  @Test
+  void boundsOpeningCoverageByTheAbsoluteLimitEvenWithoutAnItemLimit() {
+    ResolvedBookableTarget target = target(12L);
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setTimeZone("UTC");
+    configuration.setMaxBookingDurationMinutes(0);
+    when(configurationDao.lockActiveByTarget(target.reference()))
+        .thenReturn(Optional.of(configuration));
+    Instant start = Instant.parse("2026-01-05T00:00:00Z");
+    Instant atLimit =
+        start.plus(Duration.ofMinutes(BookingSchedulingSettings.MAX_BOOKING_DURATION_MINUTES));
+
+    assertEquals(
+        Date.from(atLimit),
+        manager
+            .createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, Date.from(start), Date.from(atLimit), null),
+                actor,
+                actor)
+            .getEndTime());
+    assertThrows(
+        BookingDurationException.class,
+        () ->
+            manager.createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, Date.from(start), Date.from(atLimit.plus(Duration.ofMinutes(1))), null),
+                actor,
+                actor));
+    assertThrows(
+        BookingDurationException.class,
+        () ->
+            manager.createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, Date.from(start), instant("2626-01-05T00:00:00Z"), null),
+                actor,
+                actor));
+    verify(configurationDao, times(1)).lockActiveByTarget(target.reference());
+  }
+
+  @Test
+  void maintenanceMayUseAClosedWeekdayButARegularBookingMayNot() {
+    when(actor.hasSysadminRole()).thenReturn(true);
+    ResolvedBookableTarget target = target(12L);
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setTimeZone("UTC");
+    configuration.setOpeningHours(hours("08:00", "18:00", 3));
+    when(configurationDao.lockActiveByTarget(target.reference()))
+        .thenReturn(Optional.of(configuration));
+
+    TimeSlotBooking maintenance =
+        manager.createBooking(
+            new TimeSlotBookingManager.Create(
+                target,
+                instant("2026-10-26T22:00:00Z"),
+                instant("2026-10-27T02:00:00Z"),
+                "Service optics",
+                BookingEventKind.MAINTENANCE),
+            actor,
+            actor);
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () ->
+                manager.createBooking(
+                    new TimeSlotBookingManager.Create(
+                        target,
+                        instant("2026-10-26T10:00:00Z"),
+                        instant("2026-10-26T11:00:00Z"),
+                        null),
+                    actor,
+                    actor));
+
+    assertEquals(BookingEventKind.MAINTENANCE, maintenance.getKind());
+    assertEquals(BookingPolicyException.Reason.OPENING_HOURS, failure.reason());
   }
 
   @ParameterizedTest

@@ -765,10 +765,11 @@ export const SearchBookingCatalogueLocationsResponse = BookingCatalogueManagerLo
 
 
 /**
+ * Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `q` browses the first `limit` eligible targets. A nonblank `q` filters names by case-insensitive containment and must have at least two characters after trimming.
  * @summary Search eligible Booking configuration targets
  */
 export const SearchBookingConfigurationTargetsQueryParams = v.object({
-  q: v.pipe(v.string(), v.check((value) => value.length >= 4 || [...value].length >= 2, 'Invalid length: Expected >=2'), v.description('Case-insensitive search text.')),
+  q: v.optional(v.pipe(v.string(), v.description('Optional case-insensitive search text. Omit it or provide an empty or whitespace-only value to browse the first `limit` eligible targets by name. A nonblank value must have at least two characters after trimming.'))),
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(50), v.description('Maximum results to return.')), 20)
 })
 
@@ -1143,7 +1144,7 @@ export const ListBookingsResponse = v.object({
 
 
 /**
- * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422.
+ * Creates one confirmed booking for an instrument. Intervals may not exceed the instrument's configured maximum or the 366-day system maximum. Optional Idempotency-Key (1-64 ASCII letters, digits, dot, underscore, colon or hyphen) is scoped to the creating actor. The normalized original request is retained for the booking row's lifetime. Identical retries return the current booking with 200, including after edits or cancellation; a different request returns 422. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Create one bookings
  */
 export const CreateBookingHeader = v.object({
@@ -1204,7 +1205,7 @@ export const GetBookingResponse = BookingsRead
 
 
 /**
- * Partially updates one bookings and returns the updated document.
+ * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const UpdateBookingParams = v.object({

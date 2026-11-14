@@ -29,28 +29,6 @@ public record ApiV2ErrorMapping(
     }
   }
 
-  public static <E extends RuntimeException> ApiV2ErrorMapping of(
-      Class<E> exceptionType, HttpStatus status, String errorCode, String description) {
-    return of(exceptionType, status, errorCode, description, ignored -> new Object[0]);
-  }
-
-  public static <E extends RuntimeException> ApiV2ErrorMapping of(
-      Class<E> exceptionType,
-      HttpStatus status,
-      String errorCode,
-      String description,
-      Function<E, Object[]> argumentExtractor) {
-    Objects.requireNonNull(argumentExtractor, "Error argument extractor");
-    return new ApiV2ErrorMapping(
-        exceptionType,
-        status,
-        errorCode,
-        description,
-        exception -> argumentExtractor.apply(exceptionType.cast(exception)),
-        ignored -> errorCode,
-        ignored -> Map.of());
-  }
-
   public static <E extends RuntimeException> Builder<E> forException(Class<E> type) {
     return new Builder<>(type);
   }

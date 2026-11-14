@@ -82,6 +82,22 @@ The `problem` member has the generated `ApiV2Problem` type. It is present only w
 `ApiV2ProblemSchema`. Non-JSON or malformed problem bodies leave it absent. Consumers must handle
 that case before reading details.
 
+`ApiV2Problem` documents the standard members and permits extension members through
+`additionalProperties: true`, matching the backend's extension map. A feature documents its
+extension members with its error codes and validates them with a small local Valibot schema before
+using them. Booking keeps `bookingProblemDetails` for that job. There is no separate
+`BookingProblem` schema. For a new feature, the pattern is:
+
+```ts
+const details = v.safeParse(featureProblemDetailsSchema, error.problem);
+if (details.success) {
+  // Read the feature's validated extension members from details.output.
+}
+```
+
+Here `error` has already been narrowed to `ApiV2ProblemError`, and `featureProblemDetailsSchema` is
+the feature's own schema. Do not cast an unknown extension value to a domain type.
+
 ## Tokens and identity changes
 
 `tokenProvider.ts` exports `ApiV2TokenProvider` with `getToken(signal?: AbortSignal):
