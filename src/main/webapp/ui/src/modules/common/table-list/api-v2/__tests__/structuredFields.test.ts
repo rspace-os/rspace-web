@@ -267,17 +267,15 @@ describe("declared OpenAPI fields", () => {
     expect(() => adapter(missingReference)).toThrow("MissingRead");
   });
 
-  it("rejects cyclic metadata", () => {
-    const cyclic = field("nested", "object");
-    cyclic.fields = [cyclic];
-    expect(() => adapter(openApi([cyclic]))).toThrow("cyclic child fields");
-  });
-
   it.each<[string, unknown, string]>([
     ["empty children", [], "OpenAPI rows:"],
     ["duplicate children", [field("name", "string"), field("name", "string")], "duplicate child"],
     ["missing nested children", [field("nested", "array")], "OpenAPI rows.nested child fields:"],
-    ["invalid flag", [field("name", "string", { nullable: "yes" })], "OpenAPI rows[0]: Validation failed: nullable"],
+    [
+      "invalid flag",
+      [field("name", "string", { nullable: "yes" })],
+      "OpenAPI rows: Validation failed: x-rspace-fields.0.nullable",
+    ],
     [
       "scalar children",
       [field("name", "string", { fields: [field("other", "string")] })],

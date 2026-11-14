@@ -1,20 +1,6 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { Namespace } from "i18next";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
@@ -28,7 +14,8 @@ import type {
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import { useTableListDragSensors } from "../hooks/dragSensors";
 import { serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
 import {
@@ -78,10 +65,7 @@ export function TableListFilters<TDocument>({
   onShowColumn?: (field: SearchSelector<TDocument>, shown: boolean) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onClose: () => void;
 }) {
   const { t } = useTranslation<Namespace>("common");
@@ -106,11 +90,7 @@ export function TableListFilters<TDocument>({
       (node) => node.kind !== "comparison",
     ),
   );
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useTableListDragSensors();
   const fieldOptions: FilterSelectOption[] = fields
     .filter((candidate) => candidate.origin?.namespace === undefined)
     .map((candidate) => {

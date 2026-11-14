@@ -8,12 +8,16 @@ import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreat
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { calendarBookingCatalogueQuery, catalogueItemAsConfiguration } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import {
+  bookingInstrumentSource,
+  bookingRelationshipSources,
+} from "@/modules/booking/domain/bookingRelationshipSource";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import type { CollectionConfig, FieldName, SearchSelector } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
@@ -121,6 +125,7 @@ function filterIssue<TDocument>({
 export function useCalendarContentData() {
   const queryClient = useQueryClient();
   const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
@@ -437,10 +442,27 @@ export function useCalendarContentData() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  const targetName = target
+  const targetOptionLabels = React.useMemo(
+    () => ({
+      unavailableLabel: (value: string) => commonT("relationshipPicker.unavailable", { value }),
+      failedLabel: () => commonT("relationshipPicker.restoreFailed"),
+    }),
+    [commonT],
+  );
+  // Search and the filters can hide the item from the loaded rows and events, so resolve its name on its own,
+  // as the Location filter restores its chips.
+  const [targetOption] = useSelectedRelationshipOptions({
+    sources: [bookingInstrumentSource],
+    values: target ? [target] : [],
+
+    authScope: currentUser.id,
+    labels: targetOptionLabels,
+  });
+  const loadedTargetName = target
     ? (resourceTargets.find((resource) => resource.globalId === target)?.value.name ??
       events.data?.find((event) => event.target?.globalId === target)?.target?.value.name)
     : undefined;
+  const targetName = targetOption?.restoreStatus === undefined ? targetOption?.label : loadedTargetName;
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     const events = withoutPresets(expression, [eventOwnerPreset]);
     const otherItems = withoutPresets(itemExpression, [ownerPreset]);
@@ -495,5 +517,6 @@ export function useCalendarContentData() {
     target,
     targetName,
     replaceSearch,
+    targetOption,
   };
 }

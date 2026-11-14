@@ -20,9 +20,11 @@ beforeEach(() => {
 
 describe("Calendar Availability", () => {
   it("coerces Week to Day and explains disabled periods", async () => {
+    const user = userEvent.setup();
     await renderCalendar("/booking/calendar?layout=availability&view=week");
-    expect(await screen.findByRole("button", { name: "Week" })).toBeDisabled();
-    expect(await screen.findByRole("button", { name: "Month" })).toHaveAccessibleDescription(
+    await user.click(await screen.findByRole("button", { name: "View: Availability · Day" }));
+    expect(await screen.findByRole("menuitemradio", { name: "Week" })).toHaveAttribute("aria-disabled", "true");
+    expect(await screen.findByRole("menuitemradio", { name: "Month" })).toHaveAccessibleDescription(
       "Availability is available for Day only.",
     );
   });
@@ -41,7 +43,7 @@ describe("Calendar Availability", () => {
     const { router } = await renderCalendar(
       "/booking/calendar?layout=availability&calendar-resources.q=scope&calendar-resources.where=targetOwner%3D%3Dme%3Bavailability%3D%3Davailable-now",
     );
-    await screen.findByRole("button", { name: "Availability" });
+    await screen.findByRole("button", { name: "View: Availability · Day" });
     const writes = vi.spyOn(router, "navigate");
     const invalidRequests: string[] = [];
     server.use(
@@ -50,7 +52,8 @@ describe("Calendar Availability", () => {
         return undefined;
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Resources" }));
+    await user.click(screen.getByRole("button", { name: "View: Availability · Day" }));
+    await user.click(await screen.findByRole("menuitemradio", { name: "By Item" }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(new URLSearchParams(router.state.location.searchStr).get("layout")).toBe("resources"));
     const search = new URLSearchParams(router.state.location.searchStr);
@@ -134,7 +137,7 @@ describe("Calendar Availability", () => {
       expect(new URLSearchParams(router.state.location.searchStr).get("calendar-resources.where")).toBeNull(),
     );
     expect(new URLSearchParams(router.state.location.searchStr).get("calendar-events.where")).toBeNull();
-    expect(await screen.findByRole("button", { name: "Resources" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "View: By Item · Day" })).toBeVisible();
   });
 
   it("offers Details and Book with the displayed day and no lifecycle controls", async () => {

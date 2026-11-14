@@ -5,21 +5,10 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
   type UniqueIdentifier,
   useDroppable,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  rectSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Namespace } from "i18next";
 import { GripVerticalIcon, XIcon } from "lucide-react";
@@ -27,10 +16,14 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
-import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
+import type {
+  RuntimeFieldCatalogForNamespace,
+  RuntimeFieldDefinition,
+} from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
+import { useTableListDragSensors } from "../hooks/dragSensors";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 
 type Section = "shown" | "hidden";
@@ -69,12 +62,15 @@ function ColumnSection<TDocument>({
   emptyLabel: string;
   children: ReactNode;
 }) {
+  const { i18n } = useTranslation<Namespace>("common");
   const { isOver, setNodeRef } = useDroppable({ id: sectionIds[name], data: { section: name } });
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
         <h3 className="text-xs font-semibold tracking-wide uppercase">{title}</h3>
-        <span className="text-xs text-muted-foreground">{fields.length}</span>
+        <span className="text-xs text-muted-foreground">
+          {new Intl.NumberFormat(i18n.resolvedLanguage ?? i18n.language, { useGrouping: false }).format(fields.length)}
+        </span>
       </div>
       <fieldset
         ref={setNodeRef}
@@ -177,10 +173,7 @@ export function TableListColumns<TDocument>({
   onChange: (fields: readonly FieldName<TDocument>[]) => void;
   onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
   runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
+  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
   onClose: () => void;
 }) {
   const { t } = useTranslation<Namespace>("common");
@@ -202,11 +195,7 @@ export function TableListColumns<TDocument>({
   const activeField = drag.activeField;
   const draft = activeField === null ? propsLayout : dragLayout;
   const endDrag = () => setDrag((current) => ({ ...current, activeField: null }));
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useTableListDragSensors();
 
   const transfer = ({ active, over }: DragOverEvent) => {
     if (!over) return;
