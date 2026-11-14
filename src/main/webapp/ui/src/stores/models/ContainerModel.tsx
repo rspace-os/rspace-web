@@ -789,19 +789,6 @@ export default class ContainerModel
     return Boolean(this.selectedResults[0]);
   }
 
-  contextMenuDisabled(): string | null {
-    const listViewAndASelectedRecord = this.contentSearch.searchView === "LIST" && this.hasSelectedRecord;
-    const gridOrImageViewAndSelectedLocation =
-      (this.contentSearch.searchView === "GRID" || this.contentSearch.searchView === "IMAGE") &&
-      this.hasSelectedLocation;
-    return (
-      super.contextMenuDisabled() ??
-      (listViewAndASelectedRecord || gridOrImageViewAndSelectedLocation
-        ? i18n.t("inventory:container.contextMenu.contentsSelected")
-        : null)
-    );
-  }
-
   get fieldNamesInUse(): Array<string> {
     return [...super.fieldNamesInUse, ...["Can Store", "Type", "Locations Image", "Grid Dimensions"]];
   }
