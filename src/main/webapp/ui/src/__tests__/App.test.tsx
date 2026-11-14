@@ -2,11 +2,14 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/stores/stores/RootStore";
 import { act, render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, onTestFinished, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import App from "@/App";
 import JwtService from "@/common/JwtService";
+import { createUiOAuthToken } from "@/modules/common/api/v2/generated/oauth/oauth";
+import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
 
@@ -27,7 +30,7 @@ it("shows an error when authentication initialization rejects", async () => {
   silenceConsole(["error"], ["Application initialization failed"]);
   const error = new Error("Token service unavailable");
   stores.current = {
-    authStore: { synchronizeWithSessionStorage: vi.fn().mockRejectedValue(error), isAuthenticated: false },
+    authStore: { refreshAuthentication: vi.fn().mockRejectedValue(error), isAuthenticated: false },
   } as unknown as RootStore;
   render(<App />);
   expect(await screen.findByText("Authentication failed")).toBeVisible();
@@ -35,6 +38,13 @@ it("shows an error when authentication initialization rejects", async () => {
 });
 
 it("loads the current user with an expiring token after a transient mint failure and recovers", async () => {
+  onTestFinished(
+    setApiV2TokenProvider({
+      getToken: async () => (await createUiOAuthToken()).accessToken,
+      recover: async () => (await createUiOAuthToken()).accessToken,
+    }),
+  );
+  resetUiTokenForTests();
   vi.useFakeTimers();
   const token = (seconds: number) =>
     `eyJhbGciOiJub25lIn0.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
@@ -52,9 +62,9 @@ it("loads the current user with an expiring token after a transient mint failure
   const authenticate = vi.spyOn(authStore, "authenticate");
   let requests = 0;
   server.use(
-    http.get("*/userform/ajax/inventoryOauthToken", () => {
+    http.post("*/api/v2/oauth/tokens", () => {
       requests++;
-      return requests === 1 ? new HttpResponse(null, { status: 503 }) : HttpResponse.json({ data: fresh });
+      return requests === 1 ? new HttpResponse(null, { status: 503 }) : HttpResponse.json({ accessToken: fresh });
     }),
   );
   render(<App />);

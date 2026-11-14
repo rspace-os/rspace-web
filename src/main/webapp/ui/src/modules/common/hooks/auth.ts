@@ -1,8 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import {
   fetchOauthToken,
-  getStoredToken,
-  isExpiringSoon,
+  isPublicDocumentView,
+  mintUiToken,
   saveStoredToken,
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
@@ -22,16 +23,11 @@ const API_BASE_URL = "/api/v1";
  * This is used internally by the useOauthTokenQuery hook.
  */
 async function fetchToken(): Promise<string> {
-  const response = await fetch("/userform/ajax/inventoryOauthToken", {
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-    },
+  if (!isPublicDocumentView()) return getApiV2TokenProvider().getToken();
+  const response = await fetch("/public/publicView/userform/ajax/inventoryOauthToken", {
+    headers: { "X-Requested-With": "XMLHttpRequest" },
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch token: ${response.statusText}`);
-  }
-
+  if (!response.ok) throw new Error(`Failed to fetch token: ${response.statusText}`);
   const json = (await response.json()) as { data: string };
   const newToken = json.data;
   saveStoredToken(newToken);
@@ -74,15 +70,9 @@ async function fetchToken(): Promise<string> {
 export function useOauthTokenQuery() {
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(),
-    queryFn: async () => {
-      // First, check if we have a valid token in session storage
-      const savedToken = getStoredToken();
-      if (savedToken && !isExpiringSoon(savedToken)) {
-        return savedToken;
-      }
-      // If no valid token exists, fetch a new one
-      return fetchOauthToken(fetchToken);
-    },
+    // Mint once per page load: the shared storage key may hold a token from another session
+    // context (for example, from before an operate-as start or release).
+    queryFn: () => (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken()),
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
     staleTime: (query) => {

@@ -5595,6 +5595,157 @@ export default interface Resources {
       }
     }
   },
+  "server.api.openapi": {
+    "api": {
+      "v2": {
+        "openapi": {
+          "headers": {
+            "etag": "Strong entity tag for the returned representation.",
+            "privateNoStore": "Prevents storage of caller-specific subscription state.",
+            "rateLimitIntervals": "Per-interval rate-limit headers. Every response that lists X-Rate-Limit-WaitTimeMillis also carries each of these headers once for every listed interval, with the interval name as the header suffix.",
+            "rateLimitLimit": "Configured request limit for the interval that suffixes the header name.",
+            "rateLimitMinWait": "Configured minimum interval between requests, in milliseconds, taken as the largest across all intervals.",
+            "rateLimitRemaining": "Whole requests remaining in the interval that suffixes the header name.",
+            "rateLimitWait": "Wait before another request is allowed, in milliseconds. Without a suffix, the longest wait across all intervals; with an interval suffix, the wait before that interval allows another request."
+          },
+          "info": {
+            "description": "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",
+            "title": "RSpace REST API v2"
+          },
+          "operations": {
+            "archive": {
+              "description": "Archives one {0} and returns the archived document. Repeating ordinary DELETE is a no-op.",
+              "permanentDescription": "Archives one {0} and returns the archived document. Repeating ordinary DELETE is a no-op. The explicit permanent=true option permanently removes the resource for a direct sysadmin and returns no document.",
+              "summary": "Archive one {0}"
+            },
+            "bulkArchive": {
+              "description": "Archives every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+              "summary": "Archive matching {0}"
+            },
+            "bulkCreate": {
+              "description": "Creates the supplied {0} documents in input order. The batch is handled as one service-layer mutation; validation failure prevents the entire batch from being created.",
+              "success": "Successful bulk_create.",
+              "summary": "Create many {0}"
+            },
+            "bulkDelete": {
+              "description": "Deletes every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+              "success": "Successful bulk_delete.",
+              "summary": "Delete matching {0}"
+            },
+            "bulkUpdate": {
+              "description": "Updates every {0} matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
+              "success": "Successful bulk_update.",
+              "summary": "Update matching {0}"
+            },
+            "count": {
+              "description": "Counts {0} matching the optional bounded filter.",
+              "success": "Successful count.",
+              "summary": "Count {0}"
+            },
+            "create": {
+              "description": "Creates one {0} from the documented create schema.",
+              "success": "Successful create.",
+              "summary": "Create one {0}"
+            },
+            "delete": {
+              "description": "Deletes one {0} and returns the deleted document.",
+              "success": "Successful delete.",
+              "summary": "Delete one {0}"
+            },
+            "list": {
+              "description": "Returns a paginated view of {0}. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
+              "success": "Successful list.",
+              "summary": "List {0}"
+            },
+            "read": {
+              "description": "Returns one visible {0}. A resource that is absent or not readable is reported as not found.",
+              "success": "Successful read.",
+              "summary": "Get one {0}"
+            },
+            "update": {
+              "description": "Partially updates one {0} and returns the updated document.",
+              "success": "Successful update.",
+              "summary": "Update one {0}"
+            }
+          },
+          "parameters": {
+            "depth": "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
+            "exclude": "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[{0}]=id,name.",
+            "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name.",
+            "id": "Resource identifier.",
+            "ifMatch": "Strong entity tag containing the current resource version.",
+            "limit": "Maximum documents per page.",
+            "max": "Cap requested totals at max. When exceeded, totalDocs equals max and totalIsLowerBound is true. On list routes, requires totals=true.",
+            "page": "One-based page number.",
+            "permanent": "When true, permanently removes the resource. This is restricted to a direct sysadmin and returns 204. The default false performs the ordinary retry-safe archive transition.",
+            "sort": "Comma-separated sortable fields; prefix descending fields with '-'. At most {0} fields.",
+            "totals": "Include totalDocs and totalIsLowerBound. Defaults to false.",
+            "where": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.",
+            "whereWithRuntimeFields": "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields."
+          },
+          "resourceAccess": {
+            "assignmentAbsent": "The direct assignment is absent.",
+            "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
+            "document": "Current direct assignments and caller capabilities.",
+            "grantees": "Eligible users and groups.",
+            "ifMatch": "Strong ETag from the latest access document.",
+            "leave": {
+              "summary": "Remove the caller's direct assignment"
+            },
+            "limit": "Maximum grantees to return.",
+            "managingCallers": "Authenticated callers with the registered assignment-management capability.",
+            "ownerRequired": "The assignment change would violate a resource invariant.",
+            "query": "Case-insensitive user or group search text.",
+            "read": {
+              "summary": "Get direct access assignments"
+            },
+            "replace": {
+              "summary": "Replace direct access assignments"
+            },
+            "search": {
+              "summary": "Search eligible access grantees"
+            },
+            "stale": "The access document changed since it was read."
+          },
+          "responses": {
+            "badRequest": "The request is invalid.",
+            "bulkLimit": "The bulk operation exceeds the configured limit.",
+            "failure": "Request failed.",
+            "forbidden": "The caller is not authorized.",
+            "ifMatchRequired": "A strong If-Match header is required.",
+            "notAcceptable": "No acceptable response representation is available.",
+            "notFound": "The resource was not found or is not visible.",
+            "permanentlyRemoved": "The resource and its dependent live data were permanently removed.",
+            "success": "Successful response.",
+            "tooManyRequests": "The request was throttled.",
+            "unauthenticated": "Authentication is required.",
+            "unexpectedError": "An unexpected server error occurred.",
+            "unsupportedMediaType": "The request media type is unsupported."
+          },
+          "runtimeFields": {
+            "ids": "Comma-separated field identifiers.",
+            "limit": "Page size.",
+            "namespace": "Runtime field namespace.",
+            "page": "Page number.",
+            "search": "Search text.",
+            "success": "Caller-specific runtime field catalog."
+          },
+          "schemas": {
+            "globalId": "RSpace global identifier.",
+            "globalIdPrefixes": "RSpace global identifier. Permitted prefixes: {0}.",
+            "totalDocs": "Present only when totals=true.",
+            "totalIsLowerBound": "True when the requested total exceeds max."
+          },
+          "security": {
+            "browserSession": "Authenticated browser session. A deployment can rename this cookie."
+          },
+          "server": {
+            "description": "RSpace deployment root for this generated document."
+          }
+        }
+      }
+    }
+  },
   "server.apps": {
     "apps": {
       "box": {
@@ -5922,8 +6073,89 @@ export default interface Resources {
         "required": "Please fill in all the fields."
       },
       "api": {
+        "pagination": {
+          "limit": {
+            "max": "Limit must not exceed {value}.",
+            "min": "Limit must be 1 or greater."
+          },
+          "page": {
+            "min": "Page must be 1 or greater."
+          }
+        },
         "v2": {
-          "forbidden": "You do not have permission to perform this action."
+          "authenticationRequired": "Authentication is required.",
+          "bulk": {
+            "filter": {
+              "required": "A where filter is required for bulk operations."
+            },
+            "limit": "The bulk operation exceeds the allowed batch size for this operation."
+          },
+          "count": {
+            "max": {
+              "max": "Max must not exceed {value}.",
+              "min": "Max must be 1 or greater."
+            }
+          },
+          "delete": {
+            "permanent": {
+              "unsupported": "This resource does not support permanent deletion."
+            }
+          },
+          "depth": {
+            "max": "Depth must not exceed {value}.",
+            "min": "Depth must be 0 or greater.",
+            "range": "Depth must be between 0 and {0}.",
+            "rangeTitle": "Depth is outside the allowed range."
+          },
+          "forbidden": "You do not have permission to perform this action.",
+          "invalidRequest": "The request contains an invalid value.",
+          "methodNotAllowed": "This HTTP method is not supported for this resource.",
+          "missingParameter": "A required request parameter is missing.",
+          "notAcceptable": "The requested response content type is not available.",
+          "notFound": "The requested resource was not found.",
+          "query": {
+            "complexity": "The query is too complex.",
+            "field": "The query contains an unsupported field.",
+            "operator": "The query contains an unsupported operator.",
+            "syntax": "The RSQL expression is invalid.",
+            "value": "The query contains an invalid value."
+          },
+          "requestRejected": "The request could not be processed.",
+          "resourceAccess": {
+            "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
+            "duplicateGrantee": "Each user or group can have only one direct role.",
+            "forbidden": "You do not have permission to manage access to this resource.",
+            "ifMatchRequired": "The current access version is required.",
+            "invalidGrantee": "The selected user or group is no longer available.",
+            "invalidRole": "The selected role is not valid for this resource.",
+            "ownerRequired": "At least one direct Owner must remain.",
+            "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+            "stale": "Access changed after this page was loaded. Review the latest access before saving again."
+          },
+          "runtimeFields": {
+            "ids": {
+              "limit": "A request must not name more than {0} custom fields.",
+              "limitTitle": "The custom field limit was exceeded."
+            },
+            "page": {
+              "invalid": "The page number is out of range."
+            },
+            "projection": {
+              "limit": "A request must not select more than {0} custom field values.",
+              "limitTitle": "Too many custom fields were selected."
+            },
+            "query": {
+              "invalid": "The custom field request is invalid. The page size must be between 1 and {0}.",
+              "invalidTitle": "The custom field request is invalid."
+            }
+          },
+          "tooManyRequests": "Too many requests. Please try again later.",
+          "unexpected": "An unexpected error occurred.",
+          "unsupportedMediaType": "This content type is not supported for this resource.",
+          "where": {
+            "length": "The where expression must not exceed {0} characters.",
+            "lengthTitle": "The where expression is too long."
+          }
         }
       },
       "authorization": {

@@ -18,10 +18,9 @@ import java.util.function.Function;
  * would tell them which is which.
  *
  * <p>A list rather than one provider, because one collection can have more than one kind of
- * per-actor field. An instrument has both {@code customFields}, copied from a template and shared
- * by every instrument using it, and {@code extraFields}, typed onto one instrument and shared with
- * nothing. They answer to different providers and cannot be merged: only the namespace tells them
- * apart, and each owns its own identity scheme.
+ * per-actor field. A record can have both fields copied from a template it shares with other
+ * records and fields typed onto that one record alone. They answer to different providers and
+ * cannot be merged: only the namespace tells them apart, and each owns its own identity scheme.
  */
 public record RuntimeFieldContext(
     List<RuntimeCollectionFields<?>> providers,
