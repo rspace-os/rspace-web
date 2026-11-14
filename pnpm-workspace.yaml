@@ -55,7 +55,8 @@ packageExtensions:
       assert: 2.1.0
 
 allowBuilds:
-  lefthook: true
+  # The root prepare script installs hooks only when a Git checkout is available.
+  lefthook: false
   '@swc/core': true
   canvas: true
   core-js: true

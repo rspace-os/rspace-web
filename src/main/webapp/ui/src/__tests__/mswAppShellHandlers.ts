@@ -4,7 +4,7 @@ import { HttpResponse, http } from "msw/http";
 /*
  * Default MSW handlers for the global app-shell endpoints that fire on render
  * regardless of which component is under test (current user, nav data,
- * analytics, live chat). Under Playwright these fire-and-forget requests were
+ * analytics, live chat, HelpDocs). Under Playwright these fire-and-forget requests were
  * harmless, but Vitest browser mode surfaces their rejections as test errors,
  * so we answer them with benign payloads. Registered as worker *defaults*
  * (survive `resetHandlers()`); individual suites can still override them.
@@ -42,6 +42,7 @@ export const appShellHandlers = (): RequestHandler[] => [
       nextMaintenance: null,
     }),
   ),
+  http.get("https://lighthouse.helpdocs.io/load", () => new HttpResponse(null, { status: 204 })),
   http.get("/session/ajax/analyticsProperties", () => HttpResponse.json({})),
   http.get("/session/ajax/livechatProperties", () => HttpResponse.json({})),
 ];
