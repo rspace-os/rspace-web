@@ -4,12 +4,14 @@ import { observer } from "mobx-react-lite";
 import React, { type SyntheticEvent, useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import useStores from "../../../stores/use-stores";
 import Node from "./Node";
 
 const tappedToggleIcon = (event: SyntheticEvent) => !(event.target as HTMLElement).closest(`.${treeItemClasses.label}`);
 
 function RecordTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
+  const { uiStore } = useStores();
 
   const handleToggle = (_: SyntheticEvent | null, nodeIds: Array<GlobalId>) => {
     search.tree.setExpanded(nodeIds);
@@ -23,9 +25,11 @@ function RecordTree(): React.ReactNode {
     } else if (tappedToggleIcon(event)) {
       return;
     }
-    if (nodeIds !== search.tree.selected) {
-      search.tree.setSelected(nodeIds);
+    if (nodeIds === search.tree.selected) {
+      if (nodeIds !== null) uiStore.setVisiblePanel("right");
+      return;
     }
+    search.tree.setSelected(nodeIds);
   };
 
   return (

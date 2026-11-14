@@ -2,7 +2,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -11,10 +11,12 @@ import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
 import RecordTree from "../RecordTree";
 
+const { setVisiblePanel } = vi.hoisted(() => ({ setVisiblePanel: vi.fn() }));
+
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: { search: {} },
-    uiStore: { addAlert: () => {}, setVisiblePanel: () => {} },
+    uiStore: { addAlert: () => {}, setVisiblePanel },
     authStore: { isSynchronizing: false },
     moveStore: {
       selectedResultsIncludesContainers: false,
@@ -37,9 +39,10 @@ function containerWith(children: Array<ContainerModel>, globalId: string): Conta
   return container;
 }
 
-function renderTree(results: Array<ContainerModel>, { greyedOut = false } = {}) {
+function renderTree(results: Array<ContainerModel>, { greyedOut = false, selected = false } = {}) {
   const search = new Search({ factory: mockFactory() });
   search.fetcher.setResults(results);
+  if (selected) search.activeResult = results[0];
   if (greyedOut) search.alwaysFilterOut = () => true;
   const setActiveResult = vi.spyOn(search, "setActiveResult").mockImplementation(() => Promise.resolve());
   render(
@@ -53,6 +56,10 @@ function renderTree(results: Array<ContainerModel>, { greyedOut = false } = {}) 
 }
 
 describe("RecordTree", () => {
+  beforeEach(() => {
+    setVisiblePanel.mockClear();
+  });
+
   test("Space on a focused row selects it", async () => {
     const user = userEvent.setup();
     const container = containerWith([], "IC1");
@@ -75,16 +82,66 @@ describe("RecordTree", () => {
     expect(setActiveResult).toHaveBeenCalledWith(container);
   });
 
-  test("Space on the already selected row does not clear the selection", async () => {
+  test.each([
+    ["click", null],
+    ["Space", " "],
+    ["Enter", "{Enter}"],
+  ])("%s on the already selected leaf shows its details without reselecting it", async (_, key) => {
     const user = userEvent.setup();
     const container = containerWith([], "IC1");
-    const { search, setActiveResult } = renderTree([container]);
-    search.activeResult = container;
+    const { setActiveResult } = renderTree([container], { selected: true });
+
+    if (key === null) {
+      // biome-ignore lint/style/noNonNullAssertion: every row renders a label
+      await user.click(screen.getByRole("treeitem").querySelector<HTMLElement>(`.${treeItemClasses.label}`)!);
+    } else {
+      await user.tab();
+      await user.keyboard(key);
+    }
+
+    expect(setVisiblePanel).toHaveBeenCalledWith("right");
+    expect(setActiveResult).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["Space", " "],
+    ["Enter", "{Enter}"],
+  ])("%s on the already selected parent shows its details and preserves expansion behavior", async (_, key) => {
+    const user = userEvent.setup();
+    const container = containerWith([containerWith([], "IC2")], "IC1");
+    const { setActiveResult } = renderTree([container], { selected: true });
 
     await user.tab();
-    await user.keyboard(" ");
+    const row = screen.getByRole("treeitem");
+    expect(row).toHaveAttribute("aria-expanded", "false");
 
-    expect(setActiveResult).not.toHaveBeenCalledWith(null);
+    await user.keyboard(key);
+
+    expect(setVisiblePanel).toHaveBeenCalledWith("right");
+    expect(setActiveResult).not.toHaveBeenCalled();
+    expect(row).toHaveAttribute("aria-expanded", key === "{Enter}" ? "true" : "false");
+    setVisiblePanel.mockClear();
+
+    await user.keyboard(key);
+
+    expect(setVisiblePanel).toHaveBeenCalledWith("right");
+    expect(setActiveResult).not.toHaveBeenCalled();
+    expect(row).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test.each([
+    ["Space", " "],
+    ["Enter", "{Enter}"],
+  ])("%s on an already selected disabled row does not show its details", async (_, key) => {
+    const user = userEvent.setup();
+    const container = containerWith([], "IC1");
+    const { setActiveResult } = renderTree([container], { greyedOut: true, selected: true });
+
+    await user.tab();
+    await user.keyboard(key);
+
+    expect(setVisiblePanel).not.toHaveBeenCalled();
+    expect(setActiveResult).not.toHaveBeenCalled();
   });
 
   test("A click on the expand arrow does not select the row", async () => {
