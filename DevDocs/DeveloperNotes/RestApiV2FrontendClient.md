@@ -100,7 +100,9 @@ prevents reload loops. Same-identity refreshes do not reload.
 
 Use Orval's keys with the shape `[path, params?]`. Use a full path such as `/api/v2/instruments/42`.
 Suspense and ordinary hooks share keys. Do not add resource-root key factories or identity scopes.
-Identity changes reload the page through the provider.
+Identity changes reload the page through the provider. Current-user identity still supplies Table
+List `dataScope` metadata and runtime-field selection resets; those values are not query-key
+members.
 
 `orval.config.ts` builds `mutationInvalidates` rules through `scripts/api-v2-invalidation/`. Every
 non-GET operation invalidates its resource's list and count queries across all parameter sets by
@@ -130,6 +132,12 @@ mapping and plain functions for transforms or domain checks. Invalidation belong
 configuration. Components may call generated hooks directly for plain calls without domain logic and
 for imperative actions such as downloads.
 
+`apiV2Resources` in `src/modules/common/api/v2/apiV2Resources.ts` maps resource names to entries
+with `name` and supported generated operations and query-key getters. Optional keys are `list`,
+`count`, `get`, `create`, `update`, `delete`, `createMany`, `updateMany`, `deleteMany`, `access`,
+`replaceAccess`, `leaveAccess`, `grantees`, `audit` and `runtimeFields`. Unsupported capabilities
+are absent.
+
 The registry is generated from each operation's tag and `x-rspace-operation` by
 `scripts/api-v2-valibot/resources.mjs`, run by `pnpm generate:api-v2` after Orval and the
 Valibot adapter. The handwritten module keeps the registry types and re-exports generated
@@ -141,6 +149,14 @@ add its slot and read/write classification to `resources.mjs`, extend `ApiV2Oper
 if needed, and update the focused mapping test. Regenerate the client and golden slots.
 The generated entries retain literal tag names through `satisfies ApiV2ResourceEntry`.
 
+Generic modules take a registry entry instead of constructing URLs from a resource-name string.
+Tests and stories can inject fake entries for resources such as `widgets`, `records` and
+`test-collections`. Continue fetching filter and field metadata from `/api/v2/openapi.json` at
+runtime through the shared fetch function. The document publishes repeated parameters, responses
+and extension values once under `components`, so readers pass it through `dereferenceApiV2OpenApi`
+before looking up a parameter or extension. `where` remains a string built with the existing
+`serializeRsql` and `filterFields` utilities.
+
 ## Validation rules
 
 The mutator validates JSON request bodies before sending them and JSON success bodies against the
@@ -150,7 +166,8 @@ Invalid requests throw `ApiV2ProblemError` with status 400, code `errors.api.v2.
 
 Validation checks values. The transport returns the original parsed JSON unchanged. Open
 dictionaries, runtime metadata and problem extensions keep their values. Read schemas require only
-`id`, so projected responses using `fields`, `exclude` or `depth` pass.
+`id`, so projected responses using `fields`, `exclude` or `depth` pass. Table List keeps its
+stronger selected-field check with `v.required(v.pick(schema, selected))` on the generated schema.
 Generated fieldset types exclude `null`; adapters omit empty selections. The mutator does not
 sanitize fieldsets.
 
@@ -215,7 +232,8 @@ restore();
 Restore the provider in teardown or `finally` so it is restored even if an assertion fails. Register
 endpoint handlers with `server.use(...)`, importing `server` from `src/__tests__/mswServer.ts`.
 Return success bodies typed with generated models. Keep malformed bodies and problem fixtures
-available for failure tests. There are no generated Faker mocks.
+available for failure tests. There are no generated Faker mocks. Shared component tests and stories
+use the registry injection seam for fake resources.
 
 Collection list envelopes expose `docs`, `page`, `limit` and `hasNextPage`, plus optional
 `totalDocs` and `totalIsLowerBound`. Request `page + 1` when `hasNextPage` is true; derive
