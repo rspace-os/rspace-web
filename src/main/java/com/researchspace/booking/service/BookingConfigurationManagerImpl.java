@@ -1,6 +1,8 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -69,7 +71,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final CollectionDescription<BookingConfiguration> description;
   private final BookingItemPermissions itemPermissions;
+  private final BookingCalendarSubscriptionDao calendarSubscriptions;
   private final TimeSlotBookingDao timeSlotBookings;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   @Autowired
   public BookingConfigurationManagerImpl(
@@ -83,7 +87,10 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       @Qualifier(BookingResourceAccessConfiguration.BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> description,
       BookingItemPermissions itemPermissions,
-      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings) {
+      @Qualifier("bookingCalendarSubscriptionDao")
+          BookingCalendarSubscriptionDao calendarSubscriptions,
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings,
+      BookingCalendarPermissionGateDao permissionGate) {
     this.auditDao = auditDao;
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
@@ -93,7 +100,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.resourceRegistry = resourceRegistry;
     this.description = description;
     this.itemPermissions = itemPermissions;
+    this.calendarSubscriptions = calendarSubscriptions;
     this.timeSlotBookings = timeSlotBookings;
+    this.permissionGate = permissionGate;
   }
 
   @Override
@@ -172,6 +181,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (creates.size() > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
+    permissionGate.lockShared();
     BookingConfigurationDefaults defaults =
         BookingConfigurationDefaultsManagerImpl.requiredDefaults(defaultsDao);
     Date now = new Date();
@@ -335,6 +345,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .map(Instrument::getName)
             .orElse("Unavailable target");
     int bookingCount = timeSlotBookings.removeAllByConfigurationId(id);
+    int subscriptionCount = calendarSubscriptions.deleteByConfigurationId(id);
     BookingConfigurationPermanentDeleteSnapshot snapshot =
         new BookingConfigurationPermanentDeleteSnapshot(
             id,
@@ -343,6 +354,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             targetName,
             configuration.getState(),
             bookingCount,
+            subscriptionCount,
             Instant.now());
     bookingConfigurationDao.remove(id);
     events.publishEvent(
@@ -486,6 +498,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
           new TimeSlotBookingAuditEvent(actor, subject, booking, AuditAction.WRITE));
     }
     configuration.setState(BookingConfigurationState.ARCHIVED);
+    calendarSubscriptions.deleteByConfigurationId(configuration.getId());
     touchAudit(configuration, actor, timestamp);
     return save(configuration);
   }

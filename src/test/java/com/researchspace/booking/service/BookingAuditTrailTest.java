@@ -133,6 +133,7 @@ class BookingAuditTrailTest {
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
+            1,
             Instant.parse("2026-09-01T12:00:00Z"));
 
     new BookingAuditTrail(auditTrail)
@@ -153,6 +154,7 @@ class BookingAuditTrailTest {
             "Microscope",
             BookingConfigurationState.ARCHIVED,
             2,
+            1,
             Instant.parse("2026-09-01T12:00:00Z"));
 
     String json =

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.FileMetadataDao;
@@ -61,6 +62,7 @@ public class UserDeletionManagerTest {
   private @Mock RecordDao recordDao;
   private @Mock TransferService formTransferService;
   private @Mock TransferService templateTransferService;
+  private @Mock BookingCalendarRevocationCoordinator bookingCalendarRevocationCoordinator;
   private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks UserDeletionManagerImpl userDeletionMgr;

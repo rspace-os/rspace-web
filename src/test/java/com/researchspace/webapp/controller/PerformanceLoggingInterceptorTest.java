@@ -23,6 +23,7 @@ class PerformanceLoggingInterceptorTest {
   class PerformanceLoggingInteceptorTSS extends PerformanceLoggingInterceptor {
     int loggedCount = 0;
     long currTime = 0;
+    String loggedUrl;
 
     public PerformanceLoggingInteceptorTSS(Integer thresholdMillis) {
       super(thresholdMillis);
@@ -31,6 +32,7 @@ class PerformanceLoggingInterceptorTest {
     // record that log was written to
     void writeToSlowLog(long elapsedTime, HttpServletRequest req, String url) {
       loggedCount++;
+      loggedUrl = url;
     }
 
     // be able to specify time rather than depend on clock times
@@ -56,5 +58,20 @@ class PerformanceLoggingInterceptorTest {
     interceptor.currTime = threshold + 1;
     interceptor.postHandle(request, response, null, null);
     assertEquals(1, interceptor.loggedCount);
+  }
+
+  @Test
+  void slowCalendarFeedLoggingReceivesOnlyTheFixedPath() throws Exception {
+    String token = "A".repeat(43);
+    PerformanceLoggingInteceptorTSS interceptor = new PerformanceLoggingInteceptorTSS(0);
+    request.setRequestURI(BookingCalendarFeedController.PATH);
+    request.setQueryString("token=" + token);
+
+    interceptor.preHandle(request, response, null);
+    interceptor.currTime = 1;
+    interceptor.postHandle(request, response, null, null);
+
+    assertEquals(BookingCalendarFeedController.PATH, interceptor.loggedUrl);
+    assertFalse(interceptor.loggedUrl.contains(token));
   }
 }

@@ -101,6 +101,26 @@ export function findBookingConfigurationQueryOptions(globalId: string) {
   });
 }
 
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (globalIds.length === 0) return [];
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "in",
+    value: globalIds,
+  });
+  return (
+    await listBookingConfigurations(
+      { ...parameters(globalIds[0]), where, limit: Math.min(globalIds.length, 100) },
+      { signal },
+    )
+  ).docs.map(mapBookingConfiguration);
+}
+
 export function bookingRouteTargetQuery(globalId: string | undefined) {
   return getSearchBookingConfigurationTargetsQueryOptions(
     { q: globalId ?? "", limit: 20 },

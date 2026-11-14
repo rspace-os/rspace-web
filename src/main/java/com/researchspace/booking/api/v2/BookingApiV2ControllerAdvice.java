@@ -3,6 +3,8 @@ package com.researchspace.booking.api.v2;
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.controller.ApiV2ProblemFactory;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
@@ -64,5 +66,16 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(StaleBookingSettingsException.class)
   public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
     return problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingConfiguration.stale");
+  }
+
+  @ExceptionHandler(BookingCalendarNotFoundException.class)
+  public ResponseEntity<ApiV2Problem> handleCalendarNotFound() {
+    return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
+  @ExceptionHandler(UserSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
+    return problem(
+        HttpStatus.PRECONDITION_FAILED, "errors.api.v2.bookingCalendar.subscriptionConflict");
   }
 }

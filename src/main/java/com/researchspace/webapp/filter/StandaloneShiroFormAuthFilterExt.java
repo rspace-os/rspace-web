@@ -173,9 +173,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
         logBusyRefusal(request, username, busy);
       } else {
         try {
-          User u = userMgr.getUserByUsernameOrAlias(username);
-          lockoutPolicy.handleLockoutOnFailure(u);
-          userMgr.save(u);
+          userMgr.recordLoginFailure(username);
         } catch (DataAccessException re) {
           SECURITY_LOG.warn(
               "Login attempt for username [{}] who cannot be found in RSpace, from {}",

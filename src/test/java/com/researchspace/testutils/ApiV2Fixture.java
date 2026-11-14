@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
-import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.Group;
@@ -374,7 +374,7 @@ public final class ApiV2Fixture {
   private User createUser() {
     User created =
         TestFactory.createAnyUser("apiv2" + UUID.randomUUID().toString().substring(0, 8));
-    String hashed = CryptoUtils.hashWithSha256inHex(BaseManagerTestCaseBase.TESTPASSWD);
+    String hashed = new RSpacePasswordEncoder().encode(BaseManagerTestCaseBase.TESTPASSWD);
     created.setPassword(hashed);
     created.setConfirmPassword(hashed);
     created.addRole(roleManager.getRole(Constants.USER_ROLE));

@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import * as v from "valibot";
 import type { BookingMutation } from "@/modules/booking/domain/booking";
 import { createBooking } from "@/modules/booking/domain/booking";
+import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2";
@@ -181,10 +182,18 @@ export function useCreateBooking() {
         isBookingConflictError(error) ||
         (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification")
       ) {
-        void Promise.all([invalidateListBookings(queryClient), invalidateCountBookings(queryClient)]);
+        void Promise.all([
+          invalidateListBookings(queryClient),
+          invalidateCountBookings(queryClient),
+          invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "locations"),
+        ]);
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        void invalidateListBookingConfigurations(queryClient);
+        void Promise.all([
+          invalidateListBookingConfigurations(queryClient),
+          invalidateBookingListOperation(queryClient, "catalogue"),
+        ]);
       }
     },
   });

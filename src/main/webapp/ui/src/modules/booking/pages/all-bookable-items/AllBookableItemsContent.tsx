@@ -12,6 +12,7 @@ import {
 import {
   deleteBookingConfiguration,
   getCountBookingConfigurationsQueryKey,
+  getGetBookingCalendarSubscriptionQueryKey,
   getGetBookingConfigurationAccessQueryKey,
   getGetBookingConfigurationQueryKey,
   getListBookingConfigurationAuditEventsQueryKey,
@@ -24,6 +25,10 @@ import {
   useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import {
+  getGetUserBookingCalendarSubscriptionQueryKey,
+  getListMyBookableItemCalendarSubscriptionsQueryKey,
+} from "@/modules/common/api/v2/generated/users/users";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
@@ -348,12 +353,15 @@ export async function invalidateBookableItemRecords(
             queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getListBookingConfigurationAuditEventsQueryKey(id) }),
+            queryClient.invalidateQueries({ queryKey: getGetBookingCalendarSubscriptionQueryKey(id) }),
           ],
     ),
     ...(action === "archive"
       ? [
           queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getCountBookingsQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getListMyBookableItemCalendarSubscriptionsQueryKey() }),
+          queryClient.invalidateQueries({ queryKey: getGetUserBookingCalendarSubscriptionQueryKey() }),
         ]
       : []),
   ]);

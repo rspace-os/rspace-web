@@ -82,6 +82,8 @@
                  InventoryOperationTransactionRuleTest pins this to the interface. -->
             <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
+            <tx:method name="recordLoginSuccess" propagation="NOT_SUPPORTED"/>
+            <tx:method name="recordLoginFailure" propagation="NOT_SUPPORTED"/>
             <tx:method name="createUiToken" propagation="NOT_SUPPORTED"/>
             <tx:method name="*"/>
         </tx:attributes>

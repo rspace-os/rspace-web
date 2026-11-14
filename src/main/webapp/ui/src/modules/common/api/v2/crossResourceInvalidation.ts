@@ -1,3 +1,4 @@
+// The item popover owns subscription status updates/refetches to preserve response ETags.
 export const crossResourceInvalidation: ReadonlyArray<{
   onMutations: readonly string[];
   invalidates: ReadonlyArray<{ query: string; params?: readonly string[] }>;
@@ -32,6 +33,28 @@ export const crossResourceInvalidation: ReadonlyArray<{
   {
     onMutations: ["deleteBookingConfiguration", "updateBookingConfiguration"],
     invalidates: [{ query: "listBookings" }, { query: "countBookings" }],
+  },
+  {
+    onMutations: [
+      "createUserBookingCalendarSubscription",
+      "rotateUserBookingCalendarSubscription",
+      "revokeUserBookingCalendarSubscription",
+    ],
+    invalidates: [{ query: "getUserBookingCalendarSubscription" }],
+  },
+  {
+    onMutations: ["updateBookingConfiguration", "deleteBookingConfiguration"],
+    invalidates: [{ query: "getBookingCalendarSubscription", params: ["id"] }],
+  },
+  {
+    onMutations: [
+      "createBookingCalendarSubscription",
+      "rotateBookingCalendarSubscription",
+      "revokeBookingCalendarSubscription",
+      "updateBookingConfiguration",
+      "deleteBookingConfiguration",
+    ],
+    invalidates: [{ query: "listMyBookableItemCalendarSubscriptions" }],
   },
   {
     onMutations: [
