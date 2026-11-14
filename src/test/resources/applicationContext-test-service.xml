@@ -49,6 +49,9 @@
                  InventoryOperationTransactionRuleTest. -->
             <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
+            <!-- UserManager login bookkeeping runs each attempt in its own transaction. -->
+            <tx:method name="recordLoginSuccess" propagation="NOT_SUPPORTED"/>
+            <tx:method name="recordLoginFailure" propagation="NOT_SUPPORTED"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

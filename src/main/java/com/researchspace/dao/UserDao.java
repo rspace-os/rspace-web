@@ -12,12 +12,33 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 /** User Data Access Object (GenericDao) interface. */
 public interface UserDao extends GenericDao<User, Long> {
+  /**
+   * Reads only the login lockout fields (id, failure count, failure timestamp, locked flag) into a
+   * detached {@link User}, preferring a username match to an alias match.
+   *
+   * @throws ObjectRetrievalFailureException if no user matches
+   */
+  User readLoginState(String usernameOrAlias);
+
+  /** Loads the user with a pessimistic write lock held until the current transaction ends. */
+  User lockLoginAccount(Long id);
+
+  /**
+   * Updates only the login lockout fields, and {@code lastLogin} when it is not null, provided the
+   * lockout fields still hold the values in {@code before}.
+   *
+   * @return whether the row was updated
+   */
+  boolean updateLoginState(User before, User after, Date lastLogin);
+
   /**
    * Gets a list of active (i.e., non-blocked) users ordered by the uppercase version of their
    * username.

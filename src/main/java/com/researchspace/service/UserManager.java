@@ -21,6 +21,19 @@ import java.util.Set;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 public interface UserManager extends GenericManager<User, Long> {
+  /**
+   * Records a successful login in its own transaction, updating only the login fields, and copies
+   * the persisted login state onto {@code subject}.
+   */
+  void recordLoginSuccess(User subject);
+
+  /**
+   * Applies the lockout policy to a failed login in its own transaction, updating only the login
+   * fields.
+   *
+   * @throws ObjectRetrievalFailureException if no user matches {@code usernameOrAlias}
+   */
+  void recordLoginFailure(String usernameOrAlias);
 
   /**
    * Retrieves a user by userId. An exception is thrown if user not found
