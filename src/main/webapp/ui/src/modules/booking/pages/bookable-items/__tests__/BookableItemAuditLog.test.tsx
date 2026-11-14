@@ -166,7 +166,7 @@ describe("BookableItemAuditLog", () => {
 
     const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
     expect(within(item).getByText("booking:bookableItemDetails.audit.fields.actor")).toBeVisible();
-    expect(within(item).getByText("booking:bookableItems.fields.id")).toBeVisible();
+    expect(within(item).getByText("booking:allBookableItems.fields.id")).toBeVisible();
     expect(within(item).queryByText("booking:bookableItemDetails.audit.fields.values")).not.toBeInTheDocument();
 
     const expand = within(item).getByRole("button", { name: "common:actions.expand" });
@@ -348,12 +348,12 @@ describe("BookableItemAuditLog", () => {
     await expectAccessible(container);
   });
 
-  it("paginates the capped result locally and refreshes once", async () => {
+  it("paginates locally and announces truncation using the returned cap", async () => {
     const user = userEvent.setup();
     let requests = 0;
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () => {
-        requests += 1;
+        requests++;
         return HttpResponse.json(
           auditPage(
             Array.from({ length: 21 }, () => event),
@@ -362,19 +362,46 @@ describe("BookableItemAuditLog", () => {
         );
       }),
     );
-    const { container } = renderAudit();
-    await screen.findAllByText("common:values.userWithUsername");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "booking:bookableItemDetails.audit.status.loaded booking:bookableItemDetails.audit.truncated",
+    const { container } = render(
+      await wrapWithRealI18n(<BookableItemAuditLog configurationId={7} />, {
+        resources: { booking: bookingCatalog, common: commonCatalog },
+        defaultNS: "booking",
+      }),
+      { wrapper },
     );
-    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
+    expect(
+      await screen.findByText("Showing the newest 21 events. Narrow the date range to see older events.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole("status")).toMatchTextContent(
+      "Showing the newest 21 events. Narrow the date range to see older events.",
+    );
+    expect(screen.getAllByRole("article")).toHaveLength(20);
+    await user.click(screen.getByRole("button", { name: "Next, page 2" }));
+    await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(1));
     expect(requests).toBe(1);
-    expect(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" })).toBeDisabled();
+    await expectAccessible(container);
+  });
+
+  it("Refresh reloads once, returns to the first local page and keeps focus", async () => {
+    const user = userEvent.setup();
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () => {
+        requests++;
+        return HttpResponse.json(auditPage(Array.from({ length: 21 }, () => event)));
+      }),
+    );
+    renderAudit();
+    await screen.findAllByRole("article");
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
+    await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(1));
     const refresh = screen.getByRole("button", { name: "booking:bookableItemDetails.audit.refresh" });
     await user.click(refresh);
     await waitFor(() => expect(requests).toBe(2));
+    expect(screen.getAllByRole("article")).toHaveLength(20);
     expect(refresh).toHaveFocus();
-    await expectAccessible(container);
   });
 
   it.each([

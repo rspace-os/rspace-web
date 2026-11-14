@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
+import { createMemoryHistory } from "@tanstack/react-router";
+import { setupWorker } from "msw/browser";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -6,7 +8,10 @@ import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferen
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { bookingTarget, busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
+import { bookingPagesHandlers } from "../mocks/bookingPagesMocks";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
+import { CalendarAvailabilityStory } from "./CalendarPage.story";
+import { allowedViews } from "./calendarLayoutUtils";
 
 const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
@@ -53,11 +58,6 @@ const storyEvents: readonly BookingListDocument[] = [
   },
 ];
 
-function bookingRequesterId(requester: { value: number | { id: number } } | null | undefined): number | undefined {
-  const value = requester?.value;
-  return typeof value === "number" ? value : value?.id;
-}
-
 function InteractiveCalendar() {
   const [date, setDate] = React.useState("2026-08-17");
   const [view, setView] = React.useState<CalendarView>("week");
@@ -65,13 +65,17 @@ function InteractiveCalendar() {
   const [search, setSearch] = React.useState("");
   const [mineOnly, setMineOnly] = React.useState(false);
   // The page asks the server to filter; the story filters its fixture so Search and My calendar visibly work.
-  const events = storyEvents.filter(
-    (event) =>
-      (!mineOnly || bookingRequesterId(event.requester) === 1) &&
+  const events = storyEvents.filter((event) => {
+    const requesterValue = event.requester?.value;
+    const requesterId = typeof requesterValue === "number" ? requesterValue : requesterValue?.id;
+    return (
+      (!mineOnly || requesterId === 1) &&
       [event.target?.value.name, event.purpose, event.bookedBy].some((value) =>
         value?.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
-      ),
-  );
+      )
+    );
+  });
+  if (layout === "availability") return <CalendarAvailabilityStory />;
   return (
     <BookingEventsCalendar
       date={date}
@@ -95,7 +99,10 @@ function InteractiveCalendar() {
         setMineOnly(false);
       }}
       onViewChange={setView}
-      onLayoutChange={setLayout}
+      onLayoutChange={(next) => {
+        if (!allowedViews[next].includes(view)) setView(next === "resources" ? "week" : "day");
+        setLayout(next);
+      }}
     />
   );
 }
@@ -106,6 +113,11 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     a11y: { config: { rules: [{ id: "landmark-unique", enabled: false }] } },
+  },
+  beforeEach: async () => {
+    const worker = setupWorker(...bookingPagesHandlers());
+    await worker.start();
+    return () => worker.stop();
   },
   decorators: [
     (Story) => (
@@ -143,4 +155,12 @@ export const Interactive: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
   },
+};
+
+export const Availability: Story = {
+  render: () => (
+    <CalendarAvailabilityStory
+      history={createMemoryHistory({ initialEntries: ["/booking/calendar?layout=availability&date=2026-08-17"] })}
+    />
+  ),
 };

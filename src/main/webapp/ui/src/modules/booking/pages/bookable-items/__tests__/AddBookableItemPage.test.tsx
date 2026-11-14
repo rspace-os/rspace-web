@@ -66,7 +66,7 @@ function availabilityHandler(
 
 function DestinationPage() {
   const { t } = useTranslation("booking");
-  return <h1>{t("bookableItems.plural")}</h1>;
+  return <h1>{t("allBookableItems.plural")}</h1>;
 }
 
 function ExistingConfigurationPage() {
@@ -90,7 +90,7 @@ function renderPage(initialEntry = "/booking/bookable-items/add", defaults: obje
   });
   const destinationRoute = createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items",
+    path: "/all-items",
     component: DestinationPage,
   });
   const existingConfigurationRoute = createRoute({
@@ -128,9 +128,7 @@ function renderPage(initialEntry = "/booking/bookable-items/add", defaults: obje
 async function completeForm(user: ReturnType<typeof userEvent.setup>) {
   const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
   await user.type(search, "Conf");
-  await user.click(
-    await screen.findByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
-  );
+  await user.click(await screen.findByRole("option", { name: "Confocal microscope IN123" }));
   await screen.findByRole("button", { name: "common:relationshipPicker.clear" });
 }
 
@@ -153,9 +151,7 @@ describe("AddBookableItemPage", () => {
     );
     const { queryClient } = renderPage("/booking/bookable-items/add?target=IN123");
     await user.type(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
-    await user.click(
-      await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),
-    );
+    await user.click(await screen.findByRole("option", { name: "Spare microscope IN456" }));
     const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
       "booking:settings.fields.openingStart",
     );
@@ -191,7 +187,7 @@ describe("AddBookableItemPage", () => {
       );
       response.resolve();
       await refresh;
-      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     } finally {
       response.resolve();
       await refresh;
@@ -218,11 +214,9 @@ describe("AddBookableItemPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
     await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
-    await user.click(
-      await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),
-    );
+    await user.click(await screen.findByRole("option", { name: "Spare microscope IN456" }));
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(saved).toMatchObject({ target: { relationTo: "instruments", value: 456 } });
   });
 
@@ -263,13 +257,15 @@ describe("AddBookableItemPage", () => {
     queryClient.setQueryData(catalogueQueryKey, []);
 
     expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "booking:allBookableItems.fields.timezone" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
     await completeForm(user);
 
     await expectAccessible(container);
 
-    const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+    const timezone = screen.getByRole("combobox", { name: "booking:allBookableItems.fields.timezone" });
     expect(timezone).toHaveValue("Etc/UTC");
     await user.clear(timezone);
     await user.type(timezone, "Europe/Berl");
@@ -277,7 +273,7 @@ describe("AddBookableItemPage", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(postSaveListGets).toBe(1);
     expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
     expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
@@ -368,9 +364,7 @@ describe("AddBookableItemPage", () => {
 
     await user.click(screen.getByRole("button", { name: "common:relationshipPicker.clear" }));
     await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
-    await user.click(
-      await screen.findByRole("option", { name: "Spare confocal microscope common:relationshipPicker.openRecord" }),
-    );
+    await user.click(await screen.findByRole("option", { name: "Spare confocal microscope IN456" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -404,7 +398,7 @@ describe("AddBookableItemPage", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:allBookableItems.plural" })).toBeVisible();
     expect(attempts).toBe(2);
     expect(requestBodies[1]).toMatchObject({
       target: { relationTo: "instruments", value: 123 },
@@ -421,12 +415,8 @@ describe("AddBookableItemPage", () => {
     const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
     await user.type(search, "Conf");
 
-    expect(
-      screen.queryByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
-    ).not.toBeInTheDocument();
-    await user.click(
-      await screen.findByRole("option", { name: "Spare confocal microscope common:relationshipPicker.openRecord" }),
-    );
+    expect(screen.queryByRole("option", { name: "Confocal microscope IN123" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("option", { name: "Spare confocal microscope IN456" }));
     expect(await screen.findByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
 
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();

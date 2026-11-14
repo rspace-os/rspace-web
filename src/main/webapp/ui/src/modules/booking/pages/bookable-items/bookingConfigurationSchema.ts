@@ -20,9 +20,8 @@ const NO_BOOKING_CAPABILITIES = {
 };
 
 function mapConfigurationFields(input: BookingConfigurationsRead) {
-  const policy = v.parse(SchedulingSettingsSchema, input);
+  const settings = v.parse(SchedulingSettingsSchema, input);
   return {
-    ...input,
     ...input,
     id: input.id,
     configurationVersion: required(input.configurationVersion, "configurationVersion"),
@@ -30,6 +29,7 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
     enabled: required(input.enabled, "enabled"),
     state: required(input.state, "state"),
     timezone: required(input.timezone, "timezone"),
+    ...settings,
     updatedAt: input.updatedAt,
     createdAt: input.createdAt,
     createdByName: input.createdByName,
@@ -38,7 +38,6 @@ function mapConfigurationFields(input: BookingConfigurationsRead) {
     roleSources: input.roleSources ?? [],
     capabilities: { ...NO_BOOKING_CAPABILITIES, ...input.capabilities },
     ownerHealth: input.ownerHealth,
-    ...policy,
   };
 }
 type OptionalConfigurationFields = "createdAt" | "updatedAt" | "createdByName" | "createdBy" | "ownerHealth";

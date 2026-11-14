@@ -58,7 +58,7 @@ final class BookingAuditDetails {
       Map.of(
           "CONFIRMED", "booking:bookings.details.confirmed",
           "CANCELLED", "booking:bookings.details.cancelled",
-          "ACTIVE", "booking:bookableItems.states.active",
+          "ACTIVE", "booking:allBookableItems.states.active",
           "ARCHIVED", "booking:bookableItemDetails.archived",
           "BOOKING", "booking:bookings.form.typeBooking",
           "MAINTENANCE", "booking:calendar.feed.maintenance");

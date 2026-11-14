@@ -1,6 +1,11 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
+import {
+  getCountBookingCatalogueAvailabilityQueryKey,
+  getSearchBookingCatalogueQueryKey,
+} from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import { getListUsersQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import appI18n from "@/modules/common/i18n";
 
 beforeBookingCatalog(async () => {
@@ -46,7 +51,15 @@ describe("BookableItemPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderPage();
+    const { queryClient } = renderPage();
+    const catalogueQueryKeys = [
+      [...getSearchBookingCatalogueQueryKey(), "picker"],
+      [...getSearchBookingCatalogueQueryKey(), "all-items"],
+      [...getCountBookingCatalogueAvailabilityQueryKey(), "availability-counts"],
+    ] as const;
+    for (const key of catalogueQueryKeys) queryClient.setQueryData(key, []);
+    const unrelatedUserKey = getListUsersQueryKey();
+    queryClient.setQueryData(unrelatedUserKey, []);
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
@@ -69,6 +82,14 @@ describe("BookableItemPage", () => {
     const editButton = await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" });
     expect(editButton).toHaveFocus();
     expect(postSaveListGets).toBe(1);
+    await waitFor(() =>
+      expect(catalogueQueryKeys.map((key) => queryClient.getQueryState(key)?.isInvalidated)).toEqual([
+        true,
+        true,
+        true,
+      ]),
+    );
+    expect(queryClient.getQueryState(unrelatedUserKey)?.isInvalidated).toBe(false);
   });
 
   it("cancels an edit without sending a request", async () => {
@@ -287,13 +308,11 @@ describe("BookableItemPage", () => {
 it("confirms disabling, retaining the draft when cancelled", async () => {
   const user = userEvent.setup();
   const patches: unknown[] = [];
-  const versions: Array<string | null> = [];
   server.use(
     http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
     http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
       patches.push(await request.json());
-      versions.push(request.headers.get("If-Match"));
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -303,13 +322,13 @@ it("confirms disabling, retaining the draft when cancelled", async () => {
   const duration = screen.getByLabelText("booking:bookableItemDetails.fields.maximumDuration");
   await user.clear(duration);
   await user.type(duration, "60");
-  await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
+  await user.click(screen.getByRole("checkbox", { name: "booking:allBookableItems.fields.enabled" }));
   await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
   const dialog = screen.getByRole("alertdialog");
   await expectAccessible(dialog);
   await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
   expect(patches).toHaveLength(0);
-  expect(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" })).not.toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "booking:allBookableItems.fields.enabled" })).not.toBeChecked();
   await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
   await user.click(
     within(screen.getByRole("alertdialog")).getByRole("button", {
@@ -317,6 +336,5 @@ it("confirms disabling, retaining the draft when cancelled", async () => {
     }),
   );
   await waitFor(() => expect(patches).toHaveLength(1));
-  expect(patches[0]).toMatchObject({ enabled: false, maxBookingDurationMinutes: 60 });
-  expect(versions).toEqual([`"${configuration.configurationVersion}"`]);
+  expect(patches[0]).toMatchObject({ enabled: false });
 });

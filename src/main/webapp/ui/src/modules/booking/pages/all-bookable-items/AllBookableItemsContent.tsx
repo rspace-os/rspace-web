@@ -1,50 +1,24 @@
-import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { PlusIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import type { QueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
-import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
-  getSearchBookingCatalogueLocationsQueryKey,
-  getSearchBookingCatalogueQueryKey,
-  getSearchCalendarCatalogueQueryKey,
-} from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
+  fetchBookingNotificationSubscription,
+  replaceBookingNotificationSubscription,
+} from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import {
-  deleteManyBookingConfigurations,
-  getCountBookingConfigurationsQueryKey,
-  getGetBookingCalendarSubscriptionQueryKey,
-  getGetBookingConfigurationAccessQueryKey,
-  getGetBookingConfigurationQueryKey,
-  getGetMyBookingNotificationSubscriptionQueryKey,
-  getListBookingConfigurationAuditEventsQueryKey,
-  getListBookingConfigurationsQueryKey,
-  getSearchBookingConfigurationAccessGranteesQueryKey,
+  invalidateCountBookingConfigurations,
   invalidateGetBookingCalendarSubscription,
+  invalidateGetBookingConfiguration,
+  invalidateGetBookingConfigurationAccess,
+  invalidateGetMyBookingNotificationSubscription,
+  invalidateListBookingConfigurationAuditEvents,
   invalidateListBookingConfigurations,
-  updateManyBookingConfigurations,
-  useDeleteManyBookingConfigurations,
-  useUpdateManyBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import {
-  getCountBookingsQueryKey,
-  getListBookingsQueryKey,
-  invalidateListBookings,
-} from "@/modules/common/api/v2/generated/bookings/bookings";
-import {
-  getGetUserBookingCalendarSubscriptionQueryKey,
-  getListMyBookableItemCalendarSubscriptionsQueryKey,
-} from "@/modules/common/api/v2/generated/users/users";
-import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
-import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
-import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
-import { buttonVariants } from "@/modules/common/ui/button";
-import { cn } from "@/modules/common/utils/cn";
-import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
-import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
+import { rsqlSelectors } from "@/modules/common/table-list/rsql";
+import { Button } from "@/modules/common/ui/button";
 import { BookableItemsBulkActions } from "../bookable-items/BookableItemsBulkActions";
 import {
   type BookableItemsBulkAction,
@@ -53,133 +27,81 @@ import {
 } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import {
-  archiveBookingConfiguration,
   type BookingConfigurationRow,
-  bookingConfigurationConfig,
-  permanentlyDeleteBookingConfiguration,
+  invalidateBookingCatalogueQueries,
   restoreBookingConfiguration,
 } from "../bookable-items/bookingConfiguration";
-import { mapBookingConfiguration } from "../bookable-items/bookingConfigurationSchema";
-import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import { invalidateBookableItemRecords, mutateBookableItems } from "../bookable-items/mutateBookableItems";
+import { DroppedFilterNotice } from "../DroppedFilterNotice";
+import { AllBookableItemsTable } from "./AllBookableItemsTable";
+import { useAllBookableItemsData } from "./useAllBookableItemsData";
 
-const bookableItemsProjection = {
-  fixed: [
-    "id",
-    "configurationVersion",
-    "target",
-    "enabled",
-    "timezone",
-    ...schedulingSettingsFieldNames,
-    "updatedAt",
-    "effectiveRole",
-    "roleSources",
-    "capabilities",
-    "state",
-  ],
-} as const;
-
-const maximumBookableItemsSelection = 1000;
-type BookableItemsBulkMutation = {
-  action: BookableItemsBulkAction;
-  selectedRowIds: readonly string[];
-};
-
-function bulkParameters(selectedRowIds: readonly string[]) {
-  if (selectedRowIds.length === 0) throw new Error("A bulk booking action requires at least one row ID");
-  if (selectedRowIds.length > maximumBookableItemsSelection) {
-    throw new Error(`A bulk booking action cannot contain more than ${maximumBookableItemsSelection} row IDs`);
-  }
-
-  const where = serializeRsqlExpression<BookingConfigurationRow>({
-    kind: "comparison",
-    field: "id",
-    operator: "in",
-    value: selectedRowIds,
-  });
-  return { where };
-}
-
-export async function mutateBookableItems(
-  action: BookableItemsBulkAction,
-  selectedRowIds: readonly string[],
-): Promise<void> {
-  const params = bulkParameters(selectedRowIds);
-  if (action === "archive") await deleteManyBookingConfigurations(params);
-  else await updateManyBookingConfigurations({ enabled: action === "enable" }, params);
-}
-
+type BookableItemsBulkMutation = { action: BookableItemsBulkAction; selectedRowIds: readonly string[] };
 export function AllBookableItemsContent() {
-  const { t } = useTranslation(["booking", "common"]);
+  const { data: currentUser } = useCurrentUserQuery();
+  return <AllBookableItemsContentForUser key={currentUser.id} />;
+}
 
+function AllBookableItemsContentForUser() {
+  const { t } = useTranslation(["booking", "common"]);
   const { data: currentUser } = useCurrentUserQuery();
   const queryClient = useQueryClient();
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
-  const request = useMemo(
-    () => ({
-      authScope: currentUser.id,
-      depth: 1,
-      projection: bookableItemsProjection,
-    }),
-    [currentUser.id],
-  );
-  const table = useApiV2TableList({
-    resource: apiV2Resources["booking-configurations"],
-    config: bookingConfigurationConfig,
-    documentSchema: BookingConfigurationsReadSchema,
-    mapDocument: mapBookingConfiguration,
-    request,
-    query: { keepPreviousData: true },
+  const table = useAllBookableItemsData({ subjectId: currentUser.id });
+  const [droppedStatusFields, setDroppedStatusFields] = useState<readonly string[]>([]);
+  const restoredIssue = table.tableProps.restoredViewIssue;
+  const recoveredStatusView = useRef<string | null>(null);
+  useEffect(() => {
+    if (restoredIssue?.kind !== "invalid") {
+      recoveredStatusView.current = null;
+      return;
+    }
+    if (table.state.filters.expression !== null || recoveredStatusView.current === restoredIssue.encoded) return;
+    const statusFields = rsqlSelectors(restoredIssue.encoded).filter(
+      (field) => field === "state" || field === "enabled",
+    );
+    if (statusFields.length === 0) return;
+    recoveredStatusView.current = restoredIssue.encoded;
+    setDroppedStatusFields(statusFields);
+    restoredIssue.remove();
+  }, [restoredIssue, table.state.filters.expression]);
+  const notificationEligible = useRef(new Set<string>());
+  for (const row of table.tableProps.rows) {
+    if (row.capabilities?.canManageNotificationSubscription) notificationEligible.current.add(String(row.id));
+    else notificationEligible.current.delete(String(row.id));
+  }
+  const notificationIds = [...selectedRowIds].filter((id) => notificationEligible.current.has(id));
+  const notificationMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      for (const id of notificationIds) {
+        const subscription = await fetchBookingNotificationSubscription(Number(id));
+        const etag = subscription.headers.get("ETag");
+        if (!etag) throw new Error("Notification subscription validator is unavailable");
+        await replaceBookingNotificationSubscription(Number(id), enabled, etag);
+        await invalidateGetMyBookingNotificationSubscription(queryClient, Number(id));
+      }
+    },
+    onSuccess: () => setSelectedRowIds(new Set()),
   });
-  const onArchive = useCallback((id: number, version: number) => archiveBookingConfiguration(id, version), []);
-  const onPermanentDelete = useCallback(
-    (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version),
-    [],
-  );
-  const onChanged = useCallback(
-    async (configurationId?: number) => {
-      await Promise.all([
-        invalidateListBookingConfigurations(queryClient),
-        invalidateListBookings(queryClient),
-        ...(configurationId === undefined
-          ? []
-          : [invalidateGetBookingCalendarSubscription(queryClient, configurationId)]),
-      ]);
-    },
-    [queryClient],
-  );
-  const onCatalogueChanged = useCallback(
-    async (configurationId: number) => {
-      await Promise.all([
-        onChanged(configurationId),
-        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }),
-      ]);
-    },
-    [onChanged, queryClient],
-  );
+  const eligibleTargets = useEligibleBookingTargets().data;
+  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: (_data, configuration) => onCatalogueChanged(configuration.id),
-  });
-  const onRestore = useCallback(
-    (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
-    [restoreMutation],
-  );
-  const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
-  const eligibleTargets = useEligibleBookingTargets().data;
-  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
-  const bulkUpdateOperation = useUpdateManyBookingConfigurations();
-  const bulkDeleteOperation = useDeleteManyBookingConfigurations();
-  const bulkMutation = useMutation({
-    mutationFn: async ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) => {
-      const params = bulkParameters(mutationRowIds);
-      const result =
-        action === "archive"
-          ? await bulkDeleteOperation.mutateAsync({ params })
-          : await bulkUpdateOperation.mutateAsync({ data: { enabled: action === "enable" }, params });
-      return result.docs;
+    onSuccess: async (_data, configuration) => {
+      await invalidateChangedConfigurations(queryClient, [configuration.id]);
+      await invalidateListBookings(queryClient);
+      await invalidateBookingCatalogueQueries(queryClient);
+      await invalidateGetBookingCalendarSubscription(queryClient, configuration.id);
     },
+  });
+  const restore = restoreMutation.mutateAsync;
+  const onRestore = useCallback((configuration: BookingConfigurationRow) => restore(configuration), [restore]);
+  const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
+  const bulkMutation = useMutation({
+    mutationFn: ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) =>
+      mutateBookableItems(action, mutationRowIds),
     onSuccess: async (docs, variables) => {
       await invalidateBookableItemRecords(queryClient, variables.action, docs ?? []);
       setSelectedRowIds(new Set());
@@ -187,53 +109,22 @@ export function AllBookableItemsContent() {
     },
     onError: (_error, variables) => setFailedBulkAction(variables.action),
   });
-  const onSelectionChange = useCallback((value: ReadonlySet<string>) => {
+  const onSelectionChange = (value: ReadonlySet<string>) => {
     setSelectedRowIds(value);
     setFailedBulkAction(null);
-  }, []);
+  };
+  const mutateBulk = bulkMutation.mutateAsync;
   const onBulkAction = useCallback(
     async (action: BookableItemsBulkAction, actionRowIds: ReadonlySet<string>) => {
       setFailedBulkAction(null);
-      await bulkMutation.mutateAsync({ action, selectedRowIds: Array.from(actionRowIds) });
+      await mutateBulk({ action, selectedRowIds: Array.from(actionRowIds) });
     },
-    [bulkMutation],
-  );
-  const rowActions = useMemo<TableListRowActions<BookingConfigurationRow>>(
-    () => ({
-      id: "actions",
-      label: t("bookableItems.fields.actions"),
-      width: 88,
-      minWidth: 80,
-      renderCell: ({ row, activate }) => (
-        <BookableItemActionTriggers
-          configuration={row}
-          activate={activate}
-          directSysadmin={directSysadmin}
-          onRestore={onRestore}
-        />
-      ),
-      renderInteraction: ({ actionId, row, close }) =>
-        actionId === "archive" ? (
-          <ArchiveBookableItemDialog
-            configuration={row}
-            close={close}
-            onArchive={onArchive}
-            onArchived={onCatalogueChanged}
-          />
-        ) : actionId === "permanent-delete" ? (
-          <PermanentDeleteBookableItemDialog
-            configuration={row}
-            close={close}
-            onDelete={onPermanentDelete}
-            onDeleted={onChanged}
-          />
-        ) : null,
-    }),
-    [directSysadmin, onArchive, onCatalogueChanged, onChanged, onPermanentDelete, onRestore, t],
+    [mutateBulk],
   );
 
   return (
-    <main className="p-4 sm:p-8">
+    <div>
+      <DroppedFilterNotice fields={[...droppedStatusFields, ...table.droppedFilterFields]} />
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {t(
@@ -246,74 +137,89 @@ export function AllBookableItemsContent() {
           )}
         </p>
       ) : null}
-      <TableList
-        {...table.tableProps}
-        headingClassName="text-2xl font-semibold"
-        rowActions={rowActions}
-        selection={
-          directSysadmin
-            ? {
-                value: selectedRowIds,
-                onChange: onSelectionChange,
-                disabled: bulkMutation.isPending,
-                maximumCount: maximumBookableItemsSelection,
-                getRowLabel: (row) => row.target?.value.name ?? t("common:values.unknownItem"),
-                renderActions: (selection) => (
+      <AllBookableItemsTable
+        filters={table.state.filters}
+        hasNoBookableItems={
+          table.tableProps.rows.length === 0 && !table.state.filters.search && !table.state.filters.expression
+        }
+        clearSelection={() => setSelectedRowIds(new Set())}
+        directSysadmin={directSysadmin}
+        resetView={() => {
+          setSelectedRowIds(new Set());
+          table.setFilters({ search: "", expression: null });
+          table.setSorting(table.tableProps.config.defaultSort ?? []);
+          table.setVisibleFields(table.tableProps.config.defaultColumns);
+        }}
+        setFilters={(filters) => {
+          setSelectedRowIds(new Set());
+          table.setFilters(filters);
+        }}
+        canAdd={canAdd}
+        onLifecycleChanged={async (ids, _permanent = false, options) => {
+          await invalidateBookableItemRecords(
+            queryClient,
+            "archive",
+            ids.map((id) => ({ id })),
+            options,
+          );
+          setSelectedRowIds(new Set());
+        }}
+        onRestore={onRestore}
+        tableProps={{
+          ...table.tableProps,
+          selection: {
+            value: selectedRowIds,
+            onChange: onSelectionChange,
+            disabled: bulkMutation.isPending || notificationMutation.isPending,
+            maximumCount: 100,
+            getRowLabel: (row) => row.target?.value.name ?? t("common:values.unknownItem"),
+            renderActions: (selection) => (
+              <>
+                {notificationIds.length > 0 ? (
+                  <>
+                    <Button
+                      disabled={bulkMutation.isPending || notificationMutation.isPending}
+                      onClick={() => notificationMutation.mutate(true)}
+                    >
+                      {t("allBookableItems.notifications.subscribe", {})}
+                    </Button>
+                    <Button
+                      disabled={bulkMutation.isPending || notificationMutation.isPending}
+                      onClick={() => notificationMutation.mutate(false)}
+                    >
+                      {t("allBookableItems.notifications.unsubscribe")}
+                    </Button>
+                  </>
+                ) : null}
+                {notificationMutation.isError ? (
+                  <p role="alert">{t("notificationSubscriptions.item.saveError")}</p>
+                ) : null}
+                {directSysadmin ? (
                   <BookableItemsBulkActions
                     selection={selection}
-                    disabled={bulkMutation.isPending}
+                    disabled={bulkMutation.isPending || notificationMutation.isPending}
                     activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
                     failedAction={failedBulkAction}
                     onAction={onBulkAction}
                   />
-                ),
-              }
-            : undefined
-        }
-        createAction={
-          canAdd ? (
-            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-              <PlusIcon aria-hidden="true" data-icon="inline-start" />
-              {t("bookableItems.actions.add")}
-            </Link>
-          ) : undefined
-        }
+                ) : null}
+              </>
+            ),
+          },
+        }}
       />
-    </main>
+    </div>
   );
 }
 
-async function invalidateBookableItemRecords(
-  queryClient: QueryClient,
-  action: BookableItemsBulkAction,
-  docs: readonly { id?: number }[],
-) {
+async function invalidateChangedConfigurations(queryClient: QueryClient, ids: readonly number[]) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: getListBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueLocationsQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getCountBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
-    queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
-    ...docs.flatMap(({ id }) =>
-      id === undefined
-        ? []
-        : [
-            queryClient.invalidateQueries({ queryKey: getSearchBookingConfigurationAccessGranteesQueryKey(id) }),
-            queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationQueryKey(id) }),
-            queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(id) }),
-            queryClient.invalidateQueries({ queryKey: getListBookingConfigurationAuditEventsQueryKey(id) }),
-            queryClient.invalidateQueries({ queryKey: getGetBookingCalendarSubscriptionQueryKey(id) }),
-            queryClient.invalidateQueries({ queryKey: getGetMyBookingNotificationSubscriptionQueryKey(id) }),
-          ],
-    ),
-    ...(action === "archive"
-      ? [
-          queryClient.invalidateQueries({ queryKey: getSearchCalendarEventsQueryKey() }, { cancelRefetch: false }),
-          queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
-          queryClient.invalidateQueries({ queryKey: getCountBookingsQueryKey() }),
-          queryClient.invalidateQueries({ queryKey: getListMyBookableItemCalendarSubscriptionsQueryKey() }),
-          queryClient.invalidateQueries({ queryKey: getGetUserBookingCalendarSubscriptionQueryKey() }),
-        ]
-      : []),
+    invalidateListBookingConfigurations(queryClient),
+    invalidateCountBookingConfigurations(queryClient),
+    ...ids.flatMap((id) => [
+      invalidateGetBookingConfiguration(queryClient, id),
+      invalidateGetBookingConfigurationAccess(queryClient, id),
+      invalidateListBookingConfigurationAuditEvents(queryClient, id),
+    ]),
   ]);
 }

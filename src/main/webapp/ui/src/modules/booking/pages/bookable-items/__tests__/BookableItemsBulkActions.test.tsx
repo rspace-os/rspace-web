@@ -18,17 +18,17 @@ describe("bulk disable confirmation", () => {
         onAction={onAction}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.bulk.actions.disable" }));
+    await user.click(screen.getByRole("button", { name: "booking:allBookableItems.bulk.actions.disable" }));
     const dialog = screen.getByRole("alertdialog");
     await expectAccessible(dialog);
     expect(onAction).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
     expect(selection.selectedRowIds.size).toBe(2);
     expect(onAction).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.bulk.actions.disable" }));
+    await user.click(screen.getByRole("button", { name: "booking:allBookableItems.bulk.actions.disable" }));
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", {
-        name: "booking:bookableItems.bulk.actions.disable",
+        name: "booking:allBookableItems.bulk.actions.disable",
       }),
     );
     expect(onAction).toHaveBeenCalledWith("disable", selection.selectedRowIds);
@@ -44,9 +44,9 @@ describe("bulk disable confirmation", () => {
         onAction={vi.fn().mockRejectedValue(new Error("Failed"))}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.bulk.actions.disable" }));
+    await user.click(screen.getByRole("button", { name: "booking:allBookableItems.bulk.actions.disable" }));
     expect(within(screen.getByRole("alertdialog")).getByRole("alert")).toHaveTextContent(
-      "booking:bookableItems.bulk.errors.disable",
+      "booking:allBookableItems.bulk.errors.disable",
     );
     expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
@@ -62,7 +62,7 @@ describe("bulk disable confirmation", () => {
         onAction={onAction}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.bulk.actions.enable" }));
+    await user.click(screen.getByRole("button", { name: "booking:allBookableItems.bulk.actions.enable" }));
     expect(onAction).toHaveBeenCalledWith("enable", selection.selectedRowIds);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });

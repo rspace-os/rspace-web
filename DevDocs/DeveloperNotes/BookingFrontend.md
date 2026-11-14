@@ -30,13 +30,13 @@ Keep new synchronized timeline callers on the shared scroll hook, not a per-scro
 React state update. Hour labels and day bounds are cached by date and timezone.
 
 Availability quick-filter counts load even when no filter is selected. They use today's preferred
-display interval: before it starts, an item with a free segment is "Free later today"; at or after
+display interval: before it starts, an item with a free segment is "Free later"; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
-Candidate discovery uses the catalogue's Search, type and item-property predicates before applying
-the 1,000-item availability limit. Local availability comparisons become logical true when deriving
-that candidate predicate, preserving AND/OR grouping. Counts therefore describe the current item
-scope. Today's availability bars reuse the same booking intervals; other dates load their own
-intervals. Both event and availability caches are scoped to the caller.
+The server classifies items and counts them under the page's Search, type and item-property
+filters, so counts describe the current item scope and no request pages through the catalogue. See
+[Booking catalogue availability quick filters](Booking.md#booking-catalogue-availability-quick-filters). Availability bars load
+the booking intervals of the rows on the page only; under a quick filter they show today. Both
+event and availability caches are scoped to the caller.
 
 Booking forms resolve wall-clock input and scheduling policy synchronously with
 `validateBookingWindow`. The fields display validation results; they do not report a resolved
@@ -148,22 +148,12 @@ date, and successful creation returns to the submitted start date rather than
 the date originally supplied in the URL. Item headers label the display timezone;
 the Booking rules section retains the separate scheduling timezone.
 
-All Bookable Items renders table and availability-detail locations from the catalogue item's
-`location`, carried by the configuration adapter on `target.location`. It makes no per-item
-instrument request. Instrument-backed configuration pages instead expand `parentContainer`
+Instrument-backed configuration pages instead expand `parentContainer`
 with `depth=2` and sparse fieldsets for `instruments` and `containers`.
 
-All Bookable Items keeps `pageSize` in the URL for both normal and availability-filtered
-results. Changing it resets to page one. My Bookings uses TableList cards on narrow
+My Bookings uses TableList cards on narrow
 viewports and a table on wide viewports. Search inputs show their collection scope.
 Pages own their main landmark; SidebarInset is only a layout container.
-
-The catalogue's master filter is the complete RSQL `where` URL parameter. Quick buttons replace
-only availability predicates; changing dates removes those predicates without discarding item or
-ID rules. Existing `target` and `availability` links remain readable. Availability predicates resolve
-to target-ID predicates before the request. `/api/v2/booking-catalogue?where=...` validates filters
-with the shared collection parser and intersects them with visibility and active-item constraints
-before database pagination. Do not fetch all catalogue pages to filter them in the browser.
 
 Calendar has one Search input and separate Bookable items and Booking events filter groups.
 The groups combine with AND; each group retains its own nested AND/OR expression.
@@ -306,3 +296,42 @@ string `payload.deletedAt` as Permanently deleted. The permanent-delete snapshot
 records that timestamp; archive snapshots do not. Booking's `relatedAuditFields`
 allowlist must retain `deletedAt` in the v2 audit response because descriptions
 are withheld. The Archived or deleted filter sends DELETE and includes both kinds.
+
+### Calendar Availability
+
+The Calendar's Availability layout uses the item expression in `calendar-resources.where` and supports Day only. Its local `availability` field is split into the catalogue's availability parameter before requests. Counts retain the other item rules and search, and remove only the availability presets. Presets describe today; selecting a date clears them.
+
+Leaving Availability removes its top-level preset rules in the same URL write as the layout change. A saved availability rule opened in another layout is dropped through the stale-field policy with a non-blocking notice. Availability disables the Resources catalogue, display events and blocking events queries. Its bars still load the bookings needed for availability shading.
+
+The inline buttons retain the former All items presentation. Availability's outer TableList edits the item expression and its nested row table hides its header and filter panel. Other layouts retain the existing event panel and owner projection. The requester rule stays stored while Availability hides its control. All items links to this layout with its search and item expression.
+
+### All items configuration list
+
+All items uses `booking-configurations` through `useApiV2TableList`, with slug
+`all-bookable-items`. Its URL search, filter, sorting and column state use the
+standard table persistence. The default scope is active, enabled configurations
+on undeleted Inventory targets. The server excludes deleted targets.
+
+A parsed top-level AND rule for `state` or `enabled` replaces the entire default
+status scope. OR-nested status rules do not replace it. This behavior applies to
+every reader, with no manager detection or status quick filters. Reset restores
+the default scope. Status is visible initially; Updated is available in Columns.
+
+All items owns lifecycle and personal notification selection, capped at 100.
+Lifecycle bulk actions require a direct sysadmin; notification actions use only
+selected rows with the subscription capability and preserve subscription
+versions. Add and permanent deletion return to All items. The former
+Administration list route is retired; Settings is a top-level sysadmin entry.
+Calendar Availability retains its catalogue data source and item query helpers.
+
+The list drops invalid Owner preset values through a page-owned expression
+normalizer. The shared table hook applies it to restored and live URL state
+before constructing page and total requests or cache keys. This keeps `me`
+recovery from sending a rejected value during URL synchronization.
+
+
+`invalidateBookableItemRecords(queryClient, action, docs, options?)` refreshes
+returned records and companion lists, including when `docs` is empty. Callers
+joining a refetch already started by generated mutation options pass
+`{ cancelRefetch: false }` as the fourth argument to await the
+existing request without cancelling and restarting it.

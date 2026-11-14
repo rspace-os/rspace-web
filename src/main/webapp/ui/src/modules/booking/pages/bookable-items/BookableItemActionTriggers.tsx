@@ -14,7 +14,9 @@ export function BookableItemActionTriggers({
   activate,
   directSysadmin,
   onRestore,
+  hideDetails = false,
 }: {
+  hideDetails?: boolean;
   configuration: BookingConfigurationRow;
   activate: (actionId: string) => void;
   directSysadmin: boolean;
@@ -25,7 +27,7 @@ export function BookableItemActionTriggers({
 
   return (
     <div className="flex items-center justify-start gap-1">
-      {configuration.target === null ? null : (
+      {hideDetails || configuration.target === null ? null : (
         <Link
           to="/booking/bookable-items/$globalId/{-$tab}"
           params={{ globalId: configuration.target.globalId, tab: undefined }}

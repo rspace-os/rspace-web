@@ -122,6 +122,7 @@ export function CalendarFilterControls({
             value={layout}
             optionLabel={(option) => t(`calendar.layout.${option}`)}
             onChange={(option) => {
+              if (option === "availability") onViewChange("day");
               if (option === "resources" && view === "month") onViewChange("week");
               onLayoutChange(option);
             }}
@@ -130,8 +131,14 @@ export function CalendarFilterControls({
             legend={t("calendar.period.legend")}
             options={calendarViews}
             value={view}
-            isDisabled={(option) => layout === "resources" && option === "month"}
-            disabledReason={() => t("calendar.period.monthUnavailableInResources")}
+            isDisabled={(option) =>
+              (layout === "availability" && option !== "day") || (layout === "resources" && option === "month")
+            }
+            disabledReason={() =>
+              layout === "availability"
+                ? t("calendar.period.dayOnlyAvailability")
+                : t("calendar.period.monthUnavailableInResources")
+            }
             optionLabel={(option) => t(`calendar.period.${option}`)}
             onChange={onViewChange}
           />

@@ -19,20 +19,23 @@ export function BookableItemsBulkActions({
   disabled,
   activeAction,
   failedAction,
+  offerEnable = true,
   onAction,
 }: {
   selection: TableListSelectionContext;
   disabled: boolean;
   activeAction: BookableItemsBulkAction | null;
   failedAction: BookableItemsBulkAction | null;
+  /** False where every listed item is already enabled, as on All items. */
+  offerEnable?: boolean;
   onAction: (action: BookableItemsBulkAction, selectedRowIds: ReadonlySet<string>) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [confirming, setConfirming] = useState<"disable" | "archive" | null>(null);
   const errorKeys = {
-    enable: "bookableItems.bulk.errors.enable",
-    disable: "bookableItems.bulk.errors.disable",
-    archive: "bookableItems.bulk.errors.archive",
+    enable: "allBookableItems.bulk.errors.enable",
+    disable: "allBookableItems.bulk.errors.disable",
+    archive: "allBookableItems.bulk.errors.archive",
   } as const;
   const error = failedAction === null ? null : t(errorKeys[failedAction]);
 
@@ -47,16 +50,18 @@ export function BookableItemsBulkActions({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={disabled}
-        aria-busy={activeAction === "enable"}
-        onClick={() => void runAction("enable")}
-      >
-        {t("bookableItems.bulk.actions.enable")}
-      </Button>
+      {offerEnable ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={disabled}
+          aria-busy={activeAction === "enable"}
+          onClick={() => void runAction("enable")}
+        >
+          {t("allBookableItems.bulk.actions.enable")}
+        </Button>
+      ) : null}
       <Button
         type="button"
         variant="secondary"
@@ -65,7 +70,7 @@ export function BookableItemsBulkActions({
         aria-busy={activeAction === "disable"}
         onClick={() => setConfirming("disable")}
       >
-        {t("bookableItems.bulk.actions.disable")}
+        {t("allBookableItems.bulk.actions.disable")}
       </Button>
       <Button
         type="button"
@@ -75,7 +80,7 @@ export function BookableItemsBulkActions({
         aria-busy={activeAction === "archive"}
         onClick={() => setConfirming("archive")}
       >
-        {t("bookableItems.bulk.actions.archive")}
+        {t("allBookableItems.bulk.actions.archive")}
       </Button>
       {error && failedAction !== confirming ? (
         <p role="alert" className="basis-full text-sm text-destructive">
@@ -95,12 +100,12 @@ export function BookableItemsBulkActions({
                 ? t("bookableItems.bulk.disableDialog.title", {
                     count: selection.selectedRowIds.size,
                   })
-                : t("bookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
+                : t("allBookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirming === "disable"
                 ? t("bookableItems.bulk.disableDialog.description", {})
-                : t("bookableItems.bulk.archiveDialog.description")}
+                : t("allBookableItems.bulk.archiveDialog.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error && failedAction === confirming ? (
@@ -119,7 +124,9 @@ export function BookableItemsBulkActions({
                 if (confirming) void runAction(confirming);
               }}
             >
-              {confirming === "disable" ? t("bookableItems.bulk.actions.disable") : t("bookableItems.actions.archive")}
+              {confirming === "disable"
+                ? t("allBookableItems.bulk.actions.disable")
+                : t("bookableItems.actions.archive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

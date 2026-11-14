@@ -40,24 +40,6 @@ export function BookingBreadcrumbs() {
       </Link>
     ),
   };
-  // Bookable items is the Administration page every user can reach; Settings is sysadmin-only.
-  const administration: BreadcrumbItem = {
-    key: "administration",
-    content: (
-      <Link to="/booking/config/bookable-items" className={breadcrumbLinkClassName}>
-        {t("sidebar.administration")}
-      </Link>
-    ),
-  };
-  const bookableItems: BreadcrumbItem = {
-    key: "bookable-items",
-    content: (
-      <Link to="/booking/config/bookable-items" className={breadcrumbLinkClassName}>
-        {t("sidebar.bookableItems")}
-      </Link>
-    ),
-  };
-
   let pageItems: BreadcrumbItem[];
   if (pathname === "/booking/calendar") pageItems = [current("calendar", t("calendar.title"))];
   else if (pathname === "/booking/all-items") pageItems = [current("all-items", t("allBookableItems.title"))];
@@ -66,11 +48,19 @@ export function BookingBreadcrumbs() {
   } else if (pathname === "/booking/my-bookings") pageItems = [current("my-bookings", t("myBookings.title"))];
   else if (pathname === "/booking/preferences") pageItems = [current("preferences", t("preferences.title"))];
   else if (pathname === "/booking/config/settings") {
-    pageItems = [administration, current("settings", t("settings.title"))];
-  } else if (pathname === "/booking/config/bookable-items") {
-    pageItems = [administration, current("bookable-items", t("sidebar.bookableItems"))];
+    pageItems = [
+      {
+        key: "administration",
+        content: (
+          <Link to="/booking/config/settings" className={breadcrumbLinkClassName}>
+            {t("sidebar.administration")}
+          </Link>
+        ),
+      },
+      current("settings", t("settings.title")),
+    ];
   } else if (pathname === "/booking/bookable-items/add") {
-    pageItems = [administration, bookableItems, current("add-bookable-item", t("bookableItems.addTitle"))];
+    pageItems = [allItems, current("add-bookable-item", t("bookableItems.addTitle"))];
   } else {
     const eventMatch = pathname.match(/^\/booking\/calendar\/bookings\/([^/]+)(\/edit)?$/);
     const itemMatch = pathname.match(/^\/booking\/bookable-items\/[^/]+(?:\/[^/]+)?$/);

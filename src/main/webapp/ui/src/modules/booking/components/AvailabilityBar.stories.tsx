@@ -127,9 +127,3 @@ export const NarrowItemCard: Story = {
     </div>
   ),
 };
-
-export const SourceFreeCompatibility: Story = {
-  args: {
-    intervals: typicalIntervals.map(({ kind, startsAt, endsAt }) => ({ kind, startsAt, endsAt })),
-  },
-};

@@ -25,7 +25,6 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-// Bookable items lists only the configurations the API lets the user read, so every user can open it.
 // Settings edits institution-wide defaults and stays sysadmin-only.
 const items = (today: string, isSysAdmin: boolean) =>
   [
@@ -61,16 +60,15 @@ const items = (today: string, isSysAdmin: boolean) =>
       icon: SlidersHorizontalIcon,
       link: <Link {...linkOptions({ to: "/booking/preferences" })} />,
     },
-    {
-      key: "administration",
-      icon: SettingsIcon,
-      children: [
-        ...(isSysAdmin
-          ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
-          : []),
-        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const,
-      ],
-    },
+    ...(isSysAdmin
+      ? [
+          {
+            key: "administration",
+            icon: SettingsIcon,
+            children: [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> }],
+          } as const,
+        ]
+      : []),
   ] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
@@ -88,7 +86,6 @@ export function BookingSidebar() {
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
-    bookableItems: t("sidebar.bookableItems"),
   };
 
   return (

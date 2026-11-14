@@ -148,7 +148,7 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     appUser,
     filterExpansionRecords,
     page,
-    pageBookableItemsFilter,
+    pageAllBookableItemsFilter,
   }) => {
     const fieldName = uniqueName("E2E filter expansion field");
     const fieldValue = `${uniqueName("E2E filter expansion match")} / "quoted, value"`;
@@ -246,18 +246,18 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     });
     page.on("pageerror", (error) => browserErrors.push(error.message));
 
-    await pageBookableItemsFilter.open();
-    await pageBookableItemsFilter.openFilters();
-    await pageBookableItemsFilter.addFilter();
-    await pageBookableItemsFilter.chooseRuntimeField(1, fieldName);
-    await pageBookableItemsFilter.chooseOperator(1, "equals");
-    await pageBookableItemsFilter.scalarValue(1).fill(fieldValue);
+    await pageAllBookableItemsFilter.open();
+    await pageAllBookableItemsFilter.openFilters();
+    await pageAllBookableItemsFilter.addFilter();
+    await pageAllBookableItemsFilter.chooseRuntimeField(1, fieldName);
+    await pageAllBookableItemsFilter.chooseOperator(1, "equals");
+    await pageAllBookableItemsFilter.scalarValue(1).fill(fieldValue);
     await page.keyboard.press("Escape");
-    await pageBookableItemsFilter.applyFilters();
+    await pageAllBookableItemsFilter.applyFilters();
 
-    await expect(pageBookableItemsFilter.row(matchingName)).toBeVisible();
-    await expect(pageBookableItemsFilter.row(otherName)).toHaveCount(0);
-    await expect(pageBookableItemsFilter.row(privateName)).toHaveCount(0);
+    await expect(pageAllBookableItemsFilter.row(matchingName)).toBeVisible();
+    await expect(pageAllBookableItemsFilter.row(otherName)).toHaveCount(0);
+    await expect(pageAllBookableItemsFilter.row(privateName)).toHaveCount(0);
 
     const runtimeRequest = collectionRequests.find((url) =>
       new URL(url).searchParams.get("where")?.includes(`target.extraFields.${runtimeDefinition.id}`),
@@ -276,18 +276,18 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
       expect(runtimeExpression.right.value).toBe(fieldValue);
     }
 
-    await pageBookableItemsFilter.openFilters();
-    await pageBookableItemsFilter.filterPanel.getByRole("button", { name: "Clear all" }).click();
-    await pageBookableItemsFilter.openFilters();
-    await pageBookableItemsFilter.addFilter();
-    await pageBookableItemsFilter.chooseField(1, "Bookable item → Name");
-    await pageBookableItemsFilter.chooseOperator(1, "contains");
-    await pageBookableItemsFilter.scalarValue(1).fill(matchingName);
+    await pageAllBookableItemsFilter.openFilters();
+    await pageAllBookableItemsFilter.filterPanel.getByRole("button", { name: "Clear all" }).click();
+    await pageAllBookableItemsFilter.openFilters();
+    await pageAllBookableItemsFilter.addFilter();
+    await pageAllBookableItemsFilter.chooseField(1, "Bookable item → Name");
+    await pageAllBookableItemsFilter.chooseOperator(1, "contains");
+    await pageAllBookableItemsFilter.scalarValue(1).fill(matchingName);
     await page.keyboard.press("Escape");
-    await pageBookableItemsFilter.applyFilters();
-    await expect(pageBookableItemsFilter.row(matchingName)).toBeVisible();
-    await expect(pageBookableItemsFilter.row(otherName)).toHaveCount(0);
-    await expect(pageBookableItemsFilter.row(privateName)).toHaveCount(0);
+    await pageAllBookableItemsFilter.applyFilters();
+    await expect(pageAllBookableItemsFilter.row(matchingName)).toBeVisible();
+    await expect(pageAllBookableItemsFilter.row(otherName)).toHaveCount(0);
+    await expect(pageAllBookableItemsFilter.row(privateName)).toHaveCount(0);
 
     expect(browserErrors).toEqual([]);
   });
