@@ -21,6 +21,54 @@ afterEach(() => {
 });
 
 describe("TagsCombobox (ontologies, paginated)", () => {
+  test("cancels the pending filter request when unmounted", async () => {
+    const requestedFilters: Array<string> = [];
+    worker.use(ontologyTagsHandler({ allTags: makeTags(50), pageSize: 40, requestedPositions, requestedFilters }));
+    const { unmount } = render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
+    await pageObj.open();
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+
+    pageObj.filter("tag-04");
+    // Let React commit the new filter, which starts its 300 ms debounce, then unmount before it fires.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(requestedFilters).not.toContain("tag-04");
+  });
+
+  test.each([
+    { pages: "one page", tagCount: 10 },
+    { pages: "two pages", tagCount: 50 },
+  ])("keeps the first page of suggestions after the debounce fires ($pages)", async ({ tagCount }) => {
+    worker.use(ontologyTagsHandler({ allTags: makeTags(tagCount), pageSize: 40, requestedPositions }));
+    render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
+    await pageObj.open();
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+    expect(requestedPositions).not.toContain(1);
+  });
+
+  test("never lists a suggestion twice while a new filter loads", async () => {
+    worker.use(ontologyTagsHandler({ allTags: makeTags(5), pageSize: 40, requestedPositions }));
+    render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
+    await pageObj.open();
+    await expect.element(pageObj.option("tag-000")).toBeVisible();
+    const listings: Array<Array<string>> = [];
+    const observer = new MutationObserver(() => {
+      listings.push([...document.querySelectorAll("[role=option]")].map((o) => o.getAttribute("data-tag-value") ?? ""));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    pageObj.filter("tag-00");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    observer.disconnect();
+
+    expect(listings.filter((values) => new Set(values).size !== values.length)).toEqual([]);
+  });
+
   test("renders virtualised tag options when opened", async () => {
     render(<AddTag onSelection={vi.fn()} value={[]} enforceOntologies={false} />);
 
