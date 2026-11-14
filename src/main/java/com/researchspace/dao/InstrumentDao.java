@@ -7,6 +7,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
+import java.util.Optional;
 
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
 public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
@@ -22,6 +23,18 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
       InventorySearchDeletedOption deletedOption,
       String searchTerm,
       User user);
+
+  /**
+   * Locks and reloads one concrete Instrument, without locking its eager associations. Callers
+   * acquiring several instruments must lock them in id order before locking owners.
+   */
+  Optional<Instrument> lockById(Long id);
+
+  /**
+   * Locks and checks the current group memberships that allow {@code subject} to transfer an
+   * instrument owned by {@code owner}. Call this only after locking the instrument.
+   */
+  boolean hasLockedTransferAuthority(User subject, User owner);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);

@@ -14,6 +14,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateService;
 import com.researchspace.service.inventory.PidinstLookupManager;
@@ -44,6 +45,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InventoryIdentifierExternalUpdateService externalUpdateService;
   @Autowired private PidinstLookupManager pidinstLookupMgr;
   @Autowired private ApiAvailabilityHandler apiHandler;
+  @Autowired private UserManager userManager;
 
   @Data
   @AllArgsConstructor
@@ -236,16 +238,28 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeInstrumentOwner(
+        id, incomingInstrument, errors, user, userManager.getOriginalUserForOperateAs(user));
+  }
+
+  /**
+   * Transfers the instrument with the permissions of {@code subject} and records {@code actor}, the
+   * original sysadmin when operating as another user, as the transferring user.
+   */
+  public ApiInstrument changeInstrumentOwner(
+      Long id, ApiInstrument incomingInstrument, BindingResult errors, User subject, User actor)
+      throws BindException {
     throwBindExceptionIfErrors(errors);
     incomingInstrument.setIdIfNotSet(id);
-    instrumentApiMgr.assertUserCanTransferInstrument(id, user);
+    instrumentApiMgr.assertUserCanTransferInstrument(id, subject);
 
-    ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
+    ApiInstrument updated =
+        instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, subject, actor);
     // A transfer can change what the provider holds: RspaceToExternalProviderAdapterImpl
     // maps ownerName from the record owner's full name unless the Owner field overrides it. Left
     // unpushed, the registered record keeps naming the previous owner, which is exactly the drift
     // this ticket exists to stop.
-    pushExternalMetadataUpdates(updated, user);
+    pushExternalMetadataUpdates(updated, subject);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }
