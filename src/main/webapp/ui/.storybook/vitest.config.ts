@@ -6,6 +6,12 @@ import { defineConfig } from "vitest/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+type PlaywrightBrowser = "chromium" | "firefox" | "webkit";
+// Same VITEST_BROWSERS parsing as vitest.browser.config.ts; Chromium stays the default here.
+const browsers = (process.env.VITEST_BROWSERS ?? "chromium")
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
   plugins: [storybookTest({ configDir: __dirname })],
@@ -25,7 +31,8 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      instances: [{ browser: "chromium" }],
+      screenshotFailures: false,
+      instances: browsers.map((browser) => ({ browser })),
     },
   },
 });

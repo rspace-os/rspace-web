@@ -97,7 +97,9 @@ proxied — the `@vite/client` script connects directly to the dev server using
 Run `pnpm storybook` from the repository root to browse the component catalog,
 or `pnpm storybook:build` to produce a static build. The attributed MUI v9
 stories live in `src/modules/common/ui/material-ui`; see its `UPSTREAM.md` for
-provenance. `pnpm storybook:test` runs the stories in Chromium.
+provenance. `pnpm storybook:test` runs the stories in Chromium; set
+`VITEST_BROWSERS` (for example `chromium,firefox,webkit`) to choose engines, as
+for `pnpm test-browser`.
 
 To review the built catalog inside a local RSpace development server, run
 `pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in
