@@ -373,6 +373,49 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void whitelistVisibilityRequiresExactGroupName() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User innerMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("inner"));
+    User outerMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("outer"));
+    User wildcardMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("wild"));
+    initialiseContentWithEmptyContent(pi, owner, innerMember, outerMember, wildcardMember);
+
+    String base = getRandomAlphabeticString("wl");
+    Group inner = createGroup(base, pi);
+    addUsersToGroup(pi, inner, innerMember);
+    Group outer = createGroup("x" + base + "x", pi);
+    addUsersToGroup(pi, outer, outerMember);
+    Group wildcard = createGroup(base + "_%", pi);
+    addUsersToGroup(pi, wildcard, wildcardMember);
+    // matched by the unescaped pattern of the wildcard group's name
+    Group lookalike = createGroup(base + "Ax", pi);
+
+    ApiContainer outerContainer = createBasicContainerForUser(owner, "outer", List.of(outer));
+    moveContainerToTopLevel(outerContainer, owner);
+    ApiContainer wildcardContainer =
+        createBasicContainerForUser(owner, "wildcard", List.of(wildcard));
+    moveContainerToTopLevel(wildcardContainer, owner);
+    ApiContainer lookalikeContainer =
+        createBasicContainerForUser(owner, "lookalike", List.of(lookalike));
+    moveContainerToTopLevel(lookalikeContainer, owner);
+
+    assertThat(topContainerGlobalIds(innerMember)).isEmpty();
+    assertEquals(List.of(outerContainer.getGlobalId()), topContainerGlobalIds(outerMember));
+    assertEquals(List.of(wildcardContainer.getGlobalId()), topContainerGlobalIds(wildcardMember));
+  }
+
+  private List<String> topContainerGlobalIds(User user) {
+    return containerApiMgr
+        .getTopContainersForUser(
+            PaginationCriteria.createDefaultForClass(Container.class), null, null, user)
+        .getResults()
+        .stream()
+        .map(ApiContainerInfo::getGlobalId)
+        .toList();
+  }
+
+  @Test
   public void containerDuplicationWithinGroup() {
     // create pi with a container, and a group with test user
     User pi = createAndSaveUserIfNotExists("pi" + getRandomName(8), Constants.PI_ROLE);
