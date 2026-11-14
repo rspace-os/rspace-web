@@ -66,7 +66,7 @@ restores its draft during the same edit session. Open all day stores `00:00`–`
 restores the day's last valid custom hours, or `09:00`–`17:00` if none exist. Native time inputs
 display a `24:00` end as `00:00`. Accepted saves reset this editing history; failed saves retain it.
 Callers that explicitly reset the form must also remount `SchedulingSettingsFields` to start a new
-editing session. Availability-window, timezone, default sharing, granularity and buffer settings
+editing session. Availability-window, timezone, granularity and buffer settings
 remain separate from the weekly schedule.
 
 Item creation copies the full institution schedule into its draft. Item edits submit the full

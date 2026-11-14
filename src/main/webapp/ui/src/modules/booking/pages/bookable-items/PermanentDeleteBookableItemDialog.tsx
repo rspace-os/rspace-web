@@ -1,6 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getDeleteBookingConfigurationMutationOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,14 +28,19 @@ export function PermanentDeleteBookableItemDialog({
   onDeleted: () => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const queryClient = useQueryClient();
   const [confirmation, setConfirmation] = useState("");
   const confirmationId = useId();
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await onDelete(configuration.id, requiredVersion(configuration));
-      close();
-      await onDeleted();
-    },
+    ...getDeleteBookingConfigurationMutationOptions(queryClient, {
+      mutation: {
+        onSuccess: async () => {
+          close();
+          await onDeleted();
+        },
+      },
+    }),
+    mutationFn: () => onDelete(configuration.id, requiredVersion(configuration)),
   });
   const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
@@ -74,7 +80,13 @@ export function PermanentDeleteBookableItemDialog({
             variant="destructive"
             disabled={deleteMutation.isPending || confirmation !== itemName}
             aria-busy={deleteMutation.isPending}
-            onClick={() => deleteMutation.mutate()}
+            onClick={() =>
+              deleteMutation.mutate({
+                id: configuration.id,
+                headers: { "If-Match": `"${configuration.configurationVersion}"` },
+                params: { permanent: true },
+              })
+            }
           >
             {t("bookableItems.actions.deletePermanently")}
           </AlertDialogAction>

@@ -131,16 +131,43 @@ function mapPrivacy(input: BookingsRead) {
 export function mapBooking(input: BookingsRead) {
   return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
 }
+function mapReadIdentity(input: BookingsRead) {
+  if (input.timezone === undefined) throw new BookingUnavailableError("Booking timezone is unavailable");
+  const identity = {
+    id: input.id,
+    version: required(input.version, "version"),
+    target: input.target === null ? null : mapBookingTarget(input.target),
+    timezone: input.timezone,
+    start: required(input.start, "start"),
+    end: required(input.end, "end"),
+    state: required(input.state, "state"),
+    kind: input.kind ?? "BOOKING",
+  };
+  checkBookingInterval(identity);
+  return identity;
+}
 export function mapBookingDetails(input: BookingsRead) {
-  const booking = mapBooking(input);
-  if (booking.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
-  return { ...booking, canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration") };
+  const privacy = mapPrivacy(input);
+  if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
+  return {
+    ...mapReadIdentity(input),
+    ...privacy,
+    canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration"),
+  };
 }
 export function mapBookingListDocument(input: BookingsRead) {
+  if (input.requester === undefined) throw new BookingUnavailableError("Booking requester is unavailable");
+  const { purpose, bookedBy, privacy, canEdit, canCancel, ...metadata } = mapPrivacy(input);
   return {
-    ...mapBooking(input),
+    ...mapReadIdentity(input),
+    ...metadata,
+    purpose,
+    bookedBy,
+    privacy,
+    canEdit,
+    canCancel,
     canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration"),
-    requester: input.requester ?? null,
+    requester: input.requester,
   };
 }
 export function mapBookingMutation(input: BookingsRead) {

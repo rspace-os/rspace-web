@@ -4,7 +4,6 @@ import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
-import { Badge } from "@/modules/common/ui/badge";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { instrumentRelationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
@@ -41,13 +40,6 @@ export const bookingConfigurationConfig = {
               compact: true,
               size: "xs",
             }),
-            row.ownerHealth?.hasEffectiveOwner === false
-              ? createElement(
-                  Badge,
-                  { variant: "destructive", className: "w-fit" },
-                  i18n.t("booking:bookableItems.ownerHealth.needsOwner"),
-                )
-              : null,
           );
         },
       },

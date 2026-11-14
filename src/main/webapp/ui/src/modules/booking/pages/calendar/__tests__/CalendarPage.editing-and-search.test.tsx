@@ -1,5 +1,4 @@
-import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
-import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
@@ -11,6 +10,8 @@ import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import type { ApiV2ListResultMapStringObject } from "@/modules/common/api/v2/generated/models/apiV2ListResultMapStringObject";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 
 import {
   bookableItemFixtures,
@@ -232,10 +233,10 @@ describe("CalendarPage", () => {
       );
       expect(
         queryClient
-          .getQueriesData<BookingListDocument[]>({
-            queryKey: getListBookingsQueryKey(),
+          .getQueriesData<ApiV2ListResultMapStringObject>({
+            queryKey: getSearchCalendarEventsQueryKey(),
           })
-          .map(([, events]) => events),
+          .map(([, response]) => response?.docs),
       ).toContainEqual([expect.objectContaining({ version: 1, start: updated.start, end: updated.end })]);
       expect(within(card).getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep my calendar draft");
       expect(within(card).getByLabelText("Start time")).toHaveValue(originalTime);
@@ -365,14 +366,15 @@ describe("CalendarPage", () => {
   });
 
   it("keeps event matches from resources outside the current catalogue page", async () => {
-    if (ownBooking.privacy !== "full") throw new Error("The own-booking fixture must expose full details");
+    const ownTarget = ownBooking.target;
+    if (!ownTarget) throw new Error("The calendar fixture must include a target");
     const offPageEvent: BookingListDocument = {
       ...ownBooking,
       id: 99,
       target: {
-        ...ownBooking.target,
+        ...ownTarget,
         globalId: "IN999",
-        value: { ...ownBooking.target.value, id: 999, name: "Off-page microscope" },
+        value: { ...ownTarget.value, id: 999, name: "Off-page microscope" },
       },
       purpose: "QuasarPurposeMarker",
     };

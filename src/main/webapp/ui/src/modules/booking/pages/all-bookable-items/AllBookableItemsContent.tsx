@@ -1,13 +1,15 @@
-import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
+  getSearchCalendarCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import {
   deleteManyBookingConfigurations,
@@ -20,7 +22,6 @@ import {
   getSearchBookingConfigurationAccessGranteesQueryKey,
   invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
-  listBookingConfigurations,
   updateManyBookingConfigurations,
   useDeleteManyBookingConfigurations,
   useUpdateManyBookingConfigurations,
@@ -38,13 +39,8 @@ import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generat
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
-import {
-  TableList,
-  type TableListFilterButtons,
-  type TableListRowActions,
-} from "@/modules/common/table-list/TableList";
-import type { FilterExpression } from "@/modules/common/table-list/types";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import { buttonVariants } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
@@ -76,37 +72,11 @@ const bookableItemsProjection = {
     "effectiveRole",
     "roleSources",
     "capabilities",
-    "ownerHealth",
     "state",
   ],
 } as const;
 
 const maximumBookableItemsSelection = 1000;
-const maximumOwnerAttentionCandidates = 1000;
-
-const ownerAttentionParams = {
-  limit: 100,
-  totals: true,
-  fields: { "booking-configurations": "id,ownerHealth" },
-} as const;
-async function fetchOwnerAttentionPage(page: number, signal: AbortSignal) {
-  const result = await listBookingConfigurations({ ...ownerAttentionParams, page }, { signal });
-  if (result.totalDocs === undefined || result.totalIsLowerBound) throw new Error("Owner-health totals are missing");
-  return { ...result, totalDocs: result.totalDocs, totalPages: Math.ceil(result.totalDocs / result.limit) };
-}
-
-async function fetchOwnerAttentionIds(signal: AbortSignal): Promise<ReadonlySet<number>> {
-  const first = await fetchOwnerAttentionPage(1, signal);
-  if (first.totalDocs > maximumOwnerAttentionCandidates) {
-    throw new Error(`Owner-health filtering supports at most ${maximumOwnerAttentionCandidates} bookable items`);
-  }
-  const documents = [...first.docs];
-  for (let page = 2; page <= first.totalPages; page += 1) {
-    documents.push(...(await fetchOwnerAttentionPage(page, signal)).docs);
-  }
-  return new Set(documents.flatMap(({ id, ownerHealth }) => (ownerHealth?.hasEffectiveOwner === false ? [id] : [])));
-}
-
 type BookableItemsBulkMutation = {
   action: BookableItemsBulkAction;
   selectedRowIds: readonly string[];
@@ -143,27 +113,12 @@ export function AllBookableItemsContent() {
   const queryClient = useQueryClient();
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
-  const [ownerAttentionOnly, setOwnerAttentionOnly] = useState(false);
-  const ownerAttention = useQuery({
-    queryKey: [...getListBookingConfigurationsQueryKey(ownerAttentionParams), "owner-attention"],
-    queryFn: ({ signal }) => fetchOwnerAttentionIds(signal),
-    enabled: ownerAttentionOnly,
-    staleTime: 60_000,
-  });
-  const ownerAttentionFilter = useMemo<FilterExpression<BookingConfigurationRow> | undefined>(() => {
-    if (!ownerAttentionOnly || !ownerAttention.data) return undefined;
-    const ids = [...ownerAttention.data];
-    return ids.length > 0
-      ? { kind: "comparison", field: "id", operator: "in", value: ids }
-      : { kind: "comparison", field: "id", operator: "equals", value: -1 };
-  }, [ownerAttention.data, ownerAttentionOnly]);
   const request = useMemo(
     () => ({
       depth: 1,
       projection: bookableItemsProjection,
-      ...(ownerAttentionFilter ? { baseFilter: ownerAttentionFilter } : {}),
     }),
-    [ownerAttentionFilter],
+    [],
   );
   const table = useApiV2TableList({
     resource: apiV2Resources["booking-configurations"],
@@ -257,46 +212,9 @@ export function AllBookableItemsContent() {
     }),
     [directSysadmin, onArchive, onChanged, onPermanentDelete, onRestore, t],
   );
-  const ownerAttentionButtons: TableListFilterButtons = {
-    legend: t("bookableItems.ownerHealth.filters"),
-    buttons: [
-      {
-        id: "owner-attention",
-        label: t("bookableItems.ownerHealth.filter"),
-        pressed: ownerAttentionOnly,
-        count: ownerAttention.data?.size,
-        onClick: () => {
-          setSelectedRowIds(new Set());
-          table.setPage({ ...table.state.page, pageIndex: 0 });
-          setOwnerAttentionOnly((current) => !current);
-        },
-      },
-    ],
-    onReset: () => {
-      table.setPage({ ...table.state.page, pageIndex: 0 });
-      setOwnerAttentionOnly(false);
-    },
-  };
-  const displayedRows =
-    ownerAttentionOnly && ownerAttention.data
-      ? table.tableProps.rows.filter((row) => ownerAttention.data.has(row.id))
-      : table.tableProps.rows;
 
   return (
     <main className="p-4 sm:p-8">
-      {ownerAttentionOnly && ownerAttention.isPending && table.tableProps.status !== "error" ? (
-        <p role="status" className="sr-only">
-          {t("bookableItems.ownerHealth.loading")}
-        </p>
-      ) : null}
-      {ownerAttentionOnly && ownerAttention.isError ? (
-        <div role="alert" className="mb-3 flex items-center gap-3">
-          <span>{t("bookableItems.ownerHealth.error")}</span>
-          <Button type="button" variant="outline" onClick={() => void ownerAttention.refetch()}>
-            {t("common:actions.retry")}
-          </Button>
-        </div>
-      ) : null}
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {t(
@@ -312,16 +230,7 @@ export function AllBookableItemsContent() {
       <TableList
         {...table.tableProps}
         headingClassName="text-2xl font-semibold"
-        status={
-          table.tableProps.status === "error" || (ownerAttentionOnly && ownerAttention.isError)
-            ? "error"
-            : ownerAttentionOnly && ownerAttention.isPending
-              ? "loading"
-              : table.tableProps.status
-        }
-        rows={ownerAttentionOnly && (ownerAttention.isPending || ownerAttention.isError) ? [] : displayedRows}
         rowActions={rowActions}
-        filterButtons={ownerAttentionButtons}
         selection={
           directSysadmin
             ? {
@@ -361,6 +270,7 @@ async function invalidateBookableItemRecords(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: getListBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueLocationsQueryKey() }, { cancelRefetch: false }),
+    queryClient.invalidateQueries({ queryKey: getSearchCalendarCatalogueQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getCountBookingConfigurationsQueryKey() }, { cancelRefetch: false }),
     queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
     ...docs.flatMap(({ id }) =>
@@ -376,6 +286,7 @@ async function invalidateBookableItemRecords(
     ),
     ...(action === "archive"
       ? [
+          queryClient.invalidateQueries({ queryKey: getSearchCalendarEventsQueryKey() }, { cancelRefetch: false }),
           queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getCountBookingsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getListMyBookableItemCalendarSubscriptionsQueryKey() }),

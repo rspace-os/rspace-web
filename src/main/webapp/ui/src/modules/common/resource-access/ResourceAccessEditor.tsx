@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SaveIcon, TriangleAlertIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import type { ResourceAccessGranteeDocumentKind } from "@/modules/common/api/v2/generated/models/resourceAccessGranteeDocumentKind";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import {
@@ -30,7 +31,7 @@ import {
   draftWithRole,
   mergeAccessDraft,
 } from "./accessRows";
-import type { AccessDocument, DirectoryEntry, GranteeKind, ResourceAccessAssignment } from "./domain";
+import type { AccessDocument, DirectoryEntry, ResourceAccessAssignment } from "./domain";
 import { accessDocument } from "./domain";
 import { GranteePicker } from "./GranteePicker";
 import { type AccessMutationFactories, type AccessResource, leaveResource } from "./resourceAccess";
@@ -38,7 +39,7 @@ import { type AccessMutationFactories, type AccessResource, leaveResource } from
 export type ResourceAccessRole = {
   key: string;
   label: string;
-  allowedGranteeKinds: readonly GranteeKind[];
+  allowedGranteeKinds: readonly ResourceAccessGranteeDocumentKind[];
 };
 
 export type ResourceAccessAdapter = {
@@ -212,7 +213,7 @@ function ResourceAccessEditorSession({
     setAnnouncement(t("resourceAccess.unsavedChanges"));
   }, [dirty, save.isSuccess, save.reset, t]);
 
-  const assignedKeys = useMemo(() => new Set(draft.map(({ grantee }) => grantee.key)), [draft]);
+  const assignedKeys = new Set(draft.map(({ grantee }) => grantee.key));
   const namedAssignmentCount = draft.filter(({ grantee }) => grantee.kind !== "AUDIENCE").length;
   const canManage = !effectiveReadOnly && access.data?.caller.capabilities.canManageAssignments === true;
 

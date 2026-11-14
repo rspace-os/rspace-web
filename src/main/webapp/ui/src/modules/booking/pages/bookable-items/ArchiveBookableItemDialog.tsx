@@ -1,5 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { getDeleteBookingConfigurationMutationOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +26,17 @@ export function ArchiveBookableItemDialog({
   onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const queryClient = useQueryClient();
   const archiveMutation = useMutation({
-    mutationFn: async () => {
-      await onArchive(configuration.id, requiredVersion(configuration));
-      close();
-      await onArchived(configuration.id);
-    },
+    ...getDeleteBookingConfigurationMutationOptions(queryClient, {
+      mutation: {
+        onSuccess: async () => {
+          close();
+          await onArchived(configuration.id);
+        },
+      },
+    }),
+    mutationFn: () => onArchive(configuration.id, requiredVersion(configuration)),
   });
   const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
@@ -54,7 +60,12 @@ export function ArchiveBookableItemDialog({
             variant="destructive"
             disabled={archiveMutation.isPending}
             aria-busy={archiveMutation.isPending}
-            onClick={() => archiveMutation.mutate()}
+            onClick={() =>
+              archiveMutation.mutate({
+                id: configuration.id,
+                headers: { "If-Match": `"${configuration.configurationVersion}"` },
+              })
+            }
           >
             {t("bookableItems.actions.archive")}
           </AlertDialogAction>

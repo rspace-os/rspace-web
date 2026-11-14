@@ -21,6 +21,7 @@ import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
+import { requesterValueField } from "../ownerPreset";
 import { type BookingRow, BookingRowActions } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
@@ -103,7 +104,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     () => ({
       kind: "and",
       children: [
-        { kind: "comparison", field: "requester.value", operator: "equals", value: requesterId },
+        { kind: "comparison", field: requesterValueField, operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         ...(period === "upcoming"
           ? [

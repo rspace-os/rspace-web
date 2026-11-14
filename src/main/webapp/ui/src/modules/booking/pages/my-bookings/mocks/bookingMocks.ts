@@ -48,6 +48,8 @@ export const pastBooking = {
 export const roleLostBooking = {
   ...upcomingBooking,
   id: 43,
+  target: null,
+  timezone: null,
   canViewConfiguration: false,
   canEdit: false,
   canCancel: false,

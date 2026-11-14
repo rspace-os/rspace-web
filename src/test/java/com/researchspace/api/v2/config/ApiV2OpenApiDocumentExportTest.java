@@ -15,6 +15,10 @@ import com.researchspace.api.v2.openapi.ApiV2TestHandlerMappings;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.featureflags.FeatureFlagResourceOperations;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
+import com.researchspace.model.collection.AccessFunction;
+import com.researchspace.model.collection.FilterSchema;
+import com.researchspace.model.collection.Operator;
 import io.swagger.v3.core.util.Json31;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,6 +40,7 @@ import org.junit.jupiter.api.Test;
  */
 class ApiV2OpenApiDocumentExportTest {
 
+  private static final Path MOCKS = Path.of("src/main/webapp/ui/src/__tests__/mocks");
   private static final String UPDATE_PROPERTY = "updateApiV2OpenApiFixture";
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -49,7 +54,9 @@ class ApiV2OpenApiDocumentExportTest {
     Map<Path, String> fixtures =
         Map.of(
             Path.of("src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json"),
-            publishedDocument());
+            publishedDocument(),
+            MOCKS.resolve("apiV2CalendarEventFilter.json"),
+            calendarEventFilter());
     for (Map.Entry<Path, String> fixture : fixtures.entrySet()) {
       if (Boolean.getBoolean(UPDATE_PROPERTY)) {
         Files.createDirectories(fixture.getKey().getParent());
@@ -234,6 +241,48 @@ class ApiV2OpenApiDocumentExportTest {
       throw new AssertionError("Expected an array");
     }
     return list.stream().map(ApiV2OpenApiDocumentExportTest::objectMap).toList();
+  }
+
+  /**
+   * The Calendar endpoints parse {@code where} against their own description, which the OpenAPI
+   * document does not publish, so their selectors and operators get a fixture of their own.
+   */
+  private static String calendarEventFilter() throws IOException {
+    ObjectNode selectors = MAPPER.createObjectNode();
+    ApiV2TimeSlotBookingResource.calendarFilterDescription(AccessFunction.authenticated())
+        .schema()
+        .filters()
+        .stream()
+        .sorted(Comparator.comparing(FilterSchema::selector))
+        .forEach(
+            filter -> {
+              ObjectNode selector = selectors.putObject(filter.selector());
+              filter.operators().stream()
+                  .map(ApiV2OpenApiDocumentExportTest::token)
+                  .sorted()
+                  .forEach(selector.putArray("operators")::add);
+              selector.put("wildcards", filter.supportsWildcards());
+            });
+    ObjectNode document = MAPPER.createObjectNode();
+    document.set("selectors", selectors);
+    return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(document) + "\n";
+  }
+
+  /** The RSQL spelling of an operator, as {@code where} publishes it. */
+  private static String token(Operator operator) {
+    return switch (operator) {
+      case EQUAL -> "==";
+      case NOT_EQUAL -> "!=";
+      case GREATER_THAN -> "=gt=";
+      case GREATER_THAN_OR_EQUAL -> "=ge=";
+      case LESS_THAN -> "=lt=";
+      case LESS_THAN_OR_EQUAL -> "=le=";
+      case IN -> "=in=";
+      case NOT_IN -> "=out=";
+      case CONTAINS -> "=contains=";
+      case LIKE -> "=like=";
+      case EXISTS -> "=exists=";
+    };
   }
 
   /** Component sections whose entries exist only to be referenced by operations and schemas. */

@@ -20,6 +20,7 @@ export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) 
     ...ownBooking,
     target: bookingTarget(123, "Confocal microscope"),
     kind: "BOOKING",
+    timezone: "UTC",
     start: "2030-10-07T10:00:00Z",
     end: "2030-10-07T11:00:00Z",
     privacy: "full",

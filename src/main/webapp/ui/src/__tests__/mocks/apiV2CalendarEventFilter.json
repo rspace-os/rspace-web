@@ -1,0 +1,64 @@
+{
+  "selectors" : {
+    "bookedBy" : {
+      "operators" : [ "=contains=", "=exists=", "=like=" ],
+      "wildcards" : true
+    },
+    "end" : {
+      "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+      "wildcards" : false
+    },
+    "id" : {
+      "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+      "wildcards" : false
+    },
+    "kind" : {
+      "operators" : [ "!=", "==", "=exists=" ],
+      "wildcards" : false
+    },
+    "location" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "location.value" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "privacy" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "purpose" : {
+      "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+      "wildcards" : true
+    },
+    "requester.value" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "start" : {
+      "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
+      "wildcards" : false
+    },
+    "target" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "target.relationTo" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "target.value" : {
+      "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+      "wildcards" : false
+    },
+    "targetOwner" : {
+      "operators" : [ "==" ],
+      "wildcards" : false
+    },
+    "timezone" : {
+      "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
+      "wildcards" : true
+    }
+  }
+}

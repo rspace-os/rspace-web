@@ -70,7 +70,14 @@ describe("CalendarPage", () => {
   });
 
   it("offers a calendar file from the event card only when the booking can be exported", async () => {
-    const roleLost: BookingListDocument = { ...ownBooking, canViewConfiguration: false, canEdit: false };
+    const roleLost: BookingListDocument = {
+      ...ownBooking,
+      target: null,
+      timezone: null,
+      canViewConfiguration: false,
+      canEdit: false,
+      canCancel: false,
+    };
     const showCalendarWith = async (booking: BookingListDocument) => {
       server.use(
         oauthTokenHandler(true),
@@ -78,6 +85,7 @@ describe("CalendarPage", () => {
         http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([booking]))),
       );
       await renderCalendar(`/booking/calendar?date=${booking.start.slice(0, 10)}`);
+      await userEvent.setup().click(await screen.findByRole("button", { name: "Time grid" }));
       await userEvent.setup().click(await screen.findByRole("button", { name: /^Show details for/ }));
     };
 
@@ -88,6 +96,8 @@ describe("CalendarPage", () => {
     // The download endpoint requires the configuration read this row has lost.
     await showCalendarWith(roleLost);
     expect(await screen.findByRole("link", { name: "View details" })).toBeVisible();
+    expect(screen.getByText("Unknown item")).toBeVisible();
+    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^\.ics file for/ })).not.toBeInTheDocument();
 
     cleanup();

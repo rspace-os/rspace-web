@@ -56,7 +56,7 @@ export function BookingDetailsView() {
       heading={t(booking.kind === "MAINTENANCE" ? "bookings.details.maintenanceTitle" : "bookings.details.title")}
       headingId="booking-details-heading"
       action={
-        booking.canEdit && booking.state === "CONFIRMED" ? (
+        booking.canEdit && booking.state === "CONFIRMED" && booking.target && booking.timezone ? (
           <Link
             ref={editButtonRef}
             className={buttonVariants({ size: "xs", variant: "ghost" })}

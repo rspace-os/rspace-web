@@ -1,6 +1,7 @@
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import { getGetBookingQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { getGetBookingQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
@@ -197,7 +198,10 @@ describe("BookingInlineEditForm", () => {
       }),
     );
     const { router, queryClient } = renderEdit();
-    const calendarKey = [...getListBookingsQueryKey({ where: "kind==BOOKING" }), "calendarEvents"];
+    const calendarKey = [
+      ...getSearchCalendarEventsQueryKey({ start: document.start, end: document.end, page: 1, limit: 100 }),
+      "calendarEvents",
+    ];
     const catalogueKey = getSearchBookingCatalogueQueryKey({ page: 1, limit: 20 });
     for (const key of [calendarKey, catalogueKey]) {
       queryClient.setQueryDefaults(key, { staleTime: 30_000 });
