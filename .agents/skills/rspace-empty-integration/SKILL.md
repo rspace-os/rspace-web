@@ -19,13 +19,18 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 2. Confirm `pom.xml` exists and `<NAME>` is absent from `IntegrationStates` in
    `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`. Stop if it exists.
 3. Follow [REFERENCE.md](REFERENCE.md) to create all nine files and modify all
-   sixteen listed files. Preserve alphabetical ordering. Detect existing files
+   eighteen listed files. Preserve alphabetical ordering. Detect existing files
    and entries; refuse to overwrite them. Verify each insertion with `rg`.
-4. Run `pnpm run build`. The dialog loads `tinymce<Name>.js`; without the bundle,
-   it opens blank with a failed resource request.
-5. Run the frontend checks from the root:
+4. Run `pnpm run build`. `dialog.jsp` loads the `tinymce<Name>` bundle through
+   the Vite manifest; without the build, the dialog does not load.
+5. Run the frontend checks from the root. Regenerate the i18n types first:
+   the card's `t()` keys and `docLink="<name>"` are typed from the generated
+   `resources.d.ts`, so `tsc` fails until the new `apps` and `help` keys are
+   in it.
 
    ```bash
+   pnpm run i18n:types
+   pnpm run i18n:lint
    pnpm run tsc
    pnpm run lint
    pnpm run test src/tinyMCE/<name>/__tests__/<Name>.test.tsx
@@ -39,8 +44,8 @@ Derive `<NAME>` as uppercase, `<name>` as lowercase, and `<DATE>` as today's
 
    Alternatively, start the app and confirm `<NAME>` in
    `GET /integration/allIntegrations`. Follow `AGENTS.md` for live verification.
-7. Report the reference's manual follow-ups: card text and website,
-   `TODO_<NAME>_DOC_ID` in `DocLinks.ts`, `LOGO_COLOR`, logo and toolbar SVGs,
+7. Report the reference's manual follow-ups: card text in `apps.json`, website,
+   `TODO_<NAME>_DOC_ID` in `common.json`, `LOGO_COLOR`, logo and toolbar SVGs,
    and the category in `settings_mod.js`.
 
 ## Scope

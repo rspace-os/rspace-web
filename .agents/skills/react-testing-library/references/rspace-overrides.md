@@ -1,7 +1,7 @@
 ---
 title: RSpace Overrides (read this file first)
 impact: CRITICAL
-impactDescription: four upstream rules are not correct for this repository
+impactDescription: upstream rules that are not correct for this repository
 tags: rspace, overrides, local-conventions
 ---
 

@@ -47,25 +47,28 @@ The skill / human implementer needs four pieces of data:
 | `src/main/webapp/ui/src/assets/branding/<name>/logo.svg`              | 100×100 placeholder logo.                                          |
 | `src/main/webapp/ui/src/eln/apps/integrations/<Name>.tsx`             | Apps-page card (Chemistry-style simple toggle).                    |
 | `src/main/webapp/scripts/externalTinymcePlugins/<name>/plugin.min.js` | TinyMCE plugin: registers icon + toolbar button + dialog opener.   |
-| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.jsp`    | Dialog body host that loads the React bundle.                      |
+| `src/main/webapp/scripts/externalTinymcePlugins/<name>/dialog.jsp`    | Dialog host; `<rst:bundle>` loads the React bundle.                |
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>Entrypoint.tsx`          | Mounts React component into `#tinymce-<name>`.                     |
 | `src/main/webapp/ui/src/tinyMCE/<name>/<Name>.tsx`                    | Empty React component.                                             |
 | `src/main/webapp/ui/src/tinyMCE/<name>/__tests__/<Name>.test.tsx`     | Vitest smoke test.                                                 |
 
-## Files modified (16)
+## Files modified (18)
 
 | Path                                                                                       | Edit                                                                                                                  |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `src/main/java/com/researchspace/service/IntegrationsHandler.java`                         | Insert `String <NAME>_APP_NAME = "<NAME>";` constant in alphabetical order.                                           |
 | `src/main/java/com/researchspace/service/SystemPropertyName.java`                          | Add `<NAME>_AVAILABLE("<name>.available"),` enum entry. Without this, `SystemPropertyManagerImpl`'s `@Cacheable(key = "#name.propertyName")` resolves on a null and throws `EL1007E: Property or field 'propertyName' cannot be found on null`, breaking `/integration/allIntegrations`. |
 | `src/main/java/com/researchspace/service/impl/IntegrationsHandlerImpl.java`                | Add a new `isValidEmptyIntegration()` private method with `case <NAME>_APP_NAME: return true;`, and update `isAppConfigIntegration()` to delegate to it. Without this, `isValidIntegration()` returns false and the Apps page crashes. |
-| `src/main/resources/bundles/system/system.properties`                                      | Add `system.property.description.<name>.available=Makes <Name> integration available.`                                |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.system.json`              | Add `"<name>Available": "Makes <Name> integration available."` alphabetically inside `system.property.description`.   |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.apps.json`                | Add `"<name>": "<Name>"` alphabetically inside `apps.dialogTitles` for the dialog `<title>`.                          |
 | `src/main/resources/sqlUpdates/liquibase-master.xml`                                       | Register the new changeset.                                                                                            |
 | `src/main/webapp/ui/src/eln/apps/CardListing.tsx`                                          | Add import, `<name>Update` `useCallback`, and conditional render block (alphabetical).                                |
 | `src/main/webapp/ui/src/eln/apps/useIntegrationsEndpoint.ts`                               | Add `IntegrationStates` entry, decoder, encoder branch, two switch arms.                                              |
 | `src/main/webapp/ui/src/eln/apps/__tests__/allIntegrationsAreDisabled.json`                | Insert `"<NAME>": { … }` fixture object.                                                                              |
-| `src/main/webapp/ui/src/assets/DocLinks.ts`                                                | Add `<name>: mkDocLink("TODO_<NAME>_DOC_ID"),`.                                                                       |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/apps.json`                       | Add the `integrations.<name>` card text (`description`, `helpLink`, `name`, `setup.instructions`, `usage`) alphabetically. |
+| `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/common.json`                     | Add `"<name>": "TODO_<NAME>_DOC_ID",` inside `help`, then run `pnpm run i18n:types`.                                   |
 | `src/main/webapp/WEB-INF/pages/system/settings_ajax.jsp`                                   | Add `<div id="<name>.available.description">…</div>`.                                                                 |
+| `src/main/webapp/WEB-INF/urlrewrite.xml`                                                   | Rewrite `externalTinymcePlugins/<name>/dialog.html` to `dialog.jsp`, next to the other dialog rules.                  |
 | `src/main/webapp/scripts/pages/system/settings_mod.js`                                     | Add `_printSettings(['<name>.available']);` under an existing category.                                               |
 | `src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js`                 | Add `<name>Enabled` const, plus an `if (<name>Enabled) { ... }` block containing both `localTinymcesetup.external_plugins["<name>"] = "..."` AND `addToToolbarIfNotPresent(localTinymcesetup, " | <name>")` (the second line is required for the toolbar button to appear). |
 | `src/main/java/com/researchspace/webapp/controller/IntegrationController.java`       | Add `rc.put(<NAME>_APP_NAME, ...)` in `getAll(User)` and the corresponding static import.                             |
@@ -120,9 +123,9 @@ The empty-integration skill **does not** modify any of:
   The encoder emits `options: {}`; the decoder emits `credentials: {}`.
 - **Apps-page card**: follows the **Chemistry** simple-toggle pattern. No
   `useState`, no auth form, `update={(newMode) => update({ mode: newMode,
-  credentials: {} })}`. Setup section is a two-step `<ol>`. Placeholder strings
-  for `explanatoryText`, `usageText`, `helpLinkText`, `website`. Each placeholder
-  carries a `// TODO:` comment.
+  credentials: {} })}`. Card text comes from `apps.json` keys through `t()`;
+  the setup section is a two-step `<ol>` rendered by `TransRichText`. The
+  placeholder `website` carries a `// TODO:` comment.
 - **TinyMCE dialog**: dialog title comes from
   `windowManager.openUrl({ title: "<Name>", … })`. The React bundle mounts
   into `#tinymce-<name>` but renders an empty fragment.
@@ -138,10 +141,11 @@ The empty-integration skill **does not** modify any of:
 
 ## Manual follow-up after running the skill
 
-1. Replace placeholder strings in `<Name>.tsx`
-   (`explanatoryText`, `usageText`, `helpLinkText`, `website`).
-2. Replace `TODO_<NAME>_DOC_ID` in `DocLinks.ts` with the real helpdocs short
-   ID once the help page exists.
+1. Replace the placeholder card text in `integrations.<name>` of `apps.json`
+   (`description`, `usage`, `helpLink`, `setup.instructions`) and the
+   `website` in `<Name>.tsx`.
+2. Replace `TODO_<NAME>_DOC_ID` in the `help` section of `common.json` with the real helpdocs article
+   slug (for example `vkd8mt2ffb-argos-integration`) once the help page exists.
 3. Hand-tune `LOGO_COLOR` in `branding/<name>/index.ts` to match the real
    service's brand.
 4. Replace the placeholder `branding/<name>/logo.svg` with the real

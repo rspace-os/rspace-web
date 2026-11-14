@@ -24,10 +24,10 @@ Shared infrastructure lives here:
   in `fixtures/inventoryPermissions.ts`.
 - `assertions/` — reusable domain checks shared by several specs (e.g.
   `documents.ts`, `inventoryAccess.ts`).
-- `env.ts` — all config/env reading goes through here, nowhere else.
+- `env.ts` — environment and mock/real mode configuration. All config/env reading goes
+  through here, nowhere else.
 - `users.ts` — seed user map. Browser projects pick distinct users to avoid parallel-run state collisions.
 - `tags.ts` — native Playwright tag constants for `test.describe`/`test` metadata.
-- `env.ts` — environment and mock/real mode configuration.
 - `authState.ts` — storageState path helper shared by `auth.setup.ts` and any `browser.newContext()` call.
 - `viewports.ts` — named device-emulation presets for responsive specs (see the mobile pitfall below).
 - `playwright-e2e.config.ts` — one directory up (`src/main/webapp/ui/`).
@@ -114,9 +114,8 @@ import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
 await deleteDynamicUser(users, clientSysadmin, username); // deletes + releases the id, together
 ```
 
-Teardown cleanup failures aren't just logged anymore, either: an unexpected one now **fails the
-test**, even one that otherwise passed. Deliberate — a silently-swallowed cleanup failure used to
-let leaked/broken accounts pass CI invisibly.
+An unexpected teardown cleanup failure **fails the test**, even one that otherwise passed, so
+leaked or broken accounts cannot pass CI unnoticed.
 
 ## Must: import style — relative within a folder, `@/` across feature folders
 
