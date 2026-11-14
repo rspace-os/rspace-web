@@ -211,15 +211,16 @@ export function SchedulingSettingsFields({
       <MaximumDurationField form={form} id={`${id}-maximum-duration`} disabled={disabled} />
     </div>
   );
+  const bufferRowClass = inline ? "min-w-0 space-y-2" : rowClass;
   const buffers = (
     <>
-      <div className={rowClass}>
+      <div className={bufferRowClass}>
         <FieldLabel htmlFor={`${id}-buffer-Before`}>
           {inline ? t("bookableItemDetails.fields.bufferBefore") : t("settings.fields.bufferBefore")}
         </FieldLabel>
         {bufferControl(before, "Before")}
       </div>
-      <div className={rowClass}>
+      <div className={bufferRowClass}>
         <FieldLabel htmlFor={`${id}-buffer-After`}>
           {inline ? t("bookableItemDetails.fields.bufferAfter") : t("settings.fields.bufferAfter")}
         </FieldLabel>
@@ -240,7 +241,7 @@ export function SchedulingSettingsFields({
         </div>
         {inline ? null : openingHours}
         {inline ? maximumDuration : null}
-        {buffers}
+        {inline ? <div className="grid min-w-0 grid-cols-2 items-start gap-4 @md:col-span-2">{buffers}</div> : buffers}
         {inline ? null : maximumDuration}
         <div className={rowClass}>
           <FieldLabel htmlFor={`${id}-double-booking`}>

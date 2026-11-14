@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatBookingAgendaDateTime } from "@/modules/booking/domain/bookingAgenda";
+import { bookingLocale } from "@/modules/booking/domain/bookingTime";
 import { resourceLocation } from "@/modules/booking/pages/calendar/calendarLayoutUtils";
 import type { TableListCardField } from "@/modules/common/table-list/components/TableListCardView";
 import { TableListCard } from "@/modules/common/table-list/components/TableListCardView";
@@ -19,7 +20,7 @@ type BookingSummaryCardProps = {
 };
 
 export function BookingSummaryCard({ booking, timeZone, variant = "default" }: BookingSummaryCardProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const isFullPrivacy = booking.privacy === "full";
   const purpose = isFullPrivacy ? booking.purpose : null;
@@ -33,7 +34,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
   });
   const detailsLabel = t("dashboard.agenda.bookingDetails");
   const formatDateTime = (value: string) =>
-    formatBookingAgendaDateTime(value, booking.start, booking.end, timeZone, i18n.resolvedLanguage ?? i18n.language);
+    formatBookingAgendaDateTime(value, booking.start, booking.end, timeZone, bookingLocale());
 
   const dateFields = [
     {
@@ -67,7 +68,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
       ? [
           {
             id: "purpose",
-            label: t("myBookings.fields.purpose"),
+            label: booking.kind === "MAINTENANCE" ? t("bookings.form.notes") : t("myBookings.fields.purpose"),
             value: (
               <span title={purpose ?? undefined} className="block whitespace-normal break-words">
                 {purpose || t("bookings.details.noneProvided")}

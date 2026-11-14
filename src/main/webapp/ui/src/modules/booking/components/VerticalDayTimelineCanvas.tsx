@@ -7,7 +7,7 @@ import {
 } from "@/modules/booking/creation/timelineEditText";
 import { instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
-import { formatMinuteWithDayOffset } from "./DayTimelineEvent";
+import { CLOSED_HOURS_CLASS_NAME, formatMinuteWithDayOffset } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import type { AdjustmentEdge, IsoRange, useVerticalDayTimelineInteraction } from "./useVerticalDayTimelineInteraction";
 import type { VerticalDayTimelineEditing } from "./VerticalDayTimeline";
@@ -192,7 +192,7 @@ export function VerticalDayTimelineCanvas({
                       <div
                         key={`closed-${index}`}
                         data-testid="vertical-day-timeline-closed-hours"
-                        className="absolute inset-x-0 bg-muted/35"
+                        className={`absolute inset-x-0 ${CLOSED_HOURS_CLASS_NAME}`}
                         style={{
                           top: segment.startMinute * PIXELS_PER_MINUTE,
                           height: (segment.endMinute - segment.startMinute) * PIXELS_PER_MINUTE,
@@ -229,6 +229,8 @@ export function VerticalDayTimelineCanvas({
                                   date={date}
                                   timezone={timezone}
                                   compactCards={false}
+                                  truncateTitle
+                                  fitHeight={height}
                                   variant="timeline"
                                   expanded={expandedEventId === event.id}
                                   onExpandedChange={(expanded) => openDetails(event.id, expanded)}

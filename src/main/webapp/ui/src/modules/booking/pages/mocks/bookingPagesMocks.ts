@@ -117,10 +117,9 @@ export function bookingPagesHandlers(): RequestHandler[] {
         bookingPageRequests.bookingQuery = url;
         return HttpResponse.json({
           docs: availabilityBookings,
-          totalDocs: availabilityBookings.length,
-          limit: 100,
           page: 1,
           hasNextPage: false,
+          limit: 100,
         });
       }
       return undefined;

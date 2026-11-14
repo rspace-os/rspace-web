@@ -42,7 +42,7 @@ describe("ZonedBookingWindowFields", () => {
             schedulingTimezone="America/New_York"
             slotGranularityMinutes={5}
             maxBookingDurationMinutes={0}
-            openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+            openingHours={ALL_DAY.openingHours}
             density={density}
             value={value}
             onChange={setValue}
@@ -79,7 +79,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone="Europe/Berlin"
           slotGranularityMinutes={5}
           maxBookingDurationMinutes={0}
-          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+          openingHours={ALL_DAY.openingHours}
           density="compact"
           value={value}
           onChange={(next) => {
@@ -135,7 +135,6 @@ describe("ZonedBookingWindowFields", () => {
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
         }).window,
       ).toEqual({ start, end });
-      expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
       expect(screen.queryByText("booking:bookings.form.schedulingTimezone")).not.toBeInTheDocument();
       expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
     },

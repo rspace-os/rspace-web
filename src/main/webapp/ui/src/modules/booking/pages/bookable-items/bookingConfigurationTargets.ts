@@ -20,5 +20,10 @@ export function mapBookingTargetDirectory(
 }
 export async function searchBookingTargets(query: string, signal?: AbortSignal): Promise<BookingConfigurationTarget[]> {
   const q = query.trim();
-  return mapBookingTargetDirectory(await searchBookingConfigurationTargets({ q, limit: 20 }, { signal }));
+  return mapBookingTargetDirectory(
+    await searchBookingConfigurationTargets(
+      { q: q.length >= MINIMUM_TARGET_QUERY_LENGTH ? q : undefined, limit: 20 },
+      { signal },
+    ),
+  );
 }

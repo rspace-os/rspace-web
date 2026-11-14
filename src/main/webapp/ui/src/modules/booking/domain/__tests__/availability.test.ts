@@ -40,6 +40,35 @@ describe("availability", () => {
     ]);
   });
 
+  it("marks conflicts where only the buffer, not the event itself, reaches the draft", () => {
+    const source = (id: number, from: string, to: string) => ({
+      id: `booking:${id}`,
+      startsAt: new Date(from),
+      endsAt: new Date(to),
+      booking: { id, kind: "BOOKING" as const, privacy: "full" as const, purpose: null, bookedBy: null },
+    });
+    // Draft 11:00-12:00 with 15-minute buffers: #42 ends as the draft starts, #43 starts inside it.
+    const intervals = [
+      {
+        kind: "booking" as const,
+        startsAt: new Date("2026-08-17T11:00:00Z"),
+        endsAt: new Date("2026-08-17T11:15:00Z"),
+        source: source(42, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
+      },
+      {
+        kind: "booking" as const,
+        startsAt: new Date("2026-08-17T11:15:00Z"),
+        endsAt: new Date("2026-08-17T12:00:00Z"),
+        source: source(43, "2026-08-17T11:30:00Z", "2026-08-17T13:00:00Z"),
+      },
+    ];
+
+    expect(bookingConflicts(intervals, "UTC")).toEqual([
+      expect.objectContaining({ id: 42, bufferOnly: true, start: "2026-08-17T10:00:00.000Z" }),
+      expect.objectContaining({ id: 43, bufferOnly: false }),
+    ]);
+  });
+
   it("classifies half-open current and future availability", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
     expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(

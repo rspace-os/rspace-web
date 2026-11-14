@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClockIcon, HistoryIcon, RefreshCwIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type BookingListDocument,
@@ -13,6 +13,7 @@ import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
@@ -23,10 +24,15 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { requesterValueField } from "../ownerPreset";
-import { type BookingRow, BookingRowActions } from "./BookingRowActions";
+import {
+  type BookingRow,
+  BookingRowActions,
+  type CancelledBookingRow,
+  visibleBookingRowActions,
+} from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
-import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser, myBookingsPeriods } from "./search";
 
 const bookingListResource = {
   ...apiV2Resources.bookings,
@@ -67,10 +73,6 @@ const projection = {
     "updatedAt",
   ],
 } as const;
-const emptyDescriptionKeys = {
-  upcoming: "myBookings.empty.upcoming",
-  past: "myBookings.empty.past",
-} as const satisfies Record<MyBookingsPeriod, string>;
 
 export type UserBookingsPageProps = {
   requesterId: number;
@@ -95,7 +97,21 @@ export async function fetchUpcomingBookingCount(
 
 export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
   const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
+  const periodText = {
+    upcoming: {
+      label: t("myBookings.period.upcoming"),
+      empty: t("myBookings.empty.upcoming"),
+      Icon: CalendarClockIcon,
+    },
+    past: { label: t("myBookings.period.past"), empty: t("myBookings.empty.past"), Icon: HistoryIcon },
+    cancelled: {
+      label: t("myBookings.period.cancelled"),
+      empty: t("myBookings.empty.cancelled"),
+      Icon: CalendarX2Icon,
+    },
+  } as const;
+
   const { t: commonT } = useTranslation("common");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
@@ -108,28 +124,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       children: [
         { kind: "comparison", field: requesterValueField, operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
-        ...(period === "upcoming"
-          ? [
-              { kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CONFIRMED" },
-              { kind: "comparison" as const, field: "end" as const, operator: "greaterThan" as const, value: asOfDate },
-            ]
+        // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
+        ...(period === "cancelled"
+          ? [{ kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CANCELLED" }]
           : [
+              { kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CONFIRMED" },
               {
-                kind: "or" as const,
-                children: [
-                  {
-                    kind: "comparison" as const,
-                    field: "end" as const,
-                    operator: "lessThanOrEqual" as const,
-                    value: asOfDate,
-                  },
-                  {
-                    kind: "comparison" as const,
-                    field: "state" as const,
-                    operator: "equals" as const,
-                    value: "CANCELLED",
-                  },
-                ],
+                kind: "comparison" as const,
+                field: "end" as const,
+                operator: period === "upcoming" ? ("greaterThan" as const) : ("lessThanOrEqual" as const),
+                value: asOfDate,
               },
             ]),
       ],
@@ -173,18 +177,61 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       },
     ),
   );
+  const rows = table.tableProps.rows;
+  const periodControlsRef = useRef<HTMLDivElement>(null);
+  // A page-level live region: the cancelled row, and the dialog's own status message, unmount on refetch.
+  const [cancelAnnouncement, setCancelAnnouncement] = useState("");
+  const [pendingFocus, setPendingFocus] = useState<CancelledBookingRow | null>(null);
+  useEffect(() => {
+    // Waits until the refetched rows no longer include the cancelled booking, so focus never lands on it.
+    if (pendingFocus === null || rows.some(({ id }) => id === pendingFocus.bookingId)) return;
+    setPendingFocus(null);
+    const { position } = pendingFocus;
+    const remaining = position?.list.isConnected ? visibleBookingRowActions(position.list) : [];
+    const neighbourId = position
+      ? remaining[Math.min(position.index, remaining.length - 1)]?.dataset.bookingRowActions
+      : undefined;
+    const focusTarget = () => {
+      const neighbour =
+        neighbourId && position?.list.isConnected
+          ? visibleBookingRowActions(position.list).find((actions) => actions.dataset.bookingRowActions === neighbourId)
+          : undefined;
+      return (
+        neighbour?.querySelector<HTMLElement>("a, button:not(:disabled)") ??
+        periodControlsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')
+      );
+    };
+    const target = focusTarget();
+    target?.focus();
+    // The card view can render a row's actions once more after the refetch commits, replacing the focused
+    // control. Removal does not blur in every engine, so watch the list briefly and follow the booking.
+    if (target && position?.list.isConnected) {
+      const observer = new MutationObserver(() => {
+        if (target.isConnected) return;
+        observer.disconnect();
+        if (document.activeElement === null || document.activeElement === document.body) focusTarget()?.focus();
+      });
+      observer.observe(position.list, { childList: true, subtree: true });
+      window.setTimeout(() => observer.disconnect(), 1000);
+    }
+  }, [pendingFocus, rows]);
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      width: 176,
-      minWidth: 176,
+      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
+      width: 200,
+      minWidth: 200,
       renderCell: ({ row }) => (
         <BookingRowActions
           row={row}
           timeZone={preferences.timeZone}
-          onCancelled={async () => {
-            await table.refetch();
+          onCancelled={(cancelled) => {
+            // The dialog has already refetched the bookings; another refetch would re-mount the rows and drop focus.
+            setCancelAnnouncement(
+              t("myBookings.cancelled.announcement", { itemName: cancelled.itemName, period: cancelled.period }),
+            );
+            setPendingFocus(cancelled);
           }}
         />
       ),
@@ -193,8 +240,9 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     [preferences.timeZone, t],
   );
 
-  const selectPeriod = (nextPeriod: "upcoming" | "past") => {
+  const selectPeriod = (nextPeriod: MyBookingsPeriod) => {
     if (nextPeriod === period) return;
+    setPendingFocus(null);
     table.setPage({ ...table.state.page, pageIndex: 0 });
     void setPeriod(nextPeriod);
   };
@@ -210,60 +258,54 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
-        <div className="space-y-2">
+        <div ref={periodControlsRef} className="space-y-2">
           <ButtonGroup aria-label={t("myBookings.period.legend")}>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "upcoming" ? "secondary" : "outline"}
-              aria-label={
-                upcomingCount.isSuccess
-                  ? t("myBookings.period.withCount", {
-                      label: t("myBookings.period.upcoming"),
-                      count: upcomingCount.data.totalIsLowerBound
-                        ? t("myBookings.count.lowerBound")
-                        : upcomingCount.data.totalDocs,
-                    })
-                  : t("myBookings.period.upcoming")
-              }
-              aria-pressed={period === "upcoming"}
-              onClick={() => selectPeriod("upcoming")}
-            >
-              <CalendarClockIcon aria-hidden="true" />
-              {t("myBookings.period.upcoming")}{" "}
-              {upcomingCount.isSuccess && (
-                <Badge
-                  variant={period === "upcoming" ? "secondary" : "outline"}
-                  className="pointer-events-none min-w-5 px-1"
+            {myBookingsPeriods.map((value) => {
+              const { Icon, label } = periodText[value];
+              return (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={period === value ? "secondary" : "outline"}
                   aria-label={
-                    upcomingCount.data.totalIsLowerBound
-                      ? t("myBookings.count.lowerBoundAccessible")
-                      : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
+                    value === "upcoming" && upcomingCount.isSuccess
+                      ? t("myBookings.period.withCount", {
+                          label,
+                          count: upcomingCount.data.totalIsLowerBound
+                            ? t("myBookings.count.lowerBound")
+                            : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language),
+                        })
+                      : label
                   }
+                  aria-pressed={period === value}
+                  onClick={() => selectPeriod(value)}
                 >
-                  {" "}
-                  {upcomingCount.data.totalIsLowerBound
-                    ? t("myBookings.count.lowerBound")
-                    : upcomingCount.data.totalDocs}
-                </Badge>
-              )}
-              {upcomingCount.isPending && (
-                <span role="status" className="sr-only">
-                  {t("myBookings.count.loading")}
-                </span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "past" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.past")}
-              aria-pressed={period === "past"}
-              onClick={() => selectPeriod("past")}
-            >
-              <HistoryIcon aria-hidden="true" />
-              {t("myBookings.period.past")}
-            </Button>
+                  <Icon aria-hidden="true" />
+                  {label}{" "}
+                  {value === "upcoming" && upcomingCount.isSuccess && (
+                    <Badge
+                      variant={period === "upcoming" ? "secondary" : "outline"}
+                      className="pointer-events-none min-w-5 px-1"
+                      aria-label={
+                        upcomingCount.data.totalIsLowerBound
+                          ? t("myBookings.count.lowerBoundAccessible")
+                          : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
+                      }
+                    >
+                      {upcomingCount.data.totalIsLowerBound
+                        ? t("myBookings.count.lowerBound")
+                        : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
+                    </Badge>
+                  )}
+                  {value === "upcoming" && upcomingCount.isPending && (
+                    <span role="status" className="sr-only">
+                      {t("myBookings.count.loading")}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
@@ -289,12 +331,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         </div>
         <TableList
           {...table.tableProps}
-          variant="transparent"
           presentations={{ table: "wide", cards: "narrow" }}
-          emptyDescription={t(emptyDescriptionKeys[period])}
+          emptyDescription={periodText[period].empty}
           rowActions={rowActions}
           hideHeader
         />
+        <p role="status" aria-live="polite" className="sr-only">
+          {cancelAnnouncement}
+        </p>
       </main>
     </TooltipProvider>
   );

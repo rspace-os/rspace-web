@@ -45,6 +45,9 @@ vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi
 
 beforeEach(() => {
   server.use(
+    http.get("/api/v2/booking-configuration-targets", () =>
+      HttpResponse.json({ docs: [{ id: 1, globalId: "IN1", name: "Microscope", deleted: false }] }),
+    ),
     http.get("/api/v2/booking-catalogue/availability-counts", () =>
       HttpResponse.json({ availableNow: 2, freeLaterToday: 1 }),
     ),
@@ -327,6 +330,38 @@ describe("BookableItemsPage", () => {
     expect(await screen.findByRole("link", { name: "View details for Confocal microscope" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Archive" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Actions for Confocal microscope" })).not.toBeInTheDocument();
+  });
+
+  it("combines lifecycle state and enabled into one Status column", async () => {
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          collectionPage([
+            bookingConfiguration,
+            { ...secondBookingConfiguration, enabled: false },
+            {
+              ...bookingConfiguration,
+              id: 9,
+              state: "ARCHIVED",
+              target: { ...bookingConfiguration.target, globalId: "IN125" },
+            },
+          ]),
+        ),
+      ),
+    );
+    renderBookableItemsPage();
+
+    expect(await screen.findByText("Electron microscope")).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "booking:bookableItems.fields.status" })).toBeVisible();
+    expect(
+      screen.queryByRole("columnheader", { name: "booking:bookableItems.fields.enabled" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "booking:bookableItemDetails.enabled" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "booking:bookableItemDetails.disabled" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "booking:bookableItemDetails.archived" })).toBeVisible();
+    expect(screen.queryByText("booking:bookableItems.states.active")).not.toBeInTheDocument();
   });
 
   it("renders an unknown item when the related instrument is unreadable", async () => {

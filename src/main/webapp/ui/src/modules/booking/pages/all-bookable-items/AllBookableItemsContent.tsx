@@ -51,6 +51,7 @@ import {
   lifecycleErrorKey,
   requiredVersion,
 } from "../bookable-items/bookableItemLifecycleHelpers";
+import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import {
   archiveBookingConfiguration,
   type BookingConfigurationRow,
@@ -166,6 +167,8 @@ export function AllBookableItemsContent() {
     [restoreMutation],
   );
   const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
+  const eligibleTargets = useEligibleBookingTargets().data;
+  const canAdd = eligibleTargets === undefined || eligibleTargets.length > 0;
   const bulkUpdateOperation = useUpdateManyBookingConfigurations();
   const bulkDeleteOperation = useDeleteManyBookingConfigurations();
   const bulkMutation = useMutation({
@@ -268,10 +271,12 @@ export function AllBookableItemsContent() {
             : undefined
         }
         createAction={
-          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-            <PlusIcon aria-hidden="true" data-icon="inline-start" />
-            {t("bookableItems.actions.add")}
-          </Link>
+          canAdd ? (
+            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+              <PlusIcon aria-hidden="true" data-icon="inline-start" />
+              {t("bookableItems.actions.add")}
+            </Link>
+          ) : undefined
         }
       />
     </main>
