@@ -72,6 +72,11 @@ Use a stable fixture and render the component at the boundary where its props
 are supplied. Add a short source comment when adapting an external example and
 record its exact revision in the relevant attribution file.
 
+The retained recurring Booking prototypes render application components with
+MSW fixtures. They share a worker that starts once and resets handlers between
+stories. Storybook serves the worker script from the installed MSW package;
+there is no generated worker file to maintain.
+
 ## Verification
 
 After changing stories, run `pnpm tsc` and `pnpm lint`. Run a focused
