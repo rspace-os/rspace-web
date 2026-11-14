@@ -1,4 +1,9 @@
 function onSignUp(googleUser) {
+	var terms = document.getElementById("termsAccepted");
+	if (terms && !terms.checked) {
+		terms.reportValidity();
+		return;
+	}
 	var id_token = googleUser.credential;
 	var client_id = googleUser.clientId;
 	var device_tz = $('#timezone_field').val();
@@ -8,7 +13,8 @@ function onSignUp(googleUser) {
 		{
 			idTokenString : id_token,
 			clientId : client_id,
-			timezone:device_tz
+			timezone:device_tz,
+			termsAccepted: !!terms && terms.checked
 		}, function(xhr) {
 			if (xhr.data != null) {
 				console.log(xhr);

@@ -249,6 +249,7 @@ public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
     this.mockMvc
         .perform(
             post(SignupController.SIGNUP_URL)
+                .param("termsAccepted", "true")
                 .param("username", username)
                 .param("email", randomEmail)
                 .param("password", TESTPASSWD)

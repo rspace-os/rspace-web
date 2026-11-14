@@ -251,7 +251,7 @@
           <div class="form-group col-lg-12 rs-field rs-field--divider" style="margin-bottom: 0px;">
             <form:hidden path="token"/>
             <label>
-              <input type="checkbox" value="remember-me" required/>
+              <input type="checkbox" id="termsAccepted" name="termsAccepted" value="true" required/>
               <spring:message code="signup.form.termsAgreementLinkText" var="termsAgreementLinkText"/>
               <span class="rs-field__text rs-field__text--normal"><spring:message code="signup.form.termsAgreement">
                 <spring:argument value='<a href="https://researchspace.com/terms-conditions/" target="_blank">${termsAgreementLinkText}</a>'/>

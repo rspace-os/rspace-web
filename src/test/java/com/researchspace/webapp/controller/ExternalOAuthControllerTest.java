@@ -22,6 +22,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
 import com.researchspace.model.User;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -48,6 +49,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 @ExtendWith(MockitoExtension.class)
 public class ExternalOAuthControllerTest {
 
+  @Mock IPropertyHolder properties;
   @Mock RoleManager roleMgr;
   @Mock ExternalAuthTokenVerifier verifier;
   @Mock LoginHelper login;
@@ -124,11 +126,18 @@ public class ExternalOAuthControllerTest {
 
   @Test
   public void testExternalSignupUnverifiedTokenReturnsError() throws UserExistsException {
+    when(properties.isCloud()).thenReturn(true);
     when(verifier.verify(clientId, token)).thenReturn(Optional.empty());
     AjaxReturnObject<String> rc =
-        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+        signupCtrller.externalSignup(token, clientId, consentingRequest());
     assertNotNull(rc.getError());
     assertNoSignup();
+  }
+
+  private MockHttpServletRequest consentingRequest() {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addParameter("termsAccepted", "true");
+    return request;
   }
 
   private void assertNoSignup() throws UserExistsException {
@@ -138,24 +147,26 @@ public class ExternalOAuthControllerTest {
 
   @Test
   public void testExternalSignupHappyCase() throws UserExistsException {
+    when(properties.isCloud()).thenReturn(true);
     ExternalProfile profile = createEXternalPRofile();
     when(verifier.verify(clientId, token)).thenReturn(Optional.of(profile));
     when(signup.getRedirect(Mockito.any(User.class))).thenReturn("redirect:/workspace");
     when(policy.saveUser(Mockito.any(User.class), Mockito.any(MockHttpServletRequest.class)))
         .thenReturn(TestFactory.createAnyUser("any"));
     AjaxReturnObject<String> rc =
-        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+        signupCtrller.externalSignup(token, clientId, consentingRequest());
     assertNotNull(rc.getData());
     verify(userEnablementUtils, times(1)).checkLicenseForUserInRole(anyInt(), any());
   }
 
   @Test
   public void externalSignupWithNoFreeEncodePermitReturnsBusyWithoutSaving() throws Exception {
+    when(properties.isCloud()).thenReturn(true);
     when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
     assertTrue(encodeGate.tryAcquire());
 
     AjaxReturnObject<String> rc =
-        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+        signupCtrller.externalSignup(token, clientId, consentingRequest());
 
     assertNotNull(rc.getError());
     assertEquals(
@@ -168,12 +179,12 @@ public class ExternalOAuthControllerTest {
     when(signup.getRedirect(any(User.class))).thenReturn("redirect:/workspace");
     when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class)))
         .thenReturn(TestFactory.createAnyUser("any"));
-    assertNotNull(
-        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest()).getData());
+    assertNotNull(signupCtrller.externalSignup(token, clientId, consentingRequest()).getData());
   }
 
   @Test
   public void busyPostSignupLoginKeepsTheAccountAndSendsTheUserToTheLoginPage() throws Exception {
+    when(properties.isCloud()).thenReturn(true);
     when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
     User saved = TestFactory.createAnyUser("any");
     when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class))).thenReturn(saved);
@@ -182,7 +193,7 @@ public class ExternalOAuthControllerTest {
         .postUserCreate(any(), any(), any());
 
     AjaxReturnObject<String> rc =
-        signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+        signupCtrller.externalSignup(token, clientId, consentingRequest());
 
     assertEquals("/login?" + SignupController.ACCOUNT_CREATED_LOGIN_BUSY_PARAM, rc.getData());
     assertNull(rc.getError());
@@ -190,17 +201,18 @@ public class ExternalOAuthControllerTest {
     verify(signup, never()).getRedirect(any());
 
     doThrow(new IllegalStateException("other")).when(signup).postUserCreate(any(), any(), any());
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest request = consentingRequest();
     assertThrows(
         IllegalStateException.class, () -> signupCtrller.externalSignup(token, clientId, request));
   }
 
   @Test
   public void existingUserReleasesTheEncodePermit() throws Exception {
+    when(properties.isCloud()).thenReturn(true);
     when(verifier.verify(clientId, token)).thenReturn(Optional.of(createEXternalPRofile()));
     when(policy.saveUser(any(User.class), any(MockHttpServletRequest.class)))
         .thenThrow(new UserExistsException("exists"));
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest request = consentingRequest();
 
     assertThrows(
         UserExistsException.class, () -> signupCtrller.externalSignup(token, clientId, request));
@@ -210,8 +222,9 @@ public class ExternalOAuthControllerTest {
 
   @Test
   public void unverifiedTokenDoesNotTakeAnEncodePermit() throws Exception {
+    when(properties.isCloud()).thenReturn(true);
     when(verifier.verify(clientId, token)).thenReturn(Optional.empty());
-    signupCtrller.externalSignup(token, clientId, new MockHttpServletRequest());
+    signupCtrller.externalSignup(token, clientId, consentingRequest());
 
     assertTrue(encodeGate.tryAcquire());
   }
