@@ -2581,6 +2581,12 @@
               <java>
                 <cleanthat/>
               </java>
+              <!-- The index is discarded whenever the Spotless config changes, so sharing it
+                   with the base config made every strict run (e.g. the pre-commit hook) force
+                   the next compile to re-format every file. -->
+              <upToDateChecking>
+                <indexFile>${project.basedir}/.spotless/spotless-strict-index</indexFile>
+              </upToDateChecking>
             </configuration>
             <executions>
               <execution>
@@ -2759,7 +2765,7 @@
     <sitemesh.version>3.2.2</sitemesh.version>
     <urlrewrite.version>5.1.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
-    <spotless.version>3.5.1</spotless.version>
+    <spotless.version>3.11.0</spotless.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
