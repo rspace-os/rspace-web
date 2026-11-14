@@ -30,6 +30,10 @@ public class RecordInformation implements IFieldLinkableElement {
   private String ownerUsername;
   private String ownerFullName;
   private String createdBy;
+
+  /** Modifier username from the audited revision, when supplied. */
+  private String modifiedBy;
+
   private Long ownerId;
   private String description;
   private GlobalIdentifier oid;
