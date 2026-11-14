@@ -82,6 +82,54 @@ test.describe(`Workspace filters`, () => {
     });
   });
 
+  test("As a user, Create offers only Folder in both Templates views", async ({ page, pageWorkspace }) => {
+    const menu = pageWorkspace.toolbar.createMenu;
+    async function expectFolderOnlyOnOpening() {
+      const [samples] = await Promise.all([
+        page.evaluate(async () => {
+          const samples: string[][] = [];
+          const until = performance.now() + 1000;
+          while (performance.now() < until) {
+            const items = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]')]
+              .filter((item) => item.checkVisibility({ visibilityProperty: true }))
+              .map((item) => item.textContent?.trim() ?? "");
+            if (items.length) samples.push(items);
+            await new Promise(requestAnimationFrame);
+          }
+          return samples;
+        }),
+        menu.open(),
+      ]);
+      await expect(menu.availableActions).toHaveText(["Folder"]);
+      expect(samples.length).toBeGreaterThan(0);
+      expect([...new Set(samples.map((items) => JSON.stringify(items)))]).toEqual([JSON.stringify(["Folder"])]);
+      await menu.close();
+    }
+
+    await pageWorkspace.open();
+    await pageWorkspace.toolbar.toggleFilter("templates");
+    await expectFolderOnlyOnOpening();
+    await expectFolderOnlyOnOpening();
+    await pageWorkspace.toolbar.toggleFilter("templates");
+    await menu.open();
+    await expect(menu.availableActions.filter({ hasText: "Notebook" })).toBeVisible();
+    await expect(menu.availableActions.filter({ hasText: "Basic Document" })).toBeVisible();
+    const [formEditor] = await Promise.all([
+      page.waitForEvent("popup"),
+      menu.availableActions.filter({ hasText: "New Form" }).click(),
+    ]);
+    await expect(formEditor).toHaveURL(/\/workspace\/editor\/form\//);
+    await formEditor.close();
+
+    await pageWorkspace.open();
+    await pageWorkspace.table.openRecord("Templates");
+    await pageWorkspace.waitUntilBreadcrumbShows("Templates");
+    const entries = page.waitForResponse("**/workspace/ajax/createMenuEntries");
+    await expectFolderOnlyOnOpening();
+    await entries;
+    await expectFolderOnlyOnOpening();
+  });
+
   test.describe("Shared filter (needs a second user)", () => {
     test.describe.configure({ timeout: 120_000 });
 
