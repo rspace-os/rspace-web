@@ -1,13 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { type OpenApiDocument, operationsOf } from "./openapi.ts";
+import { getTagKey } from "orval";
+import { type OpenApiDocument, operationsOf, orvalOperationName, orvalQueryKeyName } from "./openapi.ts";
 
-// Resolve through Orval so tag buckets follow the pinned generator without another direct dependency.
-const requireOrval = createRequire(createRequire(import.meta.url).resolve("orval"));
-const { getTagKey }: { getTagKey: (tag?: string) => string } = requireOrval("@orval/core");
 const slots = {
   LIST: "list",
   COUNT: "count",
@@ -79,13 +76,14 @@ export async function generateResources(
       const properties = [...operations]
         .sort(([a], [b]) => slotOrder.indexOf(a) - slotOrder.indexOf(b))
         .map(([slot, { id, file, read }]) => {
-          const key = `get${id[0].toUpperCase()}${id.slice(1)}QueryKey`;
-          for (const target of read ? [id, key] : [id]) {
+          const request = orvalOperationName(id);
+          const key = orvalQueryKeyName(id);
+          for (const target of read ? [request, key] : [request]) {
             if (!new RegExp(`export (?:const|function) ${target}\\b`).test(sources.get(file) ?? ""))
               throw new Error(`Missing import target ${target} in ${file}`);
           }
           const alias = `resource${files.indexOf(file)}`;
-          return `    ${slot}: ${read ? `{ request: ${alias}.${id}, queryKey: ${alias}.${key} }` : `${alias}.${id}`},`;
+          return `    ${slot}: ${read ? `{ request: ${alias}.${request}, queryKey: ${alias}.${key} }` : `${alias}.${request}`},`;
         });
       return `  ${JSON.stringify(name)}: {\n    name: ${JSON.stringify(name)},\n${properties.join("\n")}\n  } satisfies ApiV2ResourceEntry<${JSON.stringify(name)}, ApiV2OperationSet>,`;
     });

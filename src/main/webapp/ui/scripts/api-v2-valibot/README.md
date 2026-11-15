@@ -46,3 +46,10 @@ Fragment tests generate native schemas through the pinned Orval installation and
 exercise their behavior through the adapter. Type tests compare the schemas with HTTP models that
 Orval generates from the same fragment, including cycles and readonly arrays, and prove that
 deliberate model drift fails compilation.
+
+The scripts name generated exports with Orval's own helpers (`pascal`, `camel`, `sanitize`, `getTagKey`
+and `Verbs`, imported from `orval`), so registry and adapter names always match Orval's output.
+Importing Orval loads esbuild, which only works in Node's realm, so these tests and the
+`api-v2-invalidation` checks form the `scripts` Vitest project in the node environment, separate from the
+jsdom `unit` project. `pnpm test` runs both; `pnpm test --project scripts` runs only these. CI runs them
+in the Vitest job and again after regeneration in the `api-v2-contract` job.

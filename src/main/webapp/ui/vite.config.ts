@@ -8,7 +8,7 @@ import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
 import { normalizePath } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
 
@@ -377,10 +377,29 @@ export default defineConfig(async ({ mode }) => {
       },
     },
     test: {
-      environment: "jsdom",
-      setupFiles: ["./src/__tests__/setup.ts"],
-      include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
-      testTimeout: 20000,
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: "unit",
+            environment: "jsdom",
+            setupFiles: ["./src/__tests__/setup.ts"],
+            include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
+            exclude: [...configDefaults.exclude, "scripts/**"],
+            testTimeout: 20000,
+          },
+        },
+        {
+          // The API v2 generator scripts load Orval, which loads esbuild at import time. esbuild needs Node's realm.
+          resolve: { alias: [{ find: /^@\//, replacement: `${resolveFromRoot("src")}/` }] },
+          test: {
+            name: "scripts",
+            environment: "node",
+            include: ["scripts/api-v2-invalidation/*.check.ts", "scripts/api-v2-valibot/*.test.ts"],
+            testTimeout: 20000,
+          },
+        },
+      ],
       reporters: ["default", "junit"],
       outputFile: {
         junit: "./junit.xml",
