@@ -112,6 +112,13 @@ $(document).ready(function () {
     $('#unpublish').hide();
     $('.editButton').hide();
     $('.deleteButton').hide();
+    $('#update').hide();
+    $('#abandon').hide();
+    $('#changeOrder').hide();
+    $('#publish').hide();
+    if (editable == 'CAN_NEVER_EDIT') {
+      $('#changeFormIconButton').hide();
+    }
     initNonEditableTinyMCE();
   } else {
     $('#tmp_tag').prop('disabled', false);

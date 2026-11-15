@@ -421,6 +421,26 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(FormState.PUBLISHED, apiFormWithAddedField.getFormState());
     assertEquals(1, apiFormWithAddedField.getVersion().intValue());
     assertFieldOrder(apiFormWithAddedField, expectedNames);
+    // RSDEV-1458: the outdated version 0 is no longer editable
+    String formName = formPost.getName();
+    formPost.setName("stale edit");
+    MvcResult staleEdit =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKeyAnyUser, "/forms/" + returnedApiForm.getId(), anyUser, formPost))
+            .andReturn();
+    formPost.setName(formName);
+    assertInstanceOf(IllegalStateException.class, staleEdit.getResolvedException());
+    assertEquals(
+        "Cannot edit this form: CAN_NEVER_EDIT", staleEdit.getResolvedException().getMessage());
+    ApiForm v0AfterStaleEdit = getForm(returnedApiForm.getId());
+    assertEquals(returnedApiForm.getName(), v0AfterStaleEdit.getName());
+    assertThat(v0AfterStaleEdit.getFields()).hasSize(originalFieldCount);
+    ApiForm currentAfterStaleEdit = getForm(apiFormWithAddedField.getId());
+    assertEquals(apiFormWithAddedField.getName(), currentAfterStaleEdit.getName());
+    assertEquals(1, currentAfterStaleEdit.getVersion().intValue());
+    assertFieldOrder(currentAfterStaleEdit, expectedNames);
     updateFormPostIds(formPost, apiFormWithAddedField);
 
     // -------------- deleting a field---------------//
@@ -495,6 +515,16 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     ApiForm apiForm = getFromJsonResponseBody(result, ApiForm.class);
     return apiForm;
+  }
+
+  private ApiForm getForm(Long formId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKeyAnyUser, "/forms/{id}", anyUser, formId))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiForm.class);
   }
 
   private ApiForm doFormEditPut(FormTemplatesCommon.FormPost formPost, Long formId)
