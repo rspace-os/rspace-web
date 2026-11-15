@@ -11,6 +11,7 @@ import com.researchspace.files.service.FileStore;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.EcatMediaFile;
@@ -470,6 +471,9 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
         ecatMediaFileCopy.setFileProperty(copyFileProperty);
         ecatMediaFileCopy.setSize(Long.parseLong(sourceFileProperty.getFileSize()));
         copy = recordDao.save(ecatMediaFileCopy);
+        if (copy instanceof EcatChemistryFile) {
+          copyGalleryChemElement(original.getId(), copy.getId(), user);
+        }
       } else {
         log.error(
             "Could not perform copy as could not retrieve original fileproperty {}",
@@ -479,6 +483,22 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
       }
     }
     return copy;
+  }
+
+  // the Gallery preview and Chemical Search of a chemistry file use the element linked to its id
+  private void copyGalleryChemElement(Long originalId, Long copyId, User user) {
+    List<RSChemElement> originalElements =
+        rsChemElementManager.getRSChemElementsLinkedToFile(originalId, user);
+    if (originalElements.isEmpty()) {
+      return;
+    }
+    RSChemElement copyChem = originalElements.get(0).shallowCopy();
+    copyChem.setEcatChemFileId(copyId);
+    try {
+      rsChemElementManager.save(copyChem, user);
+    } catch (IOException e) {
+      log.error("Problem saving chemical for copied chemistry file with id {}.", copyId, e);
+    }
   }
 
   private String createNewFileName(FileProperty sourceFileProperty) {
