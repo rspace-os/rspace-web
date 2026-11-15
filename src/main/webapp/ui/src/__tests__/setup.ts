@@ -1,5 +1,4 @@
 import "./__mocks__/resizeObserver";
-import { TextDecoder, TextEncoder } from "node:util";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 // Use the bare matchers entry point: the /vitest entry's module augmentation
 // conflicts with the jest-dom types bundled in @vitest/browser under TS 7.
@@ -19,23 +18,6 @@ i18n.options.appendNamespaceToCIMode = true;
 await i18n.changeLanguage("cimode");
 // modules/common/i18n/index.ts keeps i18next-icu's silent default; this bites only suites that call setupRealAppI18n.
 i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
-
-function createStorageMock() {
-  const storage = new Map<string, string>();
-
-  return {
-    getItem: (key: string) => storage.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      storage.set(key, String(value));
-    },
-    removeItem: (key: string) => {
-      storage.delete(key);
-    },
-    clear: () => {
-      storage.clear();
-    },
-  };
-}
 
 setup();
 
@@ -83,30 +65,6 @@ afterAll(() => {
   server.close();
   restoreStderr();
 });
-
-// Provide encoding APIs when jsdom does not expose them on its global object.
-if (typeof globalThis.TextEncoder !== "function") {
-  globalThis.TextEncoder = TextEncoder;
-}
-if (typeof globalThis.TextDecoder !== "function") {
-  globalThis.TextDecoder = TextDecoder;
-}
-
-if (typeof globalThis.localStorage !== "object") {
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    writable: true,
-    value: createStorageMock(),
-  });
-}
-
-if (typeof globalThis.sessionStorage !== "object") {
-  Object.defineProperty(globalThis, "sessionStorage", {
-    configurable: true,
-    writable: true,
-    value: createStorageMock(),
-  });
-}
 
 /*
  * Polyfill for IntersectionObserver in jsdom. Some components (e.g.
