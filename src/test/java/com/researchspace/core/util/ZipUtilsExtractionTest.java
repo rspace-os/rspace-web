@@ -18,10 +18,14 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ZipUtilsExtractionTest {
 
@@ -136,6 +140,46 @@ class ZipUtilsExtractionTest {
     assertNull(topLevel, "no directory entry means no top-level folder");
     assertEquals("aa", Files.readString(new File(dest, "a.txt").toPath()));
     assertEquals("bb", Files.readString(new File(dest, "b.txt").toPath()));
+  }
+
+  private static final byte[] OK = "ok".getBytes(StandardCharsets.UTF_8);
+
+  /** Layouts written by zip -D, macOS Archive Utility and similar tools outside RSpace. */
+  static Stream<Arguments> archivesMissingDirectoryEntries() {
+    return Stream.of(
+        Arguments.of(
+            "macOS metadata without its directory entry",
+            new EntrySpec[] {dir("root/"), file("root/a.txt", OK), file("__MACOSX/._root", OK)}),
+        Arguments.of(
+            "no directory entries",
+            new EntrySpec[] {file("root/sub/b.txt", OK), file("root/a.txt", OK)}),
+        Arguments.of("./-prefixed names", new EntrySpec[] {file("./root/a.txt", OK)}),
+        Arguments.of(
+            "file before its directory entry",
+            new EntrySpec[] {file("root/a.txt", OK), dir("root/sub/")}));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("archivesMissingDirectoryEntries")
+  void extractsArchiveMissingDirectoryEntries(String layout, EntrySpec[] entries)
+      throws IOException {
+    File zip = makeZip(entries);
+    File dest = newDestination();
+
+    String topLevel = ZipUtils.extractZip(zip, dest);
+
+    assertEquals(new File(dest, "root").getAbsolutePath(), topLevel);
+    assertEquals("ok", Files.readString(new File(dest, "root/a.txt").toPath()));
+  }
+
+  @Test
+  void rollbackRemovesImplicitlyCreatedDirectories() throws IOException {
+    File zip = makeZip(file("root/sub/a.txt", OK), file("../evil.txt", OK));
+    File dest = newDestination();
+
+    assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
+
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
   }
 
   @Test
@@ -484,6 +528,22 @@ class ZipUtilsExtractionTest {
     ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 5, 0, 0, 0));
 
     assertTrue(new File(dest, "a/b/c/d/e").isDirectory());
+  }
+
+  @Test
+  void countsEachDirectoryAFileEntryCreatesImplicitly() throws IOException {
+    File zip = makeZip(file("a/b/c.txt", OK));
+    File rejectedDest = newDestination();
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () -> ZipUtils.extractZip(zip, rejectedDest, new ZipExtractionLimits(0, 2, 0, 0, 0)));
+    assertEquals(ZipExtractionLimitException.Limit.ENTRY_COUNT, e.getLimit());
+
+    File dest = tempDir.resolve("accepted").toFile();
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 3, 0, 0, 0));
+    assertTrue(new File(dest, "a/b/c.txt").isFile());
   }
 
   private static int indexOfLocalHeader(byte[] raw, int occurrence) {
