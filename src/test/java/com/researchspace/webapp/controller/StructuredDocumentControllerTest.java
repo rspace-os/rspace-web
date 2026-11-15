@@ -598,6 +598,7 @@ public class StructuredDocumentControllerTest {
     createdComment.addCommentItem(new EcatCommentItem(createdComment, "comment", user));
     final List<EcatCommentItem> items = createdComment.getItems();
     generalExpectations();
+    when(commentMgr.getEcatComment(2L, null, user)).thenReturn(createdComment);
     when(recordAdapter.getAsBaseRecord(createdComment)).thenReturn(optSd);
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(true);
     when(commentMgr.getCommentItems(2L)).thenReturn(items);

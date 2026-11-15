@@ -1130,7 +1130,7 @@ public class StructuredDocumentController extends BaseController {
       commentsItems = auditMgr.getCommentItemsForCommentAtDocumentRevision(commentId, revision);
     }
 
-    assertCommentReadPermission(subject, commentsItems);
+    assertCommentReadPermission(subject, commentId, commentsItems);
     // probably to prevent endless cycles in json conversion //
     for (EcatCommentItem item : commentsItems) {
       item.setEcatComment(null);
@@ -1138,11 +1138,15 @@ public class StructuredDocumentController extends BaseController {
     return commentsItems;
   }
 
-  private void assertCommentReadPermission(User subject, List<EcatCommentItem> commentsItems) {
-    // we just need to check read permission of parent comment once
-    // can read comment if can read parent record
+  private void assertCommentReadPermission(
+      User subject, Long commentId, List<EcatCommentItem> commentsItems) {
+    // can read comment if can read parent record. Load the live comment: items from a revision
+    // hold a detached Envers proxy that cannot be initialised here.
     if (!commentsItems.isEmpty()) {
-      EcatComment comm = commentsItems.get(0).getEcatComment();
+      EcatComment comm = commentManager.getEcatComment(commentId, null, subject);
+      if (comm == null) {
+        throw new AuthorizationException(getResourceNotFoundMessage("Comment", commentId));
+      }
       assertAccessToRecord(
           recordAdapter.getAsBaseRecord(comm).get().getId(), PermissionType.READ, subject);
     }
