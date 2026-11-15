@@ -1744,7 +1744,7 @@ function addDownloadButtonToTables($tables) {
     $table.wrap("<div class='tableDownloadWrap' style='display:flex;'></div>");
     var wrap$ = $table.closest('div');
     wrap$.append($tableDownloadButton);
-    $tableDownloadButton.css('bottom', 13).css('align-self', 'flex-end');
+    $tableDownloadButton.css('align-self', 'flex-end');
     $tableDownloadButton.hide();
   });
 }
