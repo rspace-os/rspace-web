@@ -204,19 +204,19 @@ jobs:
       needs.changed-files.outputs.java == 'true' ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ inputs.java_version || '17' }}
           cache: maven
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
