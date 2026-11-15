@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import fc, { type Arbitrary } from "fast-check";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, test, vi } from "vitest";
 import { mkValidator } from "../../util/Validator";
 import ExportRepo from "../ExportRepo";
@@ -9,7 +10,9 @@ import repoConfig from "./repoConfig.json";
 import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
+import { server } from "@/__tests__/mswServer";
 import { DEFAULT_STATE } from "@/Export/constants";
+import { DEFAULT_REPO_CONFIG, type RepoDetails } from "../repositories/common";
 import type { Tag } from "../repositories/Tags";
 
 type DMP = {
@@ -140,4 +143,55 @@ describe("ExportRepo", () => {
     },
     30 * 1000,
   );
+  test("Zenodo's placeholder people and subject do not leak into Dataverse, also after Back and Next.", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/directory/ajax/subject", () =>
+        HttpResponse.json({ fullName: "Test User", email: "test@example.com" }),
+      ),
+    );
+    const zenodoThenDataverse = [
+      { ...zenodoRepoList[0], repoCfg: -1 },
+      { ...repoList[0], repoName: "app.dataverse", displayName: "Dataverse", repoCfg: -1 },
+    ];
+    const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
+    const validator = mkValidator();
+    const renderRepo = (repoDetails: RepoDetails) =>
+      render(
+        <ExportRepo
+          state={DEFAULT_STATE}
+          repoList={zenodoThenDataverse}
+          repoDetails={repoDetails}
+          validator={validator}
+          updateRepoConfig={updateRepoConfig}
+          fetchTags={vi.fn().mockResolvedValue([])}
+        />,
+      );
+    const switchFromZenodoToDataverse = async () => {
+      await user.click(screen.getByRole("radio", { name: "Zenodo" }));
+      // Title and description are valid, so only Dataverse's missing subject can fail validation.
+      await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "Title");
+      await user.type(
+        screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
+        "Description",
+      );
+      await user.click(screen.getByRole("radio", { name: "Dataverse" }));
+      // The current user is the default author and contact.
+      expect(await screen.findAllByText(/^Test User - /)).toHaveLength(2);
+      expect(screen.queryByText(/DUMMY_VALUE/)).not.toBeInTheDocument();
+      const config = updateRepoConfig.mock.lastCall?.[0];
+      expect(JSON.stringify(config)).not.toContain("DUMMY_VALUE");
+      await expect(validator.isValid()).resolves.toBe(false);
+      return config;
+    };
+
+    const { unmount } = renderRepo({ ...DEFAULT_REPO_CONFIG, repoChoice: 0 });
+    const config = await switchFromZenodoToDataverse();
+
+    // Back then Next re-seeds ExportRepo from the config it last reported.
+    unmount();
+    if (!config) throw new Error("ExportRepo did not report its config");
+    renderRepo(config);
+    await switchFromZenodoToDataverse();
+  });
 });

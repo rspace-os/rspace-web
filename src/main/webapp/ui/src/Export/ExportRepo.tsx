@@ -19,7 +19,13 @@ import type { DEFAULT_STATE } from "@/Export/constants";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
 import { mapNullable } from "../util/Util";
 import type { Validator } from "../util/Validator";
-import type { DMPUserInternalId, Person, Repo, RepoDetails } from "./repositories/common";
+import {
+  type DMPUserInternalId,
+  type Person,
+  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
+  type Repo,
+  type RepoDetails,
+} from "./repositories/common";
 import DataverseRepo from "./repositories/DataverseRepo";
 import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";
@@ -171,11 +177,12 @@ function ExportRepo({
           validations.crossrefFunder = true;
       }
 
+      const needsPeopleAndSubject = !REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(repo.repoName);
       if (state.description.length > 2) validations.description = true;
-      if (state.subject !== "") validations.subject = true;
+      if (!needsPeopleAndSubject || state.subject !== "") validations.subject = true;
       if (state.title.length > 2) validations.title = true;
-      if (state.authors.length) validations.author = true;
-      if (state.contacts.length) validations.contact = true;
+      if (!needsPeopleAndSubject || state.authors.length) validations.author = true;
+      if (!needsPeopleAndSubject || state.contacts.length) validations.contact = true;
 
       runInAction(() => {
         state.inputValidations = validations as typeof STANDARD_VALIDATIONS | typeof DRYAD_VALIDATIONS;
@@ -402,7 +409,6 @@ function ExportRepo({
             <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
             <ZenodoRepo
               handleChange={handleChange}
-              updatePeople={updatePeople}
               inputValidations={state.inputValidations}
               submitAttempt={state.submitAttempt}
               title={state.title}
@@ -421,7 +427,6 @@ function ExportRepo({
         {repo.repoName === "app.digitalCommonsData" && (
           <DigitalCommonsDataRepo
             handleChange={handleChange}
-            updatePeople={updatePeople}
             inputValidations={state.inputValidations}
             submitAttempt={state.submitAttempt}
             title={state.title}
