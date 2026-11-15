@@ -33,6 +33,7 @@ class Selection {
       clear: action,
       append: action,
       remove: action,
+      replaceStale: action,
     });
     this._state = new Map<GalleryFile["key"], GalleryFile>();
     this.onlyAllowSingleSelection = onlyAllowSingleSelection;
@@ -58,6 +59,17 @@ class Selection {
 
   remove(file: GalleryFile) {
     this._state.delete(file.key);
+  }
+
+  /**
+   * Swap already-selected files for the given objects with the same key, so
+   * that a refreshed listing does not leave the selection holding outdated
+   * copies. Files that are not selected are ignored.
+   */
+  replaceStale(files: Iterable<GalleryFile>) {
+    for (const file of files) {
+      if (this._state.has(file.key) && this._state.get(file.key) !== file) this._state.set(file.key, file);
+    }
   }
 
   includes(file: GalleryFile): boolean {

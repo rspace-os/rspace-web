@@ -134,6 +134,10 @@ const WholePage = ({
   const { isViewportSmall } = useViewportDimensions();
 
   const selection = useGallerySelection();
+  const renderedList = decoratedList ?? liveList;
+  React.useEffect(() => {
+    if (renderedList) selection.replaceStale(renderedList);
+  }, [renderedList]);
   React.useEffect(() => {
     try {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
@@ -283,6 +287,7 @@ const WholePage = ({
                           galleryListing={galleryListing}
                           folderId={folderId}
                           refreshListing={refreshListing}
+                          refreshListingOnTabReturn
                           key={null}
                           sortOrder={sortOrder}
                           orderBy={orderBy}
