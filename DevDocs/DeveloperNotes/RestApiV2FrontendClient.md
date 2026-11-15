@@ -14,13 +14,14 @@ use their existing clients.
 Run from the repository root after changing backend endpoint or schema declarations:
 
 ```sh
-mvn test -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest
+mvn test -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest -DupdateApiV2OpenApiFixture=true
 pnpm generate:api-v2
 ```
 
 `ApiV2OpenApiDocumentExportTest` exports the complete document for registered resources and
-controllers without a database. It writes only
-`src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json` and checks drift from the backend.
+controllers without a database. With `-DupdateApiV2OpenApiFixture=true` it writes only
+`src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json`; without the flag it fails if
+that file differs from the backend.
 
 `pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, and the resource registry last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
 can delete validation files generated before it. The Valibot project uses `client: "valibot"`,
@@ -32,9 +33,10 @@ Generated files are formatted and linted like handwritten code: both Orval proje
 are TypeScript that Node runs directly. `src/modules/common/api/v2/` has no barrel; import each
 export from the module that defines it, such as `@/modules/common/api/v2/ApiV2ProblemError`.
 
-Commit the spec and generated changes with the source change. Do not edit generated files. CI checks
-backend-to-spec drift and regenerates the client, native schemas and adapter output to check for a
-diff. `orval --outdated` alone does not check the adapter.
+Commit the spec and generated changes with the source change. Do not edit generated files. The backend
+is the source of truth: the `api-v2-contract` CI job runs both commands above from the backend and
+fails if the committed spec or any generated file differs. It runs in CI rather than as a pre-commit
+hook because the export needs a Maven build. `orval --outdated` alone does not check the adapter.
 
 Paths below are relative to `src/main/webapp/ui/`:
 
