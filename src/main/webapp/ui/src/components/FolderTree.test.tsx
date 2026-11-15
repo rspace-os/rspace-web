@@ -241,6 +241,32 @@ describe("FolderTree", () => {
     expect(await screen.findByText("Subfolder 1")).toBeVisible();
   });
 
+  test("A folder clicked before its subfolders load still expands", async () => {
+    let releaseSubfolders = (): void => {};
+    mockAxios.reset();
+    // Registered before setupApiMocks so this pending response wins for folder 100.
+    mockAxios.onGet(/\/api\/v1\/folders\/tree\/100$/).reply(
+      () =>
+        new Promise((resolve) => {
+          releaseSubfolders = () =>
+            resolve([200, { totalHits: 1, pageNumber: 0, records: [subFolderRecord(200, "Subfolder 1")] }]);
+        }),
+    );
+    setupApiMocks();
+    render(<TestFolderTreeExample />);
+
+    await screen.findByRole("treeitem", { name: "Research Projects" });
+    const researchProjects = getTreeItem("Research Projects");
+    await userEvent.setup().click(getTreeItemContent("Research Projects"));
+
+    expect(researchProjects).toHaveAttribute("aria-expanded", "true");
+    expect(within(researchProjects).getByText("common:folderTree.loading")).toBeVisible();
+
+    releaseSubfolders();
+    expect(await within(researchProjects).findByText("Subfolder 1")).toBeVisible();
+    expect(within(researchProjects).queryByText("common:folderTree.loading")).not.toBeInTheDocument();
+  });
+
   test("Shows Load More button for folders with more than 20 items", async () => {
     render(<TestFolderTreeExample />);
 
