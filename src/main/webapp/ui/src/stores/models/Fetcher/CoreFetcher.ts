@@ -77,12 +77,16 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
   const resultType = Result.fromNullable(
     searchParams.get("resultType"),
     new Error(`Search parameter "resultType" is missing`),
-  ).flatMap(parseResultType);
+  )
+    .map((s) => s.toUpperCase())
+    .flatMap(parseResultType);
   const ownedBy = searchParams.get("ownedBy");
   const deletedItems = Result.fromNullable(
     searchParams.get("deletedItems"),
     new Error(`Search parameter "deletedItems" is missing`),
-  ).flatMap(parseDeletedItems);
+  )
+    .map((s) => s.toUpperCase())
+    .flatMap(parseDeletedItems);
   const requestable = searchParams.get("requestable");
   return {
     ...(query ? { query } : {}),
