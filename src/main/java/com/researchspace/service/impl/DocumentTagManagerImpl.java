@@ -184,8 +184,20 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       return null;
     }
     StructuredDocument sd = (StructuredDocument) recordDao.get(sdocId);
+    String dataStringToSaveToDB = resolveApiTagMetaData(tagtext, sd.getTagMetaData(), user);
+    return saveTagForRecordOrFolder(sdocId, dataStringToSaveToDB, user);
+  }
+
+  @Override
+  public void validateApiTagsForNewDocument(String tagtext, User user) {
+    if (tagtext != null) {
+      resolveApiTagMetaData(tagtext, null, user);
+    }
+  }
+
+  private String resolveApiTagMetaData(String tagtext, String existingTagMetaData, User user) {
     String[] existingTagText =
-        sd.getTagMetaData() != null ? sd.getTagMetaData().split(",") : new String[0];
+        existingTagMetaData != null ? existingTagMetaData.split(",") : new String[0];
     Map<String, String> tagValuesToTagPlusMeta =
         Arrays.stream(existingTagText)
             .map(
@@ -220,10 +232,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
         valuesToSaveToDB.add(newTagValue);
       }
     }
-    String dataStringToSaveToDB =
-        String.join(",", valuesToSaveToDB.toArray(new String[valuesToSaveToDB.size()]));
-
-    return saveTagForRecordOrFolder(sdocId, dataStringToSaveToDB, user);
+    return String.join(",", valuesToSaveToDB.toArray(new String[valuesToSaveToDB.size()]));
   }
 
   private MessagedServiceOperationResult<BaseRecord> saveTagForRecordOrFolder(

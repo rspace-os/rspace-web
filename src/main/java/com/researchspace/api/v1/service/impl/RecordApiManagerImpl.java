@@ -58,7 +58,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
-
+    documentTagManager.validateApiTagsForNewDocument(apiDocument.getTags(), user);
     Folder targetFolder =
         folderManager.getApiUploadTargetFolder("", user, apiDocument.getParentFolderId());
     StructuredDocument newDocument =
