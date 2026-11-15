@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ContainersReadContainerType = typeof ContainersReadContainerType[keyof typeof ContainersReadContainerType];
-
+export type ContainersReadContainerType =
+  (typeof ContainersReadContainerType)[keyof typeof ContainersReadContainerType];
 
 export const ContainersReadContainerType = {
-  LIST: 'LIST',
-  GRID: 'GRID',
-  IMAGE: 'IMAGE',
-  WORKBENCH: 'WORKBENCH',
+  LIST: "LIST",
+  GRID: "GRID",
+  IMAGE: "IMAGE",
+  WORKBENCH: "WORKBENCH",
 } as const;

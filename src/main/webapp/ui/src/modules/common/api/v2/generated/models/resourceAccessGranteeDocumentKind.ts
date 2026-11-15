@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ResourceAccessGranteeDocumentKind = typeof ResourceAccessGranteeDocumentKind[keyof typeof ResourceAccessGranteeDocumentKind];
-
+export type ResourceAccessGranteeDocumentKind =
+  (typeof ResourceAccessGranteeDocumentKind)[keyof typeof ResourceAccessGranteeDocumentKind];
 
 export const ResourceAccessGranteeDocumentKind = {
-  USER: 'USER',
-  GROUP: 'GROUP',
-  AUDIENCE: 'AUDIENCE',
+  USER: "USER",
+  GROUP: "GROUP",
+  AUDIENCE: "AUDIENCE",
 } as const;

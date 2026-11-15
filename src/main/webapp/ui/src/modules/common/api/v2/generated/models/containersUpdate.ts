@@ -6,4 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export interface ContainersUpdate { [key: string]: never }
+export interface ContainersUpdate {
+  [key: string]: never;
+}

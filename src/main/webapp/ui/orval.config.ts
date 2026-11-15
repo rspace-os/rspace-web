@@ -45,6 +45,7 @@ export default defineConfig({
       client: "react-query",
       httpClient: "fetch",
       clean: true,
+      formatter: "biome",
       override: {
         mutator: { path: "./src/modules/common/api/v2/apiV2Fetch.ts", name: "apiV2Fetch" },
         fetch: { includeHttpResponseReturnType: false, arrayFormat: "repeat" },
@@ -65,6 +66,7 @@ export default defineConfig({
       client: "valibot",
       mode: "single",
       target: "./src/modules/common/api/v2/generated/valibot/native.ts",
+      formatter: "biome",
       override: { valibot: { generateReusableSchemas: true } },
     },
   },

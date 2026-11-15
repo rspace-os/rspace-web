@@ -5,10 +5,13 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { ContainersRead } from './containersRead.ts';
-import type { ContainersReference } from './containersReference.ts';
+import type { ContainersRead } from "./containersRead.ts";
+import type { ContainersReference } from "./containersReference.ts";
 
-export type InstrumentsReadParentContainer = ContainersReference | {
-  relationTo: 'containers';
-  value: ContainersRead;
-} | null;
+export type InstrumentsReadParentContainer =
+  | ContainersReference
+  | {
+      relationTo: "containers";
+      value: ContainersRead;
+    }
+  | null;

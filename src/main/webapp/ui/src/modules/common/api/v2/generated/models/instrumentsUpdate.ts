@@ -6,4 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export interface InstrumentsUpdate { [key: string]: never }
+export interface InstrumentsUpdate {
+  [key: string]: never;
+}

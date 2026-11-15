@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ResourceGranteeDirectoryEntryKind = typeof ResourceGranteeDirectoryEntryKind[keyof typeof ResourceGranteeDirectoryEntryKind];
-
+export type ResourceGranteeDirectoryEntryKind =
+  (typeof ResourceGranteeDirectoryEntryKind)[keyof typeof ResourceGranteeDirectoryEntryKind];
 
 export const ResourceGranteeDirectoryEntryKind = {
-  USER: 'USER',
-  GROUP: 'GROUP',
-  AUDIENCE: 'AUDIENCE',
+  USER: "USER",
+  GROUP: "GROUP",
+  AUDIENCE: "AUDIENCE",
 } as const;

@@ -6,12 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ResourceRoleSourceKind = typeof ResourceRoleSourceKind[keyof typeof ResourceRoleSourceKind];
-
+export type ResourceRoleSourceKind = (typeof ResourceRoleSourceKind)[keyof typeof ResourceRoleSourceKind];
 
 export const ResourceRoleSourceKind = {
-  DIRECT: 'DIRECT',
-  GROUP: 'GROUP',
-  AUDIENCE: 'AUDIENCE',
-  IMPLICIT: 'IMPLICIT',
+  DIRECT: "DIRECT",
+  GROUP: "GROUP",
+  AUDIENCE: "AUDIENCE",
+  IMPLICIT: "IMPLICIT",
 } as const;
