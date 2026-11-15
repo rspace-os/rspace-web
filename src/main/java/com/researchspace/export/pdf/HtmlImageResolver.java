@@ -84,6 +84,11 @@ public class HtmlImageResolver implements ReplacedElementFactory {
           return null;
         }
         final Image image = Image.getInstance(imageBytes);
+        if (isOriginalOfExcludedAnnotation(src, cssWidth, cssHeight)) {
+          // the CSS box has the annotation canvas's proportions, so fit the original inside it
+          image.scaleToFit(cssWidth, cssHeight);
+          return new ITextImageElement(new ITextFSImage(image));
+        }
         image.scaleAbsolute(
             image.getPlainWidth() * dotsPerPixel, image.getPlainHeight() * dotsPerPixel);
         FSImage fsImage = new ITextFSImage(image);
@@ -99,6 +104,14 @@ public class HtmlImageResolver implements ReplacedElementFactory {
     }
     return this.superFactory.createReplacedElement(
         layoutContext, blockBox, userAgentCallback, cssWidth, cssHeight);
+  }
+
+  private boolean isOriginalOfExcludedAnnotation(String src, int cssWidth, int cssHeight) {
+    return exportConfig != null
+        && !exportConfig.isAnnotations()
+        && src.contains("/image/getAnnotation/")
+        && cssWidth > 0
+        && cssHeight > 0;
   }
 
   @Override
