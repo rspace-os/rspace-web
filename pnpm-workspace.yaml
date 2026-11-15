@@ -25,10 +25,6 @@ overrides:
 # Each entry declares a dependency the package imports but doesn't declare.
 # Version-pinned keys stop matching silently after an upgrade; retarget them.
 packageExtensions:
-  # replit/codemirror-css-color-picker#28; Scalar pulls it in (scalar/scalar discussion #10766).
-  '@replit/codemirror-css-color-picker@6.3.0':
-    dependencies:
-      '@lezer/common': ^1.5.2
   # dromru/react-photoswipe-gallery#1495
   react-photoswipe-gallery:
     peerDependencies:
