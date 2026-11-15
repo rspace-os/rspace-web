@@ -35,9 +35,6 @@
         "noRestrictedImports": {
           "level": "error",
           "options": {
-            "paths": {
-              "@/modules/common/api/v2": "Import from the API v2 module that defines the export; there is no barrel."
-            },
             "patterns": [
               {
                 "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
