@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { pathToFileURL, URL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { apiV2Resources } from "../../src/modules/common/api/v2/apiV2Resources";
-import type { OpenApiDocument, OperationObject } from "./openapi.ts";
+import { type OpenApiDocument, type OperationObject, orvalOperationName, orvalQueryKeyName } from "./openapi.ts";
 
 type Operations = Record<string, Record<string, string>>;
 interface Case {
@@ -172,10 +172,10 @@ describe("collection resource registry emitter", () => {
       ).toEqual(Object.keys(slots).sort());
       for (const [slot, id] of Object.entries(slots)) {
         const value = entry[slot];
-        if (typeof value === "function") expect(value).toBe(exports[id]);
+        if (typeof value === "function") expect(value).toBe(exports[orvalOperationName(id)]);
         else if (typeof value === "object") {
-          expect(value.request).toBe(exports[id]);
-          expect(value.queryKey).toBe(exports[`get${id[0].toUpperCase()}${id.slice(1)}QueryKey`]);
+          expect(value.request).toBe(exports[orvalOperationName(id)]);
+          expect(value.queryKey).toBe(exports[orvalQueryKeyName(id)]);
         }
       }
     }

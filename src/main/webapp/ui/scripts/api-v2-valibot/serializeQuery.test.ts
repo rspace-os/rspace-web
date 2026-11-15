@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { apiV2SerializeQuery } from "../../src/modules/common/api/v2/apiV2SerializeQuery";
 import { filteredWhereOperations } from "./filters.ts";
-import type { OpenApiDocument } from "./openapi.ts";
+import { type OpenApiDocument, orvalUrlName } from "./openapi.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
 const ui = resolve(root, "src/main/webapp/ui");
@@ -62,7 +62,7 @@ describe("apiV2SerializeQuery", () => {
 
   it("matches Orval's default serialization for each filtered operation", () => {
     for (const operationId of operations.keys()) {
-      const name = `get${operationId[0].toUpperCase()}${operationId.slice(1)}Url`;
+      const name = orvalUrlName(operationId);
       const reference = defaults[name];
       expect(reference, name).toBeTypeOf("function");
       for (const sample of samples) {

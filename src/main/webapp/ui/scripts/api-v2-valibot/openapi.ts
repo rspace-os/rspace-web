@@ -1,3 +1,5 @@
+import { camel, pascal, sanitize, Verbs } from "orval";
+
 /** The subset of OpenAPI 3.1 that the API v2 generation scripts read. */
 export interface SchemaObject {
   $ref?: string;
@@ -33,8 +35,9 @@ export interface OperationObject {
   "x-rspace-operation"?: string | null;
   [field: string]: unknown;
 }
-export const httpMethods = ["get", "post", "put", "patch", "delete", "head", "options", "trace"] as const;
-export type HttpMethod = (typeof httpMethods)[number];
+/** The HTTP methods Orval generates operations for. */
+export const httpMethods = Object.values(Verbs);
+export type HttpMethod = (typeof Verbs)[keyof typeof Verbs];
 export type PathItem = Partial<Record<HttpMethod, OperationObject>> & Record<string, unknown>;
 export interface OpenApiDocument {
   security?: SecurityRequirement[];
@@ -49,6 +52,16 @@ export interface OpenApiDocument {
 }
 
 const methods: ReadonlySet<string> = new Set(httpMethods);
+
+/** Orval's function name for an operation ID; generated request, hook and schema names derive from it. */
+export const orvalOperationName = (operationId: string): string => sanitize(camel(operationId), { es5keyword: true });
+/** Orval's exported Valibot or model name for a component or an operation name. */
+export const orvalTypeName = (name: string): string => pascal(name);
+/** Orval's query-key getter name for an operation ID. */
+export const orvalQueryKeyName = (operationId: string): string =>
+  camel(`get-${orvalOperationName(operationId)}-query-key`);
+/** Orval's URL builder name for an operation ID. */
+export const orvalUrlName = (operationId: string): string => camel(`get-${orvalOperationName(operationId)}-url`);
 
 /** Operations of a path item in document order, skipping path-level fields such as `parameters`. */
 export function operationsOf(item: PathItem): [HttpMethod, OperationObject][] {
