@@ -34,14 +34,14 @@ export function useFormSectionError({
   return [errors, setErrors];
 }
 
-export function setFormSectionError([errors, setErrors]: FormSectionError, error: string, value: boolean): void {
-  if (value) {
-    errors.add(error);
-    setErrors(errors);
-  } else {
-    errors.delete(error);
-    setErrors(errors);
-  }
+export function setFormSectionError([, setErrors]: FormSectionError, error: string, value: boolean): void {
+  setErrors((prev) => {
+    if (prev.has(error) === value) return prev;
+    const next = new Set(prev);
+    if (value) next.add(error);
+    else next.delete(error);
+    return next;
+  });
 }
 
 type StepperPanelHeaderArgs = {
