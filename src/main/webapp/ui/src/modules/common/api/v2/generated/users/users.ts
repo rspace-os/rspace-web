@@ -24,6 +24,7 @@ import { queryOptions as queryOptionsBuilder, useQuery, useSuspenseQuery } from 
 import type { ErrorType } from "../../apiV2Fetch.ts";
 
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
+import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
 import type {
   ApiV2CurrentUser,
   BadRequestResponse,
@@ -59,33 +60,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getListUsersUrl = (params?: ListUsersParams) => {
-  const normalizedParams = new URLSearchParams();
-  const deepObjectEntries: string[] = [];
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    const deepObjectParameters = ["fields", "exclude"];
-
-    if (typeof value === "object" && value !== null && !Array.isArray(value) && deepObjectParameters.includes(key)) {
-      Object.entries(value).forEach(([subKey, subValue]) => {
-        if (subValue !== undefined) {
-          deepObjectEntries.push(
-            encodeURIComponent(key) +
-              "[" +
-              encodeURIComponent(subKey) +
-              "]=" +
-              (subValue === null ? "null" : encodeURIComponent(String(subValue))),
-          );
-        }
-      });
-      return;
-    }
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = [normalizedParams.toString(), deepObjectEntries.join("&")].filter(Boolean).join("&");
+  const stringifiedParams = apiV2SerializeQuery(params);
 
   return stringifiedParams.length > 0 ? `/api/v2/users?${stringifiedParams}` : `/api/v2/users`;
 };
@@ -413,15 +388,7 @@ export function useListUsersSuspense<
 }
 
 export const getCountUsersUrl = (params?: CountUsersParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = apiV2SerializeQuery(params);
 
   return stringifiedParams.length > 0 ? `/api/v2/users/count?${stringifiedParams}` : `/api/v2/users/count`;
 };

@@ -26,7 +26,10 @@ it("retains operation IDs over a complete scratch generation", () => {
     for (const file of [
       "orval.config.ts",
       "scripts/api-v2-invalidation",
+      "scripts/api-v2-valibot",
       "src/modules/common/api/v2/crossResourceInvalidation.ts",
+      "src/modules/common/api/v2/apiV2SerializeQuery.ts",
+      "src/modules/common/api/v2/apiV2Where.ts",
     ]) {
       const target = resolve(directory, file);
       mkdirSync(resolve(target, ".."), { recursive: true });

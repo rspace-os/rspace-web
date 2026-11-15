@@ -6,7 +6,8 @@
  * OpenAPI spec version: 2.0.0
  */
 
+import type { ApiV2Where } from "../../apiV2Where";
 /**
  * Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Scalar user-id selectors may explicitly opt into the same alias.
  */
-export type ContainersWhereParameter = string;
+export type ContainersWhereParameter = ApiV2Where<"Containers">;

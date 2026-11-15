@@ -422,6 +422,9 @@ importers:
       react-zoom-pan-pinch:
         specifier: 4.0.4
         version: 4.0.4(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+      rsql-builder:
+        specifier: 1.4.2
+        version: 1.4.2
       sockjs-client:
         specifier: 1.6.1
         version: 1.6.1(supports-color@7.2.0)
@@ -6950,6 +6953,10 @@ packages:
     resolution: {integrity: sha512-WHeFSbZYsPu3+bLoNRUuAO+wavNlocOPf3wSHTP7hcFKVnJeWsYlCDbr3mTS14FCizf9ccIxXA8sGL8zKeQN3g==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  rsql-builder@1.4.2:
+    resolution: {integrity: sha512-f6Z6y9kgSTP2M0NqxG7WYwyggraUM8xpwYWczjyJl6Gw/AljwCTCkAbgBXz8BDMh/ttkqjclaH/sdUuTZIPokQ==}
+    engines: {node: '>= 22'}
 
   run-applescript@7.1.0:
     resolution: {integrity: sha512-DPe5pVFaAsinSaV6QjQ6gdiedWDcRCbUuiQfQa2wmWV7+xC9bGulGI8+TdRmoFkAPaBXk8CrAbnlY2ISniJ47Q==}
@@ -14306,6 +14313,8 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.60.4
       fsevents: 2.3.3
     optional: true
+
+  rsql-builder@1.4.2: {}
 
   run-applescript@7.1.0: {}
 
