@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { ResultType } from "../../../stores/definitions/Search";
 import useStores from "../../../stores/use-stores";
+import { permalinkGlobalId } from "../permalinkGlobalId";
 
 function ParameterChip({ label, onDelete }: { label: string; onDelete?: () => void }): React.ReactNode {
   return <Chip size="small" label={label} onDelete={onDelete} />;
@@ -34,6 +35,15 @@ function SearchParameterChips(): React.ReactNode {
 
   return (
     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+      {search.fetcher.permalink && (
+        <ParameterChip
+          label={t("search.parameterChips.globalId", { globalId: permalinkGlobalId(search.fetcher.permalink) })}
+          onDelete={() => {
+            // a deleted record's permalink also scopes the list to the trash
+            search.setDeletedItems("EXCLUDE");
+          }}
+        />
+      )}
       {resultType && resultType !== "ALL" && (
         <ParameterChip
           label={t("search.parameterChips.type", { type: recordTypePluralLabels[resultType] })}

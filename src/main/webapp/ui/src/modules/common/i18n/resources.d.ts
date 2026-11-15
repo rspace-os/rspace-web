@@ -4871,6 +4871,7 @@ export default interface Resources {
         "basket": "Basket: {basket}",
         "benchOwner": "Bench Owner: {owner}",
         "contentsOf": "Contents of: {globalId}",
+        "globalId": "Global ID: {globalId}",
         "owner": "Owner: {owner}",
         "requestable": "Requestable only",
         "status": "Status: {status}",

@@ -2,12 +2,11 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { globalId } from "@/stores/definitions/BaseRecord";
 import { UiPreferences } from "../../hooks/api/useUiPreference";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext, { type UseLocation } from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
-import type { CoreFetcherArgs, PermalinkType } from "../../stores/definitions/Search";
+import type { CoreFetcherArgs } from "../../stores/definitions/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";
@@ -17,21 +16,12 @@ import Sidebar from "../components/Layout/Sidebar";
 import Main from "../Main";
 import LeftPanelView from "./LeftPanelView";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
+import { permalinkGlobalId } from "./permalinkGlobalId";
 import RightPanelView from "./RightPanelView";
 
 type SearchRouterArgs = {
   paramsOverride?: CoreFetcherArgs;
 };
-
-// PermalinkType uses URL-lowercase names; globalId expects camelCase keys
-const permalinkTypeToGlobalIdType = {
-  sample: "sample",
-  container: "container",
-  subsample: "subsample",
-  sampletemplate: "sampleTemplate",
-  instrument: "instrument",
-  instrumenttemplate: "instrumentTemplate",
-} as const satisfies Record<PermalinkType, Parameters<typeof globalId>[0]["type"]>;
 
 const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { t } = useTranslation("inventory");
@@ -86,10 +76,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
       <title>
         {paramsOverride?.permalink
           ? t("pageTitleWithContext", {
-              pageContext: globalId({
-                type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
-                id: paramsOverride.permalink.id,
-              }),
+              pageContext: permalinkGlobalId(paramsOverride.permalink),
             })
           : t("pageTitle")}
       </title>
