@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-15-reattach-orphaned-lab-groups" context="run" author="tchoi-rs">
+    <comment>Deleting a community used to leave its lab groups in no community (RSDEV-1464).
+      Attach every lab group (groupType 0) without a community to the default community (-1),
+      then realign the denormalised rsGroup.communityId of lab groups with their community.
+      Idempotent. Irreversible.</comment>
+    <sql>
+      INSERT INTO community_labGroups (community_id, group_id)
+      SELECT -1, g.id FROM rsGroup g
+      WHERE g.groupType = 0
+        AND NOT EXISTS (SELECT 1 FROM community_labGroups c WHERE c.group_id = g.id)
+        AND EXISTS (SELECT 1 FROM Community WHERE id = -1);
+    </sql>
+    <sql>
+      UPDATE rsGroup g JOIN community_labGroups c ON c.group_id = g.id
+      SET g.communityId = c.community_id
+      WHERE g.groupType = 0 AND (g.communityId IS NULL OR g.communityId &lt;&gt; c.community_id);
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>
