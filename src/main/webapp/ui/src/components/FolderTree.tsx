@@ -9,6 +9,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import useFolders, { type FolderTreeNode, folderDetailsAsTreeNode } from "../hooks/api/useFolders";
@@ -96,7 +97,8 @@ const TreeItemContent = ({
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [currentPage, setCurrentPage] = React.useState(0);
   const [totalHits, setTotalHits] = React.useState(0);
-  const [isLoading, setIsLoading] = React.useState(false);
+  // The first page loads on mount.
+  const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<boolean>(false);
 
   const handleChildFolderCreated = React.useCallback(
@@ -192,6 +194,15 @@ const TreeItemContent = ({
         {folders.map((subFolder) => (
           <TreeItemContent key={subFolder.id} folder={subFolder} onFolderCreated={handleChildFolderCreated} />
         ))}
+        {/* A child while the first page loads keeps the folder expandable, so an early click still opens it. */}
+        {isLoading && folders.length === 0 && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", p: 1 }}>
+            <CircularProgress size={16} aria-hidden="true" />
+            <Typography variant="body2" color="text.secondary">
+              {t("folderTree.loading")}
+            </Typography>
+          </Stack>
+        )}
         {error && (
           <Box sx={{ p: 1 }}>
             <Alert
