@@ -231,8 +231,7 @@ class ZipUtilsExtractionTest {
 
     String topLevel = ZipUtils.extractZip(zip, dest);
 
-    assertEquals(
-        new File(dest, "root").getCanonicalPath(), new File(topLevel).getCanonicalPath());
+    assertEquals(new File(dest, "root").getCanonicalPath(), new File(topLevel).getCanonicalPath());
     assertEquals("ok", Files.readString(new File(dest, "root/a.txt").toPath()));
   }
 

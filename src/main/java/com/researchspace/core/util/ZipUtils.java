@@ -200,7 +200,8 @@ public class ZipUtils {
         }
         if (name.endsWith("/")) {
           if (!destinationFile.isDirectory()) {
-            createDirectories(Path.of(rootPath), Path.of(canonical), true, zipEntry, budget, created);
+            createDirectories(
+                Path.of(rootPath), Path.of(canonical), true, zipEntry, budget, created);
           }
           if (topLevelDir == null && !canonical.equals(rootPath)) {
             topLevelDir = destinationFile;
