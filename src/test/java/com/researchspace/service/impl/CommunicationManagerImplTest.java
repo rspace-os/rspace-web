@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,19 +9,25 @@ import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
+import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.NotificationPostCommitExecutor;
 import com.researchspace.testutils.TestFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.IntSupplier;
 import org.junit.jupiter.api.Test;
@@ -37,6 +44,24 @@ public class CommunicationManagerImplTest {
 
   class CommunicationManagerImplTSS extends CommunicationManagerImpl {
     boolean notified = false;
+    boolean recordNotificationsOnly = false;
+    final List<Set<User>> createdNotificationRecipients = new ArrayList<>();
+
+    @Override
+    public Notification doCreateNotification(
+        NotificationType type,
+        String originator,
+        BaseRecord record,
+        Set<User> recipients,
+        String optionalhumanmessage,
+        String systemMsg) {
+      if (recordNotificationsOnly) {
+        createdNotificationRecipients.add(recipients);
+        return null;
+      }
+      return super.doCreateNotification(
+          type, originator, record, recipients, optionalhumanmessage, systemMsg);
+    }
 
     public Notification systemNotify(
         NotificationType notificationType, String msg, String recipientName, boolean broadcast) {
@@ -51,6 +76,7 @@ public class CommunicationManagerImplTest {
   @Mock UserDao userDao;
   @Mock IMessageAndNotificationTracker notificnTracker;
   @Mock NotificationPostCommitExecutor notificationPostCommitExecutor;
+  @Mock MessageSourceUtils messages;
 
   CommunicationManagerImplTSS mgr = new CommunicationManagerImplTSS();
 
@@ -60,6 +86,36 @@ public class CommunicationManagerImplTest {
     ReflectionTestUtils.setField(mgr, "notificnTracker", notificnTracker);
     ReflectionTestUtils.setField(
         mgr, "notificationPostCommitExecutor", notificationPostCommitExecutor);
+  }
+
+  @Test
+  void cancellingGlobalMessageUpdatesCountsButCreatesNoNotification() {
+    wireManager();
+    ReflectionTestUtils.setField(mgr, "messages", messages);
+    mgr.recordNotificationsOnly = true;
+    User sysadmin = TestFactory.createAnyUser("sysadmin");
+    User first = TestFactory.createAnyUser("first");
+    first.setId(1L);
+    User second = TestFactory.createAnyUser("second");
+    second.setId(2L);
+    MessageOrRequest globalMessage =
+        TestFactory.createAnyMessageForRecipientOfType(sysadmin, first, MessageType.GLOBAL_MESSAGE);
+    CommunicationTarget secondTarget = new CommunicationTarget();
+    secondTarget.setRecipient(second);
+    globalMessage.addRecipient(secondTarget);
+    Mockito.when(commDao.get(10L)).thenReturn(globalMessage);
+
+    mgr.cancelRequest("sysadmin", 10L, false);
+
+    assertEquals(CommunicationStatus.CANCELLED, globalMessage.getStatus());
+    globalMessage
+        .getRecipients()
+        .forEach(ct -> assertEquals(CommunicationStatus.CANCELLED, ct.getStatus()));
+    Mockito.verify(commDao).save(globalMessage);
+    Mockito.verify(notificnTracker).updateMessageCount(1L, -1, MessageType.GLOBAL_MESSAGE);
+    Mockito.verify(notificnTracker).updateMessageCount(2L, -1, MessageType.GLOBAL_MESSAGE);
+    assertThat(mgr.createdNotificationRecipients).isEmpty();
+    Mockito.verifyNoInteractions(messages);
   }
 
   @Test
