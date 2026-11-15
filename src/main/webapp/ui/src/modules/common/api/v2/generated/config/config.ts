@@ -5,11 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import {
-  queryOptions as queryOptionsBuilder,
-  useQuery,
-  useSuspenseQuery
-} from '@tanstack/react-query';
+
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -22,28 +18,22 @@ import type {
   UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryOptions,
-  UseSuspenseQueryResult
-} from '@tanstack/react-query';
+  UseSuspenseQueryResult,
+} from "@tanstack/react-query";
+import { queryOptions as queryOptionsBuilder, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import type { ErrorType } from "../../apiV2Fetch.ts";
 
-import type {
-  ApiV2Config,
-  TooManyRequestsResponse
-} from '../models';
-
-import { apiV2Fetch } from '../../apiV2Fetch.ts';
-import type { ErrorType } from '../../apiV2Fetch.ts';
-
+import { apiV2Fetch } from "../../apiV2Fetch.ts";
+import type { ApiV2Config, TooManyRequestsResponse } from "../models";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
-
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
     // The explicit queryKey always wins, matching the previous
     // `{ ...query, queryKey }` spread where it was set last.
-    if (key === 'queryKey') continue;
+    if (key === "queryKey") continue;
     Object.defineProperty(result, key, {
       enumerable: true,
       configurable: true,
@@ -54,194 +44,229 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getGetApiV2ConfigUrl = () => {
-
-
-
-
-  return `/api/v2/config`
-}
+  return `/api/v2/config`;
+};
 
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export const getApiV2Config = async ( options?: Parameters<typeof apiV2Fetch>[1]): Promise<ApiV2Config> => {
-
-  return apiV2Fetch<ApiV2Config>(getGetApiV2ConfigUrl(),
-  {
-      operationId: 'getApiV2Config',
+export const getApiV2Config = async (options?: Parameters<typeof apiV2Fetch>[1]): Promise<ApiV2Config> => {
+  return apiV2Fetch<ApiV2Config>(getGetApiV2ConfigUrl(), {
+    operationId: "getApiV2Config",
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
+    method: "GET",
+  });
+};
 
 export const getGetApiV2ConfigQueryKey = () => {
-    return [
-    `/api/v2/config`
-    ] as const;
-    }
+  return [`/api/v2/config`] as const;
+};
 
+export const getGetApiV2ConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+  request?: SecondParameter<typeof apiV2Fetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getGetApiV2ConfigQueryOptions = <TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
-) => {
+  const queryKey = queryOptions?.queryKey ?? getGetApiV2ConfigQueryKey();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV2Config>>> = ({ signal }) =>
+    getApiV2Config({ signal, ...requestOptions });
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiV2ConfigQueryKey();
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApiV2Config>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV2Config>>> = ({ signal }) => getApiV2Config({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetApiV2ConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV2Config>>>
-export type GetApiV2ConfigQueryError = ErrorType<TooManyRequestsResponse>
-
+export type GetApiV2ConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV2Config>>>;
+export type GetApiV2ConfigQueryError = ErrorType<TooManyRequestsResponse>;
 
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2Config<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>> & Pick<
+export function useGetApiV2Config<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>> &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiV2Config>>,
           TError,
           Awaited<ReturnType<typeof getApiV2Config>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2Config<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>> & Pick<
+export function useGetApiV2Config<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>> &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiV2Config>>,
           TError,
           Awaited<ReturnType<typeof getApiV2Config>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2Config<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV2Config<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2Config<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetApiV2Config<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV2ConfigQueryOptions(options);
 
-  const queryOptions = getGetApiV2ConfigQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
 
 /**
  * @summary Invalidates the {@link useGetApiV2Config} query
  */
 export const invalidateGetApiV2Config = async (
- queryClient: QueryClient,  options?: InvalidateOptions
-  ): Promise<QueryClient> => {
-
+  queryClient: QueryClient,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
   await queryClient.invalidateQueries({ queryKey: getGetApiV2ConfigQueryKey() }, options);
 
   return queryClient;
-}
+};
 
+export const getGetApiV2ConfigSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(options?: {
+  query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+  request?: SecondParameter<typeof apiV2Fetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getGetApiV2ConfigQueryKey();
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV2Config>>> = ({ signal }) =>
+    getApiV2Config({ signal, ...requestOptions });
 
-export const getGetApiV2ConfigSuspenseQueryOptions = <TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>( options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
-) => {
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } };
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetApiV2ConfigQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiV2Config>>> = ({ signal }) => getApiV2Config({ signal, ...requestOptions });
-
-
-
-
-
-   return  queryOptionsBuilder({ queryKey, ...queryOptions, queryFn: queryOptions?.queryFn ?? queryFn}) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> } & { throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never } }
-}
-
-export type GetApiV2ConfigSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV2Config>>>
-export type GetApiV2ConfigSuspenseQueryError = ErrorType<TooManyRequestsResponse>
-
+export type GetApiV2ConfigSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof getApiV2Config>>>;
+export type GetApiV2ConfigSuspenseQueryError = ErrorType<TooManyRequestsResponse>;
 
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2ConfigSuspense<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options: { query:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV2ConfigSuspense<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options: {
+    query: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2ConfigSuspense<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV2ConfigSuspense<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2ConfigSuspense<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
-  ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiV2ConfigSuspense<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * Returns branding, help links, and deployment information.
  * @summary Get public REST API v2 configuration
  */
-export function useGetApiV2ConfigSuspense<TData = Awaited<ReturnType<typeof getApiV2Config>>, TError = ErrorType<TooManyRequestsResponse>>(
-  options?: { query?:Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>, request?: SecondParameter<typeof apiV2Fetch>}
- , queryClient?: QueryClient
- ):  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetApiV2ConfigSuspense<
+  TData = Awaited<ReturnType<typeof getApiV2Config>>,
+  TError = ErrorType<TooManyRequestsResponse>,
+>(
+  options?: {
+    query?: Partial<UseSuspenseQueryOptions<Awaited<ReturnType<typeof getApiV2Config>>, TError, TData>>;
+    request?: SecondParameter<typeof apiV2Fetch>;
+  },
+  queryClient?: QueryClient,
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetApiV2ConfigSuspenseQueryOptions(options);
 
-  const queryOptions = getGetApiV2ConfigSuspenseQueryOptions(options)
-
-  const query = useSuspenseQuery(queryOptions, queryClient) as  UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-

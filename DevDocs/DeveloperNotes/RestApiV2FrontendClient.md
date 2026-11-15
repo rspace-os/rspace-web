@@ -27,6 +27,11 @@ can delete validation files generated before it. The Valibot project uses `clien
 `mode: "single"` and `override.valibot.generateReusableSchemas: true`, with an isolated target and
 no `output.schemas` setting.
 
+Generated files are formatted and linted like handwritten code: both Orval projects set
+`formatter: "biome"`, and the adapter scripts run Biome on their own output. The generator scripts
+are TypeScript that Node runs directly. `src/modules/common/api/v2/` has no barrel; import each
+export from the module that defines it, such as `@/modules/common/api/v2/ApiV2ProblemError`.
+
 Commit the spec and generated changes with the source change. Do not edit generated files. CI checks
 backend-to-spec drift and regenerates the client, native schemas and adapter output to check for a
 diff. `orval --outdated` alone does not check the adapter.
@@ -38,7 +43,7 @@ Paths below are relative to `src/main/webapp/ui/`:
 | 1. | `orval.config.ts` | Sequential HTTP and Valibot projects. HTTP generation retains React Query 5, fetch, tag-split output, suspense hooks, cancellation, invalidation and transport overrides. |
 | 2. | `src/modules/common/api/v2/generated/` | HTTP model types, request functions, query options, ordinary and suspense hooks, query keys and `invalidate*` helpers. |
 | 3. | `src/modules/common/api/v2/generated/valibot/native.ts` | Orval's reusable component schemas and operation schemas for bodies, responses and applicable path, query and header parameters. |
-| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.mjs` registers native output rather than translating JSON Schema; its only rewrite removes `v.url()`. |
+| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.ts` registers native output rather than translating JSON Schema; its only rewrite removes `v.url()`. |
 | 5. | `src/modules/common/api/v2/generated/valibot/schemas.ts` | Component exports named `<ComponentName>Schema` and two-way type assertions against HTTP models. Existing consumer imports stay here. |
 | 6. | `src/modules/common/api/v2/generated/valibot/operations.ts` | `apiV2Operations`, keyed by operation ID, with optional JSON request schemas, JSON success schemas by status and content type, and public/session flags. Downloads and empty operations retain entries without JSON body schemas. |
 
@@ -49,8 +54,7 @@ override or input transformer.
 
 ## Transport and errors
 
-The runtime lives in `src/modules/common/api/v2/`, with exports through `index.ts`. The default
-mutator is `apiV2Fetch<T>(url, init?): Promise<T>`. It returns the parsed body; a 204 returns
+The runtime lives in `src/modules/common/api/v2/`. The default mutator is `apiV2Fetch<T>(url, init?): Promise<T>`. It returns the parsed body; a 204 returns
 `undefined` and generates a `void` return type. Generated requests supply an internal `operationId`
 for validation lookup. An unregistered
 operation fails.
@@ -146,13 +150,13 @@ only with a one-line comment giving the reason, such as polling, an optional rea
 input, or an input that stays interactive while its results load.
 
 The registry is generated from each operation's tag and `x-rspace-operation` by
-`scripts/api-v2-valibot/resources.mjs`, run by `pnpm generate:api-v2` after Orval and the
+`scripts/api-v2-valibot/resources.ts`, run by `pnpm generate:api-v2` after Orval and the
 Valibot adapter. The handwritten module keeps the registry types and re-exports generated
 `apiV2Resources`; tags with only `CUSTOM` operations have no entry. Read operations expose
 `request` and `queryKey`; writes expose their request function. Runtime-field endpoints use
 `RUNTIME_FIELDS`, with no route-name inference. Unknown kinds, duplicate kinds within a tag,
 and missing Orval exports fail generation. To add a kind, register its backend metadata,
-add its slot and read/write classification to `resources.mjs`, extend `ApiV2OperationSet`
+add its slot and read/write classification to `resources.ts`, extend `ApiV2OperationSet`
 if needed, and update the focused mapping test. Regenerate the client and golden slots.
 The generated entries retain literal tag names through `satisfies ApiV2ResourceEntry`.
 

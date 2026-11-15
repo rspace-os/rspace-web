@@ -1,13 +1,14 @@
 import { stripTypeScriptTypes } from "node:module";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { generate } from "./test-helper.mjs";
+import type { OpenApiDocument, PathItem, SchemaObject, SecurityRequirement } from "./openapi.ts";
+import { generate } from "./test-helper.ts";
 
-function document(schemas, paths = {}) {
+function document(schemas: Record<string, SchemaObject>, paths: Record<string, PathItem> = {}): OpenApiDocument {
   return { security: [{ bearerAuth: [] }], components: { schemas }, paths };
 }
 // Runtime checks evaluate the emitted expressions; type assertions are checked separately by tsc.
-function compile(schemas) {
+function compile(schemas: Record<string, SchemaObject>): Record<string, v.GenericSchema> {
   const source = generate(document(schemas))
     .schemas.replace(/^import .*;$/gm, "")
     .split("type Assert<")[0]
@@ -19,12 +20,12 @@ function compile(schemas) {
       .join(",")}}`,
   )(v);
 }
-function schema(fragment) {
+function schema(fragment: SchemaObject): v.GenericSchema {
   return compile({ Value: fragment }).Value;
 }
 
 describe("schema conversion", () => {
-  it.each([
+  it.each<[SchemaObject, unknown, unknown]>([
     [{ type: "string" }, "x", 1],
     [{ type: "boolean" }, false, "false"],
     [{ type: "number" }, 1.5, "1"],
@@ -86,7 +87,7 @@ describe("schema conversion", () => {
     });
     expect(v.safeParse(value, { id: 1 }).success).toBe(true);
     expect(v.safeParse(value, { id: 1, name: 3 }).success).toBe(false);
-    const selected = v.required(v.pick(value, ["name"]));
+    const selected = v.required(v.pick(value as v.ObjectSchema<v.ObjectEntries, undefined>, ["name"]));
     expect(v.safeParse(selected, {}).success).toBe(false);
     expect(v.safeParse(selected, { name: "selected" }).success).toBe(true);
     expect(v.safeParse(selected, { name: 3 }).success).toBe(false);
@@ -96,7 +97,11 @@ describe("schema conversion", () => {
     "preserves dictionary values with additionalProperties %j",
     (additionalProperties) => {
       for (const properties of [undefined, { id: { type: "integer" } }]) {
-        const value = schema({ type: "object", ...(properties ? { properties } : {}), additionalProperties });
+        const value = schema({
+          type: "object",
+          ...(properties ? { properties } : {}),
+          additionalProperties,
+        });
         const input = { ...(properties ? { id: 1 } : {}), arbitrary: "kept" };
         expect(v.parse(value, input)).toEqual(input);
         if (additionalProperties !== true) expect(v.safeParse(value, { arbitrary: 5 }).success).toBe(false);
@@ -105,11 +110,19 @@ describe("schema conversion", () => {
   );
   it("merges allOf objects and references with required members", () => {
     const { Value } = compile({
-      Base: { type: "object", properties: { id: { type: "integer" } }, required: ["id"] },
+      Base: {
+        type: "object",
+        properties: { id: { type: "integer" } },
+        required: ["id"],
+      },
       Value: {
         allOf: [
           { $ref: "#/components/schemas/Base" },
-          { type: "object", properties: { name: { type: "string" } }, required: ["name"] },
+          {
+            type: "object",
+            properties: { name: { type: "string" } },
+            required: ["name"],
+          },
         ],
       },
     });
@@ -117,7 +130,9 @@ describe("schema conversion", () => {
     expect(v.safeParse(Value, { id: 1 }).success).toBe(false);
   });
   it.each(["anyOf", "oneOf"])("converts %s to a union", (keyword) => {
-    const value = schema({ [keyword]: [{ type: "integer" }, { type: "string" }] });
+    const value = schema({
+      [keyword]: [{ type: "integer" }, { type: "string" }],
+    } as SchemaObject);
     expect(v.safeParse(value, 1).success).toBe(true);
     expect(v.safeParse(value, "a").success).toBe(true);
     expect(v.safeParse(value, false).success).toBe(false);
@@ -127,11 +142,19 @@ describe("schema conversion", () => {
       Consumer: { $ref: "#/components/schemas/Tree" },
       Tree: {
         type: "object",
-        properties: { children: { type: "array", items: { $ref: "#/components/schemas/Branch" } } },
+        properties: {
+          children: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Branch" },
+          },
+        },
       },
       Branch: {
         type: "object",
-        properties: { tree: { $ref: "#/components/schemas/Tree" }, self: { $ref: "#/components/schemas/Branch" } },
+        properties: {
+          tree: { $ref: "#/components/schemas/Tree" },
+          self: { $ref: "#/components/schemas/Branch" },
+        },
       },
     });
     expect(v.safeParse(Tree, { children: [{ tree: { children: [] }, self: {} }] }).success).toBe(true);
@@ -139,7 +162,11 @@ describe("schema conversion", () => {
   });
   it("emits readonly for readonly arrays", () => {
     expect(
-      generate(document({ Value: { type: "array", items: { type: "string" }, readOnly: true } })).native,
+      generate(
+        document({
+          Value: { type: "array", items: { type: "string" }, readOnly: true },
+        }),
+      ).native,
     ).toContain("v.readonly()");
   });
   it("ignores the documented annotations", () => {
@@ -162,13 +189,15 @@ describe("schema conversion", () => {
   it.each(["not", "discriminator", "uniqueItems", "exclusiveMaximum", "minProperties", "unknownKeyword", "$defs"])(
     "rejects unsupported keyword %s",
     (key) => {
-      expect(() => schema({ type: "string", [key]: {} })).toThrow(`Unsupported keyword ${key}`);
+      expect(() => schema({ type: "string", [key]: {} } as SchemaObject)).toThrow(`Unsupported keyword ${key}`);
     },
   );
   it("rejects unsupported keywords nested below composition", () => {
-    expect(() => schema({ allOf: [{ type: "object", properties: { name: { type: "string", not: {} } } }] })).toThrow(
-      "Unsupported keyword not",
-    );
+    expect(() =>
+      schema({
+        allOf: [{ type: "object", properties: { name: { type: "string", not: {} } } }],
+      }),
+    ).toThrow("Unsupported keyword not");
   });
   it("rejects nullable true, unknown formats, missing refs and non-object allOf", () => {
     expect(() => schema({ nullable: true })).toThrow("nullable");
@@ -179,7 +208,7 @@ describe("schema conversion", () => {
 });
 
 describe("operation registry", () => {
-  it.each([
+  it.each<[string, SecurityRequirement[] | undefined, SecurityRequirement[] | undefined, boolean]>([
     ["explicit browser-session override", [{ bearerAuth: [] }], [{ browserSession: [] }], true],
     ["inherited browser session", [{ browserSession: [] }], undefined, true],
     ["public override of browser session", [{ browserSession: [] }], [], false],
@@ -202,12 +231,12 @@ describe("operation registry", () => {
     );
     if (topLevelSecurity === undefined) delete spec.security;
     else spec.security = topLevelSecurity;
-    const entry = generate(spec).operations.split('["mintToken"]: ')[1];
+    const entry = generate(spec).operations.split('"mintToken": ')[1];
     expect(entry.startsWith("{session: true, ")).toBe(isSessionOnly);
     expect(entry.includes("public: true")).toBe(operationSecurity?.length === 0);
   });
 
-  it.each([
+  it.each<[string, SecurityRequirement[] | undefined, SecurityRequirement[] | undefined, boolean]>([
     ["explicit public override", [{ bearerAuth: [] }], [], true],
     ["inherited public security", [], undefined, true],
     ["default public security", undefined, undefined, true],
@@ -231,9 +260,7 @@ describe("operation registry", () => {
     else spec.security = topLevelSecurity;
     const output = generate(spec).operations;
     expect(output).toContain("public?: true");
-    expect(output).toContain(
-      isPublic ? '["getValue"]: {public: true, responses: {}}' : '["getValue"]: {responses: {}}',
-    );
+    expect(output).toContain(isPublic ? '"getValue": {public: true, responses: {}}' : '"getValue": {responses: {}}');
   });
   it("registers requests, JSON success statuses and media types, including empty operations", () => {
     const output = generate(
@@ -244,17 +271,37 @@ describe("operation registry", () => {
             parameters: [{ name: "page", in: "query", schema: { type: "integer" } }],
             post: {
               operationId: "create",
-              requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Value" } } } },
+              requestBody: {
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/Value" },
+                  },
+                },
+              },
               responses: {
                 200: {
                   content: {
-                    "application/json": { schema: { $ref: "#/components/schemas/Value" } },
-                    "application/vnd.test+json": { schema: { $ref: "#/components/schemas/Value" } },
+                    "application/json": {
+                      schema: { $ref: "#/components/schemas/Value" },
+                    },
+                    "application/vnd.test+json": {
+                      schema: { $ref: "#/components/schemas/Value" },
+                    },
                   },
                 },
-                201: { content: { "application/json": { schema: { $ref: "#/components/schemas/Value" } } } },
+                201: {
+                  content: {
+                    "application/json": {
+                      schema: { $ref: "#/components/schemas/Value" },
+                    },
+                  },
+                },
                 204: {},
-                400: { content: { "application/json": { schema: { type: "string" } } } },
+                400: {
+                  content: {
+                    "application/json": { schema: { type: "string" } },
+                  },
+                },
               },
             },
           },
@@ -262,20 +309,26 @@ describe("operation registry", () => {
             get: {
               operationId: "download",
               responses: {
-                200: { content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } } },
+                200: {
+                  content: {
+                    "application/octet-stream": {
+                      schema: { type: "string", format: "binary" },
+                    },
+                  },
+                },
               },
             },
           },
         },
       ),
     ).operations;
-    expect(output).toContain('["create"]: {request: native.CreateBody');
-    expect(output).toContain('["200"]:');
-    expect(output).toContain('["201"]:');
-    expect(output).toContain('["application/vnd.test+json"]: native.CreateResponse');
-    expect(output).not.toContain('["400"]:');
-    expect(output).not.toContain('["204"]:');
-    expect(output).toContain('["download"]: {responses: {}}');
+    expect(output).toContain('"create": {request: native.CreateBody');
+    expect(output).toContain('"200":');
+    expect(output).toContain('"201":');
+    expect(output).toContain('"application/vnd.test+json": native.CreateResponse');
+    expect(output).not.toContain('"400":');
+    expect(output).not.toContain('"204":');
+    expect(output).toContain('"download": {responses: {}}');
   });
   it("skips binary JSON schemas", () => {
     const output = generate(
@@ -285,14 +338,20 @@ describe("operation registry", () => {
           "/": {
             post: {
               operationId: "upload",
-              requestBody: { content: { "application/json": { schema: { type: "string", format: "binary" } } } },
+              requestBody: {
+                content: {
+                  "application/json": {
+                    schema: { type: "string", format: "binary" },
+                  },
+                },
+              },
               responses: {},
             },
           },
         },
       ),
     ).operations;
-    expect(output).toContain('["upload"]: {responses: {}}');
+    expect(output).toContain('"upload": {responses: {}}');
   });
   it("rejects duplicate operation IDs and unsupported inline schemas", () => {
     const operation = { operationId: "same", responses: {} };
@@ -301,7 +360,15 @@ describe("operation registry", () => {
       generate(
         document(
           {},
-          { "/": { get: { operationId: "get", parameters: [{ name: "q", schema: { not: {} } }], responses: {} } } },
+          {
+            "/": {
+              get: {
+                operationId: "get",
+                parameters: [{ name: "q", schema: { not: {} } }],
+                responses: {},
+              },
+            },
+          },
         ),
       ),
     ).toThrow("Unsupported keyword not");
@@ -317,7 +384,13 @@ it("fails on unsupported inline error-response validation too", () => {
           "/": {
             get: {
               operationId: "get",
-              responses: { 400: { content: { "application/json": { schema: { type: "object", not: {} } } } } },
+              responses: {
+                400: {
+                  content: {
+                    "application/json": { schema: { type: "object", not: {} } },
+                  },
+                },
+              },
             },
           },
         },

@@ -5,7 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { UsersRead } from './usersRead.ts';
+import type { UsersRead } from "./usersRead.ts";
 
 export type ListUsers200 = {
   docs: UsersRead[];

@@ -7,14 +7,7 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.css",
-      "scripts/api-v2-valibot/**/*.mjs",
-      "scripts/api-v2-invalidation/**/*.mjs",
-      "!!src/modules/common/api/v2/generated"
-    ]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
   },
   "formatter": {
     "enabled": true,
@@ -42,6 +35,9 @@
         "noRestrictedImports": {
           "level": "error",
           "options": {
+            "paths": {
+              "@/modules/common/api/v2": "Import from the API v2 module that defines the export; there is no barrel."
+            },
             "patterns": [
               {
                 "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
@@ -58,6 +54,17 @@
     }
   },
   "overrides": [
+    {
+      // Orval types bodiless responses, such as 304 Not Modified, as `void` in error unions.
+      "includes": ["src/modules/common/api/v2/generated/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConfusingVoidType": "off"
+          }
+        }
+      }
+    },
     {
       // Bundle entries mount React at load; a component defined here breaks Fast Refresh and re-mounts on HMR.
       "includes": ["**/*Entrypoint.tsx"],

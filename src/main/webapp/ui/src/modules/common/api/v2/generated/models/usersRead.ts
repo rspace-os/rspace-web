@@ -8,9 +8,9 @@
 
 export interface UsersRead {
   /**
-     * Time at which the resource was created.
-     * @nullable
-     */
+   * Time at which the resource was created.
+   * @nullable
+   */
   readonly createdAt?: string | null;
   /** User's email address. */
   readonly email?: string;

@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { generate } from "./test-helper.mjs";
+import type { OpenApiDocument } from "./openapi.ts";
+import { generate } from "./test-helper.ts";
 
 it("compiles two-way schema/model assertions, including cycles, and rejects drift", () => {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
@@ -11,42 +12,73 @@ it("compiles two-way schema/model assertions, including cycles, and rejects drif
   mkdirSync(scratch, { recursive: true });
   const directory = mkdtempSync(resolve(scratch, "valibot-types-"));
   try {
-    const document = {
+    const document: OpenApiDocument = {
       components: {
         schemas: {
           Read: {
             type: "object",
             properties: {
               id: { type: "integer" },
-              names: { type: "array", readOnly: true, items: { type: "string" } },
+              names: {
+                type: "array",
+                readOnly: true,
+                items: { type: "string" },
+              },
               state: { enum: ["open", "closed"] },
             },
             required: ["id"],
           },
           Node: {
             type: "object",
-            properties: { next: { anyOf: [{ $ref: "#/components/schemas/Node" }, { type: "null" }] } },
+            properties: {
+              next: {
+                anyOf: [{ $ref: "#/components/schemas/Node" }, { type: "null" }],
+              },
+            },
           },
           Tree: {
             type: "object",
             properties: {
-              branches: { type: "array", readOnly: true, items: { $ref: "#/components/schemas/Branch" } },
+              branches: {
+                type: "array",
+                readOnly: true,
+                items: { $ref: "#/components/schemas/Branch" },
+              },
             },
           },
-          Branch: { type: "object", properties: { tree: { $ref: "#/components/schemas/Tree" } } },
+          Branch: {
+            type: "object",
+            properties: { tree: { $ref: "#/components/schemas/Tree" } },
+          },
           Names: { type: "array", items: { type: "string" } },
           Nested: {
             type: "object",
             properties: {
-              nullable: { type: ["array", "null"], readOnly: true, items: { type: "string" } },
-              composed: { anyOf: [{ type: "array", items: { type: "integer" } }, { type: "null" }], readOnly: true },
+              nullable: {
+                type: ["array", "null"],
+                readOnly: true,
+                items: { type: "string" },
+              },
+              composed: {
+                anyOf: [{ type: "array", items: { type: "integer" } }, { type: "null" }],
+                readOnly: true,
+              },
               nested: {
                 type: "object",
-                properties: { names: { type: "array", readOnly: true, items: { type: "string" } } },
+                properties: {
+                  names: {
+                    type: "array",
+                    readOnly: true,
+                    items: { type: "string" },
+                  },
+                },
               },
             },
           },
-          Dictionary: { type: "object", additionalProperties: { type: "string" } },
+          Dictionary: {
+            type: "object",
+            additionalProperties: { type: "string" },
+          },
           Extended: {
             type: "object",
             properties: { id: { type: "string" } },
@@ -60,7 +92,12 @@ it("compiles two-way schema/model assertions, including cycles, and rejects drif
     // Compare against the HTTP models Orval generates from the same document, not hand-written ones.
     writeFileSync(
       resolve(directory, "spec.json"),
-      JSON.stringify({ openapi: "3.1.0", info: { title: "fragment", version: "1" }, paths: {}, ...document }),
+      JSON.stringify({
+        openapi: "3.1.0",
+        info: { title: "fragment", version: "1" },
+        paths: {},
+        ...document,
+      }),
     );
     writeFileSync(
       resolve(directory, "orval.config.mjs"),

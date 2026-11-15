@@ -5,10 +5,10 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { ApiV2CurrentUserCapabilities } from './apiV2CurrentUserCapabilities.ts';
-import type { ApiV2CurrentUserLiveChat } from './apiV2CurrentUserLiveChat.ts';
-import type { ApiV2CurrentUserOrcid } from './apiV2CurrentUserOrcid.ts';
-import type { ApiV2CurrentUserSession } from './apiV2CurrentUserSession.ts';
+import type { ApiV2CurrentUserCapabilities } from "./apiV2CurrentUserCapabilities.ts";
+import type { ApiV2CurrentUserLiveChat } from "./apiV2CurrentUserLiveChat.ts";
+import type { ApiV2CurrentUserOrcid } from "./apiV2CurrentUserOrcid.ts";
+import type { ApiV2CurrentUserSession } from "./apiV2CurrentUserSession.ts";
 
 export interface ApiV2CurrentUser {
   /** Capabilities enabled for the current user. */
@@ -22,9 +22,9 @@ export interface ApiV2CurrentUser {
   /** Whether the user has the system-administrator role. */
   hasSysAdminRole: boolean;
   /**
-     * Root folder identifier.
-     * @nullable
-     */
+   * Root folder identifier.
+   * @nullable
+   */
   homeFolderId: number | null;
   /** Stable user identifier. */
   id: number;
@@ -35,22 +35,22 @@ export interface ApiV2CurrentUser {
   /** ORCID availability and connection state. */
   orcid: ApiV2CurrentUserOrcid;
   /**
-     * REST API v2 profile-image URL.
-     * @nullable
-     */
+   * REST API v2 profile-image URL.
+   * @nullable
+   */
   profileImageApiUrl: string | null;
   /**
-     * Legacy profile-image URL.
-     * @nullable
-     */
+   * Legacy profile-image URL.
+   * @nullable
+   */
   profileImageUrl: string | null;
   /** State of the current authenticated session. */
   session: ApiV2CurrentUserSession;
   /** RSpace login name. */
   username: string;
   /**
-     * Inventory workbench identifier.
-     * @nullable
-     */
+   * Inventory workbench identifier.
+   * @nullable
+   */
   workbenchId: number | null;
 }

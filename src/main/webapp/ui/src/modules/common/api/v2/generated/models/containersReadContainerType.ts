@@ -6,4 +6,4 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ContainersReadContainerType = 'LIST' | 'GRID' | 'IMAGE' | 'WORKBENCH';
+export type ContainersReadContainerType = "LIST" | "GRID" | "IMAGE" | "WORKBENCH";
