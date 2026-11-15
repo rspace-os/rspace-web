@@ -716,6 +716,39 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
   }
 
+  @Test
+  public void labAdminViewAllRevokedWhenLabAdminBecomesPiThenUser() throws Exception {
+    // RSDEV-1408: a view-all Lab Admin swapped to PI and back to User kept view-all access
+    User pi = createAndSaveAPi();
+    User labAdmin = createAndSaveAPi(); // the PI swap needs the global PI role
+    User member = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, labAdmin, member);
+    Group grp = createGroup(getRandomAlphabeticString("grp"), pi);
+    grpMgr.addMembersToGroup(
+        grp.getId(),
+        Arrays.asList(pi, labAdmin, member),
+        pi.getUsername(),
+        labAdmin.getUsername(),
+        pi);
+    logoutAndLoginAs(member);
+    StructuredDocument memberDoc = createBasicDocumentInRootFolderWithText(member, "any");
+    logoutAndLoginAs(pi);
+    grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), pi, grp.getId(), true);
+    assertAdminRead(labAdmin, true, memberDoc);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    grpMgr.setNewPi(grp.getId(), labAdmin.getId(), sysadmin);
+    assertFalse(
+        grpMgr.getGroup(grp.getId()).getUserGroupForUser(labAdmin).isAdminViewDocsEnabled());
+
+    logoutAndLoginAsSysAdmin();
+    grpMgr.setNewPi(grp.getId(), pi.getId(), sysadmin);
+    UserGroup ug = grpMgr.getGroup(grp.getId()).getUserGroupForUser(labAdmin);
+    assertEquals(RoleInGroup.DEFAULT, ug.getRoleInGroup());
+    assertFalse(ug.isAdminViewDocsEnabled());
+    assertAdminRead(labAdmin, false, memberDoc);
+  }
+
   // RSPAC-1113
   @Test
   public void groupAdminCanSeeUserFolderAfterRemovingUserFromOneOfTwoGroups() {
