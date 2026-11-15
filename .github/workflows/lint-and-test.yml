@@ -240,7 +240,7 @@ jobs:
       - name: Regenerate the API v2 client
         run: |
           pnpm generate:api-v2
-          pnpm test --config scripts/api-v2-invalidation/vitest.config.ts
+          pnpm test --project scripts
 
       - name: Fail on contract drift
         run: |

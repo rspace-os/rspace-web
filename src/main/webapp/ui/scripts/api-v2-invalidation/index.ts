@@ -1,9 +1,5 @@
-import { createRequire } from "node:module";
+import { getTagKey, Verbs } from "orval";
 import type { crossResourceInvalidation } from "../../src/modules/common/api/v2/crossResourceInvalidation";
-
-// Resolve through Orval so tag buckets follow the pinned generator without another direct dependency.
-const requireOrval = createRequire(createRequire(import.meta.url).resolve("orval"));
-const { getTagKey }: { getTagKey: (tag?: string) => string } = requireOrval("@orval/core");
 
 export interface Operation {
   operationId: string;
@@ -17,7 +13,7 @@ export interface InvalidationTarget {
   params?: string[];
   file?: string;
 }
-const methods = new Set(["get", "post", "put", "patch", "delete", "head", "options", "trace"]);
+const methods: ReadonlySet<string> = new Set(Object.values(Verbs));
 export function getOperations(document: Document) {
   return Object.entries(document.paths).flatMap(([path, item]) =>
     Object.entries(item).flatMap(([method, value]) => {
