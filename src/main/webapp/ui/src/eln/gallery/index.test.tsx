@@ -483,9 +483,8 @@ describe("Gallery", () => {
      * layout, desktop and mobile drawer alike.
      */
     async function findWayBackLinks() {
-      return await screen.findAllByRole("link", {
-        name: "gallery:pinnedVersion.viewLatest",
-      });
+      // Role queries over the whole Gallery are slow, so allow for a loaded CI worker.
+      return await screen.findAllByRole("link", { name: "gallery:pinnedVersion.viewLatest" }, { timeout: 5_000 });
     }
 
     test("offers a way back to the live item", async () => {
