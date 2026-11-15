@@ -20,6 +20,7 @@ import axios from "@/common/axios";
 import i18n from "../../../modules/common/i18n";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
+import { getErrorMessage } from "../../../util/error";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class GroupEditBar extends React.Component<any, any> {
@@ -41,8 +42,12 @@ class GroupEditBar extends React.Component<any, any> {
       errorMessage: "",
     };
 
+    this.savedProfileText = this.state.profile_text;
     this.handleChange = this.handleChange.bind(this);
   }
+
+  /** The profile text as last saved; the data-profile-text attribute is not updated after a save. */
+  savedProfileText: string | null;
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange(event: any) {
@@ -55,26 +60,33 @@ class GroupEditBar extends React.Component<any, any> {
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  submitForm = (event: any) => {
+  submitForm = async (event: any) => {
     event.preventDefault();
-    let data = new FormData(),
-      promises = [];
+    const requests: Array<Promise<boolean>> = [];
+    const onRequestError = (error: unknown) => {
+      this.handleError(getErrorMessage(error, i18n.t("apiErrors.unknown")));
+      return false;
+    };
 
-    if (this.state.can_edit) {
-      data.set("newProfile", this.state.profile_text);
-      promises.push(
+    if (this.state.can_edit && this.state.profile_text !== this.savedProfileText) {
+      const newProfile = this.state.profile_text;
+      const data = new FormData();
+      data.set("newProfile", newProfile);
+      requests.push(
         axios
-          .post<{ data: boolean | null; exceptionMessage?: string }>(`/groups/editProfile/${this.state.group_id}`, data)
+          .post<{ data: boolean | null; errorMsg?: { errorMessages?: Array<string> } | null }>(
+            `/groups/editProfile/${this.state.group_id}`,
+            data,
+          )
           .then((response) => {
             if (response.data.data === true) {
-              this.setState({ editing: false });
-            } else {
-              this.handleError(response.data.exceptionMessage);
+              this.savedProfileText = newProfile;
+              return true;
             }
+            this.showToast(response.data.errorMsg?.errorMessages?.join(" ") || i18n.t("apiErrors.unknown"));
+            return false;
           })
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .catch(onRequestError),
       );
     }
 
@@ -82,15 +94,13 @@ class GroupEditBar extends React.Component<any, any> {
       this.state.pi_can_edit_permission &&
       this.state.pi_can_edit_value !== (this.props.domContainer.getAttribute("data-pieditallchoicevalue") === "true")
     ) {
-      data = new FormData();
+      const data = new FormData();
       data.set("canPIEditAll", this.state.pi_can_edit_value);
-      promises.push(
+      requests.push(
         axios
           .post(`/groups/ajax/admin/changePiCanEditAll/${this.state.group_id}`, data)
-          .then((_response) => {})
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .then(() => true)
+          .catch(onRequestError),
       );
     }
 
@@ -99,29 +109,28 @@ class GroupEditBar extends React.Component<any, any> {
       this.state.profile_hiding_enabled &&
       this.state.profile_is_hidden !== (this.props.domContainer.getAttribute("data-group-private-profile") === "true")
     ) {
-      data = new FormData();
+      const data = new FormData();
       data.set("hideProfile", this.state.profile_is_hidden);
-      promises.push(
+      requests.push(
         axios
           .post(`/groups/ajax/admin/changeHideProfileSetting/${this.state.group_id}`, data)
-          .then((_response) => {})
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .then(() => true)
+          .catch(onRequestError),
       );
     }
 
-    axios.all(promises).then(() => {
+    const results = await Promise.all(requests);
+    if (results.every(Boolean)) {
       this.setState({ editing: false });
-    });
+    }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleError = (error: any) => {
-    this.setState({
-      toast: true,
-      errorMessage: i18n.t("profile.groups.editBar.errorMessage", { error }),
-    });
+  handleError = (error: string) => {
+    this.showToast(i18n.t("profile.groups.editBar.errorMessage", { error }));
+  };
+
+  showToast = (message: string) => {
+    this.setState({ toast: true, errorMessage: message });
   };
 
   handleClickEdit = () => {
