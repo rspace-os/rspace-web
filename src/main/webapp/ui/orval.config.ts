@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "orval";
 import { buildInvalidationRules, type Document, getOperations } from "./scripts/api-v2-invalidation";
+import { filteredWhereOperations } from "./scripts/api-v2-valibot/filters";
+import type { OpenApiDocument } from "./scripts/api-v2-valibot/openapi";
 import { crossResourceInvalidation } from "./src/modules/common/api/v2/crossResourceInvalidation";
 
 const spec: Document = JSON.parse(
@@ -12,11 +14,21 @@ const specOperationIds = new Set(getOperations(spec).map(({ operationId }) => op
 for (const operationId of Object.keys(mutatorOverrides)) {
   if (!specOperationIds.has(operationId)) throw new Error(`Mutator override for an unknown operation: ${operationId}`);
 }
+// Collection operations whose `where` carries filter metadata also accept a typed where object.
+const whereObjectOperations = filteredWhereOperations(spec as OpenApiDocument);
 const operations = Object.fromEntries(
   getOperations(spec).map(({ operationId }) => [
     operationId,
     {
       requestOptions: { operationId },
+      ...(whereObjectOperations.has(operationId)
+        ? {
+            paramsSerializer: {
+              path: "./src/modules/common/api/v2/apiV2SerializeQuery.ts",
+              name: "apiV2SerializeQuery",
+            },
+          }
+        : {}),
       ...(Object.hasOwn(mutatorOverrides, operationId)
         ? {
             mutator: {

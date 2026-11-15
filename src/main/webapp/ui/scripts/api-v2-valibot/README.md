@@ -1,7 +1,7 @@
 # API v2 Valibot adapter
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
-output, then runs `generate.ts` and `resources.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
+output, then runs `generate.ts`, `resources.ts` and `filters.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
 OpenAPI document. The adapter reads `generated/valibot/native.ts`, removes URL validation from it,
 and writes `schemas.ts` and `operations.ts` beside it. Biome then checks and formats all three
 files, as Orval does for its own output. No schema translator is retained.
@@ -9,6 +9,12 @@ files, as Orval does for its own output. No schema translator is retained.
 The registry emitter (`resources.ts`) reads tags and explicit `x-rspace-operation` metadata from OpenAPI and writes
 `generated/apiV2Resources.ts` with request functions and query-key references. CUSTOM-only tags are omitted; runtime fields
 use the RUNTIME_FIELDS kind. This step runs explicitly after the Valibot adapter.
+
+The filter step (`filters.ts`) reads `components.x-rspace-filters` and writes `generated/filters.ts`: per filter, each
+filterable selector with its allowed RSQL operators and value type. It then narrows each Orval `<Name>Parameter = string`
+model for a `where` parameter that carries `x-rspace-filter` to `ApiV2Where<"<Filter>">`, and fails if Orval's model shape
+changes. This is the second rewrite of Orval output, after removing `v.url()`. `orval.config.ts` gives the same
+operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
 
 The schema-only preflight rejects unsupported keywords, formats, references and
 inline schemas, including errors and headers. New schema constructs require an
