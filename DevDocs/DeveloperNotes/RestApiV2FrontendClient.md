@@ -229,6 +229,9 @@ body-validation contract; using them would also require parameter extraction and
 
 ## Tests and stories
 
+The generator script tests run separately in the node environment:
+`pnpm test --config scripts/vitest.config.ts` (see `scripts/api-v2-valibot/README.md`).
+
 The shared jsdom setup registers a test token provider and a default MSW handler for `POST
 /api/v2/oauth/tokens`. Most tests need no individual token stub. For a standalone client or a
 provider-specific test, install a provider and restore it after the test:

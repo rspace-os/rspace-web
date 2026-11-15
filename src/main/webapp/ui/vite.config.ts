@@ -8,7 +8,7 @@ import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
 import { normalizePath } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
 
@@ -380,6 +380,8 @@ export default defineConfig(async ({ mode }) => {
       environment: "jsdom",
       setupFiles: ["./src/__tests__/setup.ts"],
       include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
+      // The API v2 generator script tests load Orval (and so esbuild); they run under scripts/vitest.config.ts.
+      exclude: [...configDefaults.exclude, "scripts/**"],
       testTimeout: 20000,
       reporters: ["default", "junit"],
       outputFile: {
