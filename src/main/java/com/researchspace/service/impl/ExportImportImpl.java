@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import com.google.common.io.Files;
 import com.researchspace.archive.ArchivalFileNotExistException;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchivalMeta;
@@ -56,6 +55,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -309,7 +309,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ProgressMonitor monitor,
       ImportStrategy importStrategy)
       throws Exception {
-    String tempDir = Files.createTempDir().getAbsolutePath();
+    String tempDir = Files.createTempDirectory("rspace-import").toFile().getAbsolutePath();
     File oufolder = new File(tempDir);
     File zipFile = multipartToFile(file, oufolder);
     ImportArchiveReport report =
@@ -326,7 +326,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ProgressMonitor monitor,
       ImportStrategy importStrategy)
       throws Exception {
-    String tempDir = Files.createTempDir().getAbsolutePath();
+    String tempDir = Files.createTempDirectory("rspace-import").toFile().getAbsolutePath();
     ImportArchiveReport report =
         doImport(zipFile, importer, iconfig, monitor, tempDir, importStrategy);
     publisher.publishEvent(new ImportCompleted(report, importer));

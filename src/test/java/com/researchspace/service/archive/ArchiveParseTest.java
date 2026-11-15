@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -196,6 +198,30 @@ public class ArchiveParseTest {
     assertEquals(expectedLimit, e.getLimit());
     assertEquals(expectedLimitValue, e.getLimitValue());
     assertEquals(0, new File(tempDir, "out").list().length);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void archiveWithoutTopLevelFolderFailsUnzipRule(
+      boolean withRootLevelFile, @TempDir File tempDir) throws IOException {
+    File zip = new File(tempDir, "flat.zip");
+    try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(zip)) {
+      if (withRootLevelFile) {
+        out.putArchiveEntry(new ZipArchiveEntry("manifest.txt"));
+        out.closeArchiveEntry();
+      }
+    }
+    ArchiveParserImpl realParser = new ArchiveParserImpl();
+    ReflectionTestUtils.setField(realParser, "diskSpaceChecker", new DiskSpaceCheckerImpl());
+    ArchivalImportConfig cfg = new ArchivalImportConfig();
+    cfg.setUnzipPath(new File(tempDir, "out").getAbsolutePath());
+    ImportArchiveReport report = new ImportArchiveReport();
+
+    IArchiveModel model = realParser.loadArchive(zip, report, cfg);
+
+    assertNull(model);
+    assertRuleValidationResult(
+        report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
   }
 
   @Test

@@ -128,8 +128,9 @@ public class ZipUtils {
    *
    * @param archiveFile
    * @param destinationFolder the folder into which zip contents should be put.
-   * @return The name of top-level folder: the first directory entry, or the folder of the first
-   *     nested file if that comes first; <code>null</code> if the zip holds only root-level files
+   * @return The name of top-level folder: the first directory entry below the extraction root, or
+   *     the folder of the first nested file if that comes first; <code>null</code> if the zip holds
+   *     only root-level files
    */
   public static String extractZip(File archiveFile, File destinationFolder) throws IOException {
     return extractZip(archiveFile, destinationFolder, ZipExtractionLimits.DEFAULTS);
@@ -157,8 +158,9 @@ public class ZipUtils {
    * <p>The archive file MUST have a unique "root" folder. This root folder is skipped when
    * unarchiving.
    *
-   * @return The name of top-level folder: the first directory entry, or the folder of the first
-   *     nested file if that comes first; <code>null</code> if the zip holds only root-level files
+   * @return The name of top-level folder: the first directory entry below the extraction root, or
+   *     the folder of the first nested file if that comes first; <code>null</code> if the zip holds
+   *     only root-level files
    */
   private static String unzipFolder(
       File archiveFile, File zipDestinationFolder, ZipExtractionLimits limits) throws IOException {
@@ -200,7 +202,7 @@ public class ZipUtils {
           if (!destinationFile.isDirectory()) {
             createDirectories(Path.of(rootPath), Path.of(canonical), true, zipEntry, budget, created);
           }
-          if (topLevelDir == null) {
+          if (topLevelDir == null && !canonical.equals(rootPath)) {
             topLevelDir = destinationFile;
           }
           continue;

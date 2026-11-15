@@ -229,7 +229,11 @@ class ZipUtilsExtractionTest {
         makeZip(dir("./"), dir("root/"), file("root/a.txt", "ok".getBytes(StandardCharsets.UTF_8)));
     File dest = newDestination();
 
-    assertEquals("ok", readAfterExtract(zip, dest, "root/a.txt"));
+    String topLevel = ZipUtils.extractZip(zip, dest);
+
+    assertEquals(
+        new File(dest, "root").getCanonicalPath(), new File(topLevel).getCanonicalPath());
+    assertEquals("ok", Files.readString(new File(dest, "root/a.txt").toPath()));
   }
 
   @Test
