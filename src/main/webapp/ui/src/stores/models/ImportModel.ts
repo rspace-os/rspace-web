@@ -248,8 +248,7 @@ export class ColumnFieldMap {
   isCompatibleWithField(field: Field): boolean {
     if (field === Fields.source) {
       return (
-        this.fieldType === FieldTypes.radio &&
-        Boolean(this.options) &&
+        Boolean(this.options?.length) &&
         new RsSet(this.options).isSubsetOf(new RsSet(["LAB_CREATED", "VENDOR_SUPPLIED", "OTHER"]))
       );
     }
