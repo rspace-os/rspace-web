@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, onTestFinished, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
@@ -8,6 +8,7 @@ import fc from "fast-check";
 import type React from "react";
 import { useState } from "react";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
@@ -418,6 +419,76 @@ describe("ExportDialog", () => {
       expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.setPageSizeAsDefault).toBe(true);
       expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.pageSize).toBe("LETTER");
     });
+    test.each([
+      ["app.zenodo", "Zenodo"],
+      ["app.digitalCommonsData", "Digital Commons Data"],
+    ])(
+      "%s deposits still send the placeholder people and subject the backend requires.",
+      async (repoName, displayName) => {
+        mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
+          {
+            repoName,
+            displayName,
+            subjects: [],
+            license: {
+              licenseRequired: true,
+              otherLicensePermitted: false,
+              licenses: [
+                {
+                  licenseDefinition: { url: "https://creativecommons.org/publicdomain/zero/1.0/", name: "CC-0" },
+                  defaultLicense: null,
+                },
+              ],
+            },
+            otherProperties: [],
+            linkedDMPs: null,
+          },
+        ]);
+        mockAxios.onPost("/export/ajax/exportRecordTagsArchive").reply(200, { data: [] });
+        // A failed export skips the success handler's state reset, which would otherwise race the closing transition
+        // of a dialog this test wrapper keeps open. Only the request body matters here.
+        mockAxios.onPost("/export/ajax/exportArchive").reply(500, "Export failed");
+        onTestFinished(silenceConsole(["log"], ["Request failed with status code 500"]));
+        mockAxios.resetHistory();
+        const user = userEvent.setup();
+        const { setProps } = renderExportDialog();
+        act(() => {
+          setProps({
+            open: true,
+            selection: { type: "selection", exportTypes: ["NORMAL"], exportNames: ["foo"], exportIds: ["1"] },
+          });
+        });
+        await user.click(
+          screen.getByRole("radio", {
+            name: (name) => name.startsWith("workspace:export.format.chooser.formats.xmlHeading"),
+          }),
+        );
+        await user.click(screen.getByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }));
+        await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+        await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
+        await screen.findByRole("radio", { name: displayName });
+        await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "Title");
+        await user.type(
+          screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
+          "Description",
+        );
+        await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+
+        await waitFor(() => {
+          expect(mockAxios.history.post.some(({ url }) => url === "/export/ajax/exportArchive")).toBe(true);
+        });
+        const exportRequest = mockAxios.history.post.find(({ url }) => url === "/export/ajax/exportArchive");
+        const { repositoryConfig } = JSON.parse(exportRequest?.data as string);
+        expect(repositoryConfig.appName).toBe(repoName);
+        expect(repositoryConfig.meta).toMatchObject({
+          title: "Title",
+          description: "Description",
+          subject: "DUMMY_VALUE",
+          authors: [{ uniqueName: "DUMMY_VALUE", email: "DUMMY_VALUE@example.com", type: "Author" }],
+          contacts: [{ uniqueName: "DUMMY_VALUE", email: "DUMMY_VALUE@example.com", type: "Contact" }],
+        });
+      },
+    );
   });
   describe("When the dialog is rendered it is passed a selection.", () => {
     mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);

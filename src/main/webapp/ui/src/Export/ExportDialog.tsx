@@ -39,7 +39,12 @@ import FormatChoice, { type ArchiveType } from "./FormatChoice";
 import FormatSpecificOptions from "./FormatSpecificOptions";
 import type { HtmlXmlExportDetails } from "./HtmlXmlExport";
 import type { PdfExportDetails } from "./PdfExport";
-import { DEFAULT_REPO_CONFIG, type Repo } from "./repositories/common";
+import {
+  DEFAULT_REPO_CONFIG,
+  PLACEHOLDER_PEOPLE_AND_SUBJECT,
+  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
+  type Repo,
+} from "./repositories/common";
 import type { Tag } from "./repositories/Tags";
 import { appendPane, getIndexOfPane, getPaneByKey, makePane, numberOfPanes } from "./WizardPanes";
 import type { WordExportDetails } from "./WordExport";
@@ -193,11 +198,20 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     if (activePane.prev) setActivePane(activePane.prev);
   };
 
+  const prepareRepositoryConfig = () => {
+    const config = state.repositoryConfig;
+    if (!config.depositToRepository) return {};
+    const appName = "appName" in config ? config.appName : undefined;
+    return typeof appName === "string" && REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(appName)
+      ? { ...config, meta: { ...config.meta, ...PLACEHOLDER_PEOPLE_AND_SUBJECT } }
+      : { ...config };
+  };
+
   const prepareExportData = () => {
     return {
       exportSelection: { ...state.exportSelection },
       exportConfig: { ...state.exportDetails },
-      repositoryConfig: state.repositoryConfig.depositToRepository ? { ...state.repositoryConfig } : {},
+      repositoryConfig: prepareRepositoryConfig(),
       nfsConfig: { ...state.nfsConfig },
       ...(raidEnabled ? { projectGroupId: state.projectGroupId } : {}),
     };

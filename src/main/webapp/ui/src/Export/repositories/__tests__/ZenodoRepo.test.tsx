@@ -34,7 +34,6 @@ describe("ZenodoRepo", () => {
             subject: true,
           }}
           submitAttempt={false}
-          updatePeople={() => {}}
           title={title}
           description=""
           tags={[]}
@@ -76,7 +75,6 @@ describe("ZenodoRepo", () => {
             subject: true,
           }}
           submitAttempt={false}
-          updatePeople={() => {}}
           title=""
           description={description}
           tags={[]}
@@ -93,72 +91,6 @@ describe("ZenodoRepo", () => {
         target: expect.objectContaining({
           value: "foo",
           name: "description",
-        }),
-      }),
-    );
-  });
-  test("Author and Contact should be set automatically to dummy values.", () => {
-    const updatePeople = vi.fn();
-    render(
-      <ZenodoRepo
-        handleChange={() => {}}
-        inputValidations={{
-          description: true,
-          title: true,
-          author: true,
-          contact: true,
-          subject: true,
-        }}
-        submitAttempt={false}
-        updatePeople={updatePeople}
-        title=""
-        description=""
-        tags={[]}
-        onTagsChange={() => {}}
-        fetchingTags={false}
-      />,
-    );
-    expect(updatePeople).toHaveBeenLastCalledWith(
-      expect.arrayContaining([
-        {
-          uniqueName: "DUMMY_VALUE",
-          email: "DUMMY_VALUE@example.com",
-          type: "Author",
-        },
-        {
-          uniqueName: "DUMMY_VALUE",
-          email: "DUMMY_VALUE@example.com",
-          type: "Contact",
-        },
-      ]),
-    );
-  });
-  test("Subject should be set automatically to a dummy value.", () => {
-    const handleChange = vi.fn();
-    render(
-      <ZenodoRepo
-        handleChange={handleChange}
-        inputValidations={{
-          description: true,
-          title: true,
-          author: true,
-          contact: true,
-          subject: true,
-        }}
-        submitAttempt={false}
-        updatePeople={() => {}}
-        title=""
-        description=""
-        tags={[]}
-        onTagsChange={() => {}}
-        fetchingTags={false}
-      />,
-    );
-    expect(handleChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        target: expect.objectContaining({
-          value: "DUMMY_VALUE",
-          name: "subject",
         }),
       }),
     );

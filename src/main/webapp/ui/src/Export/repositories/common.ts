@@ -102,3 +102,22 @@ export const DEFAULT_REPO_CONFIG = {
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;
+
+/*
+ * The backend's RepoDepositMeta requires authors, contacts and a subject for
+ * every deposit, but Zenodo and Digital Commons Data collect none of them and
+ * their deposits ignore these values. Placeholders are added only to the
+ * export request for these repositories, never to the dialog's shared state,
+ * so they cannot leak into another repository's form.
+ */
+export const REPOS_WITHOUT_PEOPLE_OR_SUBJECT: ReadonlySet<string> = new Set(["app.zenodo", "app.digitalCommonsData"]);
+
+export const PLACEHOLDER_PEOPLE_AND_SUBJECT: {
+  subject: string;
+  authors: Array<Person>;
+  contacts: Array<Person>;
+} = {
+  subject: "DUMMY_VALUE",
+  authors: [{ uniqueName: "DUMMY_VALUE", email: "DUMMY_VALUE@example.com", type: "Author" }],
+  contacts: [{ uniqueName: "DUMMY_VALUE", email: "DUMMY_VALUE@example.com", type: "Contact" }],
+};
