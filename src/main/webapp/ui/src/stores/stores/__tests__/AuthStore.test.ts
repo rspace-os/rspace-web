@@ -45,9 +45,7 @@ afterEach(() => {
 
 const failWith = (status: number | "network") =>
   server.use(
-    http.post(MINT_URL, () =>
-      status === "network" ? HttpResponse.error() : new HttpResponse(null, { status }),
-    ),
+    http.post(MINT_URL, () => (status === "network" ? HttpResponse.error() : new HttpResponse(null, { status }))),
   );
 
 describe("AuthStore refresh recovery", () => {
@@ -120,9 +118,7 @@ describe("AuthStore refresh recovery", () => {
       await authenticate.mock.results.at(-1)?.value;
       expect(requests).toBe(index + 2);
     }
-    server.use(
-      http.post(MINT_URL, () => HttpResponse.json({ accessToken: tokenExpiringIn(3600) })),
-    );
+    server.use(http.post(MINT_URL, () => HttpResponse.json({ accessToken: tokenExpiringIn(3600) })));
     await store.authenticate();
     failWith(500);
     await store.authenticate();

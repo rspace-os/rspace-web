@@ -10,8 +10,8 @@ export interface ApiV2CurrentUserLiveChat {
   /** Whether live chat is enabled. */
   enabled: boolean;
   /**
-     * Browser live-chat application key.
-     * @nullable
-     */
+   * Browser live-chat application key.
+   * @nullable
+   */
   serverKey: string | null;
 }

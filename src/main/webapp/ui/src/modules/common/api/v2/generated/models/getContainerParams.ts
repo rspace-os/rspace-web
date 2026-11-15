@@ -5,9 +5,9 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { ContainersExcludeParameter } from './containersExcludeParameter.ts';
-import type { ContainersFieldsParameter } from './containersFieldsParameter.ts';
-import type { DepthParameter } from './depthParameter.ts';
+import type { ContainersExcludeParameter } from "./containersExcludeParameter.ts";
+import type { ContainersFieldsParameter } from "./containersFieldsParameter.ts";
+import type { DepthParameter } from "./depthParameter.ts";
 
 export type GetContainerParams = {
   /**

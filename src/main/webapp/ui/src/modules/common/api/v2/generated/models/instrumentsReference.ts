@@ -7,6 +7,6 @@
  */
 
 export interface InstrumentsReference {
-  relationTo: 'instruments';
+  relationTo: "instruments";
   value: number;
 }

@@ -9,4 +9,4 @@
 /**
  * @nullable
  */
-export type ResourceRoleSourceGrantee = {[key: string]: unknown} | null;
+export type ResourceRoleSourceGrantee = { [key: string]: unknown } | null;

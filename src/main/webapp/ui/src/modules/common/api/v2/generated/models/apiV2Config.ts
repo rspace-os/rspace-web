@@ -5,21 +5,21 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { ApiV2ConfigBranding } from './apiV2ConfigBranding.ts';
-import type { ApiV2ConfigHelpLink } from './apiV2ConfigHelpLink.ts';
+import type { ApiV2ConfigBranding } from "./apiV2ConfigBranding.ts";
+import type { ApiV2ConfigHelpLink } from "./apiV2ConfigHelpLink.ts";
 
 export interface ApiV2Config {
   /** Deployment branding displayed by API clients. */
   branding: ApiV2ConfigBranding;
   /**
-     * Human-readable description of this RSpace deployment.
-     * @nullable
-     */
+   * Human-readable description of this RSpace deployment.
+   * @nullable
+   */
   deploymentDescription: string | null;
   /**
-     * Support email address for this deployment.
-     * @nullable
-     */
+   * Support email address for this deployment.
+   * @nullable
+   */
   deploymentHelpEmail: string | null;
   /** Deployment-specific help links. */
   helpLinks: ApiV2ConfigHelpLink[];

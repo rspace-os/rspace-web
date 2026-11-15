@@ -5,8 +5,8 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { ResourceRoleSourceGrantee } from './resourceRoleSourceGrantee.ts';
-import type { ResourceRoleSourceKind } from './resourceRoleSourceKind.ts';
+import type { ResourceRoleSourceGrantee } from "./resourceRoleSourceGrantee.ts";
+import type { ResourceRoleSourceKind } from "./resourceRoleSourceKind.ts";
 
 export interface ResourceRoleSource {
   /** @nullable */

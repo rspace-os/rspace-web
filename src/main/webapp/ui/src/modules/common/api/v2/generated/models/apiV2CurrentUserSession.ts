@@ -8,9 +8,9 @@
 
 export interface ApiV2CurrentUserSession {
   /**
-     * Previous successful login instant.
-     * @nullable
-     */
+   * Previous successful login instant.
+   * @nullable
+   */
   lastSession: string | null;
   /** Whether a system administrator is operating as another user. */
   operatedAs: boolean;
