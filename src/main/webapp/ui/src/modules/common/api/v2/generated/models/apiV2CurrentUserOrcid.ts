@@ -10,9 +10,9 @@ export interface ApiV2CurrentUserOrcid {
   /** Whether ORCID integration is available. */
   available: boolean;
   /**
-     * Connected ORCID identifier.
-     * @nullable
-     * @pattern ^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$
-     */
+   * Connected ORCID identifier.
+   * @nullable
+   * @pattern ^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$
+   */
   id: string | null;
 }

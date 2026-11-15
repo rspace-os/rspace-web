@@ -7,6 +7,6 @@
  */
 
 export interface ContainersReference {
-  relationTo: 'containers';
+  relationTo: "containers";
   value: number;
 }

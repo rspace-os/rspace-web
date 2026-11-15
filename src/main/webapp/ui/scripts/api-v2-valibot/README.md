@@ -1,11 +1,12 @@
 # API v2 Valibot adapter
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
-output, then runs `generate.mjs` and `resources.mjs`. Both Orval projects read the committed API v2
+output, then runs `generate.ts` and `resources.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
 OpenAPI document. The adapter reads `generated/valibot/native.ts`, removes URL validation from it,
-and writes `schemas.ts` and `operations.ts` beside it. No schema translator is retained.
+and writes `schemas.ts` and `operations.ts` beside it. Biome then checks and formats all three
+files, as Orval does for its own output. No schema translator is retained.
 
-The registry emitter (`resources.mjs`) reads tags and explicit `x-rspace-operation` metadata from OpenAPI and writes
+The registry emitter (`resources.ts`) reads tags and explicit `x-rspace-operation` metadata from OpenAPI and writes
 `generated/apiV2Resources.ts` with request functions and query-key references. CUSTOM-only tags are omitted; runtime fields
 use the RUNTIME_FIELDS kind. This step runs explicitly after the Valibot adapter.
 

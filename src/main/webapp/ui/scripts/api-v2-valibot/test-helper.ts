@@ -2,11 +2,12 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generate as adapt } from "./generate.mjs";
-import { assertSupportedSpec } from "./preflight.mjs";
+import { generate as adapt, type GeneratedSources } from "./generate.ts";
+import { type OpenApiDocument, operationsOf } from "./openapi.ts";
+import { assertSupportedSpec } from "./preflight.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
-export function generate(document, options) {
+export function generate(document: OpenApiDocument, options?: { modelImport?: string }): GeneratedSources {
   assertSupportedSpec(document);
   const scratch = resolve(root, ".claude");
   mkdirSync(scratch, { recursive: true });
@@ -18,11 +19,11 @@ export function generate(document, options) {
       paths: {},
       ...structuredClone(document),
     };
-    for (const path of Object.values(spec.paths))
-      for (const op of Object.values(path)) {
-        if (!op?.operationId) continue;
+    for (const path of Object.values(spec.paths ?? {}))
+      for (const [, op] of operationsOf(path)) {
+        if (!op.operationId) continue;
         if (!Object.keys(op.responses ?? {}).length) op.responses = { 204: { description: "No content" } };
-        for (const response of Object.values(op.responses)) response.description ??= "Response";
+        for (const response of Object.values(op.responses ?? {})) response.description ??= "Response";
       }
     writeFileSync(resolve(directory, "spec.json"), JSON.stringify(spec));
     writeFileSync(
