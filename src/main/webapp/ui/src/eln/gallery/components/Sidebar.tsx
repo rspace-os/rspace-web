@@ -98,10 +98,11 @@ const UploadMenuItem = ({
             multiple
             onChange={({ target: { files } }) => {
               if (files === null) return;
+              // A failed upload may still have stored the file, e.g. when chemistry conversion fails.
               void uploadFiles(fId, [...files]).then(() => {
                 onUploadComplete();
                 trackEvent("user:uploaded:file:gallery");
-              });
+              }, onUploadComplete);
             }}
             type="file"
           />

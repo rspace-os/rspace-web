@@ -15,6 +15,7 @@ import { LandmarksProvider } from "@/components/LandmarksContext";
 import DmpImportDialogs, { type DmpImportTarget } from "@/eln-dmp-integration/DmpImportDialogs";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
+import AnalyticsContext from "@/stores/contexts/Analytics";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { dummyId, Filestore, type GalleryFile, type Id } from "../useGalleryListing";
 import Sidebar from "./Sidebar";
@@ -42,7 +43,29 @@ export const queryClient = new QueryClient({
   },
 });
 
-function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
+type SidebarStoryCallbacks = {
+  refreshListing?: () => Promise<void>;
+  trackEvent?: (event: string) => void;
+};
+
+function SidebarStory({
+  folderId,
+  path,
+  refreshListing = () => Promise.resolve(),
+  trackEvent,
+}: { folderId: Id; path: ReadonlyArray<GalleryFile> | null } & SidebarStoryCallbacks): React.ReactNode {
+  const sidebar = (
+    <Sidebar
+      selectedSection="Images"
+      setSelectedSection={() => {}}
+      drawerOpen={true}
+      setDrawerOpen={() => {}}
+      folderId={{ tag: "success", value: folderId }}
+      path={path}
+      refreshListing={refreshListing}
+      id="1"
+    />
+  );
   return (
     <React.StrictMode>
       <ErrorBoundary>
@@ -54,16 +77,13 @@ function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<Ga
                   <DisableDragAndDropByDefault>
                     <Alerts>
                       <LandmarksProvider>
-                        <Sidebar
-                          selectedSection="Images"
-                          setSelectedSection={() => {}}
-                          drawerOpen={true}
-                          setDrawerOpen={() => {}}
-                          folderId={{ tag: "success", value: folderId }}
-                          path={path}
-                          refreshListing={() => Promise.resolve()}
-                          id="1"
-                        />
+                        {trackEvent ? (
+                          <AnalyticsContext.Provider value={{ isAvailable: true, trackEvent }}>
+                            {sidebar}
+                          </AnalyticsContext.Provider>
+                        ) : (
+                          sidebar
+                        )}
                       </LandmarksProvider>
                     </Alerts>
                   </DisableDragAndDropByDefault>
@@ -132,8 +152,8 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
   );
 }
 
-export function DefaultSidebar(): React.ReactNode {
-  return <SidebarStory folderId={dummyId()} path={null} />;
+export function DefaultSidebar(callbacks: SidebarStoryCallbacks = {}): React.ReactNode {
+  return <SidebarStory folderId={dummyId()} path={null} {...callbacks} />;
 }
 
 /** Sidebar while browsing inside an S3 filestore root. */

@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import allIntegrationsAreDisabled from "../../apps/__tests__/allIntegrationsAreDisabled.json";
 import { DefaultSidebar, queryClient, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
@@ -115,6 +116,37 @@ describe("Sidebar", () => {
     await screen.findByRole("button", { name: "common:actions.create" });
 
     await expectAccessible(baseElement);
+  });
+
+  test("A failed chemistry conversion still refreshes the listing, without the upload analytics event", async () => {
+    // The backend stores the file before converting it, so it is in the folder despite the HTTP 500.
+    mockAxios.onPost("/").reply(500, {
+      status: "INTERNAL_SERVER_ERROR",
+      httpCode: 500,
+      internalCode: 50001,
+      message: "Chemistry service couldn't convert the chemical.",
+      messageCode: null,
+      errors: [""],
+      data: null,
+    });
+    onTestFinished(silenceConsole(["error"], ["Request failed with status code 500"]));
+    const refreshListing = vi.fn(() => Promise.resolve());
+    const trackEvent = vi.fn();
+    // The input's accept="*" is not a MIME pattern user-event understands, so it would drop the file.
+    const user = userEvent.setup({ applyAccept: false });
+    render(<DefaultSidebar refreshListing={refreshListing} trackEvent={trackEvent} />);
+
+    await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
+    await screen.findByRole("menuitem", { name: "gallery:sidebar.uploadFiles" });
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error("Upload input not found");
+    await user.upload(input, new File(["not a molfile"], "bad.mol", { type: "chemical/x-mdl-molfile" }));
+
+    expect(await screen.findByText("Chemistry service couldn't convert the chemical.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(refreshListing).toHaveBeenCalledTimes(1);
+    });
+    expect(trackEvent).not.toHaveBeenCalledWith("user:uploaded:file:gallery");
   });
 
   describe("New Folder", () => {
