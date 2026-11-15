@@ -18,7 +18,7 @@
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
     "build:stats": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" FRONTEND_BUILD_STATS=true vite build --config vite.config.ts",
     "serve": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite --config vite.config.ts",
-    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.ts && node scripts/api-v2-valibot/resources.ts",
+    "generate:api-v2": "cd src/main/webapp/ui && orval --config orval.config.ts && node scripts/api-v2-valibot/generate.ts && node scripts/api-v2-valibot/resources.ts && node scripts/api-v2-valibot/filters.ts",
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-browser": "cd src/main/webapp/ui && cross-env vitest run --config vitest.browser.config.ts",
     "test-browser:ui": "cd src/main/webapp/ui && cross-env vitest --config vitest.browser.config.ts --ui --standalone",
@@ -170,6 +170,7 @@
     "react-to-print": "3.3.0",
     "react-window": "2.3.0",
     "react-zoom-pan-pinch": "4.0.4",
+    "rsql-builder": "1.4.2",
     "sockjs-client": "1.6.1",
     "tinymce": "8.9.3",
     "valibot": "1.4.2"

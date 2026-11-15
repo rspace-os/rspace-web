@@ -23,7 +23,7 @@ controllers without a database. With `-DupdateApiV2OpenApiFixture=true` it write
 `src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json`; without the flag it fails if
 that file differs from the backend.
 
-`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, and the resource registry last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
+`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, the resource registry after it, and the `where` filter types last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
 can delete validation files generated before it. The Valibot project uses `client: "valibot"`,
 `mode: "single"` and `override.valibot.generateReusableSchemas: true`, with an isolated target and
 no `output.schemas` setting.
@@ -45,7 +45,7 @@ Paths below are relative to `src/main/webapp/ui/`:
 | 1. | `orval.config.ts` | Sequential HTTP and Valibot projects. HTTP generation retains React Query 5, fetch, tag-split output, suspense hooks, cancellation, invalidation and transport overrides. |
 | 2. | `src/modules/common/api/v2/generated/` | HTTP model types, request functions, query options, ordinary and suspense hooks, query keys and `invalidate*` helpers. |
 | 3. | `src/modules/common/api/v2/generated/valibot/native.ts` | Orval's reusable component schemas and operation schemas for bodies, responses and applicable path, query and header parameters. |
-| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.ts` registers native output rather than translating JSON Schema; its only rewrite removes `v.url()`. |
+| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.ts` registers native output rather than translating JSON Schema; it removes `v.url()`. `filters.ts` types filtered `where` parameters (see Filtering with `where`). |
 | 5. | `src/modules/common/api/v2/generated/valibot/schemas.ts` | Component exports named `<ComponentName>Schema` and two-way type assertions against HTTP models. Existing consumer imports stay here. |
 | 6. | `src/modules/common/api/v2/generated/valibot/operations.ts` | `apiV2Operations`, keyed by operation ID, with optional JSON request schemas, JSON success schemas by status and content type, and public/session flags. Downloads and empty operations retain entries without JSON body schemas. |
 
@@ -112,6 +112,31 @@ including concurrent callers waiting for the same mint. An Operate As change the
 old page's cache and UI state. A token without the hash claim does not count as a mismatch. This
 prevents reload loops. Same-identity refreshes do not reload. API v1 recovery also compares the
 replacement with the rejected token and reloads unless both carry the same hash.
+
+## Filtering with `where`
+
+Collection operations whose `where` parameter carries `x-rspace-filter` take
+`ApiV2Where<"<Filter>">`: a typed object, or an `RsqlWhere` already built from one. Raw strings do
+not type-check. Selectors, the operators each allows and value types come from the spec, so a wrong
+selector, operator or value fails `pnpm tsc`.
+
+```ts
+useListUsers({
+  where: {
+    or: [{ email: { contains: "smith" } }, { lastName: { matches: "Sm*" } }],
+    createdAt: { greaterThanOrEqual: new Date("2026-01-01") },
+  },
+});
+```
+
+A bare value means `equals`. Operator names are `equals`, `notEquals`, `greaterThan`,
+`greaterThanOrEqual`, `lessThan`, `lessThanOrEqual`, `in`, `notIn` (non-empty lists), `contains`,
+`matches` (wildcards) and `exists` (boolean). Keys combine with AND; `and` and `or` take lists of
+nested objects. `apiV2SerializeQuery`, Orval's `paramsSerializer` for these operations, converts the
+object with `apiV2WhereToRsql` and otherwise serializes exactly like Orval's default; a parity test
+checks that against Orval's own output. An empty object sends no filter. The four search operations
+without filter metadata keep a plain string `where`. Query keys hold the params as given, so an
+object and the equivalent `RsqlWhere` are cached separately; prefix invalidation still covers both.
 
 ## Query keys and invalidation
 
