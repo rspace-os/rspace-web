@@ -7,6 +7,6 @@
  */
 
 export interface UsersReference {
-  relationTo: 'users';
+  relationTo: "users";
   value: number;
 }

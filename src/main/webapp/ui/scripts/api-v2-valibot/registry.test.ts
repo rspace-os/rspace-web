@@ -1,19 +1,40 @@
 import { expect, it } from "vitest";
-import { generate } from "./generate.mjs";
+import { generate } from "./generate.ts";
+import type { Content, OpenApiDocument, SchemaObject } from "./openapi.ts";
 
 const native =
   'import * as v from "valibot";\nexport const SendBody = v.string();\nexport const SendResponse = v.string();\nexport const Binary = v.file();\n';
-function spec(request, responses, schemas = {}) {
+function spec(
+  request: Content,
+  responses: Record<string, { content?: Content }>,
+  schemas: Record<string, SchemaObject> = {},
+): OpenApiDocument {
   return {
     components: { schemas },
-    paths: { "/": { post: { operationId: "send", requestBody: { content: request }, responses } } },
+    paths: {
+      "/": {
+        post: {
+          operationId: "send",
+          requestBody: { content: request },
+          responses,
+        },
+      },
+    },
   };
 }
-const media = (schema) => ({ "application/json": { schema } });
+const media = (schema: SchemaObject): Content => ({
+  "application/json": { schema },
+});
 it("rejects distinct JSON request media schemas", () => {
   expect(() =>
     generate(
-      spec({ ...media({ type: "string" }), "application/vendor+json": { schema: { type: "integer" } } }, {}),
+      spec(
+        {
+          ...media({ type: "string" }),
+          "application/vendor+json": { schema: { type: "integer" } },
+        },
+        {},
+      ),
       native,
     ),
   ).toThrow("Distinct JSON request schemas");
@@ -21,7 +42,13 @@ it("rejects distinct JSON request media schemas", () => {
 it("rejects distinct success status and media schemas", () => {
   expect(() =>
     generate(
-      spec({}, { 200: { content: media({ type: "string" }) }, 201: { content: media({ type: "integer" }) } }),
+      spec(
+        {},
+        {
+          200: { content: media({ type: "string" }) },
+          201: { content: media({ type: "integer" }) },
+        },
+      ),
       native,
     ),
   ).toThrow("Distinct JSON success schemas");
@@ -31,7 +58,10 @@ it("rejects distinct success status and media schemas", () => {
         {},
         {
           200: {
-            content: { ...media({ type: "string" }), "application/vendor+json": { schema: { type: "integer" } } },
+            content: {
+              ...media({ type: "string" }),
+              "application/vendor+json": { schema: { type: "integer" } },
+            },
           },
         },
       ),
@@ -50,8 +80,8 @@ it("compares schema keys independently of their order", () => {
     ),
     native,
   ).operations;
-  expect(source).toContain('["200"]:');
-  expect(source).toContain('["201"]:');
+  expect(source).toContain('"200":');
+  expect(source).toContain('"201":');
 });
 it("skips referenced binary bodies, binary responses and 204", () => {
   const content = media({ $ref: "#/components/schemas/Binary" });
@@ -63,7 +93,7 @@ it("skips referenced binary bodies, binary responses and 204", () => {
     ),
     native,
   ).operations;
-  expect(source).toContain('["send"]: {public: true, responses: {}}');
+  expect(source).toContain('"send": {public: true, responses: {}}');
 });
 it("fails when the native export required by the registry is absent", () => {
   expect(() => generate(spec(media({ type: "string" }), {}), "")).toThrow("Missing native operation schema SendBody");

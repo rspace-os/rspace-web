@@ -5,8 +5,8 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.
  * OpenAPI spec version: 2.0.0
  */
-import type { MaxParameter } from './maxParameter.ts';
-import type { UsersWhereParameter } from './usersWhereParameter.ts';
+import type { MaxParameter } from "./maxParameter.ts";
+import type { UsersWhereParameter } from "./usersWhereParameter.ts";
 
 export type CountUsersParams = {
   /**

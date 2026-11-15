@@ -6,4 +6,4 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetApiV2OpenApiDocument200 = {[key: string]: unknown};
+export type GetApiV2OpenApiDocument200 = { [key: string]: unknown };
