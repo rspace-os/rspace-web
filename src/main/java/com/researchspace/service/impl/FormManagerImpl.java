@@ -18,6 +18,7 @@ import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.FormUsage;
 import com.researchspace.model.record.FormUserMenu;
@@ -253,8 +254,10 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     RSForm formToEdit = get(id, user);
 
     if (hasWritePermission(user, formToEdit)) {
-      if (!formToEdit.isCurrent() && !formToEdit.isTemporary()) {
-        // an outdated version opens read-only: no temporary copy, no edit lock
+      if (!formToEdit.isCurrent()
+          && !formToEdit.isTemporary()
+          && formToEdit.getPublishingState() == FormState.OLD) {
+        // a superseded version opens read-only: no temporary copy, no edit lock
         formToEdit.setEditStatus(EditStatus.CAN_NEVER_EDIT);
         formToEdit.getFieldForms().size();
         return formToEdit;
