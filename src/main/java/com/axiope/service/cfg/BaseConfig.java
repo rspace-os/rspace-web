@@ -1326,7 +1326,7 @@ public abstract class BaseConfig {
     return new PyratClient();
   }
 
-  @Bean(name = "dsw")
+  @Bean(name = "dsw", destroyMethod = "shutdown")
   public DSWClient dswClient() {
     return new DSWClient();
   }

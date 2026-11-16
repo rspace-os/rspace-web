@@ -53,7 +53,9 @@
         "credentials": "Cannot access the server using the supplied API key",
         "project": "Error retrieving DSW project",
         "projects": "Error getting DSW projects",
-        "serverUrl": "Cannot access the specified server URL"
+        "redirect": "The saved DSW URL redirects to a different address. Check it, for example http instead of https.",
+        "serverUrl": "Cannot access the specified server URL",
+        "versionCheck": "Could not check the version of the DSW server at the saved URL. Check the URL, or try again later."
       }
     },
     "dialogTitles": {

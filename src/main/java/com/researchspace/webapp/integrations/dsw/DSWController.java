@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dsw;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -11,12 +12,14 @@ import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
+import com.researchspace.webapp.integrations.dsw.exception.DSWVersionCheckException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +45,7 @@ public class DSWController {
   private static String MSG_PROJECTS_ERROR_CREDS =
       "Cannot access the server using the supplied API key";
   private static String MSG_PROJECTS_ERROR_URL = "Cannot access the specified server URL";
+  private static String MSG_VERSION_CHECK_ERROR = "Could not check the DSW server version";
 
   @Autowired
   public DSWController(
@@ -58,6 +62,9 @@ public class DSWController {
     try {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       return ResponseEntity.ok().body(dswClient.currentUser(serverAlias, cfg));
+    } catch (DSWVersionCheckException e) {
+      JsonNode err = JsonNodeFactory.instance.objectNode().put("message", versionCheckMessage(e));
+      return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(err);
     } catch (HttpClientErrorException e) {
       JsonNode err = JacksonUtil.fromJson(e.getResponseBodyAsString(), JsonNode.class);
       return ResponseEntity.status(e.getStatusCode()).body(err);
@@ -75,6 +82,8 @@ public class DSWController {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg);
       return new AjaxReturnObject<>(plans, null);
+    } catch (DSWVersionCheckException e) {
+      return new AjaxReturnObject<>(null, ErrorList.of(versionCheckMessage(e)));
     } catch (MalformedURLException | ResourceAccessException e) {
       log.warn(MSG_PROJECTS_ERROR_URL, e);
       return new AjaxReturnObject<>(
@@ -100,11 +109,30 @@ public class DSWController {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       JsonNode plan = dswClient.importPlan(serverAlias, cfg, planUuid);
       return new AjaxReturnObject<>(plan, null);
-    } catch (DSWProjectRetrievalException e) {
+    } catch (DSWVersionCheckException e) {
+      return new AjaxReturnObject<>(null, ErrorList.of(versionCheckMessage(e)));
+    } catch (MalformedURLException | ResourceAccessException e) {
+      log.warn(MSG_PROJECTS_ERROR_URL, e);
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.serverUrl")));
+    } catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.Forbidden e) {
+      log.warn(MSG_PROJECTS_ERROR_CREDS, e);
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.credentials")));
+    } catch (Exception e) {
+      // Without this, any other failure is a 500 that the import dialog does not report.
       log.warn(MSG_PROJECT_ERROR, e);
       return new AjaxReturnObject<>(
           null, ErrorList.of(messages.getMessage("apps.dsw.errors.project")));
     }
+  }
+
+  private String versionCheckMessage(DSWVersionCheckException e) {
+    log.warn(MSG_VERSION_CHECK_ERROR, e);
+    return messages.getMessage(
+        e.getReason() == DSWVersionCheckException.Reason.REDIRECT
+            ? "apps.dsw.errors.redirect"
+            : "apps.dsw.errors.versionCheck");
   }
 
   protected AppConfigElementSet getConfigForServer(User user, String serverAlias)
