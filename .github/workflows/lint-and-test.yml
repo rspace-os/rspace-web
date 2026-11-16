@@ -219,9 +219,21 @@ jobs:
       # frontend checks (and vice versa).
       # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
       # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
+      # PRs check only the files that differ from main (main is checked in
+      # full on every push), unless pom.xml differs, since a formatter bump or
+      # config change can affect every file. This compares against main, not
+      # the PR's base, so a stacked PR also checks every layer below it.
+      # Pushes to main and manual runs check everything.
       - name: Spotless check
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          ./mvnw -q spotless:check -DspotlessStrict \
+          ratchet=()
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] \
+            && git diff --quiet "origin/$DEFAULT_BRANCH...HEAD" -- pom.xml; then
+            ratchet=(-DratchetFrom="origin/$DEFAULT_BRANCH")
+          fi
+          ./mvnw -q spotless:check -DspotlessStrict "${ratchet[@]}" \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
