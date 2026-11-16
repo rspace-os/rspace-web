@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.EcatImageDao;
@@ -16,9 +17,11 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
@@ -37,6 +40,7 @@ public class FieldLinksEntitiesSynchronizerTest {
   @Mock FieldManager fieldMgr;
   @Mock InternalLinkDao internalLinkDao;
   @Mock EcatImageDao ecatimagedao;
+  @Mock NfsFieldLinkManager nfsFieldLinkManager;
 
   User anyUser = TestFactory.createAnyUser("any");
   FieldContents emptyContent = new FieldContents();
@@ -209,5 +213,48 @@ public class FieldLinksEntitiesSynchronizerTest {
 
     sync.syncFieldWithEntitiesOnautosave(f1, (Field) f1.shallowCopy(), "", anyUser);
     assertInternalLinkDeleted();
+  }
+
+  private FieldContents nfsContents() {
+    FieldContents contents = new FieldContents();
+    NfsElement nfs = new NfsElement(1L, "/a.dat");
+    contents.addElement(nfs, nfs.toString(), NfsElement.class);
+    return contents;
+  }
+
+  @Test
+  public void autosaveReindexesFilestoreLinksWhenElementsChanged() {
+    Field permanent = TestFactory.createTextFieldForm().createNewFieldFromForm();
+    Field temp = (Field) permanent.shallowCopy();
+    FieldContentDelta added = new FieldContentDelta(nfsContents(), new FieldContents());
+    when(parser.findFieldElementChanges(temp.getFieldData(), "new")).thenReturn(added);
+
+    sync.syncFieldWithEntitiesOnautosave(permanent, temp, "new", anyUser);
+
+    verify(nfsFieldLinkManager).reindex(permanent, "new");
+  }
+
+  @Test
+  public void autosaveLeavesTheIndexAloneWhenNothingChanged() {
+    Field permanent = TestFactory.createTextFieldForm().createNewFieldFromForm();
+    Field temp = (Field) permanent.shallowCopy();
+    when(parser.findFieldElementChanges(temp.getFieldData(), "same"))
+        .thenReturn(new FieldContentDelta(new FieldContents(), new FieldContents()));
+
+    sync.syncFieldWithEntitiesOnautosave(permanent, temp, "same", anyUser);
+
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  public void cancelReindexesFromTheSavedContent() {
+    Field permanent = TestFactory.createTextFieldForm().createNewFieldFromForm();
+    Field temp = (Field) permanent.shallowCopy();
+    when(parser.findFieldElementChanges(permanent, temp))
+        .thenReturn(new FieldContentDelta(nfsContents(), new FieldContents()));
+
+    sync.revertSyncFieldWithEntitiesOnCancel(permanent, temp);
+
+    verify(nfsFieldLinkManager).reindex(permanent, permanent.getFieldData());
   }
 }

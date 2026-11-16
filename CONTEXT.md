@@ -420,6 +420,28 @@ resolved during design. This file is a glossary only — no implementation detai
   version's, and must be worded so no one reads them as the latter.
   _Avoid_: backlink to a version, version reference
 
+## Filestore links
+
+- **Filestore link** — a reference from the text of an ELN document to a
+  Filestore item, a file or a folder. It is the only way RSpace content refers
+  to a remote file; a document may hold several, and one item may be linked
+  from many documents.
+  _Avoid_: nfs link, remote file link, netfiles link
+- **Linked document** — an ELN document whose current, non-deleted content holds
+  a Filestore link to a given item. The Gallery already lists "Linked Documents"
+  for local Gallery items; for a Filestore item the metadata sidecar and the
+  filestores API report the same thing.
+  _Avoid_: linking document, referencing document
+- **Filestore link index** — RSpace's own record of every Filestore link in
+  current document content, kept in step with the documents so that the Linked
+  documents of a Filestore item can be answered without reading every document.
+  _Avoid_: link table, nfs link table
+- **Metadata sidecar** — the DataCite-style YAML record RSpace composes for the
+  files of an S3 folder and can save next to them; the Gallery action that
+  creates it is labelled "Generate Data Record". It names the folder's Linked
+  documents by their Global ID page.
+  _Avoid_: data record (outside the UI label), sidecar file
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and

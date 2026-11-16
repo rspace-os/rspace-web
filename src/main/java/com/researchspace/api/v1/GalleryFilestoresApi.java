@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
@@ -56,6 +57,15 @@ public interface GalleryFilestoresApi {
   @GetMapping("/filestores/{filestoreId}/metadata")
   ApiGalleryFilestoreAuditInfo getFilestoreItemMetadata(
       Long filestoreId, String remotePath, User user) throws BindException;
+
+  /**
+   * Returns the ELN documents linking the filestore item, oldest first, through any user's
+   * filestore of the same filesystem. Documents the user cannot read are owner-only placeholders.
+   * Requires read access; works for every filestore type.
+   */
+  @GetMapping("/filestores/{filestoreId}/linkedDocuments")
+  List<ApiGalleryFilestoreLinkedDocument> getFilestoreItemLinkedDocuments(
+      Long filestoreId, String remotePath, User user);
 
   @PostMapping("/filestores")
   @ResponseBody
