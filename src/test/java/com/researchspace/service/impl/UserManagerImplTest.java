@@ -65,6 +65,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock IPropertyHolder properties;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
   private final RSpacePasswordEncoder passwordEncoder = new RSpacePasswordEncoder();
+  private @Mock LoginBookkeeping loginBookkeeping;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -80,7 +81,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
             properties,
             verificationPasswordValidator,
             new MessageSourceUtils(new JsonMessageSource()),
-            passwordEncoder);
+            passwordEncoder,
+            loginBookkeeping);
   }
 
   @Test
@@ -325,5 +327,24 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     when(userDao.usernameLockKey("ghost")).thenReturn("G");
 
     assertEquals("G", userManager.loginLockKey("ghost "));
+  }
+
+  @Test
+  public void recordLoginSuccessCopiesPersistedLoginStateWithoutSaving() {
+    User subject = createAnyUser("any");
+    subject.setNumConsecutiveLoginFailures((byte) 4);
+    subject.setLoginFailure(new Date());
+    subject.setAccountLocked(true);
+    User persisted = new User();
+    persisted.setLastLogin(new Date());
+    when(loginBookkeeping.recordSuccess(subject.getUsername())).thenReturn(persisted);
+
+    userManager.recordLoginSuccess(subject);
+
+    assertEquals(persisted.getLastLogin(), subject.getLastLogin());
+    assertNull(subject.getLoginFailure());
+    assertEquals(0, subject.getNumConsecutiveLoginFailures());
+    assertFalse(subject.isAccountLocked());
+    verify(userDao, never()).save(any());
   }
 }

@@ -48,7 +48,8 @@ class UserPreferenceCommitTest {
               mock(IPropertyHolder.class),
               mock(IVerificationPasswordValidator.class),
               mock(MessageSourceUtils.class),
-              mock(RSpacePasswordEncoder.class)));
+              mock(RSpacePasswordEncoder.class),
+              mock(LoginBookkeeping.class)));
   private final Preference preference = Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
   private UserPreference saved;
 
