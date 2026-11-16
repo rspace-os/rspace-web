@@ -2,6 +2,7 @@ package com.researchspace.webapp.filter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
@@ -14,7 +15,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,15 +90,25 @@ class SiteMeshDecorationTest {
 
   @Test
   void containerErrorPageIsDecorated() throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", "/404.jsp");
-    request.setServletPath("/404.jsp");
-    request.setDispatcherType(DispatcherType.ERROR);
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    response.setStatus(404);
-
-    dispatch(DispatcherType.ERROR, request, response, htmlController());
+    MockHttpServletResponse response = serve404ErrorPage(null, null);
 
     assertEquals("/WEB-INF/decorators/default.jsp", decoratorUsed(response));
+  }
+
+  @Test
+  void containerErrorPageForAjaxRequestUnderMultipartMappedPrefixIsNotDecorated() throws Exception {
+    MockHttpServletResponse response = serve404ErrorPage("/workspace/ajax/search", "/workspace");
+
+    assertNull(decoratorUsed(response));
+  }
+
+  @Test
+  void sitemeshIsMappedBeforeRewriteFilter() throws Exception {
+    List<String> order = filterMappings().stream().map(SiteMeshDecorationTest::filterName).toList();
+
+    assertTrue(
+        order.indexOf("sitemesh") < order.indexOf("rewriteFilter"),
+        "SiteMesh only sees the incoming request if it runs before the rewrite filter forwards it");
   }
 
   /**
@@ -119,6 +132,24 @@ class SiteMeshDecorationTest {
                 htmlController());
 
     dispatch(DispatcherType.REQUEST, request, response, rewriteFilter);
+    return response;
+  }
+
+  /**
+   * ERROR-dispatches the 404 page. Non-null arguments set the forward attributes the container adds
+   * for the original request.
+   */
+  private MockHttpServletResponse serve404ErrorPage(String originalUri, String originalServletPath)
+      throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", "/404.jsp");
+    request.setServletPath("/404.jsp");
+    request.setDispatcherType(DispatcherType.ERROR);
+    request.setAttribute("jakarta.servlet.forward.request_uri", originalUri);
+    request.setAttribute("jakarta.servlet.forward.servlet_path", originalServletPath);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    response.setStatus(404);
+
+    dispatch(DispatcherType.ERROR, request, response, htmlController());
     return response;
   }
 
@@ -182,15 +213,8 @@ class SiteMeshDecorationTest {
   }
 
   private static Set<DispatcherType> sitemeshDispatchersFromWebXml() throws Exception {
-    Document webXml;
-    try (InputStream in = Files.newInputStream(WEBAPP.resolve("WEB-INF/web.xml"))) {
-      webXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(in);
-    }
-    NodeList mappings = webXml.getElementsByTagName("filter-mapping");
-    for (int i = 0; i < mappings.getLength(); i++) {
-      Element mapping = (Element) mappings.item(i);
-      String name = mapping.getElementsByTagName("filter-name").item(0).getTextContent().trim();
-      if ("sitemesh".equals(name)) {
+    for (Element mapping : filterMappings()) {
+      if ("sitemesh".equals(filterName(mapping))) {
         Set<DispatcherType> types = EnumSet.noneOf(DispatcherType.class);
         NodeList dispatchers = mapping.getElementsByTagName("dispatcher");
         for (int j = 0; j < dispatchers.getLength(); j++) {
@@ -200,5 +224,22 @@ class SiteMeshDecorationTest {
       }
     }
     throw new IllegalStateException("No sitemesh filter-mapping in web.xml");
+  }
+
+  private static List<Element> filterMappings() throws Exception {
+    Document webXml;
+    try (InputStream in = Files.newInputStream(WEBAPP.resolve("WEB-INF/web.xml"))) {
+      webXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(in);
+    }
+    NodeList mappings = webXml.getElementsByTagName("filter-mapping");
+    List<Element> elements = new ArrayList<>();
+    for (int i = 0; i < mappings.getLength(); i++) {
+      elements.add((Element) mappings.item(i));
+    }
+    return elements;
+  }
+
+  private static String filterName(Element mapping) {
+    return mapping.getElementsByTagName("filter-name").item(0).getTextContent().trim();
   }
 }

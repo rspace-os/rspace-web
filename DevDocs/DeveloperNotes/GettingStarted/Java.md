@@ -152,8 +152,8 @@ All the static and UI content is stored `src/main/webapp` and includes JSP
 pages, Javascript files and CSS stylesheets. We use Sitemesh
 (http://wiki.sitemesh.org/display/sitemesh/Home) to provide a consistent
 page structure and header/footer structure across the application. This
-is a special JSP page in `/decorators/default.jsp` and configured via
-`WEB-INF/decorators.xml`.
+is a special JSP page in `WEB-INF/decorators/default.jsp` and configured via
+`WEB-INF/sitemesh3.xml`.
 
 We are now using client side templates such as Mustache wherever
 possible, Boostrap for CSS. We also make extensive use of JQuery,
