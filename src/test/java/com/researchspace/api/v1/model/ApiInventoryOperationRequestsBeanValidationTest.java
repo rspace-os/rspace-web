@@ -3,11 +3,13 @@ package com.researchspace.api.v1.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -92,7 +94,7 @@ class ApiInventoryOperationRequestsBeanValidationTest {
   @Test
   void aCountOfOnePointZeroInJsonIsRejectedAsNotWhole() throws Exception {
     ApiInventoryOperationRequests.Aliquot request =
-        new com.fasterxml.jackson.databind.ObjectMapper()
+        new ObjectMapper()
             .readValue("{\"count\": 1.0}", ApiInventoryOperationRequests.Aliquot.class);
     assertEquals(Set.of("errors.inventory.operation.countNotWhole"), keysFor(request, "count"));
   }
@@ -201,7 +203,7 @@ class ApiInventoryOperationRequestsBeanValidationTest {
 
   @Test
   void poolRefusesMoreOriginsThanTheEndpointWillProcess() {
-    ApiInventoryOperationRequests.Pool tooMany = pool(java.util.Collections.nCopies(101, origin()));
+    ApiInventoryOperationRequests.Pool tooMany = pool(Collections.nCopies(101, origin()));
 
     assertEquals(Set.of("errors.inventory.operation.tooManyOrigins"), keysFor(tooMany, "origins"));
   }

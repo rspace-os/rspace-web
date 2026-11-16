@@ -45,6 +45,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -107,7 +108,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
     filestoreWriteManager.setClock(FIXED_CLOCK);
     filestoreWriteManager.setProperties(propertyHolder);
-    filestoreWriteManager.setMessages(mock(com.researchspace.service.MessageSourceUtils.class));
+    filestoreWriteManager.setMessages(mock(MessageSourceUtils.class));
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
@@ -120,7 +121,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.properties = propertyHolder;
     controller.s3SidecarFileService = s3SidecarFileService;
     controller.metadataSidecarFileEnabled = true;
-    controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
+    controller.messages = mock(MessageSourceUtils.class);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
   }

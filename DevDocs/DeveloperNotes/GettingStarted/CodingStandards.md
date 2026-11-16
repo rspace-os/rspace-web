@@ -339,6 +339,7 @@ The Java codebase adheres to the [Google Java Style Guide](https://google.github
 Code formatting is applied via the [Spotless Maven Plugin](https://github.com/diffplug/spotless/blob/main/plugin-maven/README.md).
 
 The formatting is applied (if there are any changes) each time rspace-web is compiled, as the plugin is tied to the Maven compile phase.
+It also replaces fully qualified type names, such as `java.util.List`, with an import and the simple name, unless that would clash with another type of the same name.
 Doing so ensures that before a PR is created the formatting is as expected and changesets should therefore only contain actual code changes rather than formatting/whitespace changes.
 
 CI also runs the stricter `-DspotlessStrict` check, which adds CleanThat. On PRs it checks only the files that differ from `main`, including those changed by lower layers of a stacked PR, unless `pom.xml` differs. To run the same check locally, use `./mvnw spotless:check -DspotlessStrict -DratchetFrom=origin/main`, and replace `check` with `apply` to fix violations. Spotless skips unchanged files using indexes in `.spotless/`; the base and strict configurations keep separate indexes.

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -97,7 +98,7 @@ class InventoryOperationInFlightOriginsTest {
               return false;
             }
           };
-      List<Future<Boolean>> results = new java.util.ArrayList<>();
+      List<Future<Boolean>> results = new ArrayList<>();
       for (int i = 0; i < threads; i++) {
         results.add(pool.submit(attempt));
       }

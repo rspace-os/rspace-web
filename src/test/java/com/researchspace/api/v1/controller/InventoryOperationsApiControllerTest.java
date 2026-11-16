@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -381,11 +382,11 @@ class InventoryOperationsApiControllerTest {
   @Test
   void assertsEditPermissionOnEveryOriginBeforeTakingAnyLock() {
     when(subSampleApiMgr.assertUserCanEditSubSample(100L, user))
-        .thenThrow(new org.apache.shiro.authz.AuthorizationException("no"));
+        .thenThrow(new AuthorizationException("no"));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
     assertThrows(
-        org.apache.shiro.authz.AuthorizationException.class,
+        AuthorizationException.class,
         () -> controller.aliquot(request, bindingResultFor(request), user));
 
     verifyNoInteractions(tracker);
