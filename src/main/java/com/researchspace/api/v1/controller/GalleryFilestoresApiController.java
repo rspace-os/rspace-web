@@ -131,10 +131,10 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
   /**
    * The link index spans every user's filestores, so on filesystems with per-user logins the
-   * caller's own login must read the item: a folder must list, a file must open. Listing the parent
-   * tells which it is, since some backends (SFTP) list a file the caller cannot open. Filesystems
-   * without per-user logins are gated by their allowlists alone, and an unknown filestore is left
-   * to the lookup's 404.
+   * caller's own login must read the item: a folder must browse, a file must open. Listing the
+   * parent tells which it is, since some backends (SFTP) list a file the caller cannot open.
+   * Filesystems without per-user logins are gated by their allowlists alone, and an unknown
+   * filestore is left to the lookup's 404.
    */
   private void assertItemReadableWithOwnLogin(User user, Long filestoreId, String remotePath) {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
@@ -146,7 +146,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     String path = StringUtils.removeEnd(filestore.getAbsolutePath(remotePath), "/");
     try {
       if (StringUtils.strip(remotePath, "/").isEmpty() || isFolderIn(client, path)) {
-        if (client.queryForNfsFolder(new NfsTarget(path, null)) != null) {
+        // the folder query answers on SMB even when listing is denied; browsing fails instead
+        if (client.createFileTree(path, null, filestore) != null) {
           return;
         }
       } else {
@@ -181,7 +182,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     NfsFolderDetails parent = client.queryForNfsFolder(new NfsTarget(parentPath, null));
     String name = path.substring(slash + 1);
     return parent.getContent().stream()
-            .filter(item -> name.equals(item.getName()))
+            // iRODS names a listed collection by its absolute path
+            .filter(item -> name.equals(StringUtils.substringAfterLast("/" + item.getName(), "/")))
             .findFirst()
             .orElseThrow(() -> new IOException("not listed in its parent folder"))
         instanceof NfsFolderDetails;

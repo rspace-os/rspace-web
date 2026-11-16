@@ -47,6 +47,7 @@ import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
+import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
@@ -919,6 +920,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
       throws IOException {
     NfsClient client = loginToIrodsFilestore();
     when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFolderDetails("XRD")));
+    when(client.createFileTree(eq("/XRD"), any(), any())).thenReturn(new NfsFileTreeNode());
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/", user)).thenReturn(List.of());
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user)).isEmpty();
@@ -952,10 +954,42 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     nfsManager.getNfsFileStore(1L).setPath("/data");
     when(client.queryForNfsFolder(atPath("/data/XRD")))
         .thenReturn(folderListing(new NfsFolderDetails("raw")));
-    when(client.queryForNfsFolder(atPath("/data/XRD/raw"))).thenReturn(new NfsFolderDetails("raw"));
+    when(client.createFileTree(eq("/data/XRD/raw"), any(), any()))
+        .thenReturn(new NfsFileTreeNode());
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/raw/", user)).thenReturn(List.of());
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/raw/", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedForUnlistableFolder()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    // like SMB, whose folder query still answers when listing the folder is denied
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFolderDetails("XRD")));
+    when(client.createFileTree(any(), any(), any())).thenThrow(new IOException("access denied"));
+
+    assertThrows(
+        NotFoundException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user));
+    assertThrows(
+        NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginAcceptsFolderListedByItsFullPath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/tempZone/home/alice");
+    // iRODS names a listed collection by its absolute path
+    when(client.queryForNfsFolder(atPath("/tempZone/home/alice")))
+        .thenReturn(folderListing(new NfsFolderDetails("/tempZone/home/alice/test")));
+    when(client.createFileTree(eq("/tempZone/home/alice/test"), any(), any()))
+        .thenReturn(new NfsFileTreeNode());
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/test/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/test/", user)).isEmpty();
   }
 
   @Test
