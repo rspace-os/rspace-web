@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.dao.InventoryLinkDao;
@@ -11,6 +12,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryLinkValidator;
@@ -19,6 +21,7 @@ import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,9 +35,9 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
-    assertWritable(apiLink, actor);
+    NfsFileStore store = assertWritable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
-    applyApiToEntity(apiLink, entity);
+    applyApiToEntity(apiLink, entity, store);
     return linkDao.save(entity);
   }
 
@@ -50,8 +53,8 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
-    assertWritable(apiLink, actor);
-    applyApiToEntity(apiLink, existing);
+    NfsFileStore store = assertWritable(apiLink, actor);
+    applyApiToEntity(apiLink, existing, store);
     return linkDao.save(existing);
   }
 
@@ -131,12 +134,81 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return summary;
   }
 
+  @Override
+  public ApiInventoryLinkTargetSummary getFilestoreTargetSummary(
+      Long filestoreId, String remotePath, User actor) {
+    ApiInventoryLinkFilestoreTarget target =
+        new ApiInventoryLinkFilestoreTarget(filestoreId, remotePath);
+    if (!target.namesAnItem()) {
+      throw filestoreTargetNotFound(target);
+    }
+    ApiInventoryLinkTargetSummary summary = new ApiInventoryLinkTargetSummary();
+    linkTargetResolver
+        .ownedFilestore(filestoreId, actor)
+        .ifPresent(
+            store -> {
+              summary.setReadable(true);
+              summary.setName(store.getName());
+              summary.setType(ApiInventoryLinkTargetSummary.FILESTORE_ITEM_TYPE);
+              summary.setDeleted(store.isDeleted());
+            });
+    return summary;
+  }
+
   /**
    * The checks every link write runs, and so canCreateLink too: one place, so they cannot drift.
+   * Returns the filestore of a Filestore item target, null for a Global ID target.
    */
-  private void assertWritable(ApiInventoryLink apiLink, User actor) {
+  private NfsFileStore assertWritable(ApiInventoryLink apiLink, User actor) {
+    if (apiLink.hasFilestoreTarget()) {
+      return assertFilestoreTargetWritable(apiLink, actor);
+    }
     validateForWrite(apiLink);
     assertTargetAcceptable(apiLink, actor);
+    return null;
+  }
+
+  /**
+   * Mirrors {@link InventoryLinkValidator} for a Filestore item target, then requires a filestore
+   * the actor owns and has not removed (ADR 0016). The path is checked before the lookup, and its
+   * length after it, since the absolute path needs the filestore.
+   */
+  private NfsFileStore assertFilestoreTargetWritable(ApiInventoryLink apiLink, User actor) {
+    ApiInventoryLinkFilestoreTarget target = apiLink.getFilestoreTarget();
+    if (StringUtils.isNotBlank(apiLink.getTargetGlobalId())) {
+      throw new ApiRuntimeException("errors.inventory.field.linkTargetAmbiguous");
+    }
+    if (!DataCiteRelationType.isValid(apiLink.getRelationType())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.linkRelationTypeInvalid", apiLink.getRelationType());
+    }
+    if (apiLink.getVersionPin() != null) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.linkTargetVersionNotFound",
+          target.asLogicPath(),
+          apiLink.getVersionPin());
+    }
+    if (!target.namesAnItem()) {
+      throw filestoreTargetNotFound(target);
+    }
+    NfsFileStore store =
+        linkTargetResolver
+            .ownedFilestore(target.getFilestoreId(), actor)
+            .filter(owned -> !owned.isDeleted())
+            .orElseThrow(() -> filestoreTargetNotFound(target));
+    InventoryLink probe = new InventoryLink();
+    probe.setFilestoreTarget(store, target.getRemotePath());
+    if (probe.getTargetRemotePath().length() > InventoryLink.MAX_PATH_LENGTH
+        || probe.getTargetAbsolutePath().length() > InventoryLink.MAX_PATH_LENGTH) {
+      throw filestoreTargetNotFound(target);
+    }
+    return store;
+  }
+
+  private static ApiRuntimeException filestoreTargetNotFound(
+      ApiInventoryLinkFilestoreTarget target) {
+    return new ApiRuntimeException(
+        "errors.inventory.field.linkTargetNotFound", target.asLogicPath());
   }
 
   /**
@@ -206,14 +278,16 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return new GlobalIdentifier(gid.getPrefix(), gid.getDbId()).getIdString();
   }
 
-  private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity) {
+  private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity, NfsFileStore store) {
     entity.setRelationType(api.getRelationType());
+    if (api.hasFilestoreTarget()) {
+      entity.setFilestoreTarget(store, api.getFilestoreTarget().getRemotePath());
+      return;
+    }
     GlobalIdentifier gid = new GlobalIdentifier(api.getTargetGlobalId());
     // persist the unsuffixed base id: the version lives in versionPin, so a
     // "vN" suffix on the incoming id must not be doubly encoded in the row
-    entity.setTargetGlobalId(baseId(gid));
-    entity.setTargetPrefix(gid.getPrefix());
-    entity.setTargetDbId(gid.getDbId());
+    entity.setGlobalIdTarget(new GlobalIdentifier(gid.getPrefix(), gid.getDbId()));
     Long versionPin = pinOf(api, gid);
     entity.setVersionPin(versionPin);
     // Capture the exact audit revision the pinned version maps to. Null version means "latest",

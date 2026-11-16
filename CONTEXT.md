@@ -423,9 +423,9 @@ resolved during design. This file is a glossary only — no implementation detai
 ## Filestore links
 
 - **Filestore link** — a reference from the text of an ELN document to a
-  Filestore item, a file or a folder. It is the only way RSpace content refers
-  to a remote file; a document may hold several, and one item may be linked
-  from many documents.
+  Filestore item, a file or a folder. A document may hold several, and one item
+  may be linked from many documents. An Inventory item refers to a Filestore
+  item differently: through a Link field whose Link target is that item.
   _Avoid_: nfs link, remote file link, netfiles link
 - **Linked document** — an ELN document whose current, non-deleted content holds
   a Filestore link to a given item. The Gallery already lists "Linked Documents"
@@ -441,6 +441,22 @@ resolved during design. This file is a glossary only — no implementation detai
   creates it is labelled "Generate Data Record". It names the folder's Linked
   documents by their Global ID page.
   _Avoid_: data record (outside the UI label), sidecar file
+
+## Inventory links
+
+- **Link field** — a field of an Inventory item, either a Custom field of its
+  template or an Extra field, that holds one link: a relation type from the
+  DataCite vocabulary and a Link target. A template's Link field may restrict
+  the relation types and carry a default link for the items created from it.
+  _Avoid_: reference field, relation field
+- **Link target** — what a Link field points at. Either an RSpace record named
+  by its Global ID (an Inventory item or template, an ELN document, a notebook
+  or a Local Gallery item), optionally pinned to one of its versions, or a
+  Filestore item named by the filestore it is reached through and its path
+  there. A Filestore item has no version to pin and cannot be a template's
+  default link; only the owner of that filestore can link through it or be
+  told its name.
+  _Avoid_: linked record (a Filestore item is not a record), link destination
 
 ## Internationalization (i18n)
 

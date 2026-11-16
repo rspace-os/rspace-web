@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import org.junit.jupiter.api.Test;
 
 public class InventoryLinkFieldTest {
@@ -127,5 +129,18 @@ public class InventoryLinkFieldTest {
 
     assertNull(copy.getLink());
     assertEquals("References", copy.getAllowedRelationTypes());
+  }
+
+  @Test
+  public void aFilestoreItemTargetSatisfiesAMandatoryLinkField() {
+    InventoryLinkField field = new InventoryLinkField("Raw data");
+    InventoryLink link = new InventoryLink();
+    link.setRelationType("IsSourceOf");
+    link.setFilestoreTarget(
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("o")),
+        "/XRD/run.dat");
+    field.setLink(link);
+
+    assertTrue(field.isValidValueForMandatoryField(null));
   }
 }

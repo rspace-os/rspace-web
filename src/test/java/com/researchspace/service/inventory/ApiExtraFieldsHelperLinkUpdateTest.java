@@ -7,17 +7,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
@@ -191,5 +195,47 @@ class ApiExtraFieldsHelperLinkUpdateTest {
   void emptyIncomingListIsANoop() {
     assertFalse(
         helper.applyExistingLinkFieldChanges(Collections.emptyList(), List.of(dbField), user));
+  }
+
+  private final NfsFileStore store =
+      GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("owner"));
+
+  private ApiExtraField incomingFilestoreLinkField(Long id, String remotePath) {
+    ApiExtraField apiField = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+    apiField.setId(id);
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setRelationType("References");
+    apiLink.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(12L, remotePath));
+    apiField.setLink(apiLink);
+    return apiField;
+  }
+
+  @Test
+  void anEmptyLinkFieldGainsAFilestoreTargetViaCreate() {
+    dbField.setLink(null);
+    InventoryLink created = new InventoryLink();
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    assertSame(created, dbField.getLink());
+  }
+
+  @Test
+  void anUnchangedFilestoreTargetIsNotRevalidated() {
+    // a colleague saving a shared item, or the owner after removing the filestore
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "XRD/run.dat/");
+
+    assertFalse(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aGlobalIdLinkRetargetedToAFilestoreItemGoesThroughTheLinkManager() {
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+
+    assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
   }
 }

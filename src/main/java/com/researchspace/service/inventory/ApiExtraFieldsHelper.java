@@ -228,7 +228,7 @@ public class ApiExtraFieldsHelper implements Validator {
         continue;
       }
       ApiInventoryLink apiLink = apiField.getLink();
-      if (apiLink == null || StringUtils.isBlank(apiLink.getTargetGlobalId())) {
+      if (apiLink == null || !apiLink.hasTarget()) {
         continue;
       }
       Optional<ExtraField> dbFieldOpt =
@@ -286,9 +286,13 @@ public class ApiExtraFieldsHelper implements Validator {
    * Compared on the parsed base id plus the effective pin (a "vN" suffix counts as a pin), so a
    * client that pins via the suffix with {@code versionPin: null} does not churn an unchanged row
    * with spurious updates. An unparseable incoming id counts as changed so the manager rejects it
-   * with its clean validation error.
+   * with its clean validation error. A stored Filestore item target has no prefix, so an incoming
+   * Global ID always reads as changed.
    */
   private boolean linkChanged(ApiInventoryLink apiLink, InventoryLink dbLink) {
+    if (apiLink.hasFilestoreTarget()) {
+      return !InventoryLinkValidator.isSameFilestoreTarget(apiLink, dbLink);
+    }
     GlobalIdentifier incoming = parseTargetOrNull(apiLink.getTargetGlobalId());
     if (incoming == null) {
       return true;

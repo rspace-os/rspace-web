@@ -12,13 +12,15 @@ import lombok.NoArgsConstructor;
 @JsonPropertyOrder({"globalId", "name", "type", "deleted", "readable", "pinnedVersionFound"})
 public class ApiInventoryLinkTargetSummary {
 
+  public static final String FILESTORE_ITEM_TYPE = "FILESTORE_ITEM";
+
   @JsonProperty("globalId")
   private String globalId;
 
   @JsonProperty("name")
   private String name;
 
-  /** Item type, e.g. SAMPLE/SUBSAMPLE/CONTAINER/INSTRUMENT */
+  /** Item type, e.g. SAMPLE/SUBSAMPLE/CONTAINER/INSTRUMENT, or {@link #FILESTORE_ITEM_TYPE} */
   @JsonProperty("type")
   private String type;
 

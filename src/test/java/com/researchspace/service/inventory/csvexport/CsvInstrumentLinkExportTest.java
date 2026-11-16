@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,5 +63,16 @@ public class CsvInstrumentLinkExportTest {
     link.setTargetGlobalId(prefix.name() + dbId);
     link.setVersionPin(pin);
     return link;
+  }
+
+  @Test
+  void aFilestoreItemLinkExportsAsRelationTypeAndFilestoreIdWithPath() {
+    InventoryLink link = new InventoryLink();
+    link.setRelationType("IsSourceOf");
+    link.setFilestoreTarget(
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("o")),
+        "/XRD/run 1.dat");
+
+    assertEquals("IsSourceOf 12:/XRD/run 1.dat", exporter.csvValueForLink(link));
   }
 }

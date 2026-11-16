@@ -167,4 +167,11 @@ public class CsvLinkValueParserTest {
 
     verify(parser.linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
+
+  @Test
+  void theCellExportedForAFilestoreItemIsNotALink() {
+    assertFalse(parser.isParseable("IsSourceOf 12:/XRD/run.dat"));
+    assertThrows(
+        IllegalArgumentException.class, () -> parser.parse("IsSourceOf 12:/XRD/run.dat", importer));
+  }
 }

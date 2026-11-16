@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -168,5 +170,59 @@ class InventoryLinkValidatorTest {
 
   private Errors errorsFor(ApiInventoryLink link) {
     return new BeanPropertyBindingResult(link, "link");
+  }
+
+  private ApiInventoryLink filestoreLink(Long filestoreId, String remotePath) {
+    ApiInventoryLink l = new ApiInventoryLink();
+    l.setRelationType("IsSourceOf");
+    l.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(filestoreId, remotePath));
+    return l;
+  }
+
+  @Test
+  void acceptsAFilestoreItemTarget() {
+    ApiInventoryLink link = filestoreLink(12L, "/XRD/run.dat");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void rejectsALinkNamingBothAGlobalIdAndAFilestoreItem() {
+    ApiInventoryLink link = filestoreLink(12L, "/XRD/run.dat");
+    link.setTargetGlobalId("SA1");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertEquals(
+        "errors.inventory.field.linkTargetAmbiguous",
+        errors.getFieldError("targetGlobalId").getCode());
+  }
+
+  @Test
+  void rejectsAVersionPinOnAFilestoreItem() {
+    ApiInventoryLink link = filestoreLink(12L, "/XRD/run.dat");
+    link.setVersionPin(3L);
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertEquals(
+        "errors.inventory.field.linkTargetVersionNotFound",
+        errors.getFieldError("versionPin").getCode());
+  }
+
+  @Test
+  void rejectsAFilestoreTargetNamingNoItemAsNotFound() {
+    // a blank path, the filestore's own root, or no filestore at all
+    for (ApiInventoryLink link :
+        List.of(filestoreLink(12L, " "), filestoreLink(12L, "//"), filestoreLink(null, "/XRD"))) {
+      Errors errors = errorsFor(link);
+      validator.validate(link, "SA42", errors);
+
+      assertEquals(
+          "errors.inventory.field.linkTargetNotFound",
+          errors.getFieldError("filestoreTarget").getCode());
+    }
   }
 }

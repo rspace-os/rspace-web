@@ -1,0 +1,43 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-10-rsdev1658-inventorylink-filestore-target" context="run" author="nferrante">
+        <comment>RSDEV-1658: InventoryLink: a second target kind, a Filestore item, beside the Global ID target</comment>
+        <dropNotNullConstraint tableName="InventoryLink" columnName="target_globalid" columnDataType="varchar(64)"/>
+        <dropNotNullConstraint tableName="InventoryLink" columnName="target_prefix" columnDataType="varchar(8)"/>
+        <dropNotNullConstraint tableName="InventoryLink" columnName="target_db_id" columnDataType="bigint"/>
+        <!-- no foreign keys: user deletion hard-deletes NfsFileStore rows before anything else -->
+        <addColumn tableName="InventoryLink">
+            <column name="filestore_id" type="bigint"/>
+            <column name="target_remote_path" type="varchar(1024)"/>
+            <column name="target_filesystem_id" type="bigint"/>
+            <column name="target_absolute_path" type="varchar(1024)"/>
+        </addColumn>
+        <addColumn tableName="InventoryLink_AUD">
+            <column name="filestore_id" type="bigint"/>
+            <column name="target_remote_path" type="varchar(1024)"/>
+            <column name="target_filesystem_id" type="bigint"/>
+            <column name="target_absolute_path" type="varchar(1024)"/>
+        </addColumn>
+        <!-- case-sensitive, as S3 keys and the NfsFieldLink paths are -->
+        <sql>alter table InventoryLink
+            modify target_remote_path VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+            modify target_absolute_path VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;</sql>
+        <!-- createIndex cannot express the (191) prefix -->
+        <sql>create index IDX_InvLink_fs_abs_path on InventoryLink (target_filesystem_id, target_absolute_path(191));</sql>
+        <sql>
+            alter table InventoryLink add constraint CK_InvLink_one_target_kind check (
+              (target_globalid is not null and target_prefix is not null and target_db_id is not null
+                and filestore_id is null and target_remote_path is null
+                and target_filesystem_id is null and target_absolute_path is null)
+              or
+              (target_globalid is null and target_prefix is null and target_db_id is null
+                and version_pin is null and target_revision_id is null
+                and filestore_id is not null and target_remote_path is not null
+                and target_filesystem_id is not null and target_absolute_path is not null));
+        </sql>
+    </changeSet>
+</databaseChangeLog>
