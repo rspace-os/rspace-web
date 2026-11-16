@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,7 @@ import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFolderDetails;
 import com.researchspace.netfiles.NfsResourceDetails;
+import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
@@ -922,6 +924,38 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user)).isEmpty();
     verify(client, never()).queryNfsFileForDownload(any());
     verify(client).closeSession();
+  }
+
+  private static NfsTarget atPath(String path) {
+    return argThat(target -> target != null && path.equals(target.getPath()));
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksNestedFileUnderTheFilestoreBasePath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/data");
+    when(client.queryForNfsFolder(atPath("/data/XRD")))
+        .thenReturn(folderListing(new NfsFileDetails("run.dat")));
+    NfsFileDetails readable = new NfsFileDetails("run.dat");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(atPath("/data/XRD/run.dat"))).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/run.dat", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksNestedFolderUnderTheFilestoreBasePath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/data");
+    when(client.queryForNfsFolder(atPath("/data/XRD")))
+        .thenReturn(folderListing(new NfsFolderDetails("raw")));
+    when(client.queryForNfsFolder(atPath("/data/XRD/raw"))).thenReturn(new NfsFolderDetails("raw"));
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/raw/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/raw/", user)).isEmpty();
   }
 
   @Test
