@@ -12,7 +12,8 @@ export const DSW_MOCK_PATH = "/dsw";
 
 /*
  * A pre-5.0.0 DSW server, which serves its API and version info under /wizard-api/. It has no
- * /api/ route, so the version check gets a 404 and RSpace falls back to the legacy paths.
+ * /api/ route, so the version check gets a 404 there, then reads v4.35.0 from /wizard-api/ and
+ * uses the legacy paths.
  */
 export const DSW_V4_MOCK_PATH = "/dsw-v4";
 

@@ -29,6 +29,8 @@ import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.webapp.integrations.dsw.exception.DSWVersionCheckException;
+import com.researchspace.webapp.integrations.dsw.exception.DSWVersionCheckException.Reason;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -67,8 +70,11 @@ class DSWClientTest {
 
   private static final String SERVER = "https://dsw.example.com";
   private static final String INFO_URL = SERVER + "/api/";
+  private static final String LEGACY_INFO_URL = SERVER + "/wizard-api/";
 
   private static final String V5_INFO = "{\"releaseVersion\":\"5.0.0\"}";
+  private static final String V4_INFO =
+      "{\"name\":\"Wizard Server\",\"version\":\"v4.35.0~0000000\"}";
 
   private static final class FakeTicker extends Ticker {
     private final AtomicLong nanos = new AtomicLong();
@@ -96,35 +102,93 @@ class DSWClientTest {
     client = new DSWClient(restTemplate, ticker);
   }
 
+  // MockRestServiceServer fails on any unexpected request, so these also show that a 5.x server
+  // is not asked for its legacy version info.
   @ParameterizedTest
   @CsvSource({
-    "'{\"releaseVersion\":\"5.0.0\",\"version\":\"v5.0.0~f3c60c086\"}', /api/",
-    "'{\"releaseVersion\":\"5.1.2\"}', /api/",
-    "'{\"version\":\"v5.0.0~f3c60c086\"}', /api/",
-    "'{\"releaseVersion\":\"5.1\"}', /api/",
-    "'{\"releaseVersion\":\"5.0\"}', /api/",
-    "'{\"version\":\"v5.1~f3c60c086\"}', /api/",
-    "'{\"releaseVersion\":\"\",\"version\":\"v5.0.0~f3c60c086\"}', /api/",
-    "'{\"releaseVersion\":\"4.26.0\"}', /wizard-api/",
-    "'{\"releaseVersion\":\"4.26\"}', /wizard-api/",
-    "'{\"releaseVersion\":\"5\"}', /wizard-api/",
-    "'{\"version\":\"4.9.1\"}', /wizard-api/",
-    "'{\"name\":\"Engine Wizard\"}', /wizard-api/"
+    "'{\"releaseVersion\":\"5.0.0\",\"version\":\"v5.0.0~f3c60c086\"}'",
+    "'{\"releaseVersion\":\"5.1.2\"}'",
+    "'{\"version\":\"v5.0.0~f3c60c086\"}'",
+    "'{\"releaseVersion\":\"5.1\"}'",
+    "'{\"releaseVersion\":\"5.0\"}'",
+    "'{\"version\":\"v5.1~f3c60c086\"}'",
+    "'{\"releaseVersion\":\"\",\"version\":\"v5.0.0~f3c60c086\"}'"
   })
-  void choosesApiPathFromReportedVersion(String infoJson, String expectedPath) {
+  void usesCurrentPathWhenApiReportsV5(String infoJson) {
     server
         .expect(requestTo(INFO_URL))
         .andRespond(withSuccess(infoJson, MediaType.APPLICATION_JSON));
 
-    assertEquals(SERVER + expectedPath, client.getApiBaseUrl(SERVER));
+    assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "'{\"releaseVersion\":\"4.26.0\"}'",
+    "'{\"releaseVersion\":\"4.26\"}'",
+    "'{\"releaseVersion\":\"5\"}'",
+    "'{\"version\":\"4.9.1\"}'",
+    "'{\"name\":\"Engine Wizard\"}'"
+  })
+  void checksLegacyInfoWhenApiReportsNoV5Version(String infoJson) {
+    server
+        .expect(requestTo(INFO_URL))
+        .andRespond(withSuccess(infoJson, MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
+
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"NOT_FOUND", "UNAUTHORIZED", "FORBIDDEN", "METHOD_NOT_ALLOWED", "BAD_REQUEST"})
+  void usesLegacyPathWhenApiRejectsRequestAndWizardApiReportsOlderVersion(HttpStatus status) {
+    server.expect(requestTo(INFO_URL)).andRespond(withStatus(status));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
+
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
     server.verify();
   }
 
   @Test
-  void usesLegacyPathWhenInfoEndpointIsMissing() {
-    server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+  void usesLegacyPathWhenNeitherEndpointReportsVersion() {
+    server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.FORBIDDEN));
+    server.expect(requestTo(LEGACY_INFO_URL)).andRespond(withStatus(HttpStatus.FORBIDDEN));
 
-    assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
+  }
+
+  @Test
+  void usesCurrentPathWhenOnlyWizardApiReportsV5() {
+    server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.FORBIDDEN));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
+
+    assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
+  }
+
+  @Test
+  void throwsWithoutCachingWhenLegacyCheckFails() {
+    server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+    server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
+
+    assertUnavailable(HttpServerErrorException.class, () -> client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
   }
 
   @Test
@@ -132,8 +196,10 @@ class DSWClientTest {
     server
         .expect(requestTo(INFO_URL))
         .andRespond(withSuccess("<html></html>", MediaType.TEXT_HTML));
+    expectNoLegacyInfo(SERVER);
 
-    assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
   }
 
   @Test
@@ -146,8 +212,9 @@ class DSWClientTest {
         .expect(requestTo(httpServer + "/api/"))
         .andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
 
-    ResourceAccessException failure =
-        assertThrows(ResourceAccessException.class, () -> client.getApiBaseUrl(httpServer));
+    DSWVersionCheckException failure =
+        assertThrows(DSWVersionCheckException.class, () -> client.getApiBaseUrl(httpServer));
+    assertEquals(Reason.REDIRECT, failure.getReason());
     assertThat(failure.getMessage()).contains(INFO_URL).contains("check the saved DSW URL");
     assertEquals(httpServer + "/api/", client.getApiBaseUrl(httpServer));
     server.verify();
@@ -158,16 +225,18 @@ class DSWClientTest {
     server
         .expect(requestTo(INFO_URL))
         .andRespond(withSuccess("<html></html>", MediaType.APPLICATION_JSON));
+    expectNoLegacyInfo(SERVER);
 
-    assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
   }
 
   @Test
   void usesLegacyPathWhenInfoEndpointReturnsOversizedBody() {
     String largePage = "<html>" + " ".repeat(100 * 1024) + "</html>";
     server.expect(requestTo(INFO_URL)).andRespond(withSuccess(largePage, MediaType.TEXT_HTML));
+    expectNoLegacyInfo(SERVER);
 
-    assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
   }
 
   @Test
@@ -188,8 +257,9 @@ class DSWClientTest {
         .andRespond(
             withStatus(HttpStatus.MOVED_PERMANENTLY).header("Location", "http://bad host/"));
 
-    ResourceAccessException failure =
-        assertThrows(ResourceAccessException.class, () -> client.getApiBaseUrl(SERVER));
+    DSWVersionCheckException failure =
+        assertThrows(DSWVersionCheckException.class, () -> client.getApiBaseUrl(SERVER));
+    assertEquals(Reason.REDIRECT, failure.getReason());
     assertThat(failure.getMessage()).contains("http://bad host/");
   }
 
@@ -197,14 +267,14 @@ class DSWClientTest {
   void throwsRatherThanFallingBackOnServerError() {
     server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
-    assertThrows(HttpServerErrorException.class, () -> client.getApiBaseUrl(SERVER));
+    assertUnavailable(HttpServerErrorException.class, () -> client.getApiBaseUrl(SERVER));
   }
 
   @Test
-  void throwsRatherThanFallingBackOnClientErrorOtherThanNotFound() {
+  void throwsRatherThanFallingBackOnTooManyRequests() {
     server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
 
-    assertThrows(HttpClientErrorException.class, () -> client.getApiBaseUrl(SERVER));
+    assertUnavailable(HttpClientErrorException.class, () -> client.getApiBaseUrl(SERVER));
   }
 
   @Test
@@ -216,7 +286,7 @@ class DSWClientTest {
               throw new IOException("Connection refused");
             });
 
-    assertThrows(ResourceAccessException.class, () -> client.getApiBaseUrl(SERVER));
+    assertUnavailable(ResourceAccessException.class, () -> client.getApiBaseUrl(SERVER));
   }
 
   @Test
@@ -232,9 +302,10 @@ class DSWClientTest {
   @Test
   void checksVersionAgainAfterTtl() {
     server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+    expectNoLegacyInfo(SERVER);
     server.expect(requestTo(INFO_URL)).andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
 
-    assertEquals(SERVER + "/wizard-api/", client.getApiBaseUrl(SERVER));
+    assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
     ticker.advanceMinutes(DSWClient.DSW_API_PATH_CACHE_TTL_MINUTES);
     assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     server.verify();
@@ -245,6 +316,7 @@ class DSWClientTest {
     String otherServer = "https://other-dsw.example.com";
     server.expect(requestTo(INFO_URL)).andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
     server.expect(requestTo(otherServer + "/api/")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+    expectNoLegacyInfo(otherServer);
 
     assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     assertEquals(otherServer + "/wizard-api/", client.getApiBaseUrl(otherServer));
@@ -256,7 +328,7 @@ class DSWClientTest {
     server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
     server.expect(requestTo(INFO_URL)).andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
 
-    assertThrows(HttpServerErrorException.class, () -> client.getApiBaseUrl(SERVER));
+    assertUnavailable(HttpServerErrorException.class, () -> client.getApiBaseUrl(SERVER));
     assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     server.verify();
   }
@@ -271,6 +343,9 @@ class DSWClientTest {
   @Test
   void usesLegacyProjectsPathForPreV5Server() {
     server.expect(requestTo(INFO_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
 
     assertEquals(SERVER + "/wizard/projects/", client.getProjectsBaseUrl(SERVER));
   }
@@ -282,6 +357,18 @@ class DSWClientTest {
     assertEquals(INFO_URL, client.getApiBaseUrl(SERVER));
     assertEquals(SERVER + "/projects/", client.getProjectsBaseUrl(SERVER));
     server.verify();
+  }
+
+  private static void assertUnavailable(Class<? extends Throwable> cause, Executable call) {
+    DSWVersionCheckException failure = assertThrows(DSWVersionCheckException.class, call);
+    assertEquals(Reason.UNAVAILABLE, failure.getReason());
+    assertInstanceOf(cause, failure.getCause());
+  }
+
+  private void expectNoLegacyInfo(String serverUrl) {
+    server
+        .expect(requestTo(serverUrl + "/wizard-api/"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
   }
 
   @Test
@@ -329,7 +416,7 @@ class DSWClientTest {
         CompletionException failure =
             assertTimeoutPreemptively(
                 Duration.ofSeconds(5), () -> assertThrows(CompletionException.class, caller::join));
-        assertInstanceOf(ResourceAccessException.class, failure.getCause());
+        assertInstanceOf(DSWVersionCheckException.class, failure.getCause());
       }
 
       release.countDown();
@@ -421,18 +508,144 @@ class DSWClientTest {
             ticker,
             Duration.ofSeconds(1));
     try {
-      ResourceAccessException failure =
+      DSWVersionCheckException failure =
           assertTimeoutPreemptively(
               Duration.ofSeconds(5),
               () ->
                   assertThrows(
-                      ResourceAccessException.class, () -> deadlineClient.getApiBaseUrl(dswUrl)));
+                      DSWVersionCheckException.class, () -> deadlineClient.getApiBaseUrl(dswUrl)));
       assertThat(failure.getMessage()).contains("did not finish within 1 seconds");
       assertTrue(clientDisconnected.await(5, TimeUnit.SECONDS));
     } finally {
       dsw.stop(0);
       serverThreads.shutdownNow();
     }
+  }
+
+  @Test
+  void bothVersionChecksShareOneDeadline() throws Exception {
+    CountDownLatch release = new CountDownLatch(1);
+    HttpServer dsw =
+        HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+    dsw.createContext(
+        "/api/",
+        exchange -> {
+          try {
+            Thread.sleep(700);
+            exchange.sendResponseHeaders(403, -1);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          } finally {
+            exchange.close();
+          }
+        });
+    dsw.createContext(
+        "/wizard-api/",
+        exchange -> {
+          try {
+            release.await(10, TimeUnit.SECONDS);
+            exchange.sendResponseHeaders(404, -1);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          } finally {
+            exchange.close();
+          }
+        });
+    ExecutorService serverThreads = Executors.newCachedThreadPool();
+    dsw.setExecutor(serverThreads);
+    dsw.start();
+    String dswUrl = "http://localhost:" + dsw.getAddress().getPort();
+    DSWClient deadlineClient =
+        new DSWClient(
+            null,
+            null,
+            null,
+            null,
+            restTemplate,
+            DSWClient.buildVersionCheckRestTemplate(Duration.ofSeconds(5), Duration.ofSeconds(5)),
+            ticker,
+            Duration.ofSeconds(1));
+    try {
+      // With a deadline per check, the legacy check alone could wait the full second.
+      assertTimeoutPreemptively(
+          Duration.ofMillis(1500),
+          () ->
+              assertThrows(
+                  DSWVersionCheckException.class, () -> deadlineClient.getApiBaseUrl(dswUrl)));
+    } finally {
+      release.countDown();
+      dsw.stop(0);
+      serverThreads.shutdownNow();
+    }
+  }
+
+  @Test
+  void versionCheckFailsAtOnceWhenAllThreadsAreBusy() throws Exception {
+    int maxThreads = DSWClient.DSW_VERSION_CHECK_MAX_THREADS;
+    CountDownLatch allBusy = new CountDownLatch(maxThreads);
+    CountDownLatch release = new CountDownLatch(1);
+    ExecutorService serverThreads = Executors.newCachedThreadPool();
+    HttpServer dsw =
+        HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+    dsw.createContext(
+        "/",
+        exchange -> {
+          try {
+            allBusy.countDown();
+            release.await(10, TimeUnit.SECONDS);
+            exchange.sendResponseHeaders(404, -1);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          } finally {
+            exchange.close();
+          }
+        });
+    dsw.setExecutor(serverThreads);
+    dsw.start();
+    String dswUrl = "http://localhost:" + dsw.getAddress().getPort();
+    DSWClient busyClient =
+        new DSWClient(
+            null,
+            null,
+            null,
+            null,
+            restTemplate,
+            DSWClient.buildVersionCheckRestTemplate(Duration.ofSeconds(5), Duration.ofSeconds(5)),
+            ticker);
+    ExecutorService callers = Executors.newFixedThreadPool(maxThreads);
+    try {
+      // Each URL is a separate server to the cache, so each check needs its own thread.
+      for (int i = 0; i < maxThreads; i++) {
+        String serverUrl = dswUrl + "/server" + i;
+        callers.submit(() -> busyClient.getApiBaseUrl(serverUrl));
+      }
+      assertTrue(allBusy.await(5, TimeUnit.SECONDS));
+
+      DSWVersionCheckException failure =
+          assertTimeoutPreemptively(
+              Duration.ofSeconds(1),
+              () ->
+                  assertThrows(
+                      DSWVersionCheckException.class,
+                      () -> busyClient.getApiBaseUrl(dswUrl + "/one-too-many")));
+      assertThat(failure.getMessage()).contains("checks already running");
+    } finally {
+      release.countDown();
+      callers.shutdownNow();
+      busyClient.shutdown();
+      dsw.stop(0);
+      serverThreads.shutdownNow();
+    }
+  }
+
+  @Test
+  void shutdownStopsFurtherVersionChecks() {
+    client.shutdown();
+
+    DSWVersionCheckException failure =
+        assertThrows(DSWVersionCheckException.class, () -> client.getApiBaseUrl(SERVER));
+    assertEquals(Reason.UNAVAILABLE, failure.getReason());
+    server.verify();
   }
 
   @Test
@@ -515,12 +728,14 @@ class DSWClientTest {
             DSWClient.buildVersionCheckRestTemplate(Duration.ofSeconds(5), Duration.ofSeconds(5)),
             ticker);
     try {
-      assertTimeoutPreemptively(
-          Duration.ofSeconds(3),
-          () ->
-              assertThrows(
-                  HttpServerErrorException.class,
-                  () -> realConnectionClient.getApiBaseUrl(dswUrl)));
+      DSWVersionCheckException failure =
+          assertTimeoutPreemptively(
+              Duration.ofSeconds(3),
+              () ->
+                  assertThrows(
+                      DSWVersionCheckException.class,
+                      () -> realConnectionClient.getApiBaseUrl(dswUrl)));
+      assertInstanceOf(HttpServerErrorException.class, failure.getCause());
       assertTrue(clientDisconnected.await(3, TimeUnit.SECONDS));
       assertEquals(1, requests.get());
     } finally {
