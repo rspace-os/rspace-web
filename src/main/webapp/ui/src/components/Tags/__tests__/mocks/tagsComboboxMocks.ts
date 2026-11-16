@@ -15,22 +15,26 @@ export function makeTags(count: number, start = 0): Array<string> {
  * on the last page (which the component reads to stop requesting more pages).
  *
  * Every requested `pos` is pushed onto `requestedPositions` so a spec can assert
- * that scrolling near the end triggered a next-page fetch.
+ * that scrolling near the end triggered a next-page fetch. Every `tagFilter` is
+ * pushed onto `requestedFilters`, when given.
  */
 export function ontologyTagsHandler({
   allTags,
   pageSize = 40,
   requestedPositions,
+  requestedFilters,
 }: {
   allTags: Array<string>;
   pageSize?: number;
   requestedPositions: Array<number>;
+  requestedFilters?: Array<string>;
 }) {
   return http.get(ONTOLOGY_ENDPOINT, ({ request }) => {
     const url = new URL(request.url);
     const pos = Number(url.searchParams.get("pos") ?? "0");
     const tagFilter = url.searchParams.get("tagFilter") ?? "";
     requestedPositions.push(pos);
+    requestedFilters?.push(tagFilter);
 
     const matching = tagFilter ? allTags.filter((t) => t.includes(tagFilter)) : allTags;
     const pageStart = pos * pageSize;

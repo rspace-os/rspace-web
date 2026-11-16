@@ -30,13 +30,12 @@ pipeline {
                 echo "Analysing branch"
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
-                    echo "Using Java: `java -version`"
+                    ./mvnw -v
                     echo "App version: ${APP_VERSION}"
                 '''
                 /* we build the package, to figure actually-bundled runtime Java deps (WEB-INF/lib)
                    and the vendored/legacy non-react JS bundled as static resources */
-                sh 'mvn clean package -Dmaven.test.skip=true'
+                sh './mvnw clean package -Dmaven.test.skip=true'
             }
         }
 

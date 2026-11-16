@@ -698,6 +698,27 @@ public class FormManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void copiedTemporaryFieldIdsExcludeFieldsAddedDuringEdit() {
+    RSForm form = formMgr.create(user);
+    FieldForm originalField = TestFactory.createTextFieldForm();
+    form.addFieldForm(originalField);
+    form.publish();
+    formMgr.save(form, user);
+
+    RSForm toEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
+    FieldForm copiedField = toEdit.getFieldForms().get(0);
+    NumberFieldDTO<NumberFieldForm> newFieldDto = new NumberFieldDTO<>();
+    newFieldDto.setMinNumberValue("1");
+    newFieldDto.setMaxNumberValue("10");
+    newFieldDto.setName("new field");
+    NumberFieldForm newField = formMgr.createFieldForm(newFieldDto, toEdit.getId(), user);
+
+    assertThat(formMgr.getCopiedTemporaryFieldIds(toEdit))
+        .containsExactly(copiedField.getId())
+        .doesNotContain(newField.getId());
+  }
+
+  @Test
   public void testUpdatePErmissions() throws Exception {
     RSForm form = formMgr.create(user);
     AccessControl ac = form.getAccessControl();

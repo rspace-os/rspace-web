@@ -184,6 +184,26 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void updatingDeletedMaintenanceReturns404WithoutRecreatingIt() throws Exception {
+    ScheduledMaintenance window = new ScheduledMaintenance(dateNextHour, dateNextTwoHours);
+    Long id = maintenanceManager.saveScheduledMaintenance(window, sysUser).getId();
+    maintenanceManager.removeScheduledMaintenance(id, sysUser);
+    SMPost stalePage =
+        new SMPost(
+            id, dateFormat.format(dateNextHour), dateFormat.format(dateNextTwoHours), "stale");
+
+    mockMvc
+        .perform(
+            post("/system/maintenance/ajax/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .principal(sysUserPrincipal)
+                .content(toJson(stalePage)))
+        .andExpect(status().isNotFound());
+
+    assertTrue(maintenanceManager.getAllFutureMaintenances().isEmpty());
+  }
+
+  @Test
   public void testActiveMaintenanceCreateRetrieveFinishNow() throws Exception {
     String testMessage = "test maintenance message";
     // The response uses the JVM timezone, so derive both expectations from the same instant.

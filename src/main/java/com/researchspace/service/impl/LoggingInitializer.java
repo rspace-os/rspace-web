@@ -5,10 +5,13 @@ import java.io.File;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 public class LoggingInitializer {
 
+  private static final Logger log = LoggerFactory.getLogger(LoggingInitializer.class);
   private static final String defaultLoggingDir = ".";
 
   @Value("${logging.dir}")
@@ -23,17 +26,20 @@ public class LoggingInitializer {
     }
     loggingDirFile = new File(loggingDir);
 
-    if (!loggingDirFile.exists()) {
-      // revert to default if couldn't create
-      if (!loggingDirFile.mkdirs()) {
-        loggingDir = defaultLoggingDir;
-        loggingDirFile = new File(loggingDir);
-      }
+    // Fall back to the default unless the path is, or can be created as, a writable directory.
+    if (!loggingDir.equals(defaultLoggingDir) && !isWritableDirectory(loggingDirFile)) {
+      log.warn("logging.dir '{}' is not a writable directory; logging to '.'", loggingDir);
+      loggingDir = defaultLoggingDir;
+      loggingDirFile = new File(loggingDir);
     }
 
     if (!loggingDir.equals(defaultLoggingDir)) {
       reconfigureLogging(loggingDirFile);
     }
+  }
+
+  private static boolean isWritableDirectory(File dir) {
+    return (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
   }
 
   /**

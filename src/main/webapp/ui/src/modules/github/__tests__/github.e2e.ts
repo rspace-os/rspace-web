@@ -1,10 +1,19 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 import { MOCK_ADVERSARIAL_FILE_PATH, MOCK_FILE_PATH, MOCK_REPO_FULL_NAME } from "./mock";
 
 const INTEGRATION_MODE = env.integrationMode;
+
+async function expectPageToScroll(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  // Wheel over the page margin, outside the editor iframe and its own scroll area.
+  await page.mouse.move(5, 300);
+  await page.mouse.wheel(0, 400);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+}
 
 test.describe(`GitHub integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
   test.skip(
@@ -20,18 +29,29 @@ test.describe(`GitHub integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, ()
     await pageGitHubAppsCard.connectAndLinkRepository(MOCK_REPO_FULL_NAME);
   });
 
-  test("As a user, I can insert a GitHub file into a document field", async ({ pageWorkspace }) => {
-    await pageWorkspace.open();
-    const docEditor = await pageWorkspace.createBasicDocument();
+  for (const action of ["Cancel", "Insert"] as const) {
+    test(`As a user, I can scroll the document after GitHub ${action}`, async ({ page, pageWorkspace }) => {
+      await pageWorkspace.open();
+      const docEditor = await pageWorkspace.createBasicDocument();
+      const field = await docEditor.getField("New List of Materials");
+      await field.fill("Document scrolling regression\n".repeat(60));
+      await expectPageToScroll(page);
+      const overflowBefore = await page.evaluate(() => document.body.style.overflow);
 
-    const dialog = await docEditor.openGitHubDialog();
-    await dialog.selectRepository(MOCK_REPO_FULL_NAME);
-    await dialog.selectPath(MOCK_FILE_PATH);
-    await dialog.clickInsert();
+      const dialog = await docEditor.openGitHubDialog();
+      if (action === "Insert") {
+        await dialog.selectRepository(MOCK_REPO_FULL_NAME);
+        await dialog.selectPath(MOCK_FILE_PATH);
+        await dialog.clickInsert();
+        await expect.poll(() => field.getText()).toContain(MOCK_FILE_PATH);
+      } else {
+        await dialog.close();
+      }
 
-    const field = await docEditor.getField("New List of Materials");
-    await expect.poll(() => field.getText()).toContain(MOCK_FILE_PATH);
-  });
+      await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe(overflowBefore);
+      await expectPageToScroll(page);
+    });
+  }
 
   test.skip("As a user, a file name containing HTML metacharacters renders as literal text, not markup", async ({
     pageWorkspace,

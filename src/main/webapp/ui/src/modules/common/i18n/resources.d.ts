@@ -2388,12 +2388,12 @@ export default interface Resources {
         },
         "containerNotEmpty": {
           "help": "Delete the contents first.",
-          "title": "The container '{name}' is not empty."
+          "title": "The container ''{name}'' is not empty."
         },
         "refreshAndTryAgain": "Please refresh and try again.",
         "sampleSubsamplesInContainers": {
           "help": "Delete these subsamples first or remove them from their container.",
-          "title": "The sample '{name}' includes subsamples that are in containers."
+          "title": "The sample ''{name}'' includes subsamples that are in containers."
         }
       },
       "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
@@ -2539,7 +2539,7 @@ export default interface Resources {
           "alt": "The marked locations of {name}",
           "editLocations": "Edit Locations",
           "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
-          "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
+          "instructions": "Tap on the image to add a location marker.<br/>Tap and hold on a marker, and then drag to adjust the marked location.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
@@ -3817,8 +3817,7 @@ export default interface Resources {
         "move": {
           "alreadyOnBench": "All items are already on your bench.",
           "confirmOnBench": {
-            "itemsLabel": "The items are:",
-            "prompt": "Do you want to move them to your bench?",
+            "message": "The items are: <itemList/> Do you want to move them to your bench?",
             "title": "Some items are in containers that are already on your bench."
           },
           "none": "Nothing to move.",
@@ -4161,7 +4160,8 @@ export default interface Resources {
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."
-      }
+      },
+      "loading": "Loading people"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -6280,7 +6280,7 @@ export default interface Resources {
         "invalidData": "{0}",
         "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
         "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
-        "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+        "invalidForLatestTemplate": "Field ''{0}'' has the value ''{1}'', which the latest template no longer allows. Change the value before updating to the latest template.",
         "invalidIgsn": "Invalid IGSN format: [{0}]",
         "invalidNumber": "Invalid number: {0}",
         "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
@@ -11330,7 +11330,7 @@ export default interface Resources {
         "tableLabel": "booking search results"
       },
       "galaxy": {
-        "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+        "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:<br/><strong>{format}</strong>",
         "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
         "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
         "chooseDataTitle": "Choose Data",

@@ -28,9 +28,11 @@ echo 'Building rspace-web'
  When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
  The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
- Java 17 and 21 are both supported. The defaults below stay on 17 until Java 21 is installed on the agents,
- then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
+ Builds use the Java 21 toolchain by default; the bytecode still targets 17 (<release> in pom.xml), and 17 can
+ still be picked per build. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
  the agent's toolchains.xml entry (openjdk today), whatever distribution is installed.
+ Maven itself runs on the agent's JAVA_HOME (Jenkins Global properties); the toolchain picks the JDK that
+ compiles and runs the tests.
 */
 
 pipeline {
@@ -39,7 +41,7 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain (17 or 21)')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '21', description: 'Java version Maven toolchain (17 or 21)')
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
@@ -50,12 +52,6 @@ pipeline {
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
-
-    //tools {
-    //    // this is the JDK used to run maven itself
-    //    // the toolchain settings just affect compilation
-    //    jdk 'OPEN-JDK-17'
-    //}
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
@@ -81,8 +77,7 @@ pipeline {
                 echo "Building branch - ${BRANCH_NAME}"
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
-                    echo "Using Java: `java -version`"
+                    ./mvnw -v
                 '''
                 echo 'Cleaning out filestore'
                 sh "rm -rf $RS_FILE_BASE"

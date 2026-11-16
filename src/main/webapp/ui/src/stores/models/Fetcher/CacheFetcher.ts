@@ -61,7 +61,7 @@ export default class CacheFetcher extends CoreFetcher implements CacheFetcherInt
 
       return super.performInitialSearch({
         ...params,
-        pageSize: this.results.length,
+        pageSize: this.results.length || this.pageSize,
       });
     }
     /*

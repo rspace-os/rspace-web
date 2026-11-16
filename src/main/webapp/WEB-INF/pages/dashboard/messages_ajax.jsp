@@ -158,7 +158,7 @@
                                 <input type="hidden" class="currentStatus" value="${message.status}" />
                                 <span style="color:#C1C1C1;"><spring:message code="messages.setStatus.label"/></span>
                                 <br/>
-                                <select class="messageStatusChooser" name="messageStatus" style="margin-top:4px;">
+                                <select class="messageStatusChooser" name="messageStatus" data-yes-no="${message.messageType.yesNoMessage}" style="margin-top:4px;">
                                     <option value="${message.status}" selected="selected"><spring:message code="${rst:communicationStatusMessageKey(message.status)}"/></option>
                                     <c:forEach items="${message.messageType.validStatusesByRecipient}" var="stat">
                                         <c:if test="${message.status ne stat}">

@@ -3,7 +3,6 @@ package com.researchspace.model.inventory.field;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
-import com.researchspace.model.field.LocalizedIllegalStateException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -117,8 +116,7 @@ public class InventoryRadioField extends InventoryEntityField {
     if (currentRadioDefId != null && !currentRadioDefId.equals(templateRadioDef.getId())) {
       ErrorList validationResult = templateRadioDef.validate(getData());
       if (validationResult.hasErrorMessages()) {
-        throw new LocalizedIllegalStateException(
-            "validation.inventoryField.invalidForLatestTemplate", getName(), getData());
+        throw new FieldValueInvalidForLatestTemplateException(getName(), getData());
       }
       // switch to latest radio def
       setRadioDef(templateRadioDef);

@@ -30,6 +30,10 @@ export class CallableImagePreviewPage {
     return page.getByRole("button", { name: /open image with caption/i });
   }
 
+  get openImageWithoutDescriptionButton(): Locator {
+    return page.getByRole("button", { name: /open image without description/i });
+  }
+
   get openSmallImageButton(): Locator {
     return page.getByRole("button", { name: /open small image/i });
   }
@@ -80,6 +84,10 @@ export class CallableImagePreviewPage {
 
   async clickOpenImageWithCaption(): Promise<void> {
     await this.openImageWithCaptionButton.click();
+  }
+
+  async clickOpenImageWithoutDescription(): Promise<void> {
+    await this.openImageWithoutDescriptionButton.click();
   }
 
   async clickOpenSmallImage(): Promise<void> {

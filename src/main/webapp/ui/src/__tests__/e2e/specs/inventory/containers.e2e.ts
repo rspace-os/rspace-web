@@ -228,6 +228,77 @@ test.describe(`Inventory Containers`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
     await expect(locationsAndContent.getByText("Empty Container")).toBeVisible();
   });
 
+  for (const cType of ["GRID", "IMAGE"] as const) {
+    const containerType = cType === "GRID" ? "grid" : "visual";
+    test(`As a user, I can search an empty ${containerType} container and still see its available locations`, async ({
+      pageInventory,
+      clientInventory,
+      componentToasts,
+      page,
+    }) => {
+      const containerName = uniqueName(`e2e-empty-${cType.toLowerCase()}-search`);
+      let parentGlobalId: string;
+      if (cType === "GRID") {
+        const container = await clientInventory.createContainer({
+          name: containerName,
+          cType,
+          gridLayout: { columnsNumber: 2, rowsNumber: 2 },
+        });
+        parentGlobalId = container.globalId;
+      } else {
+        const form = await pageInventory.openNewContainerForm();
+        await form.fillName(containerName);
+        await form.setType("Visual");
+        await form.uploadLocationsImage(BACKGROUND_IMAGE);
+        const locations = await form.openEditLocations();
+        await locations.addMarker(0.5, 0.5);
+        await expect.poll(() => locations.markerCount()).toBe(1);
+        await locations.done();
+        const [created] = await Promise.all([
+          page.waitForResponse(
+            (r) => r.request().method() === "POST" && new URL(r.url()).pathname === "/api/inventory/v1/containers",
+          ),
+          form.save(),
+        ]);
+        expect(created.ok()).toBe(true);
+        parentGlobalId = (await created.json()).globalId;
+      }
+
+      await pageInventory.openRecord("CONTAINER", containerName);
+      await pageInventory.detailsPanel.expandSection("Locations and Content");
+      const content = pageInventory.detailsPanel.section("Locations and Content");
+      const emptyLocation =
+        cType === "GRID"
+          ? content.getByRole("gridcell", { name: "1", exact: true })
+          : content.getByText("1", { exact: true });
+      await expect(emptyLocation).toBeVisible();
+      const query = "no-matching-child*";
+      await content.getByRole("searchbox", { name: "Search", exact: true }).fill(query);
+      const [response] = await Promise.all([
+        page.waitForResponse((r) => {
+          const url = new URL(r.url());
+          return (
+            url.pathname === "/api/inventory/v1/search" &&
+            url.searchParams.get("query") === query &&
+            url.searchParams.get("parentGlobalId") === parentGlobalId
+          );
+        }),
+        content.getByRole("button", { name: "Search", exact: true }).click(),
+      ]);
+
+      expect(response.ok()).toBe(true);
+      const params = new URL(response.url()).searchParams;
+      expect(params.get("parentGlobalId")).toBe(parentGlobalId);
+      expect(Number(params.get("pageSize"))).toBeGreaterThan(0);
+      expect(await response.json()).toMatchObject({ totalHits: 0, records: [] });
+      await expect(emptyLocation).toBeVisible();
+      if (cType === "IMAGE") {
+        await expect(content.getByRole("img", { name: `Preview of ${containerName}`, exact: true })).toBeVisible();
+      }
+      await expect(componentToasts.root.getByRole("group", { name: "error alert" })).toHaveCount(0);
+    });
+  }
+
   test(`As a user, I can customize a grid container's row and column axis labels`, async ({
     pageInventory,
     componentToasts,

@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -87,6 +88,7 @@ public class ScheduledMaintenanceController extends BaseController {
       @Valid @RequestBody ScheduledMaintenance newMaintenance, BindingResult errors) {
     handleInvalidRequest(errors, "system.maintenance.errors.create");
     User user = userManager.getAuthenticatedUserInSession();
+    newMaintenance.setId(null);
     ScheduledMaintenance savedMaintenance =
         maintenanceManager.saveScheduledMaintenance(newMaintenance, user);
     return savedMaintenance.getId();
@@ -108,10 +110,18 @@ public class ScheduledMaintenanceController extends BaseController {
   @PostMapping("/ajax/update")
   @ResponseBody
   public String updateScheduledMaintenance(
-      @Valid @RequestBody ScheduledMaintenance updatedMaintenance, BindingResult errors) {
+      @Valid @RequestBody ScheduledMaintenance updatedMaintenance,
+      BindingResult errors,
+      HttpServletResponse response) {
     handleInvalidRequest(errors, "system.maintenance.errors.update");
     User user = userManager.getAuthenticatedUserInSession();
-    maintenanceManager.saveScheduledMaintenance(updatedMaintenance, user);
+    try {
+      maintenanceManager.updateScheduledMaintenance(updatedMaintenance, user);
+    } catch (ObjectRetrievalFailureException e) {
+      log.warn("Scheduled maintenance {} no longer exists", updatedMaintenance.getId(), e);
+      response.setStatus(HttpStatus.NOT_FOUND.value());
+      return null;
+    }
     return OK_RESPONSE;
   }
 

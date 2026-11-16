@@ -54,6 +54,14 @@ public interface MaintenanceManager {
   ScheduledMaintenance saveScheduledMaintenance(ScheduledMaintenance maintenance, User user);
 
   /**
+   * Updates an existing window in the current transaction without recreating a deleted window.
+   *
+   * @throws ObjectRetrievalFailureException if the window no longer exists
+   * @throws AuthorizationException if the user is not a sysadmin
+   */
+  ScheduledMaintenance updateScheduledMaintenance(ScheduledMaintenance maintenance, User user);
+
+  /**
    * Removes maintenance objecdt by id. Can be only called by user with sysadmin role.
    *
    * @param id

@@ -12,8 +12,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,14 +24,34 @@ import org.springframework.beans.factory.annotation.Value;
 public class DummyConversionService implements DocumentConversionService {
   Logger logger = LoggerFactory.getLogger(DummyConversionService.class);
 
-  @Value("${sample.pdf}")
+  @Value("${sample.pdf:}")
   private String pdfPath;
 
-  @Value("${sample.png}")
+  @Value("${sample.png:}")
   private String imagePath;
 
-  @Value("${sample.doc}")
+  @Value("${sample.doc:}")
   private String docPath;
+
+  /** True if all three sample.* paths are set and readable; logs a warning for each that isn't. */
+  public boolean hasReadableSamples() {
+    boolean pdfOk = isReadableSample(pdfPath, "sample.pdf");
+    boolean pngOk = isReadableSample(imagePath, "sample.png");
+    boolean docOk = isReadableSample(docPath, "sample.doc");
+    return pdfOk && pngOk && docOk;
+  }
+
+  private boolean isReadableSample(String path, String propertyName) {
+    if (StringUtils.isBlank(path)) {
+      logger.warn("Dummy converter enabled but property '{}' is not set", propertyName);
+      return false;
+    }
+    if (!Files.isReadable(Path.of(path))) {
+      logger.warn("Dummy converter sample '{}' at [{}] is not readable", propertyName, path);
+      return false;
+    }
+    return true;
+  }
 
   public void setDocPath(String docPath) {
     this.docPath = docPath;

@@ -7,16 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
@@ -28,6 +32,7 @@ import com.researchspace.model.frontend.PublicOAuthAppInfo;
 import com.researchspace.model.frontend.PublicOAuthApps;
 import com.researchspace.model.frontend.PublicOAuthConnApps;
 import com.researchspace.model.oauth.OAuthToken;
+import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
@@ -51,6 +56,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +91,39 @@ public class UserProfileControllerTest {
     sessionUser = TestFactory.createAnyUser("session");
     sessionUser.setId(3L);
     this.mockRequest = new MockHttpServletRequest();
+  }
+
+  @Test
+  public void anonymousGuestCannotCreateInventoryOauthToken() {
+    User anonymousGuest = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
+    assertTrue(anonymousGuest.isLoginDisabled());
+    when(usrMgr.getUserByUsername(anonymousGuest.getUsername())).thenReturn(anonymousGuest);
+    when(messages.getMessage("errors.authorization.inventoryOauthToken.loginRequired"))
+        .thenReturn("Login required");
+
+    AuthorizationException refused =
+        assertThrows(
+            AuthorizationException.class,
+            () -> userProfileController.getInventoryOauthToken(anonymousGuest::getUsername));
+
+    assertEquals("Login required", refused.getMessage());
+    verifyNoInteractions(oAuthTokenManager);
+  }
+
+  @Test
+  public void signedInUserCanCreateInventoryOauthToken() {
+    userProfileController.init();
+    NewOAuthTokenResponse tokenResponse = new NewOAuthTokenResponse();
+    tokenResponse.setAccessToken("inventory-token");
+    when(usrMgr.getUserByUsername(anyUser.getUsername())).thenReturn(anyUser);
+    when(oAuthTokenManager.createNewJwtToken(
+            "rsInventoryWebClient", "rsInventoryPublicSecret", anyUser, OAuthTokenType.UI_TOKEN))
+        .thenReturn(new ServiceOperationResult<>(tokenResponse, true));
+
+    AjaxReturnObject<String> result =
+        userProfileController.getInventoryOauthToken(anyUser::getUsername);
+
+    assertEquals("inventory-token", result.getData());
   }
 
   @Test

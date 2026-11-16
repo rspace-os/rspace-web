@@ -356,7 +356,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   public ApiSampleWithFullSubSamples duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
     rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanReadSampleTemplate);
-    sampleApiMgr.assertUserCanReadSample(id, user);
 
     ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(id, user);
     buildAndAddInventoryRecordLinks(copy);

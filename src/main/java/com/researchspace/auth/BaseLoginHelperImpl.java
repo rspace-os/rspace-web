@@ -97,7 +97,7 @@ public abstract class BaseLoginHelperImpl implements LoginHelper {
     analyticsMgr.userLoggedIn(loggedIn, request);
 
     // Initialize number of notifications, messages and special messages for user
-    commTracker.initCount(loggedIn.getId(), commMgr.getNotificationStatus(loggedIn));
+    commTracker.initCount(loggedIn.getId(), () -> commMgr.getNotificationStatus(loggedIn));
 
     return sssn;
   }

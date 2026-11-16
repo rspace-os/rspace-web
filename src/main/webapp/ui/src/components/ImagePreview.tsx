@@ -5,15 +5,6 @@ import Box from "@mui/material/Box";
 import { Gallery, Item } from "react-photoswipe-gallery";
 import type { URL } from "../util/types";
 
-function escapeHtml(unsafe: string) {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 /**
  * The dimensions of the image being previewed.
  */
@@ -29,8 +20,9 @@ type ImagePreviewArgs = {
   setSize: (newSize: PreviewSize) => void;
 
   /*
-   * A list of strings, shown from top to bottom, separated by two `<br />`s,
-   * placed at the bottom of the viewport
+   * A list of strings, shown as plain text from top to bottom with a blank
+   * line between each, placed at the bottom of the viewport. Blank strings
+   * are skipped.
    */
   caption?: null | ReadonlyArray<string>;
 };
@@ -45,6 +37,7 @@ export default function ImagePreview({
   setSize,
   caption,
 }: ImagePreviewArgs): React.ReactNode {
+  const captionLines = (caption ?? []).filter((line) => line.trim() !== "");
   return (
     <>
       <Global
@@ -80,6 +73,13 @@ export default function ImagePreview({
           ".pswp--click-to-zoom.pswp--zoomed-in .pswp__img:active": {
             cursor: "grabbing !important",
           },
+          /*
+           * The library sets the caption as plain text, so line breaks in it
+           * only show if whitespace is preserved.
+           */
+          ".pswp__default-caption": {
+            whiteSpace: "pre-line",
+          },
         }}
       />
       <Gallery
@@ -94,7 +94,7 @@ export default function ImagePreview({
             closePreview();
           });
         }}
-        withCaption={(caption ?? []).length > 0}
+        withCaption={captionLines.length > 0}
       >
         <Item
           original={link}
@@ -102,7 +102,7 @@ export default function ImagePreview({
           thumbnail={link}
           width={size?.width ?? 100}
           height={size?.height ?? 100}
-          caption={(caption ?? []).map(escapeHtml).join("<br /><br />")}
+          caption={captionLines.join("\n\n")}
         >
           {({ ref, open: openFn }) => {
             return (
