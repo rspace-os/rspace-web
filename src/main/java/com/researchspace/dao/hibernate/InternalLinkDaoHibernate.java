@@ -51,8 +51,8 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
     InternalLink existingLink = getInternalLinkBySourceAndTarget(sourceRecordId, targetRecordId);
     if (existingLink == null) {
       Session ss = sessionFactory.getCurrentSession();
-      Record source = ss.load(Record.class, sourceRecordId);
-      BaseRecord target = ss.load(BaseRecord.class, targetRecordId);
+      Record source = ss.getReference(Record.class, sourceRecordId);
+      BaseRecord target = ss.getReference(BaseRecord.class, targetRecordId);
       ss.persist(new InternalLink(source, target));
       return true;
     }
@@ -64,7 +64,7 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
     InternalLink existingLink = getInternalLinkBySourceAndTarget(sourceRecordId, targetRecordId);
     if (existingLink != null) {
       Session ss = sessionFactory.getCurrentSession();
-      ss.delete(existingLink);
+      ss.remove(existingLink);
     }
   }
 

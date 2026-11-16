@@ -24,6 +24,6 @@ public class RoleDaoHibernate extends GenericDaoHibernate<Role, Long> implements
   /** {@inheritDoc} */
   public void removeRole(String rolename) {
     Object role = getRoleByName(rolename);
-    getSession().delete(role);
+    getSession().remove(role);
   }
 }

@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -149,12 +150,18 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   /** {@inheritDoc} */
   public User saveUser(User user) {
     log.debug("user's id: {}", user.getId());
-    Session s = sessionFactory.getCurrentSession();
-    s.saveOrUpdate(user);
+    User saved = persistOrMerge(user);
     // this will force the throwing of a constraint violation exception
     // now, if there is one, so that it can be handled in the service layer.
-    s.flush();
-    return user;
+    sessionFactory.getCurrentSession().flush();
+    if (saved != user) {
+      // callers often pass the User cached in the Shiro session, which must stay saveable. A
+      // plain copy of the roles drops the old snapshot, which would make a later merge re-insert
+      // added roles and keep removed ones.
+      user.setVersion(saved.getVersion());
+      user.setRoles(new HashSet<>(saved.getRoles()));
+    }
+    return saved;
   }
 
   /**

@@ -46,7 +46,7 @@ public class NfsDaoHibernate implements NfsDao {
   public void deleteNfsFileStore(NfsFileStore fileStore) {
     Session ss = sessionFactory.getCurrentSession();
     Object mergedFileStore = ss.merge(fileStore);
-    ss.delete(mergedFileStore);
+    ss.remove(mergedFileStore);
     ss.flush();
   }
 
@@ -122,7 +122,7 @@ public class NfsDaoHibernate implements NfsDao {
     }
 
     Object mergedFileSystem = ss.merge(getNfsFileSystem(id));
-    ss.delete(mergedFileSystem);
+    ss.remove(mergedFileSystem);
     ss.flush();
     return true;
   }

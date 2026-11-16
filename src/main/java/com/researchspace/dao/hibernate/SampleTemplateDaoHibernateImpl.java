@@ -122,11 +122,11 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
     template.getActiveFields().stream()
         .filter(f -> FieldType.CHOICE.equals(f.getType()))
         .map(InventoryChoiceField.class::cast)
-        .forEach(cf -> currentSession.save(cf.getChoiceDef()));
+        .forEach(cf -> currentSession.persist(cf.getChoiceDef()));
     template.getActiveFields().stream()
         .filter(f -> FieldType.RADIO.equals(f.getType()))
         .map(InventoryRadioField.class::cast)
-        .forEach(cf -> currentSession.save(cf.getRadioDef()));
+        .forEach(cf -> currentSession.persist(cf.getRadioDef()));
     currentSession.persist(template);
     return get(template.getId());
   }

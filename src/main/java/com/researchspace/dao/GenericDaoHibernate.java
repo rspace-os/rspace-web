@@ -174,7 +174,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   /** {@inheritDoc} */
   public void remove(PK id) {
-    getSession().delete(this.get(id));
+    getSession().remove(this.get(id));
   }
 
   /**
@@ -201,7 +201,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   @Override
   public T load(PK id) {
-    return getSession().load(this.persistentClass, id);
+    return getSession().getReference(this.persistentClass, id);
   }
 
   /**

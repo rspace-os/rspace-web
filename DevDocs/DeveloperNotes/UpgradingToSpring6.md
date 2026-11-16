@@ -89,7 +89,9 @@ Until the reindex finishes, search results will be missing or incomplete.
 - **`Session.saveOrUpdate` is deprecated** (removed in Hibernate 7).
   `GenericDaoHibernate.save()` now branches between `persist` and `merge`; for entities
   with assigned (non-generated) ids, use the instance returned by `save()`, as its
-  javadoc explains.
+  javadoc explains. No RSpace code calls `saveOrUpdate` any more. `UserDao.saveUser`
+  copies the new version and roles back onto the object passed in, so the `User` cached
+  in the Shiro session can be saved again.
 - **HQL is parsed strictly.** Hibernate 6 rejects paths Hibernate 5 tolerated:
   transient properties (use the persistent path, e.g. `editInfo.name`, not the
   `@Transient` delegate) and raw discriminator columns (use `type(alias) = EntityName`,

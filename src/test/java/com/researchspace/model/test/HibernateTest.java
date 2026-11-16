@@ -183,7 +183,6 @@ public abstract class HibernateTest {
 
   protected User createAndSaveAnyUser() {
     User u = TestFactory.createAnyUser(CoreTestUtils.getRandomName(10));
-    u.setId(2L);
     return dao.save(u, User.class);
   }
 

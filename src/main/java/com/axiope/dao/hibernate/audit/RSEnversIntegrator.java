@@ -3,6 +3,7 @@ package com.axiope.dao.hibernate.audit;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
 import org.hibernate.boot.Metadata;
+import org.hibernate.boot.spi.BootstrapContext;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.envers.boot.internal.EnversService;
 import org.hibernate.envers.event.spi.EnversListenerDuplicationStrategy;
@@ -12,6 +13,7 @@ import org.hibernate.envers.event.spi.EnversPreCollectionUpdateEventListenerImpl
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.service.spi.ServiceRegistryImplementor;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 
 @Slf4j
@@ -66,8 +68,9 @@ public class RSEnversIntegrator implements Integrator {
   @Override
   public void integrate(
       Metadata configuration,
-      SessionFactoryImplementor arg1,
-      SessionFactoryServiceRegistry serviceRegistry) {
+      BootstrapContext bootstrapContext,
+      SessionFactoryImplementor sessionFactory) {
+    ServiceRegistryImplementor serviceRegistry = sessionFactory.getServiceRegistry();
     EventListenerRegistry listenerRegistry =
         serviceRegistry.getService(EventListenerRegistry.class);
     listenerRegistry.addDuplicationStrategy(EnversListenerDuplicationStrategy.INSTANCE);

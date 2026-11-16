@@ -1,7 +1,7 @@
 package com.researchspace.model.test;
 
+import com.researchspace.model.AbstractUserOrGroupImpl;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -24,6 +24,13 @@ public class TestDao {
     T rc = null;
     Session session = null;
     try {
+      if (batchSession != null) {
+        rc = batchSession.get(clazz, id);
+        if (initializer != null) {
+          initializer.accept(rc);
+        }
+        return rc;
+      }
       session = sessionFactory.openSession();
       // start a transaction
       transaction = session.beginTransaction();
@@ -40,7 +47,9 @@ public class TestDao {
     } catch (Exception e) {
       handleRollback(transaction, e);
     } finally {
-      session.close();
+      if (session != null) {
+        session.close();
+      }
     }
     return null;
   }
@@ -68,35 +77,90 @@ public class TestDao {
   }
 
   <T> T save(T item, Class<? extends T> clazz) {
-    doSaveOrUpdate(item, (item2, session) -> session.save(item));
+    saveTogether(item);
     return item;
   }
 
   <T> T update(T item, Class<? extends T> clazz) {
-    doSaveOrUpdate(item, (item2, session) -> session.saveOrUpdate(item));
+    saveTogether(item);
     return item;
   }
 
-  private <T> void doSaveOrUpdate(T item, BiConsumer<T, Session> saver) {
+  private Session batchSession;
+  private final List<Object[]> batchMerges = new java.util.ArrayList<>();
+
+  /**
+   * Runs the saves in {@code work} in one session and transaction. Needed when a new object refers
+   * to objects saved earlier in the same test: in separate sessions those would be detached, and
+   * persist does not cascade onto detached objects.
+   */
+  void inOneTransaction(Runnable work) {
+    Transaction transaction = null;
+    try {
+      batchSession = sessionFactory.openSession();
+      transaction = batchSession.beginTransaction();
+      work.run();
+      transaction.commit();
+      copyVersionsBack(batchMerges);
+    } catch (RuntimeException e) {
+      handleRollback(transaction, e);
+      throw e;
+    } finally {
+      batchMerges.clear();
+      if (batchSession != null) {
+        batchSession.close();
+        batchSession = null;
+      }
+    }
+  }
+
+  /**
+   * Saves the items in the given order: new items are persisted, items with an id are merged. The
+   * caller keeps its own objects; ids come back through persist and the merge listener, and a
+   * user's new version is copied back here.
+   */
+  void saveTogether(Object... items) {
+    if (batchSession != null) {
+      saveInSession(batchSession, batchMerges, items);
+      batchSession.flush();
+      return;
+    }
     Transaction transaction = null;
     Session session = null;
+    List<Object[]> merges = new java.util.ArrayList<>();
     try {
       session = sessionFactory.openSession();
-      // start a transaction
       transaction = session.beginTransaction();
-      // save the student object
-
-      saver.accept(item, session);
-      // commit transaction
+      saveInSession(session, merges, items);
       transaction.commit();
-      //	return item;
-
+      copyVersionsBack(merges);
     } catch (Exception e) {
       handleRollback(transaction, e);
       throw e;
     } finally {
       if (session != null) {
         session.close();
+      }
+    }
+  }
+
+  private void saveInSession(Session session, List<Object[]> merges, Object... items) {
+    for (Object item : items) {
+      if (session.contains(item)) {
+        continue;
+      }
+      if (sessionFactory.getPersistenceUnitUtil().getIdentifier(item) == null) {
+        session.persist(item);
+      } else {
+        merges.add(new Object[] {item, session.merge(item)});
+      }
+    }
+  }
+
+  private static void copyVersionsBack(List<Object[]> merges) {
+    for (Object[] pair : merges) {
+      if (pair[0] instanceof AbstractUserOrGroupImpl caller && pair[1] != caller) {
+        caller.setVersion(((AbstractUserOrGroupImpl) pair[1]).getVersion());
       }
     }
   }
