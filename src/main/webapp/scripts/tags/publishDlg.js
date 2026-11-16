@@ -38,6 +38,10 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
                             clearPublishLinkFields();
                         }
                     }
+                    // Fires after the animation, so the clear above can undo a confirmation typed early in the new section.
+                    if (isConfirmed($(ui.newPanel).find('#make_public_confirmation, #make_public_link_confirmation').val())) {
+                        enablePublishButton();
+                    }
                 }
             });
             disablePublishButton();
@@ -52,8 +56,8 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
             }},
             { id: 'publish-dialog-submit-btn', text: publishLabel, click: function() {
                 const isCloud = $(this).data("isCloud");
-                const publishOnInternet = $('input[id="make_public_confirmation"]').val()?.toLowerCase() === 'confirm';
-                const publishLink = $('input[id="make_public_link_confirmation"]').val()?.toLowerCase() === 'confirm';
+                const publishOnInternet = isConfirmed($('input[id="make_public_confirmation"]').val());
+                const publishLink = isConfirmed($('input[id="make_public_link_confirmation"]').val());
                 // The button is disabled until "confirm" is typed, so this is only a backstop
                 if (!publishOnInternet && !publishLink) {
                     return;
@@ -264,6 +268,7 @@ $(document).on('click', '#publishRecord', function (e) {
         .dialog("open");
 });
 
+const isConfirmed = (value) => value?.toLowerCase() === 'confirm';
 const disablePublishButton = () => $('#publish-dialog-submit-btn').prop('disabled', true).css('opacity',0.5);
 const enablePublishButton = () => $('#publish-dialog-submit-btn').prop('disabled', false).css('opacity',1);
 
@@ -275,7 +280,7 @@ $(document).on('click', '#clearPublishLink', function() {
 });
 
 $(document).on('input','#make_public_confirmation', function() {
-    if($('input[id="make_public_confirmation"]').val().toLowerCase() === 'confirm'){
+    if (isConfirmed($('input[id="make_public_confirmation"]').val())) {
         setConfirmedLabel(".publishSelected", true);
         enablePublishButton();
     } else {
@@ -285,7 +290,7 @@ $(document).on('input','#make_public_confirmation', function() {
 });
 
 $(document).on('input','#make_public_link_confirmation', function() {
-    if($('input[id="make_public_link_confirmation"]').val().toLowerCase() === 'confirm'){
+    if (isConfirmed($('input[id="make_public_link_confirmation"]').val())) {
         setConfirmedLabel(".publishLinkSelected", true);
         enablePublishButton();
     } else {
