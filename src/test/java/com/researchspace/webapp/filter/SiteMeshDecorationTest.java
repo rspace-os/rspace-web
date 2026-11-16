@@ -85,6 +85,19 @@ class SiteMeshDecorationTest {
     assertEquals("/WEB-INF/decorators/externalPages.jsp", decoratorUsed(response));
   }
 
+  @Test
+  void containerErrorPageIsDecorated() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", "/404.jsp");
+    request.setServletPath("/404.jsp");
+    request.setDispatcherType(DispatcherType.ERROR);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    response.setStatus(404);
+
+    dispatch(DispatcherType.ERROR, request, response, htmlController());
+
+    assertEquals("/WEB-INF/decorators/default.jsp", decoratorUsed(response));
+  }
+
   /**
    * Serves {@code path}, matched on the REQUEST pass to a servlet with the given servlet path and
    * path info, then forwarded by the rewrite filter to {@code /app + path}, where the controller
@@ -97,21 +110,23 @@ class SiteMeshDecorationTest {
     request.setPathInfo(pathInfo);
     MockHttpServletResponse response = new MockHttpServletResponse();
 
-    FilterChain controller =
-        (req, res) -> {
-          res.setContentType("text/html;charset=UTF-8");
-          res.getWriter().write(BODY);
-        };
     FilterChain rewriteFilter =
         (req, res) ->
             dispatch(
                 DispatcherType.FORWARD,
                 forwardedToApp((HttpServletRequest) req, path),
                 res,
-                controller);
+                htmlController());
 
     dispatch(DispatcherType.REQUEST, request, response, rewriteFilter);
     return response;
+  }
+
+  private static FilterChain htmlController() {
+    return (req, res) -> {
+      res.setContentType("text/html;charset=UTF-8");
+      res.getWriter().write(BODY);
+    };
   }
 
   private void dispatch(
