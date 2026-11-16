@@ -1906,10 +1906,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/GalleryFilestoreLinkedDocument"
+        "401":
+          description: The user is not on the filesystem's read allowlist.
         "403":
           description: Not logged into a filesystem that needs a per-user login.
         "404":
-          description: Unknown filestore, or an item the user's own filesystem login cannot read.
+          description: >-
+            Unknown filestore, an item the user's own filesystem login cannot read, or filestores
+            are disabled on this server.
   "/gallery/filestores/{filestoreId}/download":
     get:
       summary: Download from remote filestore
