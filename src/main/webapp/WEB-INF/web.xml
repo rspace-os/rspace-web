@@ -103,7 +103,7 @@
 
     <filter>
         <filter-name>sitemesh</filter-name>
-        <filter-class>com.researchspace.webapp.filter.FullPathSiteMeshFilter</filter-class>
+        <filter-class>com.researchspace.webapp.filter.ErrorPageSiteMeshFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter>

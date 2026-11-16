@@ -35,8 +35,9 @@ import org.w3c.dom.NodeList;
 
 /**
  * Runs the real SiteMesh filter and {@code sitemesh3.xml} the way the container does: a REQUEST
- * pass on the incoming URL, then the rewrite filter's FORWARD to {@code /app/...}. The filter only
- * runs on the dispatcher types {@code web.xml} maps it to.
+ * pass on the incoming URL, then the rewrite filter's FORWARD to {@code /app/...}, or an ERROR
+ * dispatch to a container error page. The filter only runs on the dispatcher types {@code web.xml}
+ * maps it to.
  */
 class SiteMeshDecorationTest {
 
@@ -44,13 +45,13 @@ class SiteMeshDecorationTest {
   private static final String BODY = "1.129.0";
 
   private MockServletContext servletContext;
-  private FullPathSiteMeshFilter filter;
+  private ErrorPageSiteMeshFilter filter;
   private Set<DispatcherType> mappedDispatchers;
 
   @BeforeEach
   void setUp() throws Exception {
     servletContext = new MockServletContext(WEBAPP.toString(), new FileSystemResourceLoader());
-    filter = new FullPathSiteMeshFilter();
+    filter = new ErrorPageSiteMeshFilter();
     filter.init(new MockFilterConfig(servletContext, "sitemesh"));
     mappedDispatchers = sitemeshDispatchersFromWebXml();
   }
@@ -88,18 +89,29 @@ class SiteMeshDecorationTest {
     assertEquals("/WEB-INF/decorators/externalPages.jsp", decoratorUsed(response));
   }
 
-  @Test
-  void containerErrorPageIsDecorated() throws Exception {
-    MockHttpServletResponse response = serve404ErrorPage(null, null);
+  /*
+   * Tomcat's error dispatch carries forward attributes from the failed request; Jetty's carries
+   * none. Either way the decision must follow the error page, as it did under SiteMesh 2.
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void notFoundPageIsDecoratedEvenForAnExcludedAjaxUrl(boolean withForwardAttributes)
+      throws Exception {
+    MockHttpServletResponse response =
+        serveErrorPage(404, "/404.jsp", "/workspace/ajax/search", withForwardAttributes);
 
     assertEquals("/WEB-INF/decorators/default.jsp", decoratorUsed(response));
   }
 
-  @Test
-  void containerErrorPageForAjaxRequestUnderMultipartMappedPrefixIsNotDecorated() throws Exception {
-    MockHttpServletResponse response = serve404ErrorPage("/workspace/ajax/search", "/workspace");
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void serverErrorPageIsNotDecorated(boolean withForwardAttributes) throws Exception {
+    MockHttpServletResponse response =
+        serveErrorPage(
+            500, "/error.jsp", "/workspace/editor/structuredDocument/1", withForwardAttributes);
 
     assertNull(decoratorUsed(response));
+    assertEquals(BODY, response.getContentAsString());
   }
 
   @Test
@@ -136,18 +148,25 @@ class SiteMeshDecorationTest {
   }
 
   /**
-   * ERROR-dispatches the 404 page. Non-null arguments set the forward attributes the container adds
-   * for the original request.
+   * ERROR-dispatches the error page at {@code location} after {@code failedUri} failed. With
+   * forward attributes, they are set the way Tomcat sets them for a URL under the multipart-mapped
+   * {@code /workspace/*} servlet.
    */
-  private MockHttpServletResponse serve404ErrorPage(String originalUri, String originalServletPath)
+  private MockHttpServletResponse serveErrorPage(
+      int status, String location, String failedUri, boolean withForwardAttributes)
       throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", "/404.jsp");
-    request.setServletPath("/404.jsp");
+    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", location);
+    request.setServletPath(location);
     request.setDispatcherType(DispatcherType.ERROR);
-    request.setAttribute("jakarta.servlet.forward.request_uri", originalUri);
-    request.setAttribute("jakarta.servlet.forward.servlet_path", originalServletPath);
+    request.setAttribute("jakarta.servlet.error.request_uri", failedUri);
+    if (withForwardAttributes) {
+      request.setAttribute("jakarta.servlet.forward.request_uri", failedUri);
+      request.setAttribute("jakarta.servlet.forward.servlet_path", "/workspace");
+      request.setAttribute(
+          "jakarta.servlet.forward.path_info", failedUri.substring("/workspace".length()));
+    }
     MockHttpServletResponse response = new MockHttpServletResponse();
-    response.setStatus(404);
+    response.setStatus(status);
 
     dispatch(DispatcherType.ERROR, request, response, htmlController());
     return response;

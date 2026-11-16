@@ -109,4 +109,7 @@ Until the reindex finishes, search results will be missing or incomplete.
   only the first one. The filter is mapped to REQUEST and ERROR, never FORWARD: SiteMesh 3
   does not mark an excluded request as handled, so on the rewrite filter's forward to
   `/app/*` it would decide again, on a path that misses exact excludes.
-  `SiteMeshDecorationTest` fails if FORWARD is added back.
+  `SiteMeshDecorationTest` fails if FORWARD is added back. Container error pages are
+  matched by the error page's path (`/404.jsp`, `/error.jsp`), not the failed URL:
+  Tomcat sets forward attributes on the error dispatch and Jetty does not, so
+  `ErrorPageSiteMeshFilter` hides them to get the same result on both.
