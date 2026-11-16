@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { LinkVersionLockDialog } from "./LinkVersionLockDialog";
 
 export class LinkFieldEditorComponent {
@@ -85,10 +85,12 @@ export class LinkFieldEditorComponent {
     ]);
   }
 
+  /** For rejected targets only: waits for the field's error state before reading the text. */
   async applyAndGetTargetHelperText(): Promise<string> {
     const targetCheck = this.waitForTargetCheck(await this.targetGlobalIdInput.inputValue());
     await this.applyButton.click();
     await targetCheck;
+    await expect(this.targetGlobalIdInput, "the target was not rejected").toHaveAttribute("aria-invalid", "true");
     return this.getTargetHelperText();
   }
 

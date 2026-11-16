@@ -58,12 +58,23 @@ export class ToolbarCreateMenu {
     const directItem = menu.getByRole("menuitem", { name, exact: true });
     if ((await directItem.count()) > 0) {
       await directItem.click();
+    } else {
+      await fromForm.click();
+      const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
+      await dialog.waitFor({ state: "visible" });
+      await this.followFormLink(dialog.getByRole("link", { name, exact: true }));
+    }
+    await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
+  }
+
+  /** Playwright 1.63's click() never returns on Firefox for this link; remove the branch once it does. */
+  private async followFormLink(link: Locator): Promise<void> {
+    if (this.page.context().browser()?.browserType().name() !== "firefox") {
+      await link.click();
       return;
     }
-    await fromForm.click();
-    const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
-    await dialog.waitFor({ state: "visible" });
-    await dialog.getByRole("link", { name, exact: true }).click();
+    await expect(link).toBeVisible();
+    await link.dispatchEvent("click");
   }
 
   private async select(name: string): Promise<void> {

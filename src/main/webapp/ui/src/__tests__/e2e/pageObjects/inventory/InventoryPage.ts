@@ -27,7 +27,7 @@ export class InventoryPage extends BasePage {
     this.sidebar = new InventorySidebar(page);
     this.searchPanel = new InventorySearchPanel(page);
     this.detailsPanel = new InventoryDetailsPanel(page);
-    this.heading = page.getByRole("heading", { level: 1, name: "Inventory" });
+    this.heading = page.getByRole("heading", { level: 1, name: "Inventory", exact: true });
   }
 
   async isLoaded(): Promise<void> {
