@@ -12,20 +12,19 @@ import org.sitemesh.config.ConfigurableSiteMeshFilter;
 /**
  * Makes SiteMesh select decorators (and apply excludes) from the full incoming request path.
  *
- * <p>SiteMesh resolves the request path from {@code jakarta.servlet.forward.servlet_path}. Every
- * RSpace request is forwarded to {@code /app/*} by the UrlRewriteFilter, so that attribute is the
- * original request's servlet path. The DispatcherServlet is additionally mapped to module-root
- * prefixes ({@code /workspace/*}, {@code /system/*}, ...) so Tomcat can resolve multipart upload
- * limits from the originally-matched servlet (see {@code DispatcherServletInitializer}). A side
- * effect of those mappings is that a request like {@code /workspace/ajax/search} matches {@code
- * /workspace/*}, so its {@code forward.servlet_path} is only {@code /workspace} — the {@code
- * /ajax/} segment moves into the path-info, which SiteMesh does not consider. The {@code
- * &#42;/ajax/&#42;} exclude in {@code sitemesh3.xml} then never matches, so AJAX fragments are
- * wrapped in the full-page decorator and the frontend, expecting a bare fragment, renders nothing.
+ * <p>On a dispatch that carries forward attributes, SiteMesh resolves the request path from {@code
+ * jakarta.servlet.forward.servlet_path}. Every RSpace request is forwarded to {@code /app/*} by the
+ * UrlRewriteFilter, so that attribute is the original request's servlet path. The DispatcherServlet
+ * is additionally mapped to module-root prefixes ({@code /workspace/*}, {@code /system/*}, ...) so
+ * Tomcat can resolve multipart upload limits from the originally-matched servlet (see {@code
+ * DispatcherServletInitializer}). For a request like {@code /workspace/ajax/search} that attribute
+ * is then only {@code /workspace}, so path-based mappings such as the {@code &#42;/ajax/&#42;}
+ * exclude in {@code sitemesh3.xml} would not see the full path.
  *
  * <p>This filter presents {@code forward.servlet_path} as the full forwarded request URI so the
- * path-based mappings in {@code sitemesh3.xml} see the complete path, as they are written to
- * expect. It changes nothing about routing or multipart handling.
+ * mappings see the complete path, as they are written to expect. It changes nothing about routing
+ * or multipart handling. SiteMesh is not mapped to FORWARD dispatches (see {@code web.xml}), so
+ * this only applies to ERROR dispatches that carry forward attributes.
  */
 public class FullPathSiteMeshFilter extends ConfigurableSiteMeshFilter {
 
