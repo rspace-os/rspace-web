@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
 
@@ -98,7 +98,7 @@ public class WopiDiscoveryProcessor {
               + result.getStatusCode().toString()
               + " Cache has not been updated.");
     }
-    return new AsyncResult<>(new StringReader(result.getBody()));
+    return CompletableFuture.completedFuture(new StringReader(result.getBody()));
   }
 
   /**
