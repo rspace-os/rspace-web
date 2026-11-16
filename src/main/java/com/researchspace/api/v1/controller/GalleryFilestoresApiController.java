@@ -150,11 +150,14 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
           return;
         }
       } else {
-        NfsTarget target = new NfsTarget(path, null);
-        try (InputStream opened = client.queryNfsFileForDownload(target).getRemoteInputStream()) {
+        NfsFileDetails file = client.queryNfsFileForDownload(new NfsTarget(path, null));
+        // closing the stream alone leaves an SMB file handle open
+        try (InputStream opened = file.getRemoteInputStream()) {
           if (opened != null) {
             return;
           }
+        } finally {
+          client.releaseNfsFileAfterDownload(file);
         }
       }
     } catch (IOException | RuntimeException e) {
@@ -164,6 +167,9 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
           remotePath,
           user.getUsername(),
           e.getMessage());
+    } finally {
+      // the credentials store logs in afresh for each request
+      client.closeSession();
     }
     throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
   }

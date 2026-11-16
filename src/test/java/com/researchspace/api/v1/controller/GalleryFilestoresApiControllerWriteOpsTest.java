@@ -894,6 +894,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         NotFoundException.class,
         () -> controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verify(client).closeSession();
   }
 
   @Test
@@ -907,6 +908,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/a.dat", user)).thenReturn(List.of());
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user)).isEmpty();
+    verify(client).releaseNfsFileAfterDownload(readable);
+    verify(client).closeSession();
   }
 
   @Test
@@ -918,6 +921,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user)).isEmpty();
     verify(client, never()).queryNfsFileForDownload(any());
+    verify(client).closeSession();
   }
 
   @Test
