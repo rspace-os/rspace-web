@@ -73,10 +73,9 @@ public class ApiSubSampleInfoWithSampleInfo extends ApiSubSampleInfo {
   public void removeImageLinksForLimitedView() {
     super.removeImageLinksForLimitedView();
 
-    /* The limited-view copy keeps the raw parent sample, whose permitted actions are never
-     * evaluated for the viewer, so its own limited-read check cannot fire. A limited-read
-     * subsample implies the viewer cannot fetch the sample's image either, so strip it
-     * unconditionally. */
+    /* The parent sample's permitted actions are never evaluated for the viewer, so its own
+     * limited-read check cannot fire. A limited-read subsample implies the viewer cannot fetch
+     * the sample's image either, so strip it unconditionally. */
     if (isLimitedReadItem() && getSampleInfo() != null) {
       getSampleInfo().removeImageLinks();
     }
@@ -85,8 +84,13 @@ public class ApiSubSampleInfoWithSampleInfo extends ApiSubSampleInfo {
   @Override
   protected void populateLimitedViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {
     super.populateLimitedViewCopy(apiInvRecCopy);
-    ApiSubSampleInfoWithSampleInfo publicViewCopy = (ApiSubSampleInfoWithSampleInfo) apiInvRecCopy;
-    publicViewCopy.setSampleInfo(getSampleInfo());
+    ApiSubSampleInfoWithSampleInfo limitedViewCopy = (ApiSubSampleInfoWithSampleInfo) apiInvRecCopy;
+    ApiSampleWithoutSubSamples sampleLimitedView =
+        (ApiSampleWithoutSubSamples) getSampleInfo().getLimitedViewCopy();
+    // the subsample page's link to its parent sample is labelled with these
+    sampleLimitedView.setSubSampleAlias(getSampleInfo().getSubSampleAlias());
+    sampleLimitedView.setSubSamplesCount(getSampleInfo().getSubSamplesCount());
+    limitedViewCopy.setSampleInfo(sampleLimitedView);
   }
 
   protected void populatePublicViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {

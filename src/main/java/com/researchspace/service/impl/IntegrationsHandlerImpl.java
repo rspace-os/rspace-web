@@ -189,7 +189,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   // if method arguments change, remember to update the 'key' attribute
   @Cacheable(
       value = INTEGRATION_INFO,
-      key = "#user.username + #integrationName.toUpperCase(T(java.util.Locale).ROOT)")
+      key = "#user.username + #integrationName.toUpperCase(T(java.util.Locale).ROOT)",
+      cacheResolver = "userPreferenceCacheResolver")
   public IntegrationInfo getIntegration(User user, String integrationName) {
     integrationName = integrationName.toUpperCase(Locale.ROOT);
     checkValidIntegration(integrationName);

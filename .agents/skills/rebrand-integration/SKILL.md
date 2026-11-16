@@ -60,8 +60,9 @@ Scan these files; skip absent paths:
 - `src/main/webapp/WEB-INF/pages/connect/<original>/connect.jsp`
 - `src/main/webapp/scripts/externalTinymcePlugins/<original>/dialog.html`
 - `src/main/webapp/scripts/externalTinymcePlugins/<original>/plugin.min.js`
-- `src/main/resources/bundles/apps/apps.properties`
-- `src/main/resources/bundles/system/system.properties`
+- Every catalog under `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`
+  that `rg -il '<OriginalName>'` matches; brand text is spread across many
+  namespaces, not only `apps` and `server.*`
 
 `plugin.min.js` is hand-edited source despite its name; include its visible strings.
 
@@ -72,8 +73,8 @@ Preserve:
   Liquibase identifiers, including uppercase and lowercase brand forms.
 - Comments, logs, README/Markdown files, `__tests__/`, `*.test.*`, `*.snap`,
   and JSON under `api_snaphots/`.
-- `website=`, `docLink=`, and the matching slug in
-  `src/main/webapp/ui/src/assets/DocLinks.ts`.
+- `website=`, `docLink=`, and the matching `help` key and its article-slug value
+  in the `common` catalog (`locales/en-US/common.json`).
 - Java strings, including OAuth `setDisplayName(...)` values.
 - Deployment OAuth credentials and `*.api.url` / `*.web.url` properties.
 - Other locales.

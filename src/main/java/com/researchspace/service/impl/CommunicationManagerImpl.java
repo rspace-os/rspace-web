@@ -32,11 +32,13 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
+import com.researchspace.service.NotificationPostCommitExecutor;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,6 +49,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("communicationManager")
 @Profile(value = {"dev,run,prod"})
@@ -59,6 +63,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   private @Autowired UserDao userDao;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired NotificationPostCommitExecutor notificationPostCommitExecutor;
 
   private List<Broadcaster> broadcasters = new ArrayList<>();
 
@@ -164,7 +169,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
       // just save if status was really updated
       if (altered > 0) {
         commDao.save(notificn);
-        notificnTracker.changeUserNotificationCount(user.getId(), altered * -1);
+        refreshNotificationCountAfterCommit(user, altered * -1);
       }
     }
   }
@@ -173,9 +178,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public void markAllNotificationsAsRead(String username, Date since) {
     int removed = commDao.markAllNotificationsAsRead(username, since);
     User user = userDao.getUserByUsername(username);
-    // this may not be strictly true, if new notifications have been generated
-    // after the 'since' date, but will be pic
-    notificnTracker.changeUserNotificationCount(user.getId(), removed * -1);
+    refreshNotificationCountAfterCommit(user, removed * -1);
   }
 
   @Override
@@ -336,12 +339,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
     Set<CommunicationTarget> cts = createCommunicationTargetsForUsers(recipients, notificn);
     notificn.setRecipients(cts);
     commDao.save(notificn);
-    broadcast(notificn, cts);
-
-    // Notify the request's recipients that the status has changed
-    for (CommunicationTarget ct : notificn.getRecipients()) {
-      notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
-    }
+    deliverNotification(notificn, cts, true);
     return notificn;
   }
 
@@ -406,13 +404,110 @@ public class CommunicationManagerImpl implements CommunicationManager {
     Set<CommunicationTarget> targets = createCommunicationTargetsForUsers(toNotify, notificn);
     notificn.setRecipients(targets);
     commDao.save(notificn);
-    if (config.isBroadcast()) {
-      broadcast(notificn, targets);
-    }
-    for (CommunicationTarget ct : targets) {
-      notificnTracker.changeUserNotificationCount(ct.getRecipient().getId(), 1);
-    }
+
+    deliverNotification(notificn, targets, config.isBroadcast());
     return notificn;
+  }
+
+  private void deliverNotification(
+      Notification notification, Set<CommunicationTarget> targets, boolean shouldBroadcast) {
+    Set<CommunicationTarget> notificationTargets = Set.copyOf(targets);
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      DeliveryBatch batch = deliveryBatch();
+      if (shouldBroadcast) {
+        batch.broadcasts.add(
+            () ->
+                safelyDeliver(
+                    "broadcast",
+                    notification.getId(),
+                    () ->
+                        notificationPostCommitExecutor.execute(
+                            () -> broadcast(notification, notificationTargets))));
+      }
+      for (CommunicationTarget target : notificationTargets) {
+        batch.userIds.add(target.getRecipient().getId());
+      }
+    } else {
+      if (shouldBroadcast) {
+        broadcast(notification, notificationTargets);
+      }
+      for (CommunicationTarget target : notificationTargets) {
+        notificnTracker.changeUserNotificationCount(target.getRecipient().getId(), 1);
+      }
+    }
+  }
+
+  private void refreshNotificationCountAfterCommit(User user, int fallbackDelta) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      deliveryBatch().userIds.add(user.getId());
+    } else {
+      notificnTracker.changeUserNotificationCount(user.getId(), fallbackDelta);
+    }
+  }
+
+  private void refreshCommittedNotificationCount(Long userId) {
+    notificnTracker.refreshNotificationCount(
+        userId,
+        () -> {
+          int[] count = new int[1];
+          notificationPostCommitExecutor.execute(
+              () -> count[0] = commDao.getUnreadNotificationCount(userId));
+          return count[0];
+        });
+  }
+
+  private static class DeliveryBatch {
+    final Set<Long> userIds = new LinkedHashSet<>();
+    final List<Runnable> broadcasts = new ArrayList<>();
+  }
+
+  private final Object deliveryBatchKey = new Object();
+
+  private DeliveryBatch deliveryBatch() {
+    DeliveryBatch existing =
+        (DeliveryBatch) TransactionSynchronizationManager.getResource(deliveryBatchKey);
+    if (existing != null) {
+      return existing;
+    }
+    DeliveryBatch batch = new DeliveryBatch();
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void suspend() {
+            TransactionSynchronizationManager.unbindResourceIfPossible(deliveryBatchKey);
+          }
+
+          @Override
+          public void resume() {
+            TransactionSynchronizationManager.bindResource(deliveryBatchKey, batch);
+          }
+
+          @Override
+          public void afterCommit() {
+            // New delivery transactions must collect their own effects.
+            for (Runnable broadcast : batch.broadcasts) {
+              broadcast.run();
+            }
+            for (Long userId : batch.userIds) {
+              safelyDeliver("recount", userId, () -> refreshCommittedNotificationCount(userId));
+            }
+          }
+
+          @Override
+          public void afterCompletion(int status) {
+            TransactionSynchronizationManager.unbindResourceIfPossible(deliveryBatchKey);
+          }
+        });
+    TransactionSynchronizationManager.bindResource(deliveryBatchKey, batch);
+    return batch;
+  }
+
+  private void safelyDeliver(String stage, Long id, Runnable action) {
+    try {
+      action.run();
+    } catch (Exception e) {
+      log.warn("Notification delivery failed after commit: stage={}, id={}", stage, id, e);
+    }
   }
 
   public int deleteReadNotificationsOlderThanDate(Date olderThan) {

@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -145,5 +146,16 @@ public class DefaultInstrumentTemplatePermissionsTest extends SpringTransactiona
     InstrumentTemplate duplicateEntity = instrumentTemplateDao.get(duplicate.getId());
 
     assertTrue(duplicateEntity.isEditable(), "a duplicate of a locked template must be editable");
+  }
+
+  @Test
+  public void nonOwnerCanDuplicateLockedDefaultInstrumentTemplate() {
+    InstrumentTemplate locked = getOrCreateDefaultLockedTemplate();
+    User other = createInitAndLoginAnyUser();
+
+    ApiInstrumentTemplate duplicate =
+        instrumentApiMgr.duplicateInstrumentTemplate(locked.getId(), other);
+
+    assertEquals(other.getUsername(), duplicate.getOwner().getUsername());
   }
 }

@@ -6,8 +6,8 @@ description: Write, run, and debug RSpace component tests in Vitest Browser Mode
 # RSpace Browser Mode tests
 
 Use Vitest Browser Mode with `@vitest/browser-playwright`, MSW, and page objects.
-Read [REFERENCE.md](REFERENCE.md) before writing specs for templates, browser
-pitfalls, and Playwright-CT migration APIs. The old `playwright-ct` setup is gone.
+Read [REFERENCE.md](REFERENCE.md) before writing specs for templates and browser
+pitfalls.
 
 ## Files and structure
 
@@ -38,7 +38,7 @@ Paths below are relative to `src/main/webapp/ui/`.
   handlers, storage and CDP media. Specs never import it.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
-- `src/__tests__/mocks/inventoryMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.
+- `src/__tests__/mocks/oauthTokenMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.
   `src/__tests__/mocks/galleryMocks.ts`: `galleryAppShellHandlers`.
   Opt in with `worker.use(...)`.
 - `src/__tests__/pageObjects/accessibility.ts`: `expectNoAxeViolations()`,
@@ -64,8 +64,9 @@ pnpm run tsc
 pnpm run lint
 ```
 
-Before finishing, run the changed file in all three engines and repeat it
-2–3 times to check for flakes. CI's `browser-tests` job in
+Iterate in Chromium only. For the final pass before finishing, run the changed
+file in all three engines and repeat it 2–3 times to check for flakes.
+CI's `browser-tests` job in
 `.github/workflows/lint-and-test.yml` installs browsers with `--with-deps`,
 sets `VITEST_BROWSERS` per matrix job, and writes per-engine JUnit results.
 Every spec file runs in every engine.

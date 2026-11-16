@@ -1,0 +1,14 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+    <changeSet id="2026-11-03-user-preference-unique" author="rspace" context="run">
+        <comment>Keep the lowest id for each user and preference, preserving the row loaded and updated by the existing preference collection, then prevent duplicates.</comment>
+        <sql>
+            DELETE duplicate FROM UserPreference duplicate
+            JOIN UserPreference retained ON duplicate.user_id = retained.user_id
+                AND duplicate.preference = retained.preference AND duplicate.id &gt; retained.id
+        </sql>
+        <addUniqueConstraint tableName="UserPreference" columnNames="user_id, preference"
+            constraintName="uk_user_preference"/>
+    </changeSet>
+</databaseChangeLog>

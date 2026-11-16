@@ -229,7 +229,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
   function handleSubmit() {
     void rename(file, name).then(() => {
       textField.current?.blur();
-      setName(file.transformFilename(() => name));
+      setName(file.name);
       trackEvent("user:renames:file:gallery");
     });
   }
@@ -293,10 +293,10 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
             },
           })}
           onFocus={() => {
-            if (name === file.name) setName(filenameExceptExtension(file.name));
+            if (name === file.name) setName(file.isSnippet ? file.name : filenameExceptExtension(file.name));
           }}
           onBlur={() => {
-            if (name === filenameExceptExtension(file.name)) setName(file.name);
+            if (name === (file.isSnippet ? file.name : filenameExceptExtension(file.name))) setName(file.name);
           }}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
