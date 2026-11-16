@@ -14,6 +14,10 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
@@ -76,6 +80,8 @@ public class WorkspacePermissionsDTOBuilder {
 
     ActionPermissionsDTO dto = new ActionPermissionsDTO();
     if (records != null) {
+      // one manager transaction for the whole page, as the check may need to query the db
+      Map<Long, Boolean> movableByRecordId = canMoveRecords(records, parentFolder, usr);
       // allowed options per record in page.
       for (BaseRecord br : records) {
         boolean rename = calculateRenameEnabled(usr, br);
@@ -86,11 +92,7 @@ public class WorkspacePermissionsDTOBuilder {
         // can't copy into shared folder, since doesn't then belong in owner's home folder
         boolean copy = calculateCopyEnabled(usr, isParentFolderInSharedTree, br, parentFolder);
         boolean export = calculateExportEnabled(br);
-        boolean move =
-            !br.isMediaRecord()
-                && !br.isSnippet()
-                && recMgr.canMove(
-                    br, parentFolder, usr); // manager transaction as may need to query db
+        boolean move = movableByRecordId.getOrDefault(br.getId(), false);
         if (isSearch) {
           move = move && usr.isOwnerOfRecord(br);
         }
@@ -160,6 +162,19 @@ public class WorkspacePermissionsDTOBuilder {
     model.addAttribute("allowCreateForm", !parentFolder.isSharedFolder());
 
     return dto;
+  }
+
+  /** Media records and snippets are never movable, so are not sent to the batch check. */
+  private Map<Long, Boolean> canMoveRecords(
+      Collection<? extends BaseRecord> records, Folder parentFolder, User usr) {
+    List<BaseRecord> moveCandidates =
+        records.stream()
+            .filter(br -> !br.isMediaRecord() && !br.isSnippet())
+            .collect(Collectors.toList());
+    if (moveCandidates.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    return recMgr.canMove(moveCandidates, parentFolder, usr);
   }
 
   private boolean calculateRenameEnabled(User usr, BaseRecord br) {
