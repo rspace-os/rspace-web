@@ -237,7 +237,7 @@ Going further (rarely needed):
 
 ```bash
 # Remove the locally-built dev images too (next up rebuilds them):
-docker image rm rspace-dev-app:local rspace-dev-frontend:local
+docker image rm rspace-dev-app:jbr21 rspace-dev-frontend:local
 
 # Remove the SHARED caches — affects EVERY worktree (they will re-download
 # Maven/npm deps on next up). Only do this to reclaim disk or force a clean cache:

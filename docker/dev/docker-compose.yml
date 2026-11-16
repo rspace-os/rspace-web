@@ -50,7 +50,9 @@ services:
       dockerfile: Dockerfile.app
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-21}
-    image: rspace-dev-app:local
+    # Tagged by JDK: every worktree shares this tag, and restart/reset-db reuse it
+    # without rebuilding, so a branch on another JDK must not overwrite it.
+    image: rspace-dev-app:jbr21
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-app
     depends_on:
       db:
