@@ -26,11 +26,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
 
-@Service("requestStatusUpdateManager")
-@Profile(value = {"dev,run,prod"})
 public class RSpaceRequestManagerImpl implements RSpaceRequestManager {
 
   private Logger log = LoggerFactory.getLogger(RSpaceRequestManagerImpl.class);
