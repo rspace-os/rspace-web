@@ -112,7 +112,8 @@ class DSWClientTest {
     "'{\"releaseVersion\":\"5.1\"}'",
     "'{\"releaseVersion\":\"5.0\"}'",
     "'{\"version\":\"v5.1~f3c60c086\"}'",
-    "'{\"releaseVersion\":\"\",\"version\":\"v5.0.0~f3c60c086\"}'"
+    "'{\"releaseVersion\":\"\",\"version\":\"v5.0.0~f3c60c086\"}'",
+    "'{\"version\":\"v5.0.0~f3c60c0860f3c60c0860f3c60c0860f3c60c08\"}'"
   })
   void usesCurrentPathWhenApiReportsV5(String infoJson) {
     server
@@ -129,7 +130,10 @@ class DSWClientTest {
     "'{\"releaseVersion\":\"4.26\"}'",
     "'{\"releaseVersion\":\"5\"}'",
     "'{\"version\":\"4.9.1\"}'",
-    "'{\"name\":\"Engine Wizard\"}'"
+    "'{\"name\":\"Engine Wizard\"}'",
+    "'{\"releaseVersion\":\"99999999999.0.0\"}'",
+    "'{\"releaseVersion\":\"1234567.0.0\"}'",
+    "'{\"releaseVersion\":\"5.1234567\"}'"
   })
   void checksLegacyInfoWhenApiReportsNoV5Version(String infoJson) {
     server
@@ -140,6 +144,23 @@ class DSWClientTest {
         .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
 
     assertEquals(LEGACY_INFO_URL, client.getApiBaseUrl(SERVER));
+    server.verify();
+  }
+
+  @Test
+  void longDigitRunInVersionIsRejectedQuickly() {
+    String digits = "9".repeat(65_000);
+    server
+        .expect(requestTo(INFO_URL))
+        .andRespond(
+            withSuccess("{\"releaseVersion\":\"" + digits + "\"}", MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(LEGACY_INFO_URL))
+        .andRespond(withSuccess(V4_INFO, MediaType.APPLICATION_JSON));
+
+    assertEquals(
+        LEGACY_INFO_URL,
+        assertTimeoutPreemptively(Duration.ofSeconds(1), () -> client.getApiBaseUrl(SERVER)));
     server.verify();
   }
 
@@ -822,6 +843,42 @@ class DSWClientTest {
       ArgumentCaptor<DMPUser> saved = ArgumentCaptor.forClass(DMPUser.class);
       verify(dmpManager).save(saved.capture());
       assertEquals(SERVER + "/projects/" + PLAN_UUID, saved.getValue().getDmpLink());
+    }
+
+    @Test
+    void reimportAfterUpgradeRefreshesLinkAndTitle() throws Exception {
+      server
+          .expect(requestTo(INFO_URL))
+          .andRespond(withSuccess(V5_INFO, MediaType.APPLICATION_JSON));
+      server
+          .expect(requestTo(SERVER + "/api/users/current"))
+          .andRespond(withSuccess("{\"uuid\":\"u1\"}", MediaType.APPLICATION_JSON));
+      server
+          .expect(requestTo(SERVER + "/api/projects?userUuids=u1"))
+          .andRespond(
+              withSuccess(
+                  "{\"_embedded\":{\"projects\":[{\"uuid\":\""
+                      + PLAN_UUID
+                      + "\",\"description\":\"d\"}]}}",
+                  MediaType.APPLICATION_JSON));
+      server
+          .expect(requestTo(SERVER + "/api/projects/" + PLAN_UUID + "/questionnaire"))
+          .andRespond(withSuccess("{\"name\":\"Renamed Plan\"}", MediaType.APPLICATION_JSON));
+      when(mediaManager.saveNewDMPWithDescription(
+              eq("Renamed Plan"), any(InputStream.class), eq(user), isNull(), eq("d")))
+          .thenReturn(savedFile);
+      DMPUser existing = new DMPUser();
+      existing.setDmpId(PLAN_UUID);
+      existing.setTitle("Plan");
+      existing.setDmpLink(SERVER + "/wizard/projects/" + PLAN_UUID);
+      when(dmpManager.findByDmpId(PLAN_UUID, user)).thenReturn(Optional.of(existing));
+
+      importingClient.importPlan(ALIAS, cfg, PLAN_UUID);
+
+      verify(dmpManager).save(existing);
+      assertEquals(SERVER + "/projects/" + PLAN_UUID, existing.getDmpLink());
+      assertEquals("Renamed Plan", existing.getTitle());
+      assertEquals(savedFile, existing.getDmpDownloadFile());
     }
   }
 }

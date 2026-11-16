@@ -122,8 +122,15 @@ public class DSWClient {
       new ThreadLocal<>();
 
   // Two or three parts, so a future "5.1" is still recognised. SemanticVersion treats a missing
-  // patch number as matching any, so "5.0" counts as 5.0.0.
-  private static final Pattern DSW_RELEASE_VERSION = Pattern.compile("\\d+\\.\\d+(?:\\.\\d+)?");
+  // patch number as matching any, so "5.0" counts as 5.0.0. Each part is limited to 6 digits, so
+  // a long digit run is scanned in linear time and cannot overflow SemanticVersion's int parts;
+  // the digit lookarounds stop part of a longer number being matched.
+  private static final Pattern DSW_RELEASE_VERSION =
+      Pattern.compile("(?<!\\d)\\d{1,6}\\.\\d{1,6}(?:\\.\\d{1,6})?(?!\\d)");
+
+  // Only the start of the reported version is examined; real values such as "v5.0.0~f3c60c086"
+  // are much shorter, and the version always comes first.
+  private static final int DSW_VERSION_STRING_MAX_LENGTH = 32;
 
   public static final int DSW_PROJECT_NAME_LENGTH_MAX = 255;
   public static final int DSW_PROJECT_DESCRIPTION_LENGTH_MAX = 250;
@@ -588,6 +595,7 @@ public class DSWClient {
     if (reported.isBlank()) {
       reported = info.path("version").asText("");
     }
+    reported = StringUtils.left(reported, DSW_VERSION_STRING_MAX_LENGTH);
     Matcher matcher = DSW_RELEASE_VERSION.matcher(reported);
     if (!matcher.find()) {
       log.warn(
@@ -752,6 +760,10 @@ public class DSWClient {
                 new DMPUser(
                     cfg.getUserAppConfig().getUser(),
                     new DmpDto(planUuid, projectName, DMPSource.DSW, null, dmpLink)));
+      } else {
+        // The link changes when the server is upgraded to 5.x, and the project may be renamed.
+        dmpUser.get().setDmpLink(dmpLink);
+        dmpUser.get().setTitle(projectName);
       }
       if (file != null) {
         dmpUser.get().setDmpDownloadFile(file);
