@@ -23,6 +23,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.mock.web.MockFilterConfig;
@@ -94,21 +96,27 @@ class SiteMeshDecorationTest {
    * none. Either way the decision must follow the error page, as it did under SiteMesh 2.
    */
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  void notFoundPageIsDecoratedEvenForAnExcludedAjaxUrl(boolean withForwardAttributes)
+  @CsvSource({
+    "/workspace/ajax/search,",
+    "/workspace/ajax/search, /workspace",
+    "/gallery/missing,",
+    "/gallery/missing, /gallery"
+  })
+  void notFoundPageIsDecoratedEvenForAnExcludedUrl(String failedUri, String forwardServletPath)
       throws Exception {
     MockHttpServletResponse response =
-        serveErrorPage(404, "/404.jsp", "/workspace/ajax/search", withForwardAttributes);
+        serveErrorPage(404, "/404.jsp", failedUri, forwardServletPath);
 
     assertEquals("/WEB-INF/decorators/default.jsp", decoratorUsed(response));
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  void serverErrorPageIsNotDecorated(boolean withForwardAttributes) throws Exception {
+  @NullSource
+  @ValueSource(strings = "/workspace")
+  void serverErrorPageIsNotDecorated(String forwardServletPath) throws Exception {
     MockHttpServletResponse response =
         serveErrorPage(
-            500, "/error.jsp", "/workspace/editor/structuredDocument/1", withForwardAttributes);
+            500, "/error.jsp", "/workspace/editor/structuredDocument/1", forwardServletPath);
 
     assertNull(decoratorUsed(response));
     assertEquals(BODY, response.getContentAsString());
@@ -148,22 +156,21 @@ class SiteMeshDecorationTest {
   }
 
   /**
-   * ERROR-dispatches the error page at {@code location} after {@code failedUri} failed. With
-   * forward attributes, they are set the way Tomcat sets them for a URL under the multipart-mapped
-   * {@code /workspace/*} servlet.
+   * ERROR-dispatches the error page at {@code location} after {@code failedUri} failed. A non-null
+   * {@code forwardServletPath} adds forward attributes the way Tomcat sets them for a URL under
+   * that multipart-mapped servlet; null leaves them out, as Jetty does.
    */
   private MockHttpServletResponse serveErrorPage(
-      int status, String location, String failedUri, boolean withForwardAttributes)
-      throws Exception {
+      int status, String location, String failedUri, String forwardServletPath) throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", location);
     request.setServletPath(location);
     request.setDispatcherType(DispatcherType.ERROR);
     request.setAttribute("jakarta.servlet.error.request_uri", failedUri);
-    if (withForwardAttributes) {
+    if (forwardServletPath != null) {
       request.setAttribute("jakarta.servlet.forward.request_uri", failedUri);
-      request.setAttribute("jakarta.servlet.forward.servlet_path", "/workspace");
+      request.setAttribute("jakarta.servlet.forward.servlet_path", forwardServletPath);
       request.setAttribute(
-          "jakarta.servlet.forward.path_info", failedUri.substring("/workspace".length()));
+          "jakarta.servlet.forward.path_info", failedUri.substring(forwardServletPath.length()));
     }
     MockHttpServletResponse response = new MockHttpServletResponse();
     response.setStatus(status);
