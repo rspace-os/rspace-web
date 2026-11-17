@@ -40,4 +40,11 @@
                 and target_filesystem_id is not null and target_absolute_path is not null));
         </sql>
     </changeSet>
+
+    <changeSet id="2026-11-17-rsdev1658-inventorylink-aud-path-charset" context="run" author="nferrante">
+        <comment>RSDEV-1658: InventoryLink_AUD path columns match the live ones, so Envers can store any path the live table accepts</comment>
+        <sql>alter table InventoryLink_AUD
+            modify target_remote_path VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+            modify target_absolute_path VARCHAR(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;</sql>
+    </changeSet>
 </databaseChangeLog>
