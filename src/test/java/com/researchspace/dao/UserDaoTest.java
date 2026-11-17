@@ -110,6 +110,97 @@ public class UserDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void saveUserOfDetachedUserKeepsCallersVersionInStep() {
+    User user = userDao.saveUser(TestFactory.createAnyUser(getRandomAlphabeticString("u")));
+    flushDatabaseState();
+    sessionFactory.getCurrentSession().evict(user);
+
+    user.setFirstName("changed");
+    userDao.saveUser(user);
+    assertEquals(versionInDatabase(user.getId()), user.getVersion());
+
+    user.setFirstName("changed again");
+    userDao.saveUser(user);
+    assertEquals(versionInDatabase(user.getId()), user.getVersion());
+  }
+
+  @Test
+  public void saveUserOfDetachedUserWithAddedRoleCanBeSavedAgain() {
+    User user = detachedUserWithUserRole();
+    user.addRole(rdao.getRoleByName(Constants.PI_ROLE));
+    userDao.saveUser(user);
+    clearSession();
+
+    user.setFirstName("changed later");
+    userDao.saveUser(user);
+    clearSession();
+
+    assertThat(roleNamesInDatabase(user.getId()))
+        .containsExactlyInAnyOrder(Constants.USER_ROLE, Constants.PI_ROLE);
+  }
+
+  @Test
+  public void saveUserOfDetachedUserCanAddThenRemoveRole() {
+    User user = detachedUserWithUserRole();
+    Role pi = rdao.getRoleByName(Constants.PI_ROLE);
+    user.addRole(pi);
+    userDao.saveUser(user);
+    clearSession();
+
+    user.removeRole(pi);
+    userDao.saveUser(user);
+    clearSession();
+
+    assertThat(roleNamesInDatabase(user.getId())).containsExactly(Constants.USER_ROLE);
+  }
+
+  private User detachedUserWithUserRole() {
+    User user = TestFactory.createAnyUser(getRandomAlphabeticString("u"));
+    user.addRole(rdao.getRoleByName(Constants.USER_ROLE));
+    Long id = userDao.saveUser(user).getId();
+    clearSession();
+    user = userDao.get(id);
+    sessionFactory.getCurrentSession().evict(user);
+    return user;
+  }
+
+  private void clearSession() {
+    flushDatabaseState();
+    sessionFactory.getCurrentSession().clear();
+  }
+
+  private List<String> roleNamesInDatabase(Long userId) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select r.name from User u join u.roles r where u.id = :id", String.class)
+        .setParameter("id", userId)
+        .list();
+  }
+
+  @Test
+  public void saveUserOfNewUserReturnsSameObject() {
+    User user = TestFactory.createAnyUser(getRandomAlphabeticString("u"));
+    User saved = userDao.saveUser(user);
+    assertSame(user, saved);
+    assertNotNull(saved.getId());
+  }
+
+  @Test
+  public void saveUserOfTrackedUserReturnsSameObject() {
+    User user = userDao.get(-1L);
+    user.setFirstName("changed");
+    assertSame(user, userDao.saveUser(user));
+  }
+
+  private Integer versionInDatabase(Long userId) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select u.version from User u where u.id = :id", Integer.class)
+        .setParameter("id", userId)
+        .getSingleResult();
+  }
+
+  @Test
   public void testAddUserRole() throws Exception {
     User user = userDao.get(-1L);
     final int INITIAL_ROLE_COUNT = user.getRoles().size();

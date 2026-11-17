@@ -228,17 +228,19 @@ class HibernateSandboxTest extends HibernateTest {
     Sample complexSample = TestFactory.createComplexSampleInContainer(testUser);
     assertEquals(1, complexSample.getActiveFields().get(0).getColumnIndex());
     assertEquals(9, complexSample.getActiveFields().get(8).getColumnIndex());
-    saveParentTemplateForSample(complexSample);
     // create a copy
     Sample copy = complexSample.copy(testUser);
     copy.getSubSamples()
         .get(0)
         .moveToNewParent(complexSample.getSubSamples().get(0).getParentContainer());
-    // save a sample
-    saveRadioAndChoiceDefinitions(dao, complexSample);
-    saveSampleInContainer(complexSample);
-    // save a copy
-    copy = saveSampleInContainer(copy);
+    // the copy shares definitions with the original, so save both in one session
+    dao.inOneTransaction(
+        () -> {
+          saveParentTemplateForSample(complexSample);
+          // both samples before their shared container
+          dao.saveTogether(
+              complexSample, copy, complexSample.getSubSamples().get(0).getParentContainer());
+        });
     assertThat(copy.getActiveFields()).hasSize(complexSample.getActiveFields().size());
     for (int i = 0; i < complexSample.getActiveFields().size(); i++) {
       InventoryEntityField origF = complexSample.getActiveFields().get(i);
@@ -251,12 +253,7 @@ class HibernateSandboxTest extends HibernateTest {
 
   private Sample saveSampleInContainer(Sample sample) {
     Container container = sample.getSubSamples().get(0).getParentContainer();
-    dao.update(container, Container.class);
-    if (sample.getId() == null) {
-      sample = dao.save(sample, Sample.class);
-    } else {
-      sample = dao.update(sample, Sample.class);
-    }
+    dao.saveTogether(sample, container);
 
     for (InventoryFile invFile : sample.getAttachedFiles()) {
       dao.update(invFile, InventoryFile.class);
@@ -440,14 +437,16 @@ class HibernateSandboxTest extends HibernateTest {
   void sampleCopy() throws IOException {
     User user = createAndSaveAnyUser();
     Sample sample = TestFactory.createSampleWithSubSamplesAndEverything(user, 1);
-    saveAssociatedEntities(sample);
-    sample = saveSampleInContainer(sample);
     Container parentContainer = sample.getSubSamples().get(0).getParentContainer();
-
     Sample copy = sample.copy(testUser);
     copy.getSubSamples().get(0).moveToNewParent(parentContainer);
-    dao.update(parentContainer, Container.class);
-    copy = dao.save(copy, Sample.class);
+    // the copy shares file properties with the original, so save both in one session
+    dao.inOneTransaction(
+        () -> {
+          saveAssociatedEntities(sample);
+          // both samples before their shared container
+          dao.saveTogether(sample, copy, parentContainer);
+        });
 
     Sample reloaded = dao.load(copy.getId(), Sample.class);
     assertFalse(reloaded.getId().equals(sample.getId()));
@@ -463,15 +462,16 @@ class HibernateSandboxTest extends HibernateTest {
     User user = createAndSaveAnyUser();
     Sample sample = TestFactory.createSampleWithSubSamplesAndEverything(user, 1);
     SubSample originalSS = sample.getActiveSubSamples().get(0);
-    saveAssociatedEntities(sample);
-    sample = saveSampleInContainer(sample);
     assertEquals(10, sample.getTotalQuantity().getNumericValue().intValue());
 
     SubSample copy = originalSS.copy(user);
     copy.moveToNewParent(sample.getSubSamples().get(0).getParentContainer());
-    dao.update(copy.getParentContainer(), Container.class);
-    copy = dao.save(copy, SubSample.class);
-    sample = dao.update(sample, Sample.class);
+    // the copy shares file properties with the original, so save both in one session
+    dao.inOneTransaction(
+        () -> {
+          saveAssociatedEntities(sample);
+          dao.saveTogether(sample, copy.getParentContainer());
+        });
     assertEquals(sample, copy.getSample());
     assertThat(copy.getActiveExtraFields().stream()).allMatch(ef -> ef.getId() != null);
     assertThat(copy.getNotes().stream()).allMatch(note -> note.getId() != null);
@@ -489,11 +489,11 @@ class HibernateSandboxTest extends HibernateTest {
     // saving name of original does not alter new name
     String originalName = originalSS.getName();
     originalSS.setName("newname");
-    originalSS = dao.update(originalSS, SubSample.class);
-    copy = dao.load(copy.getId(), SubSample.class);
-    assertEquals(originalName + "_COPY", copy.getName());
+    dao.update(originalSS, SubSample.class);
+    SubSample reloadedCopy = dao.load(copy.getId(), SubSample.class);
+    assertEquals(originalName + "_COPY", reloadedCopy.getName());
 
-    Sample reloaded = dao.load(copy.getSample().getId(), Sample.class);
+    Sample reloaded = dao.load(reloadedCopy.getSample().getId(), Sample.class);
     assertEquals(20, reloaded.getTotalQuantity().getNumericValue().intValue());
   }
 
@@ -574,9 +574,8 @@ class HibernateSandboxTest extends HibernateTest {
     Sample sample = TestFactory.createBasicSampleWithSubSamples(u, 2);
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.valueOf(5), RSUnitDef.GRAM));
     Container container = sample.getSubSamples().get(0).getParentContainer();
-    dao.update(container, Container.class);
     ConstraintViolationException cve =
-        assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
+        assertThrows(ConstraintViolationException.class, () -> dao.saveTogether(sample, container));
     // persist-time constraint messages must resolve from the JSON catalogues
     assertThat(cve.getConstraintViolations())
         .extracting(ConstraintViolation::getMessage)
@@ -757,11 +756,10 @@ class HibernateSandboxTest extends HibernateTest {
     ContainerLocation containerLocation = loadedSubContainer.getParentLocation();
     assertNotNull(containerLocation.getStoredRecord());
 
-    // try setting subsample where there is already container
+    // try setting subsample where there is already container. The stored subsample is the
+    // inverse side, so the row is not dirty and merge would not run @PreUpdate: call it directly
     containerLocation.setStoredSubSample(subSample);
-    assertThrows(
-        ConstraintViolationException.class,
-        () -> dao.save(containerLocation, ContainerLocation.class));
+    assertThrows(ConstraintViolationException.class, containerLocation::validateBeforeSave);
 
     // try updating coords to illegal value (1, 0) (valid coords start at (1,1))
     containerLocation.setStoredSubSample(null);
@@ -797,11 +795,18 @@ class HibernateSandboxTest extends HibernateTest {
         cve.getMessage());
 
     // create container which holds both sample, container and instrument
+    // the stored records were saved earlier, so load them into the same session first
     Container allContentContainer = rf.createListContainer("test container", user);
-    allContentContainer.addToNewLocation(savedContainer);
-    allContentContainer.addToNewLocation(subSample);
-    allContentContainer.addToNewLocation(instrument);
-    dao.save(allContentContainer, Container.class);
+    Long containerId = savedContainer.getId();
+    Long subSampleId = subSample.getId();
+    Long instrumentId = instrument.getId();
+    dao.inOneTransaction(
+        () -> {
+          allContentContainer.addToNewLocation(dao.load(containerId, Container.class));
+          allContentContainer.addToNewLocation(dao.load(subSampleId, SubSample.class));
+          allContentContainer.addToNewLocation(dao.load(instrumentId, Instrument.class));
+          dao.save(allContentContainer, Container.class);
+        });
     assertThat(allContentContainer.getLocations()).hasSize(3);
 
     // try disabling either canStoreSamples or canStoreContainers or canStoreInstruments flag
@@ -868,11 +873,14 @@ class HibernateSandboxTest extends HibernateTest {
   void containerCopy() throws IOException {
     User user = createAndSaveAnyUser();
     Container container = TestFactory.createImageContainer(user);
-    saveImageFileProperties(container);
-    container = dao.save(container, Container.class);
-
     Container copy = container.copy(testUser);
-    copy = dao.save(copy, Container.class);
+    // the copy shares file properties with the original, so save both in one session
+    dao.inOneTransaction(
+        () -> {
+          saveImageFileProperties(container);
+          dao.save(container, Container.class);
+          dao.save(copy, Container.class);
+        });
     assertFalse(copy.getId().equals(container.getId()));
     assertThat(copy.getLocations()).hasSizeGreaterThan(0);
 
@@ -973,13 +981,10 @@ class HibernateSandboxTest extends HibernateTest {
   public void createSampleWithAttachedFiles() throws IOException {
     User u = createAndSaveAnyUser();
 
-    // save gallery document file
+    // gallery document file
     FileProperty galleryFileFP = TestFactory.createAnyTransientFileProperty(u);
-    dao.save(galleryFileFP.getRoot(), FileStoreRoot.class);
-    galleryFileFP = dao.save(galleryFileFP, FileProperty.class);
     EcatDocumentFile connectedMediaFile = TestFactory.createEcatDocument(10L, u);
     connectedMediaFile.setFileProperty(galleryFileFP);
-    connectedMediaFile = dao.save(connectedMediaFile, EcatDocumentFile.class);
 
     Sample sample = TestFactory.createBasicSampleInContainer(u);
     // attach a standalone file
@@ -992,9 +997,15 @@ class HibernateSandboxTest extends HibernateTest {
     InventoryFile attachedGalleryFile = new InventoryFile(connectedMediaFile);
     sample.addAttachedFile(attachedGalleryFile);
 
-    // save sample
-    saveAssociatedEntities(sample);
-    sample = saveSampleInContainer(sample);
+    // the gallery file and the sample share objects, so save them in one session
+    dao.inOneTransaction(
+        () -> {
+          dao.save(galleryFileFP.getRoot(), FileStoreRoot.class);
+          dao.save(galleryFileFP, FileProperty.class);
+          dao.save(connectedMediaFile, EcatDocumentFile.class);
+          saveAssociatedEntities(sample);
+          saveSampleInContainer(sample);
+        });
 
     // verify
     assertNotNull(sample.getId());
@@ -1015,7 +1026,6 @@ class HibernateSandboxTest extends HibernateTest {
     InventoryFile invFile = rf.createInventoryFile("testFileName.txt", f1, u);
 
     Sample sample = TestFactory.createComplexSampleInContainer(u);
-    saveParentTemplateForSample(sample);
 
     InventoryAttachmentField attachmentField =
         (InventoryAttachmentField) sample.getActiveFields().get(6);
@@ -1023,9 +1033,13 @@ class HibernateSandboxTest extends HibernateTest {
     attachmentField.setFieldData("attachment description");
     attachmentField.setAttachedFile(invFile);
 
-    // save sample
-    saveAssociatedEntities(sample);
-    sample = saveSampleInContainer(sample);
+    // the template, files and sample share objects, so save them in one session
+    dao.inOneTransaction(
+        () -> {
+          saveParentTemplateForSample(sample);
+          saveAssociatedEntities(sample);
+          saveSampleInContainer(sample);
+        });
 
     assertNotNull(sample.getId());
     InventoryFile savedInvFile = sample.getActiveFields().get(6).getAttachedFile();
@@ -1063,7 +1077,6 @@ class HibernateSandboxTest extends HibernateTest {
     InventoryFile invFile2 = rf.createInventoryFile("testFileName2.txt", f2, u);
 
     Sample sample = TestFactory.createComplexSampleInContainer(u);
-    saveParentTemplateForSample(sample);
 
     InventoryAttachmentField attachmentField =
         (InventoryAttachmentField) sample.getActiveFields().get(6);
@@ -1072,20 +1085,25 @@ class HibernateSandboxTest extends HibernateTest {
     attachmentField.setAttachedFile(invFile);
     attachmentField.setAttachedFile(invFile2);
 
-    // save connected entities
-    dao.save(invFile.getFileProperty().getRoot(), FileStoreRoot.class);
-    dao.save(invFile.getFileProperty(), FileProperty.class);
-    saveAssociatedEntities(sample);
-
     // for a test, change 1st attachment to be undeleted
     assertTrue(invFile.isDeleted());
     invFile.setDeleted(false);
 
-    // try saving the sample with field having 2 non-deleted attachments
+    // try saving the sample with field having 2 non-deleted attachments; the template and
+    // files share objects with the sample, so they are saved in the same session
     Container container = sample.getSubSamples().get(0).getParentContainer();
-    dao.update(container, Container.class);
     ConstraintViolationException cve =
-        assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
+        assertThrows(
+            ConstraintViolationException.class,
+            () ->
+                dao.inOneTransaction(
+                    () -> {
+                      saveParentTemplateForSample(sample);
+                      dao.save(invFile.getFileProperty().getRoot(), FileStoreRoot.class);
+                      dao.save(invFile.getFileProperty(), FileProperty.class);
+                      saveAssociatedEntities(sample);
+                      dao.saveTogether(sample, container);
+                    }));
     assertEquals("Inventory attachment field can link only one attachment", cve.getMessage());
   }
 

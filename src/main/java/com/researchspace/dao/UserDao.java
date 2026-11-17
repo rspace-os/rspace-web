@@ -47,8 +47,12 @@ public interface UserDao extends GenericDao<User, Long> {
   /**
    * Saves a user's information.
    *
+   * <p>If {@code user} is detached, the returned object is a different, managed copy. The
+   * argument's {@code version} and {@code roles} are still updated to match the saved row, so it
+   * can be saved again. Callers should prefer the returned object.
+   *
    * @param user the object to be saved
-   * @return the persisted User object
+   * @return the persisted User object, which may not be the argument
    */
   User saveUser(User user);
 

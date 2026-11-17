@@ -110,8 +110,7 @@ class HibernateAuditTest extends HibernateTest {
   }
 
   private void saveSampleInContainer(Sample sample) {
-    dao.save(sample.getSubSamples().get(0).getParentContainer(), Container.class);
-    sample = dao.save(sample, Sample.class);
+    dao.saveTogether(sample, sample.getSubSamples().get(0).getParentContainer());
   }
 
   @Test
@@ -266,7 +265,8 @@ class HibernateAuditTest extends HibernateTest {
 
       List<AuditedEntity<DigitalObjectIdentifier>> identifierHistory =
           getRevisionsForObject(DigitalObjectIdentifier.class, igsnIdentifier.getId());
-      assertThat(identifierHistory).hasSize(4);
+      // merge writes only changed rows, so the identifier has one revision per change to it
+      assertThat(identifierHistory).hasSize(2);
       assertEquals("igsn 01", identifierHistory.get(0).getEntity().getTitle());
       assertEquals(
           "test subsample", identifierHistory.get(0).getEntity().getInventoryRecord().getName());
@@ -275,29 +275,12 @@ class HibernateAuditTest extends HibernateTest {
           ((SubSample) identifierHistory.get(0).getEntity().getInventoryRecord())
               .getSample()
               .getName());
-      assertEquals("igsn 01", identifierHistory.get(1).getEntity().getTitle());
+      assertEquals("updated igsn 01", identifierHistory.get(1).getEntity().getTitle());
       assertEquals(
           "test subsample", identifierHistory.get(1).getEntity().getInventoryRecord().getName());
       assertEquals(
           "updated uniquename one",
           ((SubSample) identifierHistory.get(1).getEntity().getInventoryRecord())
-              .getSample()
-              .getName());
-      assertEquals("updated igsn 01", identifierHistory.get(2).getEntity().getTitle());
-      assertEquals(
-          "test subsample", identifierHistory.get(2).getEntity().getInventoryRecord().getName());
-      assertEquals(
-          "updated uniquename one",
-          ((SubSample) identifierHistory.get(2).getEntity().getInventoryRecord())
-              .getSample()
-              .getName());
-      assertEquals("updated igsn 01", identifierHistory.get(3).getEntity().getTitle());
-      assertEquals(
-          "updated test subsample",
-          identifierHistory.get(3).getEntity().getInventoryRecord().getName());
-      assertEquals(
-          "updated uniquename one",
-          ((SubSample) identifierHistory.get(3).getEntity().getInventoryRecord())
               .getSample()
               .getName());
 
