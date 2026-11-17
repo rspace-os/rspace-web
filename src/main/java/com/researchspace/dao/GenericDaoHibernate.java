@@ -136,8 +136,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    * #save(Object)}: {@code persist()} for new or session-managed instances (preserving
    * same-instance semantics) and {@code merge()} for detached instances. Subclasses that save
    * entities other than their primary {@code persistentClass} should use this rather than {@code
-   * session.merge()} or {@code PersistenceUnitUtil.getIdentifier()} directly (see {@link
-   * #getEntityId} for why).
+   * session.merge()} directly.
    *
    * @return the managed instance; callers must use this, not the argument (see {@link
    *     #save(Object)}).
@@ -153,13 +152,8 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   /**
-   * Returns the database identifier of {@code object}, or {@code null} if the entity is new.
-   *
-   * <p>Uses Hibernate's {@link EntityPersister} to extract the identifier, which works correctly
-   * for both field-access and property-access entities. {@code PersistenceUnitUtil.getIdentifier()}
-   * incorrectly returns {@code null} for property-access entities in Hibernate 6. If the model
-   * entities are migrated to field-access ({@code @Id} on the field instead of the getter), this
-   * method could be replaced with a simple {@code PersistenceUnitUtil.getIdentifier()} call.
+   * Returns the database identifier of {@code object}, or {@code null} if the entity is new or its
+   * type is not mapped in this persistence unit.
    */
   private Object getEntityId(Object object, Session session) {
     SessionImplementor si = (SessionImplementor) session;

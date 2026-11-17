@@ -1,6 +1,7 @@
 package com.researchspace.model.test;
 
 import com.researchspace.model.AbstractUserOrGroupImpl;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hibernate.Session;
@@ -14,6 +15,8 @@ public class TestDao {
   }
 
   private SessionFactory sessionFactory;
+  private Session batchSession;
+  private final List<Object[]> batchMerges = new ArrayList<>();
 
   <T> T load(Long id, Class<T> clazz) {
     return load(id, clazz, null);
@@ -86,9 +89,6 @@ public class TestDao {
     return item;
   }
 
-  private Session batchSession;
-  private final List<Object[]> batchMerges = new java.util.ArrayList<>();
-
   /**
    * Runs the saves in {@code work} in one session and transaction. Needed when a new object refers
    * to objects saved earlier in the same test: in separate sessions those would be detached, and
@@ -127,7 +127,7 @@ public class TestDao {
     }
     Transaction transaction = null;
     Session session = null;
-    List<Object[]> merges = new java.util.ArrayList<>();
+    List<Object[]> merges = new ArrayList<>();
     try {
       session = sessionFactory.openSession();
       transaction = session.beginTransaction();
