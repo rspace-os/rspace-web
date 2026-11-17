@@ -231,8 +231,9 @@ public class BundleTag extends TagSupport {
    * <ul>
    *   <li><b>Production:</b> manifest is pre-warmed once at startup and cached in the {@link
    *       ServletContext} for the lifetime of the application.
-   *   <li><b>Dev ({@code run} profile, no HMR):</b> manifest is cached per-request so that a
-   *       rebuild between page loads is picked up without a Jetty restart.
+   *   <li><b>Dev ({@code frontendDevMode} or the legacy {@code run} profile, no HMR):</b> manifest
+   *       is cached per-request so that a rebuild between page loads is picked up without a Jetty
+   *       restart.
    *   <li><b>HMR ({@code reactDevMode=true}):</b> manifest is not used at all — {@link
    *       #renderHmrBundle()} serves modules directly from the Vite dev server.
    * </ul>
