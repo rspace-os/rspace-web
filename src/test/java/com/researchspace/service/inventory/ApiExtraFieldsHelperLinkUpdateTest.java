@@ -278,8 +278,9 @@ class ApiExtraFieldsHelperLinkUpdateTest {
 
   @Test
   void aNewTemplateExtraLinkFieldRefusesAFilestoreTarget() {
+    // creation ignores the delete flag, so it must not exempt the field
     ApiExtraField apiField = incomingFilestoreLinkField(null, "/XRD/run.dat");
-    apiField.setNewFieldRequest(true);
+    apiField.setDeleteFieldRequest(true);
     List<ApiExtraField> apiFields = List.of(apiField);
     InstrumentTemplate template = new InstrumentTemplate();
 
@@ -287,6 +288,25 @@ class ApiExtraFieldsHelperLinkUpdateTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> helper.addExtraFieldsForNewInventoryRecord(apiFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aTemplateUpdateFlaggedBothNewAndDeleteRefusesAFilestoreTarget() {
+    // both flags create a new field and delete the old one, so the new field would survive
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+    apiField.setNewFieldRequest(true);
+    apiField.setDeleteFieldRequest(true);
+    List<ApiExtraField> apiFields = List.of(apiField);
+    List<ExtraField> dbFields = List.of(dbField);
+    SampleTemplate template = new SampleTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.createDeleteRequestedExtraFields(apiFields, dbFields, template, user));
 
     assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);

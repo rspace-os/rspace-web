@@ -197,9 +197,8 @@ public class ApiExtraFieldsHelper implements Validator {
       return;
     }
     for (ApiExtraField apiField : incomingFields) {
-      if (!apiField.isDeleteFieldRequest()
-          && apiField.getLink() != null
-          && apiField.getLink().hasFilestoreTarget()) {
+      // whatever its flags: a POST creates the field anyway, and a PUT with both creates one
+      if (apiField.getLink() != null && apiField.getLink().hasFilestoreTarget()) {
         throw new ApiRuntimeException("errors.inventory.field.linkFilestoreTargetOnTemplate");
       }
     }
