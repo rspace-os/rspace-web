@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -72,7 +73,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.AsyncResult;
 
 public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
@@ -339,7 +339,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       repoDepositResult = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
     postDeposit(repoDepositResult, app, subject, null, repoDepositConfig);
-    return new AsyncResult<>(repoDepositResult);
+    return CompletableFuture.completedFuture(repoDepositResult);
   }
 
   @Override
@@ -360,7 +360,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       result = new RepositoryOperationResult(false, e.getMessage(), null, null);
     }
     postDeposit(result, app, subject, archiveResult.getExportFile(), repoDepositConfig);
-    return new AsyncResult<>(result);
+    return CompletableFuture.completedFuture(result);
   }
 
   @Override
@@ -377,7 +377,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       RaidUpdateResult raidUpdateResult =
           reportDoiToRaid(depositResult, app, user, repoDepositConfig);
       notifyRaidUpdateComplete(raidUpdateResult, user);
-      return new AsyncResult<>(raidUpdateResult);
+      return CompletableFuture.completedFuture(raidUpdateResult);
     }
     return null;
   }

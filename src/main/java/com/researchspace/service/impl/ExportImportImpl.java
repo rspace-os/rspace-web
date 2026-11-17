@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
@@ -73,7 +74,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -132,7 +132,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ExportEcatDocumentResult pdfExport =
           pdfWordExportManager.doExport(
               toExport, exportIds, exportNames, exportTypes, config, exporter);
-      return new AsyncResult<>(pdfExport);
+      return CompletableFuture.completedFuture(pdfExport);
     } catch (Exception e) {
       logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
       throw e;
@@ -157,7 +157,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ExportEcatDocumentResult pdfExport =
           pdfWordExportManager.doExport(
               exporter, exportIds, exportNames, exportTypes, config, exporter);
-      return new AsyncResult<>(pdfExport);
+      return CompletableFuture.completedFuture(pdfExport);
     } catch (Exception e) {
       logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
       throw e;
@@ -177,7 +177,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       ExportFileResult pdfExport =
           pdfWordExportManager.doExportForSigning(
               exporter, exportIds, exportNames, exportTypes, config, exporter);
-      return new AsyncResult<>(pdfExport);
+      return CompletableFuture.completedFuture(pdfExport);
     } catch (Exception e) {
       logAndNotifyUserAboutExportFailure(config.getExportName(), exporter, e);
       throw e;
@@ -218,7 +218,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           () -> archivePlanner.createExportRecordList(expCfg, exportSelection);
       ArchiveResult result =
           doArchiveSelection(expCfg, exporter, baseURL, postArchiveCompleter, exportListSupplier);
-      return new AsyncResult<>(result);
+      return CompletableFuture.completedFuture(result);
     } catch (Exception e) {
       logAndNotifyUserAboutExportFailure(expCfg.getDescription(), exporter, e);
       throw e;
@@ -385,7 +385,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
           () -> archivePlanner.createExportRecordList(expCfg, userSelection);
       ArchiveResult result =
           doSynchUserArchive(expCfg, baseURL, postArchiveCompleter, userSelection, rcdList);
-      return new AsyncResult<>(result);
+      return CompletableFuture.completedFuture(result);
     } catch (Exception e) {
       String exportName = "user-" + toExport.getUsername();
       logAndNotifyUserAboutExportFailure(exportName, exporter, e);
@@ -506,7 +506,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
               types.toArray(new String[0]),
               expCfg,
               exporter);
-      return new AsyncResult<>(ecatdoc);
+      return CompletableFuture.completedFuture(ecatdoc);
     } catch (Exception e) {
       logAndNotifyUserAboutExportFailure(expCfg.getExportName(), exporter, e);
       throw e;
@@ -535,7 +535,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
             baseURL,
             postArchiveCompleter,
             () -> archivePlanner.createExportRecordList(expCfg, exportSelection));
-    return new AsyncResult<>(result);
+    return CompletableFuture.completedFuture(result);
   }
 
   @Override

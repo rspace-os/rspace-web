@@ -8,6 +8,7 @@ import com.researchspace.documentconversion.spi.AbstractDocumentConversionServic
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +17,6 @@ import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.AsyncResult;
 
 /**
  * Invokes Aspose converter as a separate application in a separate process via the command line. It
@@ -141,7 +141,7 @@ public class AsposeAppInvoker extends AbstractDocumentConversionService
   public Future<ConversionResult> submitAsync(
       Convertible toConvert, String outputExt, File outFile) {
     ConversionResult result = convert(toConvert, outputExt, outFile);
-    return new AsyncResult<>(result);
+    return CompletableFuture.completedFuture(result);
   }
 
   @Override

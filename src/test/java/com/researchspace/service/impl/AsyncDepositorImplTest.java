@@ -27,6 +27,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.velocity.app.VelocityEngine;
@@ -37,7 +38,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
@@ -149,7 +149,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
+        CompletableFuture.completedFuture(
             new RepositoryOperationResult(
                 true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
@@ -204,7 +204,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             true, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
+        CompletableFuture.completedFuture(
             new RepositoryOperationResult(
                 true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
@@ -259,7 +259,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             false, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
+        CompletableFuture.completedFuture(
             new RepositoryOperationResult(
                 true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
@@ -314,7 +314,7 @@ public class AsyncDepositorImplTest {
         new RaidUpdateResult(
             false, repoName, expectedRaidIdentifier, expectedRaidUrl, expectedDoiLink, true);
     Future<RepositoryOperationResult> futureRepoOperationResult =
-        new AsyncResult<>(
+        CompletableFuture.completedFuture(
             new RepositoryOperationResult(
                 true, "", new URL(expectedResultUrl), new URL(expectedDoiLink)));
 
