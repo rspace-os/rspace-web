@@ -23,7 +23,7 @@ class FullPathSiteMeshFilterTest {
   }
 
   @Test
-  void reportsFullForwardedPathAsServletPathSoAjaxExcludeMatches() {
+  void reportsFullForwardedUriAsServletPath() {
     HttpServletRequest wrapped =
         FullPathSiteMeshFilter.withFullForwardPath(forwardedRequest("", "/workspace/ajax/search"));
 

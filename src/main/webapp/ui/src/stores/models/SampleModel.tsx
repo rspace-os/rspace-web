@@ -982,9 +982,8 @@ export default class SampleModel
   }
 }
 
-// requestable is not currently supported for batch editing.
 type BatchSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
-  Omit<SampleEditableFields, "name" | "identifiers" | "requestable">;
+  Omit<SampleEditableFields, "name" | "identifiers">;
 
 /*
  * This is a wrapper class around a set of Samples, making it easier to perform
@@ -1002,6 +1001,13 @@ export class SampleCollection
     });
   }
 
+  // Server-computed per record (SampleModel.canSetRequestable); the batch field is only ever
+  // shown when every selected sample is one the signed-in user may toggle, mirroring
+  // RequestableSwitch's own single-sample guard.
+  get canSetRequestable(): boolean {
+    return this.records.every((s) => s.canSetRequestable);
+  }
+
   get allSameTemperatures(): boolean {
     const allTemperaturesUnspecified =
       this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
@@ -1017,6 +1023,7 @@ export class SampleCollection
   get fieldValues(): BatchSampleEditableFields {
     const currentSources = new Set(Array.from(this.records, (r) => r.sampleSource));
     const currentExpiryDates = new Set(Array.from(this.records, (r) => r.expiryDate));
+    const currentRequestableValues = new Set(Array.from(this.records, (r) => r.requestable));
     const allSameTemperatures = this.allSameTemperatures;
 
     /*
@@ -1030,6 +1037,7 @@ export class SampleCollection
       ...super.fieldValues,
       sampleSource: firstValue(currentSources) ?? DEFAULT_SAMPLE.sampleSource,
       expiryDate: firstValue(currentExpiryDates) ?? null,
+      requestable: firstValue(currentRequestableValues) ?? DEFAULT_SAMPLE.requestable,
       storageTempMin: allSameTemperatures ? (firstValue(currentStorageTemperatureMin) ?? null) : null,
       storageTempMax: allSameTemperatures ? (firstValue(currentStorageTemperatureMax) ?? null) : null,
 
@@ -1044,6 +1052,7 @@ export class SampleCollection
   } {
     const currentSources = new Set(Array.from(this.records, (r) => r.sampleSource));
     const currentExpiryDates = new Set(Array.from(this.records, (r) => r.expiryDate));
+    const currentRequestableValues = new Set(Array.from(this.records, (r) => r.requestable));
     const allTemperaturesUnspecified =
       this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
     const allSameTemperatures = this.allSameTemperatures;
@@ -1057,6 +1066,7 @@ export class SampleCollection
       ...super.noValueLabel,
       sampleSource: currentSources.size === 1 ? null : "Varies",
       expiryDate: currentExpiryDates.size === 1 ? null : "Varies",
+      requestable: currentRequestableValues.size === 1 ? null : "Varies",
       quantity: null,
       storageTempMin: temperatureLabel,
       storageTempMax: temperatureLabel,
@@ -1069,6 +1079,12 @@ export class SampleCollection
   }
 
   setFieldEditable(fieldName: string, value: boolean): void {
+    // Unlike storageTempMin/Max's "Varies" placeholder, the switch always shows a concrete
+    // value, so a disagreeing selection must be normalised to it on opt-in, or saving without
+    // touching the switch would apply nothing.
+    const requestableDisagrees = fieldName === "requestable" && value && this.noValueLabel.requestable !== null;
+    const requestableValueShown = requestableDisagrees ? this.fieldValues.requestable : null;
+
     for (const sample of this.records) {
       sample.setFieldEditable(fieldName, value);
 
@@ -1085,6 +1101,9 @@ export class SampleCollection
         sample.setFieldsDirty({
           storageTempMax: { numericValue: 30, unitId: CELSIUS },
         });
+      }
+      if (requestableDisagrees) {
+        sample.setFieldsDirty({ requestable: requestableValueShown });
       }
     }
   }

@@ -1,7 +1,9 @@
 package com.axiope.service.cfg;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.MSWordImporter;
@@ -10,6 +12,7 @@ import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.impl.DummyConversionService;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.WithSpringContext;
 import java.util.List;
@@ -191,6 +194,42 @@ public class DocConverterConfigTest {
       assertThat(delegates).doesNotContain(cfg.asyncConverterService());
       assertThat(delegates).doesNotContain(cfg.nullService());
       assertThat(delegates).contains(cfg.asposeWebAppService());
+    }
+  }
+
+  @Nested
+  @TestPropertySource(
+      properties = {
+        "aspose.use.dummy.converter=true",
+        "sample.pdf=src/test/resources/exampleDoc.pdf",
+        "sample.png=src/test/resources/Picture1.png",
+        "sample.doc=src/test/resources/TestResources/MSattachment.doc"
+      })
+  public class DummyConverterReturnsSampleFiles extends TestBase {
+    @Test
+    public void testDummyConfig() {
+      List<DocumentConversionService> delegates = getConverterList();
+      assertThat(delegates).hasSize(2);
+      DocumentConversionService dummy = delegates.get(1);
+      assertInstanceOf(DummyConversionService.class, dummy);
+      assertTrue(dummy.convert(null, "html").isSuccessful());
+      assertTrue(dummy.convert(null, "png").isSuccessful());
+      assertTrue(dummy.convert(null, "doc").isSuccessful());
+    }
+  }
+
+  @Nested
+  @TestPropertySource(
+      properties = {
+        "aspose.use.dummy.converter=true",
+        "sample.pdf=src/test/resources/exampleDoc.pdf"
+      })
+  public class NoopAddedIfDummyConverterSamplesMissing extends TestBase {
+    @Test
+    public void testDummyConfig() {
+      List<DocumentConversionService> delegates = getConverterList();
+      assertThat(delegates).hasSize(2);
+      assertThat(delegates).contains(cfg.nullService());
     }
   }
 

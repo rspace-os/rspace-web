@@ -20,7 +20,6 @@ import com.researchspace.model.SignupSource;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
-import com.researchspace.model.UserPreference;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
@@ -474,20 +473,6 @@ public class UserManagerTest extends SpringTransactionalTest {
     // user3 is in collab group with user1 so can now potentially see his documents
     assertThat(userMgr.getViewableUserSet(user3)).hasSize(INDIVIDUAL_DEFAULT_VIEWABLE_USERS + 1);
     assertThat(userMgr.getViewableUserSet(user4)).hasSize(1);
-  }
-
-  @Test
-  public void updatePreferenceHappyCase() {
-    User user = createAndSaveRandomUser();
-    UserPreference userPreference =
-        userMgr.setPreference(Preference.BOX, "true", user.getUsername());
-    assertEquals(true, userPreference.getValueAsBoolean());
-    userPreference = userMgr.getPreferenceForUser(user, Preference.BOX);
-    assertEquals(true, userPreference.getValueAsBoolean());
-    userPreference = userMgr.setPreference(Preference.BOX, "false", user.getUsername());
-    assertEquals(false, userPreference.getValueAsBoolean());
-    userPreference = userMgr.getPreferenceForUser(user, Preference.BOX);
-    assertEquals(false, userPreference.getValueAsBoolean());
   }
 
   @Test

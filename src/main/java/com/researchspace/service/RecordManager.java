@@ -27,7 +27,9 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.session.UserSessionTracker;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -181,14 +183,17 @@ public interface RecordManager {
   Folder getRecordParentPreferNonShared(User user, BaseRecord original);
 
   /**
-   * Boolean test as to whether the record <code>original</code> can be moved to targetParent
+   * For listings: answers, for every record on a page at once, whether it can be moved to <code>
+   * targetParent</code>. Gives the same per-record answer as the check a real move makes, but runs
+   * in one transaction and evaluates the checks that only depend on the target folder once.
    *
-   * @param original
-   * @param targetParent
-   * @param user
-   * @return <code>true</code> if the move is permitted, <code>false</code> otherwise
+   * @param originals the records on the listing page
+   * @param targetParent the folder the page is listing
+   * @param user the subject
+   * @return record id mapped to whether that record can be moved
    */
-  boolean canMove(BaseRecord original, Folder targetParent, User user);
+  Map<Long, Boolean> canMove(
+      Collection<? extends BaseRecord> originals, Folder targetParent, User user);
 
   /**
    * Moves the record identified by <code>id</code> from folder<code>currParentId</code> to the

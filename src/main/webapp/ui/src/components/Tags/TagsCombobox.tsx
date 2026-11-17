@@ -13,8 +13,9 @@ import useAutocomplete, {
   type AutocompleteCloseReason,
   type AutocompleteGroupedOption,
 } from "@mui/material/useAutocomplete";
+import { debounce } from "es-toolkit";
 import type React from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import type { Tag } from "../../stores/definitions/Tag";
@@ -393,14 +394,19 @@ function TagsComboboxContent<
   const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(null);
   const listRef = useRef<ListImperativeAPI | null>(null);
 
-  const loadPage = (): Promise<{
+  const loadPage = ({
+    pos,
+    tagFilter,
+  }: {
+    pos: number;
+    tagFilter: string;
+  }): Promise<{
     tags: Array<InternalTag>;
     lastPage: boolean;
   }> => {
-    if (reachedEnd) return Promise.resolve({ tags: [], lastPage: true });
     setIsNextPageLoading(true);
     setError(false);
-    return fetch(`/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`)
+    return fetch(`/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${pos}&tagFilter=${tagFilter}`)
       .then((response) => response.json())
       .then(({ data }: { data: Array<string> }) => {
         const alreadySelectedTagValues = value.map((v) => v.value);
@@ -427,9 +433,11 @@ function TagsComboboxContent<
   };
 
   const loadNextPage = () => {
-    void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
+    if (reachedEnd) return;
+    void loadPage({ pos: page, tagFilter: filter }).then(({ lastPage, tags: newPageOfTags }) => {
       setReachedEnd(lastPage);
-      setTags([...tags, ...newPageOfTags]);
+      // Page 0 starts a new listing (a new filter resets `page`), so replace rather than append.
+      setTags(page === 0 ? newPageOfTags : [...tags, ...newPageOfTags]);
       if (!lastPage) setPage(page + 1);
     });
   };
@@ -563,25 +571,23 @@ function TagsComboboxContent<
     );
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 300): () => void {
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-      setDebounceTimeout(setTimeout(() => func(), timeout));
-    };
-  }
+  /*
+   * A new filter always starts again from page 0, so this takes the filter as
+   * an argument instead of reading `page` and `reachedEnd`: by the time the
+   * debounce fires, an earlier request may already have advanced them.
+   */
+  const loadFirstPage = useEffectEvent((tagFilter: string) => {
+    void loadPage({ pos: 0, tagFilter }).then(({ lastPage, tags: newPageOfTags }) => {
+      setTags(newPageOfTags);
+      setPage(1);
+      setReachedEnd(lastPage);
+    });
+  });
+  const debouncedLoadFirstPage = useMemo(() => debounce((tagFilter: string) => loadFirstPage(tagFilter), 300), []);
+  useEffect(() => () => debouncedLoadFirstPage.cancel(), [debouncedLoadFirstPage]);
 
   useEffect(() => {
-    debounce(() => {
-      // this assumes that the code that called `setFilter` also reset `page` to 0
-      void loadPage().then(({ lastPage, tags: newPageOfTags }) => {
-        setTags(newPageOfTags);
-        setPage(1);
-        setReachedEnd(lastPage);
-      });
-    })();
+    debouncedLoadFirstPage(filter);
   }, [filter]);
 
   useEffect(() => {

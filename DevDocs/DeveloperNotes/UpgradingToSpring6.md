@@ -106,4 +106,7 @@ Until the reindex finishes, search results will be missing or incomplete.
   `web.xml`.
 - **SiteMesh 3 decorators** use bare file names because `/WEB-INF/decorators/` is added
   automatically. Included fragments must not contain `<head>` because SiteMesh keeps
-  only the first one.
+  only the first one. The filter is mapped to REQUEST and ERROR, never FORWARD: SiteMesh 3
+  does not mark an excluded request as handled, so on the rewrite filter's forward to
+  `/app/*` it would decide again, on a path that misses exact excludes.
+  `SiteMeshDecorationTest` fails if FORWARD is added back.
