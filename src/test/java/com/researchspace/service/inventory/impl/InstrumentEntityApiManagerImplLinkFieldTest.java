@@ -56,9 +56,14 @@ import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -974,6 +979,26 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     assertFalse(manager.applyLinkFieldValue(dbField, apiField, user));
     assertSame(dbLink, dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
+  }
+
+  static Stream<Named<Consumer<ApiInventoryLink>>> malformedFilestorePayloads() {
+    return Stream.of(
+        Named.of("without a filestore id", link -> link.getFilestoreTarget().setFilestoreId(null)),
+        Named.of("with a version pin", link -> link.setVersionPin(3L)),
+        Named.of("with a Global ID too", link -> link.setTargetGlobalId("SA7")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("malformedFilestorePayloads")
+  void aMalformedPayloadOverAnUnchangedFilestoreTargetGoesThroughTheLinkManager(
+      Consumer<ApiInventoryLink> malform) {
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    malform.accept(apiField.getLink());
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
   }
 
   @Test

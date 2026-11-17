@@ -43,12 +43,15 @@ public class InventoryLinkValidator {
 
   /**
    * True when both name the same Filestore item, comparing the stored path with the canonical form
-   * of the incoming one, so an untouched link is not sent back through the write path.
+   * of the incoming one, so an untouched link is not sent back through the write path. A payload
+   * that also names a Global ID or a version pin is never the same, so the write path refuses it.
    */
   public static boolean isSameFilestoreTarget(ApiInventoryLink incoming, InventoryLink existing) {
     return incoming.hasFilestoreTarget()
+        && StringUtils.isBlank(incoming.getTargetGlobalId())
+        && incoming.getVersionPin() == null
         && existing.isFilestoreTarget()
-        && incoming.getFilestoreTarget().getFilestoreId().equals(existing.getFilestoreId())
+        && existing.getFilestoreId().equals(incoming.getFilestoreTarget().getFilestoreId())
         && InventoryLink.canonicalRemotePath(incoming.getFilestoreTarget().getRemotePath())
             .equals(existing.getTargetRemotePath());
   }
