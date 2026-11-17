@@ -7,10 +7,9 @@ import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "@/components/NoValue";
-import UserDetails from "@/components/UserDetails";
 import { isoToLocale } from "@/util/Util";
 import RequestsStatusChip from "./RequestsStatusChip";
-import { userDisplayName } from "./sampleRequest";
+import RequestUserChip from "./RequestUserChip";
 
 export type ApiSampleRequestStatusChangeItem = {
   id: number;
@@ -67,16 +66,7 @@ export default function RequestHistoryTable({
                 <RequestsStatusChip status={change.status} />
               </TableCell>
               <TableCell>
-                {change.createdBy.firstName === null && change.createdBy.lastName === null ? (
-                  userDisplayName(change.createdBy, t)
-                ) : (
-                  <UserDetails
-                    userId={change.createdBy.id}
-                    fullName={userDisplayName(change.createdBy, t)}
-                    position={["bottom", "right"]}
-                    maxWidth={160}
-                  />
-                )}
+                <RequestUserChip person={change.createdBy} />
               </TableCell>
               <TableCell>{isoToLocale(change.created)}</TableCell>
               <TableCell>

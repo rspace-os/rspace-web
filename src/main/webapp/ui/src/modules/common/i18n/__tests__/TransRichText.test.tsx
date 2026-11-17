@@ -12,7 +12,7 @@ vi.unmock("react-i18next");
 
 const { Trans } = await import("react-i18next");
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
-const { default: TransRichTextComponent, richText } = await import("@/modules/common/i18n/TransRichText");
+const { default: TransRichTextComponent, escapeRichText } = await import("@/modules/common/i18n/TransRichText");
 const TransRichText = TransRichTextComponent as React.ComponentType<{
   i18nKey: string;
   values?: Record<string, string>;
@@ -200,7 +200,7 @@ describe("TransRichText default vocabulary", () => {
   });
 });
 
-describe("richText", () => {
+describe("escapeRichText", () => {
   it("renders a free-text value as literal text, never parsed for markup", async () => {
     const dangerousValue = 'Evil <externalLink href="https://evil.example">click me</externalLink> & <1>x</1>';
 
@@ -208,7 +208,7 @@ describe("richText", () => {
       <ThemeProvider theme={materialTheme}>
         <TransRichText
           i18nKey="richTextFreeTextValueProbe"
-          components={{ bold: <strong>{richText(dangerousValue)}</strong> }}
+          components={{ bold: escapeRichText(dangerousValue, "strong") }}
         />
       </ThemeProvider>,
       { resources: richTextResources, defaultNS: "common" },

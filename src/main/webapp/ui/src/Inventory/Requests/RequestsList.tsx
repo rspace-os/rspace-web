@@ -16,7 +16,6 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import GlobalId from "@/components/GlobalId";
-import UserDetails from "@/components/UserDetails";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import { paginationOptions } from "@/util/table";
@@ -27,6 +26,7 @@ import { useSampleRequestsListQuery } from "./queries";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
 import RequestsTableHead, { type AdjustableColumnKey, type ColumnKey, type SortDirection } from "./RequestsTableHead";
+import RequestUserChip from "./RequestUserChip";
 import {
   type ApiSampleRequestListItem,
   type RequestsFilter,
@@ -121,20 +121,6 @@ function AdjustableRequestCell({
     case "submitted":
       return <TableCell>{isoToLocale(request.created)}</TableCell>;
   }
-}
-
-function RequesterCell({ requester }: { requester: ApiSampleRequestListItem["requester"] }): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
-  return requester.firstName === null && requester.lastName === null ? (
-    userDisplayName(requester, t)
-  ) : (
-    <UserDetails
-      userId={requester.id}
-      fullName={userDisplayName(requester, t)}
-      position={["bottom", "right"]}
-      maxWidth={160}
-    />
-  );
 }
 
 export default function RequestsList({
@@ -296,7 +282,7 @@ export default function RequestsList({
                         <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
                       </TableCell>
                       <TableCell>
-                        <RequesterCell requester={request.requester} />
+                        <RequestUserChip person={request.requester} />
                       </TableCell>
                       <AdjustableRequestCell request={request} column={adjustableColumn} />
                     </TableRow>
