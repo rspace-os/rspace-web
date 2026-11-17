@@ -1,7 +1,9 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -10,12 +12,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -253,6 +258,38 @@ class ApiExtraFieldsHelperLinkUpdateTest {
 
     assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
     verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  @Test
+  void aTemplateExtraLinkFieldRefusesAFilestoreTarget() {
+    // ADR 0016: items copy a template's extra fields, so this would stamp one user's filestore
+    List<ApiExtraField> apiFields = List.of(incomingFilestoreLinkField(5L, "/XRD/run.dat"));
+    List<ExtraField> dbFields = List.of(dbField);
+    SampleTemplate template = new SampleTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.createDeleteRequestedExtraFields(apiFields, dbFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aNewTemplateExtraLinkFieldRefusesAFilestoreTarget() {
+    ApiExtraField apiField = incomingFilestoreLinkField(null, "/XRD/run.dat");
+    apiField.setNewFieldRequest(true);
+    List<ApiExtraField> apiFields = List.of(apiField);
+    InstrumentTemplate template = new InstrumentTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.addExtraFieldsForNewInventoryRecord(apiFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
   }
 
   @Test

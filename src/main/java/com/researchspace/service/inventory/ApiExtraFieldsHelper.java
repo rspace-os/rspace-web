@@ -14,8 +14,10 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
@@ -142,6 +144,7 @@ public class ApiExtraFieldsHelper implements Validator {
     }
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
+    rejectFilestoreTargetsOnTemplate(incomingFields, parentInvRec);
     for (ApiExtraField apiField : incomingFields) {
       addRecordExtraFieldForIncomingApiField(apiField, user, parentInvRec);
     }
@@ -155,6 +158,7 @@ public class ApiExtraFieldsHelper implements Validator {
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
+    rejectFilestoreTargetsOnTemplate(incomingFields, parentInvRec);
     boolean changed = applyExistingLinkFieldChanges(incomingFields, dbFields, user);
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {
@@ -183,6 +187,22 @@ public class ApiExtraFieldsHelper implements Validator {
       parentInvRec.refreshActiveExtraFields();
     }
     return changed;
+  }
+
+  /** ADR 0016: items copy a template's extra fields, so it would stamp one user's filestore. */
+  private static void rejectFilestoreTargetsOnTemplate(
+      List<ApiExtraField> incomingFields, InventoryRecord parentInvRec) {
+    if (!(parentInvRec instanceof SampleTemplate || parentInvRec instanceof InstrumentTemplate)
+        || incomingFields == null) {
+      return;
+    }
+    for (ApiExtraField apiField : incomingFields) {
+      if (!apiField.isDeleteFieldRequest()
+          && apiField.getLink() != null
+          && apiField.getLink().hasFilestoreTarget()) {
+        throw new ApiRuntimeException("errors.inventory.field.linkFilestoreTargetOnTemplate");
+      }
+    }
   }
 
   /**
