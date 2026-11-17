@@ -208,6 +208,12 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       return false;
     }
     assertRelationAllowed(field, apiLink.getRelationType());
+    if (existing != null && apiLink.hasFilestoreTarget() && isSameTarget(apiLink, existing)) {
+      // only the owner passes the target check, so a colleague, or the owner once the filestore is
+      // removed, could not change the relation of a link they did not repoint (ADR 0016)
+      existing.setRelationType(apiLink.getRelationType());
+      return true;
+    }
     if (existing != null) {
       field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
     } else {

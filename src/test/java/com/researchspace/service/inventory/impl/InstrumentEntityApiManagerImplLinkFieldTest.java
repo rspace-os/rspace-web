@@ -981,6 +981,34 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     verifyNoInteractions(inventoryLinkManager);
   }
 
+  @Test
+  void aRelationOnlyChangeKeepsTheFilestoreTargetWithoutTheLinkManager() {
+    // a colleague editing a shared item, or the owner after removing the filestore
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("XRD/run.dat/");
+    apiField.getLink().setRelationType("IsPartOf");
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+    assertSame(dbLink, dbField.getLink());
+    assertEquals("IsPartOf", dbLink.getRelationType());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aRelationOnlyChangeOnAFilestoreTargetStillHonoursTheWhitelist() {
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    apiField.getLink().setRelationType("Cites");
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    assertEquals("errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
+    assertEquals("References", dbLink.getRelationType());
+  }
+
   static Stream<Named<Consumer<ApiInventoryLink>>> malformedFilestorePayloads() {
     return Stream.of(
         Named.of("without a filestore id", link -> link.getFilestoreTarget().setFilestoreId(null)),
