@@ -480,8 +480,8 @@ is the quick lookup.
   MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
   (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
   generous memory limit.
-- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
-  `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Image/tool overrides**: `DB_IMAGE`, `NODE_IMAGE`, and `MAVEN_OPTS` can be
+  set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
   `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
   so concurrent localhost logins don't evict each other. Override with

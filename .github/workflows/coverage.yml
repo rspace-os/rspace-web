@@ -12,6 +12,10 @@ name: Coverage
 # rather than the sum of both phases.
 # ponytail: this doubles DB schema-init cost (each shard runs drop-recreate-db);
 # a pre-seeded DB image (planned) would remove that overhead.
+#
+# This is also the Java 17 check. Maven builds on 21, like every other workflow,
+# and -Djvm makes the test JVMs run on 17: a 21-built RSpace on a Java 17 server,
+# which customers will have until they move to 21.
 
 on:
   schedule:
@@ -19,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       java_vendor:
-        description: 'Java vendor Maven toolchain'
+        description: 'JDK distribution for setup-java'
         type: string
         default: 'temurin'
 
@@ -33,10 +37,6 @@ env:
 jobs:
   unit-spring-coverage:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Java 17 nightly while customers still run 17; pull requests test on 21.
-        java-version: [17]
     services:
       db:
         image: mariadb:10.11
@@ -64,7 +64,9 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: |
+            17
+            21
           cache: maven
 
       - name: Configure MariaDB
@@ -98,8 +100,7 @@ jobs:
         run: |
           ./mvnw clean test org.jacoco:jacoco-maven-plugin:report \
             -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djvm="${JAVA_HOME_17_X64:?}/bin/java" \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -146,9 +147,6 @@ jobs:
 
   integration-coverage:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [17]
     services:
       db:
         image: mariadb:10.11
@@ -176,7 +174,9 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: |
+            17
+            21
           cache: maven
 
       - name: Configure MariaDB
@@ -204,8 +204,7 @@ jobs:
         run: |
           ./mvnw clean verify -DskipUnitTests=true \
             -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djvm="${JAVA_HOME_17_X64:?}/bin/java" \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -260,9 +259,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-spring-coverage, integration-coverage]
     if: always()
-    strategy:
-      matrix:
-        java-version: [17]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -273,14 +269,12 @@ jobs:
         uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache: maven
 
       - name: Compile main classes
         run: |
-          ./mvnw -q compile -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./mvnw -q compile -Dspotless.apply.skip=true
 
       - name: Download unit + Spring exec
         continue-on-error: true

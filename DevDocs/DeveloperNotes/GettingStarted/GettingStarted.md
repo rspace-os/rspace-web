@@ -73,7 +73,7 @@ Builds use the JDK that Maven runs on, so no Maven toolchain setup is needed. To
 </toolchains>
 ```
 
-To run a branch on Java 17 in CI, start the "Lint and Test" or "e2e (mocked)" workflow from the Actions tab and pick Java 17. For "Lint and Test", also tick the jobs you want, such as the fast or full Java tests.
+To run a branch on Java 17 in CI, start the "Coverage" workflow on that branch from the Actions tab. It builds on 21 and runs the unit, Spring and integration tests on a Java 17 JVM; every other workflow runs on 21. To do the same locally, add `-Djvm=/path/to/jdk17/bin/java` to a test command; this needs no toolchain.
 
 ### Enable git hooks (recommended)
 

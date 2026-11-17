@@ -8,13 +8,9 @@ on:
         required: true
         type: string
       java_vendor:
-        description: "Java vendor Maven toolchain"
+        description: "JDK distribution for setup-java"
         type: string
         default: "temurin"
-      java_version:
-        description: "Java version Maven toolchain"
-        type: string
-        default: "21"
 
 permissions:
   contents: read
@@ -33,7 +29,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version }}"]
+        java-version: [21]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -58,7 +54,7 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR (frontend + backend)
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
         uses: actions/upload-artifact@v7.0.1
         with:
@@ -81,7 +77,7 @@ jobs:
       # community job runs every desktop browser. Suites are objects so that each
       # one runs for every Java version.
       matrix:
-        java-version: ["${{ inputs.java_version }}"]
+        java-version: [21]
         suite:
           - { project: chromium, shard: 1, shards: 2, browsers: chromium, select: chromium }
           - { project: chromium, shard: 2, shards: 2, browsers: chromium, select: chromium }
@@ -278,7 +274,6 @@ jobs:
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
             -DreactDevMode=false \
