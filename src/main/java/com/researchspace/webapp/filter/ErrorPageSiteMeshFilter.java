@@ -2,6 +2,7 @@ package com.researchspace.webapp.filter;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -21,8 +22,6 @@ import org.sitemesh.config.ConfigurableSiteMeshFilter;
  */
 public class ErrorPageSiteMeshFilter extends ConfigurableSiteMeshFilter {
 
-  static final String FORWARD_SERVLET_PATH = "jakarta.servlet.forward.servlet_path";
-
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
@@ -37,7 +36,9 @@ public class ErrorPageSiteMeshFilter extends ConfigurableSiteMeshFilter {
     return new HttpServletRequestWrapper(http) {
       @Override
       public Object getAttribute(String name) {
-        return FORWARD_SERVLET_PATH.equals(name) ? null : super.getAttribute(name);
+        return RequestDispatcher.FORWARD_SERVLET_PATH.equals(name)
+            ? null
+            : super.getAttribute(name);
       }
     };
   }
