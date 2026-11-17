@@ -198,11 +198,16 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
             .orElseThrow(() -> filestoreTargetNotFound(target));
     InventoryLink probe = new InventoryLink();
     probe.setFilestoreTarget(store, target.getRemotePath());
-    if (probe.getTargetRemotePath().length() > InventoryLink.MAX_PATH_LENGTH
-        || probe.getTargetAbsolutePath().length() > InventoryLink.MAX_PATH_LENGTH) {
+    if (exceedsPathColumn(probe.getTargetRemotePath())
+        || exceedsPathColumn(probe.getTargetAbsolutePath())) {
       throw filestoreTargetNotFound(target);
     }
     return store;
+  }
+
+  /** The utf8mb4 path columns count characters, so a supplementary character counts as one. */
+  private static boolean exceedsPathColumn(String path) {
+    return path.codePointCount(0, path.length()) > InventoryLink.MAX_PATH_LENGTH;
   }
 
   private static ApiRuntimeException filestoreTargetNotFound(

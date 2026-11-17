@@ -375,6 +375,29 @@ class InventoryLinkManagerImplUnitTest {
   }
 
   @Test
+  void aPathOverlongOnlyOnceTheFilestorePathIsAddedFailsAsNotFound() {
+    stubOwnedFilestore();
+    store.setPath("/" + "b".repeat(100));
+
+    ApiRuntimeException refused = refusal(filestoreLink("/" + "a".repeat(1000)));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void thePathLimitCountsCharactersNotUtf16Units() {
+    // the utf8mb4 columns hold 1024 characters; an emoji is one character but two UTF-16 units
+    stubOwnedFilestore();
+    stubSavedLink();
+    String remotePath = "/" + "😀".repeat(600);
+
+    InventoryLink saved = linkManager.createLink(filestoreLink(remotePath), actor);
+
+    assertEquals(remotePath, saved.getTargetRemotePath());
+  }
+
+  @Test
   void retargetingAGlobalIdLinkToAFilestoreItemLeavesOneKind() {
     stubOwnedFilestore();
     stubSavedLink();
