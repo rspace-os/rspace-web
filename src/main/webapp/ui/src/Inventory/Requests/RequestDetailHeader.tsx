@@ -3,6 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { clampToLines, mergeSx } from "@/modules/common/utils/styles";
 import BackToListButton from "./BackToListButton";
 import RequestsStatusChip from "./RequestsStatusChip";
 
@@ -35,7 +36,7 @@ export default function RequestDetailHeader({
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
         <BackToListButton />
-        <Typography variant="h5" sx={{ overflowWrap: "anywhere" }}>
+        <Typography variant="h5" sx={mergeSx({ minWidth: 0 }, clampToLines(2))}>
           {t("requestsManagement.detail.title", { id, sampleName })}
         </Typography>
       </Box>
