@@ -416,10 +416,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
           containerType: "inline-size",
         }}
       >
-        {/* A long search, such as a date range, shrinks the search box rather than these buttons */}
-        <Box component="span" sx={{ display: "flex", flexShrink: 0 }}>
-          <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
-        </Box>
+        <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
@@ -641,9 +638,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
             />
           </Box>
         )}
-        <Box component="span" sx={{ display: "flex", flexShrink: 0 }}>
-          <DefaultSearch />
-        </Box>
+        <DefaultSearch />
       </Box>
     );
   };
