@@ -337,7 +337,8 @@ abstract class AbstractImporterStrategyImpl {
             .orElse(folderDao.getRootRecordForUser(importingUser));
     Folder newParent = oldIdToNewFolder.get(archivalDoc.getFolderId());
     if (newParent == null) {
-      newParent = importRoot;
+      newParent =
+          isTemplate(archivalDoc) ? folderDao.getTemplateFolderForUser(importingUser) : importRoot;
     }
 
     StructuredDocument newDoc =
