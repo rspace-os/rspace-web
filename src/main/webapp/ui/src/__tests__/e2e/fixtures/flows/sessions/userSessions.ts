@@ -44,6 +44,7 @@ export async function performLogin(page: Page, username: string, password: strin
   await loginPage.open();
   await loginPage.login(username, password);
   await page.waitForURL((url) => url.pathname === "/workspace");
+  await new WorkspacePage(page).waitUntilLoaded();
 }
 
 export async function loginInNewContext(
