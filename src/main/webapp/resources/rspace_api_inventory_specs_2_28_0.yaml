@@ -5994,11 +5994,75 @@ components:
           description: list of selected values for radio/choice field
           items:
             type: string
+        fieldKey:
+          type: string
+          nullable: true
+          description: |
+            Identifies the field within its template, and in the samples and instruments made from
+            it, for display rules. A lower-case UUID, copied with the field when a template is
+            duplicated or a record is created.
+
+            On template fields it is optional when the field is created (a key is generated if
+            omitted) and cannot be changed afterwards: an update that sends a different key is
+            rejected. A key sent for a new field must be unique among all fields of the template,
+            including deleted ones and the other fields created in the same request. Fields of
+            samples and instruments created before display rules existed have no key until they
+            are updated to the latest template version. Ignored when writing sample or instrument
+            fields.
+        displayRule:
+          $ref: "#/components/schemas/FieldDisplayRule"
     InventoryEntityFieldList:
       description: List of the fields in an Inventory entity (Sample, Sample Template, SubSample, Instrument or Instrument Template)
       type: array
       items:
         $ref: "#/components/schemas/InventoryEntityField"
+    FieldDisplayRule:
+      type: object
+      nullable: true
+      description: |
+        Shows the field only when another radio or choice field of the same template meets a
+        condition; null when the field is always shown. A hidden field keeps its value, which is
+        still returned by the API, and a mandatory field is only required while it is shown.
+
+        Rules are written on template fields and copied to samples and instruments when they are
+        created or updated to the latest template version. When updating a template field, omit
+        `displayRule` to keep the current rule, or send `null` to remove it. The template's rules
+        are validated together after every change in the request is applied, so a request may add
+        a source field and a rule that uses it, or delete a source and clear the rules that use it.
+
+        Visibility: a field whose source field is hidden is hidden too; a field whose source no
+        longer exists is shown.
+      required:
+        - sourceFieldKey
+        - operator
+      additionalProperties: false
+      properties:
+        sourceFieldKey:
+          type: string
+          description: The `fieldKey` of the radio or choice field the condition reads.
+        operator:
+          type: string
+          enum:
+            - IS_ANY_OF
+            - IS_NONE_OF
+            - HAS_VALUE
+            - HAS_NO_VALUE
+          description: |
+            `IS_ANY_OF`: at least one selected option is in `values`. `IS_NONE_OF`: no selected
+            option is in `values` (true when nothing is selected). `HAS_VALUE`: at least one option
+            is selected. `HAS_NO_VALUE`: nothing is selected.
+        values:
+          type: array
+          description: |
+            Options of the source field. Required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`;
+            must be absent for `HAS_VALUE` and `HAS_NO_VALUE`.
+          items:
+            type: string
+      example:
+        sourceFieldKey: 6f1c2e0a-8d5b-4c51-9a3e-2b7f1d0c4e9a
+        operator: IS_ANY_OF
+        values:
+          - "Yes"
     ExtraField:
       description: Information about extra field.
       properties:

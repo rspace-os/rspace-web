@@ -1,0 +1,630 @@
+package com.researchspace.service.inventory;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
+import com.researchspace.api.v1.controller.SamplesApiController;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
+import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
+import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+
+/**
+ * Display rules through the Inventory managers: template validation and the key contract, and the
+ * rule-aware mandatory checks on each trigger (create, update, update to latest template version)
+ * and on the paths that reach them (POST validation, bulk operations, duplication).
+ */
+class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
+
+  private static final String GMO = "Is this a GMO?";
+  private static final String PERMIT = "GMO permit number";
+  private static final String MANDATORY_MISSING = "validation.inventoryField.invalidForFieldType";
+
+  private @Autowired SamplesApiController samplesController;
+
+  private User user;
+  private String gmoKey;
+
+  @BeforeEach
+  void createUser() {
+    user = createInitAndLoginAnyUser();
+    gmoKey = UUID.randomUUID().toString();
+  }
+
+  // ------------------------------------------------------------------ templates
+
+  @Test
+  void newTemplateFieldsCanReferenceEachOtherAndGetKeys() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    ApiInventoryEntityField gmo = field(template, GMO);
+    ApiInventoryEntityField permit = field(template, PERMIT);
+    assertEquals(gmoKey, gmo.getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), permit.getDisplayRule());
+    assertNotNull(permit.getFieldKey());
+    assertDoesNotThrow(() -> UUID.fromString(permit.getFieldKey()));
+  }
+
+  @Test
+  void templateWithARuleOnAMissingFieldIsRejected() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("dangling");
+    post.getFields().add(permitField(showWhenGmoIs("Yes")));
+
+    LocalizedIllegalArgumentException e =
+        assertThrows(
+            LocalizedIllegalArgumentException.class,
+            () -> sampleApiMgr.createSampleTemplate(post, user));
+    assertEquals(FieldDisplayRuleValidator.SOURCE_MISSING, e.getMessage());
+  }
+
+  @Test
+  void templateUpdateCanAddASourceAndARuleUsingItInOneRequest() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("no rules yet");
+    post.getFields().add(permitField(null));
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, user);
+
+    ApiSampleTemplate update = templateUpdate(created);
+    ApiInventoryEntityField newGmo = gmoField(null);
+    newGmo.setNewFieldRequest(true);
+    update.getFields().add(newGmo);
+    ApiInventoryEntityField permit = fieldUpdate(field(created, PERMIT));
+    permit.setDisplayRule(showWhenGmoIs("Yes"));
+    update.getFields().add(permit);
+    ApiSampleTemplate updated = sampleApiMgr.updateApiSampleTemplate(update, user);
+
+    assertEquals(gmoKey, field(updated, GMO).getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), field(updated, PERMIT).getDisplayRule());
+  }
+
+  @Test
+  void deletingASourceWithoutClearingItsRulesIsRejected() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    ApiSampleTemplate deleteOnly = templateUpdate(template);
+    deleteOnly.getFields().add(deleteRequest(field(template, GMO)));
+    LocalizedIllegalArgumentException e =
+        assertThrows(
+            LocalizedIllegalArgumentException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(deleteOnly, user));
+    assertEquals(FieldDisplayRuleValidator.SOURCE_MISSING, e.getMessage());
+  }
+
+  @Test
+  void deletingASourceAndClearingItsRulesInOneRequestIsAccepted() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    ApiSampleTemplate deleteAndClear = templateUpdate(template);
+    deleteAndClear.getFields().add(deleteRequest(field(template, GMO)));
+    ApiInventoryEntityField clearRule = fieldUpdate(field(template, PERMIT));
+    clearRule.setDisplayRule(null);
+    deleteAndClear.getFields().add(clearRule);
+    ApiSampleTemplate updated = sampleApiMgr.updateApiSampleTemplate(deleteAndClear, user);
+
+    assertNull(field(updated, PERMIT).getDisplayRule());
+  }
+
+  @Test
+  void ruleOmittedFromAnUpdateIsKept() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    ApiSampleTemplate rename = templateUpdate(template);
+    ApiInventoryEntityField permit = fieldUpdate(field(template, PERMIT));
+    permit.setName("Permit no.");
+    rename.getFields().add(permit);
+    ApiSampleTemplate updated = sampleApiMgr.updateApiSampleTemplate(rename, user);
+
+    assertEquals(showWhenGmoIs("Yes"), field(updated, "Permit no.").getDisplayRule());
+  }
+
+  @Test
+  void keyOfASoftDeletedFieldCannotBeReused() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+    ApiSampleTemplate delete = templateUpdate(template);
+    delete.getFields().add(deleteRequest(field(template, GMO)));
+    ApiInventoryEntityField clearRule = fieldUpdate(field(template, PERMIT));
+    clearRule.setDisplayRule(null);
+    delete.getFields().add(clearRule);
+    sampleApiMgr.updateApiSampleTemplate(delete, user);
+
+    ApiSampleTemplate reuse = templateUpdate(template);
+    ApiInventoryEntityField sameKey = gmoField(null);
+    sameKey.setName("Reused key");
+    sameKey.setNewFieldRequest(true);
+    reuse.getFields().add(sameKey);
+
+    LocalizedIllegalArgumentException e =
+        assertThrows(
+            LocalizedIllegalArgumentException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(reuse, user));
+    assertEquals(FieldDisplayRuleValidator.KEY_DUPLICATE, e.getMessage());
+  }
+
+  @Test
+  void fieldKeyCannotBeChanged() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+    ApiSampleTemplate update = templateUpdate(template);
+    ApiInventoryEntityField gmo = fieldUpdate(field(template, GMO));
+    gmo.setFieldKey(UUID.randomUUID().toString());
+    update.getFields().add(gmo);
+
+    LocalizedIllegalArgumentException e =
+        assertThrows(
+            LocalizedIllegalArgumentException.class,
+            () -> sampleApiMgr.updateApiSampleTemplate(update, user));
+    assertEquals("errors.inventory.field.keyChanged", e.getMessage());
+  }
+
+  @Test
+  void duplicatedTemplateAndItsSamplesKeepRulesOnTheRightFields() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(template.getId(), user);
+    assertEquals(gmoKey, field(duplicate, GMO).getFieldKey());
+    assertEquals(field(template, PERMIT).getFieldKey(), field(duplicate, PERMIT).getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), field(duplicate, PERMIT).getDisplayRule());
+
+    ApiSampleWithFullSubSamples sample = createSample(duplicate, "No", "");
+    assertEquals(gmoKey, field(sample, GMO).getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), field(sample, PERMIT).getDisplayRule());
+    assertMandatoryMissing(() -> createSample(duplicate, "Yes", ""));
+  }
+
+  @Test
+  void firstRuleOnABackfilledTemplateIsAccepted() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("created before display rules");
+    post.getFields().add(gmoField(null));
+    post.getFields().add(permitField(null));
+    ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, user);
+    // as an upgraded database has it: no keys, then the changelog's backfill
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory
+        .getCurrentSession()
+        .createNativeQuery("update InventoryEntityField set fieldKey = null where sample_id = :id")
+        .setParameter("id", created.getId())
+        .executeUpdate();
+    sessionFactory
+        .getCurrentSession()
+        .createNativeQuery(
+            "update InventoryEntityField f join Sample s on s.id = f.sample_id set f.fieldKey ="
+                + " UUID() where f.fieldKey is null and s.DTYPE = 'SampleTemplate'")
+        .executeUpdate();
+    sessionFactory.getCurrentSession().clear();
+
+    ApiSampleTemplate backfilled = sampleApiMgr.getApiSampleTemplateById(created.getId(), user);
+    String backfilledGmoKey = field(backfilled, GMO).getFieldKey();
+    assertNotEquals(gmoKey, backfilledGmoKey);
+    ApiSampleTemplate update = templateUpdate(backfilled);
+    ApiInventoryEntityField permit = fieldUpdate(field(backfilled, PERMIT));
+    permit.setDisplayRule(
+        new FieldDisplayRule(backfilledGmoKey, ConditionOperator.IS_ANY_OF, List.of("Yes")));
+    update.getFields().add(permit);
+
+    ApiSampleTemplate updated = sampleApiMgr.updateApiSampleTemplate(update, user);
+    assertEquals(backfilledGmoKey, field(updated, PERMIT).getDisplayRule().sourceFieldKey());
+  }
+
+  // ------------------------------------------------------------------ samples
+
+  @Test
+  void sampleCreateRequiresOnlyShownMandatoryFields() {
+    ApiSampleTemplate template = createGmoSampleTemplate("No");
+
+    assertNotNull(createSampleFromDefaults(template));
+    assertNotNull(createSample(template, "No", ""));
+    assertMandatoryMissing(() -> createSample(template, "Yes", ""));
+    assertNotNull(createSample(template, "Yes", "P-123"));
+
+    ApiSampleTemplate shownByDefault = createGmoSampleTemplate("Yes");
+    assertMandatoryMissing(() -> createSampleFromDefaults(shownByDefault));
+  }
+
+  @Test
+  void samplePostValidationSkipsHiddenMandatoryFields() throws Exception {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+
+    assertFalse(validateCreate(sampleRequest(template, "No", "")).hasErrors());
+    BindingResult shown = validateCreate(sampleRequest(template, "Yes", ""));
+    assertEquals(
+        "errors.inventory.field.mandatoryFieldEmpty", shown.getFieldError("fields").getCode());
+  }
+
+  @Test
+  void sampleUpdateRejectsRevealingAnEmptyMandatoryField() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+    ApiSampleWithFullSubSamples sample = createSample(template, "No", "");
+
+    ApiSample reveal = sampleUpdate(sample);
+    reveal.getFields().add(optionsUpdate(field(sample, GMO), "Yes"));
+    assertMandatoryMissing(() -> sampleApiMgr.updateApiSample(reveal, user));
+
+    ApiSample revealAndFill = sampleUpdate(sample);
+    revealAndFill.getFields().add(optionsUpdate(field(sample, GMO), "Yes"));
+    revealAndFill.getFields().add(contentUpdate(field(sample, PERMIT), "P-1"));
+    ApiSample updated = sampleApiMgr.updateApiSample(revealAndFill, user);
+    assertEquals("P-1", field(updated, PERMIT).getContent());
+
+    ApiSample empty = sampleUpdate(sample);
+    empty.getFields().add(contentUpdate(field(sample, PERMIT), ""));
+    assertMandatoryMissing(() -> sampleApiMgr.updateApiSample(empty, user));
+  }
+
+  @Test
+  void updateToLatestChecksVisibilityAfterTheWholeSync() {
+    // template versions bump once per transaction, so the samples are made before the only update
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("permit optional at first");
+    ApiInventoryEntityField optionalPermit = permitField(showWhenGmoIs("Yes"));
+    optionalPermit.setMandatory(false);
+    post.getFields().add(optionalPermit);
+    post.getFields().add(gmoField(null));
+    ApiSampleTemplate template = sampleApiMgr.createSampleTemplate(post, user);
+    ApiSampleWithFullSubSamples hidden = createSample(template, "No", "");
+    ApiSampleWithFullSubSamples shown = createSample(template, "Yes", "");
+
+    ApiSampleTemplate makeMandatory = templateUpdate(template);
+    ApiInventoryEntityField mandatory = fieldUpdate(field(template, PERMIT));
+    mandatory.setMandatory(true);
+    makeMandatory.getFields().add(mandatory);
+    sampleApiMgr.updateApiSampleTemplate(makeMandatory, user);
+
+    ApiSample updatedHidden =
+        sampleApiMgr.updateSampleToLatestTemplateVersion(hidden.getId(), user);
+    assertTrue(field(updatedHidden, PERMIT).getMandatory());
+    LocalizedIllegalStateException e =
+        assertThrows(
+            LocalizedIllegalStateException.class,
+            () -> sampleApiMgr.updateSampleToLatestTemplateVersion(shown.getId(), user));
+    assertEquals("validation.inventoryField.mandatoryInLatestTemplate", e.getMessage());
+  }
+
+  @Test
+  void updateToLatestCopiesARuleAddedWithTheMandatoryFlag() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("rule added later");
+    post.getFields().add(gmoField(null));
+    ApiInventoryEntityField optionalPermit = permitField(null);
+    optionalPermit.setMandatory(false);
+    post.getFields().add(optionalPermit);
+    ApiSampleTemplate template = sampleApiMgr.createSampleTemplate(post, user);
+    ApiSampleWithFullSubSamples sample = createSample(template, "No", "");
+
+    // one template version adds the rule and makes the field mandatory: hidden, so allowed
+    ApiSampleTemplate addRule = templateUpdate(template);
+    ApiInventoryEntityField permit = fieldUpdate(field(template, PERMIT));
+    permit.setDisplayRule(showWhenGmoIs("Yes"));
+    permit.setMandatory(true);
+    addRule.getFields().add(permit);
+    sampleApiMgr.updateApiSampleTemplate(addRule, user);
+
+    ApiSample updated = sampleApiMgr.updateSampleToLatestTemplateVersion(sample.getId(), user);
+    assertEquals(showWhenGmoIs("Yes"), field(updated, PERMIT).getDisplayRule());
+    assertEquals(field(template, PERMIT).getFieldKey(), field(updated, PERMIT).getFieldKey());
+    assertTrue(field(updated, PERMIT).getMandatory());
+
+    ApiSample reveal = sampleUpdate(sample);
+    reveal.getFields().add(optionsUpdate(field(updated, GMO), "Yes"));
+    assertMandatoryMissing(() -> sampleApiMgr.updateApiSample(reveal, user));
+  }
+
+  @Test
+  void emptyShownMandatoryFieldAddedByUpdateToLatestDoesNotBlockAnUnrelatedEdit() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("permit added later");
+    post.getFields().add(gmoField(null));
+    ApiSampleTemplate template = sampleApiMgr.createSampleTemplate(post, user);
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples();
+    sample.setName("GMO sample");
+    sample.setTemplateId(template.getId());
+    sample.getFields().add(optionsValue("Yes"));
+    sample = sampleApiMgr.createNewApiSample(sample, user);
+
+    ApiSampleTemplate addPermit = templateUpdate(template);
+    ApiInventoryEntityField permit = permitField(showWhenGmoIs("Yes"));
+    permit.setNewFieldRequest(true);
+    addPermit.getFields().add(permit);
+    sampleApiMgr.updateApiSampleTemplate(addPermit, user);
+    ApiSample updated = sampleApiMgr.updateSampleToLatestTemplateVersion(sample.getId(), user);
+    assertNull(field(updated, PERMIT).getContent());
+
+    ApiSample rename = sampleUpdate(sample);
+    rename.setName("renamed");
+    assertEquals("renamed", sampleApiMgr.updateApiSample(rename, user).getName());
+  }
+
+  @Test
+  void bulkCreateAndUpdateApplyTheSameChecks() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+    InventoryBulkOperationConfig create =
+        new InventoryBulkOperationConfig(
+            BulkApiOperationType.CREATE,
+            new ArrayList<>(
+                List.of(sampleRequest(template, "No", ""), sampleRequest(template, "Yes", ""))),
+            false,
+            user);
+    ApiInventoryBulkOperationResult created = inventoryBulkOpApiMgr.runBulkOperation(create);
+    assertEquals(1, created.getSuccessCount());
+    assertEquals(1, created.getErrorCount());
+
+    ApiSampleWithFullSubSamples hidden =
+        (ApiSampleWithFullSubSamples) created.getResults().get(0).getRecord();
+    ApiSampleWithFullSubSamples reveal = new ApiSampleWithFullSubSamples();
+    reveal.setId(hidden.getId());
+    reveal.getFields().add(optionsUpdate(field(hidden, GMO), "Yes"));
+    InventoryBulkOperationConfig update =
+        new InventoryBulkOperationConfig(
+            BulkApiOperationType.UPDATE, new ArrayList<>(List.of(reveal)), false, user);
+    assertEquals(1, inventoryBulkOpApiMgr.runBulkOperation(update).getErrorCount());
+  }
+
+  // ------------------------------------------------------------------ instruments
+
+  @Test
+  void instrumentTemplatesAndInstrumentsApplyRules() {
+    ApiInstrumentTemplate template = createGmoInstrumentTemplate(true);
+    assertEquals(gmoKey, field(template, GMO).getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), field(template, PERMIT).getDisplayRule());
+
+    ApiInstrument hidden = createInstrument(template, "No", "");
+    assertEquals(showWhenGmoIs("Yes"), field(hidden, PERMIT).getDisplayRule());
+    assertMandatoryMissing(() -> createInstrument(template, "Yes", ""));
+
+    ApiInstrument reveal = new ApiInstrument();
+    reveal.setId(hidden.getId());
+    reveal.getFields().add(optionsUpdate(field(hidden, GMO), "Yes"));
+    assertMandatoryMissing(() -> instrumentApiMgr.updateApiInstrument(reveal, user));
+
+    ApiInstrumentTemplate duplicate =
+        instrumentApiMgr.duplicateInstrumentTemplate(template.getId(), user);
+    assertEquals(gmoKey, field(duplicate, GMO).getFieldKey());
+    assertEquals(showWhenGmoIs("Yes"), field(duplicate, PERMIT).getDisplayRule());
+  }
+
+  @Test
+  void instrumentTemplateUpdateValidatesRules() {
+    ApiInstrumentTemplate template = createGmoInstrumentTemplate(true);
+    ApiInstrumentTemplate dangling = new ApiInstrumentTemplate();
+    dangling.setId(template.getId());
+    dangling.getFields().add(deleteRequest(field(template, GMO)));
+
+    LocalizedIllegalArgumentException e =
+        assertThrows(
+            LocalizedIllegalArgumentException.class,
+            () -> instrumentApiMgr.updateApiInstrumentTemplate(dangling, user));
+    assertEquals(FieldDisplayRuleValidator.SOURCE_MISSING, e.getMessage());
+  }
+
+  @Test
+  void instrumentUpdateToLatestIsRuleAware() {
+    ApiInstrumentTemplate template = createGmoInstrumentTemplate(false);
+    ApiInstrument hidden = createInstrument(template, "No", "");
+    ApiInstrument shown = createInstrument(template, "Yes", "");
+    ApiInstrumentTemplate makeMandatory = new ApiInstrumentTemplate();
+    makeMandatory.setId(template.getId());
+    ApiInventoryEntityField mandatory = fieldUpdate(field(template, PERMIT));
+    mandatory.setMandatory(true);
+    makeMandatory.getFields().add(mandatory);
+    instrumentApiMgr.updateApiInstrumentTemplate(makeMandatory, user);
+
+    assertDoesNotThrow(
+        () -> instrumentApiMgr.updateInstrumentToLatestTemplateVersion(hidden.getId(), user));
+    assertThrows(
+        LocalizedIllegalStateException.class,
+        () -> instrumentApiMgr.updateInstrumentToLatestTemplateVersion(shown.getId(), user));
+  }
+
+  @Test
+  void blankLandingPageStaysExemptWhenItHasARule() {
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    post.setName("instrument with landing page rule");
+    post.getFields().add(gmoField("Yes"));
+    ApiInventoryEntityField landingPage = new ApiInventoryEntityField();
+    landingPage.setName("Landing page");
+    landingPage.setType(ApiFieldType.URI);
+    landingPage.setContent("https://example.org/template-page");
+    landingPage.setMandatory(true);
+    landingPage.setDisplayRule(showWhenGmoIs("Yes"));
+    post.getFields().add(landingPage);
+    ApiInstrumentTemplate template = instrumentApiMgr.createInstrumentTemplate(post, user);
+
+    ApiInstrument instrument = new ApiInstrument();
+    instrument.setName("from template");
+    instrument.setTemplateId(template.getId());
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(instrument, user);
+
+    assertNull(field(created, "Landing page").getContent());
+  }
+
+  // ------------------------------------------------------------------ helpers
+
+  private FieldDisplayRule showWhenGmoIs(String option) {
+    return new FieldDisplayRule(gmoKey, ConditionOperator.IS_ANY_OF, List.of(option));
+  }
+
+  private ApiInventoryEntityField gmoField(String defaultOption) {
+    ApiInventoryEntityField gmo = new ApiInventoryEntityField();
+    gmo.setName(GMO);
+    gmo.setType(ApiFieldType.RADIO);
+    gmo.setDefinition(new ApiInventoryFieldDef(List.of("Yes", "No"), false));
+    gmo.setFieldKey(gmoKey);
+    if (defaultOption != null) {
+      gmo.setSelectedOptions(List.of(defaultOption));
+    }
+    return gmo;
+  }
+
+  private ApiInventoryEntityField permitField(FieldDisplayRule rule) {
+    ApiInventoryEntityField permit = new ApiInventoryEntityField();
+    permit.setName(PERMIT);
+    permit.setType(ApiFieldType.STRING);
+    permit.setMandatory(true);
+    permit.setDisplayRule(rule);
+    return permit;
+  }
+
+  /** A template whose mandatory permit field is shown when GMO is "Yes"; GMO is listed second. */
+  private ApiSampleTemplate createGmoSampleTemplate(String gmoDefault) {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("GMO register");
+    post.getFields().add(permitField(showWhenGmoIs("Yes")));
+    post.getFields().add(gmoField(gmoDefault));
+    return sampleApiMgr.createSampleTemplate(post, user);
+  }
+
+  private ApiInstrumentTemplate createGmoInstrumentTemplate(boolean permitMandatory) {
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    post.setName("GMO instruments");
+    ApiInventoryEntityField permit = permitField(showWhenGmoIs("Yes"));
+    permit.setMandatory(permitMandatory);
+    post.getFields().add(permit);
+    post.getFields().add(gmoField(null));
+    return instrumentApiMgr.createInstrumentTemplate(post, user);
+  }
+
+  /** Field values in template order: permit, then GMO. */
+  private ApiSampleWithFullSubSamples sampleRequest(
+      ApiSampleTemplate template, String gmo, String permit) {
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples();
+    sample.setName("GMO sample");
+    sample.setTemplateId(template.getId());
+    sample.getFields().add(contentValue(permit));
+    sample.getFields().add(optionsValue(gmo));
+    return sample;
+  }
+
+  private ApiSampleWithFullSubSamples createSample(
+      ApiSampleTemplate template, String gmo, String permit) {
+    return sampleApiMgr.createNewApiSample(sampleRequest(template, gmo, permit), user);
+  }
+
+  private ApiSampleWithFullSubSamples createSampleFromDefaults(ApiSampleTemplate template) {
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples();
+    sample.setName("defaults");
+    sample.setTemplateId(template.getId());
+    return sampleApiMgr.createNewApiSample(sample, user);
+  }
+
+  private ApiInstrument createInstrument(
+      ApiInstrumentTemplate template, String gmo, String permit) {
+    ApiInstrument instrument = new ApiInstrument();
+    instrument.setName("GMO instrument");
+    instrument.setTemplateId(template.getId());
+    instrument.getFields().add(contentValue(permit));
+    instrument.getFields().add(optionsValue(gmo));
+    return instrumentApiMgr.createNewApiInstrument(instrument, user);
+  }
+
+  private BindingResult validateCreate(ApiSampleWithFullSubSamples sample) {
+    BindingResult errors = new BeanPropertyBindingResult(sample, "sample");
+    try {
+      samplesController.validateCreateSampleInput(sample, errors, user);
+    } catch (BindException e) {
+      return e.getBindingResult();
+    }
+    return errors;
+  }
+
+  private static ApiInventoryEntityField contentValue(String content) {
+    ApiInventoryEntityField value = new ApiInventoryEntityField();
+    value.setContent(content);
+    return value;
+  }
+
+  private static ApiInventoryEntityField optionsValue(String option) {
+    ApiInventoryEntityField value = new ApiInventoryEntityField();
+    value.setSelectedOptions(List.of(option));
+    return value;
+  }
+
+  private static ApiInventoryEntityField contentUpdate(
+      ApiInventoryEntityField existing, String content) {
+    ApiInventoryEntityField update = fieldUpdate(existing);
+    update.setContent(content);
+    return update;
+  }
+
+  private static ApiInventoryEntityField optionsUpdate(
+      ApiInventoryEntityField existing, String option) {
+    ApiInventoryEntityField update = fieldUpdate(existing);
+    update.setSelectedOptions(List.of(option));
+    return update;
+  }
+
+  private static ApiInventoryEntityField fieldUpdate(ApiInventoryEntityField existing) {
+    ApiInventoryEntityField update = new ApiInventoryEntityField();
+    update.setId(existing.getId());
+    return update;
+  }
+
+  private static ApiInventoryEntityField deleteRequest(ApiInventoryEntityField existing) {
+    ApiInventoryEntityField delete = fieldUpdate(existing);
+    delete.setDeleteFieldRequest(true);
+    return delete;
+  }
+
+  private static ApiSampleTemplate templateUpdate(ApiSampleTemplate template) {
+    ApiSampleTemplate update = new ApiSampleTemplate();
+    update.setId(template.getId());
+    return update;
+  }
+
+  private static ApiSample sampleUpdate(ApiSampleWithoutSubSamples sample) {
+    ApiSample update = new ApiSample();
+    update.setId(sample.getId());
+    return update;
+  }
+
+  private static ApiInventoryEntityField field(ApiSampleWithoutSubSamples record, String name) {
+    return findField(record.getFields(), name);
+  }
+
+  private static ApiInventoryEntityField field(ApiInstrumentEntity record, String name) {
+    return findField(record.getFields(), name);
+  }
+
+  private static ApiInventoryEntityField findField(
+      List<ApiInventoryEntityField> fields, String name) {
+    return fields.stream().filter(f -> name.equals(f.getName())).findFirst().orElseThrow();
+  }
+
+  private static void assertMandatoryMissing(Runnable action) {
+    LocalizedIllegalArgumentException e =
+        assertThrows(LocalizedIllegalArgumentException.class, action::run);
+    assertEquals(MANDATORY_MISSING, e.getMessage());
+  }
+}

@@ -8,11 +8,13 @@ import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.model.field.ValidatingField;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -31,6 +33,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -66,6 +70,15 @@ public abstract class InventoryEntityField
   private boolean deleteOnSampleUpdate;
   private boolean deleteOnInstrumentUpdate;
   private boolean mandatory;
+
+  /**
+   * Identifies the field within its template, and in records copied from it, for display rules.
+   * Copied verbatim with the field; null on record fields created before display rules existed.
+   */
+  private String fieldKey;
+
+  /** Shows this field only when another field of the same template meets a condition. */
+  private FieldDisplayRule displayRule;
 
   private SampleEntity sample;
   private InstrumentEntity instrumentEntity;
@@ -163,6 +176,19 @@ public abstract class InventoryEntityField
   @Column(nullable = false)
   public FieldType getType() {
     return type;
+  }
+
+  /** Lower-case UUID, unique among the fields of a template, including deleted ones. */
+  @Column(length = 36)
+  public String getFieldKey() {
+    return fieldKey;
+  }
+
+  /** Null when the field is always shown. */
+  @Convert(converter = FieldDisplayRuleConverter.class)
+  @Column(columnDefinition = "text")
+  public FieldDisplayRule getDisplayRule() {
+    return displayRule;
   }
 
   @Transient
@@ -283,13 +309,20 @@ public abstract class InventoryEntityField
    */
   public ErrorList validate(String fieldData) {
     ErrorList result = new ErrorList();
-    boolean isTemplateField =
-        (getSample() != null && getSample().isTemplate())
-            || getInstrumentEntity() != null && getInstrumentEntity().isTemplate();
-    if (isMandatory() && !isTemplateField && !isValidValueForMandatoryField(fieldData)) {
+    // a field with a display rule is only required while shown, which depends on its sibling
+    // fields, so its mandatory check runs on the whole record (InventoryFieldDisplayRules)
+    if (isMandatory()
+        && displayRule == null
+        && !belongsToTemplate()
+        && !isValidValueForMandatoryField(fieldData)) {
       result.addErrorMsgCode("validation.inventoryField.mandatoryContentMissing", getName());
     }
     return result;
+  }
+
+  private boolean belongsToTemplate() {
+    return (getSample() != null && getSample().isTemplate())
+        || getInstrumentEntity() != null && getInstrumentEntity().isTemplate();
   }
 
   @Transient
@@ -344,6 +377,8 @@ public abstract class InventoryEntityField
     copy.setColumnIndex(getColumnIndex());
     copy.setDeleted(isDeleted());
     copy.setMandatory(isMandatory());
+    copy.setFieldKey(getFieldKey());
+    copy.setDisplayRule(getDisplayRule());
   }
 
   /**
@@ -353,12 +388,16 @@ public abstract class InventoryEntityField
    * <p/>
    * This method applies changes from latest template field: - updates name of the field (if
    * changed) - updates columnIndex of the field (if changed) - applies 'deleted' flag to the field,
-   * but only if field value is empty. If field value is not empty, an exception is thrown.
+   * but only if field value is empty. If field value is not empty, an exception is thrown. - copies
+   * the mandatory flag, field key and display rule.
+   *
+   * <p>A field that becomes mandatory without a value is not rejected here: whether it is shown
+   * depends on its siblings, so the record checks it once all fields are synced (see {@link
+   * InventoryFieldDisplayRules#assertMandatoryInLatestTemplateFilled}).
    *
    * @return true if method resulted in any change (modification) to the field
    * @throws IllegalStateException if the field or stored data is not compatible with latest
-   *                               template definition, e.g. doesn't have connected template field,
-   *                               or doesn't have data and latest field is marked as mandatory.
+   *                               template definition, e.g. doesn't have connected template field.
    */
   public boolean updateToLatestTemplateDefinition() {
     if (templateField == null) {
@@ -387,11 +426,15 @@ public abstract class InventoryEntityField
     }
     if (isMandatory() != templateField.isMandatory()) {
       setMandatory(templateField.isMandatory());
-      if (requiresValueWhenBecomingMandatoryOnTemplateUpdate()
-          && !isValidValueForMandatoryField(getFieldData())) {
-        throw new LocalizedIllegalStateException(
-            "validation.inventoryField.mandatoryInLatestTemplate", getName());
-      }
+      fieldUpdated = true;
+    }
+    // unconditionally, so a record field made before field keys existed gets its template's key
+    if (!Objects.equals(getFieldKey(), templateField.getFieldKey())) {
+      setFieldKey(templateField.getFieldKey());
+      fieldUpdated = true;
+    }
+    if (!Objects.equals(getDisplayRule(), templateField.getDisplayRule())) {
+      setDisplayRule(templateField.getDisplayRule());
       fieldUpdated = true;
     }
 
@@ -449,6 +492,11 @@ public abstract class InventoryEntityField
               + " needs to be connected always to one and only one of the following inventory"
               + " entity: sample, sample template, instrument, instrument template",
           null);
+    }
+    // safety net: template fields get their key when created, so this only covers a template
+    // field that reaches the database some other way
+    if (fieldKey == null && belongsToTemplate()) {
+      fieldKey = UUID.randomUUID().toString();
     }
   }
 

@@ -43,6 +43,8 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules.RecordBeforeUpdate;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
@@ -348,6 +350,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     }
     setWorkbenchAsParentForNewSubSamples(sample, user);
     sample.recalculateTotalQuantity();
+    InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(
+        sample.getActiveFields(), field -> false);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sample);
     Sample savedSample = sampleDao.persistNewSample(sample);
@@ -833,6 +837,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       boolean alreadyChanged,
       User user) {
     assertAccessPermissionsChangeAllowed(dbSample, apiSample, user);
+    RecordBeforeUpdate fieldsBeforeUpdate =
+        InventoryFieldDisplayRules.beforeUpdate(dbSample.getActiveFields());
     boolean contentChanged = alreadyChanged;
     contentChanged |=
         extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSample(
@@ -849,6 +855,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
     if (dbSample.isTemplate()) {
       assertDefaultLinksMatchWhitelists(dbSample.getActiveFields());
+      dbSample.assertFieldDisplayRulesValid();
+    } else {
+      fieldsBeforeUpdate.assertShownMandatoryFieldsFilled(
+          dbSample.getActiveFields(), field -> false);
     }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
@@ -1083,6 +1093,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     setBasicFieldsFromNewIncomingApiInventoryRecord(sampleTemplate, apiSample, user);
     setSampleCoreProperties(apiSample, sampleTemplate);
     createFields(apiSample, sampleTemplate, user);
+    sampleTemplate.assertFieldDisplayRulesValid();
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
     SampleTemplate savedSampleTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
