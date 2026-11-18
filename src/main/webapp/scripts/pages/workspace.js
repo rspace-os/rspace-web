@@ -407,7 +407,7 @@ var paginationEventHandler = function (source, e) {
  * Reloads the workspace results by either searching or viewing a folder (depending on `url` being either
  * 'workspace/ajax/view' or 'workspace/ajax/search'). `data` should be the workspace settings, which all get added to the
  * URL so that the server knows what they are. Optional parameter onLoad(result) is a function that gets called when
- * the results load. Optional parameter onFail() replaces the default error report when the request fails.
+ * the results load. Optional parameter onFail(jqxhr) replaces the default error report when the request fails.
  *
  * Gets used when opening a folder, searching, changing sorting options, switching
  * pages, etc.
@@ -428,7 +428,7 @@ function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
     }, effectDuration);
   }).fail(function () {
     if (onFail) {
-      onFail();
+      onFail(jqxhr);
     } else {
       RS.ajaxFailed(RS.msg("legacyjs.workspace.main.displaySettingsAction"), true, jqxhr);
     }

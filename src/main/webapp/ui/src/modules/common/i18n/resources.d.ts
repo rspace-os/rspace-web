@@ -13764,6 +13764,8 @@ export default interface Resources {
         "dateRange": "{from} to {to}",
         "invalidSearch": "This search link is not valid, so the folder is shown instead.",
         "isDefault": "This is your default search",
+        "linkFailedReason": "This search link could not be run: {reason}",
+        "linkNetworkError": "Could not run the search. Check your connection and reload.",
         "operatorAnd": "AND",
         "operatorOr": "OR",
         "options": "Default search options",

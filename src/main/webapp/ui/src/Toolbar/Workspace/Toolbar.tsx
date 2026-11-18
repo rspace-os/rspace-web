@@ -32,6 +32,7 @@ import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
 import DefaultSearch from "./DefaultSearch/DefaultSearch";
+import { searchLinkFailureReason } from "./DefaultSearch/searchLinkFailure";
 import { RECORD_LIST_SHOWN } from "./DefaultSearch/workspaceGlobals";
 import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
@@ -217,7 +218,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     }
   };
 
-  showFolderInsteadOfSearch = () => {
+  showFolderInsteadOfSearch = (jqxhr) => {
     if (this.searchLinkLeftTreeView) {
       this.searchLinkLeftTreeView = false;
       showTreeView();
@@ -228,8 +229,23 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     workspaceSettings.ontologiesFilter = false;
     this.setState({ viewableItemsFilter: false, ontologiesFilter: false });
     resetToolbar();
+    this.simpleSearch.current?.resetState();
+    if (jqxhr?.status === 0) {
+      // Keep the link in the address bar, so that reloading tries it again
+      RS.confirm(i18n.t("workspace:toolbar.defaultSearch.linkNetworkError"), "warning", 5000);
+      return;
+    }
     abandonSearch();
-    RS.confirm(i18n.t("workspace:toolbar.defaultSearch.invalidSearch"), "warning", 5000);
+    const reason = jqxhr ? searchLinkFailureReason(jqxhr.responseText) : "";
+    RS.confirm(
+      reason
+        ? i18n.t("workspace:toolbar.defaultSearch.linkFailedReason", {
+            reason: RS.escapeHtml(reason),
+          })
+        : i18n.t("workspace:toolbar.defaultSearch.invalidSearch"),
+      "warning",
+      5000,
+    );
   };
 
   handleOpen = (idx, event) => {

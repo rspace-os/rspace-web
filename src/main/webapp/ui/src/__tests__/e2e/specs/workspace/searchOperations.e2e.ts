@@ -285,6 +285,45 @@ test.describe(`Workspace search operations`, () => {
     await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
   });
 
+  test(`As a user, a search link that cannot be run says why and leaves the search box empty`, async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await test.step("A link the page cannot read shows the generic message", async () => {
+      await page.goto("/workspace?options%5B%5D=bogus&terms%5B%5D=leftover");
+      await expect(page.getByText("This search link is not valid, so the folder is shown instead.")).toBeVisible();
+      await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
+    });
+
+    await test.step("A link the server rejects shows the server's reason", async () => {
+      await pageWorkspace.searchBar.openSearchUrl("/workspace?options%5B%5D=global&terms%5B%5D=*abc");
+      await expect(page.getByText(/This search link could not be run: .*Invalid search input/)).toBeVisible();
+      await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
+      await expect(page).toHaveURL(/\/workspace$/);
+    });
+
+    await test.step("The server's reason is shown as text", async () => {
+      await page.route("**/workspace/ajax/search**", (route) =>
+        route.fulfill({
+          status: 400,
+          contentType: "text/html",
+          body: '<html><body><span id="ajaxErrorMsg">bad &lt;b&gt;term&lt;/b&gt;</span></body></html>',
+        }),
+      );
+      await pageWorkspace.searchBar.openSearchUrl("/workspace?options%5B%5D=global&terms%5B%5D=leftover");
+      await expect(page.getByText("This search link could not be run: bad <b>term</b>")).toBeVisible();
+      await page.unroute("**/workspace/ajax/search**");
+    });
+
+    await test.step("A dropped connection says so and keeps the link", async () => {
+      await page.route("**/workspace/ajax/search**", (route) => route.abort());
+      await page.goto("/workspace?options%5B%5D=global&terms%5B%5D=leftover");
+      await expect(page.getByText("Could not run the search. Check your connection and reload.")).toBeVisible();
+      await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
+      await expect(page).toHaveURL(/terms%5B%5D=leftover/);
+    });
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,
