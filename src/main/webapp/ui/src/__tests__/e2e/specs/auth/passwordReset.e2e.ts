@@ -7,6 +7,14 @@ test.use({ storageState: { cookies: [], origins: [] } });
 const NEW_PASSWORD = "NewPassw0rd!456";
 
 test.describe("Password reset", () => {
+  let recipient: string | undefined;
+
+  test.afterEach(async ({ clientMailpit }) => {
+    if (recipient) {
+      await clientMailpit.deleteMessages(`to:${recipient}`);
+    }
+  });
+
   test("As a user, I receive a reset email and can set a new password", async ({
     page,
     pageLogin,
@@ -16,7 +24,7 @@ test.describe("Password reset", () => {
   }) => {
     const username = alphaNumericUnique("e2ePwReset");
     const email = `${username}@example.com`;
-    await clientMailpit.deleteAllMessages();
+    recipient = email;
 
     const RESET_EMAIL_SUBJECT = "RSpace password change request";
     await clientSysadmin.createUser({

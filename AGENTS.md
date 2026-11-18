@@ -39,8 +39,8 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `mvn test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
 | `mvn clean test -Dfast=true` | Run all pure backend unit tests |
 | `mvn test -Dtest=MyClassName` | Run one Spring transactional test class |
-| `mvn clean test` | Run unit and Spring tests; requires a database |
-| `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
+| `mvn clean test` | Run unit and Spring tests; DB-backed tests use a throwaway MariaDB in Docker |
+| `mvn clean verify` | Run verification including `*IT`; DB-backed tests use a throwaway MariaDB in Docker |
 | `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
 
 Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
