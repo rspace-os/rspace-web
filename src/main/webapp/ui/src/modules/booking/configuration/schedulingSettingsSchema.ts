@@ -5,10 +5,9 @@ import {
   validIncrementForSchedule,
   validMaximumForIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
-import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
 import { ALL_ISO_WEEKDAYS, mapOpeningHours, validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
-import type { BookingSettingsControllerAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerAdminSettingsDocument";
-import type { BookingSettingsControllerSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerSettingsDocument";
+import type { BookingAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingAdminSettingsDocument";
+import type { BookingSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsDocument";
 import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 
 export const MAX_BUFFER_MINUTES = 10_080;
@@ -58,32 +57,30 @@ export const SchedulingSettingsSchema = v.pipe(
 );
 
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
-export type BookingSettings = Required<Omit<BookingSettingsControllerSettingsDocument, "slotGranularityMinutes">> &
+export type BookingSettings = Omit<BookingSettingsDocument, "slotGranularityMinutes"> &
   Pick<SchedulingSettings, "slotGranularityMinutes">;
-export type BookingAdminSettings = Required<
-  Omit<BookingSettingsControllerAdminSettingsDocument, "slotGranularityMinutes">
-> &
+export type BookingAdminSettings = Omit<BookingAdminSettingsDocument, "slotGranularityMinutes"> &
   Pick<SchedulingSettings, "slotGranularityMinutes">;
 
-export function mapBookingSettings(input: BookingSettingsControllerSettingsDocument): BookingSettings {
+export function mapBookingSettings(input: BookingSettingsDocument): BookingSettings {
   const scheduling = {
-    slotGranularityMinutes: required(input.slotGranularityMinutes, "slotGranularityMinutes"),
-    incrementUnit: required(input.incrementUnit, "incrementUnit"),
-    openingHours: mapOpeningHours(required(input.openingHours, "openingHours")),
-    bufferBeforeMinutes: required(input.bufferBeforeMinutes, "bufferBeforeMinutes"),
-    bufferAfterMinutes: required(input.bufferAfterMinutes, "bufferAfterMinutes"),
-    maxBookingDurationMinutes: required(input.maxBookingDurationMinutes, "maxBookingDurationMinutes"),
-    allowDoubleBooking: required(input.allowDoubleBooking, "allowDoubleBooking"),
+    slotGranularityMinutes: input.slotGranularityMinutes,
+    incrementUnit: input.incrementUnit,
+    openingHours: mapOpeningHours(input.openingHours),
+    bufferBeforeMinutes: input.bufferBeforeMinutes,
+    bufferAfterMinutes: input.bufferAfterMinutes,
+    maxBookingDurationMinutes: input.maxBookingDurationMinutes,
+    allowDoubleBooking: input.allowDoubleBooking,
   };
   const settings = v.parse(SchedulingSettingsSchema, scheduling);
   const { overridden: _overridden, ...display } = mapBookingDisplayPreferences({ ...input, overridden: false });
   return { ...settings, ...display };
 }
 
-export function mapBookingAdminSettings(input: BookingSettingsControllerAdminSettingsDocument): BookingAdminSettings {
+export function mapBookingAdminSettings(input: BookingAdminSettingsDocument): BookingAdminSettings {
   return {
     ...mapBookingSettings(input),
-    configurationVersion: required(input.configurationVersion, "configurationVersion"),
+    configurationVersion: input.configurationVersion,
   };
 }
 

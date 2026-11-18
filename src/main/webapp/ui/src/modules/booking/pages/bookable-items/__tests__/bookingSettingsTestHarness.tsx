@@ -5,9 +5,9 @@ import { Suspense } from "react";
 import * as v from "valibot";
 import { expect } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import type { BookingSettingsControllerAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerAdminSettingsDocument";
-import type { BookingSettingsControllerSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerSettingsPatch";
-import { BookingSettingsControllerAdminSettingsDocumentSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import type { BookingAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingAdminSettingsDocument";
+import type { BookingSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsPatch";
+import { BookingAdminSettingsDocumentSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import BookingSettingsPage from "../BookingSettingsPage";
 
 export const bookingSettingsFixture = {
@@ -26,34 +26,34 @@ export const bookingSettingsFixture = {
   configurationVersion: 0,
 };
 
-export function createBookingSettingsFixture(overrides: Partial<BookingSettingsControllerAdminSettingsDocument> = {}) {
+export function createBookingSettingsFixture(overrides: Partial<BookingAdminSettingsDocument> = {}) {
   return { ...bookingSettingsFixture, ...overrides };
 }
 
 export function serveBookingSettings(
-  initial: Partial<BookingSettingsControllerAdminSettingsDocument> = {},
+  initial: Partial<BookingAdminSettingsDocument> = {},
   saveSucceeds: () => boolean = () => true,
 ) {
-  const submitted: BookingSettingsControllerSettingsPatch[] = [];
-  let current: BookingSettingsControllerAdminSettingsDocument = createBookingSettingsFixture(initial);
+  const submitted: BookingSettingsPatch[] = [];
+  let current: BookingAdminSettingsDocument = createBookingSettingsFixture(initial);
   server.use(
     http.get("/api/v2/booking-settings/admin", () =>
-      HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, {
+      HttpResponse.json<BookingAdminSettingsDocument>(current, {
         headers: { ETag: `"${current.configurationVersion}"` },
       }),
     ),
-    http.patch<never, BookingSettingsControllerSettingsPatch>("/api/v2/booking-settings/admin", async ({ request }) => {
+    http.patch<never, BookingSettingsPatch>("/api/v2/booking-settings/admin", async ({ request }) => {
       expect(request.headers.get("If-Match")).toBe(`"${current.configurationVersion}"`);
       const body = await request.json();
       expect(body).not.toHaveProperty("configurationVersion");
       submitted.push(body);
       if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
-      current = v.parse(BookingSettingsControllerAdminSettingsDocumentSchema, {
+      current = v.parse(BookingAdminSettingsDocumentSchema, {
         ...current,
         ...body,
         configurationVersion: (current.configurationVersion ?? 0) + 1,
       });
-      return HttpResponse.json<BookingSettingsControllerAdminSettingsDocument>(current, {
+      return HttpResponse.json<BookingAdminSettingsDocument>(current, {
         headers: { ETag: `"${current.configurationVersion}"` },
       });
     }),

@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
         @Extension(properties = @ExtensionProperty(name = "x-tag-group", value = "Platform")))
 public final class BookingDisplayPreferencesController {
 
+  @Schema(name = "BookingDisplayPreferencesReplacement")
   public record Replacement(
       @NotNull
           @Pattern(

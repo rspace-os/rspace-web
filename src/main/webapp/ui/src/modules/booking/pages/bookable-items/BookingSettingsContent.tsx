@@ -21,9 +21,9 @@ import {
   invalidateGetAdminBookingSettings,
   invalidateGetBookingSettings,
 } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import { invalidateGetMyBookingPreferences } from "@/modules/common/api/v2/generated/users/users";
-import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { BookingDisplayPreferencesReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Button } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
@@ -38,7 +38,7 @@ export function BookingSettingsContent() {
   const loadedSettings = useSuspenseQuery(bookingAdminSettingsQuery()).data;
   const [settings, setSettings] = useState(loadedSettings);
   const [editorVersion, setEditorVersion] = useState(0);
-  const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesControllerReplacement>({
+  const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesReplacement>({
     availabilityWindowStart: settings.availabilityWindowStart,
     availabilityWindowEnd: settings.availabilityWindowEnd,
     timezoneMode: settings.timezoneMode,
@@ -71,7 +71,7 @@ export function BookingSettingsContent() {
   });
   const preferenceValues = { ...displaySettings, customTimezone: displaySettings.customTimezone ?? null };
   const displaySettingsValid =
-    v.safeParse(BookingDisplayPreferencesControllerReplacementSchema, displaySettings).success &&
+    v.safeParse(BookingDisplayPreferencesReplacementSchema, displaySettings).success &&
     hasValidAvailabilityWindow(preferenceValues) &&
     hasValidCustomTimezone(preferenceValues);
   const dirty =

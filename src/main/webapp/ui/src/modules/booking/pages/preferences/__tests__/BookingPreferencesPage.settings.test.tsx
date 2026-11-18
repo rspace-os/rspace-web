@@ -19,7 +19,7 @@ import { server } from "@/__tests__/mswServer";
 import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
@@ -70,13 +70,13 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+      http.put<never, BookingDisplayPreferencesReplacement, BookingDisplayPreferences | ApiV2Problem>(
         "/api/v2/users/me/booking-preferences",
         async ({ request }) => {
           body = await request.json();
           return HttpResponse.json({
             ...inheritedBrowserBookingPreferences,
-            ...(body as BookingDisplayPreferencesControllerReplacement),
+            ...(body as BookingDisplayPreferencesReplacement),
             overridden: true,
           });
         },
@@ -184,7 +184,7 @@ describe("BookingPreferencesPage", () => {
         if (reads === 1) return HttpResponse.json(inheritedBrowserBookingPreferences);
         return HttpResponse.json(reads === 2 ? changedPreferences : matchingPreferences);
       }),
-      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+      http.put<never, BookingDisplayPreferencesReplacement, BookingDisplayPreferences | ApiV2Problem>(
         "/api/v2/users/me/booking-preferences",
         async ({ request }) => {
           submittedBody = await request.json();
@@ -356,7 +356,7 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences | ApiV2Problem>(
+      http.put<never, BookingDisplayPreferencesReplacement, BookingDisplayPreferences | ApiV2Problem>(
         "/api/v2/users/me/booking-preferences",
         () => {
           writes += 1;

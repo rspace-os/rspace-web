@@ -1,4 +1,4 @@
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -21,7 +21,7 @@ function registerHandlers() {
     http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
       HttpResponse.json(stored),
     ),
-    http.put<never, BookingDisplayPreferencesControllerReplacement, BookingDisplayPreferences>(
+    http.put<never, BookingDisplayPreferencesReplacement, BookingDisplayPreferences>(
       "/api/v2/users/me/booking-preferences",
       async ({ request }) => {
         stored = {

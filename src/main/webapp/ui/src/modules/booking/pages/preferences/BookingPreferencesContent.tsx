@@ -12,8 +12,8 @@ import {
   useReplaceBookingDisplayPreferences,
   useResetBookingDisplayPreferences,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
-import { BookingDisplayPreferencesControllerReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
+import { BookingDisplayPreferencesReplacementSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Button } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
@@ -25,7 +25,7 @@ function inputFrom(
     BookingDisplayPreferencesDocument,
     "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone"
   >,
-): BookingDisplayPreferencesControllerReplacement {
+): BookingDisplayPreferencesReplacement {
   return {
     availabilityWindowStart: document.availabilityWindowStart,
     availabilityWindowEnd: document.availabilityWindowEnd,
@@ -38,8 +38,8 @@ export function BookingPreferencesContent() {
   const { t } = useTranslation("booking");
   const document = useSuspenseQuery(bookingDisplayPreferencesQueryOptions()).data;
   const [draft, setDraft] = useState<{
-    baseline: BookingDisplayPreferencesControllerReplacement;
-    input: BookingDisplayPreferencesControllerReplacement;
+    baseline: BookingDisplayPreferencesReplacement;
+    input: BookingDisplayPreferencesReplacement;
   }>();
   const input = draft?.input ?? inputFrom(document);
   const replace = useReplaceBookingDisplayPreferences();
@@ -47,7 +47,7 @@ export function BookingPreferencesContent() {
   const browserZone = browserTimeZone() ?? document.institutionTimezone;
 
   const valid =
-    v.safeParse(BookingDisplayPreferencesControllerReplacementSchema, input).success &&
+    v.safeParse(BookingDisplayPreferencesReplacementSchema, input).success &&
     minuteOfDay(input.availabilityWindowStart) < minuteOfDay(input.availabilityWindowEnd) &&
     (input.timezoneMode === "CUSTOM"
       ? Boolean(input.customTimezone && isValidTimeZone(input.customTimezone))

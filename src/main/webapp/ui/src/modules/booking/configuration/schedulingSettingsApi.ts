@@ -5,7 +5,7 @@ import {
   getGetBookingSettingsSuspenseQueryOptions,
   patchAdminBookingSettings,
 } from "@/modules/common/api/v2/generated/booking-settings/booking-settings";
-import type { BookingSettingsControllerSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsControllerSettingsPatch";
+import type { BookingSettingsPatch } from "@/modules/common/api/v2/generated/models/bookingSettingsPatch";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import {
   type BookingAdminSettings,
@@ -39,7 +39,7 @@ export function bookingAdminSettingsQuery() {
   });
 }
 export async function saveBookingSettings(
-  input: BookingSettingsControllerSettingsPatch,
+  input: BookingSettingsPatch,
   expectedEtag: string,
 ): Promise<BookingAdminSettings & { etag: string }> {
   return withEtag(await patchAdminBookingSettings(input, { "If-Match": expectedEtag }));

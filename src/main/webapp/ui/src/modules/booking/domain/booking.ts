@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   createBooking as generatedCreateBooking,
   updateBooking as generatedUpdateBooking,
@@ -60,44 +61,66 @@ function mapTarget(target: BookingsRead["target"]) {
   return { ...reference, relationTo: "instruments" as const, globalId: reference.globalId, value };
 }
 
-function mapIdentity<TTarget>(input: BookingsRead, target: TTarget) {
+export const BOOKING_READ_FIELDS = [
+  "id",
+  "version",
+  "target",
+  "canViewConfiguration",
+  "timezone",
+  "start",
+  "end",
+  "state",
+  "kind",
+  "purpose",
+  "bookedBy",
+  "createdBy",
+  "privacy",
+  "canEdit",
+  "canCancel",
+  "createdAt",
+  "updatedAt",
+] as const;
+/** A booking read with `BOOKING_READ_FIELDS`, or a mutation response, after `assertApiV2Selected`. */
+export type SelectedBooking = ApiV2Selected<"bookings", typeof BOOKING_READ_FIELDS>;
+
+function mapIdentity<TTarget>(input: SelectedBooking, target: TTarget) {
   const identity = {
     id: input.id,
-    version: required(input.version, "version"),
+    version: input.version,
     target,
     timezone: required(input.timezone, "timezone"),
-    start: required(input.start, "start"),
-    end: required(input.end, "end"),
-    state: required(input.state, "state"),
-    kind: input.kind ?? "BOOKING",
+    start: input.start,
+    end: input.end,
+    state: input.state,
+    kind: input.kind,
   };
   checkBookingInterval(identity);
   return identity;
 }
 
-export function mapBookingSummary(input: BookingsRead) {
+export function mapBookingSummary(input: SelectedBooking) {
   const summary = {
     id: input.id,
     target: mapTarget(input.target),
     timezone: required(input.timezone, "timezone"),
-    start: required(input.start, "start"),
-    end: required(input.end, "end"),
-    state: required(input.state, "state"),
-    kind: input.kind ?? "BOOKING",
+    start: input.start,
+    end: input.end,
+    state: input.state,
+    kind: input.kind,
   };
   checkBookingInterval(summary);
   return summary;
 }
 
-function mapPrivacy(input: BookingsRead) {
+function mapPrivacy(input: SelectedBooking) {
   const management: {
     createdAt: string;
     updatedAt: string;
     createdBy?: string | null;
     canViewConfiguration?: boolean;
   } = {
-    createdAt: required(input.createdAt, "createdAt"),
-    updatedAt: required(input.updatedAt, "updatedAt"),
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
     createdBy: input.createdBy,
     canViewConfiguration: input.canViewConfiguration,
   };
@@ -113,34 +136,33 @@ function mapPrivacy(input: BookingsRead) {
       canCancel: false as const,
     };
   }
-  if (input.privacy !== "full" || input.purpose === undefined || input.bookedBy === undefined)
-    throw new BookingUnavailableError("Booking details are unavailable");
+  if (input.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
   return {
     ...management,
     privacy: "full" as const,
     purpose: input.purpose,
     bookedBy: input.bookedBy,
-    canEdit: required(input.canEdit, "canEdit"),
-    canCancel: required(input.canCancel, "canCancel"),
+    canEdit: input.canEdit,
+    canCancel: input.canCancel,
   };
 }
 
-export function mapBooking(input: BookingsRead) {
+export function mapBooking(input: SelectedBooking) {
   return { ...mapIdentity(input, mapTarget(input.target)), ...mapPrivacy(input) };
 }
-export function mapBookingDetails(input: BookingsRead) {
+export function mapBookingDetails(input: SelectedBooking) {
   const booking = mapBooking(input);
   if (booking.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
-  return { ...booking, canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration") };
+  return { ...booking, canViewConfiguration: input.canViewConfiguration };
 }
-export function mapBookingListDocument(input: BookingsRead) {
+export function mapBookingListDocument(input: SelectedBooking) {
   return {
     ...mapBooking(input),
-    canViewConfiguration: required(input.canViewConfiguration, "canViewConfiguration"),
+    canViewConfiguration: input.canViewConfiguration,
     requester: input.requester ?? null,
   };
 }
-export function mapBookingMutation(input: BookingsRead) {
+export function mapBookingMutation(input: SelectedBooking) {
   const target = required(input.target, "target");
   return { ...mapIdentity(input, typeof target.value === "number" ? target : mapTarget(target)), ...mapPrivacy(input) };
 }
@@ -161,25 +183,30 @@ export const BookingListDocumentTableValidation = {
   },
 };
 
-export const BOOKING_READ_FIELDS =
-  "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 const readParameters = {
   depth: 2,
   fields: {
-    bookings: BOOKING_READ_FIELDS,
+    bookings: apiV2Fields(BOOKING_READ_FIELDS),
     instruments: "id,globalId,name,deleted,parentContainer",
     containers: "id,globalId,name",
   },
 };
 
 export async function fetchBooking(id: number, signal?: AbortSignal): Promise<BookingDetails> {
-  return mapBookingDetails(await getBooking(id, readParameters, { signal }));
+  const document = await getBooking(id, readParameters, { signal });
+  assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
+  return mapBookingDetails(document);
+}
+/** Create and update responses return every readable field, so they carry the same guarantees as a full read. */
+function selectedMutation(document: BookingsRead): BookingMutation {
+  assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
+  return mapBookingMutation(document);
 }
 export async function createBooking(input: BookingsCreate): Promise<BookingMutation> {
-  return mapBookingMutation(await generatedCreateBooking(input));
+  return selectedMutation(await generatedCreateBooking(input));
 }
 export async function updateBooking(id: number, version: number, input: BookingsUpdate): Promise<BookingMutation> {
-  return mapBookingMutation(await generatedUpdateBooking(id, input, { "If-Match": `"${version}"` }));
+  return selectedMutation(await generatedUpdateBooking(id, input, { "If-Match": `"${version}"` }));
 }
 export function cancelBooking(id: number, version: number): Promise<BookingMutation> {
   return updateBooking(id, version, { state: "CANCELLED" });

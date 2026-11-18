@@ -1,7 +1,7 @@
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import type { BookingTimezoneMode } from "@/modules/common/api/v2/generated/models/bookingTimezoneMode";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
@@ -41,8 +41,8 @@ export function BookingDisplaySettingsFields({
   institutionTimezone,
   disabled = false,
 }: {
-  value: BookingDisplayPreferencesControllerReplacement;
-  onChange: (value: BookingDisplayPreferencesControllerReplacement) => void;
+  value: BookingDisplayPreferencesReplacement;
+  onChange: (value: BookingDisplayPreferencesReplacement) => void;
   browserTimezone: string;
   institutionTimezone: string;
   disabled?: boolean;
@@ -54,7 +54,7 @@ export function BookingDisplaySettingsFields({
     () => bookingTimeZoneOptions(browserTimezone, institutionTimezone, value.customTimezone),
     [browserTimezone, institutionTimezone, value.customTimezone],
   );
-  const patch = (next: Partial<BookingDisplayPreferencesControllerReplacement>) => onChange({ ...value, ...next });
+  const patch = (next: Partial<BookingDisplayPreferencesReplacement>) => onChange({ ...value, ...next });
   const timezoneModeOptions = [
     ["BROWSER", t("preferences.timezone.browser", { timezone: browserTimezone })],
     ["INSTITUTION", t("preferences.timezone.institution", { timezone: institutionTimezone })],

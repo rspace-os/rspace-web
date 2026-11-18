@@ -3018,9 +3018,10 @@
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
+        "required" : [ "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "overridden" ],
         "type" : "object"
       },
-      "BookingDisplayPreferencesControllerReplacement" : {
+      "BookingDisplayPreferencesReplacement" : {
         "properties" : {
           "availabilityWindowEnd" : {
             "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
@@ -9682,7 +9683,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingDisplayPreferencesControllerReplacement"
+                "$ref" : "#/components/schemas/BookingDisplayPreferencesReplacement"
               }
             }
           },
