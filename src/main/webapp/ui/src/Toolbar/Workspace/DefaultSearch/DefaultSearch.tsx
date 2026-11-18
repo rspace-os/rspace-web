@@ -90,6 +90,18 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     setFocusAfterStore(null);
   }, [focusAfterStore]);
 
+  // Another tab may have changed the default while this one was in the background
+  React.useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "hidden") return;
+      readStoredDefault().then(setShown, () => {
+        // Keep showing the default this page has
+      });
+    };
+    document.addEventListener("visibilitychange", refresh);
+    return () => document.removeEventListener("visibilitychange", refresh);
+  }, []);
+
   const [saving, setSaving] = React.useState(false);
 
   const store = async (query: string | null) => {

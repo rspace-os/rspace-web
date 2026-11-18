@@ -338,6 +338,30 @@ describe("DefaultSearch", () => {
     expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
   });
 
+  test("returning to the tab shows the default another tab has since saved", async () => {
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, { [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" })).toBeVisible();
+
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+  });
+
+  test("returning to the tab keeps the shown default when the check fails", async () => {
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, FAILED_READ);
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+    expect(runButton()).toBeVisible();
+  });
+
   test("clicking Default search opens the stored search", async () => {
     const user = userEvent.setup();
     const navigate = vi.fn();
