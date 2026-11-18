@@ -1,4 +1,6 @@
+import type { FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { hiddenFieldsOf } from "@/stores/models/fieldVisibility";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
@@ -96,7 +98,10 @@ type TemplateFieldsLike = {
     type?: string;
     content?: unknown;
     link?: { targetGlobalId?: string | null } | null;
-    selectedOptions?: ReadonlyArray<unknown> | null;
+    selectedOptions?: ReadonlyArray<string> | null;
+    options?: ReadonlyArray<{ value: string }>;
+    fieldKey?: string | null;
+    displayRule?: FieldDisplayRule | null;
   }>;
 };
 
@@ -110,8 +115,11 @@ export function templateBlockReason(
   template: TemplateFieldsLike,
   language: string,
 ): { blocked: boolean; count: number; fields: string } {
+  // a mandatory field that the template's default values hide is not needed (RPD-339)
+  const hidden = hiddenFieldsOf(template.fields);
+  const shown = template.fields.filter((f) => !hidden.has(f));
   const { blocked, missingFields } = templateSelectionBlock(
-    template.fields.map((f) => ({
+    shown.map((f) => ({
       name: f.name,
       mandatory: f.mandatory,
       hasDefault: fieldHasDefault(f),

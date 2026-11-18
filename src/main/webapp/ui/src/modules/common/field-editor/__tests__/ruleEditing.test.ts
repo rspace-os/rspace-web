@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import {
+  groupDisplayRules,
+  type RuleEditorField,
+  ruleFromDraft,
+  sourceCandidates,
+  targetCandidates,
+  usableOptions,
+  withoutOptions,
+} from "../ruleEditing";
+
+const field = (key: string, overrides: Partial<RuleEditorField> = {}): RuleEditorField => ({
+  key,
+  name: key,
+  canBeSource: false,
+  options: [],
+  rule: null,
+  ...overrides,
+});
+
+const radio = (key: string, rule: RuleEditorField["rule"] = null) =>
+  field(key, { canBeSource: true, options: ["Yes", "No"], rule });
+
+describe("usableOptions", () => {
+  it("leaves out blank options and repeats", () => {
+    expect(usableOptions(["Yes", "", "  ", "No", "Yes"])).toEqual(["Yes", "No"]);
+  });
+});
+
+describe("groupDisplayRules", () => {
+  it("shows identical rules once, with every field they show, whatever the order of their options", () => {
+    const fields = [
+      radio("gmo"),
+      field("permit", { rule: createDisplayRule("gmo", "IS_ANY_OF", ["Yes", "No"]) }),
+      field("genes", { rule: createDisplayRule("gmo", "IS_ANY_OF", ["No", "Yes"]) }),
+      field("notes", { rule: createDisplayRule("gmo", "HAS_VALUE", []) }),
+    ];
+    expect(groupDisplayRules(fields).map((group) => group.targetKeys)).toEqual([["permit", "genes"], ["notes"]]);
+  });
+});
+
+describe("cycle prevention", () => {
+  // level reads gmo, approval reads level
+  const fields = [
+    radio("gmo"),
+    radio("level", createDisplayRule("gmo", "IS_ANY_OF", ["Yes"])),
+    radio("approval", createDisplayRule("level", "IS_ANY_OF", ["Yes"])),
+  ];
+
+  it("does not offer a field that depends on the target as its source", () => {
+    expect(sourceCandidates(fields, ["gmo"]).map((candidate) => candidate.key)).toEqual([]);
+    expect(sourceCandidates(fields, ["level"]).map((candidate) => candidate.key)).toEqual(["gmo"]);
+  });
+
+  it("does not offer the source, or a field the source depends on, as a target", () => {
+    expect(targetCandidates([...fields, field("notes")], "approval", []).map((candidate) => candidate.key)).toEqual([
+      "notes",
+    ]);
+  });
+
+  it("does not offer a field that has a rule or that another draft claimed", () => {
+    expect(
+      targetCandidates([radio("gmo"), field("a"), field("b")], "gmo", [], new Set(["b"])).map((c) => c.key),
+    ).toEqual(["a"]);
+  });
+});
+
+describe("withoutOptions", () => {
+  it("keeps the remaining options of a rule", () => {
+    expect(withoutOptions(createDisplayRule("gmo", "IS_ANY_OF", ["Yes", "No"]), ["No"])?.values).toEqual(["Yes"]);
+  });
+
+  it("drops a rule left without options", () => {
+    expect(withoutOptions(createDisplayRule("gmo", "IS_NONE_OF", ["No"]), ["No"])).toBeNull();
+  });
+
+  it("keeps a rule that names no option", () => {
+    const rule = createDisplayRule("gmo", "HAS_VALUE", []);
+    expect(withoutOptions(rule, ["No"])).toBe(rule);
+  });
+});
+
+describe("ruleFromDraft", () => {
+  it("is null until an operator that needs options has one", () => {
+    expect(ruleFromDraft({ sourceFieldKey: "gmo", operator: "IS_ANY_OF", values: [] })).toBeNull();
+    expect(ruleFromDraft({ sourceFieldKey: "gmo", operator: "IS_ANY_OF", values: ["Yes"] })).toEqual(
+      createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]),
+    );
+  });
+
+  it("drops options an operator does not take", () => {
+    expect(ruleFromDraft({ sourceFieldKey: "gmo", operator: "HAS_NO_VALUE", values: ["Yes"] })?.values).toEqual([]);
+  });
+});

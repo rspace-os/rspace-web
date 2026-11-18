@@ -1,4 +1,4 @@
-import { action, makeObservable, observable, override, runInAction } from "mobx";
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
 import type { _LINK } from "@/util/types";
@@ -24,6 +24,7 @@ import type { AttachmentJson } from "./AttachmentModel";
 import type { ContainerAttrs, ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { hiddenFieldsOf } from "./fieldVisibility";
 import { HasLocationMixin } from "./HasLocation";
 import type InstrumentTemplateModel from "./InstrumentTemplateModel";
 import InventoryBaseRecord, {
@@ -145,6 +146,7 @@ export default class InstrumentModel
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
+      hiddenFields: computed,
     });
 
     if (this.recordType === "instrument") {
@@ -294,6 +296,15 @@ export default class InstrumentModel
     return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
   }
 
+  /** Fields that display rules hide given the current values; they keep their values. */
+  get hiddenFields(): ReadonlySet<Field> {
+    return hiddenFieldsOf(this.fields);
+  }
+
+  isFieldHidden(field: Field): boolean {
+    return this.hiddenFields.has(field);
+  }
+
   overrideFields(fields: Array<Field>): void {
     this.setAttributes({
       fields: fields.map((f) => {
@@ -318,6 +329,8 @@ export default class InstrumentModel
             attachment: null,
             mandatory: fm.mandatory,
             allowedRelationTypes: [...(fm.allowedRelationTypes ?? [])],
+            fieldKey: fm.fieldKey,
+            displayRule: fm.displayRule,
           },
           this,
         );

@@ -16,6 +16,7 @@ import type { Field } from "../../../stores/definitions/Field";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import type InstrumentModel from "../../../stores/models/InstrumentModel";
 import AttachmentField from "../../components/Fields/Attachments/AttachmentField";
+import useShownTemplateFields from "../../components/Fields/useShownTemplateFields";
 import FormField from "../../components/Inputs/FormField";
 import LinkFieldValue from "../../Sample/Fields/TemplateFields/LinkFieldValue";
 
@@ -26,7 +27,8 @@ type TemplateFieldsArgs = {
 
 function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  return (instrument.fields ?? []).map((field: Field) => {
+  const { shownFields, announcer } = useShownTemplateFields(instrument, onErrorStateChange);
+  const rendered = shownFields.map((field: Field) => {
     const commonProps = {
       disabled: !instrument.isFieldEditable("fields"),
       label: field.name,
@@ -284,6 +286,12 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
 
     return <Box key={field.name}>{t("instrument.templateFields.unknownFieldType", { type: field.type })}</Box>;
   });
+  return (
+    <>
+      {rendered}
+      {announcer}
+    </>
+  );
 }
 
 export default observer(TemplateFields);

@@ -9,6 +9,7 @@ import TemplateModel from "../../../stores/models/TemplateModel";
 import useStores from "../../../stores/use-stores";
 import CustomField from "./CustomField";
 import NewField from "./NewField";
+import TemplateDisplayRules from "./TemplateDisplayRules";
 
 type FieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
@@ -37,7 +38,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
             <CustomField
               field={field}
               i={i}
-              key={i}
+              key={field.fieldKey ?? i}
               editable={editable}
               onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
               onRemove={(b) => removeCustomField(field)(b)}
@@ -53,6 +54,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
   const editable = activeResult.isFieldEditable("fields");
   return (
     <>
+      <TemplateDisplayRules fields={fields} editable={editable} />
       {fields.length > 0 ? (
         <TemplateFields editable={editable} />
       ) : (

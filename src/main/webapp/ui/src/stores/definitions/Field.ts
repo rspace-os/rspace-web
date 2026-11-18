@@ -1,3 +1,4 @@
+import type { FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import type { ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import type { Attachment } from "./Attachment";
@@ -64,6 +65,15 @@ export interface Field extends BaseRecord {
 
   /** For link fields: the single link value, or null when unset. */
   link: FieldLink | null;
+
+  /**
+   * Identifies the field within its template and the records made from it, so
+   * display rules can name it. Null for record fields created before keys existed.
+   */
+  fieldKey: string | null;
+
+  /** Shows the field only when another field meets a condition; null when always shown. */
+  displayRule: FieldDisplayRule | null;
 
   readonly paramsForBackend: object;
   readonly hasContent: boolean;

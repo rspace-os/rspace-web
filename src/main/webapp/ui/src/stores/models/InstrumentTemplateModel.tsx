@@ -23,7 +23,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import FieldModel, { clearRulesReading, type FieldModelAttrs } from "./FieldModel";
 import InventoryBaseRecord, {
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
@@ -162,13 +162,16 @@ export default class InstrumentTemplateModel
     this.instrumentsToUpdateCount = params.instrumentsToUpdateCount ?? 0;
   }
 
+  /** Adds a field with a new key, so display rules can use it before the template is saved. */
   addField(fieldParams: FieldModelAttrs): void {
     this.setAttributesDirty({
-      fields: [...this.fields, new FieldModel(fieldParams, this)],
+      fields: [...this.fields, new FieldModel({ ...fieldParams, fieldKey: crypto.randomUUID() }, this)],
     });
   }
 
+  /** Removes a field, clearing the display rules that read it in the same change. */
   removeCustomField(id: Id, index: number, deleteFromInstruments = false): void {
+    clearRulesReading(this.fields[index]);
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {

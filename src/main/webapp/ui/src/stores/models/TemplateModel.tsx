@@ -21,7 +21,7 @@ import type { Template } from "../definitions/Template";
 import { categoryOfUnit } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
 import type { UnitCategory } from "../stores/UnitStore";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import FieldModel, { clearRulesReading, type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
   defaultVisibleSampleFields,
@@ -122,6 +122,7 @@ export default class TemplateModel extends SampleModel implements Template {
       recordDetails: override,
       supportsBatchEditing: override,
       enforceMandatoryFields: override,
+      hiddenFields: override,
       fieldNamesInUse: override,
       globalIdOfLatest: computed,
       validSubSampleAlias: computed,
@@ -230,13 +231,16 @@ export default class TemplateModel extends SampleModel implements Template {
       );
   }
 
+  /** Adds a field with a new key, so display rules can use it before the template is saved. */
   addField(fieldParams: FieldModelAttrs) {
     this.setAttributesDirty({
-      fields: [...this.fields, new FieldModel(fieldParams, this)],
+      fields: [...this.fields, new FieldModel({ ...fieldParams, fieldKey: crypto.randomUUID() }, this)],
     });
   }
 
+  /** Removes a field, clearing the display rules that read it in the same change. */
   removeCustomField(id: Id, index: number, deleteFromSamples: boolean = false) {
+    clearRulesReading(this.fields[index]);
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {
@@ -535,6 +539,11 @@ export default class TemplateModel extends SampleModel implements Template {
    */
   get enforceMandatoryFields(): boolean {
     return false;
+  }
+
+  /** A template edits field definitions, so every field is shown whatever the rules say. */
+  get hiddenFields(): ReadonlySet<Field> {
+    return new Set();
   }
 
   get showBarcode(): boolean {
