@@ -58,6 +58,8 @@ public class RecordApiManagerImpl implements RecordApiManager {
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
+    // must stay before the create: API document creation is not one transaction, so a tag
+    // rejection after it would leave an empty document behind (RSDEV-1026)
     documentTagManager.validateApiTagsForNewDocument(apiDocument.getTags(), user);
     Folder targetFolder =
         folderManager.getApiUploadTargetFolder("", user, apiDocument.getParentFolderId());
