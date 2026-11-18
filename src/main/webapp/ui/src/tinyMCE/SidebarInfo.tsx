@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import { paperClasses } from "@mui/material/Paper";
 import React, { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { galleryPictureHtml } from "./bondStrengths/galleryPicture";
 import { type BondStrengthsDocumentContent, insertBondStrengthsAfter } from "./bondStrengths/insertIntoDocument";
 import ChemCard from "./ChemCard";
 
@@ -16,6 +17,7 @@ interface SidebarInfoProps {
 }
 
 type TinyMCEEditor = {
+  id: string;
   execCommand: (command: string, ui: boolean, value?: string) => void;
   undoManager: { transact: (change: () => void) => unknown };
   nodeChanged: () => void;
@@ -83,15 +85,26 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   }, []);
 
   const insertBondStrengths = useCallback(
-    (id: string | undefined, content: BondStrengthsDocumentContent): void => {
+    async (id: string | undefined, content: BondStrengthsDocumentContent): Promise<void> => {
       const chemImage = id ? (getIframeDocument(iframe)?.getElementById(id) ?? null) : null;
       const activeEditor = getActiveEditor();
       if (!isChemImage(chemImage) || !activeEditor) {
         return;
       }
 
+      const fieldId = activeEditor.id.replace(/^\D+/g, "");
+      let pictureHtml: string | null = null;
+      if (content.imageSrc && fieldId) {
+        try {
+          pictureHtml = await galleryPictureHtml(content.imageSrc, fieldId, `bond-strengths-${id}.png`);
+        } catch (error) {
+          // The table still goes in without the picture.
+          console.warn("The bond strengths picture could not be stored", error);
+        }
+      }
+
       // One undo step for the whole insert; it also marks the editor as changed.
-      activeEditor.undoManager.transact(() => insertBondStrengthsAfter(chemImage, content));
+      activeEditor.undoManager.transact(() => insertBondStrengthsAfter(chemImage, content, pictureHtml));
       activeEditor.nodeChanged();
     },
     [iframe],

@@ -1,11 +1,12 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { galleryPictureHtml } from "../bondStrengths/galleryPicture";
 import type { BondStrengthsDocumentContent } from "../bondStrengths/insertIntoDocument";
 import SidebarInfo from "../SidebarInfo";
 
 const bondStrengthsContent: BondStrengthsDocumentContent = {
-  imageSrc: "data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E",
+  imageSrc: "data:image/png;base64,AAAA",
   imageAlt: "Structure with bond strengths",
   caption: "Predicted bond strengths",
   columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
@@ -14,6 +15,12 @@ const bondStrengthsContent: BondStrengthsDocumentContent = {
     { bond: "C2:C3", notAvailable: "n/a (ring bond)" },
   ],
 };
+
+const galleryPicture =
+  '<p><img class="imageDropped" src="/thumbnail/data?sourceId=7" alt="image picture.png"></p>&nbsp;';
+vi.mock("../bondStrengths/galleryPicture", () => ({
+  galleryPictureHtml: vi.fn(() => Promise.resolve(galleryPicture)),
+}));
 
 vi.mock("../ChemCard", () => ({
   default: ({
@@ -145,7 +152,7 @@ describe("SidebarInfo accessibility", () => {
     const transact = vi.fn((change: () => void) => change());
     const nodeChanged = vi.fn();
     Object.assign(globalThis, {
-      tinymce: { activeEditor: { execCommand: vi.fn(), undoManager: { transact }, nodeChanged } },
+      tinymce: { activeEditor: { id: "rtf_12", execCommand: vi.fn(), undoManager: { transact }, nodeChanged } },
     });
     render(<SidebarInfo iframe={iframe} />);
     act(() => {
@@ -153,6 +160,12 @@ describe("SidebarInfo accessibility", () => {
     });
 
     await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+    await waitFor(() => expect(nodeChanged).toHaveBeenCalled());
+    expect(galleryPictureHtml).toHaveBeenCalledExactlyOnceWith(
+      "data:image/png;base64,AAAA",
+      "12",
+      "bond-strengths-chem-4.png",
+    );
 
     // The iframe document has no window, so role queries and jest-dom matchers cannot read it.
     const [, pictureParagraph, table] = Array.from(iframeDocument.body.children) as [
@@ -168,7 +181,9 @@ describe("SidebarInfo accessibility", () => {
     ]);
     expect(chemicalImage.parentElement).toBe(chemicalParagraph);
     expect(pictureParagraph.firstElementChild?.tagName).toBe("IMG");
-    expect(pictureParagraph.firstElementChild?.getAttribute("src")).toBe(bondStrengthsContent.imageSrc);
+    // The picture is the Gallery image, never the data URI, which would bloat the field.
+    expect(pictureParagraph.firstElementChild?.getAttribute("src")).toBe("/thumbnail/data?sourceId=7");
+    expect(pictureParagraph.firstElementChild?.className).toBe("imageDropped");
     expect(pictureParagraph.firstElementChild?.getAttribute("alt")).toBe("Structure with bond strengths");
     expect(table.caption?.textContent).toBe("Predicted bond strengths");
     expect(Array.from(table.rows, (row) => Array.from(row.cells, (cell) => cell.textContent))).toEqual([

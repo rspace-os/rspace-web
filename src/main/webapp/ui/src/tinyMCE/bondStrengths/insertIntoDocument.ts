@@ -1,8 +1,10 @@
+import DOMPurify from "dompurify";
+
 export type BondStrengthsDocumentRow =
   | { bond: string; kcalMol: string; kjMol: string }
   | { bond: string; notAvailable: string };
 
-/** Text and picture for the document, already translated and formatted. */
+/** Text and picture for the document, already translated and formatted. The picture is a PNG data URI. */
 export type BondStrengthsDocumentContent = {
   imageSrc: string | null;
   imageAlt: string;
@@ -58,23 +60,25 @@ function buildTable(doc: Document, content: BondStrengthsDocumentContent): HTMLT
 /**
  * Adds the picture and the table after the top-level block that holds the chem image. Going to
  * the top level keeps the HTML valid when the image sits inside a list or a table cell.
+ * `pictureHtml` is the editor markup for the picture once it is stored in the Gallery.
  */
-export function insertBondStrengthsAfter(chemImage: HTMLImageElement, content: BondStrengthsDocumentContent): void {
+export function insertBondStrengthsAfter(
+  chemImage: HTMLImageElement,
+  content: BondStrengthsDocumentContent,
+  pictureHtml: string | null,
+): void {
   const doc = chemImage.ownerDocument;
   let block: Element = chemImage;
   while (block.parentElement && block.parentElement !== doc.body) {
     block = block.parentElement;
   }
 
-  const nodes: HTMLElement[] = [];
-  if (content.imageSrc) {
-    const image = element(doc, "img");
-    image.setAttribute("src", content.imageSrc);
-    image.setAttribute("alt", content.imageAlt);
-    image.setAttribute("width", "480");
-    const paragraph = element(doc, "p");
-    paragraph.append(image);
-    nodes.push(paragraph);
+  const nodes: Element[] = [];
+  if (pictureHtml) {
+    const holder = element(doc, "div");
+    holder.innerHTML = DOMPurify.sanitize(pictureHtml);
+    holder.querySelector("img")?.setAttribute("alt", content.imageAlt);
+    nodes.push(...Array.from(holder.children));
   }
   nodes.push(buildTable(doc, content));
   block.after(...nodes);

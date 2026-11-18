@@ -54,7 +54,7 @@ interface ChemCardProps {
   idx?: number;
   onClose?: (id: string | undefined) => void;
   /** Only the editor can change the document, so only the editor passes this. */
-  onInsertBondStrengths?: (id: string | undefined, content: BondStrengthsDocumentContent) => void;
+  onInsertBondStrengths?: (id: string | undefined, content: BondStrengthsDocumentContent) => void | Promise<void>;
 }
 
 function renderFormattedFormula(formula?: string): React.ReactNode {

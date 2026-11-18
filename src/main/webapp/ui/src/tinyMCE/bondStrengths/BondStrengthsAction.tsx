@@ -9,7 +9,7 @@ import type { BondStrengthsDocumentContent } from "./insertIntoDocument";
 type BondStrengthsActionProps = {
   chemId: number;
   revision?: number;
-  onInsert?: (content: BondStrengthsDocumentContent) => void;
+  onInsert?: (content: BondStrengthsDocumentContent) => void | Promise<void>;
 };
 
 /**

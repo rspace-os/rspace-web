@@ -17,7 +17,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import {
@@ -47,7 +47,7 @@ type BondStrengthsDialogProps = {
   chemId: number;
   revision?: number;
   /** When given, the dialog offers to put the result into the document. */
-  onInsert?: (content: BondStrengthsDocumentContent) => void;
+  onInsert?: (content: BondStrengthsDocumentContent) => void | Promise<void>;
 };
 
 function structureNotSupportedText(t: Translate, result: UnsupportedBondStrengths): string {
@@ -218,6 +218,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { data, isPending, isError } = useQuery(bondStrengthsQuery(chemId, revision));
   const supported = data?.supported ? data : null;
+  const [inserting, setInserting] = useState(false);
   const rows = supported ? bondRows(t, language, supported.bonds) : [];
 
   return (
@@ -239,15 +240,16 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
           <Button
             variant="contained"
             color="callToAction"
+            loading={inserting}
             onClick={() => {
+              setInserting(true);
               // Without a picture the table still goes in.
               const picture = supported.imageSvg
                 ? svgToPngDataUri(supported.imageSvg).catch(() => null)
                 : Promise.resolve(null);
-              void picture.then((imageSrc) => {
-                onInsert(documentContent(t, language, supported, rows, imageSrc));
-                onClose();
-              });
+              void picture
+                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, imageSrc)))
+                .finally(onClose);
             }}
           >
             {t("tinymce.bondStrengths.dialog.insert")}
