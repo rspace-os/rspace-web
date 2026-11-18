@@ -449,6 +449,8 @@ export default class FieldModel implements Field {
     }
     const params: Record<string, unknown> = pick(ret, keys as Array<keyof typeof ret>);
     if (this.fieldKey !== null) params.fieldKey = this.fieldKey;
+    // a field being deleted sends no rule, so the request never depends on rules of deleted fields
+    if (this.deleteFieldRequest) return params;
     // the API reads an absent rule as unchanged, so a cleared rule is sent as null
     if (this.displayRule !== null) params.displayRule = JSON.parse(serializeDisplayRule(this.displayRule));
     else if (this.loadedWithRule) params.displayRule = null;

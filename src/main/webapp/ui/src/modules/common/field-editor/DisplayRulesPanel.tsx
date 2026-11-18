@@ -32,6 +32,7 @@ import {
   type RuleChange,
   type RuleEditorField,
   ruleFromDraft,
+  sameRule,
   sanitiseDraft,
   sourceCandidates,
   targetCandidates,
@@ -279,9 +280,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
    * focus. Both are only changed in event handlers.
    */
   const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(new Map());
-  /** The row the author last changed, which keeps its identity when its rule merges with another. */
-  const [activeRowId, setActiveRowId] = useState<string | null>(null);
-  /** Rows in display order: the rules there at first render, then rows as handlers first see them. */
+  /** Rows in display order: the rules there at first render, then every row on screen when a handler runs. */
   const [rowOrder, setRowOrder] = useState<ReadonlyArray<string>>(() =>
     groupDisplayRules(fields).map(({ targetKeys }) => targetKeys[0]),
   );
@@ -289,9 +288,11 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
 
   // fields whose saved rule a draft is editing stay out of the groups, so the draft owns only them
   const shadowed = new Set(drafts.flatMap((draft) => draft.replaces));
-  const draftRows: Array<Row> = drafts.map((draft) => {
+  const draftRows: Array<Row> = drafts.flatMap((draft) => {
     const replaced = fields.filter((field) => draft.replaces.includes(field.key) && field.rule !== null);
     const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
+    // an edit whose fields have all been deleted, with nothing else to show, has nothing left to edit
+    if (draft.replaces.length > 0 && replaced.length === 0 && sanitised.targetKeys.length === 0) return [];
     return {
       id: draft.id,
       ...sanitised,
@@ -306,8 +307,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
   const usedIds = new Set(drafts.map((draft) => draft.id));
   const groupRows: Array<Row> = groupDisplayRules(fields.filter((field) => !shadowed.has(field.key))).map(
     ({ rule, targetKeys }) => {
-      const ids = targetKeys.map((key) => rowIdByTarget.get(key) ?? key);
-      const preferred = activeRowId !== null && ids.includes(activeRowId) ? activeRowId : ids[0];
+      const preferred = rowIdByTarget.get(targetKeys[0]) ?? targetKeys[0];
       const id = usedIds.has(preferred) ? `${preferred}/${targetKeys[0]}` : preferred;
       usedIds.add(id);
       return { id, condition: rule, targetKeys, stored: { rule, targetKeys }, isDraft: false, sourceDropped: false };
@@ -335,14 +335,14 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
       return draft ? [...others, draft] : others;
     });
 
-  const seeRow = (rowId: string) => {
-    setActiveRowId(rowId);
-    setRowOrder((current) => (current.includes(rowId) ? current : [...current, rowId]));
+  /** Fixes the place of every row on screen, so the first edit of one does not reorder the others. */
+  const seeRows = () => {
+    setRowOrder((current) => [...current, ...rows.map(({ id }) => id).filter((id) => !current.includes(id))]);
   };
 
   /** Applies the row's rule to its targets when it is complete and valid; keeps it as a draft otherwise. */
   const update = (row: Row, condition: DraftCondition, targetKeys: ReadonlyArray<string>) => {
-    seeRow(row.id);
+    seeRows();
     const rule = ruleFromDraft(condition);
     const storedKeys = row.stored?.targetKeys ?? [];
     if (rule !== null && targetKeys.length > 0) {
@@ -351,11 +351,21 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         ...targetKeys.map((key) => ({ key, rule })),
       ];
       if (!changesAreInvalid(fields, changes)) {
+        // every field the rule will be on, including those of a saved rule it merges with, now belongs to this row
+        const merged = fields
+          .filter(
+            (field) =>
+              !shadowed.has(field.key) &&
+              !storedKeys.includes(field.key) &&
+              field.rule !== null &&
+              sameRule(field.rule, rule),
+          )
+          .map((field) => field.key);
         setRowIdByTarget(
           (current) =>
             new Map([
               ...[...current].filter(([, id]) => id !== row.id),
-              ...targetKeys.map((key) => [key, row.id] as const),
+              ...[...merged, ...targetKeys].map((key) => [key, row.id] as const),
             ]),
         );
         replaceDraft(null, row.id);

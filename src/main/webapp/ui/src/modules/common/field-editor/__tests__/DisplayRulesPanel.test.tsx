@@ -243,6 +243,49 @@ describe("DisplayRulesPanel", () => {
     expect(screen.getByRole("combobox", { name: "Show these fields" })).toHaveFocus();
   });
 
+  it("keeps a merged card mounted and in place when another rule is edited afterwards", async () => {
+    const user = userEvent.setup();
+    const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
+    await renderPanel([gmo, { ...permit, rule: level.rule }, { ...level, rule: no }, notes]);
+
+    await user.click(screen.getByRole("button", { name: "Add rule" }));
+    const added = screen.getByRole("listitem", { name: /^New rule/ });
+    await user.click(within(added).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+    await user.click(within(added).getByRole("combobox", { name: "Show these fields" }));
+    await user.click(screen.getByRole("option", { name: "Notes" }));
+    await user.keyboard("{Escape}");
+    const merged = screen.getByRole("listitem", { name: "When Is this a GMO? is Yes" });
+    const position = screen.getAllByRole("listitem").indexOf(merged);
+
+    const other = screen.getByRole("listitem", { name: "When Is this a GMO? is No" });
+    await user.click(within(other).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+
+    expect(screen.getByRole("listitem", { name: "When Is this a GMO? is Yes" })).toBe(merged);
+    expect(screen.getAllByRole("listitem").indexOf(merged)).toBe(position);
+  });
+
+  it("does not move a rule above the others the first time it is edited", async () => {
+    const user = userEvent.setup();
+    const wrapper = await createRealI18nWrapper({ resources: { common }, defaultNS: "common" });
+    const panel = (fields: Array<RuleEditorField>) => (
+      <ThemeProvider theme={materialTheme}>
+        <DisplayRulesPanel fields={fields} editable onChange={vi.fn()} />
+      </ThemeProvider>
+    );
+    // the rules arrive after the panel first renders, so none has a remembered place yet
+    const { rerender } = render(panel([gmo, permit, { ...level, rule: null }]), { wrapper });
+    const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
+    rerender(panel([gmo, { ...permit, rule: level.rule }, { ...level, rule: no }]));
+
+    const second = screen.getByRole("listitem", { name: "When Is this a GMO? is No" });
+    await user.click(within(second).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+
+    expect(screen.getAllByRole("listitem")[1]).toBe(second);
+  });
+
   it("keeps a saved rule's card in place, with focus, when its first field is removed", async () => {
     const user = userEvent.setup();
     const yes = level.rule;

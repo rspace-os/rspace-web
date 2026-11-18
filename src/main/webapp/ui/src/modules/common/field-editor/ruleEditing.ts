@@ -43,13 +43,20 @@ export function usableOptions(options: ReadonlyArray<string>): Array<string> {
   return uniq(options.filter((option) => !isBlankOption(option)));
 }
 
+function ruleSignature(rule: FieldDisplayRule): string {
+  return JSON.stringify([rule.sourceFieldKey, rule.operator, [...rule.values].sort()]);
+}
+
+/** Whether two rules are the same condition, whatever the order of their options. */
+export function sameRule(a: FieldDisplayRule, b: FieldDisplayRule): boolean {
+  return ruleSignature(a) === ruleSignature(b);
+}
+
 export function groupDisplayRules(fields: ReadonlyArray<RuleEditorField>): Array<RuleGroup> {
   const withRules = fields.filter(
     (field): field is RuleEditorField & { rule: FieldDisplayRule } => field.rule !== null,
   );
-  const groups = groupBy(withRules, ({ rule }) =>
-    JSON.stringify([rule.sourceFieldKey, rule.operator, [...rule.values].sort()]),
-  );
+  const groups = groupBy(withRules, ({ rule }) => ruleSignature(rule));
   return Object.values(groups).map((members) => ({
     rule: members[0].rule,
     targetKeys: members.map((field) => field.key),

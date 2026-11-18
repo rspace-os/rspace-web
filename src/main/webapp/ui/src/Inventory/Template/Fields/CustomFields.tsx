@@ -54,7 +54,12 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
   const editable = activeResult.isFieldEditable("fields");
   return (
     <>
-      <TemplateDisplayRules fields={fields} editable={editable} />
+      {/* another template, or another edit, starts with no drafts left over */}
+      <TemplateDisplayRules
+        key={`${activeResult.globalId ?? "new"}:${String(editable)}`}
+        fields={fields}
+        editable={editable}
+      />
       {fields.length > 0 ? (
         <TemplateFields editable={editable} />
       ) : (
