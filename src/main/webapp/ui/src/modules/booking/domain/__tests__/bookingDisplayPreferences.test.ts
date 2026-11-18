@@ -15,6 +15,7 @@ const inherited = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
+  timeFormat: "AUTOMATIC" as const,
   institutionTimezone: "Europe/Berlin",
   overridden: false,
 };
@@ -63,13 +64,13 @@ describe("Booking display preferences", () => {
     await expect(fetchBookingDisplayPreferences()).rejects.toThrow();
   });
 
-  it("reads a missing time format as Automatic and rejects unknown ones", async () => {
+  it("reads the time format and rejects unknown ones", async () => {
     let document: object = inherited;
     server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
 
-    const withoutTimeFormat = await fetchBookingDisplayPreferences();
-    expect(withoutTimeFormat.timeFormat).toBe("AUTOMATIC");
-    expect(resolveBookingDisplayPreferences(withoutTimeFormat).timeFormat).toBe("AUTOMATIC");
+    const automatic = await fetchBookingDisplayPreferences();
+    expect(automatic.timeFormat).toBe("AUTOMATIC");
+    expect(resolveBookingDisplayPreferences(automatic).timeFormat).toBe("AUTOMATIC");
 
     document = { ...inherited, timeFormat: "H24" };
     expect(resolveBookingDisplayPreferences(await fetchBookingDisplayPreferences()).timeFormat).toBe("H24");
