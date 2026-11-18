@@ -51,6 +51,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 - Keep changes scoped; preserve unrelated work.
 - Read nested `AGENTS.md` files before editing.
 - Use `rg` and `rg --files` for searches.
+- Use explicit Java imports, including static imports. Avoid wildcard imports.
 - Only edit vendored code, minified files, build output, `target/`, `dist/`, or `node_modules/` when explicitly targeted.
 - Put plans and scratch notes in gitignored `.claude/`.
 - Add dependencies only when necessary.
