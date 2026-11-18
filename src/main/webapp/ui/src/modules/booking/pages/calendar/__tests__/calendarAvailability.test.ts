@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 import { loadCalendarAvailability } from "../calendarAvailability";
 
@@ -22,6 +23,8 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   purpose: `Purpose ${id}`,
   bookedBy: `User ${id}`,
   privacy: "full",
+  canViewConfiguration: true,
+  createdBy: null,
   canEdit: false,
   canCancel: false,
   createdAt: "2026-08-01T09:00:00Z",
@@ -60,6 +63,8 @@ const sourced = (
             privacy: "full",
             purpose: `Purpose ${id.replace("booking:", "")}`,
             bookedBy: `User ${id.replace("booking:", "")}`,
+            canViewConfiguration: true,
+            createdBy: null,
           },
         }
       : {}),
@@ -122,7 +127,7 @@ describe("calendar availability", () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("where")).toContain("target=in=(IN1,IN2)");
-    expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
+    expect(requests[0].searchParams.get("fields[bookings]")).toBe(apiV2Fields(BOOKING_READ_FIELDS));
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
     ]);

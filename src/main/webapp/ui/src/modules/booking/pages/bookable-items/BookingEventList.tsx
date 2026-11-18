@@ -9,7 +9,7 @@ import { TableList } from "@/modules/common/table-list/TableList";
 import { Button } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { type BookingEventPeriod, bookableItemEventsQuery, fetchBookableItemEvents } from "./bookableItemEvents";
+import { type BookingEventPeriod, bookableItemEventsQueryKey, fetchBookableItemEvents } from "./bookableItemEvents";
 
 export type BookingEventListProps = {
   globalId: string;
@@ -123,7 +123,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       } satisfies CollectionConfig<Booking>),
     [formatter, period, t],
   );
-  const queryPrefix = bookableItemEventsQuery({ globalId, period, cutoff, page: 0, limit: 1, totals: true }).queryKey;
+  const queryPrefix = bookableItemEventsQueryKey({ globalId, period, cutoff, page: 0, limit: 1, totals: true });
   // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
   const totals = useQuery({
     queryKey: [...queryPrefix, "bookableItemEventTotals"],
@@ -149,8 +149,13 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
     dataSource: {
       type: "remote",
       queryKey: (state) => [
-        ...bookableItemEventsQuery({ globalId, period, cutoff, page: state.page.pageIndex, limit: state.page.pageSize })
-          .queryKey,
+        ...bookableItemEventsQueryKey({
+          globalId,
+          period,
+          cutoff,
+          page: state.page.pageIndex,
+          limit: state.page.pageSize,
+        }),
         "bookableItemEventList",
       ],
       fetch: async (state, { signal }) => {

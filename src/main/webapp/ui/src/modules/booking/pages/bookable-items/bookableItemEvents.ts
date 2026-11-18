@@ -1,7 +1,7 @@
-import { BOOKING_READ_FIELDS, mapBooking } from "@/modules/booking/domain/booking";
-import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
+import { BOOKING_READ_FIELDS, mapSelectedBookings } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
-import { getListBookingsQueryOptions, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { getListBookingsQueryKey, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 export type BookingEventPeriod = "upcoming" | "past";
 
@@ -29,15 +29,11 @@ function parameters(input: BookableItemEventsInput) {
     page: input.page + 1,
     limit: input.limit,
     depth: 1,
-    fields: { bookings: BOOKING_READ_FIELDS },
+    fields: { bookings: apiV2Fields(BOOKING_READ_FIELDS) },
   };
 }
 function mapEvents(result: ListBookings200, input: BookableItemEventsInput) {
-  const mapped = {
-    ...result,
-    docs: result.docs.map(mapBooking),
-    hasNextPage: required(result.hasNextPage, "hasNextPage"),
-  };
+  const mapped = { ...result, docs: mapSelectedBookings(result.docs) };
   if (mapped.docs.some((booking) => booking.target.globalId !== input.globalId)) {
     throw new Error(`Booking response contained an event for another target`);
   }
@@ -48,8 +44,7 @@ export type BookableItemEvents = ReturnType<typeof mapEvents>;
 export async function fetchBookableItemEvents(input: BookableItemEventsInput): Promise<BookableItemEvents> {
   return mapEvents(await listBookings(parameters(input), { signal: input.signal }), input);
 }
-export function bookableItemEventsQuery(input: BookableItemEventsInput) {
-  return getListBookingsQueryOptions<BookableItemEvents>(parameters(input), {
-    query: { select: (result) => mapEvents(result, input), retry: false },
-  });
+/** The list-bookings key of an events read, so cache entries share the generated prefix. */
+export function bookableItemEventsQueryKey(input: BookableItemEventsInput) {
+  return getListBookingsQueryKey(parameters(input));
 }

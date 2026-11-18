@@ -6,8 +6,9 @@ import {
   closedIntervals,
   type SourcedAvailabilityInterval,
 } from "@/modules/booking/domain/availability";
-import { BOOKING_READ_FIELDS, type Booking, mapBooking } from "@/modules/booking/domain/booking";
+import { BOOKING_READ_FIELDS, type Booking, mapSelectedBookings } from "@/modules/booking/domain/booking";
 import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { getListBookingsQueryKey, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
@@ -36,7 +37,7 @@ function parameters(rows: readonly CalendarAvailabilityRow[], envelope: { start:
     limit: 100,
     totals: true,
     depth: 1,
-    fields: { bookings: BOOKING_READ_FIELDS, instruments: "id,globalId,name,deleted" },
+    fields: { bookings: apiV2Fields(BOOKING_READ_FIELDS), instruments: "id,globalId,name,deleted" },
   };
 }
 async function fetchPage(
@@ -48,7 +49,7 @@ async function fetchPage(
   const result = await listBookings(parameters(rows, envelope, page), { signal });
   return {
     ...result,
-    docs: result.docs.map(mapBooking),
+    docs: mapSelectedBookings(result.docs),
     totalDocs: required(result.totalDocs, "totalDocs"),
     totalPages: Math.ceil(required(result.totalDocs, "totalDocs") / result.limit),
   };

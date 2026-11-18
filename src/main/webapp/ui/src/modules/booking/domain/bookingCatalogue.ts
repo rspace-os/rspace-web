@@ -8,52 +8,32 @@ import {
 import type { BookingCatalogueItemDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueItemDocument";
 import type { BookingCataloguePageDocument } from "@/modules/common/api/v2/generated/models/bookingCataloguePageDocument";
 import type { SearchBookingCatalogueParams } from "@/modules/common/api/v2/generated/models/searchBookingCatalogueParams";
-import { requireBookingValue as required } from "./bookingMapping";
 
 export function mapBookingCatalogueItem(input: BookingCatalogueItemDocument) {
   const policy = v.parse(SchedulingSettingsSchema, input);
   if (input.targetType !== "INSTRUMENT") throw new Error("Unsupported booking target type");
-  const capabilities = required(input.capabilities, "capabilities");
   return {
-    configurationId: required(input.configurationId, "configurationId"),
-    configurationVersion: required(input.configurationVersion, "configurationVersion"),
+    configurationId: input.configurationId,
+    configurationVersion: input.configurationVersion,
     targetType: "INSTRUMENT" as const,
-    targetId: required(input.targetId, "targetId"),
-    globalId: required(input.globalId, "globalId"),
-    name: required(input.name, "name"),
-    timezone: required(input.timezone, "timezone"),
-    effectiveRole: input.effectiveRole ?? null,
-    capabilities: {
-      canEditConfiguration: mapCapability(capabilities.canEditConfiguration),
-      canViewAudit: mapCapability(capabilities.canViewAudit),
-      canViewAccess: mapCapability(capabilities.canViewAccess),
-      canManageAssignments: mapCapability(capabilities.canManageAssignments),
-      canManageOwners: mapCapability(capabilities.canManageOwners),
-      canCreateBooking: mapCapability(capabilities.canCreateBooking),
-      canManageOwnBookings: mapCapability(capabilities.canManageOwnBookings),
-      canManageAllEvents: mapCapability(capabilities.canManageAllEvents),
-      canCreateBlockout: mapCapability(capabilities.canCreateBlockout),
-      canSubscribeCalendar: mapCapability(capabilities.canSubscribeCalendar),
-      canLeaveConfiguration: mapCapability(capabilities.canLeaveConfiguration),
-    },
-    location:
-      input.location == null
-        ? null
-        : {
-            globalId: required(input.location.globalId, "location.globalId"),
-            name: required(input.location.name, "location.name"),
-          },
+    targetId: input.targetId,
+    globalId: input.globalId,
+    name: input.name,
+    timezone: input.timezone,
+    effectiveRole: input.effectiveRole,
+    capabilities: input.capabilities,
+    location: input.location,
     ...policy,
   };
 }
 export type BookingCatalogueItem = ReturnType<typeof mapBookingCatalogueItem>;
 export function mapBookingCataloguePage(input: BookingCataloguePageDocument) {
   return {
-    items: required(input.items, "items").map(mapBookingCatalogueItem),
-    page: required(input.page, "page"),
-    pageSize: required(input.pageSize, "pageSize"),
-    total: required(input.total, "total"),
-    facets: { types: required(input.facets?.types, "facets.types") },
+    items: input.items.map(mapBookingCatalogueItem),
+    page: input.page,
+    pageSize: input.pageSize,
+    total: input.total,
+    facets: { types: input.facets.types },
   };
 }
 export type BookingCataloguePage = ReturnType<typeof mapBookingCataloguePage>;
@@ -120,10 +100,4 @@ export async function fetchBookingCatalogueLocations(
   signal?: AbortSignal,
 ) {
   return searchBookingCatalogueLocations(parameters(search), { signal });
-}
-
-function mapCapability(value: unknown, fallback?: boolean): boolean {
-  if (value === undefined && fallback !== undefined) return fallback;
-  if (typeof value !== "boolean") throw new Error("Invalid booking capability");
-  return value;
 }

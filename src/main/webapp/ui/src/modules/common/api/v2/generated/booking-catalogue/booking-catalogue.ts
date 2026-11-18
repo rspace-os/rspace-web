@@ -340,8 +340,8 @@ export const getSearchCalendarCatalogueUrl = (params: SearchCalendarCataloguePar
 export const searchCalendarCatalogue = async (
   params: SearchCalendarCatalogueParams,
   options?: Parameters<typeof apiV2Fetch>[1],
-): Promise<BookingCatalogueManagerPage> => {
-  return apiV2Fetch<BookingCatalogueManagerPage>(getSearchCalendarCatalogueUrl(params), {
+): Promise<BookingCataloguePageDocument> => {
+  return apiV2Fetch<BookingCataloguePageDocument>(getSearchCalendarCatalogueUrl(params), {
     operationId: "searchCalendarCatalogue",
     ...options,
     method: "GET",

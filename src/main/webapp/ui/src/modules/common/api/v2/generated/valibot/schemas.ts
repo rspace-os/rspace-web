@@ -12,7 +12,6 @@ export const ApiV2CurrentUserCapabilitiesSchema = native.ApiV2CurrentUserCapabil
 export const ApiV2CurrentUserLiveChatSchema = native.ApiV2CurrentUserLiveChat;
 export const ApiV2CurrentUserOrcidSchema = native.ApiV2CurrentUserOrcid;
 export const ApiV2CurrentUserSessionSchema = native.ApiV2CurrentUserSession;
-export const ApiV2ListResultMapStringObjectSchema = native.ApiV2ListResultMapStringObject;
 export const ApiV2ProblemSchema = native.ApiV2Problem;
 export const ApiV2ProblemInvalidParamSchema = native.ApiV2ProblemInvalidParam;
 export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
@@ -21,6 +20,7 @@ export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCata
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
 export const BookingAdminSettingsDocumentSchema = native.BookingAdminSettingsDocument;
+export const BookingCalendarEventsPageSchema = native.BookingCalendarEventsPage;
 export const BookingCatalogueCapabilitySchema = native.BookingCatalogueCapability;
 export const BookingCatalogueFacetsSchema = native.BookingCatalogueFacets;
 export const BookingCatalogueItemDocumentSchema = native.BookingCatalogueItemDocument;
@@ -125,10 +125,6 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof ApiV2CurrentUserSessionSchema>, Models.ApiV2CurrentUserSession>>,
     Assert<Extends<Models.ApiV2CurrentUserSession, v.InferOutput<typeof ApiV2CurrentUserSessionSchema>>>,
   ];
-  ApiV2ListResultMapStringObject: [
-    Assert<Extends<v.InferOutput<typeof ApiV2ListResultMapStringObjectSchema>, Models.ApiV2ListResultMapStringObject>>,
-    Assert<Extends<Models.ApiV2ListResultMapStringObject, v.InferOutput<typeof ApiV2ListResultMapStringObjectSchema>>>,
-  ];
   ApiV2Problem: [
     Assert<Extends<v.InferOutput<typeof ApiV2ProblemSchema>, Models.ApiV2Problem>>,
     Assert<Extends<Models.ApiV2Problem, v.InferOutput<typeof ApiV2ProblemSchema>>>,
@@ -160,6 +156,10 @@ export type SchemaModelTypeChecks = {
   BookingAdminSettingsDocument: [
     Assert<Extends<v.InferOutput<typeof BookingAdminSettingsDocumentSchema>, Models.BookingAdminSettingsDocument>>,
     Assert<Extends<Models.BookingAdminSettingsDocument, v.InferOutput<typeof BookingAdminSettingsDocumentSchema>>>,
+  ];
+  BookingCalendarEventsPage: [
+    Assert<Extends<v.InferOutput<typeof BookingCalendarEventsPageSchema>, Models.BookingCalendarEventsPage>>,
+    Assert<Extends<Models.BookingCalendarEventsPage, v.InferOutput<typeof BookingCalendarEventsPageSchema>>>,
   ];
   BookingCatalogueCapability: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueCapabilitySchema>, Models.BookingCatalogueCapability>>,

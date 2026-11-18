@@ -1547,38 +1547,6 @@
         "required" : [ "canChangeFeatureFlagBaselines", "canOverrideFeatureFlags", "canUseDevtools", "lastSession", "operatedAs" ],
         "type" : "object"
       },
-      "ApiV2ListResultMapStringObject" : {
-        "properties" : {
-          "docs" : {
-            "items" : {
-              "additionalProperties" : { },
-              "type" : "object"
-            },
-            "type" : "array"
-          },
-          "hasNextPage" : {
-            "type" : "boolean"
-          },
-          "limit" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "page" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "totalDocs" : {
-            "description" : "Present only when totals=true.",
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "totalIsLowerBound" : {
-            "description" : "True when the requested total exceeds max.",
-            "type" : "boolean"
-          }
-        },
-        "type" : "object"
-      },
       "ApiV2Problem" : {
         "additionalProperties" : true,
         "properties" : {
@@ -1768,6 +1736,40 @@
           }
         },
         "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "configurationVersion" ],
+        "type" : "object"
+      },
+      "BookingCalendarEventsPage" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "additionalProperties" : { },
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/BookingsRead"
+              } ],
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "hasNextPage" : {
+            "type" : "boolean"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalDocs" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalIsLowerBound" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "docs", "page", "limit", "hasNextPage", "totalDocs", "totalIsLowerBound" ],
         "type" : "object"
       },
       "BookingCatalogueCapability" : {
@@ -5529,7 +5531,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApiV2ListResultMapStringObject"
+                  "$ref" : "#/components/schemas/BookingCalendarEventsPage"
                 }
               }
             },
@@ -5735,7 +5737,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingCatalogueManagerPage"
+                  "$ref" : "#/components/schemas/BookingCataloguePageDocument"
                 }
               }
             },

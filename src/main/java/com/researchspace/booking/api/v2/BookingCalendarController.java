@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.extensions.Extension;
 import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
@@ -61,6 +63,30 @@ import org.springframework.web.bind.annotation.RestController;
     extensions =
         @Extension(properties = @ExtensionProperty(name = "x-tag-group", value = "Booking")))
 public class BookingCalendarController {
+
+  /**
+   * A page of calendar events. The total is always counted, so {@code totalDocs} is always present.
+   */
+  @Schema(name = "BookingCalendarEventsPage")
+  public record CalendarEventsPage(
+      @ArraySchema(schema = @Schema(ref = "#/components/schemas/BookingsRead"))
+          List<Map<String, Object>> docs,
+      int page,
+      int limit,
+      boolean hasNextPage,
+      long totalDocs,
+      boolean totalIsLowerBound) {
+    static CalendarEventsPage of(ApiV2ListResult<Map<String, Object>> result) {
+      return new CalendarEventsPage(
+          result.docs(),
+          result.page(),
+          result.limit(),
+          result.hasNextPage(),
+          result.totalDocs(),
+          Boolean.TRUE.equals(result.totalIsLowerBound()));
+    }
+  }
+
   private final BookingCatalogueManager catalogue;
   private final BookingCalendarSearchManager calendar;
   private final ApiV2ResourceCatalog resources;
@@ -143,7 +169,7 @@ public class BookingCalendarController {
         @ApiResponse(responseCode = "429"),
         @ApiResponse(responseCode = "500")
       })
-  public ApiV2ListResult<Map<String, Object>> events(
+  public CalendarEventsPage events(
       @Parameter(description = "Inclusive interval start.") @RequestParam Instant start,
       @Parameter(description = "Exclusive interval end.") @RequestParam Instant end,
       @Parameter(
@@ -210,7 +236,8 @@ public class BookingCalendarController {
                       default -> Optional.empty();
                     });
     registration.decorateRuntimeValues(request, caller.subject(), result.resources(), documents);
-    return ApiV2ListResult.counted(documents, result.total(), page, limit, true, null);
+    return CalendarEventsPage.of(
+        ApiV2ListResult.counted(documents, result.total(), page, limit, true, null));
   }
 
   private ResourceRequest filtered(

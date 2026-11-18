@@ -18,6 +18,8 @@ export const booking = {
   canCancel: true,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
+  canViewConfiguration: true,
+  createdBy: null,
 };
 
 export const busyBooking = {

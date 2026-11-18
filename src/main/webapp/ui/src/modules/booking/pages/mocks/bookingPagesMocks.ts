@@ -9,10 +9,11 @@ import {
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { busyBooking, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
-export const availabilityBookingFields = BOOKING_READ_FIELDS;
-export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;
+export const availabilityBookingFields = apiV2Fields(BOOKING_READ_FIELDS);
+export const calendarBookingFields = apiV2Fields(CALENDAR_BOOKING_FIELDS);
 
 export const bookingPageRequests: {
   collectionQueries: string[];
@@ -110,6 +111,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         canCancel: true,
         createdAt: "2026-08-17T08:00:00Z",
         updatedAt: "2026-08-17T08:00:00Z",
+        canViewConfiguration: true,
       });
     }),
   ];

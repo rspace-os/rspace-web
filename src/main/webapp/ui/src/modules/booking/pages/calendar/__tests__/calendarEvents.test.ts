@@ -4,6 +4,7 @@ import { HttpResponse, http } from "msw";
 import { createElement, type PropsWithChildren } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
@@ -46,7 +47,7 @@ describe("calendar events", () => {
       "start=lt=2026-08-23T22:00:00Z;end=gt=2026-08-16T22:00:00Z;state==CONFIRMED",
     );
     const selectedFields = requests[0].searchParams.get("fields[bookings]");
-    expect(selectedFields).toBe(CALENDAR_BOOKING_FIELDS);
+    expect(selectedFields).toBe(apiV2Fields(CALENDAR_BOOKING_FIELDS));
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");
   });
 
@@ -145,5 +146,11 @@ describe("calendar events", () => {
         client.clear();
       }
     },
+  );
+});
+
+it("requests the calendar booking fields in a fixed order", () => {
+  expect(apiV2Fields(CALENDAR_BOOKING_FIELDS)).toBe(
+    "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
 });

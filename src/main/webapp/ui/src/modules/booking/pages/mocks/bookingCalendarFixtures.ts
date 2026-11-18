@@ -24,6 +24,7 @@ const timestamps = {
   createdAt: "2026-08-01T09:00:00Z",
   updatedAt: "2026-08-01T09:00:00Z",
   canCancel: false,
+  createdBy: null,
 };
 
 export const ownBooking: BookingListDocument = {

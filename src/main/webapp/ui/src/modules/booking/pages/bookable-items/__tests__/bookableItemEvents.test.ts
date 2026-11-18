@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { fetchBookableItemEvents } from "../bookableItemEvents";
 import { bookableItemEventResponse, booking } from "./bookableItemEventFixtures";
 
@@ -34,7 +35,7 @@ describe("bookable item events", () => {
     expect(url.searchParams.get("page")).toBe("3");
     expect(url.searchParams.get("limit")).toBe("10");
     expect(url.searchParams.get("depth")).toBe("1");
-    expect(url.searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
+    expect(url.searchParams.get("fields[bookings]")).toBe(apiV2Fields(BOOKING_READ_FIELDS));
   });
 
   it("accepts server-shaped full and busy documents", async () => {

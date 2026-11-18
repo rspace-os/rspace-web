@@ -6640,7 +6640,7 @@ export default interface Resources {
             "rateLimitWait": "Wait before another request is allowed, in milliseconds. Without a suffix, the longest wait across all intervals; with an interval suffix, the wait before that interval allows another request."
           },
           "info": {
-            "description": "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",
+            "description": "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.",
             "title": "RSpace REST API v2"
           },
           "operations": {
@@ -6702,7 +6702,7 @@ export default interface Resources {
           "parameters": {
             "depth": "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
             "exclude": "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[{0}]=id,name.",
-            "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name.",
+            "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name. A requested field is omitted when the caller is not allowed to read it.",
             "genericFieldset": "Comma-separated nested field paths by resource type, using square-bracket keys such as {0}[resource]=id,name.",
             "id": "Resource identifier.",
             "idempotencyKey": "Creator-scoped request identity, retained for the resource lifetime.",

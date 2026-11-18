@@ -2,13 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 import { type BookingListDocument, mapBookingListDocument } from "@/modules/booking/domain/booking";
 import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { getListBookingsQueryKey, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 import { isNonEmpty } from "@/util/ArrayUtils";
 
-export const CALENDAR_BOOKING_FIELDS =
-  "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+export const CALENDAR_BOOKING_FIELDS = [
+  "id",
+  "version",
+  "target",
+  "requester",
+  "canViewConfiguration",
+  "timezone",
+  "start",
+  "end",
+  "state",
+  "kind",
+  "purpose",
+  "bookedBy",
+  "createdBy",
+  "privacy",
+  "canEdit",
+  "canCancel",
+  "createdAt",
+  "updatedAt",
+] as const;
 
 function calendarEventsWhere(
   start: string,
@@ -40,7 +59,7 @@ async function fetchPage(
       totals: true,
       depth: 2,
       fields: {
-        bookings: CALENDAR_BOOKING_FIELDS,
+        bookings: apiV2Fields(CALENDAR_BOOKING_FIELDS),
         instruments: "id,globalId,name,deleted,parentContainer",
         containers: "id,globalId,name",
       },
@@ -50,7 +69,10 @@ async function fetchPage(
   if (result.totalIsLowerBound) throw new Error("Booking calendar requires an exact total");
   return {
     ...result,
-    docs: result.docs.map(mapBookingListDocument),
+    docs: result.docs.map((document) => {
+      assertApiV2Selected("bookings", document, CALENDAR_BOOKING_FIELDS);
+      return mapBookingListDocument(document);
+    }),
     totalDocs: required(result.totalDocs, "totalDocs"),
     totalPages: Math.ceil(required(result.totalDocs, "totalDocs") / result.limit),
   };

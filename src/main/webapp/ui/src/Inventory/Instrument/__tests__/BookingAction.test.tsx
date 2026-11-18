@@ -82,6 +82,11 @@ function configuration({
       canSubscribeCalendar: false,
       canLeaveConfiguration: false,
     },
+    createdAt: null,
+    createdByName: null,
+    updatedAt: null,
+    effectiveRole: null,
+    roleSources: [],
   };
 }
 
