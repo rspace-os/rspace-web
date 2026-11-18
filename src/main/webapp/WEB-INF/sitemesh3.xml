@@ -7,10 +7,10 @@
       and have been dropped; use a path-based exclude instead where needed.
       Also note the matched path is the ORIGINAL request path. SiteMesh runs on the incoming
       request and on ERROR dispatches, not on the rewrite filter's forward to /app/* (see
-      web.xml). On an ERROR dispatch that carries forward attributes it reads
-      jakarta.servlet.forward.servlet_path (the pre-forward URL), NOT the error target. So write
-      excludes against the incoming URL (e.g. /gallery), not the JSP the request is ultimately
-      forwarded to (e.g. /eln/gallery.jsp).
+      web.xml). So write excludes against the incoming URL (e.g. /gallery), not the JSP the
+      request is ultimately forwarded to (e.g. /eln/gallery.jsp). The exception is container
+      error pages: they are matched by the error page's path (e.g. /404.jsp, /error.jsp), not by
+      the URL that failed (see ErrorPageSiteMeshFilter).
       Decorator names are resolved relative to SiteMesh's default decorator prefix
       (/WEB-INF/decorators/), so they are given as bare file names here. Do NOT prefix them
       with /WEB-INF/decorators/ — that gets prepended again, producing a // empty segment
@@ -25,11 +25,9 @@
     <include-error-pages>true</include-error-pages>
 
     <!-- Paths that must never be decorated (evaluated before the decorator mappings below). -->
-    <!-- 500/405 error-page target: keep undecorated, matching main (whose error.jsp has no
-         page:applyDecorator). On prod Tomcat this exclude fires because the ERROR dispatch has no
-         forward attributes, so SiteMesh matches /error.jsp; on local dev Jetty the ERROR dispatch
-         carries the original URL, so the exclude is bypassed and the 500 page appears decorated in
-         dev only. 403.jsp/404.jsp are intentionally NOT excluded so they get decorated. -->
+    <!-- 405/500 error page: keep it bare, as under SiteMesh 2 (error.jsp is a standalone page
+         and the decorator should not run while the app is failing). 403.jsp/404.jsp are
+         intentionally NOT excluded so they get decorated, whatever URL failed. -->
     <mapping path="/error.jsp" exclude="true"/>
     <mapping path="*/ajax/*" exclude="true"/>
     <mapping path="/scripts/**" exclude="true"/>

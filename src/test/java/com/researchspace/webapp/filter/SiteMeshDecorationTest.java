@@ -23,6 +23,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.mock.web.MockFilterConfig;
@@ -35,8 +37,9 @@ import org.w3c.dom.NodeList;
 
 /**
  * Runs the real SiteMesh filter and {@code sitemesh3.xml} the way the container does: a REQUEST
- * pass on the incoming URL, then the rewrite filter's FORWARD to {@code /app/...}. The filter only
- * runs on the dispatcher types {@code web.xml} maps it to.
+ * pass on the incoming URL, then the rewrite filter's FORWARD to {@code /app/...}, or an ERROR
+ * dispatch to a container error page. The filter only runs on the dispatcher types {@code web.xml}
+ * maps it to.
  */
 class SiteMeshDecorationTest {
 
@@ -44,13 +47,13 @@ class SiteMeshDecorationTest {
   private static final String BODY = "1.129.0";
 
   private MockServletContext servletContext;
-  private FullPathSiteMeshFilter filter;
+  private ErrorPageSiteMeshFilter filter;
   private Set<DispatcherType> mappedDispatchers;
 
   @BeforeEach
   void setUp() throws Exception {
     servletContext = new MockServletContext(WEBAPP.toString(), new FileSystemResourceLoader());
-    filter = new FullPathSiteMeshFilter();
+    filter = new ErrorPageSiteMeshFilter();
     filter.init(new MockFilterConfig(servletContext, "sitemesh"));
     mappedDispatchers = sitemeshDispatchersFromWebXml();
   }
@@ -88,18 +91,35 @@ class SiteMeshDecorationTest {
     assertEquals("/WEB-INF/decorators/externalPages.jsp", decoratorUsed(response));
   }
 
-  @Test
-  void containerErrorPageIsDecorated() throws Exception {
-    MockHttpServletResponse response = serve404ErrorPage(null, null);
+  /*
+   * Tomcat's error dispatch carries forward attributes from the failed request; Jetty's carries
+   * none. Either way the decision must follow the error page, as it did under SiteMesh 2.
+   */
+  @ParameterizedTest
+  @CsvSource({
+    "/workspace/ajax/search,",
+    "/workspace/ajax/search, /workspace",
+    "/gallery/missing,",
+    "/gallery/missing, /gallery"
+  })
+  void notFoundPageIsDecoratedEvenForAnExcludedUrl(String failedUri, String forwardServletPath)
+      throws Exception {
+    MockHttpServletResponse response =
+        serveErrorPage(404, "/404.jsp", failedUri, forwardServletPath);
 
     assertEquals("/WEB-INF/decorators/default.jsp", decoratorUsed(response));
   }
 
-  @Test
-  void containerErrorPageForAjaxRequestUnderMultipartMappedPrefixIsNotDecorated() throws Exception {
-    MockHttpServletResponse response = serve404ErrorPage("/workspace/ajax/search", "/workspace");
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = "/workspace")
+  void serverErrorPageIsNotDecorated(String forwardServletPath) throws Exception {
+    MockHttpServletResponse response =
+        serveErrorPage(
+            500, "/error.jsp", "/workspace/editor/structuredDocument/1", forwardServletPath);
 
     assertNull(decoratorUsed(response));
+    assertEquals(BODY, response.getContentAsString());
   }
 
   @Test
@@ -136,18 +156,24 @@ class SiteMeshDecorationTest {
   }
 
   /**
-   * ERROR-dispatches the 404 page. Non-null arguments set the forward attributes the container adds
-   * for the original request.
+   * ERROR-dispatches the error page at {@code location} after {@code failedUri} failed. A non-null
+   * {@code forwardServletPath} adds forward attributes the way Tomcat sets them for a URL under
+   * that multipart-mapped servlet; null leaves them out, as Jetty does.
    */
-  private MockHttpServletResponse serve404ErrorPage(String originalUri, String originalServletPath)
-      throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", "/404.jsp");
-    request.setServletPath("/404.jsp");
+  private MockHttpServletResponse serveErrorPage(
+      int status, String location, String failedUri, String forwardServletPath) throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest(servletContext, "GET", location);
+    request.setServletPath(location);
     request.setDispatcherType(DispatcherType.ERROR);
-    request.setAttribute("jakarta.servlet.forward.request_uri", originalUri);
-    request.setAttribute("jakarta.servlet.forward.servlet_path", originalServletPath);
+    request.setAttribute("jakarta.servlet.error.request_uri", failedUri);
+    if (forwardServletPath != null) {
+      request.setAttribute("jakarta.servlet.forward.request_uri", failedUri);
+      request.setAttribute("jakarta.servlet.forward.servlet_path", forwardServletPath);
+      request.setAttribute(
+          "jakarta.servlet.forward.path_info", failedUri.substring(forwardServletPath.length()));
+    }
     MockHttpServletResponse response = new MockHttpServletResponse();
-    response.setStatus(404);
+    response.setStatus(status);
 
     dispatch(DispatcherType.ERROR, request, response, htmlController());
     return response;
