@@ -888,6 +888,18 @@ paths:
           If the original form was NEW state then the form IDs will remain the same.
 
         If the form editing fails, then the original form will remain unchanged.
+
+
+        If the form has a draft that was saved in the form editor but not yet
+        Updated, the request replaces that draft: fields that exist only in the
+        draft are deleted unless the request lists them, the draft's changes to
+        the fields the request lists are overwritten, and the result is published
+        as the new version.
+
+
+        Radio and Choice options that the request adds or changes must not be
+        blank or contain '=' or '&'. Options that a saved field already has are
+        accepted unchanged.
       tags:
         - Forms
       parameters:
@@ -3888,8 +3900,10 @@ components:
         field whose source is hidden is hidden too. Hiding is a presentation choice
         only: a hidden field keeps its value, which the API still returns, and a
         mandatory field is only required while it is shown. The API reports each
-        field's rule but does not compute visibility.
+        field's rule but does not compute visibility. A rule with any other
+        property, or with values that are not strings, is rejected.
       nullable: true
+      additionalProperties: false
       required:
         - sourceFieldKey
         - operator
@@ -4367,7 +4381,7 @@ components:
             applied; a rule whose source is missing, is not a Radio or Choice field, or
             names an option that the source does not offer, or rules that depend on each
             other in a loop, reject the whole request. Radio and Choice options that a
-            request adds or changes must not contain '=' or '&'.
+            request adds or changes must not be blank or contain '=' or '&'.
           allOf:
             - $ref: "#/components/schemas/FieldDisplayRule"
     Form:

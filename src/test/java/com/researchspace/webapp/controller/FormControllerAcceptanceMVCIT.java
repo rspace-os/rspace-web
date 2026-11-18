@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -501,7 +502,8 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
     formController.editForm(model, mockPrincipal, docToShare.getForm().getId());
     RSForm form = getFormFromModel();
-    AjaxReturnObject<Long> fid = formController.updateForm(form.getId(), mockPrincipal);
+    // the Basic Document form is a system form, so Update makes no new version
+    assertNull(formController.updateForm(form.getId(), mockPrincipal).getData());
 
     InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     byte[] rawBytes = IOUtils.toByteArray(is);
@@ -510,7 +512,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     MockMultipartFile mf =
         new MockMultipartFile("file", "Picture1.png", "multipart/form-data", rawBytes);
 
-    AjaxReturnObject<Long> savedIcon = formController.saveImage(mf, fid.getData(), mockPrincipal);
+    AjaxReturnObject<Long> savedIcon = formController.saveImage(mf, form.getId(), mockPrincipal);
     assertNotNull(savedIcon.getData());
     MockHttpServletResponse response = new MockHttpServletResponse();
     imageCtrller.getIconImage(savedIcon.getData(), response); // if failed throw out

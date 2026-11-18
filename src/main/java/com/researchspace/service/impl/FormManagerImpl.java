@@ -30,6 +30,7 @@ import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormDefinitionCommand;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.FormVersionUpdateException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
@@ -543,14 +544,11 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     // a new form's fields are all new, whatever ids a client sends
     List<FormFieldSaveItem> fields = new ArrayList<>();
     for (FormFieldSaveItem field : definition.fields()) {
-      fields.add(
-          new FormFieldSaveItem(
-              null,
-              field.getType(),
-              field.getFieldKey(),
-              field.getDisplayRule(),
-              field.getSource(),
-              false));
+      if (field == null) {
+        fields.add(null); // reported by the field list check
+        continue;
+      }
+      fields.add(field.withId(null));
     }
     return doSaveFields(form, fields, user, false);
   }
@@ -573,7 +571,13 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     editing.setTags(definition.tags());
     editing = formDao.save(editing);
     if (!original.isNewState()) {
-      editing = updateVersion(editing.getId(), user);
+      Long draftId = editing.getId();
+      editing = updateVersion(draftId, user);
+      if (editing == null) {
+        // unchecked, so the draft changes saved above roll back with the rest
+        throw new FormVersionUpdateException(
+            messages.getMessage("form.errors.versionNotUpdated", new Object[] {formId}));
+      }
     }
     return editing;
   }
@@ -595,11 +599,19 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
         editingIdByOriginalId.put(field.getId(), field.getId());
       } else if (field.getTempFieldForm() instanceof FieldForm draftField
           && !draftField.isDeleted()) {
+        if (draftField.getId() == null) {
+          throw new IllegalStateException(
+              "Draft copy of form field " + field.getId() + " has not been saved");
+        }
         editingIdByOriginalId.put(field.getId(), draftField.getId());
       }
     }
     List<Long> requestedIds =
-        fields.stream().map(FormFieldSaveItem::getId).filter(Objects::nonNull).toList();
+        fields.stream()
+            .filter(Objects::nonNull)
+            .map(FormFieldSaveItem::getId)
+            .filter(Objects::nonNull)
+            .toList();
     if (!editingIdByOriginalId.keySet().containsAll(requestedIds)) {
       throw new IllegalArgumentException(
           messages.getMessage(
@@ -614,19 +626,16 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     Set<Long> seen = new HashSet<>();
     List<FormFieldSaveItem> mapped = new ArrayList<>();
     for (FormFieldSaveItem field : fields) {
+      if (field == null) {
+        mapped.add(null); // reported by the field list check
+        continue;
+      }
       Long id = field.getId();
       if (id != null && !seen.add(id)) {
         throw new IllegalArgumentException(
             messages.getMessage("form.errors.fieldIdDuplicate", new Object[] {id}));
       }
-      mapped.add(
-          new FormFieldSaveItem(
-              id == null ? null : editingIdByOriginalId.get(id),
-              field.getType(),
-              field.getFieldKey(),
-              field.getDisplayRule(),
-              field.getSource(),
-              field.isKeepStoredDisplayRule()));
+      mapped.add(field.withId(id == null ? null : editingIdByOriginalId.get(id)));
     }
     return mapped;
   }

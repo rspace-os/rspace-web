@@ -18,6 +18,7 @@ import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplat
 import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.FormVersionUpdateException;
 import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
@@ -285,6 +286,20 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
             message,
             message);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 422; the form and any draft are unchanged, as the edit rolled back
+  @ExceptionHandler({FormVersionUpdateException.class})
+  public ResponseEntity<Object> handleFormVersionUpdate(
+      final FormVersionUpdateException ex, final WebRequest request) {
+    logException(ex);
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            ex.getMessage(),
+            ex.getMessage());
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 

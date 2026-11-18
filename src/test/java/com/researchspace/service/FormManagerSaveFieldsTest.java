@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.AttachmentFieldPost;
+import com.researchspace.api.v1.controller.FormTemplatesCommon.ChoiceFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.NumberFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.RadioFieldPost;
@@ -296,6 +297,60 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
     assertThrows(
         FormFieldsValidationException.class,
         () -> formMgr.saveFields(form.getId(), List.of(current(form).get(0), newRadio), user));
+  }
+
+  @Test
+  public void apiOptionsAreCheckedOneByOneAndUnchangedStoredOptionsAreExempt() {
+    for (List<String> options :
+        List.of(List.of("A&fieldChoices=B"), List.of("A&"), List.of("A", " "), List.of("a=b"))) {
+      RadioFieldPost radio = apiField(new RadioFieldPost(), "radio");
+      radio.setOptions(options);
+      ChoiceFieldPost choice = apiField(new ChoiceFieldPost(), "choice");
+      choice.setOptions(options);
+      for (FormFieldPost<?> field : List.<FormFieldPost<?>>of(radio, choice)) {
+        FormFieldsValidationException e =
+            assertThrows(
+                FormFieldsValidationException.class,
+                () -> formMgr.createForm(definition(field), user));
+        assertThat(e.getErrors())
+            .anySatisfy(msg -> assertThat(msg).contains("blank or contains '&' or '='"));
+      }
+    }
+
+    RSForm form = formMgr.createForm(definition(radioPost("radio", null)), user);
+    RadioFieldForm stored = (RadioFieldForm) activeFields(form).get(0);
+    // a blank option, stored unchecked, as the forms API allowed
+    stored.setRadioOption("fieldChoices=Yes&fieldChoices= ");
+    RadioFieldPost unchanged = apiField(new RadioFieldPost(), "renamed");
+    unchanged.setId(stored.getId());
+    unchanged.setOptions(List.of("Yes", " "));
+    RSForm edited =
+        formMgr.editForm(form.getId(), definition(unchanged), user, anySessionTracker());
+    assertEquals("renamed", activeFields(edited).get(0).getName());
+
+    unchanged.setOptions(List.of("Yes", " ", "No"));
+    assertThrows(
+        FormFieldsValidationException.class,
+        () -> formMgr.editForm(form.getId(), definition(unchanged), user, anySessionTracker()));
+  }
+
+  @Test
+  public void emptyEntriesInTheFieldListAreFieldErrors() {
+    RSForm form = formWith(string("one"));
+    List<FormFieldSaveItem> withEmptyEntry = new ArrayList<>(current(form));
+    withEmptyEntry.add(null);
+
+    FormFieldsValidationException e =
+        assertThrows(
+            FormFieldsValidationException.class,
+            () -> formMgr.saveFields(form.getId(), withEmptyEntry, user));
+    assertThat(e.getErrors()).containsExactly("Field #2 in the list is empty");
+    List<FormFieldSaveItem> apiFields = new ArrayList<>();
+    apiFields.add(null);
+    FormDefinitionCommand apiDefinition =
+        new FormDefinitionCommand("api form", null, FormType.NORMAL, apiFields);
+    assertThrows(
+        FormFieldsValidationException.class, () -> formMgr.createForm(apiDefinition, user));
   }
 
   @Test

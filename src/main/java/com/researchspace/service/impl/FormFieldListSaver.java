@@ -68,6 +68,7 @@ public class FormFieldListSaver {
       FieldForm field,
       boolean isNew,
       String optionsBefore,
+      List<String> optionListBefore,
       JsonNode settingsBefore,
       Long modifiedBefore) {}
 
@@ -97,6 +98,10 @@ public class FormFieldListSaver {
 
     for (int i = 0; i < items.size(); i++) {
       FormFieldSaveItem item = items.get(i);
+      if (item == null) {
+        errors.add(messages.getMessage("form.errors.fieldMissing", args("#" + (i + 1))));
+        continue;
+      }
       String label = label(item, i);
       FieldType type =
           item.getType() == null ? null : FieldType.getFieldTypeForString(item.getType());
@@ -139,7 +144,7 @@ public class FormFieldListSaver {
       if (!(item.isKeepStoredDisplayRule() && !plan.isNew())) {
         applyRule(item, plan.field(), label, errors);
       }
-      checkOptions(plan, label, errors);
+      checkOptions(plan, source, label, errors);
       planned.add(plan);
     }
 
@@ -197,6 +202,7 @@ public class FormFieldListSaver {
             field,
             false,
             optionsOf(field),
+            ElnFieldRules.allowedOptions(field),
             settingsFingerprint(field),
             field.getModificationDate());
     copySettings(source, field);
@@ -216,11 +222,15 @@ public class FormFieldListSaver {
       return null;
     }
     field.setFieldKey(key);
-    return new PlannedField(field, true, null, null, null);
+    return new PlannedField(field, true, null, null, null, null);
   }
 
   private void applyRule(
       FormFieldSaveItem item, FieldForm field, String label, List<String> errors) {
+    if (item.isDisplayRuleUnreadable()) {
+      errors.add(messages.getMessage("form.errors.fieldRuleInvalid", args(label)));
+      return;
+    }
     if (item.getDisplayRule() == null) {
       field.setDisplayRule(null);
       return;
@@ -229,21 +239,36 @@ public class FormFieldListSaver {
       FieldDisplayRule rule = item.getDisplayRule().toRule();
       field.setDisplayRule(rule.toJson());
     } catch (IllegalArgumentException e) {
-      log.warn("Rejected display rule on form field {}: {}", label, e.getMessage());
+      log.debug("Rejected display rule on form field {}: {}", label, e.getMessage());
       errors.add(messages.getMessage("form.errors.fieldRuleInvalid", args(label)));
     }
   }
 
   /**
    * Options stored through the forms API were never checked, so the option format and length checks
-   * apply only to options that are new or changed in this save.
+   * apply only to options that are new or changed in this save. Options submitted one by one (the
+   * forms API) are checked one by one, before joining could hide a '&amp;' or '=' inside an option;
+   * they count as unchanged when they equal the options the field offered before.
    */
-  private void checkOptions(PlannedField plan, String label, List<String> errors) {
+  private void checkOptions(
+      PlannedField plan,
+      FormFieldSource<? extends FieldForm> source,
+      String label,
+      List<String> errors) {
     if (!(plan.field() instanceof RadioFieldForm || plan.field() instanceof ChoiceFieldForm)) {
       return;
     }
     String options = optionsOf(plan.field());
-    if (!plan.isNew() && Objects.equals(plan.optionsBefore(), options)) {
+    List<String> submitted = source.submittedOptions();
+    if (submitted != null) {
+      if (!plan.isNew() && submitted.equals(plan.optionListBefore())) {
+        return;
+      }
+      if (submitted.stream().anyMatch(FormFieldListSaver::isInvalidOption)) {
+        errors.add(messages.getMessage("form.errors.fieldOptionInvalid", args(label)));
+        return;
+      }
+    } else if (!plan.isNew() && Objects.equals(plan.optionsBefore(), options)) {
       return;
     }
     if (FieldUtils.isTooLong(options)) {
@@ -334,6 +359,10 @@ public class FormFieldListSaver {
     node.put("fieldKey", field.getFieldKey());
     node.put("displayRule", field.getDisplayRule());
     return node;
+  }
+
+  private static boolean isInvalidOption(String option) {
+    return StringUtils.isBlank(option) || option.contains("&") || option.contains("=");
   }
 
   private static String optionsOf(FieldForm field) {

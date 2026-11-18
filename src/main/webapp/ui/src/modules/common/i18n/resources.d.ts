@@ -12446,8 +12446,10 @@ export default interface Resources {
         "fieldInvalid": "Field [{0}]: {1}",
         "fieldKeyImmutable": "The field key of field [{0}] cannot be changed",
         "fieldKeyInUse": "Field [{0}] has a field key that another field of this form already uses",
+        "fieldMissing": "Field {0} in the list is empty",
         "fieldNotDeletable": "Field [{0}] is part of the published form and cannot be deleted from this draft",
-        "fieldRuleInvalid": "The display rule on field [{0}] is incomplete or uses an unknown operator",
+        "fieldOptionInvalid": "Field [{0}] has an option that is blank or contains ''&'' or ''=''",
+        "fieldRuleInvalid": "The display rule on field [{0}] is malformed, incomplete or uses an unknown operator",
         "fieldSettingsMissing": "The settings of field [{0}] are missing or do not match its type",
         "fieldTypeImmutable": "Field [{0}] is a {1} field, and a saved field cannot change its type to {2}",
         "fieldTypeUnknown": "Field [{0}] has an unknown type [{1}]",
@@ -12459,7 +12461,8 @@ export default interface Resources {
         "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
         "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
         "systemFormUnpublish": "Attempted to unpublish a system form",
-        "unknownFieldType": "Unknown field type [{0}]"
+        "unknownFieldType": "Unknown field type [{0}]",
+        "versionNotUpdated": "Form [{0}] could not be made a new version"
       },
       "experiment": {
         "conclusionFieldName": "Conclusion",

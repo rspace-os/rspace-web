@@ -396,14 +396,18 @@ public class RSFormController extends BaseController {
 
     User u = userManager.getUserByUsername(user.getName());
     RSForm updated = formManager.updateVersion(formId, u);
+    if (updated == null) {
+      // nothing was written (for example, a system form, or an id that is not a draft); the
+      // editor keeps its lock and reports the failure
+      ErrorList errors = new ErrorList();
+      errors.addErrorMsg(getText("form.errors.versionNotUpdated", new Object[] {formId}));
+      return new AjaxReturnObject<>(null, errors);
+    }
     // The version is committed. Release the edit lock, which is held on whichever id the editor
-    // opened: the original on a first edit, the draft when editing resumed. A failed Update
-    // throws or returns null, and keeps the lock.
-    if (updated != null) {
-      formManager.unlockForm(formId, u);
-      if (updated.getPreviousVersion() != null) {
-        formManager.unlockForm(updated.getPreviousVersion().getId(), u);
-      }
+    // opened: the original on a first edit, the draft when editing resumed.
+    formManager.unlockForm(formId, u);
+    if (updated.getPreviousVersion() != null) {
+      formManager.unlockForm(updated.getPreviousVersion().getId(), u);
     }
     return new AjaxReturnObject<Long>(formId, null);
   }

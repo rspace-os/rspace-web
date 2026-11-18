@@ -48,13 +48,35 @@ public class FormFieldSaveItem {
    */
   @JsonIgnore private boolean keepStoredDisplayRule;
 
+  /**
+   * Whether the JSON carried a display rule that is not a valid rule, so the save reports it as a
+   * field error rather than failing the whole request. Never read from JSON.
+   */
+  @JsonIgnore private boolean displayRuleUnreadable;
+
   public FormFieldSaveItem(
       Long id,
       String type,
       String fieldKey,
       FieldDisplayRuleDTO displayRule,
       FormFieldSource<? extends FieldForm> source) {
-    this(id, type, fieldKey, displayRule, source, false);
+    this(id, type, fieldKey, displayRule, source, false, false);
+  }
+
+  public FormFieldSaveItem(
+      Long id,
+      String type,
+      String fieldKey,
+      FieldDisplayRuleDTO displayRule,
+      FormFieldSource<? extends FieldForm> source,
+      boolean keepStoredDisplayRule) {
+    this(id, type, fieldKey, displayRule, source, keepStoredDisplayRule, false);
+  }
+
+  /** A copy of this item with another id, for example its draft field's id. */
+  public FormFieldSaveItem withId(Long newId) {
+    return new FormFieldSaveItem(
+        newId, type, fieldKey, displayRule, source, keepStoredDisplayRule, displayRuleUnreadable);
   }
 
   /** Reads {@code source} as the legacy DTO class that {@code type} names. */
@@ -74,7 +96,11 @@ public class FormFieldSaveItem {
       item.setType(textOrNull(node, "type"));
       item.setFieldKey(textOrNull(node, "fieldKey"));
       if (node.hasNonNull("displayRule")) {
-        item.setDisplayRule(codec.treeToValue(node.get("displayRule"), FieldDisplayRuleDTO.class));
+        try {
+          item.setDisplayRule(FieldDisplayRuleDTO.parse(node.get("displayRule")));
+        } catch (IllegalArgumentException e) {
+          item.setDisplayRuleUnreadable(true);
+        }
       }
       Class<? extends AbstractFormFieldDTO<?>> sourceClass =
           LegacyFormFieldDTOs.dtoClassFor(item.getType());

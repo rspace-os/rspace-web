@@ -108,6 +108,63 @@ public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void apiEditThatCannotMakeANewVersionLeavesTheSavedDraftAndEditLockAsTheyWere()
+      throws Exception {
+    RSForm form = publishedForm();
+    Long formId = form.getId();
+    List<FieldForm> originals = activeFields(form);
+    String gmoKey = originals.get(0).getFieldKey();
+    // the user has saved, but not Updated, a draft with a field that only the draft has
+    RSForm draft = formMgr.getForEditing(formId, user, anySessionTracker());
+    List<FieldForm> draftFields = activeFields(draft);
+    formMgr.saveFields(
+        draft.getId(),
+        List.of(
+            new FormFieldSaveItem(draftFields.get(0).getId(), "Radio", null, null, radio("GMO?")),
+            new FormFieldSaveItem(
+                draftFields.get(1).getId(),
+                "String",
+                null,
+                showWhen(gmoKey, "Yes"),
+                string("Permit")),
+            new FormFieldSaveItem(null, "String", null, null, string("draft only"))),
+        user);
+    // versioning refuses system forms
+    doInTransaction(() -> formMgr.get(formId, user).setSystemForm(true));
+    try {
+      RadioFieldPost gmo = radioPost("GMO renamed");
+      gmo.setId(originals.get(0).getId());
+      StringFieldPost permit = stringPost("Permit renamed");
+      permit.setId(originals.get(1).getId());
+
+      assertThrows(
+          FormVersionUpdateException.class,
+          () -> formMgr.editForm(formId, definition(gmo, permit), user, anySessionTracker()));
+
+      doInTransaction(
+          () -> {
+            RSForm reloaded = formMgr.get(formId, user);
+            assertTrue(reloaded.isCurrent());
+            assertThat(activeFields(reloaded))
+                .extracting(FieldForm::getName)
+                .containsExactly("GMO?", "Permit");
+            RSForm reloadedDraft = reloaded.getTempForm();
+            assertEquals(draft.getId(), reloadedDraft.getId());
+            assertThat(activeFields(reloadedDraft))
+                .extracting(FieldForm::getName)
+                .containsExactly("GMO?", "Permit", "draft only");
+            assertThat(activeFields(reloadedDraft))
+                .extracting(FieldForm::getDisplayRule)
+                .containsExactly(null, rule(gmoKey, "Yes"), null);
+          });
+      assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    } finally {
+      doInTransaction(() -> formMgr.get(formId, user).setSystemForm(false));
+      formMgr.unlockForm(formId, user);
+    }
+  }
+
+  @Test
   public void rejectedApiEditOfAFormWithoutDraftCreatesNoDraft() throws Exception {
     RSForm form = publishedForm();
     List<FieldForm> originals = activeFields(form);
