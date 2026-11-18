@@ -83,6 +83,8 @@ src/main/webapp/ui/coverage
 .worktrees/
 # Firecrawl scrape cache (research artifacts, same status as /.claude/ notes)
 /.firecrawl/
+# CodeGraph index (database, daemon pid, sockets, logs; local to each machine)
+.codegraph/
 
 .pnpm-store
 # Playwright outputs (repo root; written by the component-test runner)
