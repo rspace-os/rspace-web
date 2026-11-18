@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Download PR WAR (untrusted)
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: zap-pr-war
           run-id: ${{ github.event.workflow_run.id }}
@@ -73,7 +73,7 @@ jobs:
 
       # Take the baseline from the default branch because it is loaded as the database root user.
       - name: Checkout baseline schema (default branch)
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           path: rspace-web
           sparse-checkout: src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql
@@ -81,7 +81,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout rspace-pentest (pinned SHA)
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           repository: ResearchSpace-ELN/rspace-pentest
           ref: ${{ env.PENTEST_REF }}
