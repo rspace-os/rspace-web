@@ -7,7 +7,22 @@ import PreviewInfo, {
   STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE,
 } from "@/tinyMCE/PreviewInfo";
 
-const previewInfoRoots = new WeakMap<Element, Root>();
+const previewInfoRoots = new Map<Element, Root>();
+
+/*
+ * The editor's view-mode scripts replace or remove a field's HTML with jQuery,
+ * which detaches the nodes that previews were rendered into without unmounting
+ * them. Unmount each preview once its node has left the page, so its tree
+ * stops running on detached DOM.
+ */
+new MutationObserver(() => {
+  previewInfoRoots.forEach((root, container) => {
+    if (!container.isConnected) {
+      root.unmount();
+      previewInfoRoots.delete(container);
+    }
+  });
+}).observe(document.documentElement, { childList: true, subtree: true });
 
 function getPreviewInfoRoot(container: Element): Root {
   const existingRoot = previewInfoRoots.get(container);
