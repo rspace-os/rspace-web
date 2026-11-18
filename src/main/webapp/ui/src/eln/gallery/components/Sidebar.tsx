@@ -454,11 +454,13 @@ const Sidebar = ({
           />
           {/* Keep other menu items visible while DMP translations load. */}
           <Suspense fallback={null}>
-            <DmpImportMenuSection
-              onSelect={(target) => {
-                setDmpImportTarget(target);
-              }}
-            />
+            {newMenuAnchorEl && (
+              <DmpImportMenuSection
+                onSelect={(target) => {
+                  setDmpImportTarget(target);
+                }}
+              />
+            )}
           </Suspense>
         </SidebarCreateMenu>
         {/* Render dialogs outside the menu so closing the menu does not unmount them. */}
