@@ -58,6 +58,7 @@ export function bookingCataloguePage(
         canManageOwnBookings: true,
         canManageAllEvents: true,
         canCreateBlockout: true,
+        canManageNotificationSubscription: true,
         canSubscribeCalendar: true,
         canLeaveConfiguration: false,
       },

@@ -79,6 +79,7 @@ it("restores archived targets in one bounded target=in request", async () => {
       return HttpResponse.json({
         page: 1,
         limit: 2,
+        hasNextPage: false,
         docs: [
           {
             id: 42,
