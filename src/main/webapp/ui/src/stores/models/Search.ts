@@ -28,6 +28,7 @@ import type { Sample } from "../definitions/Sample";
 import type {
   AllowedTypeFilters,
   CacheFetcher as CacheFetcherInterface,
+  ChemicalFilter,
   CoreFetcherArgs,
   CoreFetcher as CoreFetcherInterface,
   DeletedItems,
@@ -35,6 +36,7 @@ import type {
   ExportOptions,
   ResultType,
   Search as SearchInterface,
+  SearchModule,
   SearchView,
   UiConfig,
 } from "../definitions/Search";
@@ -112,18 +114,25 @@ type SearchArgs = {
   factory: Factory;
 };
 
+/*
+ * Search modules enabled unless a search is configured otherwise. CHEMISTRY
+ * (structure search) is deliberately not here: only the main Inventory search
+ * opts into it (see SearchStore).
+ */
+export const DEFAULT_SEARCH_MODULES: ReadonlyArray<SearchModule> = [
+  "BENCHES",
+  "TYPE",
+  "STATUS",
+  "OWNER",
+  "SCAN",
+  "TAG",
+  "SAVEDSEARCHES",
+  "SAVEDBASKETS",
+  "BOOKABLE",
+];
+
 const DEFAULT_UI_CONFIG: UiConfig = {
-  allowedSearchModules: new Set([
-    "BENCHES",
-    "TYPE",
-    "STATUS",
-    "OWNER",
-    "SCAN",
-    "TAG",
-    "SAVEDSEARCHES",
-    "SAVEDBASKETS",
-    "BOOKABLE",
-  ]),
+  allowedSearchModules: new Set(DEFAULT_SEARCH_MODULES),
   allowedTypeFilters: new Set([
     "ALL",
     "CONTAINER",
@@ -217,6 +226,8 @@ export default class Search implements SearchInterface {
 
   canEditActiveResult: boolean;
   uiConfig: UiConfig;
+  /* Indexes of the adjustable columns the user has picked in this session. */
+  userChosenAdjustableColumns: Array<number> = [];
   factory: Factory;
 
   constructor({ fetcherParams, treeArgs, uiConfig, callbacks, factory }: SearchArgs) {
@@ -230,6 +241,8 @@ export default class Search implements SearchInterface {
       staticFetcher: observable,
       cacheFetcher: observable,
       alwaysFilterOut: observable,
+      userChosenAdjustableColumns: observable,
+      displayedAdjustableColumns: computed,
       canEditActiveResult: observable,
       uiConfig: observable,
       overrideSearchOnFilter: observable,
@@ -273,6 +286,8 @@ export default class Search implements SearchInterface {
       showTypeFilter: computed,
       showStatusFilter: computed,
       showBookableFilter: computed,
+      showChemicalFilter: computed,
+      chemicalFilterConflict: computed,
       showOwnershipFilter: computed,
       showBarcodeScan: computed,
       showTagsFilter: computed,
@@ -1362,6 +1377,16 @@ export default class Search implements SearchInterface {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("BOOKABLE"));
   }
 
+  get showChemicalFilter(): boolean {
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("CHEMISTRY"));
+  }
+
+  get chemicalFilterConflict(): boolean {
+    // a bench scope is not a conflict: applying a structure clears it (see setChemicalFilter)
+    const scopedToNonBench = Boolean(this.fetcher.parentGlobalId) && !this.fetcher.parentIsBench;
+    return scopedToNonBench || this.fetcher.requestable !== null;
+  }
+
   get showOwnershipFilter(): boolean {
     return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("OWNER"));
   }
@@ -1392,6 +1417,16 @@ export default class Search implements SearchInterface {
 
   setAdjustableColumn(value: AdjustableTableRowLabel, index: number) {
     this.uiConfig.adjustableColumns[index] = value;
+    if (!this.userChosenAdjustableColumns.includes(index)) this.userChosenAdjustableColumns.push(index);
+  }
+
+  get displayedAdjustableColumns(): Array<AdjustableTableRowLabel> {
+    const columns = [...this.uiConfig.adjustableColumns];
+    // structure hits on subsamples and containers should show where they are stored
+    if (this.fetcher.chemQuery && columns.length > 2 && !this.userChosenAdjustableColumns.includes(2)) {
+      columns[2] = "currentLocation";
+    }
+    return columns;
   }
 
   resetColumnLabelSettingsIfUnknown(): void {
@@ -1480,6 +1515,21 @@ export default class Search implements SearchInterface {
     this.dynamicFetcher.setBookable(bookable);
     this.cacheFetcher.setBookable(bookable);
     if (bookable !== null) this.setRequestable(null, false);
+    if (doSearch) this.performSearch();
+  }
+
+  /*
+   * A structure filter cannot be combined with a parent scope or Requestable.
+   * Applying one clears a bench scope, so that structure search works from
+   * Inventory's default "My Bench" view; a bench is cheap to pick again. Other
+   * conflicts disable the controls instead (see chemicalFilterConflict), and
+   * nothing ever clears the structure itself, which is costly to redraw.
+   */
+  setChemicalFilter(filter: ChemicalFilter | null, doSearch: boolean = true) {
+    if (filter && this.fetcher.parentIsBench) this.setBench(null, false);
+    this.staticFetcher.setChemicalFilter(filter);
+    this.dynamicFetcher.setChemicalFilter(filter);
+    this.cacheFetcher.setChemicalFilter(filter);
     if (doSearch) this.performSearch();
   }
 

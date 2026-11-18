@@ -6,6 +6,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.InventorySearchConfig.InventorySearchType;
 import com.axiope.search.SearchManager;
 import com.researchspace.api.v1.InventorySearchApi;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.model.PaginationCriteria;
@@ -15,6 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.service.inventory.InventoryStructureSearchManager;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +30,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
     implements InventorySearchApi {
 
   @Autowired private SearchManager searchManager;
+  @Autowired private InventoryStructureSearchManager structureSearchManager;
 
   @Override
   public ApiInventorySearchResult searchInventoryRecords(
@@ -65,6 +68,11 @@ public class InventorySearchApiController extends BaseApiInventoryController
       apiPgCrit = new InventoryApiPaginationCriteria();
     }
 
+    if (srchConfig != null && StringUtils.isNotBlank(srchConfig.getChemQuery())) {
+      return runStructureSearch(
+          srchConfig, apiPgCrit, searchQuery, searchType, deletedItemsOption, user);
+    }
+
     /* there are some cases where we know immediately there won't be any results */
     if (!isValidSearchConfig(parentOid, searchType)) {
       return ApiInventorySearchResult.emptyResult();
@@ -92,6 +100,37 @@ public class InventorySearchApiController extends BaseApiInventoryController
     }
 
     /* process the results */
+    setLinksInApiInventoryRecordList(apiSearchResult.getRecords());
+    apiSearchResult.addNavigationLinks(getInventoryApiBaseURIBuilder(), apiPgCrit, srchConfig);
+    return apiSearchResult;
+  }
+
+  private ApiInventorySearchResult runStructureSearch(
+      InventoryApiSearchConfig srchConfig,
+      InventoryApiPaginationCriteria apiPgCrit,
+      String searchQuery,
+      InventorySearchType searchType,
+      InventorySearchDeletedOption deletedItemsOption,
+      User user) {
+    // scoped structure search (container, bench, basket) and requestable samples are out of scope
+    if (srchConfig.getParentGlobalId() != null || srchConfig.getRequestable() != null) {
+      throw new ApiRuntimeException("errors.inventory.search.chemistry.incompatibleFilter");
+    }
+    if (!structureSearchManager.isStructureSearchAvailable(user)) {
+      throw new ApiRuntimeException("errors.inventory.search.chemistry.unavailable");
+    }
+
+    ApiInventorySearchResult apiSearchResult =
+        structureSearchManager.searchByStructure(
+            srchConfig.getChemQuery(),
+            srchConfig.getChemSearchTypeOrDefault(),
+            searchQuery,
+            searchType,
+            srchConfig.getOwnedBy(),
+            deletedItemsOption,
+            srchConfig.getBookable(),
+            getPaginationCriteriaForApiSearch(apiPgCrit, InventoryRecord.class),
+            user);
     setLinksInApiInventoryRecordList(apiSearchResult.getRecords());
     apiSearchResult.addNavigationLinks(getInventoryApiBaseURIBuilder(), apiPgCrit, srchConfig);
     return apiSearchResult;

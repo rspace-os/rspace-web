@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 
 public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
@@ -282,6 +283,66 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiInventorySearchResult matchingSearchResults =
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertEquals(1, matchingSearchResults.getTotalHits().intValue());
+  }
+
+  @Test
+  public void structureSearchErrors() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(anyUser);
+
+    // scoped structure search is not supported
+    assertStructureSearchRejected(
+        apiKey,
+        anyUser,
+        "parentGlobalId",
+        sample.getGlobalId(),
+        status().isUnprocessableEntity(),
+        "Structure search can't be combined with a parentGlobalId");
+    assertStructureSearchRejected(
+        apiKey,
+        anyUser,
+        "requestable",
+        "true",
+        status().isUnprocessableEntity(),
+        "Structure search can't be combined with");
+    assertStructureSearchRejected(
+        apiKey,
+        anyUser,
+        "chemSearchType",
+        "SIMILARITY",
+        status().isBadRequest(),
+        "Requested chemSearchType must be one of: EXACT or SUBSTRUCTURE");
+
+    // the test deployment has no chemistry provider, so structure search is unavailable
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/search", anyUser)
+                    .param("chemQuery", "c1ccccc1"))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertThat(result.getResponse().getContentAsString())
+        .contains("Structure search is not available");
+  }
+
+  private void assertStructureSearchRejected(
+      String apiKey,
+      User user,
+      String param,
+      String value,
+      ResultMatcher expectedStatus,
+      String expectedMessage)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/search", user)
+                    .param("chemQuery", "c1ccccc1")
+                    .param(param, value))
+            .andExpect(expectedStatus)
+            .andReturn();
+    assertThat(result.getResponse().getContentAsString()).contains(expectedMessage);
   }
 
   @Test

@@ -1,10 +1,19 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { InventoryStructureSearchDialog } from "@/modules/chemistry/__tests__/pageObjects/InventoryStructureSearchDialog";
 import { BasketsMenuComponent } from "./BasketsMenuComponent";
 import { openDialog } from "./DialogHelpers";
 import { InventoryBatchActionBar } from "./InventoryBatchActionBar";
 import { SearchableResultsTable } from "./SearchableResultsTable";
 
-export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Tags" | "Baskets" | "Requestable";
+export type InventoryFilterChip =
+  | "Type"
+  | "Owner"
+  | "Bench"
+  | "Status"
+  | "Chemical"
+  | "Tags"
+  | "Baskets"
+  | "Requestable";
 
 export type InventoryViewMode = "List" | "Tree" | "Card" | "Grid";
 
@@ -67,6 +76,20 @@ export class InventorySearchPanel {
 
   async openBasketsMenu(): Promise<BasketsMenuComponent> {
     return openDialog(() => this.filterChip("Baskets").click(), new BasketsMenuComponent(this.page));
+  }
+
+  async openChemicalSearch(): Promise<InventoryStructureSearchDialog> {
+    return openDialog(() => this.filterChip("Chemical").click(), new InventoryStructureSearchDialog(this.page));
+  }
+
+  /** The chip showing the active structure filter; clicking it reopens the structure editor. */
+  chemicalFilterChip(): Locator {
+    return this.root.getByRole("button", { name: /^Edit chemical structure filter/ });
+  }
+
+  /** Reopens the structure editor from the active structure filter's chip, with the structure loaded. */
+  async editChemicalFilter(): Promise<InventoryStructureSearchDialog> {
+    return openDialog(() => this.chemicalFilterChip().click(), new InventoryStructureSearchDialog(this.page));
   }
 
   async ensureVisible(): Promise<void> {

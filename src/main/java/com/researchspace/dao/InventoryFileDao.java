@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import java.util.Collection;
 import java.util.List;
 
 /** For DAO operations on Inventory File. */
@@ -28,4 +29,20 @@ public interface InventoryFileDao extends GenericDao<InventoryFile, Long> {
    * @param mediaFileId the db id of the Gallery {@code EcatMediaFile}
    */
   List<InventoryAttachmentField> findAttachmentFieldsByMediaFileId(Long mediaFileId);
+
+  /**
+   * Batched form of {@link #findByMediaFileId}: all live attachments of any of the given Gallery
+   * media files.
+   *
+   * @param mediaFileIds db ids of Gallery {@code EcatMediaFile}s
+   */
+  List<InventoryFile> findByMediaFileIds(Collection<Long> mediaFileIds);
+
+  /**
+   * Batched form of {@link #findAttachmentFieldsByMediaFileId}: live attachment fields holding a
+   * live attachment of any of the given Gallery media files.
+   *
+   * @param mediaFileIds db ids of Gallery {@code EcatMediaFile}s
+   */
+  List<InventoryAttachmentField> findAttachmentFieldsByMediaFileIds(Collection<Long> mediaFileIds);
 }

@@ -544,16 +544,10 @@
         "preview": "Preview"
       },
       "dialogTitle": "Chemical Search",
-      "drawInstruction": "Draw a single molecule below to search",
       "errorFetching": "Error fetching search results: {message}",
       "ketcherTitle": "Chemistry Search",
       "loading": "Loading...",
-      "noResults": "No Search Results",
-      "searchType": "Search Type",
-      "searchTypeExact": "Exact",
-      "searchTypeSubstructure": "Substructure",
-      "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
-      "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+      "noResults": "No Search Results"
     },
     "compareDialog": {
       "columnHeaders": {

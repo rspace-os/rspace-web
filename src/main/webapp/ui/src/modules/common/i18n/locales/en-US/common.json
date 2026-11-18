@@ -455,6 +455,14 @@
       "title": "Discard changes?"
     },
     "insertChemicalTitle": "Ketcher Insert Chemical",
+    "structureSearch": {
+      "drawInstruction": "Draw a single molecule below to search",
+      "searchType": "Search Type",
+      "searchTypeExact": "Exact",
+      "searchTypeSubstructure": "Substructure",
+      "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
+      "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+    },
     "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
   },
   "loading": "Loading",

@@ -75,14 +75,14 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
             <AdjustableHeadCell
               options={search.adjustableColumnOptions}
               onChange={handleAdjustableColumnChange(0)}
-              current={search.uiConfig.adjustableColumns[0]}
+              current={search.displayedAdjustableColumns[0]}
               sortableProperties={sortProperties}
             />
             {cols > 3 && (
               <AdjustableHeadCell
                 options={search.adjustableColumnOptions}
                 onChange={handleAdjustableColumnChange(1)}
-                current={search.uiConfig.adjustableColumns[1]}
+                current={search.displayedAdjustableColumns[1]}
                 sortableProperties={sortProperties}
               />
             )}
@@ -90,7 +90,7 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
               <AdjustableHeadCell
                 options={search.adjustableColumnOptions}
                 onChange={handleAdjustableColumnChange(2)}
-                current={search.uiConfig.adjustableColumns[2]}
+                current={search.displayedAdjustableColumns[2]}
                 sortableProperties={sortProperties}
               />
             )}

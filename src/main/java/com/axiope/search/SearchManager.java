@@ -11,6 +11,7 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import java.io.IOException;
+import java.util.List;
 
 /** Top-level search interface */
 public interface SearchManager {
@@ -70,6 +71,37 @@ public interface SearchManager {
         searchQuery, searchType, parentOid, ownedBy, deletedItemsOption, null, pgCrit, user);
   }
 
+  default ApiInventorySearchResult searchInventoryWithSimpleQuery(
+      String searchQuery,
+      InventorySearchType searchType,
+      GlobalIdentifier parentOid,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean bookable,
+      PaginationCriteria<InventoryRecord> pgCrit,
+      User user) {
+    return searchInventoryWithSimpleQuery(
+        searchQuery,
+        searchType,
+        parentOid,
+        ownedBy,
+        deletedItemsOption,
+        bookable,
+        null,
+        pgCrit,
+        user);
+  }
+
+  /**
+   * As {@link #searchInventoryWithSimpleQuery(String, InventorySearchType, GlobalIdentifier,
+   * String, InventorySearchDeletedOption, PaginationCriteria, User)}, additionally filtering by
+   * Booking availability and by an explicit set of records.
+   *
+   * @param bookable (optional) keep only bookable ({@code true}) or non-bookable ({@code false})
+   *     records
+   * @param limitResultsToGlobalIds (optional) keep only records with these global ids. Applied to
+   *     the Lucene hits, so records outside Lucene's result limit are not returned even if listed.
+   */
   ApiInventorySearchResult searchInventoryWithSimpleQuery(
       String searchQuery,
       InventorySearchType searchType,
@@ -77,6 +109,7 @@ public interface SearchManager {
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       Boolean bookable,
+      List<String> limitResultsToGlobalIds,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user);
 }

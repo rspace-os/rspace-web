@@ -11,13 +11,18 @@ type DropdownButtonArgs = {
   onClick: (event: React.MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   title?: string;
+  /**
+   * Why the button is disabled, shown as its tooltip while disabled. Unlike
+   * `title`, it does not replace the button's accessible name.
+   */
+  disabledReason?: string;
   sx?: SxProps;
 };
 
-const DropdownButton = ({ name, children, onClick, disabled, title, sx }: DropdownButtonArgs) => (
+const DropdownButton = ({ name, children, onClick, disabled, title, disabledReason, sx }: DropdownButtonArgs) => (
   <Box>
     {/** biome-ignore lint/a11y/useValidAriaValues: initial biome migration */}
-    <CustomTooltip title={title ?? ""} aria-label="">
+    <CustomTooltip title={(disabled && disabledReason) || title || ""} aria-label="">
       <Button
         endIcon={<KeyboardArrowDownIcon />}
         size="small"

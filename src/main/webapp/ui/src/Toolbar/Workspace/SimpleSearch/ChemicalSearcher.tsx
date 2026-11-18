@@ -6,19 +6,18 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormLabel from "@mui/material/FormLabel";
 import Link from "@mui/material/Link";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import { IsInvalid, IsValid } from "../../../components/ValidatingSubmitButton";
+import {
+  StructureSearchTypeControl,
+  useSingleMoleculeValidation,
+} from "../../../components/Ketcher/StructureSearchControls";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import type { ChemSearchType } from "../../../stores/definitions/Search";
 import { DataGridColumn } from "../../../util/table";
 
 const KetcherDialog = React.lazy(() => import("../../../components/Ketcher/KetcherDialog"));
@@ -35,7 +34,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
   const [totalItems, setTotalItems] = useState(0);
   const [searchSmiles, setSearchSmiles] = useState("");
   const itemsPerPage = 10;
-  const [searchType, setSearchType] = useState("SUBSTRUCTURE");
+  const [searchType, setSearchType] = useState<ChemSearchType>("SUBSTRUCTURE");
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: itemsPerPage,
@@ -91,27 +90,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     setErrorMessage(null);
   };
 
-  const [isValid, setIsValid] = useState(IsValid());
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const validate = (ketcher: any) => {
-    if (!ketcher) {
-      setIsValid(IsValid());
-      return;
-    }
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    ketcher.getKet().then((ketData: any) => {
-      const molecules = Object.keys(JSON.parse(ketData)).filter((key) => key.startsWith("mol"));
-      if (molecules.length === 0) {
-        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationNoMolecule")));
-        return;
-      }
-      if (molecules.length > 1) {
-        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationMultipleMolecules")));
-        return;
-      }
-      setIsValid(IsValid());
-    });
-  };
+  const { validationResult: isValid, validate } = useSingleMoleculeValidation();
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleInsert = (ketcher: any) => {
@@ -206,35 +185,11 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
             handleClose={closeAndReset}
             existingChem={searchSmiles}
             validationResult={isValid}
-            instructionText={t("toolbar.chemicalSearch.drawInstruction")}
+            instructionText={t("common:ketcher.structureSearch.drawInstruction")}
             onChange={() => {
               validate(window.ketcher);
             }}
-            additionalControls={
-              <FormControl>
-                <FormLabel id="search-type">{t("toolbar.chemicalSearch.searchType")}</FormLabel>
-                <RadioGroup
-                  row
-                  aria-labelledby="search-type"
-                  name="search-type"
-                  value={searchType}
-                  onChange={(e) => {
-                    setSearchType(e.target.value);
-                  }}
-                >
-                  <FormControlLabel
-                    value="SUBSTRUCTURE"
-                    control={<Radio />}
-                    label={t("toolbar.chemicalSearch.searchTypeSubstructure")}
-                  />
-                  <FormControlLabel
-                    value="EXACT"
-                    control={<Radio />}
-                    label={t("toolbar.chemicalSearch.searchTypeExact")}
-                  />
-                </RadioGroup>
-              </FormControl>
-            }
+            additionalControls={<StructureSearchTypeControl value={searchType} onChange={setSearchType} />}
           />
         </React.Suspense>
       )}

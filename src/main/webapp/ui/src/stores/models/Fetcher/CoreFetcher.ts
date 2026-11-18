@@ -15,6 +15,8 @@ import type { Factory } from "../../definitions/Factory";
 import type { InventoryRecord } from "../../definitions/InventoryRecord";
 import type { Person, Username } from "../../definitions/Person";
 import {
+  type ChemicalFilter,
+  type ChemSearchType,
   type CoreFetcherArgs,
   type DeletedItems,
   type ParentGlobalIdType,
@@ -41,6 +43,8 @@ export const DEFAULT_SEARCH = {
   permalink: null,
   benchOwner: null,
   requestable: null,
+  chemQuery: null,
+  chemSearchType: null,
 };
 
 export const DEFAULT_FETCHER = {
@@ -48,6 +52,7 @@ export const DEFAULT_FETCHER = {
   loading: false,
   count: 0,
   error: "",
+  textSearchLimitReached: false,
 };
 
 const omitDefault = <T extends object>(obj: T): object => {
@@ -87,6 +92,8 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
   const requestable = searchParams.get("requestable");
   const bookableParameter = searchParams.get("bookable");
   const bookable = bookableParameter === "true" ? true : bookableParameter === "false" ? false : null;
+  const chemQuery = searchParams.get("chemQuery");
+  const chemSearchType: ChemSearchType = searchParams.get("chemSearchType") === "EXACT" ? "EXACT" : "SUBSTRUCTURE";
   return {
     ...(query ? { query } : {}),
     ...(orderBy ? { orderBy } : {}),
@@ -97,6 +104,7 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     // Requestable and bookable are mutually exclusive (see Search.setBookable). A URL carrying both keeps
     // requestable: it is the narrower, Sample-only scope, and no sample is bookable.
     ...(bookable === null || requestable === "true" ? {} : { bookable }),
+    ...(chemQuery ? { chemQuery, chemSearchType } : {}),
     ...order.map((o) => ({ order: o })).orElse({}),
     ...pageNumber.map((pNumber) => ({ pageNumber: pNumber })).orElse({}),
     ...pageSize.map((pSize) => ({ pageSize: pSize })).orElse({}),
@@ -168,6 +176,12 @@ export default class CoreFetcher {
   benchOwner: Person | null;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   requestable: boolean | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  chemQuery: string | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  chemSearchType: ChemSearchType | null;
+  // @ts-expect-error set by passing DEFAULT_FETCHER to setAttributes
+  textSearchLimitReached: boolean;
   /**
    * Set when a permalink fetch fails, so that the UI can show a specific
    * not-found state (e.g. "version 2 of this subsample was not found")
@@ -203,6 +217,9 @@ export default class CoreFetcher {
       bookable: observable,
       benchOwner: observable,
       requestable: observable,
+      chemQuery: observable,
+      chemSearchType: observable,
+      textSearchLimitReached: observable,
       permalinkNotFound: observable,
       setAttributes: action,
       setPage: action,
@@ -225,6 +242,7 @@ export default class CoreFetcher {
       setOwner: action,
       setBenchOwner: action,
       setRequestable: action,
+      setChemicalFilter: action,
       setLoading: action,
       setResultType: action,
       parentGlobalIdType: computed,
@@ -282,9 +300,9 @@ export default class CoreFetcher {
       return;
     }
     this.endpoint = "search";
-    // Both true and false bookable filters require /search.
-    // Type-specific listing endpoints do not apply this filter.
-    if (!this.parentGlobalId && this.bookable === null) {
+    // Both true and false bookable filters, and structure search, require /search.
+    // Type-specific listing endpoints do not apply these filters.
+    if (!this.parentGlobalId && this.bookable === null && !this.chemQuery) {
       // The samples endpoint also accepts a free-text query alongside `requestable`, unlike the
       // other type-specific endpoints below, so a query doesn't rule it out once requestable is set.
       if ((!this.query || this.requestable !== null) && this.resultType === "SAMPLE") {
@@ -337,6 +355,7 @@ export default class CoreFetcher {
       (!params.resultType || params.resultType === "ALL") &&
       !params.parentGlobalId &&
       params.bookable == null &&
+      !params.chemQuery &&
       !params.query &&
       !params.permalink
     ) {
@@ -388,6 +407,7 @@ export default class CoreFetcher {
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          textSearchLimitReached?: boolean;
         }>(
           endpoint,
           new URLSearchParams(
@@ -414,6 +434,8 @@ export default class CoreFetcher {
         ])();
         runInAction(() => {
           this.count = data.totalHits || records.length;
+          this.textSearchLimitReached = data.textSearchLimitReached === true;
+          this.error = "";
         });
         const factory = this.factory.newFactory();
         storeResults(
@@ -455,6 +477,17 @@ export default class CoreFetcher {
     } catch (error) {
       this.resetSearch();
       const notFound = Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(null) === 404;
+      const status = Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(null);
+      if (params.chemQuery && status === 422) {
+        // structure search refused (chemistry unavailable, or an incompatible filter): shown in the
+        // results status and on the structure filter chip rather than as a transient alert
+        runInAction(() => {
+          this.error = i18n.t("inventory:search.feedback.chemicalSearchFailed", {
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+          });
+        });
+        return;
+      }
       if (params.permalink && notFound) {
         // the right panel (PermalinkNotFound) already explains the missing record or version;
         // transient failures (500s, network errors) keep the generic error alert below
@@ -663,6 +696,11 @@ export default class CoreFetcher {
 
   setRequestable(value: boolean | null) {
     this.requestable = value;
+  }
+
+  setChemicalFilter(filter: ChemicalFilter | null) {
+    this.chemQuery = filter?.chemQuery ?? null;
+    this.chemSearchType = filter?.chemSearchType ?? null;
   }
 
   get isOrderDesc(): boolean {

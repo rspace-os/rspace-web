@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { ResultType } from "../../../stores/definitions/Search";
 import useStores from "../../../stores/use-stores";
+import { ChemicalFilterChip } from "./ChemicalFilter";
 
 function ParameterChip({ label, onDelete }: { label: string; onDelete?: () => void }): React.ReactNode {
   return <Chip size="small" label={label} onDelete={onDelete} />;
@@ -82,6 +83,7 @@ function SearchParameterChips(): React.ReactNode {
           }}
         />
       )}
+      <ChemicalFilterChip />
       {search.fetcher.bookable !== null && (
         <ParameterChip
           label={t("search.parameterChips.bookable", {

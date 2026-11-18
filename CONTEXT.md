@@ -660,6 +660,18 @@ resolved during design. This file is a glossary only — no implementation detai
   term length, refuses wildcard terms and returns at most 500 results.
   _Avoid_: sysadmin search, admin search, global search (that is the simple "All" search
   anyone runs)
+- **Structure search** — a search by a drawn or pasted chemical structure rather than by text,
+  matching either the exact structure or any structure that contains it (a substructure
+  match). It finds chemistry held in RSpace, not records by name or formula. Its label in
+  both the Workspace and Inventory is "Chemical".
+  _Avoid_: chemical search or chemistry search for the concept (a name or formula search
+  would also be "chemical"), molecule search
+- **Structure hit** — an Inventory record returned by a structure search because a matching
+  Gallery chemistry file is attached to that record itself. The hit is never rolled up or
+  down: a match on a sample returns the sample, not its subsamples, and a match on a
+  subsample returns only that subsample. Each record appears at most once, however many of
+  its attachments match.
+  _Avoid_: chemical result, match (that is the structure, not the record)
 
 ## Platform configuration
 

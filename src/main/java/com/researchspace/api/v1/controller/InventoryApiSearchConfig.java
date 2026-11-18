@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -52,6 +53,20 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String deletedItems;
 
   private Boolean bookable;
+
+  /**
+   * Structure search: the chemical structure to search for, as SMILES. Combines with {@link
+   * #query}, {@link #resultType}, {@link #ownedBy}, {@link #deletedItems} and {@link #bookable},
+   * but not with {@link #parentGlobalId} or {@link #requestable}.
+   */
+  @Size(max = MAX_QUERY_LENGTH, message = "{errors.inventory.search.maxQueryLength}")
+  private String chemQuery;
+
+  /** Structure search match type; {@code SUBSTRUCTURE} when not given. */
+  @Pattern(
+      regexp = "(?i)EXACT|SUBSTRUCTURE",
+      message = "{errors.inventory.search.chemSearchType.invalid}")
+  private String chemSearchType;
 
   /**
    * Limits Sample search results to samples with a matching {@code requestable} value. When {@code
@@ -139,6 +154,12 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
     if (bookable != null) {
       rc.add("bookable", bookable.toString());
     }
+    if (!StringUtils.isBlank(chemQuery)) {
+      rc.add("chemQuery", chemQuery);
+    }
+    if (chemSearchType != null) {
+      rc.add("chemSearchType", chemSearchType);
+    }
     return rc;
   }
 
@@ -149,6 +170,14 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
       return InventorySearchDeletedOption.valueOf(requestedDeletedItems);
     }
     return null;
+  }
+
+  /** The requested structure match type, upper-cased; {@code SUBSTRUCTURE} when not given. */
+  @Transient
+  public String getChemSearchTypeOrDefault() {
+    return StringUtils.isBlank(chemSearchType)
+        ? "SUBSTRUCTURE"
+        : chemSearchType.toUpperCase(Locale.ROOT);
   }
 
   @Transient

@@ -2703,6 +2703,20 @@ paths:
         /search?query=pcr | Gets samples and subsamples containing the word 'pcr'.
 
         /search?query=mice&resultType=SUBSAMPLE&orderBy=name%20asc | Get subsamples containing the word 'mice', ordered by subsample name ascending.
+
+        /search?chemQuery=c1ccccc1 | Structure search: gets items carrying a Gallery chemistry file that contains benzene.
+
+
+        **Structure search.** With 'chemQuery' (a structure as SMILES, percent-encoded) the search returns
+        the items that a matching Gallery chemistry file is attached to, either as an attachment or in an
+        attachment field. Each item is returned once, and matches are not rolled up to a parent or down to
+        subsamples. It uses the same chemistry service as the Workspace chemical search, and needs the
+        chemistry service configured on the server and the Chemistry app enabled for the user.
+
+        Structure search combines with 'query', 'resultType', 'ownedBy' and 'deletedItems', but not with
+        'parentGlobalId' or 'requestable'. When combined with 'query', only the top 1000 text matches are
+        considered; if the text query matched more, the response includes `"textSearchLimitReached": true`
+        and a narrower text query may find further structure matches.
       tags:
         - Search
       parameters:
@@ -2711,12 +2725,38 @@ paths:
         - $ref: "#/components/parameters/parentGlobalIdParam"
         - $ref: "#/components/parameters/ownedByParam"
         - $ref: "#/components/parameters/deletedItemsParam"
+        - name: chemQuery
+          in: query
+          required: false
+          description: Chemical structure to search for, as SMILES (structure search).
+          schema:
+            type: string
+            maxLength: 2000
+            example: c1ccccc1
+        - name: chemSearchType
+          in: query
+          required: false
+          description: >
+            Structure search match type: `SUBSTRUCTURE` finds items carrying any structure containing
+            'chemQuery', `EXACT` only the same structure.
+          schema:
+            type: string
+            enum:
+              - SUBSTRUCTURE
+              - EXACT
+            default: SUBSTRUCTURE
         - $ref: "#/components/parameters/pageNumberParam"
         - $ref: "#/components/parameters/pageSizeParam"
         - $ref: "#/components/parameters/orderByParam"
       responses:
         "200":
           description: A list of InventoryRecordInfo objects.
+        "400":
+          description: Invalid parameters, e.g. an unknown 'chemSearchType'.
+        "422":
+          description: >
+            Structure search cannot run: chemistry is not available to the user, or 'chemQuery' is
+            combined with 'parentGlobalId' or 'requestable'.
   /barcodes:
     get:
       summary: Gets a barcode image for requested content

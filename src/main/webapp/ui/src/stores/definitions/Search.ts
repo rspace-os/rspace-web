@@ -30,7 +30,8 @@ export type SearchModule =
   | "TAG"
   | "SAVEDSEARCHES"
   | "SAVEDBASKETS"
-  | "BOOKABLE";
+  | "BOOKABLE"
+  | "CHEMISTRY";
 /*
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
  * extended functionality of RsSet is not needed.
@@ -181,6 +182,20 @@ export type Permalink = {
   version: number | null;
 };
 
+/*
+ * Structure search match type: SUBSTRUCTURE finds any structure containing the
+ * query structure, EXACT only the same structure.
+ */
+export type ChemSearchType = "SUBSTRUCTURE" | "EXACT";
+
+/*
+ * A structure search filter: the structure, as SMILES, and how to match it.
+ */
+export type ChemicalFilter = {
+  chemQuery: string;
+  chemSearchType: ChemSearchType;
+};
+
 export type CoreFetcherArgs = {
   query?: string;
   pageNumber?: number;
@@ -201,6 +216,9 @@ export type CoreFetcherArgs = {
   bookable?: boolean | null;
   benchOwner?: Person | null;
   requestable?: boolean | null;
+  chemQuery?: string | null;
+  chemSearchType?: ChemSearchType | null;
+  textSearchLimitReached?: boolean;
 };
 
 /**
@@ -315,6 +333,20 @@ export interface CoreFetcher {
    */
   requestable: boolean | null;
   setRequestable(value: boolean | null): void;
+
+  /*
+   * Structure search: filter by a chemical structure, as SMILES. Cannot be
+   * combined with parentGlobalId or requestable.
+   */
+  chemQuery: string | null;
+  chemSearchType: ChemSearchType | null;
+  setChemicalFilter(filter: ChemicalFilter | null): void;
+
+  /*
+   * True when the last structure search with a text query only considered
+   * the server's top text matches, so some structure matches may be missing.
+   */
+  textSearchLimitReached: boolean;
 
   /*
    * Searches can be saved, enabling the user to replay a particular search.
@@ -436,6 +468,7 @@ export interface Search {
   setBookable(bookable: boolean | null, doSearch?: boolean): void;
   setParentGlobalId(parentGlobalId: GlobalId | null, doSearch?: boolean): void;
   setRequestable(value: boolean | null, doSearch?: boolean): void;
+  setChemicalFilter(filter: ChemicalFilter | null, doSearch?: boolean): void;
 
   /*
    * These setters MUST update the state of the staticFetcher (the only with
@@ -479,6 +512,13 @@ export interface Search {
    */
   readonly adjustableColumnOptions: RsSet<AdjustableTableRowLabel>;
   setAdjustableColumn(value: AdjustableTableRowLabel, index: number): void;
+
+  /*
+   * The adjustable columns to show: the configured ones, except that while a
+   * structure filter is set the third shows the location, unless the user has
+   * chosen that column themselves.
+   */
+  readonly displayedAdjustableColumns: Array<AdjustableTableRowLabel>;
   resetColumnLabelSettingsIfUnknown(): void;
 
   /*
@@ -487,6 +527,14 @@ export interface Search {
    */
   readonly showStatusFilter: boolean;
   readonly showBookableFilter: boolean;
+  readonly showChemicalFilter: boolean;
+
+  /*
+   * True when the search is scoped to a container, basket or other non-bench
+   * parent, or filtered to requestable samples; a structure filter cannot be
+   * combined with these. A bench scope is cleared when a structure is applied.
+   */
+  readonly chemicalFilterConflict: boolean;
   readonly showTypeFilter: boolean;
   readonly showOwnershipFilter: boolean;
   readonly showBenchFilter: boolean;

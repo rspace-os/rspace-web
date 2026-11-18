@@ -2149,6 +2149,21 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
+  public void invSearchCanBeLimitedToGivenGlobalIds() {
+    User u = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples kept = createBasicSampleForUser(u);
+    createBasicSampleForUser(u);
+    flushToSearchIndices();
+
+    ApiInventorySearchResult result =
+        searchMgr.searchInventoryWithSimpleQuery(
+            "myS*", null, null, null, null, null, List.of(kept.getGlobalId()), null, u);
+
+    assertEquals(1, result.getTotalHits().intValue());
+    assertEquals(kept.getGlobalId(), result.getRecords().get(0).getGlobalId());
+  }
+
+  @Test
   public void invSampleSearchHandlesDeleted() {
     // create two samples named "mySample"
     User u = createInitAndLoginAnyUser();
