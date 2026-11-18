@@ -13762,6 +13762,9 @@ export default interface Resources {
         "title": "Export Documents to CSV",
         "unknownError": "Unknown reason"
       },
+      "defaultSearch": {
+        "invalidSearch": "This search link is not valid, so the folder is shown instead."
+      },
       "filePicker": {
         "clickToSelect": "Click on the folder icon to select records.",
         "dialogTitle": "{count, plural, one {# record selected} other {# records selected}}",

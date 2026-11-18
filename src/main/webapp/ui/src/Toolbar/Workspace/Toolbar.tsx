@@ -31,6 +31,7 @@ import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
+import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
@@ -94,6 +95,8 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       });
     };
 
+    this.restoreSearchFromLocation();
+
     /*
      * This event tells the jQuery parts of the code that they can assume that
      * the dom nodes managed by react have now been added to the dom.
@@ -139,6 +142,68 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         this.handleHideIcons(true);
       }
     }
+  };
+
+  // Runs the search held in the address bar, for a bookmarked or shared search link
+  restoreSearchFromLocation = () => {
+    if (workspaceSettings.options.length > 0) return;
+    const parsed = parseSearchQuery(window.location.search);
+    if (parsed.kind === "none") return;
+    if (parsed.kind === "invalid") {
+      this.showFolderInsteadOfSearch();
+      return;
+    }
+
+    const { state } = parsed;
+    const runSearch = () => {
+      Object.assign(workspaceSettings, {
+        options: [...state.options],
+        terms: [...state.terms],
+        advancedSearch: state.advancedSearch,
+        operator: state.operator,
+        sharedFilter: state.sharedFilter,
+        favoritesFilter: state.favoritesFilter,
+        viewableItemsFilter: state.viewableItemsFilter,
+        templatesFilter: state.templatesFilter,
+        ontologiesFilter: state.ontologiesFilter,
+        orderBy: state.orderBy,
+        sortOrder: state.sortOrder,
+        searchMode: true,
+        pageNumber: 0,
+        url: "/workspace/ajax/search",
+      });
+      this.setState(
+        {
+          sharedFilter: state.sharedFilter,
+          favoritesFilter: state.favoritesFilter,
+          viewableItemsFilter: state.viewableItemsFilter,
+          templatesFilter: state.templatesFilter,
+          ontologiesFilter: state.ontologiesFilter,
+        },
+        () => {
+          this.checkSavedSettings();
+          doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch);
+        },
+      );
+    };
+
+    // The search box only exists in list view
+    if (this.state.treeView) {
+      list_view();
+      this.setState({ treeView: false }, runSearch);
+    } else {
+      runSearch();
+    }
+  };
+
+  showFolderInsteadOfSearch = () => {
+    // resetToolbar() leaves these two filters as they are
+    workspaceSettings.viewableItemsFilter = false;
+    workspaceSettings.ontologiesFilter = false;
+    this.setState({ viewableItemsFilter: false, ontologiesFilter: false });
+    resetToolbar();
+    abandonSearch();
+    RS.confirm(i18n.t("workspace:toolbar.defaultSearch.invalidSearch"), "warning", 5000);
   };
 
   handleOpen = (idx, event) => {
