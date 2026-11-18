@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -8,10 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
@@ -197,6 +201,35 @@ public class DashboardControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andExpect(jsonPath("$.data.length()").value(0))
             .andReturn();
+  }
+
+  @Test
+  public void dashboardBadgeTotalsCountAllPages() throws Exception {
+    User sender = createInitAndLoginAnyUser();
+    User recipient = createInitAndLoginAnyUser();
+    logoutAndLoginAs(sender);
+    for (int i = 0; i < 11; i++) {
+      communicationMgr.doCreateNotification(
+          NotificationType.PROCESS_COMPLETED,
+          sender.getUsername(),
+          null,
+          Set.of(recipient),
+          "n",
+          "n");
+      sendSimpleMessage(sender, "m", recipient);
+    }
+    logoutAndLoginAs(recipient);
+    Map<String, Object> model =
+        mockMvc
+            .perform(get("/dashboard").principal(recipient::getUsername))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getModelAndView()
+            .getModel();
+    assertEquals(11L, model.get("notificationTotal"));
+    assertEquals(11L, model.get("receivedMessageTotal"));
+    assertThat((List<?>) model.get("notificationList")).hasSize(10);
+    assertThat((List<?>) model.get("messages")).hasSize(10);
   }
 
   private void assertNResults(MvcResult result, int expectedResults) {
