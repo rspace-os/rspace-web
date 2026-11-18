@@ -46,7 +46,6 @@ export class NotebookPage extends BasePage {
     await this.page.waitForURL("**/notebookEditor/**");
     await this.entryStrip.entryCounter.or(this.emptyState).first().waitFor({ state: "visible" });
     await this.toolbar.mounted.waitFor({ state: "visible" });
-    await this.page.waitForLoadState("networkidle");
   }
 
   async openByGlobalId(notebook: { id: number; globalId: string }): Promise<void> {
