@@ -8,7 +8,7 @@ import * as v from "valibot";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrumentTemplate } from "@/stores/models/__tests__/InstrumentTemplateModel/mocking";
-import { makeMockTemplate } from "@/stores/models/__tests__/TemplateModel/mocking";
+import { makeMockTemplate, templateAttrs } from "@/stores/models/__tests__/TemplateModel/mocking";
 import type FieldModel from "@/stores/models/FieldModel";
 import type { FieldModelAttrs } from "@/stores/models/FieldModel";
 import type TemplateModel from "@/stores/models/TemplateModel";
@@ -18,13 +18,15 @@ import materialTheme from "@/theme";
 import InstrumentTemplateFields from "../../../InstrumentTemplate/Fields/CustomFields";
 import CustomFields from "../CustomFields";
 
-const { update } = vi.hoisted(() => ({ update: vi.fn() }));
-vi.mock("@/common/InvApiService", () => ({ default: { update } }));
+const { update, post } = vi.hoisted(() => ({ update: vi.fn(), post: vi.fn() }));
+vi.mock("@/common/InvApiService", () => ({ default: { update, post } }));
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: { assertValidUnitId: () => {}, getUnit: () => ({ label: "ml" }) },
     trackingStore: { trackEvent: () => {} },
-    uiStore: { addAlert: () => {}, setPageNavigationConfirmation: () => {}, setDirty: () => {} },
+    uiStore: { addAlert: () => {}, setPageNavigationConfirmation: () => {}, setDirty: () => {}, unsetDirty: () => {} },
+    searchStore: { search: { setActiveResult: () => Promise.resolve() } },
+    peopleStore: { currentUser: null },
   }),
 }));
 
@@ -72,6 +74,15 @@ const newField = (attrs: Partial<FieldModelAttrs> & Pick<FieldModelAttrs, "type"
   initial: true,
   editing: true,
 });
+
+/** A template being created, with a radio field rules can read and a field they can show. */
+const newGmoTemplate = () => {
+  const template = makeMockTemplate({ id: null, globalId: null });
+  template.addField(newField({ name: "Is this a GMO?", type: "radio", definition: { options: ["Yes", "No"] } }));
+  template.addField(newField({ name: "GMO permit", type: "string" }));
+  template.currentlyEditableFields.add("fields");
+  return template;
+};
 
 function renderEditor(template: TemplateModel, confirm = vi.fn(() => Promise.resolve(true))) {
   template.currentlyEditableFields.add("fields");
@@ -445,6 +456,33 @@ describe("Display rule drafts across saves and edit sessions", () => {
     await addDraft(user);
     act(() => second.setAttributes({ editing: false }));
     act(() => second.setAttributes({ editing: true }));
+    expect(draftCards()).toHaveLength(0);
+
+    // two templates that are both being created have no global id to tell them apart
+    const [third, fourth] = [newGmoTemplate(), newGmoTemplate()];
+    act(() => runInAction(() => (searchStore.activeResult = third)));
+    await addDraft(user);
+    act(() => runInAction(() => (searchStore.activeResult = fourth)));
+    expect(draftCards()).toHaveLength(0);
+  });
+
+  it("keeps drafts when creating the template fails, and starts afresh once it is created", async () => {
+    const user = userEvent.setup();
+    const template = newGmoTemplate();
+    renderEditor(template);
+    await addDraft(user);
+
+    post.mockRejectedValueOnce(new Error("The create failed"));
+    await act(async () => {
+      await template.create().catch(() => {});
+    });
+    expect(draftCards()).toHaveLength(1);
+
+    post.mockResolvedValueOnce({ data: { ...templateAttrs({ id: 9, globalId: "IT9" }), attachments: [] } });
+    await act(async () => {
+      await template.create();
+    });
+    expect(template.globalId).toBe("IT9");
     expect(draftCards()).toHaveLength(0);
   });
 });

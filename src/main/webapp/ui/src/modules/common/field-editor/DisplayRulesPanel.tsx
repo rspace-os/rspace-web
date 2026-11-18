@@ -14,7 +14,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { partition, sortBy } from "es-toolkit";
-import { type ReactNode, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -286,7 +286,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         groupDisplayRules(fields).flatMap(({ targetKeys }) => targetKeys.map((key) => [key, targetKeys[0]] as const)),
       ),
   );
-  /** Rows in display order: the rules there at first render, then every row on screen when a handler runs. */
+  /** Rows in display order: saved rules as they first appear, then new rules as they are added. */
   const [rowOrder, setRowOrder] = useState<ReadonlyArray<string>>(() =>
     groupDisplayRules(fields).map(({ targetKeys }) => targetKeys[0]),
   );
@@ -322,6 +322,27 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
   const [ordered, unordered] = partition([...groupRows, ...draftRows], (row) => rowOrder.includes(row.id));
   const rows = [...sortBy(ordered, [(row) => rowOrder.indexOf(row.id)]), ...unordered];
 
+  /*
+   * Saved rules that arrive after the first render (fields loading late) get
+   * a place and an identity as soon as they appear, so deleting one of their
+   * fields before any edit does not rekey or move them.
+   */
+  const savedRows = rows.filter((row) => !row.isDraft);
+  const savedSignature = JSON.stringify(savedRows.map(({ id, targetKeys }) => [id, targetKeys]));
+  // the signature stands for savedRows, which is a new array on every render
+  useEffect(() => {
+    setRowOrder((current) => {
+      const unseen = savedRows.map(({ id }) => id).filter((id) => !current.includes(id));
+      return unseen.length === 0 ? current : [...current, ...unseen];
+    });
+    setRowIdByTarget((current) => {
+      const unmapped = savedRows.flatMap((row) =>
+        row.targetKeys.filter((key) => !current.has(key)).map((key) => [key, row.id] as const),
+      );
+      return unmapped.length === 0 ? current : new Map([...current, ...unmapped]);
+    });
+  }, [savedSignature]);
+
   if (!editable) {
     return (
       <Box component="section" aria-labelledby={headingId}>
@@ -341,23 +362,8 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
       return draft ? [...others, draft] : others;
     });
 
-  /**
-   * Fixes the place and identity of every row on screen, so the first edit of
-   * one, or a new rule, does not reorder or remount the others.
-   */
-  const seeRows = () => {
-    setRowOrder((current) => [...current, ...rows.map(({ id }) => id).filter((id) => !current.includes(id))]);
-    setRowIdByTarget((current) => {
-      const unmapped = rows.flatMap((row) =>
-        row.isDraft ? [] : row.targetKeys.filter((key) => !current.has(key)).map((key) => [key, row.id] as const),
-      );
-      return unmapped.length === 0 ? current : new Map([...current, ...unmapped]);
-    });
-  };
-
   /** Applies the row's rule to its targets when it is complete and valid; keeps it as a draft otherwise. */
   const update = (row: Row, condition: DraftCondition, targetKeys: ReadonlyArray<string>) => {
-    seeRows();
     const rule = ruleFromDraft(condition);
     const storedKeys = row.stored?.targetKeys ?? [];
     if (rule !== null && targetKeys.length > 0) {
@@ -437,7 +443,6 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         onClick={() => {
           nextDraftId.current += 1;
           const id = `draft-${nextDraftId.current}`;
-          seeRows();
           setRowOrder((current) => [...current, id]);
           setDrafts((current) => [
             ...current,

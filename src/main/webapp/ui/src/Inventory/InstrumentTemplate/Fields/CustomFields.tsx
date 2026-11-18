@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
@@ -37,6 +37,8 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
   } = useStores();
   if (!activeResult || !(activeResult instanceof InstrumentTemplateModel))
     throw new Error("ActiveResult must be an Instrument Template");
+  // a record not yet saved has no global id, so each one (activeResult) gets its own session for the panel key
+  const session = useMemo(() => crypto.randomUUID(), [activeResult]);
 
   const TemplateFields = observer(({ editable }: { editable: boolean }) => {
     const removeCustomField =
@@ -72,7 +74,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
     <>
       {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
       <TemplateDisplayRules
-        key={`${activeResult.globalId ?? "new"}:${activeResult.state}`}
+        key={`${activeResult.globalId ?? session}:${activeResult.state}`}
         fields={fields}
         editable={editable}
       />

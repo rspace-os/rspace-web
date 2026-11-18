@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../../components/NoValue";
 import FieldModel from "../../../stores/models/FieldModel";
@@ -22,6 +22,8 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
     uiStore,
   } = useStores();
   if (!activeResult || !(activeResult instanceof TemplateModel)) throw new Error("ActiveResult must be a Template");
+  // a record not yet saved has no global id, so each one (activeResult) gets its own session for the panel key
+  const session = useMemo(() => crypto.randomUUID(), [activeResult]);
 
   const TemplateFields = observer(({ editable }: { editable: boolean }) => {
     const removeCustomField =
@@ -56,7 +58,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
     <>
       {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
       <TemplateDisplayRules
-        key={`${activeResult.globalId ?? "new"}:${activeResult.state}`}
+        key={`${activeResult.globalId ?? session}:${activeResult.state}`}
         fields={fields}
         editable={editable}
       />
