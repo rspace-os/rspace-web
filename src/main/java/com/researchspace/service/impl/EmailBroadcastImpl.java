@@ -255,7 +255,7 @@ public class EmailBroadcastImpl implements EmailBroadcast {
     setDateHeader(message, Instant.now());
     message.setSubject(emailConfig.content().subject());
     message.setFrom(new InternetAddress(from));
-    msgRecipientFac.populateRecipients(emailConfig.addresses(), message, emailConfig.comm());
+    msgRecipientFac.populateRecipients(emailConfig.addresses(), message, emailConfig.comm(), from);
     message.setReplyTo(new Address[] {new InternetAddress(replyTo)});
     message.setContent(generateMultipartContent(emailConfig));
   }
