@@ -327,7 +327,45 @@ describe("DefaultSearch", () => {
 
     await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" }));
 
-    expect(navigate).toHaveBeenCalledWith(`/workspace?${BKMKTAG}`);
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith(`/workspace?${BKMKTAG}`));
+  });
+
+  test("clicking Default search opens the default another tab has since saved", async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, { [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch navigate={navigate} />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" }));
+
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith(`/workspace?${ZEBRAFISH}`));
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  test("clicking Default search opens the loaded default when the check fails", async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, FAILED_READ);
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch navigate={navigate} />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" }));
+
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith(`/workspace?${BKMKTAG}`));
+  });
+
+  test("clicking Default search after another tab removed it opens nothing and hides the button", async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, {});
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch navigate={navigate} />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" }));
+
+    await vi.waitFor(() => expect(runButton()).not.toBeInTheDocument());
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   test("removing the default stores null and hides the button", async () => {

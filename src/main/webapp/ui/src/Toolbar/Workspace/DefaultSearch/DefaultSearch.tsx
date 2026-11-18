@@ -139,6 +139,18 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     if (latest === null || (await confirmReplacing(latest))) await store(query);
   };
 
+  // Another tab may have changed the default since this page loaded
+  const run = async () => {
+    let latest = stored;
+    try {
+      latest = await readStoredDefault();
+    } catch {
+      // Run the default this page loaded
+    }
+    setShown(latest);
+    if (latest !== null) navigate(`/workspace?${latest}`);
+  };
+
   const remove = async () => {
     const read = await readOrAnnounce(t("toolbar.defaultSearch.removeFailed"));
     if (!read) return;
@@ -187,7 +199,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
               disabled={saving}
               color="inherit"
               aria-label={t("toolbar.defaultSearch.run")}
-              onClick={() => navigate(`/workspace?${stored}`)}
+              onClick={() => void run()}
             >
               <FontAwesomeIcon icon={faBookmark} />
             </IconButton>
