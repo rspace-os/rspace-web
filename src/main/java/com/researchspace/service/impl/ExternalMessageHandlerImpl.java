@@ -112,7 +112,11 @@ public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
       return new ServiceOperationResult<ResponseEntity<String>>(
           null, false, messageSource.getMessage(SEND_FAILED_MSG_KEY));
     } catch (WebhookUrlNotAllowedException e) {
-      // a stored URL that the destination rules reject; the sender logged why, without the URL
+      // a stored URL that the destination rules reject; the reason never contains the URL
+      log.warn(
+          "Webhook destination for app {} rejected: {}",
+          appConfigElementSet.getUserAppConfig().getApp().getName(),
+          e.getReason());
       return new ServiceOperationResult<ResponseEntity<String>>(
           null, false, messageSource.getMessage(SEND_FAILED_MSG_KEY));
     }

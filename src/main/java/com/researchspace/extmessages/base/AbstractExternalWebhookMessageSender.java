@@ -63,7 +63,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
               "errors.authorization.failure.sendExternalMessage",
               new Object[] {subject.getUsername()}));
     }
-    URI uri = checkedPostUrl(messageConfig);
+    URI uri = destinationPolicy().checkResolved(doGetPostUrl(messageConfig), hostResolver);
     String jsonMessage = createMessage(message);
 
     ResponseEntity<String> rc = doSendMessage(jsonMessage, uri);
@@ -76,18 +76,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    * @return the allowed destinations for this sender's webhooks
    */
   protected abstract WebhookDestinationPolicy destinationPolicy();
-
-  private URI checkedPostUrl(AppConfigElementSet messageConfig) {
-    String webhookUrl = doGetPostUrl(messageConfig);
-    try {
-      destinationPolicy().checkResolved(webhookUrl, hostResolver);
-    } catch (WebhookUrlNotAllowedException e) {
-      // not the URL: a webhook URL is a credential (RSDEV-1525)
-      log.warn("{} webhook destination rejected: {}", getClass().getSimpleName(), e.getReason());
-      throw e;
-    }
-    return URI.create(webhookUrl);
-  }
 
   /**
    * Performs any tidy up, notification or analytics actions after the message has been sent
@@ -112,7 +100,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
           getRestClient()
               .post()
               .uri(uri)
-              .headers(headers -> headers.addAll(createPostHeaders()))
+              .contentType(MediaType.APPLICATION_JSON)
               .body(jsonMessage)
               .retrieve()
               .onStatus(
@@ -156,8 +144,9 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   }
 
   /**
-   * Raises the usual status exceptions without reading the error response body, which RestClient's
-   * default handler would buffer.
+   * Raises the usual status exceptions without the error response body, which RestClient's default
+   * handler would buffer, or the URL, which it would put in the message (a webhook URL is a
+   * credential, RSDEV-1525).
    */
   private static void failWithoutBody(HttpRequest request, ClientHttpResponse response)
       throws IOException {
@@ -168,20 +157,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
       throw HttpClientErrorException.create(statusCode, statusText, headers, null, null);
     }
     throw HttpServerErrorException.create(statusCode, statusText, headers, null, null);
-  }
-
-  /**
-   * Creates the headers for the webhook POST.
-   *
-   * <p>Declares {@code application/json} so the body is sent as UTF-8. Without it, a String body is
-   * sent as ISO-8859-1 and non-Latin-1 characters become {@code ?}.
-   *
-   * @return headers with an {@code application/json} content type
-   */
-  protected HttpHeaders createPostHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
   }
 
   /**
