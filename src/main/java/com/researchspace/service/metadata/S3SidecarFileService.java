@@ -1,5 +1,6 @@
 package com.researchspace.service.metadata;
 
+import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
@@ -7,7 +8,6 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
-import com.researchspace.model.record.RecordInformation;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.IdentifierScheme;
@@ -26,10 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -120,18 +117,17 @@ public class S3SidecarFileService {
       NfsFileSystem fileSystem, String prefix, List<SidecarFileEntry> files, User user) {
     List<String> paths = new ArrayList<>(List.of(prefix));
     files.forEach(file -> paths.add(file.key()));
-    Collection<String> globalIds =
+    List<String> globalIds =
         nfsFieldLinkManager.getLinkedDocuments(fileSystem, paths, user).stream()
             // documents the user cannot read come back as placeholders without a Global ID
             .filter(info -> info.getOid() != null)
-            .collect(
-                Collectors.toMap(
-                    RecordInformation::getId,
-                    info -> info.getOid().getIdString(),
-                    (first, duplicate) -> first,
-                    TreeMap::new))
-            .values();
-    return globalIds.stream().map(id -> propertyHolder.getServerUrl() + "/globalId/" + id).toList();
+            .map(info -> info.getOid().getIdString())
+            .toList();
+    if (globalIds.isEmpty()) {
+      return globalIds;
+    }
+    String serverUrl = propertyHolder.getServerUrl();
+    return globalIds.stream().map(id -> ArchiveUtils.getAbsoluteGlobalLink(id, serverUrl)).toList();
   }
 
   /** Files in the folder, skipping subfolders and any existing sidecar, with full S3 keys. */

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,6 +39,7 @@ import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import jakarta.ws.rs.NotFoundException;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,7 +122,7 @@ class S3SidecarFileServiceTest {
   }
 
   @Test
-  void namesReadableDocumentsLinkingTheFolderOrItsFilesOnceEach() throws Exception {
+  void namesReadableDocumentsLinkingTheFolderOrItsFilesSkippingPrivateOnes() throws Exception {
     when(s3Utilities.listFolderContents("XRD-Experiments"))
         .thenReturn(
             List.of(
@@ -131,7 +133,7 @@ class S3SidecarFileServiceTest {
     privateDoc.setOwnerFullName("Grace Hopper");
     when(nfsFieldLinkManager.getLinkedDocuments(
             filesystem, List.of("XRD-Experiments", "XRD-Experiments/xrd_run_041.dat"), user))
-        .thenReturn(List.of(readableDoc(12L), readableDoc(11L), readableDoc(12L), privateDoc));
+        .thenReturn(List.of(readableDoc(11L), readableDoc(12L), privateDoc));
 
     JsonNode related =
         yaml.readTree(service.preview(1L, "XRD-Experiments", user).getContent())
@@ -144,6 +146,49 @@ class S3SidecarFileServiceTest {
     assertEquals(
         "https://rspace.example.com/globalId/SD12",
         related.path(1).path("relatedIdentifier").path("value").asText());
+  }
+
+  @Test
+  void serverUrlWithTrailingSlashGivesOneSlashBeforeGlobalId() throws Exception {
+    when(s3Utilities.listFolderContents("XRD-Experiments")).thenReturn(List.of());
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com/");
+    when(nfsFieldLinkManager.getLinkedDocuments(filesystem, List.of("XRD-Experiments"), user))
+        .thenReturn(List.of(readableDoc(11L)));
+
+    JsonNode related =
+        yaml.readTree(service.preview(1L, "XRD-Experiments", user).getContent())
+            .path("relatedIdentifiers");
+
+    assertEquals(
+        "https://rspace.example.com/globalId/SD11",
+        related.path(0).path("relatedIdentifier").path("value").asText());
+  }
+
+  @Test
+  void saveWritesTheLinkedDocumentsIntoTheFile() throws Exception {
+    when(s3Utilities.listFolderContents("XRD-Experiments")).thenReturn(List.of());
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(nfsFieldLinkManager.getLinkedDocuments(filesystem, List.of("XRD-Experiments"), user))
+        .thenReturn(List.of(readableDoc(11L)));
+    StringBuilder uploaded = new StringBuilder();
+    doAnswer(
+            invocation -> {
+              uploaded.append(Files.readString(invocation.<File>getArgument(1).toPath()));
+              return null;
+            })
+        .when(s3Utilities)
+        .uploadToS3(eq("XRD-Experiments"), any(File.class), any());
+
+    service.save(1L, "XRD-Experiments", user);
+
+    assertEquals(
+        "https://rspace.example.com/globalId/SD11",
+        yaml.readTree(uploaded.toString())
+            .path("relatedIdentifiers")
+            .path(0)
+            .path("relatedIdentifier")
+            .path("value")
+            .asText());
   }
 
   @Test

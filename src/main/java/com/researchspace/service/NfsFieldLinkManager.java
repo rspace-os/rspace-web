@@ -29,7 +29,10 @@ public interface NfsFieldLinkManager {
    */
   List<RecordInformation> getLinkedDocuments(Long filestoreId, String remotePath, User user);
 
-  /** Linked documents of any of the absolute paths on the filesystem, as the overload above. */
+  /**
+   * Linked documents of any of the absolute paths on the filesystem, as the overload above: each
+   * document once, oldest first.
+   */
   List<RecordInformation> getLinkedDocuments(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User user);
 }
