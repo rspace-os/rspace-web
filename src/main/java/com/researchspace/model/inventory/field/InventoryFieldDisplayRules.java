@@ -6,7 +6,7 @@ import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.rule.FieldDisplayRuleEvaluator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
-import com.researchspace.model.field.rule.RuleField;
+import com.researchspace.model.field.rule.FieldSnapshot;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -36,11 +36,11 @@ public final class InventoryFieldDisplayRules {
    * @param fields the active fields of one template or record
    */
   public static List<Boolean> visibility(List<InventoryEntityField> fields) {
-    List<RuleField> ruleFields = new ArrayList<>(fields.size());
+    List<FieldSnapshot> snapshots = new ArrayList<>(fields.size());
     for (InventoryEntityField field : fields) {
-      ruleFields.add(toRuleField(field, selectedOptions(field)));
+      snapshots.add(toSnapshot(field, selectedOptions(field)));
     }
-    return FieldDisplayRuleEvaluator.visibility(ruleFields);
+    return FieldDisplayRuleEvaluator.visibility(snapshots);
   }
 
   /**
@@ -52,11 +52,11 @@ public final class InventoryFieldDisplayRules {
    */
   public static List<Boolean> visibility(
       List<InventoryEntityField> fields, List<List<String>> selectedOptions) {
-    List<RuleField> ruleFields = new ArrayList<>(fields.size());
+    List<FieldSnapshot> snapshots = new ArrayList<>(fields.size());
     for (int i = 0; i < fields.size(); i++) {
-      ruleFields.add(toRuleField(fields.get(i), selectedOptions.get(i)));
+      snapshots.add(toSnapshot(fields.get(i), selectedOptions.get(i)));
     }
-    return FieldDisplayRuleEvaluator.visibility(ruleFields);
+    return FieldDisplayRuleEvaluator.visibility(snapshots);
   }
 
   /**
@@ -81,11 +81,11 @@ public final class InventoryFieldDisplayRules {
     }
     List<InventoryEntityField> active =
         allFields.stream().filter(field -> !field.isDeleted()).toList();
-    List<RuleField> ruleFields = new ArrayList<>(active.size());
+    List<FieldSnapshot> snapshots = new ArrayList<>(active.size());
     for (InventoryEntityField field : active) {
-      ruleFields.add(toRuleField(field, List.of()));
+      snapshots.add(toSnapshot(field, List.of()));
     }
-    List<RuleError> errors = FieldDisplayRuleValidator.validate(ruleFields);
+    List<RuleError> errors = FieldDisplayRuleValidator.validate(snapshots);
     if (!errors.isEmpty()) {
       RuleError first = errors.get(0);
       throw new LocalizedIllegalArgumentException(
@@ -214,9 +214,9 @@ public final class InventoryFieldDisplayRules {
         field.getType().getType());
   }
 
-  private static RuleField toRuleField(InventoryEntityField field, List<String> selected) {
+  private static FieldSnapshot toSnapshot(InventoryEntityField field, List<String> selected) {
     boolean options = field.isOptionsStoringField();
-    return new RuleField(
+    return new FieldSnapshot(
         field.getFieldKey(),
         field.getType(),
         field.getDisplayRule(),
