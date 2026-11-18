@@ -12,6 +12,7 @@ import com.researchspace.dao.IconImgDao;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
+import com.researchspace.model.dtos.CommonSettingsFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
@@ -135,6 +136,17 @@ public class FormImporterImpl implements FormImporter {
                   aff.getDateFormat(),
                   aff.getName(),
                   aff.isMandatory()));
+          break;
+        case URI:
+          persistFieldForm(form, CommonSettingsFieldDTO.uri(aff.getName(), aff.isMandatory()));
+          break;
+        case REFERENCE:
+          persistFieldForm(
+              form, CommonSettingsFieldDTO.reference(aff.getName(), aff.isMandatory()));
+          break;
+        case ATTACHMENT:
+          persistFieldForm(
+              form, CommonSettingsFieldDTO.attachment(aff.getName(), aff.isMandatory()));
           break;
 
         default: // Text

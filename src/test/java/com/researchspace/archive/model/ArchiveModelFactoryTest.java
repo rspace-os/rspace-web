@@ -5,12 +5,17 @@ import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSt
 import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
+import com.researchspace.archive.ArchivalField;
+import com.researchspace.archive.ArchivalFieldForm;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchivalNfsFile;
@@ -18,11 +23,17 @@ import com.researchspace.archive.ArchiveComment;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
+import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
+import com.researchspace.model.field.Field;
+import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.ReferenceFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.URIFieldForm;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.Folder;
@@ -31,8 +42,13 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.FieldTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ArchiveModelFactoryTest {
   RSForm form;
@@ -164,5 +180,70 @@ public class ArchiveModelFactoryTest {
 
     assertTrue(aform.getFieldFormList().get(0).isDisplayAsPickList());
     assertTrue(aform.getFieldFormList().get(0).isSortAlphabetic());
+  }
+
+  static Stream<Arguments> fieldFormsWithOnlyCommonSettings() {
+    return Stream.of(
+        Arguments.of(new URIFieldForm("uri"), FieldType.URI),
+        Arguments.of(new ReferenceFieldForm("reference"), FieldType.REFERENCE),
+        Arguments.of(new AttachmentFieldForm("attachment"), FieldType.ATTACHMENT));
+  }
+
+  @ParameterizedTest
+  @MethodSource("fieldFormsWithOnlyCommonSettings")
+  public void exportsFieldFormsWithOnlyCommonSettings(FieldForm fieldForm, FieldType type) {
+    fieldForm.setMandatory(true);
+    fieldForm.setColumnIndex(3);
+
+    ArchivalFieldForm archived = factory.createArchivalFieldForm(fieldForm);
+
+    assertEquals(type.getType(), archived.getType());
+    assertEquals(fieldForm.getName(), archived.getName());
+    assertTrue(archived.isMandatory());
+    assertEquals(3, archived.getColumnIndex());
+    assertNull(archived.getDefaultValue());
+  }
+
+  @Test
+  public void exportsDocumentContentOfUriReferenceAndAttachmentFields() {
+    RSForm form = new RSForm("form", "desc", createAnyUser("user"));
+    form.addAllFieldForms(
+        new URIFieldForm("uri"),
+        new ReferenceFieldForm("reference"),
+        new AttachmentFieldForm("attachment"));
+    form.setId(1L);
+    StructuredDocument doc = createAnySD(form);
+    doc.setId(1L);
+    Map<String, String> contentByField =
+        Map.of("uri", "https://example.org/a", "reference", "SD123", "attachment", "GL456");
+    long id = 1L;
+    for (Field field : doc.getFields()) {
+      field.setId(id++);
+      field.setFieldData(contentByField.get(field.getName()));
+    }
+
+    List<ArchivalField> archived = factory.createArchivalDocument(doc).getListFields();
+
+    assertThat(archived)
+        .extracting(ArchivalField::getFieldName, ArchivalField::getFieldType)
+        .containsExactlyInAnyOrder(
+            tuple("uri", "URI"),
+            tuple("reference", "REFERENCE"),
+            tuple("attachment", "ATTACHMENT"));
+    for (ArchivalField field : archived) {
+      assertEquals(contentByField.get(field.getFieldName()), field.getFieldData());
+    }
+  }
+
+  @Test
+  public void unsupportedFieldFormTypeFailsWithClearMessage() {
+    TextFieldForm fieldForm = new TextFieldForm("identifier");
+    fieldForm.setType(FieldType.IDENTIFIER);
+
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class, () -> factory.createArchivalFieldForm(fieldForm));
+
+    assertThat(ex.getMessage()).contains("identifier").contains("IDENTIFIER");
   }
 }
