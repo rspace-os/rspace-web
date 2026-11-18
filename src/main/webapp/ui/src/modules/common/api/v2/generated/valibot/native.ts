@@ -34,7 +34,7 @@ export const AuditAction = v.picklist([
 
 export const ApiV2AuditEvent = v.object({
   action: AuditAction,
-  description: v.nullish(v.string()),
+  description: v.nullable(v.string()),
   domain: v.picklist([
     "MESSAGING",
     "RECORD",
@@ -62,9 +62,9 @@ export const ApiV2AuditEvent = v.object({
       "Invalid length: Expected <=64",
     ),
   ),
-  fullName: v.nullish(v.string()),
+  fullName: v.nullable(v.string()),
   payload: v.record(v.string(), v.unknown()),
-  target: v.nullish(v.pipe(v.string(), v.description("Stable audited resource identifier"))),
+  target: v.nullable(v.pipe(v.string(), v.description("Stable audited resource identifier"))),
   timestamp: v.pipe(v.string(), v.isoTimestamp()),
   username: v.string(),
 });

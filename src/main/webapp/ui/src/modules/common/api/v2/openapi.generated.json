@@ -783,7 +783,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "action", "domain", "eventId", "payload", "timestamp", "username" ],
+        "required" : [ "action", "description", "domain", "eventId", "fullName", "payload", "target", "timestamp", "username" ],
         "type" : "object"
       },
       "ApiV2Config" : {
