@@ -5,6 +5,7 @@ import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { ResourceAccessAssignmentDocument } from "@/modules/common/api/v2/generated/models/resourceAccessAssignmentDocument";
 import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
@@ -103,7 +104,7 @@ test.describe
         expect(response.ok(), await response.text()).toBe(true);
 
         const incomingOwnerBooking = await apiContext.get(
-          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${BOOKING_READ_FIELDS}`,
+          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${apiV2Fields(BOOKING_READ_FIELDS)}`,
           { headers: { apiKey: incomingOwner.apiKey } },
         );
         expect(incomingOwnerBooking.ok(), await incomingOwnerBooking.text()).toBe(true);
@@ -115,7 +116,7 @@ test.describe
 
       await test.step("the former owner keeps a read-only booking with an unknown item", async () => {
         const bookingRead = await apiContext.get(
-          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${BOOKING_READ_FIELDS}`,
+          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${apiV2Fields(BOOKING_READ_FIELDS)}`,
           { headers: { apiKey: appUser.apiKey } },
         );
         expect(bookingRead.ok(), await bookingRead.text()).toBe(true);
@@ -132,7 +133,7 @@ test.describe
         });
 
         const ownRowsResponse = await apiContext.get(
-          `/api/v2/bookings?depth=1&limit=100&where=id==${bookingId}&fields[bookings]=${BOOKING_READ_FIELDS}`,
+          `/api/v2/bookings?depth=1&limit=100&where=id==${bookingId}&fields[bookings]=${apiV2Fields(BOOKING_READ_FIELDS)}`,
           { headers: { apiKey: appUser.apiKey } },
         );
         expect(ownRowsResponse.ok(), await ownRowsResponse.text()).toBe(true);
