@@ -126,7 +126,7 @@ service-backed job. To run that group locally against a chemistry service on
 port 8090, use:
 
 ```bash
-./mvnw integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+./mvnw integration-test -DskipUnitTests=true \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url=http://localhost:8090
 ```

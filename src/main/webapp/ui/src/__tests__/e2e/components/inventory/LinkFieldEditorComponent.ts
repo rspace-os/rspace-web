@@ -90,6 +90,7 @@ export class LinkFieldEditorComponent {
     const targetCheck = this.waitForTargetCheck(await this.targetGlobalIdInput.inputValue());
     await this.applyButton.click();
     await targetCheck;
+    // The response arrives before React commits the server-side validation error.
     await expect(this.targetGlobalIdInput, "the target was not rejected").toHaveAttribute("aria-invalid", "true");
     return this.getTargetHelperText();
   }

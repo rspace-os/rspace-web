@@ -25,12 +25,14 @@ This runs a production build and generates a `stats.html` file in the
 interactive treemap of all bundles and their constituent modules. Use the gzip
 toggle to see sizes representative of what users will actually download.
 
-Alongside `stats.html`, the same build writes a machine-readable
+The same build writes a machine-readable
 `src/main/webapp/ui/dist/stats.json` via the
 [vite-bundle-analyzer](https://www.npmjs.com/package/vite-bundle-analyzer)
 plugin. Both outputs are only produced when the `FRONTEND_BUILD_STATS`
 environment variable is set to `true` (which `pnpm run build:stats` does for
-you), so a normal `pnpm run build` is unaffected.
+you), so a normal `pnpm run build` is unaffected. When `CI=true`, the build
+writes only `stats.json`: CI compares that file, and skipping the interactive
+`stats.html` report saves build time.
 
 ## Automated bundle-size comparison on pull requests
 
@@ -40,7 +42,12 @@ wired up in `.github/workflows/lint-and-test.yml`:
 
 1. `bundle-size-pr` builds the PR branch with `pnpm run build:stats` and uploads
    its `dist/stats.json` as an artifact.
-2. `bundle-size-base` does the same for the base branch.
+2. `bundle-size-base` provides the same file for the base commit. On `main`,
+   the `build` job builds with `FRONTEND_BUILD_STATS=true` and caches its
+   `stats.json`, keyed by commit and by the pnpm manifests and lockfile.
+   `bundle-size-base` restores that cache and only builds the base commit
+   itself when there is no matching entry, for example when the base is not a
+   `main` commit or its `build` run has not finished.
 3. `bundle-size-report` downloads both artifacts and runs
    [`wojtekmaj/vite-compare-bundle-size`](https://github.com/wojtekmaj/vite-compare-bundle-size),
    which diffs the two `stats.json` files and posts (or updates) a comment

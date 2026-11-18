@@ -14,8 +14,10 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
@@ -142,6 +144,7 @@ public class ApiExtraFieldsHelper implements Validator {
     }
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
+    rejectFilestoreTargetsOnTemplate(incomingFields, parentInvRec);
     for (ApiExtraField apiField : incomingFields) {
       addRecordExtraFieldForIncomingApiField(apiField, user, parentInvRec);
     }
@@ -155,6 +158,7 @@ public class ApiExtraFieldsHelper implements Validator {
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
+    rejectFilestoreTargetsOnTemplate(incomingFields, parentInvRec);
     boolean changed = applyExistingLinkFieldChanges(incomingFields, dbFields, user);
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {
@@ -183,6 +187,21 @@ public class ApiExtraFieldsHelper implements Validator {
       parentInvRec.refreshActiveExtraFields();
     }
     return changed;
+  }
+
+  /** ADR 0016: items copy a template's extra fields, so it would stamp one user's filestore. */
+  private static void rejectFilestoreTargetsOnTemplate(
+      List<ApiExtraField> incomingFields, InventoryRecord parentInvRec) {
+    if (!(parentInvRec instanceof SampleTemplate || parentInvRec instanceof InstrumentTemplate)
+        || incomingFields == null) {
+      return;
+    }
+    for (ApiExtraField apiField : incomingFields) {
+      // whatever its flags: a POST creates the field anyway, and a PUT with both creates one
+      if (apiField.getLink() != null && apiField.getLink().hasFilestoreTarget()) {
+        throw new ApiRuntimeException("errors.inventory.field.linkFilestoreTargetOnTemplate");
+      }
+    }
   }
 
   /**
@@ -228,7 +247,7 @@ public class ApiExtraFieldsHelper implements Validator {
         continue;
       }
       ApiInventoryLink apiLink = apiField.getLink();
-      if (apiLink == null || StringUtils.isBlank(apiLink.getTargetGlobalId())) {
+      if (apiLink == null || !apiLink.hasTarget()) {
         continue;
       }
       Optional<ExtraField> dbFieldOpt =
@@ -286,9 +305,13 @@ public class ApiExtraFieldsHelper implements Validator {
    * Compared on the parsed base id plus the effective pin (a "vN" suffix counts as a pin), so a
    * client that pins via the suffix with {@code versionPin: null} does not churn an unchanged row
    * with spurious updates. An unparseable incoming id counts as changed so the manager rejects it
-   * with its clean validation error.
+   * with its clean validation error. A stored Filestore item target has no prefix, so an incoming
+   * Global ID always reads as changed.
    */
   private boolean linkChanged(ApiInventoryLink apiLink, InventoryLink dbLink) {
+    if (apiLink.hasFilestoreTarget()) {
+      return !InventoryLinkValidator.isSameFilestoreTarget(apiLink, dbLink);
+    }
     GlobalIdentifier incoming = parseTargetOrNull(apiLink.getTargetGlobalId());
     if (incoming == null) {
       return true;

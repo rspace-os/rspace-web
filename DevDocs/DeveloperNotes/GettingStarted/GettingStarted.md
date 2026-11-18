@@ -259,10 +259,26 @@ if this folder does not exist)
 
 ### Run the default test suite (recommended)
 
-To run tests: `mvn clean test -Denvironment=drop-recreate-db` will drop
-and recreate the database tables and run JUnit tests. This will run all
-unit and Spring integration tests and may take over 10 mins to run.
-If these pass, or there are just a few failures, then your setup is basically fine.
+To run tests: `mvn clean test` runs all unit and Spring integration tests
+and may take over 10 mins to run. If these pass, or there are just a few
+failures, then your setup is basically fine.
+
+DB-backed tests need Docker. `TestDatabaseExtension` starts a throwaway
+MariaDB container with the baseline schema for each test JVM, because
+`DatabaseCleaner` deletes nearly all rows after every integration-test class
+and would wipe a shared database such as the local `rspace` one. To use your own
+database instead, pass `-Djdbc.url` (plus `-Djdbc.username`/`-Djdbc.password`
+if not the defaults). Only point it at a database whose contents you are happy
+to lose. To reset it from the baseline first, the reset step needs the same
+server and database spelled out separately, with credentials in
+`-Djdbc.username.maven`/`-Djdbc.password.maven`; the build fails if they
+disagree with `jdbc.url`:
+
+```bash
+mvn clean test -Denvironment=drop-recreate-db \
+  -Djdbc.url=jdbc:mysql://localhost:3307/rspace_test \
+  -Djdbc.url.maven=jdbc:mysql://localhost:3307 -Djdbc.db.maven=rspace_test
+```
 
 Tests tagged `chemistry` are excluded because they require the OSS chemistry
 service. CI runs them in a separate job. See

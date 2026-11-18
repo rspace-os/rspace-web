@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiDocumentField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -76,5 +77,21 @@ public class ApiFieldsHelperTest {
 
     assertTrue(errors.hasErrors(), "a mandatory link field with no link must be rejected");
     assertEquals("errors.inventory.field.mandatoryFieldEmpty", errors.getFieldError().getCode());
+  }
+
+  @Test
+  public void mandatoryLinkFieldSatisfiedByIncomingFilestoreTarget() {
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setRelationType("IsSourceOf");
+    apiLink.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(12L, "/XRD/run.dat"));
+    ApiInventoryEntityField incoming = new ApiInventoryEntityField();
+    incoming.setType(ApiFieldType.LINK);
+    incoming.setLink(apiLink);
+
+    Errors errors = new MapBindingResult(new HashMap<>(), "sample");
+    helper.validateMandatoryFieldsForEntityPost(
+        List.of(incoming), List.<InventoryEntityField>of(mandatoryLinkTemplateField()), errors);
+
+    assertFalse(errors.hasErrors());
   }
 }

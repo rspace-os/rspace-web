@@ -3,9 +3,11 @@ package com.researchspace.service.inventory.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -14,14 +16,18 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -269,5 +275,209 @@ class InventoryLinkManagerImplUnitTest {
     ApiRuntimeException unsupported =
         assertThrows(ApiRuntimeException.class, () -> linkManager.getTargetSummary("FL3", actor));
     assertEquals("errors.inventory.field.linkTargetKindUnsupported", unsupported.getErrorCode());
+  }
+
+  private final NfsFileStore store =
+      GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("owner"));
+
+  private static ApiInventoryLink filestoreLink(String remotePath) {
+    ApiInventoryLink api = new ApiInventoryLink();
+    api.setRelationType("IsSourceOf");
+    api.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(12L, remotePath));
+    return api;
+  }
+
+  private void stubOwnedFilestore() {
+    when(linkTargetResolver.ownedFilestore(12L, actor)).thenReturn(Optional.of(store));
+  }
+
+  private ApiRuntimeException refusal(ApiInventoryLink api) {
+    return assertThrows(ApiRuntimeException.class, () -> linkManager.createLink(api, actor));
+  }
+
+  @Test
+  void createLinkToAFilestoreItemStoresTheCanonicalPathAndNoGlobalId() {
+    stubOwnedFilestore();
+    stubSavedLink();
+    store.setPath("/data");
+
+    InventoryLink saved = linkManager.createLink(filestoreLink("XRD/run.dat/"), actor);
+
+    assertEquals("IsSourceOf", saved.getRelationType());
+    assertEquals(12L, saved.getFilestoreId());
+    assertEquals("/XRD/run.dat", saved.getTargetRemotePath());
+    assertEquals("data/XRD/run.dat", saved.getTargetAbsolutePath());
+    assertNull(saved.getTargetGlobalId());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
+    verify(snapshotResolver, never()).resolveRevisionForVersion(any(), any(), any());
+  }
+
+  @Test
+  void aFilestoreTheActorDoesNotOwnFailsAsNotFound() {
+    // the unstubbed resolver answers empty, as it does for another user's filestore and
+    // for one that does not exist
+    ApiRuntimeException refused = refusal(filestoreLink("/XRD/run.dat"));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    assertArrayEquals(new Object[] {"12:/XRD/run.dat"}, refused.getArgs());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void aRemovedFilestoreFailsAsNotFoundToo() {
+    stubOwnedFilestore();
+    store.setDeleted(true);
+
+    ApiRuntimeException refused = refusal(filestoreLink("/XRD/run.dat"));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void aFilestoreTargetNamingNoItemFailsBeforeTheFilestoreIsLookedUp() {
+    ApiRuntimeException refused = refusal(filestoreLink("/"));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkTargetResolver, never()).ownedFilestore(any(), any());
+  }
+
+  @Test
+  void aLinkNamingBothTargetKindsIsRefused() {
+    ApiInventoryLink api = filestoreLink("/XRD/run.dat");
+    api.setTargetGlobalId("SA6");
+
+    ApiRuntimeException refused = refusal(api);
+
+    assertEquals("errors.inventory.field.linkTargetAmbiguous", refused.getErrorCode());
+    verify(linkTargetResolver, never()).ownedFilestore(any(), any());
+  }
+
+  @Test
+  void aVersionPinOnAFilestoreItemIsRefused() {
+    ApiInventoryLink api = filestoreLink("/XRD/run.dat");
+    api.setVersionPin(3L);
+
+    ApiRuntimeException refused = refusal(api);
+
+    assertEquals("errors.inventory.field.linkTargetVersionNotFound", refused.getErrorCode());
+    assertArrayEquals(new Object[] {"12:/XRD/run.dat", 3L}, refused.getArgs());
+  }
+
+  @Test
+  void anOverlongFilestorePathFailsAsNotFound() {
+    stubOwnedFilestore();
+
+    ApiRuntimeException refused = refusal(filestoreLink("/" + "a".repeat(1024)));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void aPathOverlongOnlyOnceTheFilestorePathIsAddedFailsAsNotFound() {
+    stubOwnedFilestore();
+    store.setPath("/" + "b".repeat(100));
+
+    ApiRuntimeException refused = refusal(filestoreLink("/" + "a".repeat(1000)));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void thePathLimitCountsCharactersNotUtf16Units() {
+    // the utf8mb4 columns hold 1024 characters; an emoji is one character but two UTF-16 units
+    stubOwnedFilestore();
+    stubSavedLink();
+    String remotePath = "/" + "😀".repeat(600);
+
+    InventoryLink saved = linkManager.createLink(filestoreLink(remotePath), actor);
+
+    assertEquals(remotePath, saved.getTargetRemotePath());
+  }
+
+  @Test
+  void retargetingAGlobalIdLinkToAFilestoreItemLeavesOneKind() {
+    stubOwnedFilestore();
+    stubSavedLink();
+    InventoryLink existing = new InventoryLink();
+    existing.setTargetGlobalId("SA6");
+    existing.setTargetPrefix(GlobalIdPrefix.SA);
+    existing.setTargetDbId(6L);
+    existing.setVersionPin(3L);
+    existing.setTargetRevisionId(99L);
+
+    InventoryLink updated = linkManager.updateLink(existing, filestoreLink("/XRD"), actor);
+
+    assertTrue(updated.isFilestoreTarget());
+    assertNull(updated.getTargetGlobalId());
+    assertNull(updated.getTargetPrefix());
+    assertNull(updated.getTargetDbId());
+    assertNull(updated.getVersionPin());
+    assertNull(updated.getTargetRevisionId());
+  }
+
+  @Test
+  void retargetingAFilestoreLinkToAGlobalIdLeavesOneKind() {
+    stubReadableTarget();
+    stubSavedLink();
+    InventoryLink existing = new InventoryLink();
+    existing.setFilestoreTarget(store, "/XRD");
+    ApiInventoryLink update = new ApiInventoryLink();
+    update.setRelationType("References");
+    update.setTargetGlobalId("SD42");
+
+    InventoryLink updated = linkManager.updateLink(existing, update, actor);
+
+    assertFalse(updated.isFilestoreTarget());
+    assertEquals("SD42", updated.getTargetGlobalId());
+    assertNull(updated.getTargetAbsolutePath());
+  }
+
+  @Test
+  void filestoreTargetSummaryNamesTheFilestoreToItsOwner() {
+    stubOwnedFilestore();
+
+    ApiInventoryLinkTargetSummary summary =
+        linkManager.getFilestoreTargetSummary(12L, "/XRD/run.dat", actor);
+
+    assertTrue(summary.isReadable());
+    assertEquals("My S3", summary.getName());
+    assertEquals("FILESTORE_ITEM", summary.getType());
+    assertFalse(summary.isDeleted());
+    assertNull(summary.getGlobalId());
+    assertNull(summary.getPinnedVersionFound());
+  }
+
+  @Test
+  void filestoreTargetSummaryFlagsARemovedFilestoreAsDeleted() {
+    stubOwnedFilestore();
+    store.setDeleted(true);
+
+    ApiInventoryLinkTargetSummary summary =
+        linkManager.getFilestoreTargetSummary(12L, "/XRD/run.dat", actor);
+
+    assertTrue(summary.isReadable());
+    assertTrue(summary.isDeleted());
+  }
+
+  @Test
+  void filestoreTargetSummaryIsFullyRedactedWhenTheFilestoreIsNotOwned() {
+    // ADR 0002: nothing but defaults, whether the filestore is someone else's or absent
+    assertEquals(
+        new ApiInventoryLinkTargetSummary(),
+        linkManager.getFilestoreTargetSummary(12L, "/XRD/run.dat", actor));
+  }
+
+  @Test
+  void filestoreTargetSummaryRejectsAPathNamingNoItem() {
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> linkManager.getFilestoreTargetSummary(12L, "/", actor));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(linkTargetResolver, never()).ownedFilestore(any(), any());
   }
 }

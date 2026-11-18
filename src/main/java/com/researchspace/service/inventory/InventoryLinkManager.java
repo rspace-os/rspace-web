@@ -18,7 +18,9 @@ public interface InventoryLinkManager {
    * ExtraLinkField; the caller is responsible for wiring the returned entity into the parent.
    * Rejects a pin to a version the target does not have with {@code
    * errors.inventory.field.linkTargetVersionNotFound}, checked only after the target proved
-   * readable (RSDEV-1530).
+   * readable (RSDEV-1530). A Filestore item target is accepted only through a filestore the actor
+   * owns and has not removed, at a path naming an item inside it, with no version pin; refusals
+   * read like an unknown Global ID target (ADR 0016).
    */
   InventoryLink createLink(ApiInventoryLink apiLink, User actor);
 
@@ -26,10 +28,11 @@ public interface InventoryLinkManager {
    * Whether {@link #createLink} would succeed for this payload and actor: a parseable target of an
    * allowed kind, a valid relation type, and, unless the payload skips the target check as CSV
    * import does, a target that exists and the actor can READ and, when pinned, a version that
-   * target has. The same checks as {@code createLink}, so a caller that must not fail as a whole on
-   * one bad link (the PIDINST import, RSDEV-1528) can drop that link beforehand. A link field's
-   * allowed-relation whitelist is not among them: the field enforces it on write. False for every
-   * failure alike, saying nothing about which.
+   * target has; for a Filestore item target, the filestore rule of {@link #createLink}. The same
+   * checks as {@code createLink}, so a caller that must not fail as a whole on one bad link (the
+   * PIDINST import, RSDEV-1528) can drop that link beforehand. A link field's allowed-relation
+   * whitelist is not among them: the field enforces it on write. False for every failure alike,
+   * saying nothing about which.
    */
   boolean canCreateLink(ApiInventoryLink apiLink, User actor);
 
@@ -58,4 +61,15 @@ public interface InventoryLinkManager {
    * i18n errors as the write path.
    */
   ApiInventoryLinkTargetSummary getTargetSummary(String targetGlobalId, User actor);
+
+  /**
+   * Summary of a link target that is a Filestore item. To the user who owns the filestore: its
+   * name, type {@code FILESTORE_ITEM}, and {@code deleted} once the filestore was removed from the
+   * Gallery. To anyone else, and for an unknown filestore, the same fully redacted summary (ADR
+   * 0002, ADR 0016). The remote store is never contacted, so nothing is said about the file itself.
+   * A path naming no item inside the filestore is rejected with the write path's "target not found"
+   * error.
+   */
+  ApiInventoryLinkTargetSummary getFilestoreTargetSummary(
+      Long filestoreId, String remotePath, User actor);
 }

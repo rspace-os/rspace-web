@@ -111,6 +111,9 @@ what happens in the background is that maven drops the `rspace` database and re-
 started, all the changesets defined in liquibase "changelog" xmls are applied. On production, 
 the database already exists, the new changesets will be applied on top of it. 
 
+The flag is for resetting your local database before `mvn jetty:run`. Tests no longer need it:
+DB-backed tests start their own throwaway MariaDB container (see `TestDatabaseExtension`).
+
 When adding a new liquibase changeset:
 
 * Add a comment describing what the change is.

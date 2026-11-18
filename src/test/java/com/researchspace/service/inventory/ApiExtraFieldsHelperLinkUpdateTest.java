@@ -1,29 +1,43 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -191,5 +205,118 @@ class ApiExtraFieldsHelperLinkUpdateTest {
   void emptyIncomingListIsANoop() {
     assertFalse(
         helper.applyExistingLinkFieldChanges(Collections.emptyList(), List.of(dbField), user));
+  }
+
+  private final NfsFileStore store =
+      GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("owner"));
+
+  private ApiExtraField incomingFilestoreLinkField(Long id, String remotePath) {
+    ApiExtraField apiField = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+    apiField.setId(id);
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setRelationType("References");
+    apiLink.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(12L, remotePath));
+    apiField.setLink(apiLink);
+    return apiField;
+  }
+
+  @Test
+  void anEmptyLinkFieldGainsAFilestoreTargetViaCreate() {
+    dbField.setLink(null);
+    InventoryLink created = new InventoryLink();
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    assertSame(created, dbField.getLink());
+  }
+
+  @Test
+  void anUnchangedFilestoreTargetIsNotRevalidated() {
+    // a colleague saving a shared item, or the owner after removing the filestore
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "XRD/run.dat/");
+
+    assertFalse(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  static Stream<Named<Consumer<ApiInventoryLink>>> malformedFilestorePayloads() {
+    return Stream.of(
+        Named.of("without a filestore id", link -> link.getFilestoreTarget().setFilestoreId(null)),
+        Named.of("with a version pin", link -> link.setVersionPin(3L)),
+        Named.of("with a Global ID too", link -> link.setTargetGlobalId("SA7")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("malformedFilestorePayloads")
+  void aMalformedPayloadOverAnUnchangedFilestoreTargetGoesThroughTheLinkManager(
+      Consumer<ApiInventoryLink> malform) {
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+    malform.accept(apiField.getLink());
+
+    assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  @Test
+  void aTemplateExtraLinkFieldRefusesAFilestoreTarget() {
+    // ADR 0016: items copy a template's extra fields, so this would stamp one user's filestore
+    List<ApiExtraField> apiFields = List.of(incomingFilestoreLinkField(5L, "/XRD/run.dat"));
+    List<ExtraField> dbFields = List.of(dbField);
+    SampleTemplate template = new SampleTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.createDeleteRequestedExtraFields(apiFields, dbFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aNewTemplateExtraLinkFieldRefusesAFilestoreTarget() {
+    // creation ignores the delete flag, so it must not exempt the field
+    ApiExtraField apiField = incomingFilestoreLinkField(null, "/XRD/run.dat");
+    apiField.setDeleteFieldRequest(true);
+    List<ApiExtraField> apiFields = List.of(apiField);
+    InstrumentTemplate template = new InstrumentTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.addExtraFieldsForNewInventoryRecord(apiFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aTemplateUpdateFlaggedBothNewAndDeleteRefusesAFilestoreTarget() {
+    // both flags create a new field and delete the old one, so the new field would survive
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+    apiField.setNewFieldRequest(true);
+    apiField.setDeleteFieldRequest(true);
+    List<ApiExtraField> apiFields = List.of(apiField);
+    List<ExtraField> dbFields = List.of(dbField);
+    SampleTemplate template = new SampleTemplate();
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> helper.createDeleteRequestedExtraFields(apiFields, dbFields, template, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aGlobalIdLinkRetargetedToAFilestoreItemGoesThroughTheLinkManager() {
+    ApiExtraField apiField = incomingFilestoreLinkField(5L, "/XRD/run.dat");
+
+    assertTrue(helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
   }
 }

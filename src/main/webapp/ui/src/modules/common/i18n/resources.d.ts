@@ -6884,7 +6884,9 @@ export default interface Resources {
           "line": "{0} on {1}: {2}"
         },
         "errors": {
-          "exportFolderUnavailable": "Could not obtain the PDF export folder."
+          "exportFolderUnavailable": "Could not obtain the PDF export folder.",
+          "generationFailed": "Export could not be generated",
+          "noContent": "Export cancelled because the selection contains no data"
         },
         "exporterNameWithOrcid": "{0} - Orcid ID {1}",
         "footer": {
@@ -7462,8 +7464,10 @@ export default interface Resources {
             "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
             "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
           },
+          "linkFilestoreTargetOnTemplate": "The default link of a template cannot target a filestore item.",
           "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
           "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
+          "linkTargetAmbiguous": "A link names either a Global ID or a filestore item, not both.",
           "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
           "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",

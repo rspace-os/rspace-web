@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -11,17 +12,21 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.NfsManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +46,7 @@ class LinkTargetResolverImplTest {
   @Mock private InventoryPermissionUtils inventoryPermissionUtils;
   @Mock private BaseRecordManager baseRecordManager;
   @Mock private IPermissionUtils permissionUtils;
+  @Mock private NfsManager nfsManager;
   @InjectMocks private LinkTargetResolverImpl resolver;
 
   private User user;
@@ -396,5 +402,39 @@ class LinkTargetResolverImplTest {
         .thenReturn(rec);
     when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(rec), eq(user))).thenReturn(false);
     return rec;
+  }
+
+  private NfsFileStore filestoreOf(String username) {
+    return GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(
+        12L, "My S3", new User(username));
+  }
+
+  @Test
+  void aFilestoreIsOwnedByTheUserItBelongsToEvenOnceRemoved() {
+    NfsFileStore store = filestoreOf("any");
+    store.setDeleted(true);
+    when(nfsManager.getNfsFileStore(12L)).thenReturn(store);
+
+    assertSame(store, resolver.ownedFilestore(12L, user).orElseThrow());
+  }
+
+  @Test
+  void anotherUsersFilestoreIsNotOwned() {
+    when(nfsManager.getNfsFileStore(12L)).thenReturn(filestoreOf("someone-else"));
+
+    assertTrue(resolver.ownedFilestore(12L, user).isEmpty());
+  }
+
+  @Test
+  void anUnknownFilestoreIsNotOwned() {
+    // the unstubbed manager answers null, as the real one does for an unknown id
+    assertTrue(resolver.ownedFilestore(404L, user).isEmpty());
+    verify(nfsManager).getNfsFileStore(404L);
+  }
+
+  @Test
+  void aMissingFilestoreIdIsNotLookedUp() {
+    assertTrue(resolver.ownedFilestore(null, user).isEmpty());
+    verifyNoInteractions(nfsManager);
   }
 }

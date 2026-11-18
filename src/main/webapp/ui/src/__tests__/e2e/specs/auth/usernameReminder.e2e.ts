@@ -7,6 +7,14 @@ test.use({ storageState: { cookies: [], origins: [] } });
 const REMINDER_EMAIL_SUBJECT = "RSpace username reminder";
 
 test.describe("Username reminder", () => {
+  let recipient: string | undefined;
+
+  test.afterEach(async ({ clientMailpit }) => {
+    if (recipient) {
+      await clientMailpit.deleteMessages(`to:${recipient}`);
+    }
+  });
+
   test("As a user, I receive an email reminding me of my username", async ({
     page,
     pageLogin,
@@ -15,7 +23,7 @@ test.describe("Username reminder", () => {
   }) => {
     const username = alphaNumericUnique("e2eUserReminder");
     const email = `${username}@example.com`;
-    await clientMailpit.deleteAllMessages();
+    recipient = email;
 
     await clientSysadmin.createUser({
       username,

@@ -10,11 +10,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 /** API payload representing a Link extra-field's target/relation metadata. */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"relationType", "targetGlobalId", "versionPin"})
+@JsonPropertyOrder({"relationType", "targetGlobalId", "versionPin", "filestoreTarget"})
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public class ApiInventoryLink {
 
@@ -26,6 +27,11 @@ public class ApiInventoryLink {
 
   @JsonProperty("versionPin")
   private Long versionPin;
+
+  /** Present only on a link to a Filestore item, so Global ID link payloads are unchanged. */
+  @JsonProperty("filestoreTarget")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private ApiInventoryLinkFilestoreTarget filestoreTarget;
 
   /**
    * Set only by {@link com.researchspace.service.inventory.csvimport.CsvLinkValueParser}: skips the
@@ -42,6 +48,18 @@ public class ApiInventoryLink {
     this.relationType = link.getRelationType();
     this.targetGlobalId = link.getTargetGlobalId();
     this.versionPin = link.getVersionPin();
+    if (link.isFilestoreTarget()) {
+      this.filestoreTarget =
+          new ApiInventoryLinkFilestoreTarget(link.getFilestoreId(), link.getTargetRemotePath());
+    }
+  }
+
+  public boolean hasFilestoreTarget() {
+    return filestoreTarget != null;
+  }
+
+  public boolean hasTarget() {
+    return hasFilestoreTarget() || StringUtils.isNotBlank(targetGlobalId);
   }
 
   /**
