@@ -150,7 +150,9 @@ public class InventoryLink implements Serializable {
   /**
    * Creates a new, unpersisted copy of this link carrying the same target identity, version pin,
    * relation type and deletion state. The copy has a null id and no timestamps (those are set on
-   * persist), so it can be attached to a copied field without sharing this managed instance.
+   * persist), so it can be attached to a copied field without sharing this managed instance. Per
+   * ADR 0016 the target is not checked again, so a copy made by someone else keeps a Filestore item
+   * target.
    */
   public InventoryLink shallowCopy() {
     InventoryLink copy = new InventoryLink();
