@@ -2,7 +2,6 @@ import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import {
   ApiV2Error,
-  ApiV2ProblemError,
   ApiV2SessionEndedError,
   ApiV2UnexpectedResponseError,
 } from "@/modules/common/api/v2/ApiV2ProblemError";

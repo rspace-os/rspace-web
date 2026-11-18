@@ -9,7 +9,6 @@ import { BookingItemInformationCard } from "@/modules/booking/creation/BookingIt
 import { BookingUnavailableError, bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { currentWallClock, formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { ApiV2Error, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
   invalidateCountBookings,
