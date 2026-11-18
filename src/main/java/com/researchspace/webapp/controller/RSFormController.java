@@ -132,6 +132,7 @@ public class RSFormController extends BaseController {
    * @param formId
    * @return
    */
+  @ResponseBody
   @PostMapping("/unlockform")
   public AjaxReturnObject<Boolean> unlockForm(
       @RequestParam("id") long formId, Principal principal) {

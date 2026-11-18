@@ -45,15 +45,10 @@ public class TimeFieldDTO<T> extends AbstractFormFieldDTO<TimeFieldForm> {
     fldemplate.setTimeFormat(getTimeFormat());
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(fldemplate.getTimeFormat());
     try {
-      if (!StringUtils.isEmpty(getDefaultValue())) {
-        fldemplate.setDefaultTime(simpleDateFormat.parse(getDefaultValue()).getTime());
-      }
-      if (!StringUtils.isEmpty(getMinValue())) {
-        fldemplate.setMinTime(simpleDateFormat.parse(getMinValue()).getTime());
-      }
-      if (!StringUtils.isEmpty(getMaxValue())) {
-        fldemplate.setMaxTime(simpleDateFormat.parse(getMaxValue()).getTime());
-      }
+      // the editors always send every setting, so an empty one has been cleared (0 is unset)
+      fldemplate.setDefaultTime(parseOrUnset(simpleDateFormat, getDefaultValue()));
+      fldemplate.setMinTime(parseOrUnset(simpleDateFormat, getMinValue()));
+      fldemplate.setMaxTime(parseOrUnset(simpleDateFormat, getMaxValue()));
     } catch (ParseException e) {
       LoggerFactory.getLogger(TimeFieldDTO.class.getName())
           .error("Error parsing epoch second from string.", e);
@@ -67,5 +62,9 @@ public class TimeFieldDTO<T> extends AbstractFormFieldDTO<TimeFieldForm> {
     TimeFieldForm tft = new TimeFieldForm();
     copyValuesIntoFieldForm(tft);
     return tft;
+  }
+
+  private static long parseOrUnset(SimpleDateFormat format, String value) throws ParseException {
+    return StringUtils.isEmpty(value) ? 0 : format.parse(value).getTime();
   }
 }

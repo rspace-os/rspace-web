@@ -11400,6 +11400,76 @@ export default interface Resources {
         }
       }
     },
+    "formFieldEditor": {
+      "addField": "Add field",
+      "confirm": {
+        "abandon": "Abandon the changes to this form?",
+        "abandonAction": "Abandon changes",
+        "abandonMessage": "Every change since the form was last updated is discarded, including any unsaved field changes.",
+        "changeType": "Change the type of {field}?",
+        "changeTypeAction": "Change type",
+        "deleteField": "Delete {field}?",
+        "dependents": "{count, plural, one {The display rule of {fields} reads it and will be removed.} other {The display rules of {fields} read it and will be removed.}}",
+        "removeOption": "Remove the option {option}?"
+      },
+      "errorTitle": "The fields were not saved.",
+      "heading": "Fields",
+      "loadFailed": "The fields of this form could not be loaded.",
+      "noFields": "This form has no fields yet.",
+      "optionInUse": "A display rule uses this option, so it cannot be renamed.",
+      "problems": {
+        "aboveMax": "The default cannot be more than the maximum.",
+        "belowMin": "The default cannot be less than the minimum.",
+        "decimalPlaces": "Enter a whole number from 0 to 127.",
+        "minAboveMax": "The minimum cannot be more than the maximum.",
+        "nameRequired": "Enter a name.",
+        "nameTooLong": "Use at most {max, number} characters.",
+        "notANumber": "Enter a number.",
+        "optionCharacters": "Options cannot contain & or =.",
+        "optionsInvalid": "Options cannot be blank and must all be different.",
+        "optionsRequired": "Add at least one option.",
+        "optionsTooLong": "These options are too long altogether."
+      },
+      "problemsTitle": "Fix the problems marked below, then save again.",
+      "publishedNotice": "This form is published. To change its fields, edit it again from the list of forms; your changes then make a new version.",
+      "saveFailed": "The fields could not be saved. Try again.",
+      "settings": {
+        "apiOnlyType": "Fields of this type are added through the API. Here you can rename, reorder, delete it, make it mandatory, or show it with a display rule.",
+        "dateFormat": "Date format",
+        "decimalPlaces": "Decimal places",
+        "defaultOption": "Default option",
+        "defaultOptions": "Selected by default",
+        "defaultText": "Default text",
+        "defaultTextOf": "Default text of {field}",
+        "defaultValue": "Default value",
+        "earliest": "Earliest",
+        "editDefaultText": "Edit default text of {field}",
+        "latest": "Latest",
+        "maximum": "Maximum",
+        "minimum": "Minimum",
+        "multiple": "Multiple selection",
+        "noDefault": "No default",
+        "noDefaultText": "No default text.",
+        "password": "Hide the value, like a password",
+        "showAsPickList": "Show as a drop-down list",
+        "sortAlphabetic": "Sort options alphabetically",
+        "time12Hour": "12-hour (02:30 PM)",
+        "time24Hour": "24-hour (14:30)",
+        "timeFormat": "Time format"
+      },
+      "types": {
+        "attachment": "Attachment",
+        "choice": "Choice (several options)",
+        "date": "Date",
+        "number": "Number",
+        "radio": "Radio (one option)",
+        "reference": "Reference",
+        "string": "String (one line of text)",
+        "text": "Text (formatted text)",
+        "time": "Time",
+        "uri": "URI"
+      }
+    },
     "tinymce": {
       "chemCard": {
         "atoms": "Atoms",
