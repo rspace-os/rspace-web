@@ -5,6 +5,8 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import SampleModel from "../../../stores/models/SampleModel";
 import useStores from "../../../stores/use-stores";
 import type theme from "../../../theme";
 import type { RecordPalette } from "../../../theme";
@@ -71,6 +73,23 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
+  let nestedSelectionReason = "";
+  if (activeResult instanceof ContainerModel) {
+    const listViewAndASelectedRecord =
+      activeResult.contentSearch.searchView === "LIST" && activeResult.hasSelectedRecord;
+    const gridOrImageViewAndSelectedLocation =
+      (activeResult.contentSearch.searchView === "GRID" || activeResult.contentSearch.searchView === "IMAGE") &&
+      activeResult.hasSelectedLocation;
+    if (listViewAndASelectedRecord || gridOrImageViewAndSelectedLocation) {
+      nestedSelectionReason = t("container.contextMenu.contentsSelected");
+    }
+  } else if (activeResult instanceof SampleModel) {
+    const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(activeResult.search.searchView);
+    if (activeResult.hasSelectedSubsample && searchShowsSelection) {
+      nestedSelectionReason = t("sample.contextMenu.subsamplesSelected");
+    }
+  }
+
   const prefixActions = [
     {
       key: "show-info",
@@ -90,7 +109,11 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
               menuID="stepper"
               prefixActions={prefixActions}
               selectedResults={[activeResult].filter(Boolean)}
-              forceDisabled={search.processingContextActions ? "Action in Progress" : ""}
+              forceDisabled={
+                search.processingContextActions
+                  ? "Action in Progress"
+                  : (activeResult.contextMenuDisabled() ?? nestedSelectionReason)
+              }
               basketSearch={search.fetcher.basketSearch}
             />
           </Box>
