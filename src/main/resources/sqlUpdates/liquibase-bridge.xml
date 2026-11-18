@@ -1,0 +1,46 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!--
+      INTEGRATION BRANCH ONLY: main-plus-booking-poc. Never merge this file or its
+      liquibaseBridge beans into a feature branch or main.
+
+      Runs before liquibase-master.xml, through its own SpringLiquibase bean: Liquibase validates
+      checksums and reads DATABASECHANGELOG once per run, so these changes must land in an earlier run.
+
+      Bridges a sample-requests-and-booking 2.27.2-RC database to this branch, keeping booking data.
+      The booking stack folded its later column and table drops into the changesets that created
+      them, so the schema already matches and only the changelog needs updating.
+      Any other database marks this as ran without changes.
+    -->
+    <changeSet id="bridge-2.27.2-RC-to-main-plus-booking-poc" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN">
+            <changeSetExecuted id="booking-default-access-grantee" author="tchoi-rs"
+                changeLogFile="sqlUpdates/changeLog-rsdev-1187-booking-settings.xml"/>
+        </preConditions>
+        <!-- Edited in place. Liquibase recomputes a NULL MD5SUM. -->
+        <sql>
+            UPDATE DATABASECHANGELOG SET MD5SUM = NULL
+            WHERE AUTHOR = 'tchoi-rs' AND (
+                  (FILENAME = 'sqlUpdates/changeLog-rsdev-1187-booking-configuration.xml'
+                   AND ID IN ('rsdev-1187-booking-configuration', 'rsdev-1187-booking-configuration-audit'))
+               OR (FILENAME = 'sqlUpdates/changeLog-rsdev-1187-booking-settings.xml'
+                   AND ID IN ('rsdev-1187-booking-configuration-defaults', 'booking-configuration-defaults-audit')));
+        </sql>
+        <!-- Folded into the changesets above, or replaced by notification-message-text. -->
+        <sql>
+            DELETE FROM DATABASECHANGELOG
+            WHERE AUTHOR = 'tchoi-rs' AND (
+                  (FILENAME = 'sqlUpdates/changeLog-rsdev-1187-booking-settings.xml'
+                   AND ID IN ('booking-default-access-grantee', 'booking-default-access-grantee-audit'))
+               OR (FILENAME = 'sqlUpdates/changeLog-booking-directional-buffers.xml' AND ID = 'booking-directional-buffers')
+               OR (FILENAME = 'sqlUpdates/changeLog-booking-drop-default-sharing.xml' AND ID = 'booking-drop-default-sharing')
+               OR (FILENAME = 'sqlUpdates/changeLog-booking-drop-resource-access.xml' AND ID = 'booking-inherited-access-drop-acl')
+               OR (FILENAME = 'sqlUpdates/changeLog-booking-single-buffer.xml' AND ID = 'booking-single-buffer')
+               OR (FILENAME = 'sqlUpdates/changeLog-rsdev-booking-cancellation-reason.xml' AND ID = 'rsdev-booking-notification-message'));
+        </sql>
+    </changeSet>
+</databaseChangeLog>
