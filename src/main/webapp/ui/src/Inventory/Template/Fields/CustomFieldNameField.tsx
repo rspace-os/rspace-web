@@ -2,7 +2,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type FieldModel from "../../../stores/models/FieldModel";
@@ -25,6 +25,18 @@ function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): R
 
   const emptyName = field.name === "";
   const tooLongName = field.name.length > 50;
+  const hasError = emptyName || tooLongName || duplicateFieldError;
+
+  // Parents pass a fresh callback on every render; keep the latest in a ref so the effect only
+  // re-runs when the error state changes.
+  const onErrorStateChangeRef = useRef(onErrorStateChange);
+  onErrorStateChangeRef.current = onErrorStateChange;
+
+  // Report on mount as well as on change: a newly added field starts with an empty name.
+  useEffect(() => {
+    onErrorStateChangeRef.current(editing && hasError);
+    return () => onErrorStateChangeRef.current(false);
+  }, [editing, hasError]);
 
   const helperText = match<void, string>([
     [() => emptyName, t("fields.templateFields.customField.validation.emptyName")],
@@ -36,7 +48,7 @@ function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): R
   return editing ? (
     <InputWrapper
       label={t("fields.templateFields.customField.name")}
-      error={emptyName || tooLongName || duplicateFieldError}
+      error={hasError}
       helperText={helperText}
       maxLength={50}
       value={field.name}
@@ -48,7 +60,6 @@ function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): R
         disabled={!editing}
         onChange={({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
           field.setAttributesDirty({ name: value });
-          onErrorStateChange(value === "" || value.length > 50);
         }}
         id={id}
       />
