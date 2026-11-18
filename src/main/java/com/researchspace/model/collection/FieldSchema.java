@@ -21,5 +21,6 @@ public record FieldSchema(
     AccessDocumentation readAccess,
     AccessDocumentation createAccess,
     AccessDocumentation updateAccess,
+    boolean readInherited,
     List<FieldSchema> fields)
     implements ResourceFieldSchema {}

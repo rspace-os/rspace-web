@@ -116,7 +116,8 @@ class ApiV2DeclaredArrayOpenApiTest {
       Map<String, Object> childArray = map(children.get("children"));
       assertEquals(false, map(childArray.get("items")).get("additionalProperties"));
       if ("Read".equals(operation)) {
-        assertFalse(item.containsKey("required"));
+        // Copied from the Row component: always rendered, with no read restriction of their own.
+        assertEquals(Set.of("name", "group"), Set.copyOf((List<?>) item.get("required")));
         assertFalse(group.containsKey("required"));
       } else {
         assertEquals(Set.of("name", "group"), Set.copyOf((List<?>) item.get("required")));
@@ -246,6 +247,18 @@ class ApiV2DeclaredArrayOpenApiTest {
   }
 
   @Test
+  void marksReadPropertiesWithoutTheirOwnReadRestrictionAsGuaranteed() {
+    Map<String, Object> schemas = schemas(document(description("rows"), false));
+    Map<String, Object> read = map(map(schemas.get("ItemsRead")).get("properties"));
+    for (String field : List.of("id", "detail", "summary", "rows")) {
+      assertEquals(true, map(read.get(field)).get("x-rspace-read-guaranteed"), field);
+    }
+    assertFalse(map(read.get("secret")).containsKey("x-rspace-read-guaranteed"));
+    Map<String, Object> created = map(map(schemas.get("ItemsCreate")).get("properties"));
+    assertFalse(map(created.get("rows")).containsKey("x-rspace-read-guaranteed"));
+  }
+
+  @Test
   void readOnlyObjectPublishesItsTypeAsAComponentWithFieldMetadata() {
     Map<String, Object> schemas = schemas(document(description("rows"), false));
     Map<String, Object> summary =
@@ -334,6 +347,8 @@ class ApiV2DeclaredArrayOpenApiTest {
                 "summary",
                 CollectionFieldTypes.readOnlyObject(Summary.class),
                 (Item item) -> new Summary(1)),
+            Field.readOnly("secret", "secret", CollectionFieldTypes.text(), (Item item) -> "secret")
+                .readableBy(AccessFunction.never()),
             Field.writable(name, "rows", rows, Item::rows, (item, value) -> {})
                 .allowNull()
                 .defaultValue(

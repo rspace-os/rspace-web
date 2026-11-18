@@ -27,6 +27,13 @@ public sealed interface ResourceFieldSchema permits FieldSchema, RelationshipSch
 
   AccessDocumentation updateAccess();
 
+  /**
+   * True when the member's read access is {@link AccessFunction#INHERITED}: it has no read
+   * restriction of its own, so it is readable whenever its document is. {@link #readAccess()} holds
+   * the resolved documentation and cannot tell the two apart.
+   */
+  boolean readInherited();
+
   default Object defaultValue() {
     return null;
   }

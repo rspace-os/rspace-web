@@ -17,7 +17,8 @@ public record RelationshipSchema(
     OpenApiSchemaDocumentation openApi,
     AccessDocumentation readAccess,
     AccessDocumentation createAccess,
-    AccessDocumentation updateAccess)
+    AccessDocumentation updateAccess,
+    boolean readInherited)
     implements ResourceFieldSchema {
 
   @Override

@@ -15,7 +15,7 @@ final class ApiV2OpenApiResultSchemas {
         "type",
         "object",
         "required",
-        List.of("docs", "limit", "page"),
+        List.of("docs", "limit", "page", "hasNextPage"),
         "properties",
         ordered(
             "docs",

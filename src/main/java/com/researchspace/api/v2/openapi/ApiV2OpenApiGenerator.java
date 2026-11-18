@@ -109,6 +109,7 @@ public final class ApiV2OpenApiGenerator {
         .forEach(
             resource -> addPaths(paths, resource, componentNames, resourceSchemas, referenced));
 
+    ApiV2OpenApiSchemas.requireResponseOnlyRequired(paths, schemas);
     schemas.replaceAll(
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
     ApiV2OpenApiAccessPolicies.share(schemas, referenced);

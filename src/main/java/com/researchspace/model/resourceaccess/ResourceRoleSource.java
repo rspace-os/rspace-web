@@ -1,11 +1,10 @@
 package com.researchspace.model.resourceaccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 /** One persisted or implicit source contributing to a subject's effective resource access. */
 public record ResourceRoleSource(
@@ -24,25 +23,36 @@ public record ResourceRoleSource(
     return new ResourceRoleSource(ResourceRoleSourceKind.IMPLICIT, roleKey, null, null);
   }
 
+  /**
+   * Safe source identity for a group or audience source. {@code id} is the numeric or symbolic
+   * identifier parsed from the key, and is omitted when the key carries none.
+   */
+  public record Grantee(
+      ResourceRoleSourceKind kind,
+      String key,
+      @JsonInclude(JsonInclude.Include.NON_NULL)
+          @Schema(
+              types = {"integer", "string"},
+              requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+          Object id,
+      @Schema(nullable = true) String name) {}
+
   /** Safe source identity, null for direct and implicit sources in direct JSON serialization. */
   @JsonProperty("grantee")
   @Schema(nullable = true)
-  public Map<String, Object> grantee() {
+  public Grantee grantee() {
     if (kind == ResourceRoleSourceKind.DIRECT || kind == ResourceRoleSourceKind.IMPLICIT) {
       return null;
     }
-    Map<String, Object> grantee = new LinkedHashMap<>();
-    grantee.put("kind", kind.name());
-    grantee.put("key", granteeKey);
     String rawId = ResourceGranteeKeys.parseIdentifier(granteeKey);
+    Object id = null;
     if (rawId != null) {
       try {
-        grantee.put("id", Long.valueOf(rawId));
+        id = Long.valueOf(rawId);
       } catch (NumberFormatException ignored) {
-        grantee.put("id", rawId.toUpperCase(Locale.ROOT).replace('-', '_'));
+        id = rawId.toUpperCase(Locale.ROOT).replace('-', '_');
       }
     }
-    grantee.put("name", nameSnapshot);
-    return Map.copyOf(grantee);
+    return new Grantee(kind, granteeKey, id, nameSnapshot);
   }
 }

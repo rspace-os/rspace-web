@@ -278,6 +278,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         CollectionSchemaBuilder.documented(childAccess.readAccess()),
         CollectionSchemaBuilder.documented(childAccess.createAccess()),
         CollectionSchemaBuilder.documented(childAccess.updateAccess()),
+        readAccess == AccessFunction.INHERITED,
         type.fields().stream().map(child -> child.schema(childAccess)).toList());
   }
 

@@ -28,6 +28,12 @@ import java.util.Set;
 
 final class ApiV2OpenApiResourceDocumentBuilder {
 
+  /**
+   * Marks a {@code *Read} property that a readable document always contains when it is requested:
+   * the id, or a member without a read restriction of its own. Removing it is a breaking change.
+   */
+  static final String READ_GUARANTEED = "x-rspace-read-guaranteed";
+
   private static AccessDocumentation access(AccessPolicySchema access, WriteOperation operation) {
     return access(access.readAccess(), access.createAccess(), access.updateAccess(), operation);
   }
@@ -102,6 +108,11 @@ final class ApiV2OpenApiResourceDocumentBuilder {
       }
       Map<String, Object> property =
           documentFieldProperty(field, names, writeOperation, false, false, text, components);
+      // The backend omits a requested field only for its own read restriction.
+      if (writeOperation == null
+          && (field.name().equals(resource.idField()) || field.readInherited())) {
+        property.put(READ_GUARANTEED, true);
+      }
       properties.put(field.name(), property);
       if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
           || (writeOperation == null && field.name().equals(resource.idField()))) {
