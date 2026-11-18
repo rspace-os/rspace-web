@@ -2349,6 +2349,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                   .getPreferenceForUser(user, Preference.WORKSPACE_RESULTS_PER_PAGE)
                   .getValueAsNumber()
                   .intValue());
+          WorkspaceListingConfig kept = (WorkspaceListingConfig) session.getAttribute(settingsKey);
+          assertThat(kept.getSrchTerms()).containsExactly(searchTerm);
+          assertEquals(mode, kept.getCurrentViewMode());
+          assertEquals(matching.getParent().getId(), kept.getParentFolderId());
+          assertEquals(50, kept.getPgCrit().getResultsPerPage());
         }
       }
       mockMvc

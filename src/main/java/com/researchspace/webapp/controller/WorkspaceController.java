@@ -1271,9 +1271,10 @@ public class WorkspaceController extends BaseController {
         WorkspaceSettings.isSearchTermsSet(cfg.getSrchOptions(), cfg.getSrchTerms())
             ? getSearchValidationErrors(cfg, user)
             : null;
-    if (errors == null || !errors.hasErrorMessages()) {
-      session.setAttribute(settingsKey, cfg);
+    if (errors != null && errors.hasErrorMessages()) {
+      cfg.keepSearchFrom((WorkspaceListingConfig) session.getAttribute(settingsKey));
     }
+    session.setAttribute(settingsKey, cfg);
 
     workspaceViewModePreferences.setOrGetWorkspaceViewMode(settings.getCurrentViewMode(), user);
     PaginationCriteria<BaseRecord> pgCrit = settings.createPaginationCriteria();
