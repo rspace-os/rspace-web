@@ -22,11 +22,13 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -114,6 +116,62 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   private void publishAndRegisterForCleanup(User publisher, Long recordId) {
     publishDocumentForUser(publisher, recordId);
     publishedRecords.add(new PublishedRecord(recordId, publisher));
+  }
+
+  @Test
+  public void resolveSnippetPermalinkForOwnerAndRecipient() throws Exception {
+    User recipient = createInitAndLoginAnyUser();
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    initUser(pi);
+    logoutAndLoginAs(pi);
+    Group group = createGroupForUsers(pi, pi.getUsername(), "", recipient, pi);
+    Snippet snippet = recordManager.createSnippet("permalink snippet", "text", pi);
+    Long ownerFolderId = snippet.getParent().getId();
+    String endpoint = "/gallery/ajax/item/" + snippet.getId();
+    mockMvc
+        .perform(get(endpoint))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value(snippet.getName()))
+        .andExpect(jsonPath("$.parentFolderId").value(ownerFolderId));
+    EcatImage image = addImageToGallery(pi);
+    mockMvc
+        .perform(get("/gallery/ajax/item/" + image.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.parentFolderId").value(image.getParent().getId()));
+
+    sharingMgr.shareRecord(
+        pi,
+        snippet.getId(),
+        new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")});
+    mockMvc
+        .perform(get(endpoint))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.parentFolderId").value(ownerFolderId));
+    logoutAndLoginAs(recipient);
+    EcatImage memberImage = addImageToGallery(recipient);
+    logoutAndLoginAs(pi);
+    mockMvc
+        .perform(get("/gallery/ajax/item/" + memberImage.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.parentFolderId").value(memberImage.getOwnerParent().get().getId()));
+    Long sharedFolderId = group.getSharedSnippetGroupFolderId();
+    logoutAndLoginAs(recipient);
+    mockMvc
+        .perform(get(endpoint))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.parentFolderId").value(sharedFolderId));
+    doInTransaction(
+        () -> {
+          recordManager.get(snippet.getId()).getParents().stream()
+              .filter(relation -> relation.getFolder().getId().equals(sharedFolderId))
+              .forEach(relation -> relation.markRecordInFolderDeleted(true));
+        });
+    MvcResult deleted = mockMvc.perform(get(endpoint)).andReturn();
+    assertAuthorizationException(deleted);
+    createInitAndLoginAnyUser();
+    assertAuthorizationException(mockMvc.perform(get(endpoint)).andReturn());
+    assertAuthorizationException(
+        mockMvc.perform(get("/gallery/ajax/item/" + memberImage.getId())).andReturn());
   }
 
   @Test

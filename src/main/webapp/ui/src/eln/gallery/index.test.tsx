@@ -292,7 +292,7 @@ describe("Gallery", () => {
             document.title = "";
             mockAxios.reset();
             mockNetwork();
-            mockAxios.onGet(`/api/v1/files/${id}`).reply(200, {
+            mockAxios.onGet(`/gallery/ajax/item/${id}`).reply(200, {
               id,
               globalId: `GL${id}`,
               name: `${filename}.jpg`,
@@ -379,6 +379,10 @@ describe("Gallery", () => {
 
     /** The live item, at version 3. */
     function mockLiveItem() {
+      mockAxios.onGet(`/gallery/ajax/item/${PINNED_ITEM_ID}`).reply(200, {
+        name: "assay.png",
+        parentFolderId: 123,
+      });
       mockAxios.onGet(`/api/v1/files/${PINNED_ITEM_ID}`).reply(200, {
         id: PINNED_ITEM_ID,
         globalId: `GL${PINNED_ITEM_ID}`,
