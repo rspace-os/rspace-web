@@ -13763,7 +13763,19 @@ export default interface Resources {
         "unknownError": "Unknown reason"
       },
       "defaultSearch": {
-        "invalidSearch": "This search link is not valid, so the folder is shown instead."
+        "dateRange": "{from} to {to}",
+        "invalidSearch": "This search link is not valid, so the folder is shown instead.",
+        "isDefault": "This is your default search",
+        "operatorAnd": "AND",
+        "operatorOr": "OR",
+        "options": "Default search options",
+        "remove": "Remove default search",
+        "replaceConfirm": "Replace",
+        "replaceMessage": "This replaces your current default search:",
+        "replaceTitle": "Replace default search?",
+        "run": "Default search",
+        "save": "Save as default search",
+        "withinRecords": "Within records"
       },
       "filePicker": {
         "clickToSelect": "Click on the folder icon to select records.",

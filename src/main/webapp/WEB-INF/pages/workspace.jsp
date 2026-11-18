@@ -104,6 +104,7 @@
   <div id="searchModePanel" style="display: none;">
     <span id="message"></span>
     <button id="resetSearch"><spring:message code="common:search.clearTooltip"/></button>
+    <span id="defaultSearchSlot"></span>
     <%--<button class="search-highlight-toggle" data-altLabel="Unighlight matches" data-on="false">Highlight matches</button>--%>
   </div>
 <!-- </div> -->

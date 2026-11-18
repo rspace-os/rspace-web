@@ -675,7 +675,8 @@ div .searchButton {
     display: inline-block; }
 
 #searchModePanel button,
-#searchModePanel #resetSearch {
+#searchModePanel #resetSearch,
+#searchModePanel #saveDefaultSearch {
     background-color: white;
     padding: 4px 5px;
     width: auto;
@@ -686,9 +687,15 @@ div .searchButton {
     cursor: pointer; }
 
     #searchModePanel button,
-    #searchModePanel #resetSearch:hover {
+    #searchModePanel #resetSearch:hover,
+    #searchModePanel #saveDefaultSearch:hover {
       background-color: #6389a8;
       color: white; }
+
+#searchModePanel #saveDefaultSearch,
+#searchModePanel #isDefaultSearch {
+  margin-left: 8px;
+}
 
 #searchModePanel .search-highlight-toggle{
   float: right;

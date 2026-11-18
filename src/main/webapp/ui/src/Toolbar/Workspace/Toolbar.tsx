@@ -31,6 +31,7 @@ import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
+import DefaultSearch from "./DefaultSearch/DefaultSearch";
 import { RECORD_LIST_SHOWN } from "./DefaultSearch/workspaceGlobals";
 import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
@@ -583,6 +584,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
                 height: "100%",
               }}
             ></Box>
+            <DefaultSearch />
             <SimpleSearch
               ref={this.simpleSearch}
               toggleAdvanced={this.toggleAdvanced}
