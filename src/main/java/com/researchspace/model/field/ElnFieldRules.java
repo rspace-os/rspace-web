@@ -3,7 +3,7 @@ package com.researchspace.model.field;
 import com.researchspace.model.field.rule.ElnChoiceValues;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleEvaluator;
-import com.researchspace.model.field.rule.RuleField;
+import com.researchspace.model.field.rule.FieldSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +20,8 @@ public final class ElnFieldRules {
    *
    * @param field a form field
    */
-  public static RuleField forDefinition(IFieldForm field) {
-    return new RuleField(
+  public static FieldSnapshot forDefinition(IFieldForm field) {
+    return new FieldSnapshot(
         field.getFieldKey(), field.getType(), storedRule(field), allowedOptions(field), List.of());
   }
 
@@ -29,9 +29,9 @@ public final class ElnFieldRules {
    * The rule engine's view of a document field: its form field's key, rule and options, and the
    * options its data selects.
    */
-  public static RuleField forDocumentField(Field field) {
+  public static FieldSnapshot forDocumentField(Field field) {
     IFieldForm definition = field.getFieldForm();
-    return new RuleField(
+    return new FieldSnapshot(
         definition.getFieldKey(),
         definition.getType(),
         storedRule(definition),
@@ -47,11 +47,11 @@ public final class ElnFieldRules {
    * @param fields a document's fields
    */
   public static boolean everyShownMandatoryFieldHasData(List<Field> fields) {
-    List<RuleField> ruleFields = new ArrayList<>(fields.size());
+    List<FieldSnapshot> snapshots = new ArrayList<>(fields.size());
     for (Field field : fields) {
-      ruleFields.add(forDocumentField(field));
+      snapshots.add(forDocumentField(field));
     }
-    List<Boolean> shown = FieldDisplayRuleEvaluator.visibility(ruleFields);
+    List<Boolean> shown = FieldDisplayRuleEvaluator.visibility(snapshots);
     for (int i = 0; i < fields.size(); i++) {
       if (shown.get(i) && !fields.get(i).isMandatoryStateSatisfied()) {
         return false;
