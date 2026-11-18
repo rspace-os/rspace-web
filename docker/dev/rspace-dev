@@ -165,7 +165,7 @@ compose() {
   # The bond strength endpoint only exists in a locally built chemistry image, so
   # the profile swaps the chemistry image as well as starting the model service.
   local chemistry_image bond_strength_url=""
-  chemistry_image="$(env_get CHEMISTRY_IMAGE)"
+  chemistry_image="$(env_get CHEMISTRY_IMAGE || true)"
   if [ "$(env_get RSPACE_BOND_STRENGTH)" = "true" ]; then
     profiles="${profiles:+${profiles},}bond-strength"
     chemistry_image="${chemistry_image:-rspace-chemistry:bond-strength-poc}"
