@@ -1,8 +1,10 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { BOOKING_READ_FIELDS, type BookingListDocument } from "@/modules/booking/domain/booking";
+import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import {
+  DASHBOARD_BOOKING_FIELDS,
   dashboardMonthInterval,
   fetchMonthlyDashboardBookings,
   fetchUpcomingDashboardBookings,
@@ -77,7 +79,7 @@ describe("dashboard booking data", () => {
     expect(requests[0].searchParams.get("limit")).toBe("5");
     expect(requests[0].searchParams.get("sort")).toBe("start,id");
     expect(requests[0].searchParams.get("depth")).toBe("1");
-    expect(requests[0].searchParams.get("fields[bookings]")).toBe(`${BOOKING_READ_FIELDS},requester`);
+    expect(requests[0].searchParams.get("fields[bookings]")).toBe(apiV2Fields(DASHBOARD_BOOKING_FIELDS));
   });
 
   it("loads monthly pages, deduplicates IDs, and sorts by start then ID", async () => {
@@ -381,4 +383,10 @@ it("continues after a removed row using the exact serialized start and id", asyn
     ).map(({ id }) => id),
   ).toEqual([2, 3]);
   expect(requests).toBe(2);
+});
+
+it("requests the dashboard booking fields in a fixed order", () => {
+  expect(apiV2Fields(DASHBOARD_BOOKING_FIELDS)).toBe(
+    "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt,requester",
+  );
 });

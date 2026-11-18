@@ -1,21 +1,19 @@
 import { Temporal } from "@js-temporal/polyfill";
+import { queryOptions } from "@tanstack/react-query";
 import { uniqBy } from "es-toolkit";
 import {
   BOOKING_READ_FIELDS,
   type BookingListDocument,
   mapBookingListDocument,
 } from "@/modules/booking/domain/booking";
-import { requireBookingValue as required } from "@/modules/booking/domain/bookingMapping";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
-import {
-  getListBookingsQueryKey,
-  getListBookingsQueryOptions,
-  listBookings,
-} from "@/modules/common/api/v2/generated/bookings/bookings";
+import { getListBookingsQueryKey, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import { upcomingBookingWhere } from "../my-bookings/bookingCountFilter";
 
-const DASHBOARD_BOOKING_FIELDS = `${BOOKING_READ_FIELDS},requester`;
+export const DASHBOARD_BOOKING_FIELDS = [...BOOKING_READ_FIELDS, "requester"] as const;
 type DashboardBookingPage = Awaited<ReturnType<typeof fetchDashboardBookingPage>>;
 
 const MAX_MONTHLY_PAGES = 10;
@@ -77,14 +75,22 @@ async function fetchDashboardBookingPage(
 ) {
   throwIfAborted(signal);
   const result = await listBookings(dashboardParameters(where, page, limit), { signal });
-  return {
-    ...result,
-    docs: result.docs.map(mapBookingListDocument),
-    hasNextPage: required(result.hasNextPage, "hasNextPage"),
-  };
+  return { ...result, docs: result.docs.map(mapDashboardDocument) };
+}
+/** Asserts a dashboard booking's guaranteed fields at the fetch boundary, then maps it. */
+function mapDashboardDocument(document: BookingsRead): BookingListDocument {
+  assertApiV2Selected("bookings", document, DASHBOARD_BOOKING_FIELDS);
+  return mapBookingListDocument(document);
 }
 function dashboardParameters(where: BookingsWhere, page: number, limit = 100) {
-  return { where, sort: "start,id", page, limit, depth: 1, fields: { bookings: DASHBOARD_BOOKING_FIELDS } };
+  return {
+    where,
+    sort: "start,id",
+    page,
+    limit,
+    depth: 1,
+    fields: { bookings: apiV2Fields(DASHBOARD_BOOKING_FIELDS) },
+  };
 }
 
 function compareBookings(left: BookingListDocument, right: BookingListDocument): number {
@@ -190,30 +196,19 @@ export function groupDashboardBookingsByDay(
 }
 
 export function upcomingDashboardBookingsQuery(requesterId: number, _timeZone: string, asOf: string) {
-  return getListBookingsQueryOptions<BookingListDocument[]>(
-    dashboardParameters(upcomingBookingWhere(requesterId, asOf), 1, 5),
-    {
-      query: {
-        select: (result) => deduplicateAndSort(result.docs.map(mapBookingListDocument)).slice(0, 5),
-        retry: false,
-        refetchOnWindowFocus: true,
-      },
-    },
-  );
+  return queryOptions({
+    queryKey: getListBookingsQueryKey(dashboardParameters(upcomingBookingWhere(requesterId, asOf), 1, 5)),
+    queryFn: ({ signal }) => fetchUpcomingDashboardBookings({ requesterId, asOf, signal }),
+    retry: false,
+    refetchOnWindowFocus: true,
+  });
 }
 export function monthlyDashboardBookingsQuery(requesterId: number, _timeZone: string, start: string, end: string) {
   const parameters = dashboardParameters(monthlyBookingWhere(requesterId, start, end), 1);
-  return getListBookingsQueryOptions<BookingListDocument[]>(parameters, {
-    query: {
-      queryKey: [...getListBookingsQueryKey(parameters), "dashboardMonthly"],
-      queryFn: async ({ signal }) => ({
-        docs: await fetchMonthlyDashboardBookings({ requesterId, start, end, signal }),
-        page: 1,
-        limit: 100,
-      }),
-      select: (result) => result.docs.map(mapBookingListDocument),
-      retry: false,
-      refetchOnWindowFocus: true,
-    },
+  return queryOptions({
+    queryKey: [...getListBookingsQueryKey(parameters), "dashboardMonthly"],
+    queryFn: ({ signal }) => fetchMonthlyDashboardBookings({ requesterId, start, end, signal }),
+    retry: false,
+    refetchOnWindowFocus: true,
   });
 }
