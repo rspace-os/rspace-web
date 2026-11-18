@@ -130,6 +130,24 @@ describe("BondStrengthsDialog", () => {
     await expectAccessible(baseElement);
   });
 
+  it("rounds each value once, half up, so the table agrees with the picture", async () => {
+    respondWith({
+      ...toluene,
+      bonds: [
+        bond("C6-N8", { bdeKcalMol: 84.46410369873047, bdeKjMol: 353.3978098754883, weakest: true }),
+        bond("C1-C2", { bdeKcalMol: 84.5, bdeKjMol: 353.548 }),
+      ],
+    });
+    await renderDialog({});
+
+    const table = await screen.findByRole("table", { name: "Bond strengths, weakest first" });
+    expect(
+      within(table)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toEqual(["84", "353", "85", "354"]);
+  });
+
   it("shows the picture as an image and says where the values come from", async () => {
     respondWith(toluene);
     await renderDialog({});
