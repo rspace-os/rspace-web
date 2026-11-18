@@ -2,18 +2,19 @@ import { readFileSync } from "node:fs";
 import { defineConfig } from "orval";
 import { buildInvalidationRules, type Document, getOperations } from "./scripts/api-v2-invalidation";
 import { filteredWhereOperations } from "./scripts/api-v2-valibot/filters";
+import { mutatorOverrides as deriveMutatorOverrides } from "./scripts/api-v2-valibot/mutators";
 import type { OpenApiDocument } from "./scripts/api-v2-valibot/openapi";
 import { crossResourceInvalidation } from "./src/modules/common/api/v2/crossResourceInvalidation";
 
 const spec: Document = JSON.parse(
   readFileSync(new URL("./src/modules/common/api/v2/openapi.generated.json", import.meta.url), "utf8"),
 );
-// Operations whose response headers (ETag, Location) or binary body need another apiV2Fetch.ts mutator.
-const mutatorOverrides: Record<string, "apiV2HeadersFetch" | "apiV2BlobFetch"> = {};
-const specOperationIds = new Set(getOperations(spec).map(({ operationId }) => operationId));
-for (const operationId of Object.keys(mutatorOverrides)) {
-  if (!specOperationIds.has(operationId)) throw new Error(`Mutator override for an unknown operation: ${operationId}`);
-}
+// Binary successes select apiV2BlobFetch from the spec; operations whose response headers (ETag, Location) callers
+// read are listed here. Every operation declaring an ETag is either listed or excluded explicitly.
+const mutatorOverrides = deriveMutatorOverrides(spec as OpenApiDocument, {
+  headers: [],
+  etagExclusions: ["getApiV2OpenApiDocument"],
+});
 // Collection operations whose `where` carries filter metadata also accept a typed where object.
 const whereObjectOperations = filteredWhereOperations(spec as OpenApiDocument);
 const operations = Object.fromEntries(

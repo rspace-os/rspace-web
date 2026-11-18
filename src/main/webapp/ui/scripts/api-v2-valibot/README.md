@@ -8,7 +8,13 @@ files, as Orval does for its own output. No schema translator is retained.
 
 The registry emitter (`resources.ts`) reads tags and explicit `x-rspace-operation` metadata from OpenAPI and writes
 `generated/apiV2Resources.ts` with request functions and query-key references. CUSTOM-only tags are omitted; runtime fields
-use the RUNTIME_FIELDS kind. This step runs explicitly after the Valibot adapter.
+use the RUNTIME_FIELDS kind. This step runs explicitly after the Valibot adapter. It also writes
+`generated/guaranteedReadFields.ts` from the `x-rspace-read-guaranteed` extension on each READ operation's `*Read`
+schema, for `apiV2Selected.ts`.
+
+`mutators.ts` chooses each operation's transport mutator for `orval.config.ts`: binary-only successes use
+`apiV2BlobFetch`, an explicit allowlist uses `apiV2HeadersFetch`, and unsupported success shapes or unread `ETag`
+headers fail generation.
 
 The filter step (`filters.ts`) reads `components.x-rspace-filters` and writes `generated/filters.ts`: per filter, each
 filterable selector with its allowed RSQL operators and value type. It then narrows each Orval `<Name>Parameter = string`
