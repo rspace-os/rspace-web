@@ -115,7 +115,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
 
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
-  checkSavedSettings = () => {
+  checkSavedSettings = ({ fillSimpleSearch = true } = {}) => {
     let localQueries: Array<object> = [],
       term: string | string[] = "",
       filter: string = "",
@@ -142,7 +142,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
 
     if (localQueries.length > 1) {
       this.setState({ advancedOpen: true }, () => this.advancedSearch.current.setQueries(localQueries));
-    } else if (localQueries.length === 1) {
+    } else if (localQueries.length === 1 && fillSimpleSearch) {
       this.simpleSearch.current.setQueries(localQueries);
 
       if (localQueries[0].filter !== "global") {
@@ -199,7 +199,8 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
           ontologiesFilter: state.ontologiesFilter,
         },
         () => {
-          this.checkSavedSettings();
+          // A long search, such as a date range, would crowd the toolbar
+          this.checkSavedSettings({ fillSimpleSearch: false });
           searchLinkSearchStarted();
           doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch, () => {
             // The results are drawn after a short fade, which then sends this event
