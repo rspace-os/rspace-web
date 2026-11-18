@@ -1,16 +1,19 @@
 import DOMPurify from "dompurify";
 
-export type BondStrengthsDocumentRow =
-  | { bond: string; kcalMol: string; kjMol: string }
-  | { bond: string; notAvailable: string };
+export type BondStrengthsDocumentRow = { bond: string; kcalMol: string; kjMol: string };
 
 /** Text and picture for the document, already translated and formatted. The picture is a PNG data URI. */
 export type BondStrengthsDocumentContent = {
   imageSrc: string | null;
   imageAlt: string;
+  /** Explains the picture; only used when the picture goes in. */
+  legend: string;
   caption: string;
   columns: { bond: string; kcalMol: string; kjMol: string };
+  /** Only the bonds that have a value. */
   rows: ReadonlyArray<BondStrengthsDocumentRow>;
+  /** One sentence per reason why other bonds have no value. */
+  notes: ReadonlyArray<string>;
 };
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -42,14 +45,7 @@ function buildTable(doc: Document, content: BondStrengthsDocumentContent): HTMLT
   const body = element(doc, "tbody");
   for (const row of content.rows) {
     const tableRow = element(doc, "tr");
-    tableRow.append(element(doc, "td", row.bond));
-    if ("notAvailable" in row) {
-      const cell = element(doc, "td", row.notAvailable);
-      cell.setAttribute("colspan", "2");
-      tableRow.append(cell);
-    } else {
-      tableRow.append(element(doc, "td", row.kcalMol), element(doc, "td", row.kjMol));
-    }
+    tableRow.append(element(doc, "td", row.bond), element(doc, "td", row.kcalMol), element(doc, "td", row.kjMol));
     body.append(tableRow);
   }
 
@@ -78,8 +74,13 @@ export function insertBondStrengthsAfter(
     const holder = element(doc, "div");
     holder.innerHTML = DOMPurify.sanitize(pictureHtml);
     holder.querySelector("img")?.setAttribute("alt", content.imageAlt);
-    nodes.push(...Array.from(holder.children));
+    nodes.push(...Array.from(holder.children), element(doc, "p", content.legend));
   }
   nodes.push(buildTable(doc, content));
+  if (content.notes.length > 0) {
+    const list = element(doc, "ul");
+    list.append(...content.notes.map((note) => element(doc, "li", note)));
+    nodes.push(list);
+  }
   block.after(...nodes);
 }

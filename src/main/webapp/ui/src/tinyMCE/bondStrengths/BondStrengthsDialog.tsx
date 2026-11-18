@@ -36,9 +36,8 @@ type Translate = TFunction<["workspace", "common"]>;
 type BondRow = {
   label: string;
   weakest: boolean;
-  /** Null when the model gives no value for this bond. */
-  values: { kcalMol: string; kjMol: string } | null;
-  notAvailable: string;
+  kcalMol: string;
+  kjMol: string;
 };
 
 type BondStrengthsDialogProps = {
@@ -73,43 +72,96 @@ function structureNotSupportedText(t: Translate, result: UnsupportedBondStrength
   }
 }
 
-function notAvailableText(t: Translate, reason: Bond["unsupportedReason"]): string {
-  switch (reason) {
-    case "RING_BOND":
-      return t("workspace:tinymce.bondStrengths.notAvailable.ringBond");
-    case "MULTIPLE_BOND":
-      return t("workspace:tinymce.bondStrengths.notAvailable.multipleBond");
-    case "BOND_TYPE_NOT_COVERED":
-      return t("workspace:tinymce.bondStrengths.notAvailable.bondTypeNotCovered");
-    case "LOW_CONFIDENCE":
-      return t("workspace:tinymce.bondStrengths.notAvailable.lowConfidence");
-    default:
-      return t("workspace:tinymce.bondStrengths.notAvailable.other");
-  }
+function bondLabel(t: Translate, bond: Bond): string {
+  return typeof bond.hydrogenCount === "number" && bond.hydrogenCount > 1
+    ? t("workspace:tinymce.bondStrengths.table.equivalentHydrogens", { label: bond.label, count: bond.hydrogenCount })
+    : bond.label;
 }
 
+function hasValue(bond: Bond): bond is Bond & { bdeKcalMol: number; bdeKjMol: number } {
+  return bond.supported && typeof bond.bdeKcalMol === "number" && typeof bond.bdeKjMol === "number";
+}
+
+/** The bonds that have a value, weakest first. */
 function bondRows(t: Translate, language: string, bonds: ReadonlyArray<Bond>): BondRow[] {
   const oneDecimal = new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  return sortWeakestFirst(bonds).map((bond) => ({
-    label:
-      typeof bond.hydrogenCount === "number" && bond.hydrogenCount > 1
-        ? t("workspace:tinymce.bondStrengths.table.equivalentHydrogens", {
-            label: bond.label,
-            count: bond.hydrogenCount,
+  return sortWeakestFirst(bonds)
+    .filter(hasValue)
+    .map((bond) => ({
+      label: bondLabel(t, bond),
+      weakest: bond.weakest,
+      kcalMol: oneDecimal.format(bond.bdeKcalMol),
+      kjMol: oneDecimal.format(bond.bdeKjMol),
+    }));
+}
+
+/**
+ * One sentence per reason a bond has no value. Ring and multiple bonds are only counted, because
+ * every structure with a ring has them; the rarer cases name the bonds.
+ */
+function noValueNotes(t: Translate, language: string, result: SupportedBondStrengths): string[] {
+  const withoutValue = result.bonds.filter((bond) => !hasValue(bond));
+  const labelsFor = (reason: string | null) =>
+    withoutValue.filter((bond) => (bond.unsupportedReason ?? null) === reason).map((bond) => bondLabel(t, bond));
+  const list = new Intl.ListFormat(language, { style: "long", type: "conjunction" });
+  const notes: string[] = [];
+
+  const ringBonds = labelsFor("RING_BOND").length;
+  if (ringBonds > 0) {
+    notes.push(
+      t("workspace:tinymce.bondStrengths.noValue.ringBonds", {
+        count: ringBonds,
+      }),
+    );
+  }
+  const multipleBonds = labelsFor("MULTIPLE_BOND").length;
+  if (multipleBonds > 0) {
+    notes.push(
+      t("workspace:tinymce.bondStrengths.noValue.multipleBonds", {
+        count: multipleBonds,
+      }),
+    );
+  }
+  const notCovered = labelsFor("BOND_TYPE_NOT_COVERED");
+  if (notCovered.length > 0) {
+    notes.push(
+      t("workspace:tinymce.bondStrengths.noValue.bondTypeNotCovered", {
+        bonds: list.format(notCovered),
+      }),
+    );
+  }
+  const lowConfidence = labelsFor("LOW_CONFIDENCE");
+  if (lowConfidence.length > 0) {
+    const limit = result.method.crossCheck?.maxDifferenceKcalMol;
+    notes.push(
+      typeof limit === "number"
+        ? t("workspace:tinymce.bondStrengths.noValue.lowConfidence", {
+            bonds: list.format(lowConfidence),
+            limit: formatNumber(limit, language),
           })
-        : bond.label,
-    weakest: bond.weakest,
-    values:
-      bond.supported && typeof bond.bdeKcalMol === "number" && typeof bond.bdeKjMol === "number"
-        ? { kcalMol: oneDecimal.format(bond.bdeKcalMol), kjMol: oneDecimal.format(bond.bdeKjMol) }
-        : null,
-    notAvailable: notAvailableText(t, bond.unsupportedReason),
-  }));
+        : t("workspace:tinymce.bondStrengths.noValue.lowConfidenceNoLimit", {
+            bonds: list.format(lowConfidence),
+          }),
+    );
+  }
+  const known = new Set(["RING_BOND", "MULTIPLE_BOND", "BOND_TYPE_NOT_COVERED", "LOW_CONFIDENCE"]);
+  const other = withoutValue
+    .filter((bond) => !known.has(bond.unsupportedReason ?? ""))
+    .map((bond) => bondLabel(t, bond));
+  if (other.length > 0) {
+    notes.push(
+      t("workspace:tinymce.bondStrengths.noValue.other", {
+        bonds: list.format(other),
+      }),
+    );
+  }
+  return notes;
 }
 
 function pictureAndColumnText(t: Translate) {
   return {
     imageAlt: t("workspace:tinymce.bondStrengths.imageAlt"),
+    legend: t("workspace:tinymce.bondStrengths.legend"),
     columns: {
       bond: t("workspace:tinymce.bondStrengths.table.bond"),
       kcalMol: t("workspace:tinymce.bondStrengths.table.kcalMol"),
@@ -123,6 +175,7 @@ function documentContent(
   language: string,
   result: SupportedBondStrengths,
   rows: ReadonlyArray<BondRow>,
+  notes: ReadonlyArray<string>,
   imageSrc: string | null,
 ): BondStrengthsDocumentContent {
   return {
@@ -134,61 +187,80 @@ function documentContent(
       error: formatNumber(result.method.meanAbsoluteErrorKcalMol, language),
       date: new Intl.DateTimeFormat(language, { dateStyle: "long" }).format(new Date()),
     }),
-    rows: rows.map((row) => {
-      const bond = row.weakest
-        ? t("workspace:tinymce.bondStrengths.document.weakestBond", { label: row.label })
-        : row.label;
-      return row.values ? { bond, ...row.values } : { bond, notAvailable: row.notAvailable };
-    }),
+    rows: rows.map((row) => ({
+      bond: row.weakest ? t("workspace:tinymce.bondStrengths.document.weakestBond", { label: row.label }) : row.label,
+      kcalMol: row.kcalMol,
+      kjMol: row.kjMol,
+    })),
+    notes,
   };
 }
 
-function SupportedResult({ result, rows }: { result: SupportedBondStrengths; rows: ReadonlyArray<BondRow> }) {
+function SupportedResult({
+  result,
+  rows,
+  notes,
+}: {
+  result: SupportedBondStrengths;
+  rows: ReadonlyArray<BondRow>;
+  notes: ReadonlyArray<string>;
+}) {
   const { t, i18n } = useTranslation(["workspace", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const { imageAlt, columns } = pictureAndColumnText(t);
+  const { imageAlt, legend, columns } = pictureAndColumnText(t);
 
   return (
     <Stack spacing={2}>
       {result.imageSvg && (
-        <Box
-          component="img"
-          src={svgDataUri(result.imageSvg)}
-          alt={imageAlt}
-          sx={{ display: "block", maxWidth: "100%", height: "auto", mx: "auto" }}
-        />
+        <Box component="figure" sx={{ m: 0 }}>
+          <Box
+            component="img"
+            src={svgDataUri(result.imageSvg)}
+            alt={imageAlt}
+            sx={{ display: "block", maxWidth: "100%", height: "auto", mx: "auto" }}
+          />
+          <Typography component="figcaption" variant="caption" sx={{ display: "block" }}>
+            {legend}
+          </Typography>
+        </Box>
       )}
-      <TableContainer>
-        <Table size="small" aria-label={t("tinymce.bondStrengths.table.label")}>
-          <TableHead>
-            <TableRow>
-              <TableCell>{columns.bond}</TableCell>
-              <TableCell align="right">{columns.kcalMol}</TableCell>
-              <TableCell align="right">{columns.kjMol}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.label}>
-                <TableCell component="th" scope="row" sx={row.weakest ? { fontWeight: "bold" } : undefined}>
-                  {row.label}
-                  {row.weakest && <Chip size="small" label={t("tinymce.bondStrengths.table.weakest")} sx={{ ml: 1 }} />}
-                </TableCell>
-                {row.values ? (
-                  <>
-                    <TableCell align="right">{row.values.kcalMol}</TableCell>
-                    <TableCell align="right">{row.values.kjMol}</TableCell>
-                  </>
-                ) : (
-                  <TableCell align="right" colSpan={2}>
-                    {row.notAvailable}
-                  </TableCell>
-                )}
+      {rows.length === 0 && <Alert severity="info">{t("tinymce.bondStrengths.noValues")}</Alert>}
+      {rows.length > 0 && (
+        <TableContainer>
+          <Table size="small" aria-label={t("tinymce.bondStrengths.table.label")}>
+            <TableHead>
+              <TableRow>
+                <TableCell>{columns.bond}</TableCell>
+                <TableCell align="right">{columns.kcalMol}</TableCell>
+                <TableCell align="right">{columns.kjMol}</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.label}>
+                  <TableCell component="th" scope="row" sx={row.weakest ? { fontWeight: "bold" } : undefined}>
+                    {row.label}
+                    {row.weakest && (
+                      <Chip size="small" label={t("tinymce.bondStrengths.table.weakest")} sx={{ ml: 1 }} />
+                    )}
+                  </TableCell>
+                  <TableCell align="right">{row.kcalMol}</TableCell>
+                  <TableCell align="right">{row.kjMol}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      {notes.length > 0 && (
+        <Box component="ul" sx={{ m: 0, pl: 3 }}>
+          {notes.map((note) => (
+            <Typography key={note} component="li" variant="body2">
+              {note}
+            </Typography>
+          ))}
+        </Box>
+      )}
       <Box>
         <Typography variant="body2">
           {t("tinymce.bondStrengths.coverage", {
@@ -220,6 +292,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
   const supported = data?.supported ? data : null;
   const [inserting, setInserting] = useState(false);
   const rows = supported ? bondRows(t, language, supported.bonds) : [];
+  const notes = supported ? noValueNotes(t, language, supported) : [];
 
   return (
     <>
@@ -232,11 +305,11 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
         )}
         {isError && <Alert severity="error">{t("tinymce.bondStrengths.dialog.error")}</Alert>}
         {data && !data.supported && <Alert severity="info">{structureNotSupportedText(t, data)}</Alert>}
-        {supported && <SupportedResult result={supported} rows={rows} />}
+        {supported && <SupportedResult result={supported} rows={rows} notes={notes} />}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common:actions.close")}</Button>
-        {supported && onInsert && (
+        {supported && rows.length > 0 && onInsert && (
           <Button
             variant="contained"
             color="callToAction"
@@ -248,7 +321,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
                 ? svgToPngDataUri(supported.imageSvg).catch(() => null)
                 : Promise.resolve(null);
               void picture
-                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, imageSrc)))
+                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, notes, imageSrc)))
                 .finally(onClose);
             }}
           >

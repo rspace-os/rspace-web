@@ -25,6 +25,7 @@ const method = {
   version: "0.1.0-poc",
   weightsSha256: "af085c02bbbc372c177ff0b256b25aa7f0f6a8d9988276ca02e5c85ba0a9e890",
   meanAbsoluteErrorKcalMol: 0.8,
+  crossCheck: { maxDifferenceKcalMol: 5 },
 };
 
 function bond(label: string, overrides: Record<string, unknown> = {}) {
@@ -49,9 +50,10 @@ const toluene = {
     bond("C2:C3", { supported: false, unsupportedReason: "RING_BOND" }),
     bond("C1-H", { hydrogenCount: 3, bdeKcalMol: 89.3, bdeKjMol: 373.5, weakest: true }),
     bond("C3-H", { hydrogenCount: 1, bdeKcalMol: 110.4, bdeKjMol: 461.9 }),
+    bond("C4-H", { hydrogenCount: 1, supported: false, unsupportedReason: "LOW_CONFIDENCE" }),
   ],
   supportedBondCount: 3,
-  totalBondCount: 4,
+  totalBondCount: 5,
   imageSvg: "<?xml version='1.0' encoding='iso-8859-1'?>\n<svg xmlns='http://www.w3.org/2000/svg'></svg>",
   method,
 };
@@ -66,6 +68,13 @@ const sodiumAcetate = {
   imageSvg: null,
   method,
 };
+
+const noValueNotes = [
+  "1 ring bond has no value. Ring bonds are not covered.",
+  "No value for C4-H. Low confidence: two models disagreed by more than 5 kcal/mol, so the value is not shown.",
+];
+const legend =
+  "Numbers on bonds are in kcal/mol. Atom numbers match the table. Red marks the weakest bond, or its atom when that bond is to a hydrogen. Bonds to hydrogen are only in the table.";
 
 function respondWith(result: unknown) {
   server.use(http.get("/chemical/ajax/bondStrengths", () => HttpResponse.json({ data: result })));
@@ -106,13 +115,17 @@ describe("BondStrengthsDialog", () => {
           .getAllByRole("cell")
           .map((cell) => cell.textContent),
       ),
-    ).toEqual([["89.3", "373.5"], ["101.0", "422.6"], ["110.4", "461.9"], ["n/a (ring bond)"]]);
+    ).toEqual([
+      ["89.3", "373.5"],
+      ["101.0", "422.6"],
+      ["110.4", "461.9"],
+    ]);
     expect(rows.map((row) => within(row).getByRole("rowheader").textContent)).toEqual([
       "C1-H (×3)Weakest",
       "C1-C2",
       "C3-H",
-      "C2:C3",
     ]);
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(noValueNotes);
     expect(screen.getByRole("dialog", { name: "Bond strengths" })).toBeVisible();
     await expectAccessible(baseElement);
   });
@@ -124,7 +137,8 @@ describe("BondStrengthsDialog", () => {
     const picture = await screen.findByRole("img", { name: /^Structure with atom numbers/ });
 
     expect(picture).toHaveAttribute("src", expect.stringMatching(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/));
-    expect(screen.getByText("3 of 4 bonds have a value.")).toBeVisible();
+    expect(screen.getByText(legend)).toBeVisible();
+    expect(screen.getByText("3 of 5 bonds have a value.")).toBeVisible();
     expect(
       screen.getByText(
         "Model: RSpace bond strength model 0.1.0-poc. The values are predicted and are not validated against experiment. Mean absolute error against the DFT reference: 0.8 kcal/mol.",
@@ -171,6 +185,7 @@ describe("BondStrengthsDialog", () => {
       imageSrc: "data:image/png;base64,AAAA",
       imageAlt:
         "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
+      legend,
       caption:
         "Predicted bond strengths (bond dissociation enthalpy). Model: RSpace bond strength model 0.1.0-poc. Mean absolute error against the DFT reference: 0.8 kcal/mol. Not validated against experiment. Calculated on November 18, 2026.",
       columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
@@ -178,8 +193,8 @@ describe("BondStrengthsDialog", () => {
         { bond: "C1-H (×3), weakest bond", kcalMol: "89.3", kjMol: "373.5" },
         { bond: "C1-C2", kcalMol: "101.0", kjMol: "422.6" },
         { bond: "C3-H", kcalMol: "110.4", kjMol: "461.9" },
-        { bond: "C2:C3", notAvailable: "n/a (ring bond)" },
       ],
+      notes: noValueNotes,
     });
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -195,6 +210,27 @@ describe("BondStrengthsDialog", () => {
 
     await waitFor(() => expect(onInsert).toHaveBeenCalledOnce());
     expect(onInsert.mock.calls[0][0].imageSrc).toBeNull();
-    expect(onInsert.mock.calls[0][0].rows).toHaveLength(4);
+    expect(onInsert.mock.calls[0][0].rows).toHaveLength(3);
+  });
+
+  it("says so and offers no insert when no bond has a value", async () => {
+    respondWith({
+      ...toluene,
+      bonds: [
+        bond("C1:C2", { supported: false, unsupportedReason: "RING_BOND" }),
+        bond("C2:C3", { supported: false, unsupportedReason: "RING_BOND" }),
+        bond("C1-H", { hydrogenCount: 1, supported: false, unsupportedReason: "LOW_CONFIDENCE" }),
+      ],
+      supportedBondCount: 0,
+      totalBondCount: 3,
+    });
+    await renderDialog({ onInsert: vi.fn() });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No bond in this structure has a value.");
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
+      "2 ring bonds have no value. Ring bonds are not covered.",
+    );
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Insert into document" })).not.toBeInTheDocument();
   });
 });

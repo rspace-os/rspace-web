@@ -8,12 +8,14 @@ import SidebarInfo from "../SidebarInfo";
 const bondStrengthsContent: BondStrengthsDocumentContent = {
   imageSrc: "data:image/png;base64,AAAA",
   imageAlt: "Structure with bond strengths",
+  legend: "Numbers on bonds are in kcal/mol.",
   caption: "Predicted bond strengths",
   columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
   rows: [
     { bond: "C1-H (×3), weakest bond", kcalMol: "89.3", kjMol: "373.5" },
-    { bond: "C2:C3", notAvailable: "n/a (ring bond)" },
+    { bond: "C1-C2", kcalMol: "101.0", kjMol: "422.6" },
   ],
+  notes: ["1 ring bond has no value. Ring bonds are not covered."],
 };
 
 const galleryPicture =
@@ -168,16 +170,24 @@ describe("SidebarInfo accessibility", () => {
     );
 
     // The iframe document has no window, so role queries and jest-dom matchers cannot read it.
-    const [, pictureParagraph, table] = Array.from(iframeDocument.body.children) as [
+    const [, pictureParagraph, legend, table, notes] = Array.from(iframeDocument.body.children) as [
       Element,
       HTMLParagraphElement,
+      HTMLParagraphElement,
       HTMLTableElement,
+      HTMLUListElement,
     ];
     expect(Array.from(iframeDocument.body.children)).toEqual([
       chemicalParagraph,
       pictureParagraph,
+      legend,
       table,
+      notes,
       nextParagraph,
+    ]);
+    expect(legend.textContent).toBe("Numbers on bonds are in kcal/mol.");
+    expect(Array.from(notes.children, (note) => note.textContent)).toEqual([
+      "1 ring bond has no value. Ring bonds are not covered.",
     ]);
     expect(chemicalImage.parentElement).toBe(chemicalParagraph);
     expect(pictureParagraph.firstElementChild?.tagName).toBe("IMG");
@@ -189,7 +199,7 @@ describe("SidebarInfo accessibility", () => {
     expect(Array.from(table.rows, (row) => Array.from(row.cells, (cell) => cell.textContent))).toEqual([
       ["Bond", "kcal/mol", "kJ/mol"],
       ["C1-H (×3), weakest bond", "89.3", "373.5"],
-      ["C2:C3", "n/a (ring bond)"],
+      ["C1-C2", "101.0", "422.6"],
     ]);
     expect(transact).toHaveBeenCalledOnce();
     expect(nodeChanged).toHaveBeenCalledOnce();

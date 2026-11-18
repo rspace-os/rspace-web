@@ -20,6 +20,7 @@ const MethodSchema = v.object({
   version: v.string(),
   weightsSha256: v.string(),
   meanAbsoluteErrorKcalMol: v.number(),
+  crossCheck: v.nullish(v.object({ maxDifferenceKcalMol: v.number() })),
 });
 
 const BondStrengthsSchema = v.variant("supported", [

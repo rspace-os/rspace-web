@@ -41,7 +41,7 @@ function ActionWhenEnabled({ chemId, revision, onInsert }: BondStrengthsActionPr
 
   return (
     <>
-      <Button size="small" onClick={() => setOpen(true)} sx={{ m: 1 }}>
+      <Button size="small" variant="outlined" onClick={() => setOpen(true)} sx={{ m: 1 }}>
         {t("tinymce.bondStrengths.action")}
       </Button>
       <BondStrengthsDialog
