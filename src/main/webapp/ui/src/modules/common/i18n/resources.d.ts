@@ -10866,14 +10866,12 @@ export default interface Resources {
           "folderEmpty": "This folder is empty.",
           "importWordFileType": "Word or Open Office",
           "importWordTitle": "Import from Word/Open Office",
-          "listView": "List View",
           "loadingRecords": "Loading records...",
           "openFolderAction": "Opening folder",
           "orderByTitle": "Order by {0}",
           "saveSettingsFailedAction": "Failed to save workspace settings",
           "searchNoResults": "Your search returned no results. Please modify your search or clear it below.",
-          "searchResultsShown": "Showing results of your search.",
-          "treeView": "Tree View"
+          "searchResultsShown": "Showing results of your search."
         },
         "notebookEditor": {
           "ajaxDeleteEntry": "Delete entry",
