@@ -1336,7 +1336,11 @@ public class RichTextUpdater {
     }
     Document dc = Jsoup.parse(fld.getFieldData());
 
-    Elements elms = dc.getElementsByClass(linkType);
+    // export lists only internal attachments, so external file-store links must not shift the index
+    Elements elms =
+        FieldParserConstants.ATTACHMENT_CLASSNAME.equals(linkType)
+            ? ElementSelectorFactory.internalAttachmentSelector.select(dc)
+            : dc.getElementsByClass(linkType);
     int curElementIndex = 0;
     if (linkType.equals(ANNOTATION_IMG_CLASSNAME)) {
       Elements elmsx =

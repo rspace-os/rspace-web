@@ -37,7 +37,7 @@ class ElementSelectorFactory {
   ElementSelector chemSelector = doc -> doc.select("." + CHEM_IMG_CLASSNAME).select("[id]");
   ElementSelector mathSelector =
       doc -> doc.select("." + MATH_CLASSNAME).select("[" + DATA_MATHID + "]");
-  ElementSelector internalAttachmentSelector =
+  static final ElementSelector internalAttachmentSelector =
       doc ->
           doc.select("." + ATTACHMENT_CLASSNAME)
               .select(":not([" + EXTERNALFILESTORELINK_KEY + "])");
