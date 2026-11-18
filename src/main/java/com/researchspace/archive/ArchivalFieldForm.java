@@ -57,6 +57,12 @@ public class ArchivalFieldForm {
   @XmlElement(name = "dateFormat")
   private String dateFormat;
 
+  /** The field key that display rules use to name this field. Absent in older archives. */
+  @XmlElement private String fieldKey;
+
+  /** The field's display rule as stored JSON; absent when the field is always shown. */
+  @XmlElement private String displayRule;
+
   public ArchivalFieldForm() {
     code = "parentCode_formField";
     modificationDate = new Date().getTime();

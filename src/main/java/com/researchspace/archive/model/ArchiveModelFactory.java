@@ -84,6 +84,8 @@ public class ArchiveModelFactory {
     rc.setModificationDate(fm.getModificationDate());
     rc.setType(fm.getType().getType());
     rc.setSummary(fm.getSummary());
+    rc.setFieldKey(fm.getFieldKey());
+    rc.setDisplayRule(fm.getDisplayRule());
     switch (FieldType.getFieldTypeForString(rc.getType())) {
       case NUMBER: // "Number"
         NumberFieldForm nfm = (NumberFieldForm) fm;

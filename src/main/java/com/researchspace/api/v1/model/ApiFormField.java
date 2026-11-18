@@ -9,9 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
 import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.NumberFieldForm;
@@ -51,6 +53,12 @@ public abstract class ApiFormField extends IdentifiableNameableApiObject {
   private Integer index;
   private String type;
 
+  /** Identifies the field within its form; display rules name their source by this key. */
+  private String fieldKey;
+
+  /** Show this field only when the rule holds; null when it is always shown. */
+  private FieldDisplayRuleDTO displayRule;
+
   public static ApiFormField fromFieldForm(FieldForm formField) {
     switch (formField.getType()) {
       case CHOICE:
@@ -83,5 +91,7 @@ public abstract class ApiFormField extends IdentifiableNameableApiObject {
     setLastModifiedMillis(formField.getModificationDate());
     setIndex(formField.getColumnIndex());
     setType(formField.getType().getType());
+    setFieldKey(formField.getFieldKey());
+    setDisplayRule(FieldDisplayRuleDTO.from(ElnFieldRules.storedRule(formField)));
   }
 }

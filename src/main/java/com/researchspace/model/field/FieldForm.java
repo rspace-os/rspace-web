@@ -20,13 +20,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -92,6 +95,8 @@ public abstract class FieldForm
   private Long modificationDate = new Date().getTime();
   private FieldType type;
   private boolean isDeleted = false;
+  private String fieldKey;
+  private String displayRule;
 
   public boolean isDeleted() {
     return isDeleted;
@@ -314,6 +319,50 @@ public abstract class FieldForm
     copy.setType(copy.getType());
     copy.setDeleted(isDeleted);
     copy.setMandatory(isMandatory());
+    copy.setFieldKey(fieldKey);
+    copy.setDisplayRule(displayRule);
+  }
+
+  /**
+   * Identifies this field within its form, so that display rules can name their source. A lowercase
+   * UUID, copied verbatim with the field (form versions, form copies and archive import keep it),
+   * so a rule never needs rewriting when its form is copied.
+   *
+   * @return the key; null only before the field is first persisted
+   */
+  @Column(length = 36)
+  public String getFieldKey() {
+    return fieldKey;
+  }
+
+  public void setFieldKey(String fieldKey) {
+    this.fieldKey = fieldKey;
+  }
+
+  /**
+   * The display rule as stored JSON (see {@link
+   * com.researchspace.model.field.rule.FieldDisplayRule#toJson()}), or null when the field is
+   * always shown.
+   */
+  @Lob
+  public String getDisplayRule() {
+    return displayRule;
+  }
+
+  public void setDisplayRule(String displayRule) {
+    this.displayRule = displayRule;
+  }
+
+  /**
+   * Gives a field that reaches persistence without a key a new one. Never done in the constructor:
+   * {@link #shallowCopy()} and Hibernate both use the no-argument constructor, and a key assigned
+   * there would differ from the original's.
+   */
+  @PrePersist
+  void assignFieldKeyIfMissing() {
+    if (fieldKey == null) {
+      fieldKey = UUID.randomUUID().toString();
+    }
   }
 
   @Override
