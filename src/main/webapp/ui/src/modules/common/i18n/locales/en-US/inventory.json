@@ -1132,6 +1132,7 @@
       },
       "customField": {
         "defaultDescription": "Default Description",
+        "defaultOptionsExplanation": "Options selected here are selected in new {recordType} made from this template.",
         "defaultValue": "Default Value",
         "deleteField": "Delete field {fieldName}",
         "deleteNewField": "Delete new field",
@@ -2814,6 +2815,22 @@
         "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
         "label": "Sample"
       }
+    },
+    "displayRules": {
+      "confirmDeleteField": {
+        "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
+        "title": "Delete {field}?"
+      },
+      "confirmOptionRemoval": {
+        "message": "{count, plural, one {The display rule of {fields} uses this option. Removing the option also removes it from that rule, and removes the rule if it has no options left.} other {The display rules of {fields} use this option. Removing the option also removes it from those rules, and removes any rule that has no options left.}}",
+        "title": "Remove option {option}?"
+      },
+      "confirmTypeChange": {
+        "confirm": "Change type",
+        "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
+        "title": "Change the type of {field}?"
+      },
+      "optionInUse": "A display rule uses this option, so it can only be removed."
     },
     "fields": {
       "customField": {

@@ -1,23 +1,22 @@
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
-import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import type { TFunction } from "i18next";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
+import DisplayRuleSummary from "@/modules/common/field-editor/DisplayRuleSummary";
+import FieldCard from "@/modules/common/field-editor/FieldCard";
+import type { FieldTypeOption } from "@/modules/common/field-editor/FieldTypeSelect";
+import OptionsEditor from "@/modules/common/field-editor/OptionsEditor";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import RemoveButton from "../../../components/RemoveButton";
-import type FieldModel from "../../../stores/models/FieldModel";
-import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
-import { match } from "../../../util/Util";
+import type { FieldType as ApiFieldType } from "../../../stores/definitions/Field";
+import FieldModel, { hasOptions } from "../../../stores/models/FieldModel";
+import { FIELD_DATA, FIELD_LABEL, fieldTypeToApiString, SUPPORTED_TYPES } from "../../../stores/models/FieldTypes";
+import useStores from "../../../stores/use-stores";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
-import NameField from "./CustomFieldNameField";
 import DefaultValueField from "./DefaultValueField";
-import FieldTypeMenu from "./FieldTypeMenu";
-import MoveButtons from "./MoveButtons";
 
 function makeDeleteOptions(t: TFunction<"inventory">, recordType: string): Array<DeleteOption> {
   return [
@@ -26,49 +25,14 @@ function makeDeleteOptions(t: TFunction<"inventory">, recordType: string): Array
   ];
 }
 
-const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
-  const { t } = useTranslation("inventory");
-  return (
-    <InputWrapper label={t("fields.templateFields.customField.type")}>
-      <FieldTypeMenu
-        fieldType={field.fieldType}
-        onChange={(fieldType) => {
-          field.setAttributesDirty({
-            type: fieldTypeToApiString(fieldType),
-            content: match<FieldType, string | number | Array<unknown>>([
-              [(f) => f === FieldTypes.radio, []],
-              [(f) => f === FieldTypes.choice, []],
-              [(f) => f === FieldTypes.number, 0],
-              [() => true, ""],
-            ])(fieldType),
-          });
-        }}
-      />
-    </InputWrapper>
-  );
-});
+const TYPE_OPTIONS: ReadonlyArray<FieldTypeOption<ApiFieldType>> = [...SUPPORTED_TYPES].map((fieldType) => ({
+  value: fieldTypeToApiString(fieldType) as ApiFieldType,
+  label: FIELD_DATA[fieldType].label,
+  description: FIELD_DATA[fieldType].help,
+  icon: FIELD_DATA[fieldType].icon,
+}));
 
-const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: boolean }) => {
-  const { t } = useTranslation(["inventory", "common"]);
-  const mandatoryLabel = field.mandatory ? t("common:actions.yes") : t("common:actions.no");
-  return (
-    <InputWrapper label={t("fields.templateFields.customField.mandatory")}>
-      {editing ? (
-        <Switch
-          checked={field.mandatory}
-          onChange={({ target: { checked } }) => {
-            field.setAttributesDirty({
-              mandatory: checked,
-            });
-          }}
-          edge="start"
-        />
-      ) : (
-        mandatoryLabel
-      )}
-    </InputWrapper>
-  );
-});
+const NAME_MAX_LENGTH = 50;
 
 type CustomFieldArgs = {
   field: FieldModel;
@@ -81,6 +45,10 @@ type CustomFieldArgs = {
   recordTypeName?: "sample" | "instrument";
 };
 
+/**
+ * Adapts a MobX template field to the shared field card, and guards the edits
+ * that would leave display rules reading a field or option that is gone.
+ */
 function CustomField({
   field,
   i,
@@ -91,105 +59,172 @@ function CustomField({
   onMove,
   recordTypeName = "sample",
 }: CustomFieldArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
-  const nameFieldId = useId();
+  const { t, i18n } = useTranslation(["inventory", "common"]);
+  const { uiStore } = useStores();
   const recordType = t(`recordTypes.${recordTypeName}.lowerPlural`);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const nameOf = (other: FieldModel) => other.name || t("common:fieldEditor.card.unnamed");
+  const namesOf = (fields: ReadonlyArray<FieldModel>) => formatList(fields.map(nameOf), language);
 
-  return (
-    <Grid role="region" aria-labelledby={nameFieldId}>
+  if (field.deleteFieldRequest) {
+    return (
       <div data-testid="TemplateField">
         <Paper variant="outlined">
-          {field.deleteFieldRequest ? (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle1">
-                <strong>{field.name}</strong>{" "}
-                {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
-              </Typography>
-              <p>
-                {t("template.fields.customField.newSamplesExclusion", { recordType })}{" "}
-                {field.deleteFieldOnSampleUpdate
-                  ? t("template.fields.customField.deleteFieldOnUpdate", { recordType })
-                  : t("template.fields.customField.deleteFieldOnUpdateNot", { recordType })}
-              </p>
-            </Box>
-          ) : (
-            <Box sx={{ position: "relative", p: 2 }}>
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <NameField
-                  field={field}
-                  editing={editable}
-                  onErrorStateChange={(value) => {
-                    onErrorStateChange(value);
-                  }}
-                  id={nameFieldId}
-                />
-                <Box
-                  sx={{
-                    ml: 1.5,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                  }}
-                >
-                  {editable && (
-                    <Box sx={{ ml: 0.75, mb: 0.75 }}>
-                      {field.initial ? (
-                        <RemoveButton
-                          onClick={() => onRemove()}
-                          title={t("fields.templateFields.customField.deleteNewField")}
-                        />
-                      ) : (
-                        <RemoveMenu
-                          deleteOptions={makeDeleteOptions(t, recordType)}
-                          onClick={(b) => onRemove(b)}
-                          tooltipTitle={t("fields.templateFields.customField.deleteField", { fieldName: field.name })}
-                        />
-                      )}
-                    </Box>
-                  )}
-                  {!field.initial && (
-                    <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
-                      {FIELD_LABEL[field.fieldType]}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-              <Box sx={{ mt: 4 }}>
-                <Grid container sx={{ flexDirection: forceColumnLayout ? "column" : "row" }}>
-                  <Grid
-                    size={{
-                      lg: 3,
-                    }}
-                  >
-                    <Mandatory field={field} editing={editable} />
-                  </Grid>
-                  <Grid
-                    size={{
-                      lg: 9,
-                    }}
-                  >
-                    {field.initial && (
-                      <Box sx={{ mt: forceColumnLayout ? 3 : 0 }}>
-                        <FieldTypeSelector field={field} />
-                      </Box>
-                    )}
-                  </Grid>
-                </Grid>
-              </Box>
-              <DefaultValueField field={field} editing={editable} recordTypeName={recordTypeName} />
-              {editable && <MoveButtons index={i} onClick={(newIndex) => onMove(newIndex)} />}
-            </Box>
-          )}
+          <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle1">
+              <strong>{field.name}</strong>{" "}
+              {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
+            </Typography>
+            <p>
+              {t("template.fields.customField.newSamplesExclusion", { recordType })}{" "}
+              {field.deleteFieldOnSampleUpdate
+                ? t("template.fields.customField.deleteFieldOnUpdate", { recordType })
+                : t("template.fields.customField.deleteFieldOnUpdateNot", { recordType })}
+            </p>
+          </Box>
         </Paper>
       </div>
-    </Grid>
+    );
+  }
+
+  const siblings = (field.owner.fields ?? []).filter(
+    (other): other is FieldModel => other instanceof FieldModel && !other.deleteFieldRequest,
+  );
+  const rule = field.displayRule;
+  const source = rule ? (siblings.find((other) => other.fieldKey === rule.sourceFieldKey) ?? null) : null;
+
+  const duplicateName = field.owner.fieldNamesInUse.filter((name) => name === field.name).length > 1;
+  const nameError =
+    field.name === ""
+      ? t("fields.templateFields.customField.validation.emptyName")
+      : duplicateName
+        ? t("fields.templateFields.customField.validation.duplicateName")
+        : field.name.length > NAME_MAX_LENGTH
+          ? t("fields.templateFields.customField.validation.nameTooLong")
+          : null;
+
+  const remove = async (deleteFromRecords?: boolean) => {
+    const dependents = field.dependentFields;
+    if (
+      dependents.length > 0 &&
+      !(await uiStore.confirm(
+        t("template.displayRules.confirmDeleteField.title", { field: nameOf(field) }),
+        t("template.displayRules.confirmDeleteField.message", {
+          count: dependents.length,
+          fields: namesOf(dependents),
+        }),
+        t("common:actions.delete"),
+        t("common:actions.cancel"),
+      ))
+    )
+      return;
+    onRemove(deleteFromRecords);
+  };
+
+  const changeType = async (type: ApiFieldType) => {
+    const dependents = hasOptions(type) ? [] : field.dependentFields;
+    if (
+      dependents.length > 0 &&
+      !(await uiStore.confirm(
+        t("template.displayRules.confirmTypeChange.title", { field: nameOf(field) }),
+        t("template.displayRules.confirmTypeChange.message", {
+          count: dependents.length,
+          fields: namesOf(dependents),
+        }),
+        t("template.displayRules.confirmTypeChange.confirm"),
+        t("common:actions.cancel"),
+      ))
+    )
+      return;
+    field.changeType(type);
+  };
+
+  const removeOption = async (index: number) => {
+    const option = field.options[index]?.value ?? "";
+    const stillOffered = field.options.some((other, otherIndex) => otherIndex !== index && other.value === option);
+    const dependents = stillOffered ? [] : field.fieldsUsingOption(option);
+    if (
+      dependents.length > 0 &&
+      !(await uiStore.confirm(
+        t("template.displayRules.confirmOptionRemoval.title", { option }),
+        t("template.displayRules.confirmOptionRemoval.message", {
+          count: dependents.length,
+          fields: namesOf(dependents),
+        }),
+        t("common:actions.remove"),
+        t("common:actions.cancel"),
+      ))
+    )
+      return;
+    field.removeOption(index);
+  };
+
+  return (
+    <div data-testid="TemplateField">
+      <FieldCard
+        name={field.name}
+        onNameChange={(name) => {
+          field.setAttributesDirty({ name });
+          onErrorStateChange(name === "" || name.length > NAME_MAX_LENGTH);
+        }}
+        nameError={nameError}
+        type={field.type}
+        typeOptions={TYPE_OPTIONS}
+        onTypeChange={(type) => void changeType(type)}
+        canChangeType={field.initial}
+        mandatory={field.mandatory}
+        onMandatoryChange={(mandatory) => field.setAttributesDirty({ mandatory })}
+        position={i}
+        count={field.owner.fields.length}
+        onMove={onMove}
+        canDelete
+        onDelete={() => void remove()}
+        deleteControl={
+          field.initial ? (
+            <RemoveButton onClick={() => void remove()} title={t("fields.templateFields.customField.deleteNewField")} />
+          ) : (
+            <RemoveMenu
+              deleteOptions={makeDeleteOptions(t, recordType)}
+              onClick={(deleteFromRecords) => void remove(deleteFromRecords)}
+              tooltipTitle={t("fields.templateFields.customField.deleteField", { fieldName: field.name })}
+            />
+          )
+        }
+        editable={editable}
+        columnLayout={forceColumnLayout}
+        summary={
+          <DisplayRuleSummary
+            rule={rule}
+            sourceName={source ? nameOf(source) : null}
+            sourceIsBelow={source !== null && siblings.indexOf(source) > siblings.indexOf(field)}
+          />
+        }
+      >
+        {hasOptions(field.type) && (
+          <OptionsEditor
+            options={field.options.map((option) => {
+              const usedByRule = field.fieldsUsingOption(option.value).length > 0;
+              return {
+                value: option.value,
+                editable: option.editing && !usedByRule,
+                lockedReason: usedByRule ? t("template.displayRules.optionInUse") : undefined,
+              };
+            })}
+            onOptionChange={(index, value) =>
+              field.setAttributesDirty({
+                options: field.options.toSpliced(index, 1, { value, label: value, editing: true }),
+              })
+            }
+            onOptionRemove={(index) => void removeOption(index)}
+            onOptionAdd={() =>
+              field.setAttributesDirty({ options: [...field.options, { value: "", label: "", editing: true }] })
+            }
+            disabled={!editable}
+          />
+        )}
+        <DefaultValueField field={field} editing={editable} recordTypeName={recordTypeName} />
+      </FieldCard>
+    </div>
   );
 }
 

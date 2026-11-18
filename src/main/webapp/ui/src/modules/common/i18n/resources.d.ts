@@ -942,6 +942,78 @@ export default interface Resources {
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
     },
+    "fieldDisplay": {
+      "fieldsShown": "{count, plural, one {One more field is shown: {fields}} other {# more fields are shown: {fields}}}"
+    },
+    "fieldEditor": {
+      "card": {
+        "changeType": "Change type, currently {type}",
+        "delete": "Delete field {field}",
+        "mandatory": "Mandatory",
+        "mandatoryNo": "Not mandatory",
+        "mandatoryYes": "Mandatory",
+        "move": "Move field",
+        "moveDown": "Move {field} down",
+        "moveDownTooltip": "Move down",
+        "moveToBottom": "Move {field} to the bottom",
+        "moveToBottomTooltip": "Move to bottom",
+        "moveToTop": "Move {field} to the top",
+        "moveToTopTooltip": "Move to top",
+        "moveUp": "Move {field} up",
+        "moveUpTooltip": "Move up",
+        "name": "Name",
+        "type": "Type",
+        "unnamed": "Unnamed field"
+      },
+      "options": {
+        "add": "Add option",
+        "blank": "Options cannot be blank.",
+        "duplicate": "Options must all be different.",
+        "optionLabel": "Option {position}",
+        "remove": "Remove option {option}",
+        "required": "Add at least one option.",
+        "title": "Options"
+      },
+      "rules": {
+        "addRule": "Add rule",
+        "deleteRule": "Delete rule: {rule}",
+        "explanation": "Show fields only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "heading": {
+          "hasNoValue": "When {source} has no value",
+          "hasValue": "When {source} has a value",
+          "isAnyOf": "When {source} is {options}",
+          "isNoneOf": "When {source} is not {options}",
+          "sourceMissing": "When a deleted field has a value"
+        },
+        "incomplete": "This rule is not applied until it has a field, a condition, any options it needs, and at least one field to show.",
+        "newRuleHeading": "New rule {position}",
+        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
+        "none": "No display rules. Every field is always shown.",
+        "operator": {
+          "hasNoValue": "has no value",
+          "hasValue": "has a value",
+          "isAnyOf": "is any of",
+          "isNoneOf": "is none of"
+        },
+        "operatorLabel": "Condition",
+        "shows": "Shows {fields}",
+        "sourceLabel": "Field",
+        "sourceMissing": "The field this rule read no longer exists. Choose another field.",
+        "targetsLabel": "Show these fields",
+        "targetsRequired": "Choose at least one field to show.",
+        "title": "Display rules",
+        "valuesLabel": "Options",
+        "valuesRequired": "Choose at least one option."
+      },
+      "summary": {
+        "hasNoValue": "Shown when {source} has no value",
+        "hasValue": "Shown when {source} has a value",
+        "isAnyOf": "Shown when {source} is {options}",
+        "isNoneOf": "Shown when {source} is not {options}",
+        "sourceBelowHint": "Placing it below {source} reads better.",
+        "sourceMissing": "Always shown: the field its rule read no longer exists."
+      }
+    },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
       "selectedFolderWithColon": "Selected folder:",
@@ -3404,6 +3476,7 @@ export default interface Resources {
         },
         "customField": {
           "defaultDescription": "Default Description",
+          "defaultOptionsExplanation": "Options selected here are selected in new {recordType} made from this template.",
           "defaultValue": "Default Value",
           "deleteField": "Delete field {fieldName}",
           "deleteNewField": "Delete new field",
@@ -5086,6 +5159,22 @@ export default interface Resources {
           "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
           "label": "Sample"
         }
+      },
+      "displayRules": {
+        "confirmDeleteField": {
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
+          "title": "Delete {field}?"
+        },
+        "confirmOptionRemoval": {
+          "message": "{count, plural, one {The display rule of {fields} uses this option. Removing the option also removes it from that rule, and removes the rule if it has no options left.} other {The display rules of {fields} use this option. Removing the option also removes it from those rules, and removes any rule that has no options left.}}",
+          "title": "Remove option {option}?"
+        },
+        "confirmTypeChange": {
+          "confirm": "Change type",
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
+          "title": "Change the type of {field}?"
+        },
+        "optionInUse": "A display rule uses this option, so it can only be removed."
       },
       "fields": {
         "customField": {

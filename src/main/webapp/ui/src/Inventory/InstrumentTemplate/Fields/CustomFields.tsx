@@ -12,6 +12,7 @@ import FieldModel, { type FieldModelAttrs } from "../../../stores/models/FieldMo
 import InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
 import useStores from "../../../stores/use-stores";
 import CustomField from "../../Template/Fields/CustomField";
+import TemplateDisplayRules from "../../Template/Fields/TemplateDisplayRules";
 
 const EMPTY_FIELD: FieldModelAttrs = {
   name: "",
@@ -52,7 +53,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
             <CustomField
               field={field}
               i={i}
-              key={i}
+              key={field.fieldKey ?? i}
               editable={editable}
               onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
               onRemove={(b) => removeCustomField(field)(b)}
@@ -69,6 +70,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
   const editable = activeResult.isFieldEditable("fields");
   return (
     <>
+      <TemplateDisplayRules fields={fields} editable={editable} />
       {fields.length > 0 ? (
         <TemplateFields editable={editable} />
       ) : (

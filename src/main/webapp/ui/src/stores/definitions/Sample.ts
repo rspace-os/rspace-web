@@ -28,5 +28,11 @@ export interface Sample extends InventoryRecord {
    */
   readonly enforceMandatoryFields: boolean;
 
+  /**
+   * Whether a display rule hides the field given the current values. A hidden
+   * field keeps its value but is not shown and not validated.
+   */
+  isFieldHidden?(field: Field): boolean;
+
   subSamplesCount: number;
 }

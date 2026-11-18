@@ -1,5 +1,12 @@
 import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
+import * as v from "valibot";
+import { withoutOptions } from "@/modules/common/field-editor/ruleEditing";
+import {
+  type FieldDisplayRule,
+  FieldDisplayRuleSchema,
+  serializeDisplayRule,
+} from "@/modules/common/field-rules/displayRule";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -41,7 +48,25 @@ export type FieldModelAttrs = {
   mandatory: boolean;
   allowedRelationTypes?: Array<string> | null;
   link?: FieldLink | null;
+  fieldKey?: string | null;
+  /** A rule as the API sends it (a JSON object), or one already parsed. */
+  displayRule?: unknown;
 };
+
+function parseRule(json: unknown): FieldDisplayRule | null {
+  if (json === null || json === undefined) return null;
+  const result = v.safeParse(FieldDisplayRuleSchema, json);
+  if (result.success) return result.output;
+  // a rule that cannot be read must not hide data, so the field is always shown
+  console.warn("Ignoring an unreadable display rule", json);
+  return null;
+}
+
+/** Clears the display rules that read `field`, before it is removed. */
+export function clearRulesReading(field: Field | undefined): void {
+  if (!(field instanceof FieldModel)) return;
+  for (const dependent of field.dependentFields) dependent.setAttributesDirty({ displayRule: null });
+}
 
 export default class FieldModel implements Field {
   // @ts-expect-error Initialised by setAttributes
@@ -77,6 +102,10 @@ export default class FieldModel implements Field {
   allowedRelationTypes: Array<string> = [];
   /** Link fields: the single link value, or null when unset. */
   link: FieldLink | null = null;
+  fieldKey: string | null = null;
+  displayRule: FieldDisplayRule | null = null;
+  /** Whether the field had a rule when loaded, so clearing it is sent as an explicit null. */
+  private readonly loadedWithRule: boolean;
 
   constructor(_params: FieldModelAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
@@ -100,7 +129,11 @@ export default class FieldModel implements Field {
       linkEditInProgress: observable,
       allowedRelationTypes: observable,
       link: observable,
+      fieldKey: observable,
+      displayRule: observable.ref,
       setAttributesDirty: action,
+      removeOption: action,
+      changeType: action,
       setAttributes: action,
       setEditing: action,
       setError: action,
@@ -194,6 +227,9 @@ export default class FieldModel implements Field {
           },
         ),
       });
+    this.fieldKey = _params.fieldKey ?? null;
+    this.displayRule = parseRule(_params.displayRule);
+    this.loadedWithRule = this.displayRule !== null;
     this.error = false;
   }
 
@@ -229,7 +265,58 @@ export default class FieldModel implements Field {
     return new Set(optionValues).size === optionValues.length;
   }
 
+  /** Siblings in the same template or record that are still in use. */
+  private get liveSiblings(): Array<FieldModel> {
+    const fields = (this.owner.fields ?? []) as Array<FieldModel>;
+    return fields.filter((field) => field !== this && !field.deleteFieldRequest);
+  }
+
+  /** Fields whose display rule reads this field. */
+  get dependentFields(): Array<FieldModel> {
+    const key = this.fieldKey;
+    if (key === null) return [];
+    return this.liveSiblings.filter((field) => field.displayRule?.sourceFieldKey === key);
+  }
+
+  /** Fields whose display rule names this option of this field. */
+  fieldsUsingOption(option: string): Array<FieldModel> {
+    return this.dependentFields.filter((field) => field.displayRule?.values.includes(option));
+  }
+
+  /**
+   * Removes an option, and with it the option from any display rule that names
+   * it, in the same change; a rule left without options is cleared.
+   */
+  removeOption(index: number): void {
+    const removed = this.options[index]?.value;
+    const options = this.options.toSpliced(index, 1);
+    if (removed !== undefined && !options.some((option) => option.value === removed)) {
+      for (const dependent of this.fieldsUsingOption(removed)) {
+        if (dependent.displayRule)
+          dependent.setAttributesDirty({ displayRule: withoutOptions(dependent.displayRule, [removed]) });
+      }
+    }
+    this.setAttributesDirty({ options });
+  }
+
+  /**
+   * Changes the type of a field that has not been saved, resetting its value.
+   * If the new type cannot be read by a display rule, the rules that read this
+   * field are cleared in the same change.
+   */
+  changeType(type: FieldType): void {
+    if (!hasOptions(type)) {
+      for (const dependent of this.dependentFields) dependent.setAttributesDirty({ displayRule: null });
+    }
+    this.setAttributesDirty({
+      type,
+      content: hasOptions(type) ? [] : type === "number" ? 0 : "",
+    });
+  }
+
   validate(): ValidationResult {
+    // a hidden field keeps its value but is not checked (RPD-339)
+    if (this.owner.isFieldHidden?.(this)) return IsValid();
     if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");
     if (this.name.length > 50) return IsInvalid("Names for custom fields cannot exceed 50 characters.");
     if (this.type === "radio") {
@@ -328,6 +415,11 @@ export default class FieldModel implements Field {
     } else {
       keys.push(hasOptions(ret.type) ? "selectedOptions" : "content");
     }
-    return pick(ret, keys as Array<keyof typeof ret>) as object;
+    const params: Record<string, unknown> = pick(ret, keys as Array<keyof typeof ret>);
+    if (this.fieldKey !== null) params.fieldKey = this.fieldKey;
+    // the API reads an absent rule as unchanged, so a cleared rule is sent as null
+    if (this.displayRule !== null) params.displayRule = JSON.parse(serializeDisplayRule(this.displayRule));
+    else if (this.loadedWithRule) params.displayRule = null;
+    return params;
   }
 }
