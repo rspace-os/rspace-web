@@ -192,6 +192,12 @@ export default function StoichiometryDialog({
       aria-labelledby={titleId}
       maxWidth="xl"
       fullWidth
+      /*
+       * The dialog opens from the editor's iframe, so MUI cannot record where
+       * focus came from and would restore it to a node inside the closing
+       * dialog. The editor plugin returns focus to the editor instead.
+       */
+      disableRestoreFocus
     >
       <AppBar
         variant="dialog"
