@@ -381,6 +381,8 @@ function _updateFields(fields) {
           $(this).prop("checked", true);
         }
       });
+      // radio data, and the picklist's selection, as display rules read them
+      syncRadioFieldValue(field.id, field.fieldData);
       $("#radioText_" + field.id).text(field.fieldData);
       return;
     }

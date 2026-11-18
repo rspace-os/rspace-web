@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { createDisplayRule, serializeDisplayRule } from "@/modules/common/field-rules/displayRule";
-import { applyFieldDisplayRules, markAnswered, shownMandatoryFieldsSatisfied } from "../documentFieldDisplay";
+import {
+  applyFieldDisplayRules,
+  markAnswered,
+  shownMandatoryFieldsSatisfied,
+  syncStoredValue,
+} from "../documentFieldDisplay";
 
 const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const LEVEL_KEY = "6f1c2e0a-0000-4000-8000-000000000002";
@@ -12,6 +17,7 @@ const showWhenNo = serializeDisplayRule(createDisplayRule(GMO_KEY, "IS_ANY_OF", 
 /** Builds a row the way the JSP does: attributes are set through the DOM, so values are escaped. */
 function row(attributes: Record<string, string>, inner = ""): HTMLElement {
   const element = document.createElement("div");
+  element.className = "journalField";
   for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
   element.innerHTML = inner;
   return element;
@@ -22,6 +28,8 @@ function find<E extends Element>(root: ParentNode, selector: string): E {
   if (element === null) throw new Error(`No element matches ${selector}`);
   return element;
 }
+
+const pickListOptions = () => `<select><option value="Yes">Yes</option><option value="No">No</option></select>`;
 
 function page(...rows: Array<HTMLElement>): HTMLElement {
   const root = document.createElement("div");
@@ -113,10 +121,10 @@ describe("applyFieldDisplayRules", () => {
     expect(dependent).not.toHaveAttribute("hidden");
   });
 
-  test("counts a picklist's displayed option only once it was stored or picked", () => {
+  test("reads a picklist's stored answer, not the option a select always displays", () => {
     const pickList = row(
-      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY },
-      `<select><option value="Yes">Yes</option><option value="No">No</option></select>`,
+      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY, "data-field-value": "" },
+      pickListOptions(),
     );
     const dependent = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": showWhenYes });
     const root = page(pickList, dependent);
@@ -129,14 +137,15 @@ describe("applyFieldDisplayRules", () => {
     expect(dependent).not.toHaveAttribute("hidden");
   });
 
-  test("counts a picklist option the server rendered as selected", () => {
-    const pickList = row(
-      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY },
-      `<select><option value="No">No</option><option value="Yes" selected>Yes</option></select>`,
+  test("counts stored radio data that is no longer an option, as the server does", () => {
+    const rule = serializeDisplayRule(createDisplayRule(GMO_KEY, "HAS_VALUE", []));
+    const source = row(
+      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY, "data-field-value": "Maybe" },
+      radio("1", ["Yes", "No"]),
     );
-    const dependent = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": showWhenYes });
+    const dependent = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": rule });
 
-    applyFieldDisplayRules(page(pickList, dependent));
+    applyFieldDisplayRules(page(source, dependent));
 
     expect(dependent).not.toHaveAttribute("hidden");
   });
@@ -199,6 +208,61 @@ describe("applyFieldDisplayRules", () => {
     expect(text.querySelector("p")).not.toHaveAttribute("hidden");
     expect(dependent).not.toHaveAttribute("hidden");
     expect([...result.shownById.keys()]).toEqual(["1", "2", "3"]);
+  });
+
+  test("still applies rules to a notebook field that unbalanced markup in an earlier field nested", () => {
+    const root = document.createElement("div");
+    // the first field's stored text opens a <div> it never closes, so the parser nests the next field in it
+    root.innerHTML = `
+      <div class="journalField" data-field-id="1" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-value="No">
+        <div class="journalField" data-field-id="2" data-field-type="TEXT">notes <div>
+          <div class="journalField" data-field-id="3" data-field-type="STRING" data-display-rule='${showWhenYes}'>permit</div>
+      </div></div>`;
+
+    const result = applyFieldDisplayRules(root);
+
+    expect(result.shownById.get("3")).toBe(false);
+  });
+});
+
+describe("a picklist whose data the page reloads", () => {
+  function pickListPage(storedValue: string) {
+    const pickList = row(
+      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY, "data-field-value": storedValue },
+      pickListOptions(),
+    );
+    const permit = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": showWhenYes });
+    return { root: page(pickList, permit), pickList, permit };
+  }
+  // the mandatory permit field is empty
+  const fields = [
+    { id: 1, mandatoryStateSatisfied: true },
+    { id: 2, mandatoryStateSatisfied: false },
+  ];
+
+  test("reveals an empty mandatory field when the data is restored to a matching answer", () => {
+    const { root, pickList, permit } = pickListPage("");
+    expect(shownMandatoryFieldsSatisfied(fields, applyFieldDisplayRules(root).shownById)).toBe(true);
+
+    syncStoredValue(pickList, "Yes");
+    const result = applyFieldDisplayRules(root);
+
+    expect(permit).not.toHaveAttribute("hidden");
+    expect(find<HTMLSelectElement>(pickList, "select")).toHaveValue("Yes");
+    expect(shownMandatoryFieldsSatisfied(fields, result.shownById)).toBe(false);
+  });
+
+  test("hides it again when the data is cleared, even after the user had picked an option", () => {
+    const { root, pickList, permit } = pickListPage("Yes");
+    markAnswered(find(pickList, "select"));
+    expect(shownMandatoryFieldsSatisfied(fields, applyFieldDisplayRules(root).shownById)).toBe(false);
+
+    syncStoredValue(pickList, "");
+    const result = applyFieldDisplayRules(root);
+
+    expect(permit).toHaveAttribute("hidden");
+    expect(find<HTMLSelectElement>(pickList, "select").selectedIndex).toBe(-1);
+    expect(shownMandatoryFieldsSatisfied(fields, result.shownById)).toBe(true);
   });
 });
 

@@ -1,3 +1,4 @@
+import { createInstance } from "i18next";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { createDisplayRule, serializeDisplayRule } from "@/modules/common/field-rules/displayRule";
@@ -8,7 +9,7 @@ const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const showWhenYes = serializeDisplayRule(createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]));
 
 function dependentRow(id: string, name: string): string {
-  return `<tr data-field-id="${id}" data-field-type="STRING" data-field-name="${name}" data-display-rule='${showWhenYes}'><td><input type="text"></td></tr>`;
+  return `<tr class="field" data-field-id="${id}" data-field-type="STRING" data-field-name="${name}" data-display-rule='${showWhenYes}'><td><input type="text"></td></tr>`;
 }
 
 let display: LegacyFieldDisplay;
@@ -16,7 +17,7 @@ let display: LegacyFieldDisplay;
 beforeEach(async () => {
   document.body.innerHTML = `
     <table><tbody>
-      <tr data-field-id="1" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-name="GMO?">
+      <tr class="field" data-field-id="1" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-name="GMO?">
         <td><input type="radio" name="gmo" value="Yes"><input type="radio" name="gmo" value="No"></td>
       </tr>
       ${dependentRow("2", "Containment level")}
@@ -54,11 +55,30 @@ describe("createLegacyFieldDisplay", () => {
     expect(answer("Yes")).toHaveFocus();
   });
 
-  test("announces nothing on load or on a refresh without a change", () => {
+  test("mounts an empty polite region on load, and announces nothing on a refresh without a change", () => {
+    const region = document.querySelector('[role="status"]');
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region).toBeEmptyDOMElement();
+
     answer("Yes").checked = true;
     display.refresh();
 
-    expect(document.querySelector('[role="status"]')).toBeNull();
+    expect(region).toBeEmptyDOMElement();
+  });
+
+  test("never announces the raw message key before the catalog has loaded", async () => {
+    document.querySelector('[role="status"]')?.remove();
+    const notLoaded = createInstance();
+    await notLoaded.init({ lng: "en-US", resources: {}, ns: [] });
+    const early = createLegacyFieldDisplay(notLoaded);
+    early.refresh();
+
+    const control = answer("Yes");
+    control.checked = true;
+    early.fieldChanged(control);
+    await Promise.resolve();
+
+    expect(document.querySelector('[role="status"]')).not.toHaveTextContent("fieldDisplay");
   });
 
   test("clears the message when fields hide, so revealing them again is announced again", () => {

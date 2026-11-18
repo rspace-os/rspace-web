@@ -9,17 +9,19 @@
  *  - `data-field-key`: the form field's key;
  *  - `data-display-rule`: its stored rule JSON, absent when it has none;
  *  - `data-field-id` and `data-field-name`: for callers and announcements;
- *  - `data-field-value`: stored radio or choice data, used only where the
- *    element has no inputs (the notebook view renders plain text).
+ *  - `data-field-value`: stored radio data on the document page, and stored
+ *    radio or choice data in the notebook view, which has no inputs. Legacy
+ *    code that reloads a field's data updates it through `syncStoredValue`.
  */
 import * as v from "valibot";
 import { type FieldDisplayRule, parseDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { parseElnChoiceValues } from "@/modules/common/field-rules/elnChoiceValues";
 import { displayRuleVisibility } from "@/modules/common/field-rules/evaluateDisplayRules";
 
-export const FIELD_SELECTOR = "[data-field-type]";
+/** Document field rows and notebook field wrappers; nothing inside a field's rich text matches. */
+export const FIELD_SELECTOR = "tr.field[data-field-type], div.journalField[data-field-type]";
 
-/** Set on a picklist once the user picks an option, see `pickListSelection`. */
+/** Set on a picklist once the user picks an option; cleared when its data is reloaded. */
 const ANSWERED_ATTRIBUTE = "data-field-answered";
 
 export type FieldDisplayResult = {
@@ -43,28 +45,27 @@ function readRule(element: HTMLElement): FieldDisplayRule | null {
   }
 }
 
+const asSelection = (value: string): Array<string> => (value === "" ? [] : [value]);
+
 /**
- * A select always shows an option, even when the field has no data, so its
- * value counts only if the server rendered an option as selected or the user
- * has picked one. Otherwise the page would disagree with the stored data, which
- * the server uses for the Sign button.
+ * Radio data as the server reads it: any non-empty stored value is selected,
+ * even one that is no longer an option. The page's controls take over once
+ * they say more: a checked radio, or a picklist the user has picked from (a
+ * select always shows an option, even when the field has no data).
  */
-function pickListSelection(select: HTMLSelectElement): Array<string> {
-  const answered =
-    select.hasAttribute(ANSWERED_ATTRIBUTE) || Array.from(select.options).some((option) => option.defaultSelected);
-  return answered && select.value !== "" ? [select.value] : [];
+function radioSelection(element: HTMLElement, storedValue: string): Array<string> {
+  const checked = element.querySelector<HTMLInputElement>('input[type="radio"]:checked');
+  if (checked) return [checked.value];
+  const select = element.querySelector("select");
+  if (select?.hasAttribute(ANSWERED_ATTRIBUTE)) return asSelection(select.value);
+  return asSelection(storedValue);
 }
 
 function selectedOptions(element: HTMLElement): Array<string> {
   const storedValue = element.dataset.fieldValue ?? "";
   switch (element.dataset.fieldType) {
-    case "RADIO": {
-      const radios = Array.from(element.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
-      if (radios.length > 0) return radios.filter((radio) => radio.checked).map((radio) => radio.value);
-      const select = element.querySelector("select");
-      if (select) return pickListSelection(select);
-      return storedValue === "" ? [] : [storedValue];
-    }
+    case "RADIO":
+      return radioSelection(element, storedValue);
     case "CHOICE": {
       const boxes = Array.from(element.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
       if (boxes.length > 0) return boxes.filter((box) => box.checked).map((box) => box.value);
@@ -81,10 +82,8 @@ function selectedOptions(element: HTMLElement): Array<string> {
  * Values are never touched, so a hidden field keeps its data.
  */
 export function applyFieldDisplayRules(root: ParentNode): FieldDisplayResult {
-  // Rich text inside a field is the author's content, not a field, whatever attributes it has.
-  const elements = Array.from(root.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).filter(
-    (element) => element.parentElement?.closest(FIELD_SELECTOR) == null,
-  );
+  // Selected by class, not by nesting: unbalanced markup in one field's stored text can nest the next field.
+  const elements = Array.from(root.querySelectorAll<HTMLElement>(FIELD_SELECTOR));
   const rules = elements.map(readRule);
   const visibility = displayRuleVisibility(
     elements.map((element, i) => {
@@ -115,6 +114,21 @@ export function applyFieldDisplayRules(root: ParentNode): FieldDisplayResult {
 /** Records that the user changed a field's control, so a picklist's value counts from now on. */
 export function markAnswered(control: Element): void {
   if (control instanceof HTMLSelectElement) control.setAttribute(ANSWERED_ATTRIBUTE, "");
+}
+
+/**
+ * Records radio data the page has just reloaded (from the server or an
+ * autosave), which legacy code writes into the inputs without change events.
+ * A picklist shows the value, or no option when it has none.
+ */
+export function syncStoredValue(element: HTMLElement, value: string): void {
+  element.dataset.fieldValue = value;
+  const select = element.querySelector("select");
+  if (select) {
+    select.removeAttribute(ANSWERED_ATTRIBUTE);
+    select.value = value;
+    if (select.value !== value) select.selectedIndex = -1;
+  }
 }
 
 /**
