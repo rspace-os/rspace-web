@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import type React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +10,7 @@ const mockCreateRoot = vi.fn((container: Element) => ({
   render: vi.fn((node: React.ReactNode) => {
     rootRenderCalls.push({ container, node });
   }),
+  unmount: vi.fn(),
 }));
 
 const firstRootRenderCall = () => {
@@ -147,6 +148,26 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls).toHaveLength(2);
     expect(rootRenderCalls[0]?.container).toBe(rootRenderCalls[1]?.container);
+  });
+
+  it("unmounts a preview once its node is removed from the page", async () => {
+    document.body.innerHTML = `
+      <div id="div_7">
+        <div
+          id="table-only-preview"
+          data-stoichiometry-table-only="true"
+          data-stoichiometry-table='{"id":3,"revision":4}'
+        ></div>
+      </div>
+    `;
+    document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
+    const root = mockCreateRoot.mock.results[0]?.value;
+
+    document.getElementById("div_7")?.replaceChildren();
+
+    await waitFor(() => {
+      expect(root?.unmount).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("renders preview info into the closest span for chem-updated images", () => {

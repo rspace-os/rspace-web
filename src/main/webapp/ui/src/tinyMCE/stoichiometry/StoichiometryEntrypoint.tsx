@@ -371,9 +371,18 @@ class StoichiometryPlugin {
 
       syncStoichiometryTableOnlyPlaceholder(targetNode);
 
+      /*
+       * This runs while the dialog is open. mceReplaceContent focuses the
+       * editor's iframe, even with skip_focus because it calls
+       * mceInsertContent internally, which would take focus out of the dialog.
+       */
+      const focusedElement = document.activeElement;
       editor.selection.select(targetNode);
       editor.execCommand("mceReplaceContent", false, targetNode.outerHTML);
       editor.setDirty(true);
+      if (focusedElement instanceof HTMLElement && focusedElement !== document.body) {
+        focusedElement.focus({ preventScroll: true });
+      }
 
       const updatedNode = findStoichiometryNode(nodeId);
       if (updatedNode) {
