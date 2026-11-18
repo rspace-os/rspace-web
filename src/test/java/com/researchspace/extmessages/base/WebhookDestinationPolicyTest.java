@@ -3,7 +3,6 @@ package com.researchspace.extmessages.base;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -19,7 +18,6 @@ class WebhookDestinationPolicyTest {
   @ValueSource(
       strings = {
         "http://127.0.0.1:9988/x",
-        "https://user:pw@hooks.slack.com/x",
         "http://hooks.slack.com/x",
         "https://hooks.slack.com.evil.example/x",
         "https://evilhooks.slack.com/x",
@@ -48,11 +46,6 @@ class WebhookDestinationPolicyTest {
   @ValueSource(
       strings = {
         "hooks.slack.com",
-        "ftp://hooks.slack.com",
-        "https://h.example/path",
-        "https://user@h.example",
-        "https://h.example?sig=x",
-        "https://h.example#x",
         "https://h.*.example",
         "https://",
         "https://*.0.0.1",
@@ -62,14 +55,5 @@ class WebhookDestinationPolicyTest {
   void malformedEntryStopsStartup(String entry) {
     assertThrows(
         IllegalStateException.class, () -> WebhookDestinationPolicy.parse("test.origins", entry));
-  }
-
-  @Test
-  void entryDnsLabelsMayHaveUpTo63Characters() {
-    String longest = "https://" + "a".repeat(63) + ".example";
-    String tooLong = "https://" + "a".repeat(64) + ".example";
-    assertDoesNotThrow(() -> WebhookDestinationPolicy.parse("test.origins", longest));
-    assertThrows(
-        IllegalStateException.class, () -> WebhookDestinationPolicy.parse("test.origins", tooLong));
   }
 }

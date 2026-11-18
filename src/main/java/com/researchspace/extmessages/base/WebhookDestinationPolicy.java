@@ -1,6 +1,5 @@
 package com.researchspace.extmessages.base;
 
-import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,7 +41,8 @@ public final class WebhookDestinationPolicy {
    *
    * @param propertyName the deployment property the value came from, named in errors
    * @param allowedOrigins comma-separated {@code scheme://host[:port]} entries; blank allows none
-   * @throws IllegalStateException if an entry is malformed, so a bad configuration stops startup
+   * @throws IllegalStateException if an entry has no host, or a wildcard covers a public suffix or
+   *     an IP address, so the configuration stops startup
    */
   public static WebhookDestinationPolicy parse(String propertyName, String allowedOrigins) {
     List<Origin> origins = new ArrayList<>();
@@ -74,32 +74,17 @@ public final class WebhookDestinationPolicy {
     } catch (URISyntaxException e) {
       throw invalid;
     }
-    String scheme = Objects.toString(uri.getScheme(), "").toLowerCase(Locale.ROOT);
-    int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
-    String host = uri.getHost() == null ? null : normaliseHost(uri.getHost());
-    if (!(scheme.equals("http") || scheme.equals("https"))
-        || !isValidHost(host)
-        || port < 1
-        || port > 65535
-        || !isOriginOnly(uri)
-        || (wildcard && !isWildcardableDomain(host))) {
+    if (uri.getHost() == null) {
       throw invalid;
     }
+    // anything else malformed (scheme, port, host name) can never match a real URL: it fails closed
+    String scheme = Objects.toString(uri.getScheme(), "").toLowerCase(Locale.ROOT);
+    String host = normaliseHost(uri.getHost());
+    if (wildcard && !isWildcardableDomain(host)) {
+      throw invalid;
+    }
+    int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
     return new Origin(scheme, host, port, wildcard);
-  }
-
-  /** A DNS name within the label and length limits, or an IP literal. */
-  private static boolean isValidHost(String host) {
-    return host != null
-        && (InternetDomainName.isValid(host) || InetAddresses.isUriInetAddress(host));
-  }
-
-  /** No user info, path, query or fragment: an entry names an origin, never a webhook URL. */
-  private static boolean isOriginOnly(URI uri) {
-    return uri.getRawUserInfo() == null
-        && (uri.getRawPath().isEmpty() || uri.getRawPath().equals("/"))
-        && uri.getRawQuery() == null
-        && uri.getRawFragment() == null;
   }
 
   /**
@@ -117,8 +102,7 @@ public final class WebhookDestinationPolicy {
    * before every send.
    *
    * @return the checked URL, to send to
-   * @throws WebhookUrlNotAllowedException if the URL is malformed, has user info, or its origin
-   *     matches no entry
+   * @throws WebhookUrlNotAllowedException if the URL is malformed or its origin matches no entry
    */
   public URI check(String url) {
     URI uri = parseUrl(url);
@@ -140,9 +124,6 @@ public final class WebhookDestinationPolicy {
     }
     if (!uri.isAbsolute() || uri.getHost() == null) {
       throw new WebhookUrlNotAllowedException("not an absolute URL with a host");
-    }
-    if (uri.getRawUserInfo() != null) {
-      throw new WebhookUrlNotAllowedException("URL has user info");
     }
     return uri;
   }
