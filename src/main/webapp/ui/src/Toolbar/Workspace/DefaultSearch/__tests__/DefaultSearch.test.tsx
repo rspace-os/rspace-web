@@ -360,6 +360,67 @@ describe("DefaultSearch", () => {
     expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
   });
 
+  /** Answers preference reads in order; the read numbered `held` waits until released. */
+  function givenHeldRead(held: number, ...preferences: Array<Record<string, unknown>>) {
+    let reads = 0;
+    let release: () => void = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      http.get("/userform/ajax/preference", async () => {
+        const read = reads++;
+        if (read === held) await released;
+        return HttpResponse.json(preferences[Math.min(read, preferences.length - 1)]);
+      }),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        savedPreferences.push(JSON.parse(form.get("value") as string));
+        return HttpResponse.json({});
+      }),
+    );
+    return () => release();
+  }
+
+  test("a check started on returning to the tab does not undo a save that finished after it", async () => {
+    const user = userEvent.setup();
+    const release = givenHeldRead(1, {}, {}, {}, {});
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    const save = await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" });
+
+    document.dispatchEvent(new Event("visibilitychange"));
+    await user.click(save);
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+    release();
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+    expect(runButton()).toBeVisible();
+  });
+
+  test("an older check that answers last does not replace a newer one", async () => {
+    const release = givenHeldRead(
+      1,
+      { [KEY]: { value: BKMKTAG } },
+      { [KEY]: { value: BKMKTAG } },
+      {
+        [KEY]: { value: ZEBRAFISH },
+      },
+    );
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" });
+
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("focus"));
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+    release();
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+  });
+
   test("returning to the tab keeps the shown default when the check fails", async () => {
     givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, FAILED_READ);
     givenWorkspace({});

@@ -90,14 +90,24 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     setFocusAfterStore(null);
   }, [focusAfterStore]);
 
+  // Each refresh, save, remove and run moves this on, so a refresh that answers
+  // after any of them is ignored rather than undoing what they show
+  const latestCheck = React.useRef(0);
+
   // Another tab or window may have changed the default while this one was in the background.
   // Moving between two visible windows changes focus but not visibility.
   React.useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "hidden") return;
-      readStoredDefault().then(setShown, () => {
-        // Keep showing the default this page has
-      });
+      const check = ++latestCheck.current;
+      readStoredDefault().then(
+        (latest) => {
+          if (check === latestCheck.current) setShown(latest);
+        },
+        () => {
+          // Keep showing the default this page has
+        },
+      );
     };
     document.addEventListener("visibilitychange", refresh);
     window.addEventListener("focus", refresh);
@@ -110,6 +120,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
   const [saving, setSaving] = React.useState(false);
 
   const store = async (query: string | null) => {
+    latestCheck.current++;
     setSaving(true);
     try {
       await setStored(query);
@@ -137,6 +148,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
 
   // Without the stored value, saving or removing could overwrite another tab's default unasked
   const readOrAnnounce = async (failed: string): Promise<{ latest: string | null } | null> => {
+    latestCheck.current++;
     try {
       return { latest: await readStoredDefault() };
     } catch {
@@ -160,6 +172,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
 
   // Another tab may have changed the default since this page loaded
   const run = async () => {
+    latestCheck.current++;
     let latest = stored;
     try {
       latest = await readStoredDefault();
