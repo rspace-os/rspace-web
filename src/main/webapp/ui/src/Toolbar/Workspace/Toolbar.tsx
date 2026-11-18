@@ -195,14 +195,22 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         },
         () => {
           this.checkSavedSettings();
-          doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch);
+          doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch, () => {
+            if (this.searchLinkLeftTreeView) {
+              this.searchLinkLeftTreeView = false;
+              workspaceSettings.currentViewMode = "LIST_VIEW";
+              saveWorkplaceSettings();
+            }
+          });
         },
       );
     };
 
-    // The search box only exists in list view
+    // The search box only exists in list view. The list is saved as the
+    // user's view only once the search has worked.
     if (this.state.treeView) {
-      list_view();
+      this.searchLinkLeftTreeView = true;
+      showListView();
       this.setState({ treeView: false }, runSearch);
     } else {
       runSearch();
@@ -210,6 +218,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   };
 
   showFolderInsteadOfSearch = () => {
+    if (this.searchLinkLeftTreeView) {
+      this.searchLinkLeftTreeView = false;
+      showTreeView();
+      this.setState({ treeView: true });
+    }
     // resetToolbar() leaves these two filters as they are
     workspaceSettings.viewableItemsFilter = false;
     workspaceSettings.ontologiesFilter = false;

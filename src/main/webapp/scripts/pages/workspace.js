@@ -474,26 +474,41 @@ function initFileTree() {
   });
 }
 
-function list_view(id) {
+// The view that is about to be shown, cancelled when the user switches again before it appears
+var pendingViewSwitch;
+
+// Shows the list without saving it as the user's view
+function showListView() {
+  clearTimeout(pendingViewSwitch);
   $('#fileBrowsing').hide(effect, effectDuration);
-  setTimeout(function () {
+  pendingViewSwitch = setTimeout(function () {
     $('#record_list_frame').show(effect, effectDuration);
     $('#viewMenu .dropdown-toggle i').attr('class', 'icon-th-list');
   }, effectDuration);
+}
+
+function list_view(id) {
+  showListView();
   workspaceSettings.currentViewMode = "LIST_VIEW";
   saveWorkplaceSettings();
 }
 
-function tree_view() {
+// Shows the tree without saving it as the user's view
+function showTreeView() {
+  clearTimeout(pendingViewSwitch);
   resetCrudops();
   $('#record_list_frame').hide(effect, effectDuration);
   if ($('#fancyTree').html() === "") {
     initFileTree();
   }
-  setTimeout(function () {
+  pendingViewSwitch = setTimeout(function () {
     $('#fileBrowsing').show(effect, effectDuration);
     $('#viewMenu .dropdown-toggle i').attr('class', 'icon-flow-split');
   }, effectDuration);
+}
+
+function tree_view() {
+  showTreeView();
   workspaceSettings.currentViewMode = "TREE_VIEW";
   saveWorkplaceSettings();
 }

@@ -247,6 +247,26 @@ test.describe(`Workspace search operations`, () => {
     await expect(page.getByRole("combobox", { name: "Select owner(s)" })).toBeVisible();
   });
 
+  test(`As a user in tree view, a search link shows only its results and a failed one keeps tree view`, async ({
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-tree-link");
+    await clientDocuments.create({ name: docName });
+    await pageWorkspace.open();
+    await pageWorkspace.toolbar.switchLayout("tree");
+
+    await pageWorkspace.searchBar.openSearchUrl(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    await expect(pageWorkspace.tree.root).toBeHidden();
+
+    await pageWorkspace.open();
+    await pageWorkspace.toolbar.switchLayout("tree");
+    await pageWorkspace.searchBar.openSearchUrl("/workspace?options%5B%5D=global&terms%5B%5D=*abc");
+    await pageWorkspace.open();
+    await expect(pageWorkspace.tree.root).toBeVisible();
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,

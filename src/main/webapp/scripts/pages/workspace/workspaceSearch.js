@@ -45,7 +45,7 @@ function abandonSearch() {
 * Performs a search – blocks the page, retrieves workspace results and shows them, then updates workspaceSettings
 * accordingly.
 **/
-function doWorkspaceSearch(url, data, onFail) {
+function doWorkspaceSearch(url, data, onFail, onSuccess) {
   getAndDisplayWorkspaceResults(url, data, function (result) {
     // Configure workspaceSettings
     workspaceSettings.url = "/workspace/ajax/search"
@@ -53,5 +53,8 @@ function doWorkspaceSearch(url, data, onFail) {
     // for search results we set root folder as parent
     workspaceSettings.parentFolderId = $('#currFolderId').val();
     workspaceSettings.grandparentFolderId = null;
+    if (onSuccess) {
+      onSuccess();
+    }
   }, onFail);
 }
