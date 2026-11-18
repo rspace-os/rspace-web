@@ -429,7 +429,9 @@ final class ApiV2OpenApiSchemas {
   private static Map<String, Object> nonNullSchema(
       Map<String, Object> schema, Map<String, Object> components) {
     if (schema.get("$ref") instanceof String ref) {
-      return mutableObjectMap(components.get(RefUtils.extractSimpleName(ref).getLeft()));
+      // A controller may reference a resource schema that a partial document does not register.
+      Object target = components.get(RefUtils.extractSimpleName(ref).getLeft());
+      return target == null ? new LinkedHashMap<>() : mutableObjectMap(target);
     }
     for (String keyword : List.of("anyOf", "oneOf", "allOf")) {
       if (schema.get(keyword) instanceof List<?> alternatives) {

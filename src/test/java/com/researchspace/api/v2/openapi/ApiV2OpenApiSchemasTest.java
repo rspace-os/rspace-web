@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -279,6 +280,19 @@ class ApiV2OpenApiSchemasTest {
     assertEquals(
         List.of("string", "null"), map(map(schema.get("properties")).get("detail")).get("type"));
     assertTrue(((List<?>) schema.get("required")).contains("detail"));
+  }
+
+  record ReferencingPage(
+      @ArraySchema(schema = @Schema(ref = "#/components/schemas/UnregisteredRow"))
+          List<Map<String, Object>> docs) {}
+
+  @Test
+  void toleratesReferencesToComponentsThatThePartialDocumentDoesNotRegister() {
+    Map<String, Object> components = new LinkedHashMap<>();
+    ApiV2OpenApiSchemas.responseSchemaFor(ReferencingPage.class, components);
+    Map<String, Object> schema = map(components.get("ApiV2OpenApiSchemasTestReferencingPage"));
+    assertEquals(List.of("docs"), schema.get("required"));
+    assertFalse(components.containsKey("UnregisteredRow"));
   }
 
   @SuppressWarnings("unchecked")
