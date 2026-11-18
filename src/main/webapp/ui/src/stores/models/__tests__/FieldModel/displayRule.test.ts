@@ -1,6 +1,7 @@
+import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import { createDisplayRule, type FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 import { makeMockField } from "./mocking";
 
@@ -14,6 +15,8 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 
 const KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const RULE_JSON = { sourceFieldKey: KEY, operator: "IS_ANY_OF", values: ["Yes"] };
+/** Attrs built from API JSON carry the rule unparsed, whatever their type says. */
+const fromApi = (json: object) => json as FieldDisplayRule;
 
 describe("FieldModel display rules", () => {
   it("sends neither a key nor a rule for a legacy field that has none", () => {
@@ -23,20 +26,20 @@ describe("FieldModel display rules", () => {
   });
 
   it("sends the rule as the API's JSON object", () => {
-    const field = makeMockField({ type: "string", fieldKey: KEY, displayRule: RULE_JSON });
+    const field = makeMockField({ type: "string", fieldKey: KEY, displayRule: fromApi(RULE_JSON) });
     expect(field.displayRule).toEqual(createDisplayRule(KEY, "IS_ANY_OF", ["Yes"]));
     expect(field.paramsForBackend).toMatchObject({ fieldKey: KEY, displayRule: RULE_JSON });
   });
 
   it("sends an explicit null when a saved rule is cleared, since an absent rule means unchanged", () => {
-    const field = makeMockField({ type: "string", displayRule: RULE_JSON });
+    const field = makeMockField({ type: "string", displayRule: fromApi(RULE_JSON) });
     field.setAttributes({ displayRule: null });
     expect(field.paramsForBackend).toHaveProperty("displayRule", null);
   });
 
   it("shows a field whose stored rule cannot be read", () => {
     const restore = silenceConsole(["warn"], ["Ignoring an unreadable display rule"]);
-    const field = makeMockField({ type: "string", displayRule: { operator: "SOMETIMES" } });
+    const field = makeMockField({ type: "string", displayRule: fromApi({ operator: "SOMETIMES" }) });
     restore();
     expect(field.displayRule).toBeNull();
   });
@@ -46,7 +49,7 @@ describe("FieldModel display rules", () => {
     template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
     template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
     const [first, second] = template.fields.map((field) => field.fieldKey);
-    expect(first).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(v.is(v.pipe(v.string(), v.uuid()), first)).toBe(true);
     expect(second).not.toBe(first);
     expect(makeMockField({ type: "string" }).fieldKey).toBeNull();
   });

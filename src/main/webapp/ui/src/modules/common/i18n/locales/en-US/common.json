@@ -211,6 +211,7 @@
       "moveUp": "Move {field} up",
       "moveUpTooltip": "Move up",
       "name": "Name",
+      "nameLength": "{length, number} / {max, number}",
       "type": "Type",
       "unnamed": "Unnamed field"
     },
@@ -235,6 +236,9 @@
         "sourceMissing": "When a deleted field has a value"
       },
       "incomplete": "This rule is not applied until it has a field, a condition, any options it needs, and at least one field to show.",
+      "incompleteEdit": "This change is not applied until the rule has a field, a condition, any options it needs, and at least one field to show. Until then the saved rule stays as it was.",
+      "invalid": "This rule cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself.",
+      "invalidEdit": "This change cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself. Until it is fixed the saved rule stays as it was.",
       "newRuleHeading": "New rule {position}",
       "none": "No display rules. Every field is always shown.",
       "noSources": "Add a radio or choice field first. Rules can only read those fields.",

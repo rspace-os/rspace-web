@@ -17,6 +17,8 @@ type FieldCardProps<T extends string> = {
   onNameChange: (name: string) => void;
   /** Shown under the name; the host decides what makes a name invalid. */
   nameError?: string | null;
+  /** Shows a character count against this limit under the name. */
+  nameMaxLength?: number;
   type: T;
   typeOptions: ReadonlyArray<FieldTypeOption<T>>;
   onTypeChange: (type: T) => void;
@@ -49,6 +51,7 @@ export default function FieldCard<T extends string>({
   name,
   onNameChange,
   nameError = null,
+  nameMaxLength,
   type,
   typeOptions,
   onTypeChange,
@@ -90,7 +93,12 @@ export default function FieldCard<T extends string>({
               value={name}
               onChange={({ target: { value } }) => onNameChange(value)}
               error={Boolean(nameError)}
-              helperText={nameError ?? undefined}
+              helperText={
+                nameError ??
+                (nameMaxLength === undefined
+                  ? undefined
+                  : t("fieldEditor.card.nameLength", { length: name.length, max: nameMaxLength }))
+              }
               sx={{ flexGrow: 1 }}
             />
           ) : (

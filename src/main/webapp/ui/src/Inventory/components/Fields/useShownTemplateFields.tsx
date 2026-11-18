@@ -1,3 +1,4 @@
+import { partition } from "es-toolkit";
 import { type ReactNode, useEffect } from "react";
 import RevealedFieldsAnnouncer from "@/modules/common/field-display/RevealedFieldsAnnouncer";
 import type { Field } from "../../../stores/definitions/Field";
@@ -9,12 +10,11 @@ import type { Field } from "../../../stores/definitions/Field";
  * towards the form section's error state.
  */
 export default function useShownTemplateFields(
-  record: { fields?: ReadonlyArray<Field>; isFieldHidden?: (field: Field) => boolean },
+  record: { globalId: string | null; fields?: ReadonlyArray<Field>; isFieldHidden?: (field: Field) => boolean },
   onErrorStateChange: (fieldName: string, hasError: boolean) => void,
 ): { shownFields: Array<Field>; announcer: ReactNode } {
-  const fields = record.fields ?? [];
-  const shownFields = fields.filter((field) => !record.isFieldHidden?.(field));
-  const hiddenNames = fields.filter((field) => !shownFields.includes(field)).map((field) => field.name);
+  const [hiddenFields, shownFields] = partition(record.fields ?? [], (field) => record.isFieldHidden?.(field) ?? false);
+  const hiddenNames = hiddenFields.map((field) => field.name);
   const hiddenSignature = JSON.stringify(hiddenNames);
 
   // the signature stands for hiddenNames, which is a new array on every render
@@ -25,8 +25,11 @@ export default function useShownTemplateFields(
   return {
     shownFields,
     announcer: (
+      // another record starts a new announcer, so its fields are not announced as revealed
       <RevealedFieldsAnnouncer
+        key={record.globalId ?? "unsaved"}
         shownFieldNames={shownFields.filter((field) => field.displayRule !== null).map((field) => field.name)}
+        hiddenFieldNames={hiddenNames}
       />
     ),
   };

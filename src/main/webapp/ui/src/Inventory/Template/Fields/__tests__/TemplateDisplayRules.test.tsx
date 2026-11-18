@@ -3,6 +3,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import * as v from "valibot";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrumentTemplate } from "@/stores/models/__tests__/InstrumentTemplateModel/mocking";
@@ -25,6 +26,7 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   }),
 }));
 
+const UUID = v.pipe(v.string(), v.uuid());
 const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const PERMIT_KEY = "6f1c2e0a-0000-4000-8000-000000000002";
 
@@ -57,7 +59,7 @@ const savedGmoTemplate = () =>
         type: "string",
         mandatory: true,
         fieldKey: PERMIT_KEY,
-        displayRule: { sourceFieldKey: GMO_KEY, operator: "IS_ANY_OF", values: ["Yes"] },
+        displayRule: createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]),
       }),
     ],
   } as Parameters<typeof makeMockTemplate>[0]);
@@ -103,7 +105,7 @@ describe("Template display rules", () => {
     await user.click(screen.getByRole("option", { name: "GMO permit" }));
 
     const [source, dependent] = [fieldAt(template, gmo), fieldAt(template, permit)];
-    expect(source.fieldKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(v.is(UUID, source.fieldKey)).toBe(true);
     expect(dependent.paramsForBackend).toMatchObject({
       newFieldRequest: true,
       fieldKey: dependent.fieldKey,
@@ -178,9 +180,7 @@ describe("Template display rules", () => {
     template.addField(newField({ name: "Is this a GMO?", type: "radio", definition: { options: ["Yes", "No"] } }));
     template.addField(newField({ name: "GMO permit", type: "string" }));
     const source = fieldAt(template, gmo);
-    fieldAt(template, permit).setAttributes({
-      displayRule: createDisplayRule(source.fieldKey ?? "", "IS_ANY_OF", ["Yes"]),
-    });
+    fieldAt(template, permit).setDisplayRule(createDisplayRule(source.fieldKey ?? "", "IS_ANY_OF", ["Yes"]));
     const { confirm } = renderEditor(template);
 
     await user.click(
@@ -191,6 +191,62 @@ describe("Template display rules", () => {
     expect(confirm).toHaveBeenCalledOnce();
     expect(source.type).toBe("number");
     expect(fieldAt(template, permit).displayRule).toBeNull();
+  });
+
+  it("keeps the saved rule in the save while an edit leaves it incomplete", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+
+    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
+    await user.keyboard("{Backspace}");
+
+    expect(fieldAt(template, permit).paramsForBackend).toMatchObject({
+      displayRule: { sourceFieldKey: GMO_KEY, operator: "IS_ANY_OF", values: ["Yes"] },
+    });
+  });
+
+  it("carries a selected default when its new option is renamed", async () => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({ id: null, globalId: null });
+    template.addField(newField({ name: "Colour", type: "radio", definition: { options: [] } }));
+    renderEditor(template);
+    const card = fieldCard("Colour");
+
+    await user.click(within(card).getByRole("button", { name: "common:fieldEditor.options.add" }));
+    await user.type(within(card).getByRole("textbox", { name: "common:fieldEditor.options.optionLabel" }), "Re");
+    await user.click(within(card).getByRole("radio", { name: "Re" }));
+    await user.type(within(card).getByRole("textbox", { name: "common:fieldEditor.options.optionLabel" }), "d");
+
+    expect(fieldAt(template, 0).selectedOptions).toEqual(["Red"]);
+  });
+
+  it.each([
+    ["radio", ["A"], []],
+    ["choice", ["A", "C"], ["C"]],
+  ] as const)("drops a removed option from a %s field's default", async (type, selected, expected) => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({
+      fields: [
+        savedField({
+          id: 1,
+          globalId: "SF1",
+          name: "Letters",
+          type,
+          definition: { options: ["A", "B", "C"] },
+          selectedOptions: [...selected],
+          fieldKey: GMO_KEY,
+        }),
+      ],
+    });
+    renderEditor(template);
+
+    const [removeA] = within(fieldCard("Letters")).getAllByRole("button", {
+      name: "common:fieldEditor.options.remove",
+    });
+    await user.click(removeA);
+
+    expect(fieldAt(template, 0).selectedOptions).toEqual(expected);
   });
 
   it("is accessible", async () => {
@@ -217,7 +273,7 @@ describe("Instrument template display rules", () => {
       </ThemeProvider>,
     );
 
-    expect((template.fields[0] as FieldModel).fieldKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(v.is(UUID, (template.fields[0] as FieldModel).fieldKey)).toBe(true);
     expect(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).toBeInTheDocument();
   });
 });

@@ -1,12 +1,12 @@
-import { pick } from "es-toolkit";
+import { pick, uniq } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
 import * as v from "valibot";
-import { withoutOptions } from "@/modules/common/field-editor/ruleEditing";
 import {
   type FieldDisplayRule,
   FieldDisplayRuleSchema,
   serializeDisplayRule,
 } from "@/modules/common/field-rules/displayRule";
+import { withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -49,8 +49,7 @@ export type FieldModelAttrs = {
   allowedRelationTypes?: Array<string> | null;
   link?: FieldLink | null;
   fieldKey?: string | null;
-  /** A rule as the API sends it (a JSON object), or one already parsed. */
-  displayRule?: unknown;
+  displayRule?: FieldDisplayRule | null;
 };
 
 function parseRule(json: unknown): FieldDisplayRule | null {
@@ -65,7 +64,7 @@ function parseRule(json: unknown): FieldDisplayRule | null {
 /** Clears the display rules that read `field`, before it is removed. */
 export function clearRulesReading(field: Field | undefined): void {
   if (!(field instanceof FieldModel)) return;
-  for (const dependent of field.dependentFields) dependent.setAttributesDirty({ displayRule: null });
+  for (const dependent of field.dependentFields) dependent.setDisplayRule(null);
 }
 
 export default class FieldModel implements Field {
@@ -132,6 +131,8 @@ export default class FieldModel implements Field {
       fieldKey: observable,
       displayRule: observable.ref,
       setAttributesDirty: action,
+      setDisplayRule: action,
+      renameOption: action,
       removeOption: action,
       changeType: action,
       setAttributes: action,
@@ -228,7 +229,8 @@ export default class FieldModel implements Field {
         ),
       });
     this.fieldKey = _params.fieldKey ?? null;
-    this.displayRule = parseRule(_params.displayRule);
+    // attrs built from API JSON carry the rule unparsed whatever their type says, so it is parsed here
+    this.displayRule = parseRule(_params.displayRule as unknown);
     this.loadedWithRule = this.displayRule !== null;
     this.error = false;
   }
@@ -283,20 +285,49 @@ export default class FieldModel implements Field {
     return this.dependentFields.filter((field) => field.displayRule?.values.includes(option));
   }
 
+  setDisplayRule(displayRule: FieldDisplayRule | null): void {
+    this.setAttributesDirty({ displayRule });
+  }
+
   /**
-   * Removes an option, and with it the option from any display rule that names
-   * it, in the same change; a rule left without options is cleared.
+   * The default selection once option `previous` has been renamed to
+   * `replacement`, or removed when `replacement` is null. Nothing changes while
+   * another option still offers `previous`; a blank replacement is dropped.
+   */
+  private selectionAfter(
+    options: ReadonlyArray<Option>,
+    previous: string,
+    replacement: string | null,
+  ): Array<string> | null {
+    const selected = this.selectedOptions;
+    if (!selected?.includes(previous) || options.some((option) => option.value === previous)) return selected;
+    if (replacement === null || replacement.trim() === "") return selected.filter((value) => value !== previous);
+    return uniq(selected.map((value) => (value === previous ? replacement : value)));
+  }
+
+  /** Renames an option still being typed, carrying a default that selected it. */
+  renameOption(index: number, value: string): void {
+    const previous = this.options[index]?.value;
+    if (previous === undefined) return;
+    const options = this.options.toSpliced(index, 1, { value, label: value, editing: true });
+    this.setAttributesDirty({ options, selectedOptions: this.selectionAfter(options, previous, value) });
+  }
+
+  /**
+   * Removes an option, and with it the option from the default selection and
+   * from any display rule that names it, in the same change; a rule left
+   * without options is cleared.
    */
   removeOption(index: number): void {
     const removed = this.options[index]?.value;
+    if (removed === undefined) return;
     const options = this.options.toSpliced(index, 1);
-    if (removed !== undefined && !options.some((option) => option.value === removed)) {
+    if (!options.some((option) => option.value === removed)) {
       for (const dependent of this.fieldsUsingOption(removed)) {
-        if (dependent.displayRule)
-          dependent.setAttributesDirty({ displayRule: withoutOptions(dependent.displayRule, [removed]) });
+        if (dependent.displayRule) dependent.setDisplayRule(withoutOptions(dependent.displayRule, [removed]));
       }
     }
-    this.setAttributesDirty({ options });
+    this.setAttributesDirty({ options, selectedOptions: this.selectionAfter(options, removed, null) });
   }
 
   /**
@@ -306,7 +337,7 @@ export default class FieldModel implements Field {
    */
   changeType(type: FieldType): void {
     if (!hasOptions(type)) {
-      for (const dependent of this.dependentFields) dependent.setAttributesDirty({ displayRule: null });
+      for (const dependent of this.dependentFields) dependent.setDisplayRule(null);
     }
     this.setAttributesDirty({
       type,

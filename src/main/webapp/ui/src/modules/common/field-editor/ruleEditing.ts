@@ -3,12 +3,15 @@
  * They know nothing about Inventory or ELN models: each product maps its
  * fields to `RuleEditorField` and applies the returned `RuleChange`s itself.
  */
+import { groupBy, uniq } from "es-toolkit";
 import {
   type ConditionOperator,
   createDisplayRule,
   type FieldDisplayRule,
+  type FieldSnapshot,
   operatorRequiresValues,
 } from "@/modules/common/field-rules/displayRule";
+import { DISPLAY_RULE_ERROR_CODES, validateDisplayRules } from "@/modules/common/field-rules/validateDisplayRules";
 
 /** One field as the rule editor sees it. */
 export type RuleEditorField = {
@@ -30,57 +33,77 @@ export type RuleChange = {
 
 /** Fields whose stored rules are identical, shown as one rule with several targets. */
 export type RuleGroup = {
-  /** Stable while the group's first target stays the same. */
-  readonly id: string;
   readonly rule: FieldDisplayRule;
   readonly targetKeys: ReadonlyArray<string>;
 };
 
-/** Options a rule may use: blank options and repeats of an earlier option are left out. */
-export function usableOptions(options: Iterable<string>): Array<string> {
-  const seen = new Set<string>();
-  for (const option of options) {
-    if (!/^\s*$/.test(option)) seen.add(option);
-  }
-  return [...seen];
+/** An option that is empty or only whitespace, which no rule or default can use. */
+export function isBlankOption(option: string): boolean {
+  return option.trim() === "";
 }
 
-function ruleSignature(rule: FieldDisplayRule): string {
-  return JSON.stringify([rule.sourceFieldKey, rule.operator, [...rule.values].sort()]);
+/** Options a rule may use: blank options and repeats of an earlier option are left out. */
+export function usableOptions(options: ReadonlyArray<string>): Array<string> {
+  return uniq(options.filter((option) => !isBlankOption(option)));
 }
 
 export function groupDisplayRules(fields: ReadonlyArray<RuleEditorField>): Array<RuleGroup> {
-  const groups = new Map<string, { id: string; rule: FieldDisplayRule; targetKeys: Array<string> }>();
-  for (const field of fields) {
-    if (field.rule === null) continue;
-    const signature = ruleSignature(field.rule);
-    const group = groups.get(signature);
-    if (group) group.targetKeys.push(field.key);
-    else groups.set(signature, { id: field.key, rule: field.rule, targetKeys: [field.key] });
-  }
-  return [...groups.values()];
+  const withRules = fields.filter(
+    (field): field is RuleEditorField & { rule: FieldDisplayRule } => field.rule !== null,
+  );
+  const groups = groupBy(withRules, ({ rule }) =>
+    JSON.stringify([rule.sourceFieldKey, rule.operator, [...rule.values].sort()]),
+  );
+  return Object.values(groups).map((members) => ({
+    rule: members[0].rule,
+    targetKeys: members.map((field) => field.key),
+  }));
 }
 
-/** Whether the field with `fieldKey` is shown only through a chain of rules that reads `ancestorKey`. */
-export function dependsOn(fields: ReadonlyArray<RuleEditorField>, fieldKey: string, ancestorKey: string): boolean {
-  const byKey = new Map(fields.map((field) => [field.key, field]));
-  const visited = new Set<string>();
-  let current = byKey.get(fieldKey);
-  while (current?.rule && !visited.has(current.key)) {
-    visited.add(current.key);
-    if (current.rule.sourceFieldKey === ancestorKey) return true;
-    current = byKey.get(current.rule.sourceFieldKey);
-  }
-  return false;
+function snapshot(field: RuleEditorField, rule: FieldDisplayRule | null): FieldSnapshot {
+  return { key: field.key, canBeSource: field.canBeSource, rule, allowedOptions: field.options, selectedOptions: [] };
+}
+
+/** Key format and uniqueness are the host's concern, not the rule editor's. */
+const KEY_ERRORS: ReadonlySet<string> = new Set([
+  DISPLAY_RULE_ERROR_CODES.keyInvalid,
+  DISPLAY_RULE_ERROR_CODES.keyDuplicate,
+]);
+
+/** Applies the changes to the fields, as the host would. */
+export function withChanges(
+  fields: ReadonlyArray<RuleEditorField>,
+  changes: ReadonlyArray<RuleChange>,
+): Array<RuleEditorField> {
+  return fields.map((field) => {
+    const change = changes.find(({ key }) => key === field.key);
+    return change ? { ...field, rule: change.rule } : field;
+  });
+}
+
+/**
+ * Whether the changes would leave a changed field with an invalid rule, by the
+ * shared validator: a missing or unreadable source, an option the source no
+ * longer offers, or a cycle. Errors on fields the changes do not touch are
+ * left to the save, so an existing problem elsewhere does not block editing.
+ */
+export function changesAreInvalid(fields: ReadonlyArray<RuleEditorField>, changes: ReadonlyArray<RuleChange>): boolean {
+  const changed = new Set(changes.filter(({ rule }) => rule !== null).map(({ key }) => key));
+  const after = withChanges(fields, changes);
+  return validateDisplayRules(after.map((field) => snapshot(field, field.rule))).some(
+    ({ fieldIndex, code }) => changed.has(after[fieldIndex].key) && !KEY_ERRORS.has(code),
+  );
 }
 
 /** Whether giving `targetKey` a rule that reads `sourceKey` would make a field depend on itself. */
-export function wouldCreateCycle(
-  fields: ReadonlyArray<RuleEditorField>,
-  targetKey: string,
-  sourceKey: string,
-): boolean {
-  return targetKey === sourceKey || dependsOn(fields, sourceKey, targetKey);
+function createsCycle(fields: ReadonlyArray<RuleEditorField>, targetKey: string, sourceKey: string): boolean {
+  if (targetKey === sourceKey) return true;
+  const probe = createDisplayRule(sourceKey, "HAS_VALUE", []);
+  const snapshots = fields.map((field) => snapshot(field, field.key === targetKey ? probe : field.rule));
+  const target = fields.findIndex((field) => field.key === targetKey);
+  return validateDisplayRules(snapshots).some(
+    ({ fieldIndex, code }) => fieldIndex === target && code === DISPLAY_RULE_ERROR_CODES.cycle,
+  );
 }
 
 /** Fields a rule showing `targetKeys` may read. */
@@ -89,57 +112,26 @@ export function sourceCandidates(
   targetKeys: ReadonlyArray<string>,
 ): Array<RuleEditorField> {
   return fields.filter(
-    (field) => field.canBeSource && targetKeys.every((target) => !wouldCreateCycle(fields, target, field.key)),
+    (field) => field.canBeSource && targetKeys.every((target) => !createsCycle(fields, target, field.key)),
   );
 }
 
 /**
- * Fields a rule reading `sourceKey` may show: its own targets, and fields
- * without a rule that nobody else has claimed, unless that would make a cycle.
+ * Fields a rule reading `sourceKey` may show: `ownKeys` (the rule's targets),
+ * and fields without a rule that nobody else has claimed, unless that would
+ * make a cycle.
  */
 export function targetCandidates(
   fields: ReadonlyArray<RuleEditorField>,
   sourceKey: string | null,
-  ownTargetKeys: ReadonlyArray<string>,
+  ownKeys: ReadonlyArray<string>,
   claimedKeys: ReadonlySet<string> = new Set(),
 ): Array<RuleEditorField> {
   return fields.filter(
     (field) =>
-      (ownTargetKeys.includes(field.key) || (field.rule === null && !claimedKeys.has(field.key))) &&
-      (sourceKey === null || !wouldCreateCycle(fields, field.key, sourceKey)),
+      (ownKeys.includes(field.key) || (field.rule === null && !claimedKeys.has(field.key))) &&
+      (sourceKey === null || !createsCycle(fields, field.key, sourceKey)),
   );
-}
-
-/** Fields whose rule reads `sourceKey`. */
-export function dependentsOf<T extends Pick<RuleEditorField, "rule">>(
-  fields: ReadonlyArray<T>,
-  sourceKey: string | null,
-): Array<T> {
-  if (sourceKey === null) return [];
-  return fields.filter((field) => field.rule?.sourceFieldKey === sourceKey);
-}
-
-/** Fields whose rule reads `sourceKey` and names one of `removedOptions`. */
-export function dependentsUsingOptions<T extends Pick<RuleEditorField, "rule">>(
-  fields: ReadonlyArray<T>,
-  sourceKey: string | null,
-  removedOptions: ReadonlyArray<string>,
-): Array<T> {
-  return dependentsOf(fields, sourceKey).filter((field) =>
-    field.rule?.values.some((value) => removedOptions.includes(value)),
-  );
-}
-
-/**
- * The rule without the removed options. A rule that names no option is kept;
- * a rule left without any of its options is dropped (null).
- */
-export function withoutOptions(rule: FieldDisplayRule, removedOptions: ReadonlyArray<string>): FieldDisplayRule | null {
-  if (!operatorRequiresValues(rule.operator)) return rule;
-  const values = rule.values.filter((value) => !removedOptions.includes(value));
-  if (values.length === rule.values.length) return rule;
-  if (values.length === 0) return null;
-  return createDisplayRule(rule.sourceFieldKey, rule.operator, values);
 }
 
 /** A condition being edited, which may not yet be a valid rule. */
@@ -158,4 +150,26 @@ export function ruleFromDraft(draft: DraftCondition): FieldDisplayRule | null {
     draft.operator,
     operatorRequiresValues(draft.operator) ? draft.values : [],
   );
+}
+
+/**
+ * The draft as it can still apply to the current fields: a source that can no
+ * longer be read (deleted, retyped, or now a cycle) is dropped, and options the
+ * source no longer offers are removed.
+ */
+export function sanitiseDraft(
+  fields: ReadonlyArray<RuleEditorField>,
+  condition: DraftCondition,
+  targetKeys: ReadonlyArray<string>,
+): { condition: DraftCondition; targetKeys: Array<string> } {
+  const liveTargets = targetKeys.filter((key) => fields.some((field) => field.key === key));
+  const source = sourceCandidates(fields, liveTargets).find((field) => field.key === condition.sourceFieldKey);
+  return {
+    condition: {
+      operator: condition.operator,
+      sourceFieldKey: source?.key ?? null,
+      values: source ? condition.values.filter((value) => source.options.includes(value)) : [],
+    },
+    targetKeys: liveTargets,
+  };
 }
