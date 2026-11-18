@@ -9,6 +9,8 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
@@ -200,5 +202,27 @@ class SampleApiManagerImplTemplateFieldMergeTest {
         sample, inherited("Batch"));
 
     assertEquals(1, sample.getExtraFields().size(), "no collision, so nothing to absorb");
+  }
+
+  @Test
+  void blankValueMergesIntoAMandatoryFieldWithARuleForTheRecordToJudge() {
+    // whether the field is required depends on its siblings, so the merge does not reject the
+    // blank; the create check rejects it afterwards only if the field is shown
+    InventoryEntityField ruled = new InventoryStringField("Passage number");
+    ruled.setMandatory(true);
+    ruled.setDisplayRule(
+        new FieldDisplayRule(
+            "6f1c2e0a-8d5b-4c51-9a3e-2b7f1d0c4e9a", ConditionOperator.HAS_VALUE, null));
+    InventoryEntityField plain = new InventoryStringField("Cryomedium");
+    plain.setMandatory(true);
+    ApiSampleWithFullSubSamples sample =
+        sampleWith(operationField("Passage number", ""), operationField("Cryomedium", ""));
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(
+        sample, List.of(ruled, plain));
+
+    assertEquals("", ruled.getFieldData());
+    assertEquals(1, sample.getExtraFields().size());
+    assertEquals("Cryomedium", sample.getExtraFields().get(0).getName());
   }
 }

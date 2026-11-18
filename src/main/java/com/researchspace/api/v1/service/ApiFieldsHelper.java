@@ -20,6 +20,7 @@ import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -332,6 +333,10 @@ public class ApiFieldsHelper {
    * Checks if the provided entity apiFields (of Samples or Instrument or InstrumentTemplate) are
    * matching templateFields and alsop if they are mandatory.
    *
+   * <p>A mandatory field hidden by its display rule is not required. Visibility is judged on the
+   * values the new record will hold: the incoming value where one is posted, the template's default
+   * otherwise.
+   *
    * <p>Otherwise add the errors if there are problems.
    */
   public void validateMandatoryFieldsForEntityPost(
@@ -339,9 +344,23 @@ public class ApiFieldsHelper {
       List<InventoryEntityField> templateFields,
       Errors errors) {
 
+    List<List<String>> effectiveSelections = new ArrayList<>();
     for (int i = 0; i < templateFields.size(); i++) {
       InventoryEntityField templateField = templateFields.get(i);
-      if (templateField.isMandatory()) {
+      boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
+      effectiveSelections.add(
+          !templateField.isOptionsStoringField()
+              ? List.of()
+              : hasApiFieldForTemplateField
+                  ? incomingApiFields.get(i).getSelectedOptions()
+                  : templateField.getSelectedOptions());
+    }
+    List<Boolean> visible =
+        InventoryFieldDisplayRules.visibility(templateFields, effectiveSelections);
+
+    for (int i = 0; i < templateFields.size(); i++) {
+      InventoryEntityField templateField = templateFields.get(i);
+      if (templateField.isMandatory() && visible.get(i)) {
         boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
         boolean isOptionsStoringField = templateField.isOptionsStoringField();
         if (isOptionsStoringField) {

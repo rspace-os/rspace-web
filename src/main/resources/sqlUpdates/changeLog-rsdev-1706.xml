@@ -1,0 +1,35 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-18-rsdev1706-inventory-field-key-and-display-rule" context="run" author="tchoi-rs">
+        <comment>RSDEV-1706: Inventory fields gain a field key, copied with the field, and an optional
+            display rule that references another field of the same template by that key</comment>
+        <addColumn tableName="InventoryEntityField">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="text"/>
+        </addColumn>
+        <addColumn tableName="InventoryEntityField_AUD">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="text"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-11-18-rsdev1706-backfill-template-field-keys" context="run" author="tchoi-rs">
+        <comment>RSDEV-1706: Give every existing sample and instrument template field a key, so any field
+            an author can pick in a display rule has one. Fields of samples and instruments are copies
+            and keep a null key until they are updated to the latest template version.</comment>
+        <sql>
+            update InventoryEntityField f
+              join Sample s on s.id = f.sample_id
+               set f.fieldKey = UUID()
+             where f.fieldKey is null and s.DTYPE = 'SampleTemplate';
+            update InventoryEntityField f
+              join InstrumentEntity i on i.id = f.instrumentEntity_id
+               set f.fieldKey = UUID()
+             where f.fieldKey is null and i.DTYPE = 'InstrumentTemplate';
+        </sql>
+    </changeSet>
+</databaseChangeLog>
