@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -112,9 +114,9 @@ public class ZipUtils {
    * inside the extraction directory (covering {@code ..} traversal and backslash variants).
    * Extraction also stops once the archive exceeds {@link ZipExtractionLimits#DEFAULTS} (bytes
    * written, entry count, compression ratio, free disk space), so a zip bomb cannot fill the
-   * partition. A rejection or I/O failure aborts and removes everything the extraction created; it
-   * does not restore pre-existing files that a failed run has already overwritten, so extract into
-   * a fresh directory when the destination may hold content worth keeping.
+   * partition. A rejection or I/O failure aborts and removes everything the extraction created. An
+   * entry that would overwrite an existing file is rejected, so extraction never changes content
+   * that was already in the destination.
    *
    * @param archivePath path to zip file, e.g., a/b/c/d.archive.zip
    * @param destinationPath The folder into which the zip archive will be extracted.
@@ -219,16 +221,21 @@ public class ZipUtils {
           topLevelDir = new File(zipDestinationFolder, relative.getName(0).toString());
         }
 
-        // track for rollback only what this extraction creates, never pre-existing content
-        if (!destinationFile.exists()) {
-          created.add(destinationFile);
+        // never replace a file that is already there, so a rejection has nothing to restore
+        OutputStream out;
+        try {
+          out = Files.newOutputStream(destinationFile.toPath(), StandardOpenOption.CREATE_NEW);
+        } catch (FileAlreadyExistsException e) {
+          throw new InvalidArchiveException(
+              "entry would overwrite an existing file: " + zipEntry.getName());
         }
-        try (InputStream entryStream = zipFile.getInputStream(zipEntry);
-            FileOutputStream fos = new FileOutputStream(destinationFile)) {
+        created.add(destinationFile);
+        try (out;
+            InputStream entryStream = zipFile.getInputStream(zipEntry)) {
           int n;
           while ((n = entryStream.read(buf)) != -1) {
             if (n > 0) {
-              fos.write(buf, 0, n);
+              out.write(buf, 0, n);
               budget.countWritten(n);
             }
           }

@@ -1,6 +1,7 @@
 package com.researchspace.core.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -268,6 +269,38 @@ class ZipUtilsExtractionTest {
         "keep me",
         Files.readString(dest.toPath().resolve("keepme/precious.txt")),
         "rollback must not delete pre-existing content");
+  }
+
+  @Test
+  void rejectsEntryOverwritingExistingFileAndKeepsIt() throws IOException {
+    File dest = newDestination();
+    assertTrue(new File(dest, "root").mkdirs());
+    Path precious = dest.toPath().resolve("root/precious.txt");
+    Files.writeString(precious, "keep me");
+    File zip =
+        makeZip(
+            dir("root/"),
+            file("root/new.txt", "new".getBytes(StandardCharsets.UTF_8)),
+            file("root/precious.txt", "overwrite".getBytes(StandardCharsets.UTF_8)));
+
+    assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
+
+    assertEquals("keep me", Files.readString(precious));
+    assertFalse(new File(dest, "root/new.txt").exists(), "new output must be rolled back");
+  }
+
+  @Test
+  void extractsIntoDirectoryHoldingTheArchive() throws IOException {
+    // import saves the upload into the directory it then extracts into
+    File dest = newDestination();
+    assertTrue(dest.mkdirs());
+    File source =
+        makeZip(dir("root/"), file("root/a.txt", "hello".getBytes(StandardCharsets.UTF_8)));
+    File upload = new File(dest, "upload.zip");
+    Files.copy(source.toPath(), upload.toPath());
+
+    assertEquals("hello", readAfterExtract(upload, dest, "root/a.txt"));
+    assertArrayEquals(Files.readAllBytes(source.toPath()), Files.readAllBytes(upload.toPath()));
   }
 
   @Test
