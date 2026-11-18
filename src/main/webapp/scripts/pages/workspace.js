@@ -333,21 +333,6 @@ function toolbarButtonsEventHandler() {
     form.submit();
   });
 
-  $("#list_view").click(function () {
-    var id = this.id;
-    list_view();
-    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.listView")}, RS.msg("legacyjs.workspace.main.listView"),
-        "?list_view");
-  });
-
-  $("#tree_view").click(function () {
-    RS.trackEvent('Workspace Tree Viewed');
-    var id = this.id;
-    tree_view();
-    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.treeView")}, RS.msg("legacyjs.workspace.main.treeView"),
-        "?tree_view");
-  });
-
   $('#createRequest').click(function () {
     $('#createRequestDlg').dialog('open');
     RS.trackEvent("user:open:create_request_dialog:workspace");
