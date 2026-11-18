@@ -18,14 +18,18 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.UserExternalIdResolver;
@@ -54,6 +58,8 @@ class S3SidecarFileServiceTest {
   private AuditTrailService auditService;
   private MessageSourceUtils messages;
   private RoRService rorService;
+  private NfsFieldLinkManager nfsFieldLinkManager;
+  private NfsFileSystem filesystem;
   private S3SidecarFileService service;
 
   private final User user = new User("jmuller");
@@ -69,12 +75,13 @@ class S3SidecarFileServiceTest {
     auditService = mock(AuditTrailService.class);
     messages = mock(MessageSourceUtils.class);
     rorService = mock(RoRService.class);
+    nfsFieldLinkManager = mock(NfsFieldLinkManager.class);
     when(rorService.getSystemRoRValue()).thenReturn("https://ror.org/00t3r8h32");
 
     user.setFirstName("Jana");
     user.setLastName("Müller");
 
-    NfsFileSystem filesystem = new NfsFileSystem();
+    filesystem = new NfsFileSystem();
     filesystem.setName("lrz-filestore");
     filesystem.setClientType(NfsClientType.S3);
     NfsFileStore filestore = new NfsFileStore();
@@ -96,11 +103,63 @@ class S3SidecarFileServiceTest {
             new DataCiteYamlSidecarFileGenerator(),
             auditService,
             messages,
-            rorService);
+            rorService,
+            nfsFieldLinkManager);
   }
 
   private S3FolderContentItem file(String name, long size, String etag, String storageClass) {
     return new S3FolderContentItem(name, false, size, null, etag, storageClass);
+  }
+
+  private RecordInformation readableDoc(long id) {
+    RecordInformation info = new RecordInformation();
+    info.setId(id);
+    info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, id));
+    info.setName("doc " + id);
+    return info;
+  }
+
+  @Test
+  void namesReadableDocumentsLinkingTheFolderOrItsFilesOnceEach() throws Exception {
+    when(s3Utilities.listFolderContents("XRD-Experiments"))
+        .thenReturn(
+            List.of(
+                file("xrd_run_041.dat", 2202009L, "\"b2c3\"", "STANDARD"),
+                new S3FolderContentItem("nested", true, null, null)));
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com");
+    RecordInformation privateDoc = new RecordInformation();
+    privateDoc.setOwnerFullName("Grace Hopper");
+    when(nfsFieldLinkManager.getLinkedDocuments(
+            filesystem, List.of("XRD-Experiments", "XRD-Experiments/xrd_run_041.dat"), user))
+        .thenReturn(List.of(readableDoc(12L), readableDoc(11L), readableDoc(12L), privateDoc));
+
+    JsonNode related =
+        yaml.readTree(service.preview(1L, "XRD-Experiments", user).getContent())
+            .path("relatedIdentifiers");
+
+    assertThat(related).hasSize(2);
+    assertEquals(
+        "https://rspace.example.com/globalId/SD11",
+        related.path(0).path("relatedIdentifier").path("value").asText());
+    assertEquals(
+        "https://rspace.example.com/globalId/SD12",
+        related.path(1).path("relatedIdentifier").path("value").asText());
+  }
+
+  @Test
+  void rootFolderAsksForTheEmptyPathAndItsFiles() throws Exception {
+    when(s3Utilities.listFolderContents(""))
+        .thenReturn(List.of(file("top.dat", 10L, "\"e\"", "STANDARD")));
+    RecordInformation privateDoc = new RecordInformation();
+    privateDoc.setOwnerFullName("Grace Hopper");
+    when(nfsFieldLinkManager.getLinkedDocuments(filesystem, List.of("", "top.dat"), user))
+        .thenReturn(List.of(privateDoc));
+
+    GeneratedSidecarFile result = service.preview(1L, "", user);
+
+    verify(nfsFieldLinkManager).getLinkedDocuments(filesystem, List.of("", "top.dat"), user);
+    assertTrue(yaml.readTree(result.getContent()).path("relatedIdentifiers").isMissingNode());
+    verify(propertyHolder, never()).getServerUrl();
   }
 
   @Test
@@ -135,6 +194,9 @@ class S3SidecarFileServiceTest {
     service.save(1L, "XRD-Experiments", user);
 
     verify(aclChecker).assertCanWrite(eq(user), any(NfsFileSystem.class));
+    verify(nfsFieldLinkManager)
+        .getLinkedDocuments(
+            filesystem, List.of("XRD-Experiments", "XRD-Experiments/xrd_run_041.dat"), user);
 
     ArgumentCaptor<File> fileCaptor = ArgumentCaptor.forClass(File.class);
     ArgumentCaptor<Map<String, String>> metaCaptor = ArgumentCaptor.forClass(Map.class);
