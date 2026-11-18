@@ -90,7 +90,8 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     setFocusAfterStore(null);
   }, [focusAfterStore]);
 
-  // Another tab may have changed the default while this one was in the background
+  // Another tab or window may have changed the default while this one was in the background.
+  // Moving between two visible windows changes focus but not visibility.
   React.useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "hidden") return;
@@ -99,7 +100,11 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
       });
     };
     document.addEventListener("visibilitychange", refresh);
-    return () => document.removeEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
   const [saving, setSaving] = React.useState(false);

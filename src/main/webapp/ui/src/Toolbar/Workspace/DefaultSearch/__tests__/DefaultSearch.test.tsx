@@ -349,6 +349,17 @@ describe("DefaultSearch", () => {
     expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
   });
 
+  test("returning to the browser window shows the default another window has since saved", async () => {
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, { [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" })).toBeVisible();
+
+    window.dispatchEvent(new Event("focus"));
+
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+  });
+
   test("returning to the tab keeps the shown default when the check fails", async () => {
     givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, FAILED_READ);
     givenWorkspace({});
