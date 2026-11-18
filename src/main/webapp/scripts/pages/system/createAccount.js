@@ -62,6 +62,12 @@ $(document).ready(function () {
     });
     jqxhr.done(function (response) {
       if (response.data == "Success") {
+        if (isChecked) {
+          $(':input', '#createUserAccountForm').not(':button, :submit, :reset, :hidden, :radio, :checkbox')
+            .val('')
+            .removeAttr('checked')
+            .removeAttr('selected');
+        }
         if (response.errorMsg.errorMessages.length !== 0) {
           $().toastmessage('showNoticeToast', response.errorMsg.errorMessages);
         }
@@ -71,12 +77,7 @@ $(document).ready(function () {
           position: 'top-right',
           type: 'success',
           close: function () {
-            if (isChecked) {
-              $(':input', '#createUserAccountForm').not(':button, :submit, :reset, :hidden, :radio, :checkbox')
-                .val('')
-                .removeAttr('checked')
-                .removeAttr('selected');
-            } else {
+            if (!isChecked) {
               window.location.href = "/system/createAccount";
             }
           }
