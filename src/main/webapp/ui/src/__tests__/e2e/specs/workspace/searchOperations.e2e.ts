@@ -415,6 +415,47 @@ test.describe(`Workspace search operations`, () => {
     ).toContain("/workspace/ajax/view/");
   });
 
+  test(`As a user, a folder that fails to open while a search link is loading leaves the listing usable`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-link-failed-folder");
+    await clientDocuments.create({ name: docName });
+    let releaseSearch: () => void = () => {};
+    const searchHeld = new Promise<void>((resolve) => {
+      releaseSearch = resolve;
+    });
+    let searchSent: () => void = () => {};
+    const searchStarted = new Promise<void>((resolve) => {
+      searchSent = resolve;
+    });
+    await page.route("**/workspace/ajax/search**", async (route) => {
+      searchSent();
+      await searchHeld;
+      await route.continue();
+    });
+
+    await page.goto(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    // The toolbar sends the search once the page, including its folder links, is set up
+    await searchStarted;
+    // The jQuery blockUI overlay has no role or label, so it is found by its class
+    const overlay = page.locator("#record_list_frame > .blockOverlay");
+    await overlay.waitFor();
+    await page.route("**/workspace/ajax/view/**", (route) => route.fulfill({ status: 500 }));
+    const folderFailed = page.waitForResponse((response) => response.url().includes("/workspace/ajax/view/"));
+    await pageWorkspace.table.row("Examples").getByRole("link", { name: "Examples", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await folderFailed;
+
+    const searchResponse = page.waitForResponse((response) => response.url().includes("/workspace/ajax/search"));
+    releaseSearch();
+    await searchResponse;
+
+    await expect(overlay).toHaveCount(0);
+    await expect(pageWorkspace.table.row("Examples")).toBeVisible();
+  });
+
   test(`As a user, the folder listing stays covered until a slow search link's results are shown`, async ({
     page,
     pageWorkspace,

@@ -195,6 +195,10 @@ function navigateToFolder(folderId) {
     if (requestId !== listingRequestId) {
       return;
     }
+    // Requests this one superseded will not clear their loading state, so this one does
+    endSearchLinkWait();
+    RS.unblockPage($('.rs-working-area'));
+    $('#record_list').show();
     RS.ajaxFailed(RS.msg("legacyjs.workspace.main.openFolderAction"), false, jqxhr);
   });
 }
