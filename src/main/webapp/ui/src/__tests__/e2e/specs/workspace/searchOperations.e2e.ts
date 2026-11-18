@@ -499,6 +499,7 @@ test.describe(`Workspace search operations`, () => {
 
     await expect(pageWorkspace.table.row(docName)).toBeVisible();
     await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+    await expect(pageWorkspace.searchBar.searchInput).toHaveValue(docName);
     expect(searches.length).toBeLessThanOrEqual(1);
   });
 
