@@ -365,6 +365,30 @@ test.describe(`Workspace search operations`, () => {
     await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
   });
 
+  test(`As a user, the folder listing stays covered until a slow search link's results are shown`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    test.setTimeout(60_000);
+    const docName = uniqueName("e2e-search-slower-link");
+    await clientDocuments.create({ name: docName });
+    await page.route("**/workspace/ajax/search**", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 17_000));
+      await route.continue();
+    });
+
+    await page.goto(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    // The jQuery blockUI overlay has no role or label, so it is found by its class
+    const overlay = page.locator("#record_list_frame > .blockOverlay");
+    await overlay.waitFor();
+    await page.waitForTimeout(16_000);
+    await expect(overlay).toBeVisible();
+
+    await expect(pageWorkspace.table.row(docName)).toBeVisible({ timeout: 10_000 });
+    await expect(overlay).toHaveCount(0);
+  });
+
   test(`As a user, Back from a search result shows the search again`, async ({
     page,
     pageWorkspace,

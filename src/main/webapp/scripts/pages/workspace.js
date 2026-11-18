@@ -454,6 +454,11 @@ function startSearchLinkWait() {
   searchLinkTimeout = setTimeout(endSearchLinkWait, 15000);
 }
 
+// Once the toolbar has started the search, its success or failure ends the wait
+function searchLinkSearchStarted() {
+  clearTimeout(searchLinkTimeout);
+}
+
 function endSearchLinkWait() {
   if (!searchLinkPending) {
     return;

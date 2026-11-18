@@ -200,8 +200,10 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         },
         () => {
           this.checkSavedSettings();
+          searchLinkSearchStarted();
           doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch, () => {
-            endSearchLinkWait();
+            // The results are drawn after a short fade, which then sends this event
+            window.addEventListener(RECORD_LIST_SHOWN, endSearchLinkWait, { once: true });
             if (this.searchLinkLeftTreeView) {
               this.searchLinkLeftTreeView = false;
               workspaceSettings.currentViewMode = "LIST_VIEW";
