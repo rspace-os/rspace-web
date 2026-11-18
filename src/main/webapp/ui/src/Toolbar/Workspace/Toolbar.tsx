@@ -584,13 +584,13 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
                 height: "100%",
               }}
             ></Box>
-            <DefaultSearch />
             <SimpleSearch
               ref={this.simpleSearch}
               toggleAdvanced={this.toggleAdvanced}
               advancedOpen={this.state.advancedOpen}
               hideIcons={this.handleHideIcons}
             />
+            <DefaultSearch />
           </Box>
         )}
       </Box>
