@@ -170,6 +170,11 @@
       "search": {
         "help": "Typing `/rs-search [search term]` will look up your search term using RSpace basic search and post the first five results. Search term can be a document name, tag or global ID. For example, `/rs-search Example*`. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature."
       }
+    },
+    "webhook": {
+      "errors": {
+        "urlNotAllowed": "This webhook URL is not allowed. Use the webhook link copied from Slack or Microsoft Teams. If your organisation uses a different webhook address, ask your System Administrator to allow it."
+      }
     }
   },
   "connect": {

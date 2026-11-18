@@ -240,6 +240,8 @@ jobs:
               "-Dslack.signing.secret=mock-signing-secret"
               "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
               "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
+              "-Dslack.webhook.allowed.origins=http://localhost:$E2E_MOCK_PORT"
+              "-Dmsteams.webhook.allowed.origins=http://localhost:$E2E_MOCK_PORT"
               "-Dror.api.url=http://localhost:$E2E_MOCK_PORT/ror"
               "-Dpidinst.lookup.datacite.url=http://localhost:$E2E_MOCK_PORT"
               "-Dpidinst.lookup.b2inst.url=http://localhost:$E2E_MOCK_PORT"

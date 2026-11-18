@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
+import com.researchspace.extmessages.base.WebhookDestinationPolicy;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -44,6 +45,13 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
     @Override
     protected String doGetPostUrl(AppConfigElementSet messageConfig) {
       return null;
+    }
+
+    @Override
+    protected WebhookDestinationPolicy destinationPolicy() {
+      return WebhookDestinationPolicy.parse(
+          "msteams.webhook.allowed.origins",
+          "https://*.environment.api.powerplatform.com,https://*.logic.azure.com");
     }
 
     protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {

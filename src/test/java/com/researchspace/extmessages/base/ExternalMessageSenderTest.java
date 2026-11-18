@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -51,30 +52,34 @@ public class ExternalMessageSenderTest {
 
   @Test
   public void testSendMessageApp() throws RestClientException, URISyntaxException {
-    ResponseEntity<String> okResponse = new ResponseEntity<>(HttpStatus.OK);
+    ResponseEntity<Void> okResponse = new ResponseEntity<>(HttpStatus.OK);
     when(template.postForEntity(
             Mockito.eq(new URI(msteamsSender.url)),
             Mockito.any(HttpEntity.class),
-            Mockito.eq(String.class)))
+            Mockito.eq(Void.class)))
         .thenReturn(okResponse);
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
     assertEquals(
-        okResponse,
-        msteamsSender.sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender));
+        HttpStatus.OK,
+        msteamsSender
+            .sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender)
+            .getStatusCode());
   }
 
   @Test
   public void testSendMessageAppPostFails() throws RestClientException, URISyntaxException {
-    ResponseEntity<String> errorResponse = new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+    ResponseEntity<Void> errorResponse = new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
     when(template.postForEntity(
             Mockito.eq(new URI(msteamsSender.url)),
             Mockito.any(HttpEntity.class),
-            Mockito.eq(String.class)))
+            Mockito.eq(Void.class)))
         .thenReturn(errorResponse);
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
     assertEquals(
-        errorResponse,
-        msteamsSender.sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender));
+        HttpStatus.SERVICE_UNAVAILABLE,
+        msteamsSender
+            .sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender)
+            .getStatusCode());
   }
 
   @Test
@@ -88,12 +93,22 @@ public class ExternalMessageSenderTest {
     assertMessageNotPosted();
   }
 
+  @Test
+  public void loopbackWebhookIsRejectedBeforePosting() {
+    msteamsSender.url = "http://127.0.0.1:9988/x";
+    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
+    var config = cfg.getAppConfigElementSets().iterator().next();
+    assertThrows(
+        WebhookUrlNotAllowedException.class, () -> msteamsSender.sendMessage(null, config, sender));
+    verifyNoInteractions(template);
+  }
+
   private void assertMessageNotPosted() throws URISyntaxException {
     Mockito.verify(template, Mockito.never())
         .postForEntity(
             Mockito.eq(new URI(msteamsSender.url)),
             Mockito.any(HttpEntity.class),
-            Mockito.eq(String.class));
+            Mockito.eq(Void.class));
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
+import com.researchspace.extmessages.base.WebhookUrlNotAllowedException;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -108,6 +109,10 @@ public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
       log.warn(
           "Posting external message failed: {}",
           NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+      return new ServiceOperationResult<ResponseEntity<String>>(
+          null, false, messageSource.getMessage(SEND_FAILED_MSG_KEY));
+    } catch (WebhookUrlNotAllowedException e) {
+      // a stored URL that the destination rules reject; the sender logged why, without the URL
       return new ServiceOperationResult<ResponseEntity<String>>(
           null, false, messageSource.getMessage(SEND_FAILED_MSG_KEY));
     }

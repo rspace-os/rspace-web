@@ -13,7 +13,9 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
 
   boolean supported = true;
   String message = "{'text':'some json'}";
-  String url = "http://a.b.c";
+  String url = "https://hooks.example.test/x";
+  WebhookDestinationPolicy policy =
+      WebhookDestinationPolicy.parse("test.allowed.origins", "https://hooks.example.test");
 
   @Override
   public boolean supportsApp(App app) {
@@ -26,7 +28,12 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
   }
 
   RestTemplate getRestTemplate() {
-    return template;
+    return template != null ? template : super.getRestTemplate();
+  }
+
+  @Override
+  protected WebhookDestinationPolicy destinationPolicy() {
+    return policy;
   }
 
   void setTemplate(RestTemplate template) {
