@@ -7,7 +7,7 @@
 		$("#"+fielID).select2();
 	});
 </script>
-<tr id="field_${field.id}" name="picklist" class="field">
+<tr id="field_${field.id}" name="picklist" class="field"<%@ include file="fieldDisplayAttributes.jspf" %>>
 	<td class="field-value">
 		<div id="theRadio" style="position:relative;">
 			<table>

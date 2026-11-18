@@ -15,6 +15,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
+import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
@@ -43,6 +44,7 @@ import org.apache.shiro.subject.support.SubjectThreadState;
 import org.apache.shiro.util.ThreadState;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,6 +242,44 @@ public class JournalControllerTest extends SpringTransactionalTest {
     // non-text field content should be escaped
     assertThat(combinedEntryContent).contains("<p>default text</p><br/><br/>");
     assertThat(combinedEntryContent).contains("&lt;p&gt;default string&lt;/p&gt;<br/>");
+  }
+
+  @Test
+  public void fieldsCarryEscapedDisplayRuleAttributes() {
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
+    String sourceKey = "6f1c2e0a-0000-4000-8000-000000000001";
+    RSForm form = recordFactory.createNewForm();
+    ChoiceFieldForm choice = new ChoiceFieldForm("Is it \"<GMO>\"?");
+    choice.setChoiceOptions("fieldChoices=a&fieldChoices=b");
+    choice.setDefaultChoiceOption("fieldChoices=b");
+    choice.setFieldKey(sourceKey);
+    choice.setColumnIndex(0);
+    choice.setId(1L);
+    form.addFieldForm(choice);
+    StringFieldForm dependent = new StringFieldForm("Permit");
+    String rule =
+        "{\"sourceFieldKey\":\"" + sourceKey + "\",\"operator\":\"IS_ANY_OF\",\"values\":[\"b\"]}";
+    dependent.setDisplayRule(rule);
+    dependent.setColumnIndex(1);
+    dependent.setId(2L);
+    form.addFieldForm(dependent);
+    StructuredDocument doc = recordFactory.createStructuredDocument("rules", user, form);
+
+    String html = journalController.prepareStructuredDocumentContent(doc);
+
+    Elements fields = Jsoup.parseBodyFragment(html).select("body > div.journalField");
+    assertEquals(2, fields.size());
+    Element source = fields.get(0);
+    assertEquals("CHOICE", source.attr("data-field-type"));
+    assertEquals(sourceKey, source.attr("data-field-key"));
+    assertEquals("Is it \"<GMO>\"?", source.attr("data-field-name"));
+    assertEquals("fieldChoices=b", source.attr("data-field-value"));
+    assertThat(source.select("h2.formTitles")).hasSize(1);
+    Element target = fields.get(1);
+    assertEquals("STRING", target.attr("data-field-type"));
+    assertEquals(rule, target.attr("data-display-rule"));
+    assertThat(target.hasAttr("data-field-value")).isFalse();
+    assertThat(html).contains("data-display-rule=\"{&quot;sourceFieldKey&quot;:");
   }
 
   private RSForm createTestForm() {

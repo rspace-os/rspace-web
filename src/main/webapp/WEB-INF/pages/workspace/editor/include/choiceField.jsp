@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<tr id="field_${field.id}" name="choice" class="field">
+<tr id="field_${field.id}" name="choice" class="field"<%@ include file="fieldDisplayAttributes.jspf" %>>
   <td class="field-value">
     <div id="theChoice" style="position: relative;">
       <table>

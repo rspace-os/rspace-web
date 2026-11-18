@@ -12,6 +12,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.ChoiceField;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.IFieldForm;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -198,6 +200,12 @@ public class JournalController extends BaseController {
     Boolean inventoryEnabled = null;
     Boolean galaxyEnabled = null;
     for (Field field : allFields) {
+      Field latestField = field;
+      if (field.getTempField() != null) {
+        // RSTEST-284: show autosaved content, if present
+        latestField = field.getTempField();
+      }
+      buffer.append(fieldDisplayWrapperStart(field, latestField));
       if (!doc.isBasicDocument()) {
         buffer.append("<h2 class='formTitles'>" + field.getName() + "</h2>");
       }
@@ -220,12 +228,6 @@ public class JournalController extends BaseController {
             String.format(
                 JUPYTER_NOTEBOOKS_DIV, field.getId(), field.getId(), field.getId(), doc.getId()));
       }
-      Field latestField = field;
-      if (field.getTempField() != null) {
-        // RSTEST-284: show autosaved content, if present
-        latestField = field.getTempField();
-      }
-
       String fieldContent;
       if (latestField instanceof ChoiceField) {
         fieldContent = ((ChoiceField) latestField).getChoiceOptionSelectedAsString();
@@ -238,8 +240,40 @@ public class JournalController extends BaseController {
 
       buffer.append(fieldContent);
       buffer.append("<br/><br/>");
+      buffer.append("</div>");
     }
     return buffer.toString();
+  }
+
+  /**
+   * Opens the element that wraps one field of a notebook entry, carrying the attributes the
+   * elnFieldDisplay bundle reads to apply the form's display rules (see {@code
+   * fieldDisplayAttributes.jspf}). Radio and choice fields also carry the data shown, since the
+   * entry has no inputs to read it from.
+   */
+  static String fieldDisplayWrapperStart(Field field, Field shownField) {
+    IFieldForm definition = field.getFieldForm();
+    FieldType type = definition.getType();
+    StringBuilder html = new StringBuilder("<div class=\"journalField\"");
+    appendAttribute(html, "data-field-id", String.valueOf(field.getId()));
+    appendAttribute(html, "data-field-key", definition.getFieldKey());
+    appendAttribute(html, "data-field-type", type.name());
+    appendAttribute(html, "data-field-name", field.getName());
+    appendAttribute(html, "data-display-rule", definition.getDisplayRule());
+    if (type == FieldType.RADIO || type == FieldType.CHOICE) {
+      appendAttribute(html, "data-field-value", shownField.getFieldData());
+    }
+    return html.append(">").toString();
+  }
+
+  private static void appendAttribute(StringBuilder html, String name, String value) {
+    if (value != null) {
+      html.append(' ')
+          .append(name)
+          .append("=\"")
+          .append(StringEscapeUtils.escapeHtml4(value))
+          .append('"');
+    }
   }
 
   @GetMapping("/ajax/retrieveHistory/{recordid}/{position}/{refresh}")

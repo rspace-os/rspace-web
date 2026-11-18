@@ -1,0 +1,2 @@
+<%-- Display-rule attributes of a document field row, read by the elnFieldDisplay bundle. EscapeXmlELResolver escapes every string value, quotes included. --%>
+ data-field-id="${field.id}" data-field-key="${field.fieldForm.fieldKey}" data-field-type="${field.fieldForm.type}" data-field-name="${field.name}"<c:if test="${not empty field.fieldForm.displayRule}"> data-display-rule="${field.fieldForm.displayRule}"</c:if>
