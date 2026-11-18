@@ -267,6 +267,24 @@ test.describe(`Workspace search operations`, () => {
     await expect(pageWorkspace.tree.root).toBeVisible();
   });
 
+  test(`As a user, switching to tree view during a search ends the search`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-then-tree");
+    await clientDocuments.create({ name: docName });
+    await pageWorkspace.open();
+    await pageWorkspace.searchBar.search(docName);
+
+    await pageWorkspace.toolbar.switchLayout("tree");
+    await expect(page).toHaveURL(/\/workspace$/);
+
+    await pageWorkspace.toolbar.switchLayout("list");
+    await expect(pageWorkspace.searchBar.clearSearchButton).toBeHidden();
+    await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,

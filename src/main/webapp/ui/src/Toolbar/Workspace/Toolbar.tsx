@@ -279,6 +279,8 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   };
 
   openTreeView = () => {
+    // The tree has no search bar, so leave the search the way Clear search does
+    if (workspaceSettings.searchMode) $("#resetSearch").trigger("click");
     tree_view();
     this.setState({ treeView: true });
     this.handleClose(0);
