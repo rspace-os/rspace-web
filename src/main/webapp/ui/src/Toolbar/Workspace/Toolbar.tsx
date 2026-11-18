@@ -62,6 +62,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       ontologiesFilter: workspaceSettings.ontologiesFilter,
       asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
+      defaultSearchSlot: null,
     };
 
     this.simpleSearch = React.createRef();
@@ -112,6 +113,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       window.dispatchEvent(new CustomEvent("ReactToolbarMounted"));
     }, 0);
   }
+
+  // The search box has a place for the Default search button; tree view has no search box
+  setDefaultSearchSlot = (slot) => {
+    if (slot !== this.state.defaultSearchSlot) this.setState({ defaultSearchSlot: slot });
+  };
 
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
@@ -416,7 +422,10 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
           containerType: "inline-size",
         }}
       >
-        <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
+        {/* A long search, such as a date range, shrinks the search box rather than this button */}
+        <Box component="span" sx={{ display: "flex", flexShrink: 0 }}>
+          <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
+        </Box>
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
@@ -483,7 +492,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         </Menu>
         {this.state.treeView && <TreeSort />}
         {!this.state.treeView && (
-          <Box component="span" sx={{ display: "flex", flexGrow: "1" }}>
+          <Box component="span" sx={{ display: "flex", flexGrow: "1", minWidth: 0 }}>
             <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
               <IconButton
                 data-test-id="toolbar-views-2"
@@ -635,10 +644,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
               toggleAdvanced={this.toggleAdvanced}
               advancedOpen={this.state.advancedOpen}
               hideIcons={this.handleHideIcons}
+              defaultSearchSlotRef={this.setDefaultSearchSlot}
             />
           </Box>
         )}
-        <DefaultSearch />
+        <DefaultSearch runButtonSlot={this.state.defaultSearchSlot} />
       </Box>
     );
   };

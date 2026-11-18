@@ -35,7 +35,7 @@ export class WorkspaceSearchBar {
   readonly saveDefaultButton: Locator;
   readonly isDefaultMessage: Locator;
   readonly defaultSearchButton: Locator;
-  readonly defaultSearchOptionsButton: Locator;
+  readonly clearDefaultSearchButton: Locator;
 
   constructor(private readonly page: Page) {
     this.searchInput = page.getByRole("textbox", { name: "Search" });
@@ -46,7 +46,7 @@ export class WorkspaceSearchBar {
     this.saveDefaultButton = page.getByRole("button", { name: "Save as default search", exact: true });
     this.isDefaultMessage = page.getByText("This is your default search", { exact: true });
     this.defaultSearchButton = page.getByRole("button", { name: "Default search", exact: true });
-    this.defaultSearchOptionsButton = page.getByRole("button", { name: "Default search options", exact: true });
+    this.clearDefaultSearchButton = page.getByRole("button", { name: "Clear default search", exact: true });
   }
 
   /** Opens a Workspace URL that holds a search, and waits for its results. */
@@ -69,8 +69,7 @@ export class WorkspaceSearchBar {
   }
 
   async removeDefaultSearch(): Promise<void> {
-    await this.defaultSearchOptionsButton.click();
-    await this.page.getByRole("menuitem", { name: "Remove default search", exact: true }).click();
+    await this.clearDefaultSearchButton.click();
   }
 
   async isSearchActive(): Promise<boolean> {

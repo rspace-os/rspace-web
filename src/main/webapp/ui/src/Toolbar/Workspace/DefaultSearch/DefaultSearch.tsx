@@ -1,10 +1,7 @@
 import { faBookmark } from "@fortawesome/free-solid-svg-icons/faBookmark";
-import { faCaretDown } from "@fortawesome/free-solid-svg-icons/faCaretDown";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
 import React from "react";
@@ -65,9 +62,14 @@ async function readStoredDefault(): Promise<string | null> {
 type DefaultSearchProps = {
   /** Opens a URL. Tests replace it to observe the navigation. */
   navigate?: (url: string) => void;
+  /** Where the run button goes, inside the search box. Without one (tree view) it stays where this is rendered. */
+  runButtonSlot?: HTMLElement | null;
 };
 
-function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): React.ReactNode {
+function DefaultSearchControls({
+  navigate,
+  runButtonSlot,
+}: Required<Pick<DefaultSearchProps, "navigate">> & Pick<DefaultSearchProps, "runButtonSlot">): React.ReactNode {
   const { t } = useTranslation("workspace");
   const [loadedDefault, setStored] = useUiPreference<string | null>(PREFERENCES.WORKSPACE_DEFAULT_SEARCH, {
     defaultValue: null,
@@ -76,14 +78,13 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
   const current = useCurrentSearchQuery();
   const summarise = useSummary();
   const confirm = useConfirm();
-  const [menuAnchor, setMenuAnchor] = React.useState<HTMLElement | null>(null);
   const slot = document.getElementById("defaultSearchSlot");
-  const runButton = React.useRef<HTMLButtonElement>(null);
+  const runButtonRef = React.useRef<HTMLButtonElement>(null);
   const [announcement, setAnnouncement] = React.useState("");
   const [focusAfterStore, setFocusAfterStore] = React.useState<"run" | "search" | null>(null);
 
   React.useEffect(() => {
-    if (focusAfterStore === "run") runButton.current?.focus();
+    if (focusAfterStore === "run") runButtonRef.current?.focus();
     // Tree view has no search box
     if (focusAfterStore === "search")
       (document.getElementById(SEARCH_INPUT_ID) ?? document.getElementById(VIEW_MODE_BUTTON_ID))?.focus();
@@ -212,7 +213,14 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
 
   let bar: React.ReactNode = null;
   if (current !== null && current === stored) {
-    bar = <span id="isDefaultSearch">{t("toolbar.defaultSearch.isDefault")}</span>;
+    bar = (
+      <>
+        <span id="isDefaultSearch">{t("toolbar.defaultSearch.isDefault")}</span>
+        <button type="button" id="clearDefaultSearch" disabled={saving} onClick={() => void remove()}>
+          {t("toolbar.defaultSearch.remove")}
+        </button>
+      </>
+    );
   } else if (current !== null) {
     bar = (
       <button type="button" id="saveDefaultSearch" disabled={saving} onClick={() => void save(current)}>
@@ -221,50 +229,23 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     );
   }
 
+  const runButton = stored !== null && (
+    <Tooltip title={summarise(stored)} enterDelay={300} describeChild>
+      <IconButton
+        ref={runButtonRef}
+        disabled={saving}
+        color="inherit"
+        aria-label={t("toolbar.defaultSearch.run")}
+        onClick={() => void run()}
+      >
+        <FontAwesomeIcon icon={faBookmark} />
+      </IconButton>
+    </Tooltip>
+  );
+
   return (
     <>
-      {stored !== null && (
-        <>
-          <Tooltip title={summarise(stored)} enterDelay={300} describeChild>
-            <IconButton
-              ref={runButton}
-              disabled={saving}
-              color="inherit"
-              aria-label={t("toolbar.defaultSearch.run")}
-              onClick={() => void run()}
-            >
-              <FontAwesomeIcon icon={faBookmark} />
-            </IconButton>
-          </Tooltip>
-          <IconButton
-            color="inherit"
-            size="small"
-            disabled={saving}
-            aria-label={t("toolbar.defaultSearch.options")}
-            aria-haspopup="menu"
-            aria-controls={menuAnchor ? "defaultSearchMenu" : undefined}
-            aria-expanded={menuAnchor ? "true" : undefined}
-            onClick={(e) => setMenuAnchor(e.currentTarget)}
-          >
-            <FontAwesomeIcon icon={faCaretDown} />
-          </IconButton>
-          <Menu
-            id="defaultSearchMenu"
-            anchorEl={menuAnchor}
-            open={menuAnchor !== null}
-            onClose={() => setMenuAnchor(null)}
-          >
-            <MenuItem
-              onClick={() => {
-                setMenuAnchor(null);
-                void remove();
-              }}
-            >
-              {t("toolbar.defaultSearch.remove")}
-            </MenuItem>
-          </Menu>
-        </>
-      )}
+      {runButton && (runButtonSlot ? createPortal(runButton, runButtonSlot) : runButton)}
       {slot && createPortal(bar, slot)}
       <Box component="span" role="status" sx={visuallyHidden}>
         {announcement}
@@ -274,16 +255,17 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
 }
 
 /**
- * The "Default search" toolbar button, and the control in the search bar that
- * saves the current search as the default.
+ * The "Default search" button, and the controls in the search bar that save the
+ * current search as the default or clear it.
  */
 export default function DefaultSearch({
   navigate = (url) => window.location.assign(url),
+  runButtonSlot,
 }: DefaultSearchProps): React.ReactNode {
   return (
     <UiPreferences>
       <ConfirmProvider>
-        <DefaultSearchControls navigate={navigate} />
+        <DefaultSearchControls navigate={navigate} runButtonSlot={runButtonSlot} />
       </ConfirmProvider>
     </UiPreferences>
   );

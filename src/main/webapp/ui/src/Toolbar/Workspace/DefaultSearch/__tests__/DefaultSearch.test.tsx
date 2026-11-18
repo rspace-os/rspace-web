@@ -51,6 +51,7 @@ function givenWorkspace(settings: Partial<typeof searchSettings>) {
 }
 
 const runButton = () => screen.queryByRole("button", { name: "workspace:toolbar.defaultSearch.run" });
+const clearButton = () => screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.remove" });
 
 describe("DefaultSearch", () => {
   beforeEach(() => {
@@ -147,11 +148,10 @@ describe("DefaultSearch", () => {
   test("removing asks first when another tab has since stored a different default", async () => {
     const user = userEvent.setup();
     givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, { [KEY]: { value: BKMKTAG } });
-    givenWorkspace({ searchMode: false });
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
-    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    await user.click(await clearButton());
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/bkmktag/)).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
@@ -181,13 +181,11 @@ describe("DefaultSearch", () => {
     searchBox.setAttribute("aria-label", "search");
     document.body.appendChild(searchBox);
     onTestFinished(() => searchBox.remove());
-    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
-    givenWorkspace({ searchMode: false });
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
     const { baseElement } = render(<DefaultSearch />);
 
-    (await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" })).focus();
-    await user.keyboard("{Enter}");
-    await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" });
+    (await clearButton()).focus();
     await expectAccessible(baseElement);
     await user.keyboard("{Enter}");
 
@@ -202,13 +200,11 @@ describe("DefaultSearch", () => {
     viewModeButton.textContent = "View mode";
     document.body.appendChild(viewModeButton);
     onTestFinished(() => viewModeButton.remove());
-    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
-    givenWorkspace({ searchMode: false });
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    (await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" })).focus();
-    await user.keyboard("{Enter}");
-    await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" });
+    (await clearButton()).focus();
     await user.keyboard("{Enter}");
 
     await vi.waitFor(() => expect(viewModeButton).toHaveFocus());
@@ -221,12 +217,11 @@ describe("DefaultSearch", () => {
     searchBox.id = SEARCH_INPUT_ID;
     document.body.appendChild(searchBox);
     onTestFinished(() => searchBox.remove());
-    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, {});
-    givenWorkspace({ searchMode: false });
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, {});
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
-    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    await user.click(await clearButton());
 
     await vi.waitFor(() => expect(searchBox).toHaveFocus());
     expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
@@ -268,13 +263,12 @@ describe("DefaultSearch", () => {
     const user = userEvent.setup();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     onTestFinished(() => warn.mockRestore());
-    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } });
     server.use(http.post("/userform/ajax/preference", () => new HttpResponse(null, { status: 500 })));
-    givenWorkspace({ searchMode: false });
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
-    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    await user.click(await clearButton());
 
     await vi.waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
@@ -299,11 +293,10 @@ describe("DefaultSearch", () => {
   test("a remove whose check of the stored default fails keeps it and says it failed", async () => {
     const user = userEvent.setup();
     givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, FAILED_READ, { [KEY]: { value: BKMKTAG } });
-    givenWorkspace({ searchMode: false });
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
-    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    await user.click(await clearButton());
 
     await vi.waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
@@ -486,16 +479,35 @@ describe("DefaultSearch", () => {
 
   test("removing the default stores null and hides the button", async () => {
     const user = userEvent.setup();
-    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
-    givenWorkspace({ searchMode: false });
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
     render(<DefaultSearch />);
 
-    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
-    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    await user.click(await clearButton());
 
     await vi.waitFor(() => expect(runButton()).not.toBeInTheDocument());
     await vi.waitFor(() => expect(savedPreferences).toHaveLength(1));
     expect(savedPreferences[0][KEY].value).toBeNull();
+  });
+
+  test("a search that is not the default offers no way to clear the default", async () => {
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+    await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" });
+    expect(screen.queryByRole("button", { name: "workspace:toolbar.defaultSearch.remove" })).not.toBeInTheDocument();
+  });
+
+  test("the run button goes in the search box when it has room for it", async () => {
+    const searchBoxSlot = document.createElement("span");
+    document.body.appendChild(searchBoxSlot);
+    onTestFinished(() => searchBoxSlot.remove());
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch runButtonSlot={searchBoxSlot} />);
+
+    await vi.waitFor(() => expect(runButton()).toBeInTheDocument());
+    expect(searchBoxSlot).toContainElement(runButton());
   });
 
   test("a stored term with markup shows as text in the tooltip", async () => {
