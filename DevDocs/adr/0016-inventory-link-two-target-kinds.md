@@ -26,8 +26,8 @@ that resolves, and Inventory items now refer to one through the same Link field.
    mounts, and it would hand one user's filestore name to another. A reader of the item who does
    not own the filestore therefore sees the stored path with "No access". The rule governs
    choosing or repointing a target, not holding one: duplicating, splitting or transferring an
-   item keeps its links as they are, as it does for a Global ID link the new holder cannot read,
-   since a copy reveals nothing its original did not.
+   item keeps its links as they are, as it does for a Global ID link the new holder could not
+   create themselves, since a copy reveals nothing its original did not.
 4. RSpace never contacts the remote store for a link: neither saving nor summarising checks that
    the file is there. That would need the owner's stored credentials and a network call per card.
 5. A template's default link cannot be a Filestore item: it would stamp one user's personal
