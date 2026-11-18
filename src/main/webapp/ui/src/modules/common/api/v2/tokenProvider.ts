@@ -1,13 +1,13 @@
 import { jwtDecode } from "jwt-decode";
-import * as v from "valibot";
+import { clearStoredToken, isExpiringSoon, saveStoredToken } from "../../utils/auth";
 import {
-  clearStoredToken,
-  isExpiringSoon,
-  saveStoredToken,
-  secondsToExpiry,
-  tokenRefreshDelayMs,
-} from "../../utils/auth";
-import { ApiV2ProblemError, ApiV2UnexpectedResponseError } from "./ApiV2ProblemError";
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+  readJsonBody,
+  responseMedia,
+  transportFailure,
+} from "./ApiV2ProblemError";
 import { createUiOAuthToken } from "./generated/oauth/oauth";
 
 export class ApiV2IdentityChangedError extends Error {
@@ -26,7 +26,38 @@ export interface ApiV2TokenProvider {
   recover(rejected: string, invalid?: boolean): Promise<string>;
 }
 
-const REFRESH_RETRY_DELAY_MS = 60_000;
+/** What the page does when the provider can no longer deliver tokens for the current session. */
+export interface ApiV2SessionHandlers {
+  /** Token issuance refused the session (401 or 403, or the HTML login page). */
+  onSessionEnded(error: ApiV2SessionEndedError): void;
+  /** The session now belongs to another identity, or a public document session expired. */
+  onIdentityChanged(): void;
+}
+
+const defaultSessionHandlers: ApiV2SessionHandlers = {
+  onSessionEnded: () => {
+    clearStoredToken();
+    globalThis.location.assign("/login");
+  },
+  onIdentityChanged: () => {
+    clearStoredToken();
+    globalThis.location.reload();
+  },
+};
+let installedSessionHandlers = defaultSessionHandlers;
+
+/**
+ * Installs the session handlers that the module-level provider uses, read at call time; returns a function restoring
+ * the previous ones. Entry points that install nothing keep the defaults: session ended clears the stored token and
+ * navigates to `/login`, identity changed clears it and reloads.
+ */
+export function setApiV2SessionHandlers(next: ApiV2SessionHandlers): () => void {
+  const previous = installedSessionHandlers;
+  installedSessionHandlers = next;
+  return () => {
+    installedSessionHandlers = previous;
+  };
+}
 
 /* The public view is for a document made accessible to non RSpace users. */
 const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
@@ -42,11 +73,10 @@ function refreshTokenHash(token: string): string | undefined {
 }
 
 /** Token issuance answers like this only when the browser session has ended. */
-function sessionEnded(error: unknown): boolean {
+function sessionEnded(error: unknown): error is ApiV2ProblemError | ApiV2UnexpectedResponseError {
   return (
     (error instanceof ApiV2ProblemError && (error.status === 401 || error.status === 403)) ||
-    error instanceof ApiV2UnexpectedResponseError ||
-    v.isValiError(error)
+    (error instanceof ApiV2UnexpectedResponseError && error.reason === "undeclared" && error.media === "text/html")
   );
 }
 
@@ -60,19 +90,51 @@ function abortable<T>(pending: Promise<T>, signal?: AbortSignal): Promise<T> {
   });
 }
 
+async function mintPublicDocumentToken(): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch("/public/publicView/userform/ajax/inventoryOauthToken", {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    });
+  } catch (error) {
+    throw transportFailure(error);
+  }
+  if (!response.ok) throw new ApiV2ProblemError(response.status, undefined, response.statusText);
+  const media = responseMedia(response);
+  // A redirect to the login page answers successfully with HTML.
+  if (media === "text/html") throw new ApiV2UnexpectedResponseError("undeclared", { status: response.status, media });
+  const body = await readJsonBody(response);
+  if (!body || typeof body !== "object" || !("data" in body) || typeof body.data !== "string") {
+    throw new ApiV2UnexpectedResponseError("invalidBody", {
+      status: response.status,
+      media,
+      message: "Invalid public document token",
+    });
+  }
+  return body.data;
+}
+
+/**
+ * Mints session-bound tokens on demand: concurrent callers share one mint, a token near expiry is replaced before use,
+ * and a token for another identity stops all delivery. Navigation is left to the session handlers.
+ */
 export class SessionTokenProvider implements ApiV2TokenProvider {
   private token?: string;
   private minting?: Promise<string>;
   private recovering = new Map<string, Promise<string>>();
-  private timer?: ReturnType<typeof setTimeout>;
   private identityChanged = false;
 
-  /** Stops delivering tokens and reloads, so no state of the previous identity survives. */
+  /** Without handlers, the provider reads those installed through `setApiV2SessionHandlers` at call time. */
+  constructor(private readonly handlers?: ApiV2SessionHandlers) {}
+
+  private get sessionHandlers(): ApiV2SessionHandlers {
+    return this.handlers ?? installedSessionHandlers;
+  }
+
+  /** Stops delivering tokens and lets the page discard every state of the previous identity. */
   private abandonIdentity(message?: string): never {
     this.identityChanged = true;
-    clearTimeout(this.timer);
-    clearStoredToken();
-    globalThis.location.reload();
+    this.sessionHandlers.onIdentityChanged();
     throw new ApiV2IdentityChangedError(message);
   }
 
@@ -83,42 +145,33 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
     if (previousHash && nextHash && previousHash !== nextHash) this.abandonIdentity();
   }
 
-  private schedule(token: string): void {
-    clearTimeout(this.timer);
-    if (!Number.isFinite(secondsToExpiry(token))) return;
-    this.timer = setTimeout(() => {
-      void this.mint().catch(() => {
-        if (!this.identityChanged) {
-          console.warn("Unable to refresh the browser session token.");
-          // Rescheduling the expired token adds its one-minute floor, so the retry fires after two minutes.
-          this.timer = setTimeout(() => this.schedule(token), REFRESH_RETRY_DELAY_MS);
-        }
-      });
-    }, tokenRefreshDelayMs(token));
+  /** Gives a refused mint its outcome; failures that are not a refusal reach the caller unchanged. */
+  private mintFailure(error: unknown, publicView: boolean, hadToken: boolean): unknown {
+    if (!sessionEnded(error)) return error;
+    if (publicView) {
+      // Some sessions are always refused (run-as, login-disabled users), so only a lost session reloads.
+      if (hadToken) this.abandonIdentity("Public document session expired");
+      return error;
+    }
+    const ended = new ApiV2SessionEndedError(error.status, error);
+    this.sessionHandlers.onSessionEnded(ended);
+    return ended;
   }
 
   private mint(): Promise<string> {
     if (this.identityChanged) return Promise.reject(new ApiV2IdentityChangedError());
     this.minting ??= (async () => {
+      const publicView = isPublicDocumentView();
       let token: string;
-      if (isPublicDocumentView()) {
-        const response = await fetch("/public/publicView/userform/ajax/inventoryOauthToken", {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        if (!response.ok) throw new ApiV2ProblemError(response.status, undefined, response.statusText);
-        const body: unknown = await response.json();
-        if (!body || typeof body !== "object" || !("data" in body) || typeof body.data !== "string") {
-          throw new TypeError("Invalid public document token");
-        }
-        token = body.data;
-      } else {
-        token = (await createUiOAuthToken()).accessToken;
+      try {
+        token = publicView ? await mintPublicDocumentToken() : (await createUiOAuthToken()).accessToken;
+      } catch (error) {
+        throw this.mintFailure(error, publicView, this.token !== undefined);
       }
-      if (!token) throw new TypeError("Empty browser session token");
+      if (!token) throw new ApiV2UnexpectedResponseError("invalidBody", { message: "Empty browser session token" });
       this.checkIdentity(token);
       this.token = token;
-      if (isPublicDocumentView()) saveStoredToken(token);
-      this.schedule(token);
+      if (publicView) saveStoredToken(token);
       return token;
     })().finally(() => {
       this.minting = undefined;
@@ -129,7 +182,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
   getToken(signal?: AbortSignal): Promise<string> {
     signal?.throwIfAborted();
     if (this.identityChanged) return Promise.reject(new ApiV2IdentityChangedError());
-    // A mint in flight (a scheduled refresh or a recovery) supersedes the cached token.
+    // A mint in flight (an expiry-driven refresh or a recovery) supersedes the cached token.
     const token = this.minting ? undefined : this.token;
     return abortable(token && !isExpiringSoon(token) ? Promise.resolve(token) : this.mint(), signal);
   }
@@ -149,15 +202,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
         }
         // The public controller restores the anonymous session when the document reloads.
         if (isPublicDocumentView()) this.abandonIdentity("Public document session expired");
-        try {
-          return await this.mint();
-        } catch (error) {
-          if (sessionEnded(error)) {
-            clearStoredToken();
-            globalThis.location.assign("/login");
-          }
-          throw error;
-        }
+        return this.mint();
       })().finally(() => {
         this.recovering.delete(rejected);
       });
@@ -171,6 +216,10 @@ let provider: ApiV2TokenProvider = new SessionTokenProvider();
 export function getApiV2TokenProvider(): ApiV2TokenProvider {
   return provider;
 }
+/**
+ * Replaces the module-level provider and returns a function restoring the previous one. For tests only (`setup.ts`,
+ * the provider and transport tests, and query tests); application code always uses the session provider.
+ */
 export function setApiV2TokenProvider(next: ApiV2TokenProvider): () => void {
   const previous = provider;
   provider = next;

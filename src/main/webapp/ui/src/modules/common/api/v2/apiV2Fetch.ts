@@ -1,20 +1,23 @@
 import * as v from "valibot";
-import { ApiV2ProblemError, ApiV2UnexpectedResponseError } from "./ApiV2ProblemError";
+import {
+  type ApiV2Error,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+  readJsonBody,
+  responseMedia,
+  transportFailure,
+} from "./ApiV2ProblemError";
 import { apiV2Operations } from "./generated/valibot/operations";
 import { ApiV2ProblemSchema } from "./generated/valibot/schemas";
-import { type ApiV2IdentityChangedError, getApiV2TokenProvider } from "./tokenProvider";
+import { ApiV2IdentityChangedError, getApiV2TokenProvider } from "./tokenProvider";
 
 /**
- * What a generated call rejects with: an HTTP failure, a response the registry does not declare or whose body fails
- * its schema, a blocked identity change, an abort, or a network failure.
+ * What a generated call rejects with: an `ApiV2Error` (an HTTP failure, an unusable response, a network failure or an
+ * ended session), a blocked identity change, or an abort. A request cancelled with a custom `signal.reason` rejects
+ * with that reason, which can be any value.
  */
-export type ErrorType<_E> =
-  | ApiV2ProblemError
-  | ApiV2UnexpectedResponseError
-  | v.ValiError<v.GenericSchema>
-  | ApiV2IdentityChangedError
-  | DOMException
-  | TypeError;
+export type ErrorType<_E> = ApiV2Error | ApiV2IdentityChangedError | DOMException;
 export type BodyType<B> = B;
 
 function invalidRequest(issues: readonly v.BaseIssue<unknown>[]): ApiV2ProblemError {
@@ -30,13 +33,14 @@ function invalidRequest(issues: readonly v.BaseIssue<unknown>[]): ApiV2ProblemEr
   });
 }
 
-async function httpError(response: Response): Promise<ApiV2ProblemError> {
+async function httpError(response: Response, signal?: AbortSignal | null): Promise<ApiV2ProblemError> {
   let body: unknown;
   if (response.headers.get("Content-Type")?.includes("json")) {
     try {
       body = await response.json();
-    } catch {
-      /* Malformed JSON still represents an HTTP failure. */
+    } catch (error) {
+      // Malformed JSON still represents an HTTP failure; a cancelled read does not.
+      if (signal?.aborted) throw error;
     }
   }
   const parsed = v.safeParse(ApiV2ProblemSchema, body);
@@ -92,32 +96,45 @@ async function apiV2Response(
   else headers.delete("Authorization");
   // operationId belongs to generated clients and is never forwarded to fetch.
   const { operationId: _operationId, ...request } = { ...init, operationId };
-  let response = await fetch(url, { ...request, headers });
+  const send = async () => {
+    try {
+      return await fetch(url, { ...request, headers });
+    } catch (error) {
+      throw transportFailure(error, init.signal);
+    }
+  };
+  let response = await send();
   if (response.status === 401 && token && provider) {
     let recovered: string | undefined;
     try {
       recovered = await provider.recover(token);
-    } catch {
-      /* Preserve the rejected request's HTTP error. */
+    } catch (error) {
+      // An ended session or a changed identity outranks the rejected request; other failures keep its HTTP error.
+      if (error instanceof ApiV2SessionEndedError || error instanceof ApiV2IdentityChangedError) throw error;
     }
     init.signal?.throwIfAborted();
     if (recovered && recovered !== token && (init.method ?? "GET").toUpperCase() === "GET") {
       headers.set("Authorization", `Bearer ${recovered}`);
-      response = await fetch(url, { ...request, headers });
+      response = await send();
     }
   }
-  if (!response.ok) throw await httpError(response);
+  if (!response.ok) throw await httpError(response, init.signal);
   return { response, operation };
 }
 
 async function apiV2Json(url: string, init?: RequestInit): Promise<{ body: unknown; headers: Headers }> {
   const { response, operation } = await apiV2Response(url, init);
   if (response.status === 204) return { body: undefined, headers: response.headers };
-  const media = response.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase() ?? "";
+  const media = responseMedia(response);
   const schema = operation.responses[String(response.status)]?.[media];
-  if (!schema) throw new ApiV2UnexpectedResponseError(response.status, media);
-  const body: unknown = await response.json();
-  v.parse(schema, body);
+  if (!schema) throw new ApiV2UnexpectedResponseError("undeclared", { status: response.status, media });
+  const body = await readJsonBody(response, init?.signal);
+  try {
+    v.parse(schema, body);
+  } catch (error) {
+    if (!v.isValiError(error)) throw error;
+    throw new ApiV2UnexpectedResponseError("invalidBody", { status: response.status, media, cause: error });
+  }
   return { body, headers: response.headers };
 }
 
@@ -156,5 +173,9 @@ export async function apiV2BlobFetch<_T = unknown>(
   init?: RequestInit,
 ): Promise<{ body: Blob; headers: Headers }> {
   const { response } = await apiV2Response(url, init);
-  return { body: await response.blob(), headers: response.headers };
+  try {
+    return { body: await response.blob(), headers: response.headers };
+  } catch (error) {
+    throw transportFailure(error, init?.signal);
+  }
 }

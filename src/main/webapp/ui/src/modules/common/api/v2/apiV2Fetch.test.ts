@@ -1,11 +1,20 @@
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import { ApiV2ProblemError } from "./ApiV2ProblemError";
+import {
+  ApiV2NetworkError,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+} from "./ApiV2ProblemError";
 import { apiV2BlobFetch, apiV2Fetch, apiV2HeadersFetch } from "./apiV2Fetch";
-import { ApiV2IdentityChangedError, setApiV2TokenProvider } from "./tokenProvider";
+import { ApiV2IdentityChangedError, SessionTokenProvider, setApiV2TokenProvider } from "./tokenProvider";
 
 // Test setup imports this runtime before test mocks are installed.
-vi.hoisted(() => vi.resetModules());
+const { mint } = vi.hoisted(() => {
+  vi.resetModules();
+  return { mint: vi.fn() };
+});
+vi.mock("./generated/oauth/oauth", () => ({ createUiOAuthToken: mint }));
 
 vi.mock("./generated/valibot/operations", async () => {
   const v = await import("valibot");
@@ -77,9 +86,27 @@ describe("API v2 transport", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
-  it("validates success responses", async () => {
+  it("wraps a body that fails its schema as invalidBody", async () => {
     fetchMock.mockResolvedValue(Response.json({ id: "bad" }));
-    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(v.ValiError);
+    const error = await apiV2Fetch("/resource", options()).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
+    expect(error).toMatchObject({ reason: "invalidBody", status: 200, media: "application/json" });
+    expect(error).toHaveProperty("cause", expect.any(v.ValiError));
+  });
+  it("rejects an undeclared status or media type", async () => {
+    fetchMock.mockResolvedValue(new Response("<html></html>", { headers: { "Content-Type": "text/html" } }));
+    await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({
+      name: "ApiV2UnexpectedResponseError",
+      reason: "undeclared",
+      status: 200,
+      media: "text/html",
+    });
+  });
+  it("wraps malformed success JSON", async () => {
+    fetchMock.mockResolvedValue(new Response("{", { headers: { "Content-Type": "application/json" } }));
+    const error = await apiV2Fetch("/resource", options()).catch((caught: unknown) => caught);
+    expect(error).toMatchObject({ name: "ApiV2UnexpectedResponseError", reason: "malformedJson" });
+    expect(error).toHaveProperty("cause", expect.any(SyntaxError));
   });
   it.each(["GET", "POST"])("recovers a 401 and replays only GET: %s", async (method) => {
     fetchMock
@@ -123,16 +150,61 @@ describe("API v2 transport", () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
     expect(await apiV2Fetch("/resource", options())).toBeUndefined();
   });
-  it("propagates abort and network failures", async () => {
+  it("propagates an abort before sending", async () => {
     const controller = new AbortController();
     controller.abort();
     await expect(apiV2Fetch("/resource", options("read", { signal: controller.signal }))).rejects.toMatchObject({
       name: "AbortError",
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("wraps network failures in fetch and while reading the body", async () => {
     const error = new TypeError("network");
-    fetchMock.mockRejectedValue(error);
-    await expect(apiV2Fetch("/resource", options())).rejects.toBe(error);
+    fetchMock.mockRejectedValueOnce(error);
+    await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ name: "ApiV2NetworkError", cause: error });
+    const broken = Response.json({ id: 1 });
+    vi.spyOn(broken, "json").mockRejectedValue(error);
+    fetchMock.mockResolvedValueOnce(broken);
+    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2NetworkError);
+    const brokenBlob = new Response("bytes");
+    vi.spyOn(brokenBlob, "blob").mockRejectedValue(error);
+    fetchMock.mockResolvedValueOnce(brokenBlob);
+    await expect(apiV2BlobFetch("/resource", options())).rejects.toBeInstanceOf(ApiV2NetworkError);
+  });
+  it("keeps a custom abort reason from fetch", async () => {
+    const controller = new AbortController();
+    const reason = { cancelled: true };
+    fetchMock.mockImplementation(async () => {
+      controller.abort(reason);
+      throw reason;
+    });
+    await expect(apiV2Fetch("/resource", options("read", { signal: controller.signal }))).rejects.toBe(reason);
+  });
+  it("keeps a custom abort reason during a retried GET", async () => {
+    const controller = new AbortController();
+    const reason = { cancelled: true };
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
+    recover.mockImplementation(async () => {
+      controller.abort(reason);
+      return "new";
+    });
+    await expect(apiV2Fetch("/resource", options("read", { signal: controller.signal }))).rejects.toBe(reason);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    ["a response body", () => Response.json({ id: 1 })],
+    ["an HTTP-error body", () => Response.json({ status: 500 }, { status: 500 })],
+  ])("keeps a custom abort reason while reading %s", async (_, response) => {
+    const controller = new AbortController();
+    const reason = { cancelled: true };
+    const pending = response();
+    // A body read rejects with the signal's reason once the request is aborted.
+    vi.spyOn(pending, "json").mockImplementation(async () => {
+      controller.abort(reason);
+      throw reason;
+    });
+    fetchMock.mockResolvedValue(pending);
+    await expect(apiV2Fetch("/resource", options("read", { signal: controller.signal }))).rejects.toBe(reason);
   });
   it("retains headers in JSON and Blob mutators", async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ id: 1 }, { headers: { ETag: "version" } }));
@@ -153,11 +225,66 @@ it("exposes request options without operationId to generated callers", () => {
   expectTypeOf<Parameters<typeof apiV2BlobFetch>[1]>().toEqualTypeOf<RequestInit | undefined>();
 });
 
-it("never replays a request when the provider blocks an identity change", async () => {
-  recover.mockRejectedValue(new ApiV2IdentityChangedError());
+it.each([
+  ["an identity change", new ApiV2IdentityChangedError()],
+  ["an ended session", new ApiV2SessionEndedError(401, undefined)],
+])("rethrows %s from recovery without replaying", async (_, failure) => {
+  recover.mockRejectedValue(failure);
   fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
-  await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ status: 401 });
+  await expect(apiV2Fetch("/resource", options())).rejects.toBe(failure);
   expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it("keeps the original 401 when recovery fails otherwise", async () => {
+  recover.mockRejectedValue(new ApiV2NetworkError(new TypeError("offline")));
+  fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+  await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 401 });
+});
+
+describe("recovery through the session provider", () => {
+  const onSessionEnded = vi.fn();
+  const onIdentityChanged = vi.fn();
+  const sessionToken = (hash: string) =>
+    `e30.${btoa(JSON.stringify({ exp: Date.now() / 1000 + 1000, refreshTokenHash: hash }))}.signature`;
+  const rejected = () => new Response(null, { status: 401 });
+
+  beforeEach(() => {
+    restore();
+    restore = setApiV2TokenProvider(new SessionTokenProvider({ onSessionEnded, onIdentityChanged }));
+  });
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("rejects with the ended session when re-minting is refused", async () => {
+    mint
+      .mockResolvedValueOnce({ accessToken: sessionToken("a") })
+      .mockRejectedValueOnce(new ApiV2ProblemError(401, undefined, "Unauthorized"));
+    // The resource call, then the whoami probe, both reject the token.
+    fetchMock.mockResolvedValueOnce(rejected()).mockResolvedValueOnce(rejected());
+    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2SessionEndedError);
+    expect(onSessionEnded).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it("rejects with the identity change when re-minting returns another identity", async () => {
+    mint
+      .mockResolvedValueOnce({ accessToken: sessionToken("a") })
+      .mockResolvedValueOnce({ accessToken: sessionToken("b") });
+    fetchMock.mockResolvedValueOnce(rejected()).mockResolvedValueOnce(rejected());
+    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
+    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it("rejects with the identity change when a public document session expires", async () => {
+    document.body.innerHTML = '<div id="public_document_view"></div>';
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ data: "public-token" }))
+      .mockResolvedValueOnce(rejected())
+      .mockResolvedValueOnce(rejected());
+    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
+    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
+    expect(mint).not.toHaveBeenCalled();
+  });
 });
 
 const mutators = [
@@ -196,7 +323,7 @@ it.each(unauthenticatedCases)(
 );
 
 it("protected operations still require a token", async () => {
-  const error = new Error("Token mint failed");
+  const error = new ApiV2SessionEndedError(401, undefined);
   getToken.mockRejectedValue(error);
   await expect(apiV2Fetch("/resource", options())).rejects.toBe(error);
   expect(getToken).toHaveBeenCalledTimes(1);
