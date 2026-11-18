@@ -6,7 +6,7 @@ import {
   FieldDisplayRuleSchema,
   serializeDisplayRule,
 } from "@/modules/common/field-rules/displayRule";
-import { withoutOptions } from "@/modules/common/field-rules/ruleOptions";
+import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -301,7 +301,8 @@ export default class FieldModel implements Field {
   ): Array<string> | null {
     const selected = this.selectedOptions;
     if (!selected?.includes(previous) || options.some((option) => option.value === previous)) return selected;
-    if (replacement === null || replacement.trim() === "") return selected.filter((value) => value !== previous);
+    if (replacement === null || isBlankOption(replacement)) return selected.filter((value) => value !== previous);
+    // the default is held by value, so typing a value another option already has moves it to that option
     return uniq(selected.map((value) => (value === previous ? replacement : value)));
   }
 

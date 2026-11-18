@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
-import { isBlankOption } from "./ruleEditing";
+import { isBlankOption } from "@/modules/common/field-rules/ruleOptions";
 
 export type EditableOption = {
   readonly value: string;
