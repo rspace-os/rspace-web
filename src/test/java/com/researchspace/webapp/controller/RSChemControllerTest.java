@@ -4,7 +4,6 @@ import static com.researchspace.featureflags.FeatureFlags.BOND_STRENGTHS_ENABLED
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -47,7 +46,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 public class RSChemControllerTest {
@@ -84,12 +82,10 @@ public class RSChemControllerTest {
     when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
     when(featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, user)).thenReturn(false);
 
-    ResponseStatusException e =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> rsChemController.getBondStrengths(1L, null, mockPrincipal));
+    ResponseEntity<AjaxReturnObject<JsonNode>> response =
+        rsChemController.getBondStrengths(1L, null, mockPrincipal);
 
-    assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     verifyNoInteractions(chemicalService);
   }
 
@@ -100,7 +96,8 @@ public class RSChemControllerTest {
     when(featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, user)).thenReturn(true);
     when(chemicalService.getBondStrengths(1L, 3, user)).thenReturn(result);
 
-    assertEquals(result, rsChemController.getBondStrengths(1L, 3, mockPrincipal).getData());
+    assertEquals(
+        result, rsChemController.getBondStrengths(1L, 3, mockPrincipal).getBody().getData());
   }
 
   @Test
@@ -110,7 +107,7 @@ public class RSChemControllerTest {
     when(chemicalService.getBondStrengths(1L, null, user)).thenReturn(null);
 
     AjaxReturnObject<JsonNode> response =
-        rsChemController.getBondStrengths(1L, null, mockPrincipal);
+        rsChemController.getBondStrengths(1L, null, mockPrincipal).getBody();
 
     assertNull(response.getData());
     assertNotNull(response.getErrorMsg());

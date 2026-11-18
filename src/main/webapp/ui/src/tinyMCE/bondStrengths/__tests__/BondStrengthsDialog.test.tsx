@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,14 @@ import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import materialTheme from "@/theme";
 import BondStrengthsDialog from "../BondStrengthsDialog";
+import { svgToPngDataUri } from "../bondStrengthsApi";
 import type { BondStrengthsDocumentContent } from "../insertIntoDocument";
+
+// jsdom has no canvas, so the PNG conversion is replaced.
+vi.mock("../bondStrengthsApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../bondStrengthsApi")>()),
+  svgToPngDataUri: vi.fn(() => Promise.resolve("data:image/png;base64,AAAA")),
+}));
 
 const method = {
   name: "RSpace bond strength model",
@@ -159,8 +166,9 @@ describe("BondStrengthsDialog", () => {
 
     await user.click(await screen.findByRole("button", { name: "Insert into document" }));
 
+    await waitFor(() => expect(onInsert).toHaveBeenCalled());
     expect(onInsert).toHaveBeenCalledExactlyOnceWith({
-      imageSrc: expect.stringMatching(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/) as string,
+      imageSrc: "data:image/png;base64,AAAA",
       imageAlt:
         "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
       caption:
@@ -174,5 +182,19 @@ describe("BondStrengthsDialog", () => {
       ],
     });
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("inserts the table without a picture when the picture cannot be drawn", async () => {
+    const user = userEvent.setup();
+    const onInsert = vi.fn<(content: BondStrengthsDocumentContent) => void>();
+    vi.mocked(svgToPngDataUri).mockRejectedValueOnce(new Error("no canvas"));
+    respondWith(toluene);
+    await renderDialog({ onInsert });
+
+    await user.click(await screen.findByRole("button", { name: "Insert into document" }));
+
+    await waitFor(() => expect(onInsert).toHaveBeenCalledOnce());
+    expect(onInsert.mock.calls[0][0].imageSrc).toBeNull();
+    expect(onInsert.mock.calls[0][0].rows).toHaveLength(4);
   });
 });

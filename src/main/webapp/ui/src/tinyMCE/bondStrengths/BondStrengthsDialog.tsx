@@ -26,6 +26,7 @@ import {
   type SupportedBondStrengths,
   sortWeakestFirst,
   svgDataUri,
+  svgToPngDataUri,
   type UnsupportedBondStrengths,
 } from "./bondStrengthsApi";
 import type { BondStrengthsDocumentContent } from "./insertIntoDocument";
@@ -122,10 +123,11 @@ function documentContent(
   language: string,
   result: SupportedBondStrengths,
   rows: ReadonlyArray<BondRow>,
+  imageSrc: string | null,
 ): BondStrengthsDocumentContent {
   return {
     ...pictureAndColumnText(t),
-    imageSrc: result.imageSvg ? svgDataUri(result.imageSvg) : null,
+    imageSrc,
     caption: t("workspace:tinymce.bondStrengths.document.caption", {
       name: result.method.name,
       version: result.method.version,
@@ -238,8 +240,14 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
             variant="contained"
             color="callToAction"
             onClick={() => {
-              onInsert(documentContent(t, language, supported, rows));
-              onClose();
+              // Without a picture the table still goes in.
+              const picture = supported.imageSvg
+                ? svgToPngDataUri(supported.imageSvg).catch(() => null)
+                : Promise.resolve(null);
+              void picture.then((imageSrc) => {
+                onInsert(documentContent(t, language, supported, rows, imageSrc));
+                onClose();
+              });
             }}
           >
             {t("tinymce.bondStrengths.dialog.insert")}

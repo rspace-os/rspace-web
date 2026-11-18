@@ -49,7 +49,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.server.ResponseStatusException;
 
 /** Methods related to chemical elements. */
 @Controller
@@ -438,21 +437,22 @@ public class RSChemController extends BaseController {
    */
   @GetMapping("ajax/bondStrengths")
   @ResponseBody
-  public AjaxReturnObject<JsonNode> getBondStrengths(
+  public ResponseEntity<AjaxReturnObject<JsonNode>> getBondStrengths(
       @RequestParam("chemId") long chemId,
       @RequestParam(value = "revision", required = false) Integer revision,
       Principal principal) {
     User subject = getUserByUsername(principal.getName());
     if (!featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, subject)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      return ResponseEntity.notFound().build();
     }
     JsonNode bondStrengths = chemistryService.getBondStrengths(chemId, revision, subject);
     if (bondStrengths == null) {
       log.info("No chem element found for id {} and revision {}", chemId, revision);
-      return new AjaxReturnObject<>(
-          ErrorList.of(getText("chem.errors.elementNotFound", new Object[] {chemId})));
+      return ResponseEntity.ok(
+          new AjaxReturnObject<>(
+              ErrorList.of(getText("chem.errors.elementNotFound", new Object[] {chemId}))));
     }
-    return new AjaxReturnObject<>(bondStrengths);
+    return ResponseEntity.ok(new AjaxReturnObject<>(bondStrengths));
   }
 
   @Data

@@ -68,6 +68,29 @@ export function sortWeakestFirst(bonds: ReadonlyArray<Bond>): Bond[] {
   });
 }
 
+const DOCUMENT_PICTURE_WIDTH = 960;
+
+/** The editor removes SVG data URIs when it saves, so the picture for the document is drawn to a PNG. */
+export function svgToPngDataUri(svg: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = DOCUMENT_PICTURE_WIDTH;
+      canvas.height = Math.round((DOCUMENT_PICTURE_WIDTH * image.naturalHeight) / image.naturalWidth);
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("No 2D canvas is available"));
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    image.onerror = () => reject(new Error("The picture could not be drawn"));
+    image.src = svgDataUri(svg);
+  });
+}
+
 /** The picture is only ever used as an `<img>` source, so scripts inside the SVG cannot run. */
 export function svgDataUri(svg: string): string {
   // The service declares a single-byte encoding; drop the declaration so the UTF-8 URI is read as UTF-8.

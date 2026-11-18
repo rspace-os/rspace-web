@@ -71,6 +71,7 @@ export function insertBondStrengthsAfter(chemImage: HTMLImageElement, content: B
     const image = element(doc, "img");
     image.setAttribute("src", content.imageSrc);
     image.setAttribute("alt", content.imageAlt);
+    image.setAttribute("width", "480");
     const paragraph = element(doc, "p");
     paragraph.append(image);
     nodes.push(paragraph);
