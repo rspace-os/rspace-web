@@ -32,6 +32,9 @@ public interface RecordDao extends GenericDao<Record, Long> {
       PaginationCriteria<? extends BaseRecord> pgCrit,
       RecordTypeFilter recordTypefilter);
 
+  /** Checks whether a record is an active child matching the folder listing's type filter. */
+  boolean isActiveChildWithFilter(Long recordId, Long parentId, RecordTypeFilter recordFilter);
+
   /**
    * Retrieves a list of ids of all the visible, non-deleted, normal (i.e., not templates)
    * structured documents belonging to a parent folder id. The ids are all ordered by creation date
