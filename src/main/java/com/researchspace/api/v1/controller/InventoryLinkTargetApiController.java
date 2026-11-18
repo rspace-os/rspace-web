@@ -7,6 +7,7 @@ import com.researchspace.service.inventory.InventoryLinkManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @ApiController
 public class InventoryLinkTargetApiController implements InventoryLinkTargetApi {
@@ -17,5 +18,13 @@ public class InventoryLinkTargetApiController implements InventoryLinkTargetApi 
   public ApiInventoryLinkTargetSummary getLinkTargetSummary(
       @PathVariable String globalId, @RequestAttribute(name = "user") User user) {
     return inventoryLinkManager.getTargetSummary(globalId, user);
+  }
+
+  @Override
+  public ApiInventoryLinkTargetSummary getFilestoreLinkTargetSummary(
+      @PathVariable Long filestoreId,
+      @RequestParam("remotePath") String remotePath,
+      @RequestAttribute(name = "user") User user) {
+    return inventoryLinkManager.getFilestoreTargetSummary(filestoreId, remotePath, user);
   }
 }

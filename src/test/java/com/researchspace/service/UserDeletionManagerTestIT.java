@@ -27,6 +27,7 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.dao.NfsDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
@@ -55,6 +56,7 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -123,6 +125,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired ContainerDao containerDao;
   private @Autowired SampleDao sampleDao;
+  private @Autowired InventoryLinkDao inventoryLinkDao;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -600,6 +603,30 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     openTransaction();
     assertThat(nfsDao.getFieldLinks(othersField.getId())).isEmpty();
     commitTransaction();
+  }
+
+  @Test
+  public void removeUserWhoseFilestoreAnInventoryLinkTargets() throws Exception {
+    // the link row must not hold the filestore row back
+    final User toDelete = createAndSaveUser(getRandomAlphabeticString("fsOwner"));
+    initUser(toDelete, true);
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsManager.saveNfsFileSystem(fileSystem);
+    NfsFileStore fileStore =
+        GalleryFilestoreTestUtils.createFileStore("mine", toDelete, fileSystem);
+    nfsManager.saveNfsFileStore(fileStore);
+    InventoryLink link = new InventoryLink();
+    link.setRelationType("IsSourceOf");
+    link.setFilestoreTarget(fileStore, "/XRD/run.dat");
+    openTransaction();
+    inventoryLinkDao.save(link);
+    commitTransaction();
+
+    final User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(toDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
   }
 
   @Test
