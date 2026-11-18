@@ -26,7 +26,7 @@ import com.researchspace.model.field.rule.ElnChoiceValues;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
-import com.researchspace.model.field.rule.RuleField;
+import com.researchspace.model.field.rule.FieldSnapshot;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.IconEntity;
@@ -253,7 +253,7 @@ public class FormImporterImpl implements FormImporter {
     }
 
     static ArchivedFieldRules check(ArchivalForm archiveForm) {
-      List<RuleField> ruleFields = new ArrayList<>();
+      List<FieldSnapshot> snapshots = new ArrayList<>();
       boolean rulesReadable = true;
       for (ArchivalFieldForm field : archiveForm.getFieldFormList()) {
         FieldDisplayRule rule = null;
@@ -269,9 +269,9 @@ public class FormImporterImpl implements FormImporter {
             type == FieldType.RADIO || type == FieldType.CHOICE
                 ? ElnChoiceValues.parse(field.getOptions())
                 : List.of();
-        ruleFields.add(new RuleField(field.getFieldKey(), type, rule, options, List.of()));
+        snapshots.add(new FieldSnapshot(field.getFieldKey(), type, rule, options, List.of()));
       }
-      List<RuleError> errors = FieldDisplayRuleValidator.validate(ruleFields);
+      List<RuleError> errors = FieldDisplayRuleValidator.validate(snapshots);
       boolean keysValid =
           errors.stream()
               .noneMatch(

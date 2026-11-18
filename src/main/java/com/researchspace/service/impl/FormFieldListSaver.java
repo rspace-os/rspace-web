@@ -17,7 +17,7 @@ import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
-import com.researchspace.model.field.rule.RuleField;
+import com.researchspace.model.field.rule.FieldSnapshot;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.MessageSourceUtils;
@@ -285,11 +285,11 @@ public class FormFieldListSaver {
   }
 
   private void validateRules(List<PlannedField> planned, List<String> errors) {
-    List<RuleField> ruleFields = new ArrayList<>(planned.size());
+    List<FieldSnapshot> snapshots = new ArrayList<>(planned.size());
     for (PlannedField plan : planned) {
-      ruleFields.add(ElnFieldRules.forDefinition(plan.field()));
+      snapshots.add(ElnFieldRules.forDefinition(plan.field()));
     }
-    for (RuleError error : FieldDisplayRuleValidator.validate(ruleFields)) {
+    for (RuleError error : FieldDisplayRuleValidator.validate(snapshots)) {
       String name = planned.get(error.fieldIndex()).field().getName();
       errors.add(messages.getMessage(error.code(), args(name)));
     }
