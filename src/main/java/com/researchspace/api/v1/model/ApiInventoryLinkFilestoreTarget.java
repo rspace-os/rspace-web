@@ -2,6 +2,7 @@ package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.field.InventoryLink;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,14 @@ public class ApiInventoryLinkFilestoreTarget {
     return filestoreId + ":" + remotePath;
   }
 
+  /**
+   * False with no filestore, for the filestore's own root, and for a path with a {@code .} or
+   * {@code ..} segment, which nothing resolves.
+   */
   public boolean namesAnItem() {
-    return filestoreId != null && !"/".equals(InventoryLink.canonicalRemotePath(remotePath));
+    String path = InventoryLink.canonicalRemotePath(remotePath);
+    return filestoreId != null
+        && !"/".equals(path)
+        && Stream.of(path.split("/")).noneMatch(s -> s.equals(".") || s.equals(".."));
   }
 }

@@ -225,4 +225,29 @@ class InventoryLinkValidatorTest {
           errors.getFieldError("filestoreTarget").getCode());
     }
   }
+
+  @Test
+  void rejectsAPathWithADotSegmentAsNotFound() {
+    for (String path : List.of("/../../other/secret.txt", "/a/./b.txt", "a/..", "..")) {
+      ApiInventoryLink link = filestoreLink(12L, path);
+      Errors errors = errorsFor(link);
+      validator.validate(link, "SA42", errors);
+
+      assertEquals(
+          "errors.inventory.field.linkTargetNotFound",
+          errors.getFieldError("filestoreTarget").getCode(),
+          path);
+    }
+  }
+
+  @Test
+  void acceptsNamesThatOnlyContainDots() {
+    for (String path : List.of("/a/.hidden", "/a/run..dat", "/a/...")) {
+      ApiInventoryLink link = filestoreLink(12L, path);
+      Errors errors = errorsFor(link);
+      validator.validate(link, "SA42", errors);
+
+      assertFalse(errors.hasErrors(), path);
+    }
+  }
 }
