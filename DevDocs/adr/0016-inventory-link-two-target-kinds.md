@@ -19,7 +19,9 @@ that resolves, and Inventory items now refer to one through the same Link field.
    still whole, guaranteed by the constraint instead of by column nullability.
 2. The row also stores the filesystem and the normalised absolute path, by the rule of ADR 0015, so
    "which Inventory items link this file" is the same indexed equality lookup as for documents,
-   across every user's filestore.
+   across every user's filestore. A path with a `.` or `..` segment is refused, like a blank or
+   root path, rather than resolved: that rule keeps segments as written, as S3 keys are, and
+   resolving them here would store Inventory paths differently from document ones.
 3. Only the owner of a filestore can link through it, and only the owner is told its name by the
    link target summary; anyone else, and an unknown filestore, get the identical redacted answer
    (ADR 0002). Read access to the filesystem was rejected as the rule: filestores are personal

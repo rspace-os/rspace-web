@@ -454,8 +454,8 @@ resolved during design. This file is a glossary only — no implementation detai
   or a Local Gallery item), optionally pinned to one of its versions, or a
   Filestore item named by the filestore it is reached through and its path
   there. A Filestore item has no version to pin and cannot be a template's
-  default link; only the owner of that filestore can link through it or be
-  told its name.
+  default link; only the owner of that filestore can choose it as a target or
+  be told its name, while a copy or a transfer of the item keeps the link.
   _Avoid_: linked record (a Filestore item is not a record), link destination
 
 ## Internationalization (i18n)
