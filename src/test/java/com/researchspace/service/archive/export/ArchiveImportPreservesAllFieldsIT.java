@@ -13,15 +13,17 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.AttachmentFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
-import com.researchspace.model.dtos.CommonSettingsFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.ReferenceFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.dtos.UriFieldDTO;
 import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.Field;
@@ -201,17 +203,17 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     List<FieldDefinition> fieldDefinitions =
         List.of(
             new FieldDefinition(
-                "Uri_" + run, true, FieldType.URI, CommonSettingsFieldDTO.uri("Uri_" + run, true)),
+                "Uri_" + run, true, FieldType.URI, new UriFieldDTO("Uri_" + run, true)),
             new FieldDefinition(
                 "Reference_" + run,
                 false,
                 FieldType.REFERENCE,
-                CommonSettingsFieldDTO.reference("Reference_" + run, false)),
+                new ReferenceFieldDTO("Reference_" + run, false)),
             new FieldDefinition(
                 "Attachment_" + run,
                 true,
                 FieldType.ATTACHMENT,
-                CommonSettingsFieldDTO.attachment("Attachment_" + run, true)),
+                new AttachmentFieldDTO("Attachment_" + run, true)),
             new FieldDefinition(
                 "Text_" + run,
                 false,
