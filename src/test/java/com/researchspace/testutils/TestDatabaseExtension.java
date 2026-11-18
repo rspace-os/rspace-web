@@ -14,7 +14,8 @@ import org.testcontainers.utility.MountableFile;
  * <p>{@link DatabaseCleaner} empties most tables after every integration-test class, so running
  * DB-backed tests against a shared database (such as the dev stack's {@code rspace} schema) wipes
  * its users and content. CI and Jenkins pass {@code -Djdbc.url} for their own disposable databases,
- * so they are unaffected.
+ * so the extension starts nothing there; {@code TestDatabaseExtensionTest} still starts a container
+ * directly, so those runs need Docker.
  *
  * <p>Registered before {@code SpringExtension} so the system properties are set before the context
  * is built. Both callbacks are needed: {@code PER_CLASS} tests build the instance, and so the
@@ -22,9 +23,9 @@ import org.testcontainers.utility.MountableFile;
  */
 public class TestDatabaseExtension implements BeforeAllCallback, TestInstancePostProcessor {
 
-  private static final String DB_NAME = "rspace";
-  private static final String DB_USER = "rspacedbuser";
-  private static final String DB_PASSWORD = "rspacedbpwd";
+  static final String DB_NAME = "rspace";
+  static final String DB_USER = "rspacedbuser";
+  static final String DB_PASSWORD = "rspacedbpwd";
 
   // ponytail: one container per surefire fork (mvn verify starts several), each paying the
   // baseline load and Liquibase catch-up; use Testcontainers withReuse if that gets too slow.
@@ -46,6 +47,15 @@ public class TestDatabaseExtension implements BeforeAllCallback, TestInstancePos
         || TestRunnerController.isFastRun()) {
       return;
     }
+    GenericContainer<?> db = startContainer();
+    System.setProperty("jdbc.url", jdbcUrl(db));
+    System.setProperty("jdbc.username", DB_USER);
+    System.setProperty("jdbc.password", DB_PASSWORD);
+    container = db;
+  }
+
+  /** Starts a MariaDB container with the baseline schema loaded; the caller stops it. */
+  static GenericContainer<?> startContainer() {
     if (!DockerClientFactory.instance().isDockerAvailable()) {
       throw new IllegalStateException(
           "DB-backed tests need Docker for a throwaway MariaDB, or -Djdbc.url pointing at a"
@@ -70,10 +80,10 @@ public class TestDatabaseExtension implements BeforeAllCallback, TestInstancePos
             // logged once by the temporary init server and again by the real one
             .waitingFor(Wait.forLogMessage(".*ready for connections.*", 2));
     db.start();
-    System.setProperty(
-        "jdbc.url", "jdbc:mysql://" + db.getHost() + ":" + db.getMappedPort(3306) + "/" + DB_NAME);
-    System.setProperty("jdbc.username", DB_USER);
-    System.setProperty("jdbc.password", DB_PASSWORD);
-    container = db;
+    return db;
+  }
+
+  static String jdbcUrl(GenericContainer<?> db) {
+    return "jdbc:mysql://" + db.getHost() + ":" + db.getMappedPort(3306) + "/" + DB_NAME;
   }
 }
