@@ -7,6 +7,7 @@ import SidebarInfo from "../SidebarInfo";
 
 const bondStrengthsContent: BondStrengthsDocumentContent = {
   imageSrc: "data:image/png;base64,AAAA",
+  forChemicalId: "chem-4",
   imageAlt: "Structure with bond strengths",
   legend: "Numbers on bonds are in kcal/mol.",
   caption: "Predicted bond strengths",
@@ -170,21 +171,16 @@ describe("SidebarInfo accessibility", () => {
     );
 
     // The iframe document has no window, so role queries and jest-dom matchers cannot read it.
-    const [, pictureParagraph, legend, table, notes] = Array.from(iframeDocument.body.children) as [
-      Element,
+    const [, result] = Array.from(iframeDocument.body.children);
+    expect(Array.from(iframeDocument.body.children)).toEqual([chemicalParagraph, result, nextParagraph]);
+    expect(result.getAttribute("data-bond-strengths-for")).toBe("chem-4");
+    const [pictureParagraph, legend, table, notes] = Array.from(result.children) as [
       HTMLParagraphElement,
       HTMLParagraphElement,
       HTMLTableElement,
       HTMLUListElement,
     ];
-    expect(Array.from(iframeDocument.body.children)).toEqual([
-      chemicalParagraph,
-      pictureParagraph,
-      legend,
-      table,
-      notes,
-      nextParagraph,
-    ]);
+    expect(result.children).toHaveLength(4);
     expect(legend.textContent).toBe("Numbers on bonds are in kcal/mol.");
     expect(Array.from(notes.children, (note) => note.textContent)).toEqual([
       "1 ring bond has no value. Ring bonds are not covered.",
@@ -203,5 +199,13 @@ describe("SidebarInfo accessibility", () => {
     ]);
     expect(transact).toHaveBeenCalledOnce();
     expect(nodeChanged).toHaveBeenCalledOnce();
+
+    // A second insert for the same chemical replaces the first, where it stands.
+    await user.click(screen.getByRole("button", { name: "Insert bond strengths" }));
+    await waitFor(() => expect(nodeChanged).toHaveBeenCalledTimes(2));
+    const afterSecondInsert = Array.from(iframeDocument.body.children);
+    expect(afterSecondInsert).toHaveLength(3);
+    expect(afterSecondInsert[1]).not.toBe(result);
+    expect(afterSecondInsert[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
   });
 });

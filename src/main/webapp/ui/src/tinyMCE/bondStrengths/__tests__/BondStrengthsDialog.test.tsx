@@ -97,7 +97,7 @@ describe("BondStrengthsDialog", () => {
     vi.useRealTimers();
   });
 
-  it("lists the bonds weakest first, with bonds that have no value last", async () => {
+  it("lists the bonds that have a value weakest first, and sums up the rest", async () => {
     respondWith(toluene);
     const { baseElement } = await renderDialog({});
 
@@ -116,9 +116,9 @@ describe("BondStrengthsDialog", () => {
           .map((cell) => cell.textContent),
       ),
     ).toEqual([
-      ["89.3", "373.5"],
-      ["101.0", "422.6"],
-      ["110.4", "461.9"],
+      ["89", "374"],
+      ["101", "423"],
+      ["110", "462"],
     ]);
     expect(rows.map((row) => within(row).getByRole("rowheader").textContent)).toEqual([
       "C1-H (×3)Weakest",
@@ -138,14 +138,25 @@ describe("BondStrengthsDialog", () => {
 
     expect(picture).toHaveAttribute("src", expect.stringMatching(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/));
     expect(screen.getByText(legend)).toBeVisible();
-    expect(screen.getByText("3 of 5 bonds have a value.")).toBeVisible();
+    expect(screen.getByText("3 of 5 bonds have a value. Hydrogens on the same atom share one row.")).toBeVisible();
     expect(
-      screen.getByText(
-        "Model: RSpace bond strength model 0.1.0-poc. The values are predicted and are not validated against experiment. Mean absolute error against the DFT reference: 0.8 kcal/mol.",
-      ),
+      screen.getByText("Predicted values. Typical error 0.8 kcal/mol against DFT, not checked against experiment."),
     ).toBeVisible();
-    expect(screen.getByText("Model weights: af085c02bbbc")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Insert into document" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the provenance in a section the reader can open", async () => {
+    const user = userEvent.setup();
+    respondWith({ ...toluene, method: { ...method, referenceMethod: "DFT, M06-2X/def2-TZVP" } });
+    await renderDialog({});
+
+    await user.click(await screen.findByRole("button", { name: "About this calculation" }));
+
+    const details = screen.getByRole("region", { name: "About this calculation" });
+    expect(within(details).getByText("RSpace bond strength model 0.1.0-poc")).toBeVisible();
+    expect(within(details).getByText("Mean absolute error 0.8 kcal/mol")).toBeVisible();
+    expect(within(details).getByText("DFT, M06-2X/def2-TZVP")).toBeVisible();
+    expect(within(details).getByText("af085c02bbbc")).toBeVisible();
   });
 
   it("explains why a structure is not supported, without a table", async () => {
@@ -186,13 +197,14 @@ describe("BondStrengthsDialog", () => {
       imageAlt:
         "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
       legend,
+      forChemicalId: "42",
       caption:
-        "Predicted bond strengths (bond dissociation enthalpy). Model: RSpace bond strength model 0.1.0-poc. Mean absolute error against the DFT reference: 0.8 kcal/mol. Not validated against experiment. Calculated on November 18, 2026.",
+        "Predicted bond strengths (bond dissociation enthalpy) from RSpace bond strength model 0.1.0-poc. Typical error 0.8 kcal/mol against DFT, not checked against experiment. Calculated on November 18, 2026.",
       columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
       rows: [
-        { bond: "C1-H (×3), weakest bond", kcalMol: "89.3", kjMol: "373.5" },
-        { bond: "C1-C2", kcalMol: "101.0", kjMol: "422.6" },
-        { bond: "C3-H", kcalMol: "110.4", kjMol: "461.9" },
+        { bond: "C1-H (×3), weakest bond", kcalMol: "89", kjMol: "374" },
+        { bond: "C1-C2", kcalMol: "101", kjMol: "423" },
+        { bond: "C3-H", kcalMol: "110", kjMol: "462" },
       ],
       notes: noValueNotes,
     });

@@ -1,3 +1,7 @@
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -17,7 +21,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { useId, useState } from "react";
+import React, { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import {
@@ -84,14 +88,15 @@ function hasValue(bond: Bond): bond is Bond & { bdeKcalMol: number; bdeKjMol: nu
 
 /** The bonds that have a value, weakest first. */
 function bondRows(t: Translate, language: string, bonds: ReadonlyArray<Bond>): BondRow[] {
-  const oneDecimal = new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  // The model's typical error is close to 1 kcal/mol, so decimals would suggest precision it does not have.
+  const wholeNumber = new Intl.NumberFormat(language, { maximumFractionDigits: 0 });
   return sortWeakestFirst(bonds)
     .filter(hasValue)
     .map((bond) => ({
       label: bondLabel(t, bond),
       weakest: bond.weakest,
-      kcalMol: oneDecimal.format(bond.bdeKcalMol),
-      kjMol: oneDecimal.format(bond.bdeKjMol),
+      kcalMol: wholeNumber.format(bond.bdeKcalMol),
+      kjMol: wholeNumber.format(bond.bdeKjMol),
     }));
 }
 
@@ -177,10 +182,12 @@ function documentContent(
   rows: ReadonlyArray<BondRow>,
   notes: ReadonlyArray<string>,
   imageSrc: string | null,
+  chemId: number,
 ): BondStrengthsDocumentContent {
   return {
     ...pictureAndColumnText(t),
     imageSrc,
+    forChemicalId: String(chemId),
     caption: t("workspace:tinymce.bondStrengths.document.caption", {
       name: result.method.name,
       version: result.method.version,
@@ -211,56 +218,69 @@ function SupportedResult({
 
   return (
     <Stack spacing={2}>
-      {result.imageSvg && (
-        <Box component="figure" sx={{ m: 0 }}>
-          <Box
-            component="img"
-            src={svgDataUri(result.imageSvg)}
-            alt={imageAlt}
-            sx={{ display: "block", maxWidth: "100%", height: "auto", mx: "auto" }}
-          />
-          <Typography component="figcaption" variant="caption" sx={{ display: "block" }}>
-            {legend}
-          </Typography>
-        </Box>
-      )}
-      {rows.length === 0 && <Alert severity="info">{t("tinymce.bondStrengths.noValues")}</Alert>}
-      {rows.length > 0 && (
-        <TableContainer>
-          <Table size="small" aria-label={t("tinymce.bondStrengths.table.label")}>
-            <TableHead>
-              <TableRow>
-                <TableCell>{columns.bond}</TableCell>
-                <TableCell align="right">{columns.kcalMol}</TableCell>
-                <TableCell align="right">{columns.kjMol}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.label}>
-                  <TableCell component="th" scope="row" sx={row.weakest ? { fontWeight: "bold" } : undefined}>
-                    {row.label}
-                    {row.weakest && (
-                      <Chip size="small" label={t("tinymce.bondStrengths.table.weakest")} sx={{ ml: 1 }} />
-                    )}
-                  </TableCell>
-                  <TableCell align="right">{row.kcalMol}</TableCell>
-                  <TableCell align="right">{row.kjMol}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-      {notes.length > 0 && (
-        <Box component="ul" sx={{ m: 0, pl: 3 }}>
-          {notes.map((note) => (
-            <Typography key={note} component="li" variant="body2">
-              {note}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1fr) minmax(0, 1fr)" },
+          gap: 2,
+          alignItems: "start",
+        }}
+      >
+        {result.imageSvg && (
+          // On a wide dialog the picture stays in view while the table scrolls, because the rows are
+          // named by the atom numbers shown on it.
+          <Box component="figure" sx={{ m: 0, position: { md: "sticky" }, top: 0 }}>
+            <Box
+              component="img"
+              src={svgDataUri(result.imageSvg)}
+              alt={imageAlt}
+              sx={{ display: "block", maxWidth: "100%", height: "auto", mx: "auto" }}
+            />
+            <Typography component="figcaption" variant="caption" sx={{ display: "block" }}>
+              {legend}
             </Typography>
-          ))}
-        </Box>
-      )}
+          </Box>
+        )}
+        <Stack spacing={2}>
+          {rows.length === 0 && <Alert severity="info">{t("tinymce.bondStrengths.noValues")}</Alert>}
+          {rows.length > 0 && (
+            <TableContainer>
+              <Table size="small" aria-label={t("tinymce.bondStrengths.table.label")}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{columns.bond}</TableCell>
+                    <TableCell align="right">{columns.kcalMol}</TableCell>
+                    <TableCell align="right">{columns.kjMol}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.label}>
+                      <TableCell component="th" scope="row" sx={row.weakest ? { fontWeight: "bold" } : undefined}>
+                        {row.label}
+                        {row.weakest && (
+                          <Chip size="small" label={t("tinymce.bondStrengths.table.weakest")} sx={{ ml: 1 }} />
+                        )}
+                      </TableCell>
+                      <TableCell align="right">{row.kcalMol}</TableCell>
+                      <TableCell align="right">{row.kjMol}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+          {notes.length > 0 && (
+            <Box component="ul" sx={{ m: 0, pl: 3 }}>
+              {notes.map((note) => (
+                <Typography key={note} component="li" variant="body2">
+                  {note}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </Stack>
+      </Box>
       <Box>
         <Typography variant="body2">
           {t("tinymce.bondStrengths.coverage", {
@@ -270,18 +290,68 @@ function SupportedResult({
         </Typography>
         <Typography variant="body2">
           {t("tinymce.bondStrengths.method", {
-            name: result.method.name,
-            version: result.method.version,
             error: formatNumber(result.method.meanAbsoluteErrorKcalMol, language),
           })}
         </Typography>
-        <Typography variant="caption">
-          {t("tinymce.bondStrengths.weights", {
-            hash: result.method.weightsSha256.slice(0, 12),
-          })}
-        </Typography>
       </Box>
+      <AboutCalculation method={result.method} />
     </Stack>
+  );
+}
+
+/** Provenance for the record: collapsed, because most readers only need the short line above it. */
+function AboutCalculation({ method }: { method: SupportedBondStrengths["method"] }) {
+  const { t, i18n } = useTranslation(["workspace", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const summaryId = useId();
+  const detailsId = useId();
+  const details: ReadonlyArray<[label: string, value: string | null | undefined]> = [
+    [
+      t("tinymce.bondStrengths.about.model"),
+      t("tinymce.bondStrengths.about.modelValue", {
+        name: method.name,
+        version: method.version,
+      }),
+    ],
+    [t("tinymce.bondStrengths.about.quantity"), method.quantity],
+    [
+      t("tinymce.bondStrengths.about.accuracy"),
+      t("tinymce.bondStrengths.about.accuracyValue", {
+        error: formatNumber(method.meanAbsoluteErrorKcalMol, language),
+      }),
+    ],
+    [t("tinymce.bondStrengths.about.accuracyNote"), method.accuracyNote],
+    [t("tinymce.bondStrengths.about.referenceMethod"), method.referenceMethod],
+    [t("tinymce.bondStrengths.about.trainingData"), method.trainingData],
+    [t("tinymce.bondStrengths.about.weights"), method.weightsSha256.slice(0, 12)],
+  ];
+
+  return (
+    <Accordion disableGutters elevation={0} sx={{ "&::before": { display: "none" } }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} id={summaryId} aria-controls={detailsId} sx={{ px: 0 }}>
+        <Typography variant="body2">{t("tinymce.bondStrengths.about.title")}</Typography>
+      </AccordionSummary>
+      <AccordionDetails id={detailsId} sx={{ px: 0 }}>
+        <Box
+          component="dl"
+          sx={{ m: 0, display: "grid", gridTemplateColumns: "max-content minmax(0, 1fr)", columnGap: 2, rowGap: 0.5 }}
+        >
+          {details.map(
+            ([label, value]) =>
+              value && (
+                <React.Fragment key={label}>
+                  <Typography component="dt" variant="body2" sx={{ fontWeight: "bold" }}>
+                    {label}
+                  </Typography>
+                  <Typography component="dd" variant="body2" sx={{ m: 0, overflowWrap: "anywhere" }}>
+                    {value}
+                  </Typography>
+                </React.Fragment>
+              ),
+          )}
+        </Box>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
@@ -321,7 +391,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
                 ? svgToPngDataUri(supported.imageSvg).catch(() => null)
                 : Promise.resolve(null);
               void picture
-                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, notes, imageSrc)))
+                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, notes, imageSrc, chemId)))
                 .finally(onClose);
             }}
           >
@@ -338,7 +408,7 @@ export default function BondStrengthsDialog({ open, onClose, ...resultProps }: B
   const titleId = useId();
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="md" fullWidth>
       <DialogTitle id={titleId}>{t("tinymce.bondStrengths.dialog.title")}</DialogTitle>
       {/* Dialog only mounts its children while open, so the request is made on open and not before. */}
       <BondStrengthsResult onClose={onClose} {...resultProps} />

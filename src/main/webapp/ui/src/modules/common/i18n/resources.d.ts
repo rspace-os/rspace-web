@@ -13429,8 +13429,20 @@ export default interface Resources {
     },
     "tinymce": {
       "bondStrengths": {
+        "about": {
+          "accuracy": "Accuracy",
+          "accuracyNote": "How it was measured",
+          "accuracyValue": "Mean absolute error {error} kcal/mol",
+          "model": "Model",
+          "modelValue": "{name} {version}",
+          "quantity": "What is predicted",
+          "referenceMethod": "Reference method",
+          "title": "About this calculation",
+          "trainingData": "Training data",
+          "weights": "Model weights"
+        },
         "action": "Calculate bond strengths",
-        "coverage": "{supported} of {total} bonds have a value.",
+        "coverage": "{supported} of {total} bonds have a value. Hydrogens on the same atom share one row.",
         "dialog": {
           "error": "Bond strengths could not be calculated. Try again later.",
           "insert": "Insert into document",
@@ -13438,12 +13450,12 @@ export default interface Resources {
           "title": "Bond strengths"
         },
         "document": {
-          "caption": "Predicted bond strengths (bond dissociation enthalpy). Model: {name} {version}. Mean absolute error against the DFT reference: {error} kcal/mol. Not validated against experiment. Calculated on {date}.",
+          "caption": "Predicted bond strengths (bond dissociation enthalpy) from {name} {version}. Typical error {error} kcal/mol against DFT, not checked against experiment. Calculated on {date}.",
           "weakestBond": "{label}, weakest bond"
         },
         "imageAlt": "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
         "legend": "Numbers on bonds are in kcal/mol. Atom numbers match the table. Red marks the weakest bond, or its atom when that bond is to a hydrogen. Bonds to hydrogen are only in the table.",
-        "method": "Model: {name} {version}. The values are predicted and are not validated against experiment. Mean absolute error against the DFT reference: {error} kcal/mol.",
+        "method": "Predicted values. Typical error {error} kcal/mol against DFT, not checked against experiment.",
         "noValue": {
           "bondTypeNotCovered": "No value for {bonds}. The model has too little data for this kind of bond.",
           "lowConfidence": "No value for {bonds}. Low confidence: two models disagreed by more than {limit} kcal/mol, so the value is not shown.",
@@ -13469,8 +13481,7 @@ export default interface Resources {
           "kjMol": "kJ/mol",
           "label": "Bond strengths, weakest first",
           "weakest": "Weakest"
-        },
-        "weights": "Model weights: {hash}"
+        }
       },
       "chemCard": {
         "atoms": "Atoms",

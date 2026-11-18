@@ -5,6 +5,8 @@ export type BondStrengthsDocumentRow = { bond: string; kcalMol: string; kjMol: s
 /** Text and picture for the document, already translated and formatted. The picture is a PNG data URI. */
 export type BondStrengthsDocumentContent = {
   imageSrc: string | null;
+  /** The chemical the result is for. A later insert for the same chemical replaces this one. */
+  forChemicalId: string;
   imageAlt: string;
   /** Explains the picture; only used when the picture goes in. */
   legend: string;
@@ -53,9 +55,12 @@ function buildTable(doc: Document, content: BondStrengthsDocumentContent): HTMLT
   return table;
 }
 
+const RESULT_ATTRIBUTE = "data-bond-strengths-for";
+
 /**
  * Adds the picture and the table after the top-level block that holds the chem image. Going to
  * the top level keeps the HTML valid when the image sits inside a list or a table cell.
+ * A result already in the document for the same chemical is replaced where it stands.
  * `pictureHtml` is the editor markup for the picture once it is stored in the Gallery.
  */
 export function insertBondStrengthsAfter(
@@ -64,11 +69,6 @@ export function insertBondStrengthsAfter(
   pictureHtml: string | null,
 ): void {
   const doc = chemImage.ownerDocument;
-  let block: Element = chemImage;
-  while (block.parentElement && block.parentElement !== doc.body) {
-    block = block.parentElement;
-  }
-
   const nodes: Element[] = [];
   if (pictureHtml) {
     const holder = element(doc, "div");
@@ -82,5 +82,23 @@ export function insertBondStrengthsAfter(
     list.append(...content.notes.map((note) => element(doc, "li", note)));
     nodes.push(list);
   }
-  block.after(...nodes);
+
+  const result = element(doc, "div");
+  result.setAttribute(RESULT_ATTRIBUTE, content.forChemicalId);
+  result.append(...nodes);
+
+  const earlier = Array.from(doc.body.querySelectorAll(`div[${RESULT_ATTRIBUTE}]`)).filter(
+    (candidate) => candidate.getAttribute(RESULT_ATTRIBUTE) === content.forChemicalId,
+  );
+  if (earlier.length > 0) {
+    earlier[0].replaceWith(result);
+    for (const duplicate of earlier.slice(1)) duplicate.remove();
+    return;
+  }
+
+  let block: Element = chemImage;
+  while (block.parentElement && block.parentElement !== doc.body) {
+    block = block.parentElement;
+  }
+  block.after(result);
 }
