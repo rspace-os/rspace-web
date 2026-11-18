@@ -103,11 +103,20 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     setFocusAfterStore(null);
   }, [focusAfterStore]);
 
-  const store = (query: string | null) => {
-    setShown(query);
-    setStored(query);
-    setAnnouncement(query === null ? t("toolbar.defaultSearch.removed") : t("toolbar.defaultSearch.saved"));
-    setFocusAfterStore(query === null ? "search" : "run");
+  const [saving, setSaving] = React.useState(false);
+
+  const store = async (query: string | null) => {
+    setSaving(true);
+    try {
+      await setStored(query);
+      setShown(query);
+      setAnnouncement(query === null ? t("toolbar.defaultSearch.removed") : t("toolbar.defaultSearch.saved"));
+      setFocusAfterStore(query === null ? "search" : "run");
+    } catch {
+      setAnnouncement(query === null ? t("toolbar.defaultSearch.removeFailed") : t("toolbar.defaultSearch.saveFailed"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const confirmReplacing = (query: string) =>
@@ -126,7 +135,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     const latest = await readStoredDefault(stored);
     setShown(latest);
     if (latest === query) return;
-    if (latest === null || (await confirmReplacing(latest))) store(query);
+    if (latest === null || (await confirmReplacing(latest))) await store(query);
   };
 
   const remove = async () => {
@@ -149,7 +158,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
       );
       if (!confirmed) return;
     }
-    store(null);
+    await store(null);
   };
 
   let bar: React.ReactNode = null;
@@ -157,7 +166,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     bar = <span id="isDefaultSearch">{t("toolbar.defaultSearch.isDefault")}</span>;
   } else if (current !== null) {
     bar = (
-      <button type="button" id="saveDefaultSearch" onClick={() => void save(current)}>
+      <button type="button" id="saveDefaultSearch" disabled={saving} onClick={() => void save(current)}>
         {t("toolbar.defaultSearch.save")}
       </button>
     );
@@ -170,6 +179,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
           <Tooltip title={summarise(stored)} enterDelay={300} describeChild>
             <IconButton
               ref={runButton}
+              disabled={saving}
               color="inherit"
               aria-label={t("toolbar.defaultSearch.run")}
               onClick={() => navigate(`/workspace?${stored}`)}
@@ -180,6 +190,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
           <IconButton
             color="inherit"
             size="small"
+            disabled={saving}
             aria-label={t("toolbar.defaultSearch.options")}
             aria-haspopup="menu"
             aria-controls={menuAnchor ? "defaultSearchMenu" : undefined}

@@ -13771,6 +13771,7 @@ export default interface Resources {
         "options": "Default search options",
         "remove": "Remove default search",
         "removeConfirm": "Remove",
+        "removeFailed": "Could not remove default search",
         "removeMessage": "Another tab has changed your default search. This removes it:",
         "removeTitle": "Remove default search?",
         "removed": "Default search removed",
@@ -13779,6 +13780,7 @@ export default interface Resources {
         "replaceTitle": "Replace default search?",
         "run": "Default search",
         "save": "Save as default search",
+        "saveFailed": "Could not save default search",
         "saved": "Default search saved",
         "withinRecords": "Within records"
       },

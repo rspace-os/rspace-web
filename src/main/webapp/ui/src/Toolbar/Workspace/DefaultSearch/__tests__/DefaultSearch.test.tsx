@@ -193,6 +193,68 @@ describe("DefaultSearch", () => {
     expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
   });
 
+  test("a save the server rejects keeps the old state and says it failed", async () => {
+    const user = userEvent.setup();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    givenStoredPreferences({});
+    server.use(http.post("/userform/ajax/preference", () => new HttpResponse(null, { status: 500 })));
+    givenWorkspace({});
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.saveFailed"),
+    );
+    expect(screen.getByRole("button", { name: "workspace:toolbar.defaultSearch.save" })).toBeEnabled();
+    expect(runButton()).not.toBeInTheDocument();
+  });
+
+  test("a remove the server rejects keeps the default and says it failed", async () => {
+    const user = userEvent.setup();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    server.use(http.post("/userform/ajax/preference", () => new HttpResponse(null, { status: 500 })));
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
+    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
+    );
+    expect(runButton()).toBeEnabled();
+  });
+
+  test("the buttons are disabled until the server has saved", async () => {
+    const user = userEvent.setup();
+    const pending: { finishSaving?: () => void } = {};
+    givenStoredPreferences({});
+    server.use(
+      http.post(
+        "/userform/ajax/preference",
+        () =>
+          new Promise<Response>((resolve) => {
+            pending.finishSaving = () => resolve(HttpResponse.json({}));
+          }),
+      ),
+    );
+    givenWorkspace({});
+    render(<DefaultSearch />);
+
+    const save = await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" });
+    await user.click(save);
+
+    await vi.waitFor(() => expect(pending.finishSaving).toBeDefined());
+    expect(save).toBeDisabled();
+    expect(screen.queryByText("workspace:toolbar.defaultSearch.isDefault")).not.toBeInTheDocument();
+    pending.finishSaving?.();
+    expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
+  });
+
   test("clicking Default search opens the stored search", async () => {
     const user = userEvent.setup();
     const navigate = vi.fn();
