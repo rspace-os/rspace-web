@@ -110,6 +110,7 @@ function RuleCard({
   const sources = sourceCandidates(fields, targetKeys);
   const ownKeys = [...targetKeys, ...(stored?.targetKeys ?? [])];
   const targets = targetCandidates(fields, condition.sourceFieldKey, ownKeys, claimedKeys);
+  const sourceMissing = row.sourceDropped || (condition.sourceFieldKey !== null && source === null);
   const needsValues = operatorRequiresValues(condition.operator);
   const complete = ruleFromDraft(condition) !== null && targetKeys.length > 0;
   const storedSource = stored ? fields.find((field) => field.key === stored.rule.sourceFieldKey) : undefined;
@@ -140,8 +141,8 @@ function RuleCard({
             id={`${id}-source`}
             label={t("fieldEditor.rules.sourceLabel")}
             value={source && sources.includes(source) ? source.key : ""}
-            error={row.sourceDropped}
-            helperText={row.sourceDropped ? t("fieldEditor.rules.sourceMissing") : undefined}
+            error={sourceMissing}
+            helperText={sourceMissing ? t("fieldEditor.rules.sourceMissing") : undefined}
             onChange={({ target: { value } }) => {
               const newSource = fields.find((field) => field.key === value);
               onConditionChange({
@@ -278,53 +279,42 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
    * focus. Both are only changed in event handlers.
    */
   const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(new Map());
-  const [addedRowIds, setAddedRowIds] = useState<ReadonlyArray<string>>([]);
+  /** The row the author last changed, which keeps its identity when its rule merges with another. */
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  /** Rows in display order: the rules there at first render, then rows as handlers first see them. */
+  const [rowOrder, setRowOrder] = useState<ReadonlyArray<string>>(() =>
+    groupDisplayRules(fields).map(({ targetKeys }) => targetKeys[0]),
+  );
   const nextDraftId = useRef(0);
 
-  const groupRows: Array<Row> = [];
-  for (const group of groupDisplayRules(fields)) {
-    const [firstTarget] = group.targetKeys;
-    const preferred = rowIdByTarget.get(firstTarget) ?? firstTarget;
-    const id = groupRows.some((row) => row.id === preferred) ? `${preferred}/${firstTarget}` : preferred;
-    const stored = { rule: group.rule, targetKeys: group.targetKeys };
-    const draft = drafts.find(
-      (candidate) => candidate.id === id || group.targetKeys.every((key) => candidate.replaces.includes(key)),
-    );
-    if (draft) {
-      const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
-      groupRows.push({
-        id: draft.id,
-        ...sanitised,
-        stored,
-        isDraft: true,
-        sourceDropped: draft.sourceFieldKey !== null && sanitised.condition.sourceFieldKey === null,
-      });
-    } else {
-      groupRows.push({
-        id,
-        condition: group.rule,
-        targetKeys: group.targetKeys,
-        stored,
-        isDraft: false,
-        sourceDropped: false,
-      });
-    }
-  }
-  const draftRows: Array<Row> = drafts
-    .filter((draft) => !groupRows.some((row) => row.id === draft.id))
-    .map((draft) => {
-      const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
-      return {
-        id: draft.id,
-        ...sanitised,
-        stored: null,
-        isDraft: true,
-        sourceDropped: draft.sourceFieldKey !== null && sanitised.condition.sourceFieldKey === null,
-      };
-    });
-  // rules that were already stored keep field order; rules added here keep the order they were added in
-  const [added, loaded] = partition([...groupRows, ...draftRows], (row) => addedRowIds.includes(row.id));
-  const rows = [...loaded, ...sortBy(added, [(row) => addedRowIds.indexOf(row.id)])];
+  // fields whose saved rule a draft is editing stay out of the groups, so the draft owns only them
+  const shadowed = new Set(drafts.flatMap((draft) => draft.replaces));
+  const draftRows: Array<Row> = drafts.map((draft) => {
+    const replaced = fields.filter((field) => draft.replaces.includes(field.key) && field.rule !== null);
+    const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
+    return {
+      id: draft.id,
+      ...sanitised,
+      stored:
+        replaced.length > 0 && replaced[0].rule
+          ? { rule: replaced[0].rule, targetKeys: replaced.map((field) => field.key) }
+          : null,
+      isDraft: true,
+      sourceDropped: draft.sourceFieldKey !== null && sanitised.condition.sourceFieldKey === null,
+    };
+  });
+  const usedIds = new Set(drafts.map((draft) => draft.id));
+  const groupRows: Array<Row> = groupDisplayRules(fields.filter((field) => !shadowed.has(field.key))).map(
+    ({ rule, targetKeys }) => {
+      const ids = targetKeys.map((key) => rowIdByTarget.get(key) ?? key);
+      const preferred = activeRowId !== null && ids.includes(activeRowId) ? activeRowId : ids[0];
+      const id = usedIds.has(preferred) ? `${preferred}/${targetKeys[0]}` : preferred;
+      usedIds.add(id);
+      return { id, condition: rule, targetKeys, stored: { rule, targetKeys }, isDraft: false, sourceDropped: false };
+    },
+  );
+  const [ordered, unordered] = partition([...groupRows, ...draftRows], (row) => rowOrder.includes(row.id));
+  const rows = [...sortBy(ordered, [(row) => rowOrder.indexOf(row.id)]), ...unordered];
 
   if (!editable) {
     return (
@@ -345,8 +335,14 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
       return draft ? [...others, draft] : others;
     });
 
+  const seeRow = (rowId: string) => {
+    setActiveRowId(rowId);
+    setRowOrder((current) => (current.includes(rowId) ? current : [...current, rowId]));
+  };
+
   /** Applies the row's rule to its targets when it is complete and valid; keeps it as a draft otherwise. */
   const update = (row: Row, condition: DraftCondition, targetKeys: ReadonlyArray<string>) => {
+    seeRow(row.id);
     const rule = ruleFromDraft(condition);
     const storedKeys = row.stored?.targetKeys ?? [];
     if (rule !== null && targetKeys.length > 0) {
@@ -401,7 +397,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
               onDelete={() => {
                 replaceDraft(null, row.id);
                 forgetRow(row.id);
-                setAddedRowIds((current) => current.filter((id) => id !== row.id));
+                setRowOrder((current) => current.filter((id) => id !== row.id));
                 if (row.stored) onChange(row.stored.targetKeys.map((key) => ({ key, rule: null })));
               }}
             />
@@ -416,7 +412,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         onClick={() => {
           nextDraftId.current += 1;
           const id = `draft-${nextDraftId.current}`;
-          setAddedRowIds((current) => [...current, id]);
+          setRowOrder((current) => [...current, id]);
           setDrafts((current) => [
             ...current,
             {

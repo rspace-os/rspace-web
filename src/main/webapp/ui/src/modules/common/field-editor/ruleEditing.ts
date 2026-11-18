@@ -11,6 +11,7 @@ import {
   type FieldSnapshot,
   operatorRequiresValues,
 } from "@/modules/common/field-rules/displayRule";
+import { isBlankOption } from "@/modules/common/field-rules/ruleOptions";
 import { DISPLAY_RULE_ERROR_CODES, validateDisplayRules } from "@/modules/common/field-rules/validateDisplayRules";
 
 /** One field as the rule editor sees it. */
@@ -32,15 +33,10 @@ export type RuleChange = {
 };
 
 /** Fields whose stored rules are identical, shown as one rule with several targets. */
-export type RuleGroup = {
+type RuleGroup = {
   readonly rule: FieldDisplayRule;
   readonly targetKeys: ReadonlyArray<string>;
 };
-
-/** An option that is empty or only whitespace, which no rule or default can use. */
-export function isBlankOption(option: string): boolean {
-  return option.trim() === "";
-}
 
 /** Options a rule may use: blank options and repeats of an earlier option are left out. */
 export function usableOptions(options: ReadonlyArray<string>): Array<string> {
@@ -71,7 +67,7 @@ const KEY_ERRORS: ReadonlySet<string> = new Set([
 ]);
 
 /** Applies the changes to the fields, as the host would. */
-export function withChanges(
+function withChanges(
   fields: ReadonlyArray<RuleEditorField>,
   changes: ReadonlyArray<RuleChange>,
 ): Array<RuleEditorField> {

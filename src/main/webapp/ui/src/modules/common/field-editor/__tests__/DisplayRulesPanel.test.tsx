@@ -203,6 +203,63 @@ describe("DisplayRulesPanel", () => {
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["GMO permit"]);
   });
 
+  it("completing an edit changes only the fields that rule had, not another rule that now matches", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    await renderPanel([gmo, { ...permit, rule: level.rule }, notes], onChange);
+
+    // the saved rule on GMO permit becomes an incomplete edit; the model keeps "is Yes"
+    const edited = screen.getByRole("listitem", { name: "When Is this a GMO? is Yes" });
+    await user.click(within(edited).getByRole("combobox", { name: "Options" }));
+    await user.keyboard("{Backspace}{Escape}");
+    // another rule gives Notes the condition GMO permit still has saved
+    await user.click(screen.getByRole("button", { name: "Add rule" }));
+    const added = screen.getByRole("listitem", { name: /^New rule/ });
+    await user.click(within(added).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+    await user.click(within(added).getByRole("combobox", { name: "Show these fields" }));
+    await user.click(screen.getByRole("option", { name: "Notes" }));
+    await user.keyboard("{Escape}");
+
+    await user.click(within(edited).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "No" }));
+
+    expect(onChange).toHaveBeenLastCalledWith([{ key: "permit", rule: createDisplayRule("gmo", "IS_ANY_OF", ["No"]) }]);
+    expect(onChange.mock.calls.flat(2)).not.toContainEqual({ key: "notes", rule: null });
+  });
+
+  it("keeps focus when a new rule becomes identical to a saved one and the two merge", async () => {
+    const user = userEvent.setup();
+    await renderPanel([gmo, { ...permit, rule: level.rule }, notes]);
+
+    await user.click(screen.getByRole("button", { name: "Add rule" }));
+    const added = screen.getByRole("listitem", { name: /^New rule/ });
+    await user.click(within(added).getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+    await user.click(within(added).getByRole("combobox", { name: "Show these fields" }));
+    await user.click(screen.getByRole("option", { name: "Notes" }));
+
+    expect(screen.getAllByRole("listitem", { name: "When Is this a GMO? is Yes" })).toHaveLength(1);
+    expect(screen.getByRole("combobox", { name: "Show these fields" })).toHaveFocus();
+  });
+
+  it("keeps a saved rule's card in place, with focus, when its first field is removed", async () => {
+    const user = userEvent.setup();
+    const yes = level.rule;
+    const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
+    await renderPanel([gmo, { ...permit, rule: yes }, { ...level, rule: no }, { ...notes, rule: yes }]);
+
+    const [first] = screen.getAllByRole("listitem");
+    const targets = within(first).getByRole("combobox", { name: "Show these fields" });
+    await user.click(targets);
+    await user.keyboard("{ArrowLeft}{ArrowLeft}{Backspace}");
+
+    const [stillFirst] = screen.getAllByRole("listitem");
+    expect(within(stillFirst).queryByRole("button", { name: "GMO permit" })).not.toBeInTheDocument();
+    expect(within(stillFirst).getByRole("button", { name: "Notes" })).toBeInTheDocument();
+    expect(within(stillFirst).getByRole("combobox", { name: "Show these fields" })).toHaveFocus();
+  });
+
   it("is accessible", async () => {
     const { baseElement } = await renderPanel([gmo, level, { ...permit, rule: level.rule }]);
     await expectAccessible(baseElement);

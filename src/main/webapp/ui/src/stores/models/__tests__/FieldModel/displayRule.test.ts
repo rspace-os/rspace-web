@@ -33,7 +33,7 @@ describe("FieldModel display rules", () => {
 
   it("sends an explicit null when a saved rule is cleared, since an absent rule means unchanged", () => {
     const field = makeMockField({ type: "string", displayRule: fromApi(RULE_JSON) });
-    field.setAttributes({ displayRule: null });
+    field.setDisplayRule(null);
     expect(field.paramsForBackend).toHaveProperty("displayRule", null);
   });
 

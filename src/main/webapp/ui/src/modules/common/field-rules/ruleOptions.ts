@@ -11,3 +11,8 @@ export function withoutOptions(rule: FieldDisplayRule, removedOptions: ReadonlyA
   if (values.length === 0) return null;
   return createDisplayRule(rule.sourceFieldKey, rule.operator, values);
 }
+
+/** An option that is empty or only whitespace, which no rule or default can use. */
+export function isBlankOption(option: string): boolean {
+  return option.trim() === "";
+}
