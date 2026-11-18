@@ -231,6 +231,10 @@ export default interface Resources {
           "testValid": "Connection details are valid."
         },
         "configuredLabel": "Configured Dataverse with name {name}",
+        "deleteConfirm": {
+          "message": "Delete the Dataverse configuration \"{name}\"?",
+          "title": "Delete Dataverse configuration?"
+        },
         "description": "Explore, analyse, and share data through an open-source research data repository software.",
         "errorGettingConfigs": "There was an error getting the configured Dataverses.",
         "fields": {

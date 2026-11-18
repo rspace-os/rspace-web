@@ -1,8 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
 import { describe, expect, test } from "vitest";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import axios from "@/common/axios";
+import apps from "@/modules/common/i18n/locales/en-US/apps.json";
+import common from "@/modules/common/i18n/locales/en-US/common.json";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { Optional } from "../../../../util/optional";
 import type { IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -449,7 +453,8 @@ describe("Dataverse", () => {
     });
   });
   describe("Deleting", () => {
-    test("Deleting an existing config should make the correct API call.", async () => {
+    test("Only confirming deletion sends the selected configuration to the API and removes its form.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -460,7 +465,7 @@ describe("Dataverse", () => {
           options: {},
         },
       });
-      render(
+      await renderWithRealI18n(
         <Alerts>
           <Dataverse
             integrationState={{
@@ -478,25 +483,36 @@ describe("Dataverse", () => {
             update={() => {}}
           />
         </Alerts>,
+        { resources: { apps, common }, defaultNS: "apps" },
       );
 
-      fireEvent.click(screen.getByRole("button"));
-
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.delete" }));
+      await user.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button", { name: "Delete" }));
+      const confirmation = await screen.findByRole("dialog", { name: "Delete Dataverse configuration?" });
+      expect(within(confirmation).getByText('Delete the Dataverse configuration "name"?')).toBeVisible();
+      expect(mockAxios.history.post).toHaveLength(0);
+      await user.click(within(confirmation).getByRole("button", { name: "Confirm" }));
+      expect(await screen.findByRole("alert", { name: "Successfully deleted configuration." })).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DATAVERSE");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
-        expect(
-          screen.queryByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" }),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByRole("textbox", { name: "Dataverse Name" })).not.toBeInTheDocument();
       });
     });
-    test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
+    test.each([true, false])("Confirmed deletion updates state only on success: %s", async (success) => {
+      const user = userEvent.setup();
       const integrationState = observable({
         mode: "DISABLED" as const,
         credentials: [
+          Optional.present({
+            DATAVERSE_APIKEY: "retained key",
+            DATAVERSE_URL: "retained url",
+            DATAVERSE_ALIAS: "retained name",
+            _label: "retained label",
+            optionsId: "2",
+          }),
           Optional.present({
             DATAVERSE_APIKEY: "apikey",
             DATAVERSE_URL: "url",
@@ -508,7 +524,8 @@ describe("Dataverse", () => {
       });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
-        success: true,
+        success,
+        errorMsg: "Local deletion failure",
         data: {
           available: true,
           enabled: true,
@@ -522,15 +539,71 @@ describe("Dataverse", () => {
         </Alerts>,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.delete" }));
-      await waitFor(() => {
-        expect(
-          screen.queryByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" }),
-        ).not.toBeInTheDocument();
+      const forms = screen.getAllByRole("form");
+      await user.click(within(forms[1]).getByRole("button", { name: "common:actions.delete" }));
+      await user.click(
+        within(
+          await screen.findByRole("dialog", {
+            name: "apps:integrations.dataverse.deleteConfirm.title",
+          }),
+        ).getByRole("button", { name: "common:actions.confirm" }),
+      );
+      const alert = await screen.findByRole("alert");
+      expect(
+        within(alert).getByText(
+          success
+            ? "apps:integrations.dataverse.alerts.deleteConfigSuccess"
+            : "apps:integrations.dataverse.alerts.deleteConfigError",
+        ),
+      ).toBeVisible();
+      if (!success) expect(within(alert).getByText("Local deletion failure")).toBeVisible();
+      expect(integrationState.credentials).toHaveLength(success ? 1 : 2);
+      expect(within(forms[0]).getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" })).toHaveValue(
+        "retained name",
+      );
+      if (success) {
+        expect(forms[1]).not.toBeInTheDocument();
+      } else {
+        expect(within(forms[1]).getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" })).toHaveValue(
+          "name",
+        );
+        expect(within(forms[1]).getByRole("button", { name: "common:actions.delete" })).toBeEnabled();
+      }
+    });
+    test("Cancel preserves the configuration and edited fields without sending a delete request.", async () => {
+      const user = userEvent.setup();
+      const mockAxios = new MockAdapter(axios);
+      const integrationState = observable<IntegrationStates["DATAVERSE"]>({
+        mode: "DISABLED",
+        credentials: [
+          Optional.present({
+            DATAVERSE_APIKEY: "apikey",
+            DATAVERSE_URL: "url",
+            DATAVERSE_ALIAS: "name",
+            _label: "label",
+            optionsId: "1",
+          }),
+        ],
       });
-      expect(integrationState.credentials.length).toBe(0);
+      render(<Dataverse integrationState={integrationState} update={() => {}} />);
+      await user.click(screen.getByRole("button"));
+      const alias = screen.getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" });
+      await user.clear(alias);
+      await user.type(alias, "edited name");
+      await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
+      const confirmation = await screen.findByRole("dialog", {
+        name: "apps:integrations.dataverse.deleteConfirm.title",
+      });
+      await user.click(within(confirmation).getByRole("button", { name: "common:actions.cancel" }));
+      await waitFor(() => expect(confirmation).not.toBeInTheDocument());
+      expect(alias).toHaveValue("edited name");
+      expect(screen.getByRole("textbox", { name: "apps:integrations.dataverse.fields.serverUrl" })).toHaveValue("url");
+      expect(screen.getByLabelText("apps:integrations.dataverse.fields.apiKey")).toHaveValue("apikey");
+      expect(screen.getByRole("button", { name: "apps:actions.test" })).toBeDisabled();
+      expect(integrationState.credentials).toHaveLength(1);
+      expect(mockAxios.history.post).toHaveLength(0);
     });
   });
 });

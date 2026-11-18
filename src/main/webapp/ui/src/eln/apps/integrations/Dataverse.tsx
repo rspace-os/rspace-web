@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
+import { ConfirmationDialog } from "../../../components/ConfirmationDialog";
 import SecretField, { type Secret, secretAfterSave } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
@@ -83,6 +84,8 @@ const DialogContent = observer(
     }));
     const observableConfigs = copyOfState.credentials;
 
+    const [configToDelete, setConfigToDelete] = useState<ExistingConfig | null>(null);
+    const [deletingKey, setDeletingKey] = useState<string | null>(null);
     const [newConfig, setNewConfig] = useState<NewConfig | null>(null);
 
     async function saveExistingConfig(config: ExistingConfig, index: number) {
@@ -181,8 +184,52 @@ const DialogContent = observer(
       }
     }
 
+    async function deleteConfig(config: ExistingConfig) {
+      setDeletingKey(config._key);
+      try {
+        await deleteAppOptions("DATAVERSE", config.optionsId);
+        runInAction(() => {
+          const deletedIndex = observableConfigs.findIndex(({ _key }) => _key === config._key);
+          observableConfigs.splice(deletedIndex, 1);
+          integrationState.credentials.splice(deletedIndex, 1);
+        });
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: t("integrations.dataverse.alerts.deleteConfigSuccess"),
+          }),
+        );
+      } catch (e) {
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: t("integrations.dataverse.alerts.deleteConfigError"),
+              message: e.message,
+            }),
+          );
+      } finally {
+        setDeletingKey(null);
+      }
+    }
+
     return (
       <Stack spacing={1} sx={{ mt: 1 }}>
+        {configToDelete && (
+          <ConfirmationDialog
+            title={t("integrations.dataverse.deleteConfirm.title")}
+            consequences={
+              <Typography>
+                {t("integrations.dataverse.deleteConfirm.message", {
+                  name: configToDelete.DATAVERSE_ALIAS,
+                })}
+              </Typography>
+            }
+            variant="warning"
+            callback={() => void deleteConfig(configToDelete)}
+            handleCloseDialog={() => setConfigToDelete(null)}
+          />
+        )}
         <Stack spacing={1}>
           {observableConfigs.map((config, i) => (
             <Card key={config._key} variant="outlined">
@@ -239,35 +286,7 @@ const DialogContent = observer(
                   </Stack>
                 </CardContent>
                 <CardActions>
-                  <Button
-                    onClick={() => {
-                      void (async () => {
-                        try {
-                          await deleteAppOptions("DATAVERSE", config.optionsId);
-                          runInAction(() => {
-                            const deletedIndex = observableConfigs.indexOf(config);
-                            observableConfigs.splice(deletedIndex, 1);
-                            integrationState.credentials.splice(deletedIndex, 1);
-                          });
-                          addAlert(
-                            mkAlert({
-                              variant: "success",
-                              message: t("integrations.dataverse.alerts.deleteConfigSuccess"),
-                            }),
-                          );
-                        } catch (e) {
-                          if (e instanceof Error)
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: t("integrations.dataverse.alerts.deleteConfigError"),
-                                message: e.message,
-                              }),
-                            );
-                        }
-                      })();
-                    }}
-                  >
+                  <Button disabled={deletingKey !== null} onClick={() => setConfigToDelete(config)}>
                     {t("common:actions.delete")}
                   </Button>
                   <Button
