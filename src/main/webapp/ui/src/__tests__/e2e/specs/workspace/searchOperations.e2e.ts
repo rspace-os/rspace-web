@@ -149,6 +149,96 @@ test.describe(`Workspace search operations`, () => {
     });
   });
 
+  test(`As a user, I can bookmark a search, save it as my default and run it again`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const doc1 = uniqueName("e2e-search-bookmark-doc1");
+    const doc2 = uniqueName("e2e-search-bookmark-doc2");
+    let searchUrl = "";
+
+    await test.step("Given two documents exist", async () => {
+      await clientDocuments.create({ name: doc1 });
+      await clientDocuments.create({ name: doc2 });
+      await pageWorkspace.open();
+    });
+
+    await test.step("When I search Name=doc1 OR Name=doc2, the address bar holds the search", async () => {
+      await pageWorkspace.searchBar.openAdvanced();
+      const row0 = await pageWorkspace.searchBar.addRow();
+      await pageWorkspace.searchBar.setRowType(row0, "Name");
+      await pageWorkspace.searchBar.setRowValue(row0, doc1);
+      const row1 = await pageWorkspace.searchBar.addRow();
+      await pageWorkspace.searchBar.setRowType(row1, "Name");
+      await pageWorkspace.searchBar.setRowValue(row1, doc2);
+      await pageWorkspace.searchBar.setMatchMode("any");
+      await pageWorkspace.searchBar.submitAdvanced();
+      await expect(page).toHaveURL(/\/workspace\?options%5B%5D=name&options%5B%5D=name&.*operator=OR/);
+      searchUrl = page.url();
+    });
+
+    await test.step("Then opening that URL shows the same results with the advanced panel filled in", async () => {
+      await pageWorkspace.searchBar.openSearchUrl(searchUrl);
+      await expect(pageWorkspace.table.row(doc1)).toBeVisible();
+      await expect(pageWorkspace.table.row(doc2)).toBeVisible();
+      await expect(page.getByRole("radio", { name: "Satisfy at least one condition" })).toBeChecked();
+    });
+
+    await test.step("When I save it as my default search", async () => {
+      await pageWorkspace.searchBar.saveDefaultButton.click();
+    });
+
+    await test.step("Then the toolbar has a Default search button and the bar says it is the default", async () => {
+      await expect(pageWorkspace.searchBar.defaultSearchButton).toBeVisible();
+      await expect(pageWorkspace.searchBar.isDefaultMessage).toBeVisible();
+    });
+
+    await test.step("When I clear the search, the address bar returns to /workspace", async () => {
+      await pageWorkspace.searchBar.clearSearch();
+      await expect(page).toHaveURL(/\/workspace$/);
+    });
+
+    await test.step("Then Default search shows the results again", async () => {
+      await pageWorkspace.searchBar.runDefaultSearch();
+      await expect(pageWorkspace.table.row(doc1)).toBeVisible();
+      await expect(pageWorkspace.table.row(doc2)).toBeVisible();
+      await expect(pageWorkspace.searchBar.isDefaultMessage).toBeVisible();
+    });
+
+    await test.step("And removing the default hides the button", async () => {
+      await pageWorkspace.searchBar.removeDefaultSearch();
+      await expect(pageWorkspace.searchBar.defaultSearchButton).toHaveCount(0);
+    });
+  });
+
+  test(`As a user, a search with quotes survives returning from a document twice`, async ({
+    page,
+    pageWorkspace,
+    pageDocument,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName('e2e "quoted"');
+
+    await test.step("Given a document with a quoted word in its name exists", async () => {
+      await clientDocuments.create({ name: docName });
+      await pageWorkspace.open();
+      await pageWorkspace.searchBar.search('"quoted"');
+      await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    });
+
+    for (const visit of ["first", "second"]) {
+      await test.step(`Then after the ${visit} return from the document the search is still shown`, async () => {
+        await pageWorkspace.table.openRecord(docName);
+        await pageDocument.close();
+        await expect(pageWorkspace.table.row(docName)).toBeVisible();
+        await expect(pageWorkspace.searchBar.searchInput).toHaveValue('"quoted"');
+        await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+        await expect(page).toHaveURL(/\/workspace\?options%5B%5D=global&terms%5B%5D=%22quoted%22&/);
+      });
+    }
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,
