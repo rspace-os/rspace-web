@@ -279,7 +279,13 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
    * being a stored rule and a draft, so the control the author is using keeps
    * focus. Both are only changed in event handlers.
    */
-  const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(new Map());
+  // every field of a rule maps to its row, so the row keeps its identity when its first field is deleted
+  const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(
+    () =>
+      new Map(
+        groupDisplayRules(fields).flatMap(({ targetKeys }) => targetKeys.map((key) => [key, targetKeys[0]] as const)),
+      ),
+  );
   /** Rows in display order: the rules there at first render, then every row on screen when a handler runs. */
   const [rowOrder, setRowOrder] = useState<ReadonlyArray<string>>(() =>
     groupDisplayRules(fields).map(({ targetKeys }) => targetKeys[0]),
@@ -335,9 +341,18 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
       return draft ? [...others, draft] : others;
     });
 
-  /** Fixes the place of every row on screen, so the first edit of one does not reorder the others. */
+  /**
+   * Fixes the place and identity of every row on screen, so the first edit of
+   * one, or a new rule, does not reorder or remount the others.
+   */
   const seeRows = () => {
     setRowOrder((current) => [...current, ...rows.map(({ id }) => id).filter((id) => !current.includes(id))]);
+    setRowIdByTarget((current) => {
+      const unmapped = rows.flatMap((row) =>
+        row.isDraft ? [] : row.targetKeys.filter((key) => !current.has(key)).map((key) => [key, row.id] as const),
+      );
+      return unmapped.length === 0 ? current : new Map([...current, ...unmapped]);
+    });
   };
 
   /** Applies the row's rule to its targets when it is complete and valid; keeps it as a draft otherwise. */
@@ -422,6 +437,7 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         onClick={() => {
           nextDraftId.current += 1;
           const id = `draft-${nextDraftId.current}`;
+          seeRows();
           setRowOrder((current) => [...current, id]);
           setDrafts((current) => [
             ...current,

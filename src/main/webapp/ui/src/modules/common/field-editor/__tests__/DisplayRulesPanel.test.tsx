@@ -279,11 +279,37 @@ describe("DisplayRulesPanel", () => {
     const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
     rerender(panel([gmo, { ...permit, rule: level.rule }, { ...level, rule: no }]));
 
-    const second = screen.getByRole("listitem", { name: "When Is this a GMO? is No" });
+    const [first, second] = screen.getAllByRole("listitem");
+    await user.click(screen.getByRole("button", { name: "Add rule" }));
+    const afterAdding = screen.getAllByRole("listitem");
+    expect(afterAdding.slice(0, 2)).toEqual([first, second]);
+    expect(afterAdding[2]).toHaveAccessibleName(/^New rule/);
+
     await user.click(within(second).getByRole("combobox", { name: "Options" }));
     await user.click(screen.getByRole("option", { name: "Yes" }));
 
-    expect(screen.getAllByRole("listitem")[1]).toBe(second);
+    expect(screen.getAllByRole("listitem").slice(0, 2)).toEqual([first, second]);
+  });
+
+  it("keeps an untouched shared rule's card when its first field is deleted", async () => {
+    const wrapper = await createRealI18nWrapper({ resources: { common }, defaultNS: "common" });
+    const panel = (fields: Array<RuleEditorField>) => (
+      <ThemeProvider theme={materialTheme}>
+        <DisplayRulesPanel fields={fields} editable onChange={vi.fn()} />
+      </ThemeProvider>
+    );
+    const yes = level.rule;
+    const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
+    const { rerender } = render(
+      panel([gmo, { ...permit, rule: yes }, { ...level, rule: no }, { ...notes, rule: yes }]),
+      { wrapper },
+    );
+    const shared = screen.getByRole("listitem", { name: "When Is this a GMO? is Yes" });
+
+    rerender(panel([gmo, { ...level, rule: no }, { ...notes, rule: yes }]));
+
+    expect(screen.getAllByRole("listitem")[0]).toBe(shared);
+    expect(within(shared).queryByRole("button", { name: "GMO permit" })).not.toBeInTheDocument();
   });
 
   it("keeps a saved rule's card in place, with focus, when its first field is removed", async () => {

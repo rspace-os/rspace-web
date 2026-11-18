@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { observable, runInAction } from "mobx";
 import * as v from "valibot";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
@@ -17,7 +18,8 @@ import materialTheme from "@/theme";
 import InstrumentTemplateFields from "../../../InstrumentTemplate/Fields/CustomFields";
 import CustomFields from "../CustomFields";
 
-vi.mock("@/common/InvApiService", () => ({ default: {} }));
+const { update } = vi.hoisted(() => ({ update: vi.fn() }));
+vi.mock("@/common/InvApiService", () => ({ default: { update } }));
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: { assertValidUnitId: () => {}, getUnit: () => ({ label: "ml" }) },
@@ -41,8 +43,9 @@ const savedField = (attrs: Partial<FieldModelAttrs> & Pick<FieldModelAttrs, "typ
 });
 
 /** A saved template where "GMO permit" is shown when "Is this a GMO?" is Yes. */
-const savedGmoTemplate = () =>
-  makeMockTemplate({
+const savedGmoTemplate = () => makeMockTemplate(savedGmoTemplateAttrs());
+const savedGmoTemplateAttrs = () =>
+  ({
     fields: [
       savedField({
         id: 1,
@@ -62,7 +65,7 @@ const savedGmoTemplate = () =>
         displayRule: createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]),
       }),
     ],
-  } as Parameters<typeof makeMockTemplate>[0]);
+  }) as Parameters<typeof makeMockTemplate>[0];
 
 const newField = (attrs: Partial<FieldModelAttrs> & Pick<FieldModelAttrs, "type">): FieldModelAttrs => ({
   ...savedField(attrs),
@@ -378,6 +381,71 @@ describe("Deleting fields while editing display rules", () => {
     await deleteField(user, "GMO permit");
 
     expect(ruleCards()).toHaveLength(0);
+  });
+});
+
+describe("Display rule drafts across saves and edit sessions", () => {
+  const addDraft = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "common:fieldEditor.rules.addRule" }));
+  };
+  const draftCards = () =>
+    within(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).queryAllByRole("listitem", {
+      name: "common:fieldEditor.rules.newRuleHeading",
+    });
+
+  it("keeps drafts and incomplete edits when a save fails", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+    await addDraft(user);
+    await user.click(screen.getAllByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" })[0]);
+    await user.keyboard("{Backspace}{Escape}");
+    const save = Promise.withResolvers<never>();
+    update.mockReturnValueOnce(save.promise);
+
+    let saving: Promise<void> = Promise.resolve();
+    act(() => {
+      saving = template.update().catch(() => {});
+    });
+    // while saving the panel is read-only
+    expect(screen.queryByRole("button", { name: "common:fieldEditor.rules.addRule" })).not.toBeInTheDocument();
+    await act(async () => {
+      save.reject(new Error("The save failed"));
+      await saving;
+    });
+
+    expect(update).toHaveBeenCalledOnce();
+    expect(draftCards()).toHaveLength(1);
+    expect(screen.getByText("common:fieldEditor.rules.incompleteEdit")).toBeInTheDocument();
+  });
+
+  it("starts without drafts for another template, or after leaving and re-entering edit mode", async () => {
+    const user = userEvent.setup();
+    const first = savedGmoTemplate();
+    const second = makeMockTemplate({ ...savedGmoTemplateAttrs(), id: 2, globalId: "IT2" });
+    for (const template of [first, second]) {
+      template.currentlyEditableFields.add("fields");
+      template.setAttributes({ editing: true });
+    }
+    const searchStore = observable({ activeResult: first }, { activeResult: observable.ref });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({ searchStore, uiStore: { isLarge: true, confirm: vi.fn() } })}
+        >
+          <CustomFields onErrorStateChange={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    await addDraft(user);
+    act(() => runInAction(() => (searchStore.activeResult = second)));
+    expect(draftCards()).toHaveLength(0);
+
+    await addDraft(user);
+    act(() => second.setAttributes({ editing: false }));
+    act(() => second.setAttributes({ editing: true }));
+    expect(draftCards()).toHaveLength(0);
   });
 });
 

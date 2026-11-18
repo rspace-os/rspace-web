@@ -54,9 +54,9 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
   const editable = activeResult.isFieldEditable("fields");
   return (
     <>
-      {/* another template, or another edit, starts with no drafts left over */}
+      {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
       <TemplateDisplayRules
-        key={`${activeResult.globalId ?? "new"}:${String(editable)}`}
+        key={`${activeResult.globalId ?? "new"}:${activeResult.state}`}
         fields={fields}
         editable={editable}
       />
