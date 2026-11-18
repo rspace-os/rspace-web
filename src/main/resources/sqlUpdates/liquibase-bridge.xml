@@ -14,10 +14,11 @@
       Bridges a sample-requests-and-booking 2.27.2-RC database to this branch, keeping booking data.
       The booking stack folded its later column and table drops into the changesets that created
       them, so the schema already matches and only the changelog needs updating.
-      Any other database marks this as ran without changes.
+      Any other database skips it without recording it (onFail="CONTINUE"). Recording it would make
+      initial-seed-changeLog.xml treat a fresh database as an upgrade and skip the dev-test users.
     -->
     <changeSet id="bridge-2.27.2-RC-to-main-plus-booking-poc" author="matthias" context="run">
-        <preConditions onFail="MARK_RAN">
+        <preConditions onFail="CONTINUE">
             <changeSetExecuted id="booking-default-access-grantee" author="tchoi-rs"
                 changeLogFile="sqlUpdates/changeLog-rsdev-1187-booking-settings.xml"/>
         </preConditions>
