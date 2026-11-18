@@ -1,4 +1,4 @@
-import type { ConditionOperator, FieldDisplayRule, RuleField } from "./displayRule";
+import type { ConditionOperator, FieldDisplayRule, FieldSnapshot } from "./displayRule";
 
 function conditionHolds(
   operator: ConditionOperator,
@@ -18,7 +18,7 @@ function conditionHolds(
 }
 
 /** First index of each non-null key. */
-function indexByKey(fields: ReadonlyArray<RuleField>): Map<string, number> {
+function indexByKey(fields: ReadonlyArray<FieldSnapshot>): Map<string, number> {
   const index = new Map<string, number>();
   fields.forEach(({ key }, i) => {
     if (key !== null && !index.has(key)) index.set(key, i);
@@ -40,7 +40,7 @@ function indexByKey(fields: ReadonlyArray<RuleField>): Map<string, number> {
  * When several fields share a key, the first one is the source. Runs in
  * linear time without recursion, so chain length is not limited by stack depth.
  */
-export function displayRuleVisibility(fields: ReadonlyArray<RuleField>): Array<boolean> {
+export function displayRuleVisibility(fields: ReadonlyArray<FieldSnapshot>): Array<boolean> {
   const sources = indexByKey(fields);
   const visible: Array<boolean | undefined> = new Array(fields.length).fill(undefined);
 

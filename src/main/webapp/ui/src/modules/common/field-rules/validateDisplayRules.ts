@@ -1,4 +1,5 @@
-import type { RuleField } from "./displayRule";
+import * as v from "valibot";
+import type { FieldSnapshot } from "./displayRule";
 
 /** Message codes shared with the Java `FieldDisplayRuleValidator`. */
 export const DISPLAY_RULE_ERROR_CODES = {
@@ -11,13 +12,17 @@ export const DISPLAY_RULE_ERROR_CODES = {
   cycle: "validation.fieldDisplayRule.cycle",
 } as const;
 
-export type DisplayRuleErrorCode = (typeof DISPLAY_RULE_ERROR_CODES)[keyof typeof DISPLAY_RULE_ERROR_CODES];
+export const DisplayRuleErrorCodeSchema = v.picklist(Object.values(DISPLAY_RULE_ERROR_CODES));
 
-export type DisplayRuleError = {
+export type DisplayRuleErrorCode = v.InferOutput<typeof DisplayRuleErrorCodeSchema>;
+
+export const DisplayRuleErrorSchema = v.object({
   /** The field's position in the validated list. */
-  readonly fieldIndex: number;
-  readonly code: DisplayRuleErrorCode;
-};
+  fieldIndex: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  code: DisplayRuleErrorCodeSchema,
+});
+
+export type DisplayRuleError = v.InferOutput<typeof DisplayRuleErrorSchema>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -26,7 +31,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
  * following sources from a field either ends or loops; every field is walked
  * once, so this runs in linear time.
  */
-function fieldsOnCycle(fields: ReadonlyArray<RuleField>, indexByKey: ReadonlyMap<string, number>): Array<boolean> {
+function fieldsOnCycle(fields: ReadonlyArray<FieldSnapshot>, indexByKey: ReadonlyMap<string, number>): Array<boolean> {
   const UNVISITED = 0;
   const ON_WALK = 1;
   const DONE = 2;
@@ -61,7 +66,7 @@ function fieldsOnCycle(fields: ReadonlyArray<RuleField>, indexByKey: ReadonlyMap
  * radio or choice field and offer every value the rule names, and rules must
  * not form a cycle.
  */
-export function validateDisplayRules(fields: ReadonlyArray<RuleField>): Array<DisplayRuleError> {
+export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Array<DisplayRuleError> {
   const indexByKey = new Map<string, number>();
   const duplicateKeys = new Set<string>();
   fields.forEach(({ key }, index) => {

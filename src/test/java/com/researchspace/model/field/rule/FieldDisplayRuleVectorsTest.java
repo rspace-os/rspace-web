@@ -43,13 +43,14 @@ class FieldDisplayRuleVectorsTest {
   @Test
   void deepChainListedDependentFirstIsAllShownAndValid() {
     int length = 20_000;
-    List<RuleField> fields = new ArrayList<>(length);
+    List<FieldSnapshot> fields = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       FieldDisplayRule rule =
           i == length - 1
               ? null
               : new FieldDisplayRule(chainKey(i + 1), ConditionOperator.IS_ANY_OF, List.of("Yes"));
-      fields.add(new RuleField(chainKey(i), FieldType.RADIO, rule, List.of("Yes"), List.of("Yes")));
+      fields.add(
+          new FieldSnapshot(chainKey(i), FieldType.RADIO, rule, List.of("Yes"), List.of("Yes")));
     }
 
     assertEquals(Collections.nCopies(length, true), FieldDisplayRuleEvaluator.visibility(fields));
@@ -146,13 +147,13 @@ class FieldDisplayRuleVectorsTest {
     return StreamSupport.stream(node.spliterator(), false);
   }
 
-  private static List<RuleField> fields(JsonNode nodes) {
-    List<RuleField> fields = new ArrayList<>();
+  private static List<FieldSnapshot> fields(JsonNode nodes) {
+    List<FieldSnapshot> fields = new ArrayList<>();
     for (JsonNode node : nodes) {
       JsonNode key = node.get("key");
       JsonNode rule = node.get("rule");
       fields.add(
-          new RuleField(
+          new FieldSnapshot(
               key == null || key.isNull() ? null : key.asText(),
               FieldType.valueOf(node.get("type").asText()),
               rule == null || rule.isNull() ? null : FieldDisplayRule.fromJson(rule.toString()),
