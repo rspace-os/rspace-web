@@ -233,4 +233,18 @@ public interface IPermissionUtils {
    */
   void assertRecordAccessPermitted(
       BaseRecord toTest, PermissionType permType, User subject, String actionMsg);
+
+  /**
+   * Whether {@code user} may rename {@code record} because they can edit it. Applies to documents
+   * (including notebook entries and templates) and notebooks; folders and Gallery items still need
+   * the RENAME permission.
+   *
+   * @param record the record to rename
+   * @param user the user renaming it
+   * @return <code>true</code> if the record is a document or notebook that the user can edit
+   */
+  default boolean isRenamePermittedByEditAccess(BaseRecord record, User user) {
+    return (record.isStructuredDocument() || record.isNotebook())
+        && isPermitted(record, PermissionType.WRITE, user);
+  }
 }

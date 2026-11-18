@@ -6173,7 +6173,7 @@ export default interface Resources {
       "password": "Password",
       "pdfName": "PDF name",
       "recipients": "Recipients",
-      "renameRecordAction": "rename this record",
+      "renameRecordAction": "rename this item",
       "repository": "Repository",
       "svg": "SVG",
       "svgContent": "SVG content",
