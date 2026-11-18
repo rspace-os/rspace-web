@@ -324,6 +324,35 @@ test.describe(`Workspace search operations`, () => {
     });
   });
 
+  test(`As a user, the folder listing cannot be clicked while a search link is still loading`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-slow-link");
+    await clientDocuments.create({ name: docName });
+    let releaseSearch: () => void = () => {};
+    const searchHeld = new Promise<void>((resolve) => {
+      releaseSearch = resolve;
+    });
+    await page.route("**/workspace/ajax/search**", async (route) => {
+      await searchHeld;
+      await route.continue();
+    });
+
+    await page.goto(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    // jQuery may run its ready handlers just after the load event; the jQuery blockUI
+    // overlay has no role or label, so wait for it by its class.
+    await page.locator("#record_list_frame > .blockOverlay").waitFor();
+    await expect(
+      pageWorkspace.table.row("Examples").getByRole("link", { name: "Examples", exact: true }).click({ timeout: 1000 }),
+    ).rejects.toThrow();
+
+    releaseSearch();
+    await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,

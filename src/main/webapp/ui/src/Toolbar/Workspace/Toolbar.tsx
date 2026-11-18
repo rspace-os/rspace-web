@@ -153,6 +153,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
 
   // The server rendered the results of a search kept in the session, after the user closed a document
   resumeRestoredSearch = () => {
+    endSearchLinkWait();
     workspaceSettings.searchMode = true;
     workspaceSettings.url = "/workspace/ajax/search";
     updateSearchModePanel($("#noOfRows").val() > 0);
@@ -162,7 +163,10 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   // Runs the search held in the address bar, for a bookmarked or shared search link
   restoreSearchFromLocation = () => {
     const parsed = parseSearchQuery(window.location.search);
-    if (parsed.kind === "none") return;
+    if (parsed.kind === "none") {
+      endSearchLinkWait();
+      return;
+    }
     if (parsed.kind === "invalid") {
       this.showFolderInsteadOfSearch();
       return;
@@ -197,6 +201,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         () => {
           this.checkSavedSettings();
           doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch, () => {
+            endSearchLinkWait();
             if (this.searchLinkLeftTreeView) {
               this.searchLinkLeftTreeView = false;
               workspaceSettings.currentViewMode = "LIST_VIEW";
@@ -219,6 +224,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   };
 
   showFolderInsteadOfSearch = (jqxhr) => {
+    endSearchLinkWait();
     if (this.searchLinkLeftTreeView) {
       this.searchLinkLeftTreeView = false;
       showTreeView();

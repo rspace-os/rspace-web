@@ -437,6 +437,32 @@ function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
   });
 }
 
+// A search link's results replace the listing, so the listing is blocked
+// from page load until that search has finished or failed. The frame is
+// blocked because .rs-working-area has no height for the overlay to cover.
+var searchLinkPending = false;
+var searchLinkTimeout;
+
+function startSearchLinkWait() {
+  var params = new URLSearchParams(window.location.search);
+  if (!params.has("options[]") && !params.has("terms[]")) {
+    return;
+  }
+  searchLinkPending = true;
+  RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('#record_list_frame'));
+  // Never leave the page blocked, for example if the toolbar fails to load
+  searchLinkTimeout = setTimeout(endSearchLinkWait, 15000);
+}
+
+function endSearchLinkWait() {
+  if (!searchLinkPending) {
+    return;
+  }
+  searchLinkPending = false;
+  clearTimeout(searchLinkTimeout);
+  RS.unblockPage($('#record_list_frame'));
+}
+
 function displayOrderIcon() {
   if (workspaceSettings.sortOrder === "ASC") {
     $('.orderButtonClass').css('background-image', 'url(/images/arrow_up.png)');
@@ -540,6 +566,7 @@ function updateUIForWorkspaceSettingsFromServer() {
 }
 
 $(document).ready(function () {
+  startSearchLinkWait();
   workspaceSettings.parentFolderId = recordId;
   workspaceSettings.fallbackFolderId = recordId;
   workspaceSettings.url = "/workspace/ajax/view/"
