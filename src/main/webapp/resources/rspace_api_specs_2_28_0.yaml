@@ -3889,10 +3889,11 @@ components:
           description: The key of this field's form field, in the form version the document
             was created from. Display rules name their source field by this key.
         displayRule:
-          $ref: "#/components/schemas/FieldDisplayRule"
           description: Read-only, from the field's form field. A document request that
             sends a malformed rule here is rejected with 400; echoing a rule read from
             this API is always accepted.
+          allOf:
+            - $ref: "#/components/schemas/FieldDisplayRule"
         files:
           $ref: "#/components/schemas/FileList"
         listOfMaterials:

@@ -162,8 +162,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
 
     assertNull(response.getData());
     assertThat(response.getErrorMsg().getErrorMessages())
-        .anySatisfy(
-            message -> assertThat(message).contains("System forms cannot be given a new version"));
+        .anySatisfy(message -> assertThat(message).contains("It may be a system form"));
     assertEquals(before.get("data"), getFields(draft.getId()).get("data"));
     assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));

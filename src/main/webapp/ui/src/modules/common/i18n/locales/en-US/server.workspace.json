@@ -354,7 +354,7 @@
       "notBeingEdited": "Form [{0}] is not open for editing; save fields to its draft instead",
       "notEditable": "Cannot edit this form: {0}",
       "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
-      "versionNotUpdated": "This form could not be made a new version. System forms cannot be given a new version.",
+      "versionNotUpdated": "This form could not be made a new version. It may be a system form, which cannot be given a new version.",
       "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
       "systemFormUnpublish": "Attempted to unpublish a system form",
       "unknownFieldType": "Unknown field type [{0}]"
