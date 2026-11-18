@@ -21,9 +21,6 @@ export function operatorRequiresValues(operator: ConditionOperator): boolean {
   return (OPERATORS_WITH_VALUES as ReadonlyArray<ConditionOperator>).includes(operator);
 }
 
-/** Empty or only `\s` whitespace; the Java side uses exactly the same character set. */
-const NonBlankStringSchema = v.pipe(v.string(), v.regex(/\S/, "must not be blank"));
-
 const RULE_PROPERTIES: ReadonlyArray<string> = ["sourceFieldKey", "operator", "values"];
 
 /**
@@ -45,14 +42,14 @@ const RuleShapeSchema = v.variant(
   "operator",
   [
     v.strictObject({
-      sourceFieldKey: NonBlankStringSchema,
+      sourceFieldKey: v.string(),
       operator: v.picklist(OPERATORS_WITH_VALUES),
-      values: v.pipe(v.array(NonBlankStringSchema), v.minLength(1, "needs at least one value")),
+      values: v.pipe(v.array(v.string()), v.minLength(1, "needs at least one value")),
     }),
     v.strictObject({
-      sourceFieldKey: NonBlankStringSchema,
+      sourceFieldKey: v.string(),
       operator: v.picklist(OPERATORS_WITHOUT_VALUES),
-      values: v.nullish(v.pipe(v.array(NonBlankStringSchema), v.maxLength(0, "does not take values"))),
+      values: v.nullish(v.pipe(v.array(v.string()), v.maxLength(0, "does not take values"))),
     }),
   ],
   "A display rule needs a known operator",
@@ -132,7 +129,7 @@ export function parseDisplayRule(json: string): FieldDisplayRule {
 /**
  * Builds a rule, applying the same checks as the Java record's constructor.
  *
- * @throws {v.ValiError} if the source key is blank or the values do not suit the operator
+ * @throws {v.ValiError} if the values do not suit the operator
  */
 export function createDisplayRule(
   sourceFieldKey: string,
