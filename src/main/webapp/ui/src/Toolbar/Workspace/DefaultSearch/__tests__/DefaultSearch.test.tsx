@@ -490,30 +490,8 @@ describe("DefaultSearch", () => {
     expect(savedPreferences[0][KEY].value).toBeNull();
   });
 
-  test.each([
-    ["stored", [{ [KEY]: { value: ZEBRAFISH } }]],
-    ["already removed by another tab", [{ [KEY]: { value: ZEBRAFISH } }, {}]],
-  ])("clearing the default search also clears the search when it was %s", async (_, preferences) => {
+  test("clearing the default search leaves the search, its search box and the address as they are", async () => {
     const user = userEvent.setup();
-    const clearSearch = document.createElement("button");
-    clearSearch.id = "resetSearch";
-    const ended = vi.fn();
-    clearSearch.addEventListener("click", ended);
-    document.body.appendChild(clearSearch);
-    onTestFinished(() => clearSearch.remove());
-    givenStoredPreferences(...preferences);
-    givenWorkspace({});
-    render(<DefaultSearch />);
-
-    await user.click(await clearButton());
-
-    await vi.waitFor(() => expect(ended).toHaveBeenCalledTimes(1));
-  });
-
-  test("clearing the default search keeps the search when the server rejects it", async () => {
-    const user = userEvent.setup();
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    onTestFinished(() => warn.mockRestore());
     const clearSearch = document.createElement("button");
     clearSearch.id = "resetSearch";
     const ended = vi.fn();
@@ -521,16 +499,17 @@ describe("DefaultSearch", () => {
     document.body.appendChild(clearSearch);
     onTestFinished(() => clearSearch.remove());
     givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } });
-    server.use(http.post("/userform/ajax/preference", () => new HttpResponse(null, { status: 500 })));
     givenWorkspace({});
+    const address = window.location.href;
     render(<DefaultSearch />);
 
     await user.click(await clearButton());
 
-    await vi.waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
-    );
+    await vi.waitFor(() => expect(savedPreferences).toHaveLength(1));
+    expect(savedPreferences[0][KEY].value).toBeNull();
     expect(ended).not.toHaveBeenCalled();
+    expect(window.location.href).toBe(address);
+    expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" })).toBeVisible();
   });
 
   test("a search that is not the default offers no way to clear the default", async () => {

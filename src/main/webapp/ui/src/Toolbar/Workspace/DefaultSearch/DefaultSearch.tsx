@@ -120,7 +120,7 @@ function DefaultSearchControls({
 
   const [saving, setSaving] = React.useState(false);
 
-  const store = async (query: string | null): Promise<boolean> => {
+  const store = async (query: string | null) => {
     latestCheck.current++;
     setSaving(true);
     try {
@@ -128,10 +128,8 @@ function DefaultSearchControls({
       setShown(query);
       setAnnouncement(query === null ? t("toolbar.defaultSearch.removed") : t("toolbar.defaultSearch.saved"));
       setFocusAfterStore(query === null ? "search" : "run");
-      return true;
     } catch {
       setAnnouncement(query === null ? t("toolbar.defaultSearch.removeFailed") : t("toolbar.defaultSearch.saveFailed"));
-      return false;
     } finally {
       setSaving(false);
     }
@@ -186,9 +184,6 @@ function DefaultSearchControls({
     if (latest !== null) navigate(`/workspace?${latest}`);
   };
 
-  // The legacy Clear search button ends the search and empties the search box
-  const endSearch = () => document.getElementById("resetSearch")?.click();
-
   const remove = async () => {
     const read = await readOrAnnounce(t("toolbar.defaultSearch.removeFailed"));
     if (!read) return;
@@ -197,7 +192,6 @@ function DefaultSearchControls({
       setShown(null);
       setAnnouncement(t("toolbar.defaultSearch.removed"));
       setFocusAfterStore("search");
-      endSearch();
       return;
     }
     if (latest !== stored) {
@@ -214,7 +208,7 @@ function DefaultSearchControls({
       );
       if (!confirmed) return;
     }
-    if (await store(null)) endSearch();
+    await store(null);
   };
 
   let bar: React.ReactNode = null;
