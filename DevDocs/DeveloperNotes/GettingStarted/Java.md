@@ -1,9 +1,9 @@
 # Getting started as a Java developer
 
 First, follow the [GettingStarted.md](GettingStarted.md) doc, which
-describes local Maven/MariaDB setup necessary to run RSpace. At the end
+describes local Gradle/MariaDB setup necessary to run RSpace. At the end
 of that guide you should have RSpace instance running on your localhost.
-Maven's frontend build also requires standalone pnpm on `PATH`; pnpm
+The Gradle frontend build also requires standalone pnpm on `PATH`; pnpm
 downloads the Node.js version pinned in `package.json`.
 
 Second, you'll need an IDE of your choice to edit files. Instructions
@@ -15,9 +15,10 @@ Current location is https://github.com/rspace-os/rspace-web
 
 Use a git client of your choice to checkout and manage source code.
 
-If using Eclipse as an IDE you'll need the Eclipse M2 Eclipse Maven
+If using Eclipse as an IDE you'll need the Eclipse Buildship Gradle
 plugin to get Eclipse to download dependencies and build the project
-(available from Eclipse marketplace).
+(available from Eclipse marketplace). IntelliJ IDEA imports Gradle
+projects without a plugin.
 
 ### Lombok Setup
 
@@ -29,57 +30,51 @@ installer to your Eclipse directory.
 
 Code should compile once checked out. (You may need to select the
 project in your workspace, right-click to get the context Menu, then
-Maven->Update project to get Eclipse to read the pom.xml file any
-dependencies.)
-Eclipse may show some errors in `src/main/webapp` and `pom.xml` -
-but these can be ignored.
+Gradle->Refresh Gradle Project to get Eclipse to read `build.gradle` and
+its dependencies.)
+Eclipse may show some errors in `src/main/webapp` - but these can be ignored.
 
-You may also need to set your Eclipse compiler settings to Java 1.8
+You may also need to set your Eclipse compiler settings to Java 17
 compliance. In Eclipse, navigate Preferences->Java->Compiler to
 change this if need be.
 
-At this stage, if you select the rspace-web project, right click, then Run
-As->Maven build... then enter `compile` as the goal, the source code
-should compile, after downloading a large number of artifacts/dependencies.
-You should see an entry in rspace-web project called 'Maven Dependencies'
-that lists a large number (100+) of dependencies.
+At this stage, running `./gradlew classes` (or the `classes` task from
+the Gradle Tasks view) should compile the source code, after downloading
+a large number of artifacts/dependencies. You should see an entry in the
+rspace-web project called 'Project and External Dependencies' that lists
+a large number (100+) of dependencies.
 
-### Running fast unit tests with Maven
+### Running fast unit tests with Gradle
 
 To run just pure unit tests, run
 ```bash
-mvn test -Denvironment=keepdbintact -DRSlog.level=ERROR -Dfast
+./gradlew test -Denvironment=keepdbintact -DRSlog.level=ERROR -Dfast
 ```
 which will not run any integration tests using DB connections etc.
 
-### Maven classpath
-The project filters the src/main/resources directory - only specific directories listed in the
-```
-<resources>
-<resource>
-<directory>src/main/resources</directory>
-<filtering>true</filtering>
-```
-section of pom.xml are included in the Maven classpath.
+### Resources on the classpath
+The build filters the src/main/resources directory - only the directories listed in the
+`sourceSets.main.resources` block of `build.gradle` are included in the classpath and the WAR.
+See [Gradle.md](../Gradle.md#resource-filtering).
 
 
-### Altering the build with different Maven command-line options:
+### Altering the build with different Gradle command-line options:
 
 Package (builds web application):
 
 ```bash
-mvn clean package -Denvironment=drop-recreate-db
+./gradlew clean war
 ```
 Run acceptance tests: 
 
 ```bash
-mvn clean verify -Denvironment=drop-recreate-db
+./gradlew verify -Denvironment=drop-recreate-db
 ```
 
 Launch in jetty:
 
 ```bash
-mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
+./gradlew jettyRun -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 -Dspring.profiles.active=run -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
@@ -90,8 +85,8 @@ terminal for Hot Module Replacement:
 pnpm install --frozen-lockfile && pnpm run serve
 ```
 
-In all these cases, the DB is wiped and recreated from scratch from
-Hibernate mappings.
+With `-Denvironment=drop-recreate-db`, the DB is wiped and recreated from
+the baseline schema, and RSpace applies the Liquibase changesets when it starts.
 
 To keep the database intact, replace `-Denvironment=drop-recreate-db`
 with `-Denvironment=keepdbintact`. This is useful when you want to keep
@@ -164,7 +159,7 @@ JQuery UI, React.js. We use tinyMCE as a text editor.
 > While the following steps are specific to Eclipse, Intellij setup is almost identical.
 
 This section is for setting up a Jetty launch from Eclipse. If just
-using Maven from the command line, then you can just use the 'Launch in jetty'
+using Gradle from the command line, then you can just use the 'Launch in jetty'
 command listed above.
 
 #### Jetty Eclipse Setup
@@ -173,25 +168,23 @@ You can configure to launch the application from jetty in Eclipse. It's
 probably easier to Skype or do this F2F. The application will run at
 http://localhost:8080/workspace. Here is a brief description.
 
-1. Create a new 'External Tools configuration' with the settings as
-displayed in this image:
+1. Create a new 'External Tools configuration' that runs `./gradlew` in the
+project directory with the `jettyRun` arguments listed above. The image below
+shows the old Maven version of this configuration:
 
 ![](../images/extToolConfig.png)
 
-In the 'Environment' tab add the following property 'MAVEN_OPTS' with
-value:
-
-```
--Xdebug -Xnoagent -Djava.compiler=NONE
--Xrunjdwp:transport=dt_socket,address=4000,server=y,suspend=y
-```
+Jetty runs in its own JVM, so `MAVEN_OPTS`-style settings don't reach it: put the debug agent in
+`-PjettyJvmArgs` in the tool configuration's arguments, for example
+`jettyRun -Denvironment=keepdbintact -Dspring.profiles.active=run
+-PjettyJvmArgs='-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=4000'`.
 
 2. Create a new 'Debug' configuration of type 'External Java
 application' and configure as follows:
 
 ![](../images/debugSetup.png)
 
-You can configure other Maven command lines to run through Eclipse as
+You can configure other Gradle command lines to run through Eclipse as
 well, e.g. tests
 
 #### Launch RSpace from Eclipse
@@ -204,5 +197,5 @@ you just set up.
 in your console
 4. Now 'Run->RunAs and choose the debug configuration from step 2
 above.
-5. Maven should start building and launching the application
+5. Gradle should start building and launching the application
 6. You should be able to login to localhost:8080

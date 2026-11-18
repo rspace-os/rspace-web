@@ -24,13 +24,14 @@ if [[ "${chemistry_ready}" != "true" ]]; then
   exit 1
 fi
 
-./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+# integrationTests runs the integration test tasks only (no unit tests), as Maven's
+# integration-test -DskipUnitTests=true did; --continue lets every task report.
+./gradlew --continue clean integrationTests -Denvironment=drop-recreate-db \
   -DincludedTestGroups=chemistry -DexcludedTestGroups= \
   -Dchemistry.provider=indigo -Dchemistry.service.url="${CHEMISTRY_URL}" \
-  -Djava-version="${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}" \
-  -Djava-vendor="${MAVEN_TOOLCHAIN_JAVA_VENDOR:-openjdk}" \
+  -Djava-version="${TOOLCHAIN_JAVA_VERSION:-${MAVEN_TOOLCHAIN_JAVA_VERSION:-17}}" \
   -Djavax.xml.accessExternalDTD=all \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
-  -Djdbc.db.maven="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
-  -Dmaven.test.failure.ignore=false -DRS.devlogLevel=INFO \
+  -Djdbc.server.db="${JDBC_DB}" -Djdbc.url="${JDBC_URL}" \
+  -DRS.devlogLevel=INFO \
   -DRS_FILE_BASE="${RS_FILE_BASE}"

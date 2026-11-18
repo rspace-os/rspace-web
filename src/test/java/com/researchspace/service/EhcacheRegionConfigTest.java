@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -158,20 +160,11 @@ public class EhcacheRegionConfigTest {
 
   /**
    * src/test/resources ships its own applicationContext-dao.xml (with L2 disabled) that shadows the
-   * production file on the test classpath, so pick the copy that is not under test-classes.
+   * production file on the test classpath, so read the production file from the source tree. The
+   * build copies it unfiltered, so the source is what ships, whatever the build's output layout.
    */
   private String readProductionDaoContext() throws IOException {
-    var resources = getClass().getClassLoader().getResources(DAO_CONTEXT_RESOURCE);
-    while (resources.hasMoreElements()) {
-      java.net.URL url = resources.nextElement();
-      if (!url.getPath().contains("test-classes")) {
-        try (InputStream in = url.openStream()) {
-          return IOUtils.toString(in, StandardCharsets.UTF_8);
-        }
-      }
-    }
-    throw new IllegalStateException(
-        "production " + DAO_CONTEXT_RESOURCE + " not found on the test classpath");
+    return Files.readString(Path.of("src/main/resources", DAO_CONTEXT_RESOURCE));
   }
 
   private String propertyName(Method getter) {

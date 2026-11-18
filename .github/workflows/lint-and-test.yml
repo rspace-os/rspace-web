@@ -22,10 +22,6 @@ on:
         description: 'Run build'
         type: boolean
         default: false
-      java_vendor:
-        description: 'Java vendor Maven toolchain'
-        type: string
-        default: 'temurin'
       java_version:
         description: 'Java version for the Java jobs'
         type: choice
@@ -73,8 +69,16 @@ jobs:
               - 'src/main/resources/**'
               - 'src/test/resources/**'
               - 'src/main/webapp/WEB-INF/**'
-              - 'pom.xml'
               - 'scripts/run-chemistry-tests.sh'
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'gradle/**'
+              - 'buildSrc/**'
+              - 'src/jetty/**'
+              - '.github/actions/**'
               - '.github/workflows/**'
 
   fast-junit-tests:
@@ -97,13 +101,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: tests
 
       - name: Setup filestore
         run: |
@@ -117,10 +119,9 @@ jobs:
 
       - name: Run fast tests
         run: |
-          # ponytail: 1C = one fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
-          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          # ponytail: one test fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork if file-collision flakiness appears
+          ./gradlew test -Dfast=true -PmaxTestForks="$(nproc)" -DRS_FILE_BASE=${RS_FILE_BASE} \
+            -Djava-version=${{ matrix.java-version }}
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.26.0
@@ -132,7 +133,7 @@ jobs:
           )
         with:
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: build/test-results/test/*.xml
 
   frontend-checks:
     runs-on: ubuntu-latest
@@ -207,25 +208,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: spotless
 
       # Fail the build if any Java file is not Spotless-formatted. This is an
       # independent job from frontend-checks, so it runs in parallel and a
       # Spotless failure here fails the overall CI run without stopping the
       # frontend checks (and vice versa).
-      # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
-      # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
-      - name: Spotless check
+      # -DspotlessStrict adds the CleanThat checks. Plain spotlessApply will not
+      # fix those; use `./gradlew spotlessApply -DspotlessStrict`.
+      - name: Formatting and dependency checks
         run: |
-          ./mvnw -q spotless:check -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./gradlew -q --continue spotlessCheck checkPinnedVersions -DspotlessStrict \
+            -Djava-version=${{ matrix.java-version }}
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -578,12 +576,11 @@ jobs:
           # changed (added/removed/bigger/smaller) and omit the unchanged list.
           describe-assets: changed-only
 
-  # The slow DB-backed suite is split into two jobs that run on parallel runners:
-  # - spring-tests: runs the `test` phase (pure-unit + Spring-transactional tests)
-  # - integration-tests: runs only the `integration-test` phase via -DskipUnitTests=true
-  # Their union equals a full `mvn verify`. Both jobs run drop-recreate-db independently.
-  # ponytail: this doubles DB schema-init cost (each job runs drop-recreate-db); a
-  # pre-seeded DB image (planned) would remove that overhead.
+  # Database suites and their shards run on independent runners:
+  # - spring-tests: runs only slow-tagged tests; fast-junit-tests covers pure units
+  # - integration-tests: runs only the `integrationTests` task
+  # Together with fast-junit-tests their union equals a full `./gradlew verify`.
+  # Every shard owns a separate MariaDB and filestore. Special IT groups run on shard 1.
 
   spring-tests:
     runs-on: ubuntu-latest
@@ -597,6 +594,7 @@ jobs:
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
         mariadb-version: ['10.11', '11.8']
+        shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -624,13 +622,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: tests
 
       - name: Configure MariaDB
         run: |
@@ -659,14 +655,12 @@ jobs:
 
       - name: Run Spring tests
         run: |
-          ./mvnw clean test -Denvironment=drop-recreate-db \
+          ./gradlew test -PtestSuite=slow -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
-            -Djdbc.db.maven=rspace \
+            -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
-            -Dmaven.test.failure.ignore=false \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
@@ -679,9 +673,9 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
+          check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }}, shard ${{ matrix.shard }})
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: build/test-results/test-shard${{ matrix.shard }}/*.xml
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -695,6 +689,7 @@ jobs:
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
         mariadb-version: ['10.11', '11.8']
+        shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -722,13 +717,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: tests
 
       - name: Configure MariaDB
         run: |
@@ -753,15 +746,13 @@ jobs:
 
       - name: Run integration tests
         run: |
-          ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+          ./gradlew integrationTests --continue -PtestShard=${{ matrix.shard }}/2 -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
-            -Dsurefire.rerunFailingTestsCount=1 \
-            -Djdbc.db.maven=rspace \
+            -DtestRetries=1 \
+            -Djdbc.server.db=rspace \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
-            -Dmaven.test.failure.ignore=false \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
@@ -774,9 +765,9 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
+          check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }}, shard ${{ matrix.shard }})
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: build/test-results/integrationTest*-shard${{ matrix.shard }}/*.xml
 
   chemistry-tests:
     runs-on: ubuntu-latest
@@ -816,13 +807,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ inputs.java_version || '17' }}
-          cache: maven
+          cache-key: tests
 
       - name: Configure MariaDB
         run: |
@@ -847,8 +836,7 @@ jobs:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
-          MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
-          MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
+          TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
@@ -862,7 +850,7 @@ jobs:
         with:
           check_name: Chemistry integration tests
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: build/test-results/integrationTest*/*.xml
 
   # WAR build with the production frontend bundle, tests skipped. Replaces the
   # Jenkins "Build feature branch" stage. Needs both the JDK and Node/pnpm
@@ -884,13 +872,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6.3.0
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-gradle-cached
         with:
-          problem-matcher: true
-          distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
-          cache: maven
+          cache-key: war
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.1.1
@@ -918,9 +904,9 @@ jobs:
         env:
           FRONTEND_BUILD_STATS: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
         run: |
-          ./mvnw clean package -DskipTests=true -DgenerateReactDist -DrenameResourcesMD5=true \
+          ./gradlew testClasses war -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djava-version=${{ matrix.java-version }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
 
       # Base bundle comparisons on pull requests restore this instead of rebuilding main.

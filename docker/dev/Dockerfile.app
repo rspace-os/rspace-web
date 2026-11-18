@@ -1,13 +1,13 @@
-# Backend dev image: Maven + JetBrains Runtime (JBR) 17 + HotswapAgent.
+# Backend dev image: Gradle wrapper + JetBrains Runtime (JBR) 17 + HotswapAgent.
 #
 # The image contains NO application source: the worktree is bind-mounted at
-# /rspace at runtime. The base image provides Maven; on top of it we install the
+# /rspace at runtime. The wrapper provides Gradle; we install the
 # JetBrains Runtime as the JVM the app actually runs on, because JBR ships the
 # DCEVM-derived "enhanced class redefinition" that, together with HotswapAgent,
 # allows hot-reloading far more than plain HotSpot (new methods/fields/classes,
 # many Spring bean changes) without restarting the JVM. See README "Debugging".
-ARG MAVEN_IMAGE=maven:3.9-eclipse-temurin-17
-FROM ${MAVEN_IMAGE}
+ARG APP_BASE_IMAGE=debian:bookworm-slim
+FROM ${APP_BASE_IMAGE}
 
 # Pinned versions (update together; both are vetted third-party artifacts).
 ARG JBR_VERSION=17.0.14
@@ -34,28 +34,11 @@ RUN set -eux; \
     # flag or cannot run.
     /opt/jbr/bin/java -XX:+AllowEnhancedClassRedefinition -version
 
-# Make JBR the JVM that Maven (and therefore jetty:run) runs on.
+# Run the short Gradle build and the standalone Jetty JVM on JBR.
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV GRADLE_USER_HOME=/var/rspace-build/gradle-home
 ENV JAVA_HOME=/opt/jbr
 ENV PATH="/opt/jbr/bin:${PATH}"
-
-# The maven-toolchains-plugin needs a JDK-17 toolchain; point it at JBR. (JBR is
-# OpenJDK-based, so vendor=openjdk is correct.)
-RUN mkdir -p /root/.m2 && \
-    printf '%s\n' \
-      '<?xml version="1.0" encoding="UTF-8"?>' \
-      '<toolchains>' \
-      '  <toolchain>' \
-      '    <type>jdk</type>' \
-      '    <provides>' \
-      '      <version>17</version>' \
-      '      <vendor>openjdk</vendor>' \
-      '    </provides>' \
-      '    <configuration>' \
-      '      <jdkHome>/opt/jbr</jdkHome>' \
-      '    </configuration>' \
-      '  </toolchain>' \
-      '</toolchains>' \
-      > /root/.m2/toolchains.xml
 
 COPY entrypoint-app.sh /usr/local/bin/entrypoint-app.sh
 RUN chmod +x /usr/local/bin/entrypoint-app.sh

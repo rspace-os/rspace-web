@@ -36,14 +36,18 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `pnpm run i18n:extract --sync-primary` | Extract and sync primary English translations |
 | `pnpm run i18n:types` | Generate i18n types |
 | `pnpm run i18n:lint` | Lint translation catalogs |
-| `mvn test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
-| `mvn clean test -Dfast=true` | Run all pure backend unit tests |
-| `mvn test -Dtest=MyClassName` | Run one Spring transactional test class |
-| `mvn clean test` | Run unit and Spring tests; requires a database |
-| `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
-| `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
+| `./gradlew test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
+| `./gradlew test -Dfast=true` | Run all pure backend unit tests |
+| `./gradlew test -Dtest=MyClassName` | Run one Spring transactional test class |
+| `./gradlew test` | Run unit and Spring tests; requires a database |
+| `./gradlew integrationTest -Dtest=MyClassIT` | Run one `*IT` class; requires a database |
+| `./gradlew verify -Denvironment=drop-recreate-db` | Run unit, Spring and `*IT` tests and build the WAR; resets the database |
+| `./gradlew war -DgenerateReactDist` | Build a WAR with the frontend |
+| `./gradlew spotlessApply` | Format Java |
 
-Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
+Gradle is the only build; see `DevDocs/DeveloperNotes/Gradle.md`. Run it on Java 17 or 21 under a UTF-8 locale, never `LC_ALL=C`. Pass build settings as `-D<name>=<value>`; they reach resource filtering and the test JVMs. Unchanged test tasks are skipped; add `--rerun` to run one again.
+
+Dependencies resolve from Maven Central, JitPack (`com.github.*`) and DICE only, never `mavenLocal()`; do not add it. A dependency change also updates its pin in `gradle/pinned-versions.txt`; `./gradlew checkPinnedVersions` confirms. For sibling-project changes, push, wait for JitPack to build the release, then update the version in `build.gradle` and `gradle/pinned-versions.txt`.
 </important>
 
 <important if="editing repository files">
@@ -51,7 +55,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 - Keep changes scoped; preserve unrelated work.
 - Read nested `AGENTS.md` files before editing.
 - Use `rg` and `rg --files` for searches.
-- Only edit vendored code, minified files, build output, `target/`, `dist/`, or `node_modules/` when explicitly targeted.
+- Only edit vendored code, minified files, build output, `build/`, `dist/`, or `node_modules/` when explicitly targeted.
 - Put plans and scratch notes in gitignored `.claude/`.
 - Add dependencies only when necessary.
 - Update nearby developer documentation when behavior or workflows change.
@@ -92,7 +96,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 <important if="writing backend tests">
 
 - Use JUnit 6 Jupiter imports from `org.junit.jupiter`.
-- Surefire discovers `Test*`, `*Test`, `*Tests`, and `*TestCase`. `*IT` requires the `integration-tests` execution in `pom.xml` or explicit `-Dtest=`. Other names are not discovered.
+- The `test` task runs `Test*`, `*Test`, `*Tests`, and `*TestCase` classes. `integrationTests` runs `*IT` classes (`integrationTest`, plus `integrationTestRun` and `integrationTestProblematic` for classes `build.gradle` lists). `-Dtest=` replaces those patterns in every test task. Other names are not discovered.
 - DAO tests extend `SpringTransactionalTest`.
 - Commit-dependent service tests extend `RealTransactionSpringTestBase`; name them `*IT.java`.
 - Controller tests extend `MVCTestBase`; name them `*IT.java`.
