@@ -567,6 +567,9 @@ function _updateAutosavedFields(data) {
     }
     console.log('unknown attr: ' + attr);
   });
+  if (window.elnFieldDisplay) {
+    window.elnFieldDisplay.refresh();
+  }
 }
 
 function loadDateFields() {

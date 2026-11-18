@@ -7,6 +7,7 @@
   "confirmationDialog": "src/components/ConfirmationDialogEntrypoint.tsx",
   "connectedApps": "src/my-rspace/profile/ConnectedAppsTriggerEntrypoint.tsx",
   "createGroup": "src/CreateGroup/CreateGroupEntrypoint.tsx",
+  "elnFieldDisplay": "src/eln/field-display/FieldDisplayEntrypoint.ts",
   "exportModal": "src/Export/ExportModalEntrypoint.tsx",
   "externalWorkFlows": "src/eln/eln-external-workflows/ExternalWorkflowsEntrypoint.tsx",
   "fileTreeToolbar": "src/Toolbar/FileTreeToolbarEntrypoint.tsx",

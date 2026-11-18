@@ -2,7 +2,7 @@
 
 <c:set var="colspan" value="2"></c:set>
 
-<tr id="field_${field.id}" name="text" class="field">
+<tr id="field_${field.id}" name="text" class="field"<%@ include file="fieldDisplayAttributes.jspf" %>>
   <td class="field-value">
   <div id="theChoice"  class="choiceClass" style="position:relative;">
     <input type="file" multiple class="fromLocalComputer" id="fromLocalComputerToGallery_${field.id}" style="display:none" aria-label="<spring:message code='form.textField.insertFileToGalleryAriaLabel'/>"/>
