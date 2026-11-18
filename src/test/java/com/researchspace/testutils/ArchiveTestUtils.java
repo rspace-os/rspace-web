@@ -10,6 +10,7 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
@@ -41,10 +42,13 @@ public class ArchiveTestUtils {
     ArchiveUsersTestData rc = new ArchiveUsersTestData();
     User user = TestFactory.createAnyUserWithRole("fbloggs", Constants.PI_ROLE);
     User admin = TestFactory.createAnyUserWithRole("zbloggs", Constants.ADMIN_ROLE);
+    User labAdmin = TestFactory.createAnyUserWithRole("zlabadmin", Constants.USER_ROLE);
     Group g1 = TestFactory.createAnyGroup(user, new User[] {admin});
+    g1.addMember(labAdmin, RoleInGroup.RS_LAB_ADMIN);
+    g1.setLabAdminViewAll(labAdmin, true);
     // need to set these explicitly
     ArchiveUsers userGroupInfo = new ArchiveUsers();
-    userGroupInfo.setUsers(TransformerUtils.toSet(user, admin));
+    userGroupInfo.setUsers(TransformerUtils.toSet(user, admin, labAdmin));
     userGroupInfo.setGroups(TransformerUtils.toSet(g1));
     userGroupInfo.setUserGroups(g1.getUserGroups());
     UserPreference pref =
@@ -64,6 +68,7 @@ public class ArchiveTestUtils {
     // need to set these explicitly
 
     rc.setAdmin(admin);
+    rc.setLabAdmin(labAdmin);
     rc.setUser(user);
     rc.setGroup(g1);
     rc.setCommunity(community);

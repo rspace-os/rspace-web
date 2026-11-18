@@ -36,7 +36,9 @@ import com.researchspace.model.Group;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
 import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
@@ -637,8 +639,12 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     Group grp = reloadedCommunity.getLabGroups().iterator().next();
 
     assertEquals(reloadedCommunity, grp.getCommunity());
+    User reloadedLabAdmin = userMgr.getUserByUsername(testData.getLabAdmin().getUsername());
+    UserGroup labAdminMembership = grp.getUserGroupForUser(reloadedLabAdmin);
     commitTransaction();
-    assertThat(grp.getMembers()).hasSize(2);
+    assertThat(grp.getMembers()).hasSize(3);
+    assertEquals(RoleInGroup.RS_LAB_ADMIN, labAdminMembership.getRoleInGroup());
+    assertTrue(labAdminMembership.isAdminViewDocsEnabled());
 
     User reloadedPI = userMgr.getUserByUsername(testData.getUser().getUniqueName());
     assertEquals(testData.getUser(), reloadedPI);
