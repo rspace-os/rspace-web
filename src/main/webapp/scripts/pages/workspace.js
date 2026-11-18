@@ -36,49 +36,47 @@ function showRecordList(result) {
 
   if (noOfRows > 0) {
     $('#record_list').html(result);
+  } else {
+    $('#record_list').hide().html(result);
+  }
 
-    // RSPAC-1212 Blocking: Setting the height to fit the height of the
-    // previously displayed content and the blocking message
-    if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({height: temporaryHeightOfBlockedElement});
-    }
+  // RSPAC-1212 Blocking: Setting the height to fit the height of the
+  // previously displayed content and the blocking message
+  if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
+    $(tableElement).css({height: temporaryHeightOfBlockedElement});
+  }
 
+  updateSearchModePanel(noOfRows > 0);
+  $('#record_list').show(effect, effectDuration);
+  window.dispatchEvent(new CustomEvent("workspaceRecordListShown"));
+}
+
+// Shows the listing or the empty message, and the search bar when in search mode.
+function updateSearchModePanel(hasRows) {
+  $("#searchModePanel").removeClass();
+  if (hasRows) {
     $(".rs-working-area, .tabularViewBottom").show();
-    $('#record_list').show(effect, effectDuration);
-    $("#searchModePanel").removeClass().addClass("searchSuccess");
+    $("#searchModePanel").addClass("searchSuccess");
     if (workspaceSettings.searchMode) {
-      var message = RS.msg("legacyjs.workspace.main.searchResultsShown");
-      $("#searchModePanel #message").text(message);
+      $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.searchResultsShown"));
       $("#resetSearch").show();
       $("#searchModePanel").slideDown(fadeTime);
     } else {
       $("#searchModePanel").slideUp(fadeTime);
     }
   } else {
-    $('#record_list').hide().html(result);
-
-    // RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
-    if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({height: temporaryHeightOfBlockedElement});
-    }
-
     $(".rs-working-area, .tabularViewBottom").hide();
-    $('#record_list').show(effect, effectDuration);
-    $("#searchModePanel").removeClass();
     if (workspaceSettings.searchMode) {
       $("#searchModePanel").addClass("searchError");
-      $("#searchModePanel #message").text(
-          RS.msg("legacyjs.workspace.main.searchNoResults"));
+      $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.searchNoResults"));
       $("#resetSearch").show();
-      $("#searchModePanel").slideDown(fadeTime);
     } else {
       $("#searchModePanel").addClass("emptyFolder");
       $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.folderEmpty"));
       $("#resetSearch").hide();
-      $("#searchModePanel").slideDown(fadeTime);
     }
+    $("#searchModePanel").slideDown(fadeTime);
   }
-  window.dispatchEvent(new CustomEvent("workspaceRecordListShown"));
 }
 
 function hideRecordList() {

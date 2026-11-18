@@ -31,6 +31,7 @@ import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
+import { RECORD_LIST_SHOWN } from "./DefaultSearch/workspaceGlobals";
 import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
@@ -95,7 +96,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       });
     };
 
-    this.restoreSearchFromLocation();
+    if (workspaceSettings.options.length > 0) {
+      this.resumeRestoredSearch();
+    } else {
+      this.restoreSearchFromLocation();
+    }
 
     /*
      * This event tells the jQuery parts of the code that they can assume that
@@ -144,9 +149,16 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     }
   };
 
+  // The server rendered the results of a search kept in the session, after the user closed a document
+  resumeRestoredSearch = () => {
+    workspaceSettings.searchMode = true;
+    workspaceSettings.url = "/workspace/ajax/search";
+    updateSearchModePanel($("#noOfRows").val() > 0);
+    window.dispatchEvent(new CustomEvent(RECORD_LIST_SHOWN));
+  };
+
   // Runs the search held in the address bar, for a bookmarked or shared search link
   restoreSearchFromLocation = () => {
-    if (workspaceSettings.options.length > 0) return;
     const parsed = parseSearchQuery(window.location.search);
     if (parsed.kind === "none") return;
     if (parsed.kind === "invalid") {

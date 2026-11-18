@@ -63,6 +63,18 @@ describe("toSearchQuery", () => {
     }
   });
 
+  test("the default sort field is left out, as the server fills it in after a return from a document", () => {
+    expect(toSearchQuery({ ...baseSettings, orderBy: "modificationDateMillis" })).toBe(toSearchQuery(baseSettings));
+  });
+
+  test("the default sort field is kept when sorting ascending", () => {
+    expect(
+      new URLSearchParams(toSearchQuery({ ...baseSettings, orderBy: "modificationDateMillis", sortOrder: "ASC" })).get(
+        "orderBy",
+      ),
+    ).toBe("modificationDateMillis");
+  });
+
   test("searches that differ only in sort order give different strings", () => {
     expect(toSearchQuery({ ...baseSettings, sortOrder: "ASC" })).not.toBe(toSearchQuery(baseSettings));
   });

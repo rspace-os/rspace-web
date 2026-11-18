@@ -22,6 +22,9 @@ const SEARCH_OPTIONS = [
   "records",
 ] as const;
 
+// The server reports this sort field, descending, on a restored search even when none was chosen
+const SERVER_DEFAULT_ORDER_BY = "modificationDateMillis";
+
 export type SearchOption = (typeof SEARCH_OPTIONS)[number];
 
 export type WorkspaceSearchState = {
@@ -46,7 +49,8 @@ export function toSearchQuery(settings: WorkspaceSearchState): string {
   for (const key of FILTER_KEYS) {
     if (settings[key]) params.append(key, "true");
   }
-  if (settings.orderBy) params.append("orderBy", settings.orderBy);
+  const isServerDefaultSort = settings.orderBy === SERVER_DEFAULT_ORDER_BY && settings.sortOrder === "DESC";
+  if (settings.orderBy && !isServerDefaultSort) params.append("orderBy", settings.orderBy);
   params.append("sortOrder", settings.sortOrder);
   return params.toString();
 }
