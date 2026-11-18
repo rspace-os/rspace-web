@@ -109,6 +109,7 @@ public interface BookingCatalogueManager {
   }
 
   /** How many matching items are in each availability category. */
+  @Schema(name = "BookingCatalogueAvailabilityCounts")
   record AvailabilityCounts(long availableNow, long freeLaterToday) {}
 
   /**
