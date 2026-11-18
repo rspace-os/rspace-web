@@ -24,6 +24,7 @@ import org.junit.jupiter.api.TestFactory;
  */
 class FieldDisplayRuleVectorsTest {
 
+  private static final ObjectMapper JSON = new ObjectMapper();
   private static final JsonNode VECTORS = loadVectors();
 
   private static JsonNode loadVectors() {
@@ -62,7 +63,8 @@ class FieldDisplayRuleVectorsTest {
   }
 
   @TestFactory
-  Stream<DynamicTest> validRulesParseAndSerialiseCanonically() {
+  Stream<DynamicTest> validRulesSerialiseToTheCanonicalJsonValue() {
+    // Compared as JSON values, not strings: each side serialises with its own JSON library.
     return cases("rules", "valid")
         .map(
             vector ->
@@ -70,8 +72,9 @@ class FieldDisplayRuleVectorsTest {
                     vector.get("name").asText(),
                     () ->
                         assertEquals(
-                            vector.get("canonical").asText(),
-                            FieldDisplayRule.fromJson(vector.get("json").asText()).toJson())));
+                            JSON.readTree(vector.get("canonical").asText()),
+                            JSON.readTree(
+                                FieldDisplayRule.fromJson(vector.get("json").asText()).toJson()))));
   }
 
   @TestFactory

@@ -1,5 +1,5 @@
 {
-  "description": "Shared vectors for display rules (RPD-339). Run by FieldDisplayRuleVectorsTest (Java) and displayRuleVectors.test.ts (TypeScript); both implementations must agree on every case. Keys are UUIDs; K1 is 00000000-0000-4000-8000-000000000001 and so on.",
+  "description": "Shared vectors for display rules (RPD-339). Run by FieldDisplayRuleVectorsTest (Java) and displayRuleVectors.test.ts (TypeScript); both implementations must agree on every case. Valid rules are compared by JSON value, not by bytes. Keys are UUIDs; K1 is 00000000-0000-4000-8000-000000000001 and so on.",
   "rules": {
     "valid": [
       {
@@ -23,12 +23,12 @@
         "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_NO_VALUE\"}"
       },
       {
-        "name": "escaping matches JSON.stringify: control characters, quotes, backslashes and non-ASCII",
+        "name": "control characters, quotes, backslashes and non-ASCII survive a round trip",
         "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}",
         "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}"
       },
       {
-        "name": "a lone surrogate is escaped in lowercase hex",
+        "name": "a lone surrogate survives a round trip",
         "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\uD800y\"]}",
         "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\ud800y\"]}"
       },
@@ -38,7 +38,7 @@
         "canonical": "{\"sourceFieldKey\":\"x\",\"operator\":\"HAS_VALUE\"}"
       },
       {
-        "name": "vertical tab is escaped in lowercase hex",
+        "name": "a vertical tab survives a round trip",
         "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}",
         "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}"
       },

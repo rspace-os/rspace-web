@@ -140,7 +140,7 @@ export function createDisplayRule(
   return v.parse(FieldDisplayRuleSchema, { sourceFieldKey, operator, values: [...values] });
 }
 
-/** The rule as stored JSON, byte-for-byte what the Java side writes. */
+/** The rule as stored JSON, via `JSON.stringify`; the same JSON value the Java side writes (`values` omitted when empty). */
 export function serializeDisplayRule(rule: FieldDisplayRule): string {
   return JSON.stringify({
     sourceFieldKey: rule.sourceFieldKey,

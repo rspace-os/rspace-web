@@ -66,8 +66,9 @@ const VectorsSchema = v.object({
 const vectors = v.parse(VectorsSchema, JSON.parse(fs.readFileSync(VECTORS_PATH, "utf8")));
 
 describe("display rule vectors shared with Java", () => {
-  test.each(vectors.rules.valid)("parses and serialises canonically: $name", ({ json, canonical }) => {
-    expect(serializeDisplayRule(parseDisplayRule(json))).toBe(canonical);
+  // Compared as JSON values, not strings: each side serialises with its own JSON library.
+  test.each(vectors.rules.valid)("serialises to the canonical JSON value: $name", ({ json, canonical }) => {
+    expect(JSON.parse(serializeDisplayRule(parseDisplayRule(json)))).toEqual(JSON.parse(canonical));
   });
 
   test.each(vectors.rules.invalid)("rejects: $name", ({ json }) => {

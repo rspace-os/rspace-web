@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -18,9 +20,10 @@ import java.util.regex.Pattern;
  * id. Stored as JSON, for example {@code {"sourceFieldKey":"...","operator":"IS_ANY_OF",
  * "values":["Yes"]}}.
  *
- * <p>Parsing and serialisation match the TypeScript {@code parseDisplayRule} and {@code
- * serializeDisplayRule} exactly, including on malformed input, so the server and the browser always
- * agree on what a stored rule means.
+ * <p>Parsing accepts and rejects exactly what the TypeScript {@code parseDisplayRule} does,
+ * including on malformed input, and both sides write the same JSON value, so the server and the
+ * browser always agree on what a stored rule means. Both use standard JSON libraries (Jackson here,
+ * {@code JSON.parse} and {@code JSON.stringify} there).
  *
  * @param sourceFieldKey key of the radio or choice field the condition reads
  * @param operator how the source's selected options are compared
@@ -135,58 +138,27 @@ public record FieldDisplayRule(
     return values;
   }
 
-  /** The rule as stored JSON, byte-for-byte what the TypeScript side writes. */
+  /**
+   * The rule as stored JSON, written by Jackson. Its JSON value equals what the TypeScript {@code
+   * serializeDisplayRule} writes ({@code values} omitted when empty); the bytes may differ in
+   * escaping, which does not matter because rules are always read through a JSON parser.
+   */
   public String toJson() {
-    StringBuilder json = new StringBuilder("{\"sourceFieldKey\":");
-    appendJsonString(json, sourceFieldKey);
-    json.append(",\"operator\":\"").append(operator.name()).append('"');
+    ObjectNode json = MAPPER.createObjectNode();
+    json.put("sourceFieldKey", sourceFieldKey);
+    json.put("operator", operator.name());
     if (!values.isEmpty()) {
-      json.append(",\"values\":[");
-      for (int i = 0; i < values.size(); i++) {
-        if (i > 0) {
-          json.append(',');
-        }
-        appendJsonString(json, values.get(i));
-      }
-      json.append(']');
+      ArrayNode array = json.putArray("values");
+      values.forEach(array::add);
     }
-    return json.append('}').toString();
+    try {
+      return MAPPER.writeValueAsString(json);
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Could not serialise display rule", e);
+    }
   }
 
   static boolean isBlank(String text) {
     return BLANK.matcher(text).matches();
-  }
-
-  /**
-   * Quotes a string the way JavaScript's {@code JSON.stringify} does (ECMA-262 QuoteJSONString).
-   */
-  private static void appendJsonString(StringBuilder json, String text) {
-    json.append('"');
-    for (int i = 0; i < text.length(); i++) {
-      char c = text.charAt(i);
-      switch (c) {
-        case '"' -> json.append("\\\"");
-        case '\\' -> json.append("\\\\");
-        case '\b' -> json.append("\\b");
-        case '\f' -> json.append("\\f");
-        case '\n' -> json.append("\\n");
-        case '\r' -> json.append("\\r");
-        case '\t' -> json.append("\\t");
-        default -> {
-          boolean loneHigh =
-              Character.isHighSurrogate(c)
-                  && (i + 1 >= text.length() || !Character.isLowSurrogate(text.charAt(i + 1)));
-          boolean loneLow =
-              Character.isLowSurrogate(c)
-                  && (i == 0 || !Character.isHighSurrogate(text.charAt(i - 1)));
-          if (c < 0x20 || loneHigh || loneLow) {
-            json.append(String.format("\\u%04x", (int) c));
-          } else {
-            json.append(c);
-          }
-        }
-      }
-    }
-    json.append('"');
   }
 }
