@@ -25,6 +25,7 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.TableGenerator;
@@ -39,9 +40,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
@@ -51,6 +54,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 @Entity
 @Setter
 @Getter
+@Slf4j
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Audited
@@ -79,6 +83,11 @@ public abstract class InventoryEntityField
 
   /** Shows this field only when another field of the same template meets a condition. */
   private FieldDisplayRule displayRule;
+
+  /** The stored text of the display rule, read only to report a rule that cannot be parsed. */
+  @Getter(AccessLevel.NONE)
+  @Setter(AccessLevel.NONE)
+  private String storedDisplayRule;
 
   private SampleEntity sample;
   private InstrumentEntity instrumentEntity;
@@ -184,11 +193,37 @@ public abstract class InventoryEntityField
     return fieldKey;
   }
 
-  /** Null when the field is always shown. */
+  /**
+   * Null when the field is always shown. A stored rule that cannot be read loads as null (see
+   * {@link FieldDisplayRuleConverter}).
+   */
   @Convert(converter = FieldDisplayRuleConverter.class)
   @Column(columnDefinition = "text")
   public FieldDisplayRule getDisplayRule() {
     return displayRule;
+  }
+
+  /*
+   * The display rule column again, unconverted and read-only, so a rule the converter could not
+   * read can be reported with the field's id, which the converter cannot see. Not audited: the
+   * audit table has the column once, through getDisplayRule.
+   */
+  @Column(name = "displayRule", columnDefinition = "text", insertable = false, updatable = false)
+  @NotAudited
+  private String getStoredDisplayRule() {
+    return storedDisplayRule;
+  }
+
+  private void setStoredDisplayRule(String storedDisplayRule) {
+    this.storedDisplayRule = storedDisplayRule;
+  }
+
+  @PostLoad
+  private void reportUnreadableDisplayRule() {
+    if (displayRule == null && storedDisplayRule != null) {
+      // fixed text: the stored rule and the parser's message may carry user content
+      log.warn("Inventory field {} has a display rule that cannot be read; showing it always", id);
+    }
   }
 
   @Transient

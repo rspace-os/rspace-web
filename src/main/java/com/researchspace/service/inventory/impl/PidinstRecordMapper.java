@@ -25,6 +25,7 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import com.researchspace.model.record.BaseRecord;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -183,10 +184,16 @@ final class PidinstRecordMapper {
    * the record by the template field's canonical name and type. Fields the record cannot fill are
    * blank. A link field gets the link resolved for it, if any (keyed by canonical name, matched as
    * {@link PidinstFields} matches); otherwise it says nothing about its link, so the template's
-   * default survives.
+   * default survives. A radio or choice field, which no PIDINST property maps to, keeps the
+   * template's default selection.
+   *
+   * <p>A mandatory field hidden by its display rule needs no value. Visibility is judged on the
+   * template's defaults, which is what the new instrument holds in every field a rule can depend
+   * on, as the operations wizard judges a new sample (see {@code
+   * OperationTemplateConformanceValidator}).
    *
    * @throws ApiRuntimeException {@code errors.inventory.identifier.pidinstMandatoryMissing} when
-   *     the record has no value for a mandatory template field
+   *     the record has no value for a shown, mandatory template field
    */
   static ApiInstrument toApiInstrument(
       ApiPidinstRecord record, InstrumentTemplate template, Map<String, ApiInventoryLink> links) {
@@ -198,19 +205,28 @@ final class PidinstRecordMapper {
             BaseRecord.DEFAULT_VARCHAR_LENGTH));
     instrument.setDescription(
         truncate(record.getDescription(), InventoryRecord.DESCRIPTION_LENGTH));
-    for (InventoryEntityField templateField : template.getActiveFields()) {
+    List<InventoryEntityField> templateFields = template.getActiveFields();
+    List<Boolean> visible = InventoryFieldDisplayRules.visibility(templateFields);
+    for (int i = 0; i < templateFields.size(); i++) {
+      InventoryEntityField templateField = templateFields.get(i);
+      boolean options = templateField.isOptionsStoringField();
       String value =
-          templateField.getType() == FieldType.LINK
+          templateField.getType() == FieldType.LINK || options
               ? null
               : truncate(valueFor(templateField, record), FIELD_MAX);
+      boolean empty = options ? templateField.getSelectedOptions().isEmpty() : isBlank(value);
       if (templateField.isMandatory()
+          && visible.get(i)
           && templateField.getType() != FieldType.LINK
-          && isBlank(value)) {
+          && empty) {
         throw new ApiRuntimeException(
             "errors.inventory.identifier.pidinstMandatoryMissing", templateField.getName());
       }
       ApiInventoryEntityField apiField = new ApiInventoryEntityField();
       apiField.setContent(value == null ? "" : value);
+      if (options) {
+        apiField.setSelectedOptions(templateField.getSelectedOptions());
+      }
       if (templateField.getType() == FieldType.LINK) {
         linkFor(templateField, links).ifPresent(apiField::setLink);
       }

@@ -2,6 +2,7 @@ package com.researchspace.model.inventory.field;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -195,6 +196,64 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
+  void updateTreatsABlankWrittenOverAnEmptyFieldAsUnchanged() {
+    Sample sample = template.copyFromTemplate(user);
+    List<InventoryEntityField> fields = sample.getActiveFields();
+    fields.get(0).setSelectedOptions(List.of("Yes"));
+    // as update to the latest template version leaves a field it adds
+    fields.get(1).setData(null);
+
+    RecordBeforeUpdate before = InventoryFieldDisplayRules.beforeUpdate(fields);
+    // clients send "" for empty content
+    fields.get(1).setFieldData("");
+    assertDoesNotThrow(() -> before.assertShownMandatoryFieldsFilled(fields, f -> false));
+  }
+
+  @Test
+  void ruledLinkIsJudgedOnItsLink() {
+    InventoryLinkField related = new InventoryLinkField("Related protocol");
+    related.setId(3L);
+    related.setFieldKey(NOTES_KEY);
+    related.setMandatory(true);
+    related.setDisplayRule(showWhen(GMO_KEY, "Yes"));
+    template.addSampleField(related);
+    Sample sample = template.copyFromTemplate(user);
+    List<InventoryEntityField> fields = sample.getActiveFields();
+    InventoryLinkField sampleLink = (InventoryLinkField) fields.get(2);
+
+    // create: hidden, so an empty link is allowed; shown, it must be filled
+    assertDoesNotThrow(
+        () -> InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(fields, f -> false));
+    fields.get(0).setSelectedOptions(List.of("Yes"));
+    fields.get(1).setFieldData("P-1");
+    assertMandatoryMissing(
+        () -> InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(fields, f -> false));
+    sampleLink.setLink(link());
+    assertDoesNotThrow(
+        () -> InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(fields, f -> false));
+
+    // update: clearing a shown mandatory link is rejected
+    RecordBeforeUpdate shownAndFilled = InventoryFieldDisplayRules.beforeUpdate(fields);
+    sampleLink.setLink(null);
+    assertMandatoryMissing(
+        () -> shownAndFilled.assertShownMandatoryFieldsFilled(fields, f -> false));
+
+    // update: revealing an empty mandatory link is rejected
+    fields.get(0).setSelectedOptions(List.of("No"));
+    RecordBeforeUpdate hiddenAndEmpty = InventoryFieldDisplayRules.beforeUpdate(fields);
+    fields.get(0).setSelectedOptions(List.of("Yes"));
+    assertMandatoryMissing(
+        () -> hiddenAndEmpty.assertShownMandatoryFieldsFilled(fields, f -> false));
+
+    // update: clearing a hidden one is allowed
+    fields.get(0).setSelectedOptions(List.of("No"));
+    sampleLink.setLink(link());
+    RecordBeforeUpdate hiddenAndFilled = InventoryFieldDisplayRules.beforeUpdate(fields);
+    sampleLink.setLink(null);
+    assertDoesNotThrow(() -> hiddenAndFilled.assertShownMandatoryFieldsFilled(fields, f -> false));
+  }
+
+  @Test
   void updateCountsTransitiveReveals() {
     InventoryRadioField stage = radio(3L, "Stage", NOTES_KEY, List.of("Early", "Late"));
     stage.setDisplayRule(showWhen(GMO_KEY, "Yes"));
@@ -228,6 +287,18 @@ class InventoryFieldDisplayRulesTest {
     LocalizedIllegalStateException e =
         assertThrows(LocalizedIllegalStateException.class, shown::updateToLatestTemplateVersion);
     assertEquals("validation.inventoryField.mandatoryInLatestTemplate", e.getMessage());
+  }
+
+  @Test
+  void updateToLatestLetsAnEmptyFieldBecomeOptional() {
+    Sample sample = template.copyFromTemplate(user);
+    sample.getActiveFields().get(0).setSelectedOptions(List.of("Yes"));
+    // shown, mandatory and empty in the record's version; optional in the latest
+    permit.setMandatory(false);
+    template.increaseVersion();
+
+    assertDoesNotThrow(sample::updateToLatestTemplateVersion);
+    assertFalse(sample.getActiveFields().get(1).isMandatory());
   }
 
   @Test
@@ -288,6 +359,13 @@ class InventoryFieldDisplayRulesTest {
     LocalizedIllegalArgumentException e =
         assertThrows(LocalizedIllegalArgumentException.class, check::run);
     assertEquals("validation.inventoryField.invalidForFieldType", e.getMessage());
+  }
+
+  private static InventoryLink link() {
+    InventoryLink link = new InventoryLink();
+    link.setTargetGlobalId("SA42");
+    link.setRelationType("References");
+    return link;
   }
 
   private static FieldDisplayRule showWhen(String sourceKey, String value) {

@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -23,8 +22,9 @@ import java.util.function.Predicate;
  * <p>A field without a display rule keeps the mandatory check in {@link
  * InventoryEntityField#validate}, run whenever its value is set. A field with a rule skips that
  * check, because whether it is shown depends on its siblings; one of the record-level checks here
- * replaces it, depending on what changed the record. Link fields keep their own mandatory checks (a
- * link may legitimately start empty), so these checks only decide when those are skipped.
+ * replaces it, depending on what changed the record. A field counts as filled when {@link
+ * InventoryEntityField#isValidValueForMandatoryField} accepts its value, so a link field is judged
+ * on its link's target and relation rather than on its (always empty) data column.
  */
 public final class InventoryFieldDisplayRules {
 
@@ -114,38 +114,44 @@ public final class InventoryFieldDisplayRules {
   }
 
   /**
-   * Remembers each field's value and visibility before an update, for {@link
-   * RecordBeforeUpdate#assertShownMandatoryFieldsFilled}.
+   * Remembers whether each field was filled and shown before an update, for {@link
+   * RecordBeforeUpdate#assertShownMandatoryFieldsFilled}. Call it before the request touches the
+   * record, links included.
    *
    * @param fields the record's active fields before the update is applied
    */
   public static RecordBeforeUpdate beforeUpdate(List<InventoryEntityField> fields) {
     List<Boolean> visible = visibility(fields);
-    Map<InventoryEntityField, String> data = new IdentityHashMap<>();
+    Map<InventoryEntityField, Boolean> filled = new IdentityHashMap<>();
     Map<InventoryEntityField, Boolean> shown = new IdentityHashMap<>();
     for (int i = 0; i < fields.size(); i++) {
-      data.put(fields.get(i), fields.get(i).getData());
-      shown.put(fields.get(i), visible.get(i));
+      InventoryEntityField field = fields.get(i);
+      filled.put(field, isFilled(field));
+      shown.put(field, visible.get(i));
     }
-    return new RecordBeforeUpdate(data, shown);
+    return new RecordBeforeUpdate(filled, shown);
   }
 
-  /** The values and visibility of a record's fields before an update. */
+  /** Whether a record's fields were filled and shown before an update. */
   public static final class RecordBeforeUpdate {
-    private final Map<InventoryEntityField, String> data;
+    private final Map<InventoryEntityField, Boolean> filled;
     private final Map<InventoryEntityField, Boolean> shown;
 
     private RecordBeforeUpdate(
-        Map<InventoryEntityField, String> data, Map<InventoryEntityField, Boolean> shown) {
-      this.data = data;
+        Map<InventoryEntityField, Boolean> filled, Map<InventoryEntityField, Boolean> shown) {
+      this.filled = filled;
       this.shown = shown;
     }
 
     /**
      * Rejects the update if it leaves a field with a display rule shown, mandatory and empty, and
-     * either changed that field's value or revealed it (it was hidden before). An empty mandatory
-     * field that was already shown and is left alone does not block an unrelated edit: updating to
-     * the latest template version may legitimately leave one empty.
+     * either emptied that field or revealed it (it was hidden before).
+     *
+     * <p>A field that was already empty, and stays empty, is not changed by the update, whatever
+     * blank value the request wrote over it: clients send {@code ""} for empty content, which
+     * replaces the {@code null} an update to the latest template version leaves in a field it adds.
+     * So an empty mandatory field that was already shown and is left empty does not block an
+     * unrelated edit.
      *
      * @param fields the record's active fields after the update is applied
      * @param exempt fields whose emptiness is allowed for another reason
@@ -158,10 +164,9 @@ public final class InventoryFieldDisplayRules {
         if (!visible.get(i) || !isRuledMandatoryAndEmpty(field) || exempt.test(field)) {
           continue;
         }
-        boolean changed =
-            !data.containsKey(field) || !Objects.equals(data.get(field), field.getData());
+        boolean emptied = !Boolean.FALSE.equals(filled.get(field));
         boolean revealed = !Boolean.TRUE.equals(shown.get(field));
-        if (changed || revealed) {
+        if (emptied || revealed) {
           throw mandatoryContentMissing(field);
         }
       }
@@ -197,10 +202,12 @@ public final class InventoryFieldDisplayRules {
   }
 
   private static boolean isRuledMandatoryAndEmpty(InventoryEntityField field) {
-    return field.getDisplayRule() != null
-        && field.isMandatory()
-        && !(field instanceof InventoryLinkField)
-        && !field.isValidValueForMandatoryField(field.getFieldData());
+    return field.getDisplayRule() != null && field.isMandatory() && !isFilled(field);
+  }
+
+  /** A link field ignores the argument and reads its link's target and relation. */
+  private static boolean isFilled(InventoryEntityField field) {
+    return field.isValidValueForMandatoryField(field.getFieldData());
   }
 
   private static LocalizedIllegalArgumentException mandatoryContentMissing(
