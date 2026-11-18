@@ -23,7 +23,11 @@ import com.researchspace.service.ChemistryService;
 import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
+import com.researchspace.service.inventory.InventoryStructureHit;
+import com.researchspace.service.inventory.InventoryStructureSearchManager;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +57,10 @@ public class RSChemService implements ChemistryService {
 
   private final AuditManager auditManager;
 
+  private final InventoryStructureSearchManager inventoryStructureSearchManager;
+
+  private final SystemPropertyPermissionManager systemPropertyPermissionManager;
+
   @Autowired
   public RSChemService(
       RSChemElementManager rsChemElementManager,
@@ -60,13 +68,17 @@ public class RSChemService implements ChemistryService {
       BreadcrumbGenerator breadcrumbGenerator,
       @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       EcatChemistryFileManager chemistryFileManager,
-      AuditManager auditManager) {
+      AuditManager auditManager,
+      InventoryStructureSearchManager inventoryStructureSearchManager,
+      SystemPropertyPermissionManager systemPropertyPermissionManager) {
     this.rsChemElementManager = rsChemElementManager;
     this.folderManager = folderManager;
     this.breadcrumbGenerator = breadcrumbGenerator;
     this.chemistryProvider = chemistryProvider;
     this.chemistryFileManager = chemistryFileManager;
     this.auditManager = auditManager;
+    this.inventoryStructureSearchManager = inventoryStructureSearchManager;
+    this.systemPropertyPermissionManager = systemPropertyPermissionManager;
   }
 
   @Override
@@ -97,13 +109,27 @@ public class RSChemService implements ChemistryService {
     int start = (pageNumber * pageSize);
     /* let's limit processed results to one full page after current page, and one more hit */
     int searchResultLimit = start + (2 * pageSize) + 1;
+    List<Long> chemIds = chemistryProvider.search(chemQuery, searchType).getChemicalHits();
     List<ChemSearchedItem> searchResults =
-        rsChemElementManager.search(chemQuery, searchType, searchResultLimit, user);
-    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
-    int end = Math.min(searchResults.size() - 1, (pageNumber * pageSize) + pageSize - 1);
+        rsChemElementManager.searchChemIds(chemIds, searchResultLimit, user);
+    /* below the limit, every document and Gallery hit is known, so Inventory hits can follow them;
+    at the limit, this page and the next are all document and Gallery hits */
+    boolean elnTotalKnown = searchResults.size() < searchResultLimit;
+    List<InventoryStructureHit> inventoryHits =
+        elnTotalKnown && !chemIds.isEmpty() && isInventoryIncluded(user)
+            ? inventoryStructureSearchManager.findReadableStructureHits(chemIds, user)
+            : List.of();
+    int totalKnownHits = searchResults.size() + inventoryHits.size();
+    int end = Math.min(totalKnownHits - 1, start + pageSize - 1);
 
+    List<ChemSearchedItem> pagedRecords = new ArrayList<>();
+    List<InventoryStructureHit> pagedInventoryHits = new ArrayList<>();
     for (int i = start; i <= end; i++) {
-      pagedRecords.add(searchResults.get(i));
+      if (i < searchResults.size()) {
+        pagedRecords.add(searchResults.get(i));
+      } else {
+        pagedInventoryHits.add(inventoryHits.get(i - searchResults.size()));
+      }
     }
 
     Map<Long, Breadcrumb> searchResultToBreadcrumb = new HashMap<>();
@@ -119,13 +145,25 @@ public class RSChemService implements ChemistryService {
     Integer totalPageCount = null;
     /* if number of found results is at limit or more, the results calculation was probably cut off;
     don't populate total size and page count */
-    if (searchResults.size() < searchResultLimit) {
-      totalHitCount = searchResults.size();
+    if (elnTotalKnown) {
+      totalHitCount = totalKnownHits;
       totalPageCount = (int) Math.ceil(((double) totalHitCount) / ((double) pageSize));
     }
 
     return new ChemicalSearchResults(
-        pagedRecords, start, end, searchResultToBreadcrumb, totalHitCount, totalPageCount);
+        pagedRecords,
+        pagedInventoryHits,
+        start,
+        end,
+        searchResultToBreadcrumb,
+        totalHitCount,
+        totalPageCount);
+  }
+
+  private boolean isInventoryIncluded(User user) {
+    return systemPropertyPermissionManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_AVAILABLE)
+        && inventoryStructureSearchManager.isStructureSearchAvailable(user);
   }
 
   @Override
@@ -252,6 +290,10 @@ public class RSChemService implements ChemistryService {
   @NoArgsConstructor
   public static class ChemicalSearchResults {
     List<ChemSearchedItem> pagedRecords = new ArrayList<>();
+
+    /** Inventory hits on this page, listed after {@link #pagedRecords}. */
+    List<InventoryStructureHit> pagedInventoryHits = new ArrayList<>();
+
     int startHit;
     int endHit;
     Map<Long, Breadcrumb> breadcrumbMap;

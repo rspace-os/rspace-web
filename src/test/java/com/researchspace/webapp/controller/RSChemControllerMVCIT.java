@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -18,20 +19,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
+import com.researchspace.webapp.controller.RSChemController.ChemSearchHit;
+import com.researchspace.webapp.controller.RSChemController.ChemSearchHitSource;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.security.Principal;
 import java.util.List;
@@ -57,6 +66,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Autowired private FieldParser parser;
   @Autowired private AuditManager auditMgr;
+  @Autowired private SystemPropertyManager systemPropertyManager;
 
   @BeforeEach
   public void setup() throws Exception {
@@ -271,6 +281,42 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     assertNull(result.getResolvedException());
     ChemSearchResultsPage resultsPage =
         (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertEquals(2, resultsPage.getTotalHitCount().intValue());
+  }
+
+  @Test
+  public void structureSearchListsInventoryItemsAfterGalleryFiles() throws Exception {
+    systemPropertyManager.save(
+        SystemPropertyName.CHEMISTRY_AVAILABLE, HierarchicalPermission.ALLOWED, null);
+    userMgr.setPreference(Preference.CHEMISTRY, "true", user.getUsername());
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user, "with chemistry");
+    EcatChemistryFile aminoglutethimide = addChemistryFileToGallery("Aminoglutethimide.mol", user);
+    inventoryFileApiMgr.attachGalleryFileToInventoryRecord(
+        new GlobalIdentifier(sample.getGlobalId()), aminoglutethimide.getOid(), user);
+
+    // benzene is a substructure of aminoglutethimide
+    ChemicalSearchRequestDTO request =
+        new ChemicalSearchRequestDTO("c1ccccc1", 0, 10, "SUBSTRUCTURE");
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/chemical/search")
+                    .content(getAsJsonString(request))
+                    .principal(principal)
+                    .contentType(APPLICATION_JSON))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+
+    ChemSearchResultsPage resultsPage =
+        (ChemSearchResultsPage) result.getModelAndView().getModel().get("chemSearchResultsPage");
+    assertThat(resultsPage.getHits())
+        .extracting(ChemSearchHit::getSource, ChemSearchHit::getGlobalId)
+        .containsExactly(
+            tuple(ChemSearchHitSource.GALLERY, aminoglutethimide.getOid().getIdString()),
+            tuple(ChemSearchHitSource.INVENTORY, sample.getGlobalId()));
+    ChemSearchHit inventoryHit = resultsPage.getHits().get(1);
+    assertEquals("SAMPLE", inventoryHit.getInventoryType());
+    assertNull(inventoryHit.getChemId());
     assertEquals(2, resultsPage.getTotalHitCount().intValue());
   }
 

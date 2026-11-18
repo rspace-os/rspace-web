@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +34,9 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.InventoryStructureHit;
 import com.researchspace.service.inventory.SampleApiManager;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -336,5 +339,34 @@ class InventoryStructureSearchManagerImplTest {
     stubChemistryIntegration(true, false);
 
     assertFalse(manager.isStructureSearchAvailable(user));
+  }
+
+  @Test
+  void workspaceListingGetsReadableLiveHitsWithoutQueryingTheChemistryService() {
+    when(rsChemElementDao.getGalleryChemFileIds(List.of(1L, 2L))).thenReturn(List.of(10L));
+    InventoryRecord sample = readable("SA1");
+    when(sample.getName()).thenReturn("aspirin batch");
+    when(sample.getType()).thenReturn(InventoryRecordType.SAMPLE);
+    User owner = new User("owner");
+    owner.setFirstName("Ann");
+    owner.setLastName("Owner");
+    when(sample.getOwner()).thenReturn(owner);
+    Date modified = new Date();
+    when(sample.getModificationDate()).thenReturn(modified);
+    InventoryRecord deleted = readable("SA2");
+    when(deleted.isDeleted()).thenReturn(true);
+    InventoryRecord unreadable = record("SA3");
+    List<InventoryFile> files = List.of(fileOn(sample), fileOn(deleted), fileOn(unreadable));
+    when(inventoryFileDao.findByMediaFileIds(List.of(10L))).thenReturn(files);
+    when(inventoryFileDao.findAttachmentFieldsByMediaFileIds(List.of(10L))).thenReturn(List.of());
+
+    List<InventoryStructureHit> hits = manager.findReadableStructureHits(List.of(1L, 2L), user);
+
+    assertEquals(
+        List.of(
+            new InventoryStructureHit(
+                "SA1", "aspirin batch", InventoryRecordType.SAMPLE, owner.getFullName(), modified)),
+        hits);
+    verifyNoInteractions(chemistryProvider);
   }
 }

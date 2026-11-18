@@ -16,9 +16,11 @@ import {
   StructureSearchTypeControl,
   useSingleMoleculeValidation,
 } from "../../../components/Ketcher/StructureSearchControls";
+import { galleryItemHref } from "../../../eln/gallery/components/GalleryItemLink";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import type { ChemSearchType } from "../../../stores/definitions/Search";
 import { DataGridColumn } from "../../../util/table";
+import InventoryHitIcon from "./InventoryHitIcon";
 
 const KetcherDialog = React.lazy(() => import("../../../components/Ketcher/KetcherDialog"));
 
@@ -107,18 +109,27 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     DataGridColumn.newColumnWithValueGetter(
       "preview",
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      ({ breadcrumb, chemId }: any) =>
-        breadcrumb.startsWith("/Gallery") ? "/images/icons/chemistry-file.png" : `/chemical/getImageChem/${chemId}/1`,
+      ({ breadcrumb, chemId, source, inventoryType }: any) => {
+        if (source === "INVENTORY") return { inventoryType };
+        return {
+          src: breadcrumb.startsWith("/Gallery")
+            ? "/images/icons/chemistry-file.png"
+            : `/chemical/getImageChem/${chemId}/1`,
+        };
+      },
       {
         headerName: t("toolbar.chemicalSearch.columnHeaders.preview"),
-        renderCell: (params) => (
-          <Box
-            component="img"
-            src={params.value}
-            alt={t("toolbar.chemicalSearch.chemicalPreviewAlt")}
-            sx={{ width: "150px", height: "150px", marginTop: "8px" }}
-          />
-        ),
+        renderCell: (params) =>
+          params.value.inventoryType ? (
+            <InventoryHitIcon inventoryType={params.value.inventoryType} />
+          ) : (
+            <Box
+              component="img"
+              src={params.value.src}
+              alt={t("toolbar.chemicalSearch.chemicalPreviewAlt")}
+              sx={{ width: "150px", height: "150px", marginTop: "8px" }}
+            />
+          ),
         sortable: false,
         flex: 1,
       },
@@ -128,8 +139,9 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       ({ breadcrumb, globalId, recordName }: any) => {
         if (breadcrumb.startsWith("/Gallery")) {
+          // a Gallery hit's global id is GL<file id>; the item page opens its folder with it selected
           return {
-            href: "/gallery?mediaType=Chemistry",
+            href: galleryItemHref(globalId.replace(/^GL/, "")),
             text: breadcrumb.slice(1),
           };
         }
@@ -230,7 +242,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
                   noRowsLabel: t("toolbar.chemicalSearch.noResults"),
                 }}
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                getRowId={(row: any) => row.chemId}
+                getRowId={(row: any) => `${row.globalId}-${row.chemId ?? ""}`}
                 paginationMode="server"
                 pageSizeOptions={[itemsPerPage]}
                 paginationModel={paginationModel}

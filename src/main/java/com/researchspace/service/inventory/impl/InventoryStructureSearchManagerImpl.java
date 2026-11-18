@@ -20,6 +20,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.InventoryStructureHit;
 import com.researchspace.service.inventory.InventoryStructureSearchManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -89,15 +91,12 @@ public class InventoryStructureSearchManagerImpl implements InventoryStructureSe
             ? Set.of()
             : bookableInstrumentLookup.findReadableBookableInstrumentIds(user);
     List<InventoryRecord> hits =
-        findStructureHits(chemIds).stream()
-            .filter(rec -> invPermissions.canUserReadInventoryRecord(rec, user))
+        readableStructureHits(chemIds, user)
             .filter(rec -> isMatchingDeletedOption(rec, deletedOption))
             .filter(rec -> isMatchingType(rec, resultType))
             .filter(
                 rec -> StringUtils.isBlank(ownedBy) || ownedBy.equals(rec.getOwner().getUsername()))
             .filter(rec -> bookable == null || bookable == isBookable(rec, bookableIds))
-            .filter(Predicate.not(InventoryStructureSearchManagerImpl::isSubSampleOfTemplate))
-            .filter(Predicate.not(InventoryStructureSearchManagerImpl::isWorkbench))
             .toList();
 
     if (StringUtils.isBlank(textQuery)) {
@@ -110,6 +109,29 @@ public class InventoryStructureSearchManagerImpl implements InventoryStructureSe
     List<String> hitGlobalIds = hits.stream().map(InventoryRecord::getGlobalIdentifier).toList();
     return searchManager.searchInventoryWithSimpleQuery(
         textQuery, resultType, null, ownedBy, deletedOption, bookable, hitGlobalIds, pgCrit, user);
+  }
+
+  @Override
+  public List<InventoryStructureHit> findReadableStructureHits(List<Long> chemIds, User user) {
+    return readableStructureHits(chemIds, user)
+        .filter(Predicate.not(InventoryRecord::isDeleted))
+        .map(
+            rec ->
+                new InventoryStructureHit(
+                    rec.getGlobalIdentifier(),
+                    rec.getName(),
+                    rec.getType(),
+                    rec.getOwner().getFullName(),
+                    rec.getModificationDate()))
+        .toList();
+  }
+
+  /** Structure hits the user can read, without the records no Inventory search lists. */
+  private Stream<InventoryRecord> readableStructureHits(List<Long> chemIds, User user) {
+    return findStructureHits(chemIds).stream()
+        .filter(rec -> invPermissions.canUserReadInventoryRecord(rec, user))
+        .filter(Predicate.not(InventoryStructureSearchManagerImpl::isSubSampleOfTemplate))
+        .filter(Predicate.not(InventoryStructureSearchManagerImpl::isWorkbench));
   }
 
   /** The records carrying a Gallery chemistry file among the given chem element ids, deduped. */

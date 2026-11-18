@@ -53,6 +53,17 @@ public interface RSChemElementManager extends GenericManager<RSChemElement, Long
       String chemQuery, String searchType, int searchResultLimit, User subject);
 
   /**
+   * As {@link #search(String, String, int, User)}, for chem element ids the chemistry service has
+   * already returned, so that a caller can share one chemistry service query with other searches.
+   *
+   * @param chemIds chem element ids reported by the chemistry service, in its order
+   * @param searchResultLimit size of results list at which we stop searching further
+   * @param subject user running the search
+   * @return list of the search results for given user, optionally limited to searchResultLimit
+   */
+  List<ChemSearchedItem> searchChemIds(List<Long> chemIds, int searchResultLimit, User subject);
+
+  /**
    * Gets chemical info about a particular RSChemElement
    *
    * @param chemical the chemical to get info about in any supported format e.g. a SMILES string

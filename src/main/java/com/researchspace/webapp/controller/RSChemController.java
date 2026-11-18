@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.ChemElementsFormat;
+import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
@@ -17,6 +18,7 @@ import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
+import com.researchspace.service.inventory.InventoryStructureHit;
 import jakarta.validation.Valid;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,7 +27,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -144,24 +145,35 @@ public class RSChemController extends BaseController {
     }
     ChemicalSearchResults results = getChemicalSearchResults(request);
 
-    ChemSearchResultsPage page =
-        ChemSearchResultsPage.builder()
-            .hits(
-                results.getPagedRecords().stream()
-                    .map(
-                        item ->
-                            new ChemSearchHit(
-                                item.getRecord().getOid().toString(),
-                                item.getRecordName(),
-                                item.getChemId(),
-                                results
-                                    .getBreadcrumbMap()
-                                    .get(item.getRecordId())
-                                    .getAsStringPath(),
-                                item.getRecord().getOwner().getFullName(),
-                                item.getRecord().getModificationDateAsDate().toString()))
-                    .collect(Collectors.toList()))
-            .build();
+    List<ChemSearchHit> hits = new ArrayList<>();
+    for (ChemSearchedItem item : results.getPagedRecords()) {
+      hits.add(
+          ChemSearchHit.builder()
+              .globalId(item.getRecord().getOid().toString())
+              .recordName(item.getRecordName())
+              .chemId(item.getChemId())
+              .breadcrumb(results.getBreadcrumbMap().get(item.getRecordId()).getAsStringPath())
+              .owner(item.getRecord().getOwner().getFullName())
+              .lastModified(item.getRecord().getModificationDateAsDate().toString())
+              .source(
+                  item.getRecord() instanceof EcatChemistryFile
+                      ? ChemSearchHitSource.GALLERY
+                      : ChemSearchHitSource.DOCUMENT)
+              .build());
+    }
+    for (InventoryStructureHit hit : results.getPagedInventoryHits()) {
+      hits.add(
+          ChemSearchHit.builder()
+              .globalId(hit.globalId())
+              .recordName(hit.name())
+              .breadcrumb("")
+              .owner(hit.ownerFullName())
+              .lastModified(hit.lastModified().toString())
+              .source(ChemSearchHitSource.INVENTORY)
+              .inventoryType(hit.type().name())
+              .build());
+    }
+    ChemSearchResultsPage page = ChemSearchResultsPage.builder().hits(hits).build();
     page.setStartHit(results.getStartHit());
     page.setEndHit(results.getEndHit());
     page.setTotalHitCount(results.getTotalHitCount());
@@ -174,10 +186,24 @@ public class RSChemController extends BaseController {
   static class ChemSearchHit {
     String globalId;
     String recordName;
-    long chemId;
+
+    /** The matching chem element; null for Inventory hits. */
+    Long chemId;
+
     String breadcrumb;
     String owner;
     String lastModified;
+    ChemSearchHitSource source;
+
+    /** The Inventory record type, e.g. SAMPLE; set for Inventory hits only. */
+    String inventoryType;
+  }
+
+  /** Where a chemical search hit lives; Inventory hits are listed after the others. */
+  enum ChemSearchHitSource {
+    DOCUMENT,
+    GALLERY,
+    INVENTORY
   }
 
   @Data

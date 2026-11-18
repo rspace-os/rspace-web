@@ -3,6 +3,7 @@ import { expect } from "@playwright/test";
 import type { FilesClient } from "@/__tests__/e2e/api/clients/FilesClient";
 import type { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
 
@@ -121,5 +122,28 @@ test.describe("Inventory structure search", { tag: [tags.APPS, tags.INVENTORY] }
     await substructureDialog.search();
     await pageInventory.searchPanel.waitForResultsLoaded();
     await expect(pageInventory.searchPanel.row(sample.name)).toBeVisible();
+  });
+
+  test("As a user, the Workspace chemical search lists the sample carrying the structure after the Gallery file", async ({
+    clientInventory,
+    clientFiles,
+    pageWorkspace,
+  }) => {
+    const { sample } = await sampleWithFluorescein(clientInventory, clientFiles, "sample");
+    await pageWorkspace.open();
+
+    const workspaceSearch = await pageWorkspace.openChemicalSearch();
+    await workspaceSearch.setMoleculeFromSmiles(BENZENE);
+    await workspaceSearch.search();
+
+    // a new user owns only this Gallery file and this sample, so they are the only hits
+    const rows = workspaceSearch.resultRows();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Fluorescein1.cdx");
+    await expect(rows.nth(1)).toContainText(sample.name);
+    await expect(rows.nth(1).getByRole("img", { name: "Sample" })).toBeVisible();
+
+    const inventory = new InventoryPage(await workspaceSearch.openResult(sample.name));
+    await expect(inventory.detailsPanel.root).toContainText(sample.name);
   });
 });

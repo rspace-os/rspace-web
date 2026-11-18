@@ -111,9 +111,18 @@ so the two searches cannot drift apart.
 ## Consequences
 
 - No schema change was needed. All the new queries read existing tables.
-- Returning Inventory items from the ELN chemical search (the ticket's Should) is left to a follow-up
-  ticket. The DAO lookups added here (`findByMediaFileIds`, `findAttachmentFieldsByMediaFileIds`,
-  `getGalleryChemFileIds`) are the pieces it would reuse.
+- The Workspace chemical search (`POST /chemical/search`) also lists Inventory structure hits (the
+  ticket's Should), after the document and Gallery hits, when Inventory and structure search are
+  available to the user. `RSChemService` queries the chemistry service once and passes the chem
+  ids to both the ELN filtering and `InventoryStructureSearchManager#findReadableStructureHits`,
+  which applies the same rules as Inventory search (readable, not deleted, every type).
+  **Paging trap:** the ELN search only collects hits up to one page past the current page, so its
+  total is often unknown. Inventory hits are fetched only once the ELN total is known (fewer hits
+  than that limit); before then the page, and the next, are all ELN hits and the total stays
+  unknown. Once known, the list is the ELN hits followed by the Inventory hits, so pages and the
+  total are exact. Inventory rows carry `source=INVENTORY`, their record type and no `chemId`, and
+  the UI keys rows by global id plus chem id. Ordering and presentation (type column, Location)
+  are deliberately minimal for now.
 - The round-trip test `InventoryStructureSearchChemistryMVCIT` is tagged `chemistry` and needs a
   running chemistry service. The other backend and frontend tests mock the provider.
 - In the e2e tests, Firefox and WebKit are unreliable when setting a structure on the Ketcher canvas.

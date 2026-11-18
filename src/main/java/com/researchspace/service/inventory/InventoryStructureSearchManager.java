@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
+import java.util.List;
 
 /**
  * Structure search over Inventory: finds the Inventory records that a Gallery chemistry file
@@ -54,4 +55,16 @@ public interface InventoryStructureSearchManager {
       Boolean bookable,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user);
+
+  /**
+   * The structure hits for chem element ids the chemistry service has already returned, for listing
+   * Inventory items in the Workspace chemical search. Applies the same rules as {@link
+   * #searchByStructure} with no optional filters: records the user can read, of every type, not
+   * deleted.
+   *
+   * @param chemIds chem element ids reported by the chemistry service, in its order
+   * @param user the searching user
+   * @return the hits, each record once, ordered by the first chem element id that matched it
+   */
+  List<InventoryStructureHit> findReadableStructureHits(List<Long> chemIds, User user);
 }
