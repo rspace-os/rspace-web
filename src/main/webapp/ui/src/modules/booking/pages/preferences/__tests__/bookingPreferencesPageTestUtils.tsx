@@ -27,12 +27,9 @@ export function useDefaultBookingPreferencesHandlers() {
           emailDelivery: false,
         }),
     ),
-    http.put<
-      never,
-      BookingNotificationPreferenceReplacement,
-      BookingNotificationPreferences | ApiV2Problem
-    >("/api/v2/users/me/booking-notification-preferences", async ({ request }) =>
-      HttpResponse.json({ ...(await request.json()), emailDelivery: false }),
+    http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+      "/api/v2/users/me/booking-notification-preferences",
+      async ({ request }) => HttpResponse.json({ ...(await request.json()), emailDelivery: false }),
     ),
     http.delete<never, never, BookingNotificationUnsubscribeResult | ApiV2Problem>(
       "/api/v2/users/me/booking-notification-subscriptions",

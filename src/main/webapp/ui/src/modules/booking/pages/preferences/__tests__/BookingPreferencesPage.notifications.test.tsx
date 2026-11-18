@@ -25,14 +25,13 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        saved = await request.json();
-        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          saved = await request.json();
+          return HttpResponse.json({ ...(saved as BookingNotificationPreferenceReplacement), emailDelivery: false });
+        },
+      ),
       http.delete<never, never, BookingNotificationUnsubscribeResult | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-subscriptions",
         () => {
@@ -82,14 +81,13 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        saved = await request.json();
-        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          saved = await request.json();
+          return HttpResponse.json({ ...(saved as BookingNotificationPreferenceReplacement), emailDelivery: false });
+        },
+      ),
     );
     const { container } = renderPage();
 

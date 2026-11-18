@@ -4,9 +4,9 @@ import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
+import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import type { BookingNotificationSubscriptionReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionReplacement";
 import type { BookingNotificationSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionStatus";
-import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import {
   fetchBookingNotificationPreferences,
   fetchBookingNotificationSubscription,
@@ -47,28 +47,26 @@ describe("booking notification subscriptions", () => {
           return HttpResponse.json(preferences);
         },
       ),
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        const replacement: BookingNotificationPreferenceReplacement = await request.json();
-        preferencesBody = replacement;
-        return HttpResponse.json({ ...replacement, emailDelivery: true });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          const replacement: BookingNotificationPreferenceReplacement = await request.json();
+          preferencesBody = replacement;
+          return HttpResponse.json({ ...replacement, emailDelivery: true });
+        },
+      ),
       http.get<never, never, BookingNotificationSubscriptionStatus>(
         "/api/v2/booking-configurations/7/notification-subscription",
         () => HttpResponse.json(subscription(7)),
       ),
-      http.put<
-        never,
-        BookingNotificationSubscriptionReplacement,
-        BookingNotificationSubscriptionStatus
-      >("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {
-        expect(request.headers.get("If-Match")).toBe('"v0-110"');
-        itemBody = await request.json();
-        return HttpResponse.json(subscription(7, true, 1));
-      }),
+      http.put<never, BookingNotificationSubscriptionReplacement, BookingNotificationSubscriptionStatus>(
+        "/api/v2/booking-configurations/7/notification-subscription",
+        async ({ request }) => {
+          expect(request.headers.get("If-Match")).toBe('"v0-110"');
+          itemBody = await request.json();
+          return HttpResponse.json(subscription(7, true, 1));
+        },
+      ),
       http.delete("/api/v2/users/me/booking-notification-subscriptions", () => {
         deleted = true;
         return HttpResponse.json({ updatedCount: 2 });
