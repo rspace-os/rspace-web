@@ -635,9 +635,9 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
               advancedOpen={this.state.advancedOpen}
               hideIcons={this.handleHideIcons}
             />
-            <DefaultSearch />
           </Box>
         )}
+        <DefaultSearch />
       </Box>
     );
   };

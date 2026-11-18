@@ -271,6 +271,23 @@ test.describe(`Workspace search operations`, () => {
     await expect(pageWorkspace.tree.root).toBeVisible();
   });
 
+  test(`As a user in tree view, I can run my default search`, async ({ pageWorkspace, clientDocuments }) => {
+    const docName = uniqueName("e2e-search-tree-default");
+    await clientDocuments.create({ name: docName });
+    await pageWorkspace.searchBar.openSearchUrl(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    await pageWorkspace.searchBar.saveDefaultButton.click();
+    await expect(pageWorkspace.searchBar.isDefaultMessage).toBeVisible();
+    await pageWorkspace.open();
+    await pageWorkspace.toolbar.switchLayout("tree");
+
+    await pageWorkspace.searchBar.runDefaultSearch();
+
+    await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    await expect(pageWorkspace.tree.root).toBeHidden();
+    await pageWorkspace.searchBar.removeDefaultSearch();
+    await expect(pageWorkspace.searchBar.defaultSearchButton).toHaveCount(0);
+  });
+
   test(`As a user in tree view, closing a document opened from a search link shows the search again`, async ({
     pageWorkspace,
     pageDocument,
