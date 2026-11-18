@@ -239,6 +239,14 @@ test.describe(`Workspace search operations`, () => {
     }
   });
 
+  test(`As a user, a search link naming an owner I cannot see keeps the search toolbar`, async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await pageWorkspace.searchBar.openSearchUrl("/workspace?options%5B%5D=owner&terms%5B%5D=nosuchuser");
+    await expect(page.getByRole("combobox", { name: "Select owner(s)" })).toBeVisible();
+  });
+
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({
     browser,
     browserContextOptions,
