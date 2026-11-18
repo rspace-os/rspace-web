@@ -37,6 +37,7 @@ public class UserBookingCalendarSubscriptionController {
   private static final String ITEM_SUBSCRIPTIONS = "/bookable-item-calendar-subscriptions";
 
   /** One of the caller's bookable-item calendar links. */
+  @Schema(name = "UserBookingCalendarItemLinkDocument")
   public record ItemLinkDocument(
       long configurationId,
       String itemGlobalId,
@@ -54,6 +55,7 @@ public class UserBookingCalendarSubscriptionController {
     }
   }
 
+  @Schema(name = "UserBookingCalendarItemLinksDocument")
   public record ItemLinksDocument(List<ItemLinkDocument> docs) {}
 
   private final BookingCalendarManager manager;

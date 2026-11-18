@@ -1,4 +1,3 @@
-import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
 import {
   createBookingCalendarSubscription,
   getBookingCalendarSubscription,
@@ -8,7 +7,7 @@ import {
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
-import type { UserBookingCalendarSubscriptionControllerItemLinkDocument } from "@/modules/common/api/v2/generated/models/userBookingCalendarSubscriptionControllerItemLinkDocument";
+import type { UserBookingCalendarItemLinkDocument } from "@/modules/common/api/v2/generated/models/userBookingCalendarItemLinkDocument";
 import {
   createUserBookingCalendarSubscription,
   getGetUserBookingCalendarSubscriptionQueryOptions,
@@ -101,20 +100,15 @@ export async function rotateUserCalendarSubscription(etag: string): Promise<User
 }
 function mapItemLinks(
   response: Awaited<ReturnType<typeof listMyBookableItemCalendarSubscriptions>>,
-): UserBookingCalendarSubscriptionControllerItemLinkDocument[] {
-  const docs = requireBookingValue(response.docs, "docs");
-  for (const doc of docs) checkFeedUrl(requireBookingValue(doc.subscriptionUrl, "subscriptionUrl"));
-  return docs;
+): UserBookingCalendarItemLinkDocument[] {
+  for (const doc of response.docs) checkFeedUrl(doc.subscriptionUrl);
+  return response.docs;
 }
-export async function fetchItemCalendarLinks(
-  signal?: AbortSignal,
-): Promise<UserBookingCalendarSubscriptionControllerItemLinkDocument[]> {
+export async function fetchItemCalendarLinks(signal?: AbortSignal): Promise<UserBookingCalendarItemLinkDocument[]> {
   return mapItemLinks(await listMyBookableItemCalendarSubscriptions({ signal }));
 }
 export function itemCalendarLinksQuery() {
-  return getListMyBookableItemCalendarSubscriptionsQueryOptions<
-    UserBookingCalendarSubscriptionControllerItemLinkDocument[]
-  >({
+  return getListMyBookableItemCalendarSubscriptionsQueryOptions<UserBookingCalendarItemLinkDocument[]>({
     query: { select: mapItemLinks },
   });
 }
