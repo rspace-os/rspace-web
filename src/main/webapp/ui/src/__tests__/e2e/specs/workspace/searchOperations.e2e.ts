@@ -271,6 +271,25 @@ test.describe(`Workspace search operations`, () => {
     await expect(pageWorkspace.tree.root).toBeVisible();
   });
 
+  test(`As a user in tree view, closing a document opened from a search link shows the search again`, async ({
+    pageWorkspace,
+    pageDocument,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-tree-return");
+    await clientDocuments.create({ name: docName });
+    await pageWorkspace.open();
+    await pageWorkspace.toolbar.switchLayout("tree");
+
+    await pageWorkspace.searchBar.openSearchUrl(`/workspace?options%5B%5D=name&terms%5B%5D=${docName}`);
+    await pageWorkspace.table.openRecord(docName);
+    await pageDocument.close();
+
+    await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+    await expect(pageWorkspace.tree.root).toBeHidden();
+  });
+
   test(`As a user, switching to tree view during a search ends the search`, async ({
     page,
     pageWorkspace,

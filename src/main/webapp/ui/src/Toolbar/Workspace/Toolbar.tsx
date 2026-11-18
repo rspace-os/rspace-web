@@ -206,7 +206,6 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
             window.addEventListener(RECORD_LIST_SHOWN, endSearchLinkWait, { once: true });
             if (this.searchLinkLeftTreeView) {
               this.searchLinkLeftTreeView = false;
-              workspaceSettings.currentViewMode = "LIST_VIEW";
               saveWorkplaceSettings();
             }
           });
@@ -218,6 +217,8 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     // user's view only once the search has worked.
     if (this.state.treeView) {
       this.searchLinkLeftTreeView = true;
+      // The server keeps the search with this view, for returning from a result
+      workspaceSettings.currentViewMode = "LIST_VIEW";
       showListView();
       this.setState({ treeView: false }, runSearch);
     } else {
@@ -229,6 +230,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     endSearchLinkWait();
     if (this.searchLinkLeftTreeView) {
       this.searchLinkLeftTreeView = false;
+      workspaceSettings.currentViewMode = "TREE_VIEW";
       showTreeView();
       this.setState({ treeView: true });
     }
