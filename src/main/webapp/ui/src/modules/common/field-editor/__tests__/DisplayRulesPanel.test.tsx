@@ -291,6 +291,25 @@ describe("DisplayRulesPanel", () => {
     expect(screen.getAllByRole("listitem").slice(0, 2)).toEqual([first, second]);
   });
 
+  it("keeps a late-arriving shared rule's card when its first field is deleted before any edit", async () => {
+    const wrapper = await createRealI18nWrapper({ resources: { common }, defaultNS: "common" });
+    const panel = (fields: Array<RuleEditorField>) => (
+      <ThemeProvider theme={materialTheme}>
+        <DisplayRulesPanel fields={fields} editable onChange={vi.fn()} />
+      </ThemeProvider>
+    );
+    const yes = level.rule;
+    const no = createDisplayRule("gmo", "IS_ANY_OF", ["No"]);
+    const { rerender } = render(panel([gmo, permit, { ...level, rule: null }, notes]), { wrapper });
+    rerender(panel([gmo, { ...permit, rule: yes }, { ...level, rule: no }, { ...notes, rule: yes }]));
+    const shared = screen.getByRole("listitem", { name: "When Is this a GMO? is Yes" });
+    expect(screen.getAllByRole("listitem")[0]).toBe(shared);
+
+    rerender(panel([gmo, { ...level, rule: no }, { ...notes, rule: yes }]));
+
+    expect(screen.getAllByRole("listitem")[0]).toBe(shared);
+  });
+
   it("keeps an untouched shared rule's card when its first field is deleted", async () => {
     const wrapper = await createRealI18nWrapper({ resources: { common }, defaultNS: "common" });
     const panel = (fields: Array<RuleEditorField>) => (
