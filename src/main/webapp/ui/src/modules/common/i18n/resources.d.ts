@@ -8386,6 +8386,15 @@ export default interface Resources {
         "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
         "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
       },
+      "fieldDisplayRule": {
+        "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
+        "keyDuplicate": "Field [{0}] has the same field key as another field",
+        "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
+        "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
+        "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
+        "sourceType": "The display rule on field [{0}] must depend on a radio or choice field",
+        "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
+      },
       "form": {
         "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
         "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
