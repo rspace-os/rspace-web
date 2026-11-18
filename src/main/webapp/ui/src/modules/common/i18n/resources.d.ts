@@ -6884,7 +6884,9 @@ export default interface Resources {
           "line": "{0} on {1}: {2}"
         },
         "errors": {
-          "exportFolderUnavailable": "Could not obtain the PDF export folder."
+          "exportFolderUnavailable": "Could not obtain the PDF export folder.",
+          "generationFailed": "Export could not be generated",
+          "noContent": "Export cancelled because the selection contains no data"
         },
         "exporterNameWithOrcid": "{0} - Orcid ID {1}",
         "footer": {
