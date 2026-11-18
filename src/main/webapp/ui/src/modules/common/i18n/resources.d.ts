@@ -5982,6 +5982,9 @@ export default interface Resources {
           "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
+        "inventoryOauthToken": {
+          "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+        },
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
@@ -6254,6 +6257,15 @@ export default interface Resources {
         "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
         "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
         "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
+      },
+      "fieldDisplayRule": {
+        "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
+        "keyDuplicate": "Field [{0}] has the same field key as another field",
+        "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
+        "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
+        "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
+        "sourceType": "The display rule on field [{0}] must depend on a radio or choice field",
+        "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
       },
       "form": {
         "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
