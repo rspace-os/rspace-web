@@ -118,9 +118,15 @@ class WebhookDestinationPolicyTest {
         "hooks.slack.com",
         "ftp://hooks.slack.com",
         "https://h.example/path",
+        "https://user@h.example",
+        "https://h.example?sig=x",
+        "https://h.example#x",
+        "https://h.*.example",
         "https://",
         "https://[123]",
-        "https://*.10.0.0.1"
+        "https://*.10.0.0.1",
+        "https://*.0.0.1",
+        "https://*.[::1]"
       })
   void malformedEntryStopsStartup(String entry) {
     assertThrows(

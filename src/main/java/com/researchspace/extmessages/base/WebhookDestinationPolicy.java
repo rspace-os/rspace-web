@@ -11,9 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The origins a webhook sender may post to (RSDEV-1340), read from a deployment property holding a
@@ -34,9 +33,7 @@ public final class WebhookDestinationPolicy {
 
   public static final HostResolver DNS = InetAddress::getAllByName;
 
-  private static final Pattern ENTRY =
-      Pattern.compile(
-          "(?i)(https?)://(\\*\\.)?(\\[[0-9a-f:.]+\\]|[^\\s/:@?#*\\[\\]]+)(?::(\\d{1,5}))?/?");
+  private static final String WILDCARD = "*.";
 
   private record Origin(String scheme, String host, int port, boolean wildcard) {
     boolean matches(String otherScheme, String otherHost, int otherPort) {
@@ -73,40 +70,48 @@ public final class WebhookDestinationPolicy {
   }
 
   private static Origin parseEntry(String propertyName, String entry) {
-    Matcher m = ENTRY.matcher(entry);
     // the value is not echoed: an administrator could paste a full webhook URL by mistake
     IllegalStateException invalid =
         new IllegalStateException(
             "Invalid entry in " + propertyName + ": expected scheme://host[:port]");
-    if (!m.matches()) {
+    int hostStart = entry.indexOf("://") + 3;
+    boolean wildcard = hostStart > 2 && entry.startsWith(WILDCARD, hostStart);
+    URI uri;
+    try {
+      // java.net.URI cannot parse a "*" in a host, so the wildcard is removed before parsing
+      uri =
+          new URI(
+              wildcard
+                  ? entry.substring(0, hostStart) + entry.substring(hostStart + WILDCARD.length())
+                  : entry);
+    } catch (URISyntaxException e) {
       throw invalid;
     }
-    String scheme = m.group(1).toLowerCase(Locale.ROOT);
-    boolean wildcard = m.group(2) != null;
-    if (wildcard && m.group(3).startsWith("[")) {
-      throw invalid;
-    }
-    Optional<String> host = normaliseHost(m.group(3));
-    int port = m.group(4) == null ? defaultPort(scheme) : Integer.parseInt(m.group(4));
-    if (host.isEmpty()
+    String scheme = Objects.toString(uri.getScheme(), "").toLowerCase(Locale.ROOT);
+    Optional<String> host = normaliseHost(uri.getHost());
+    int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
+    if (!(scheme.equals("http") || scheme.equals("https"))
+        || host.isEmpty()
         || port < 1
         || port > 65535
-        || !isServerHost(scheme, host.get(), port)
-        || (wildcard && host.get().matches("[0-9.]+"))) { // no wildcard over an IPv4 literal
+        || !isOriginOnly(uri)
+        || (wildcard && isIpLiteral(host.get()))) {
       throw invalid;
     }
     return new Origin(scheme, host.get(), port, wildcard);
   }
 
-  /**
-   * Webhook URLs are matched on {@link URI#getHost()}, so an entry's host must parse the same way.
-   */
-  private static boolean isServerHost(String scheme, String host, int port) {
-    try {
-      return host.equals(new URI(scheme + "://" + host + ":" + port).getHost());
-    } catch (URISyntaxException e) {
-      return false;
-    }
+  /** No user info, path, query or fragment: an entry names an origin, never a webhook URL. */
+  private static boolean isOriginOnly(URI uri) {
+    return uri.getRawUserInfo() == null
+        && (uri.getRawPath().isEmpty() || uri.getRawPath().equals("/"))
+        && uri.getRawQuery() == null
+        && uri.getRawFragment() == null;
+  }
+
+  /** A wildcard is for provider domain names; over an address, "*.0.0.1" would match 10.0.0.1. */
+  private static boolean isIpLiteral(String host) {
+    return host.startsWith("[") || host.chars().allMatch(c -> c == '.' || Character.isDigit(c));
   }
 
   /**
