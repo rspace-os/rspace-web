@@ -94,7 +94,7 @@ export default function FieldCard<T extends string>({
               sx={{ flexGrow: 1 }}
             />
           ) : (
-            <Typography variant="h6" component="h6" id={`${nameId}-region`} sx={{ overflowWrap: "anywhere" }}>
+            <Typography variant="h6" component="h4" id={`${nameId}-region`} sx={{ overflowWrap: "anywhere" }}>
               {displayName}
             </Typography>
           )}
@@ -111,7 +111,7 @@ export default function FieldCard<T extends string>({
                 </IconButton>
               ))}
             {!(editable && canChangeType) && (
-              <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
+              <Typography variant="subtitle1" component="div" sx={{ whiteSpace: "nowrap" }}>
                 {typeLabel}
               </Typography>
             )}
