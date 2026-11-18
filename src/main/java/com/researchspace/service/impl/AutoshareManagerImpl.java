@@ -30,12 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -301,7 +301,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
     String notificationMessage = createNotificationMessage(targetAutoshareStatus, result);
     sysnotify(subject, notificationMessage);
 
-    return new AsyncResult<>(result);
+    return CompletableFuture.completedFuture(result);
   }
 
   public String createNotificationMessage(

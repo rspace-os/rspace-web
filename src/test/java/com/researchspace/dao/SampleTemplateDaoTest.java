@@ -67,6 +67,31 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void persistSampleTemplateOfCopySharesOriginalDefinitions() {
+    User user = createInitAndLoginAnyUser();
+    SampleTemplate template =
+        recordFactory.createComplexSampleTemplate("dao test template", "dao test desc", user);
+    SampleTemplate saved = sampleTemplateDao.persistSampleTemplate(template);
+    flushDatabaseState();
+    long choiceDefs = countRows("InventoryChoiceFieldDef");
+    long radioDefs = countRows("InventoryRadioFieldDef");
+
+    SampleTemplate copy = sampleTemplateDao.get(saved.getId()).copy(user);
+    sampleTemplateDao.persistSampleTemplate(copy);
+    flushDatabaseState();
+
+    assertEquals(choiceDefs, countRows("InventoryChoiceFieldDef"));
+    assertEquals(radioDefs, countRows("InventoryRadioFieldDef"));
+  }
+
+  private long countRows(String entityName) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select count(*) from " + entityName, Long.class)
+        .getSingleResult();
+  }
+
+  @Test
   public void getTemplatesForUserSeesOwnAndDefaultOwnerTemplates() {
     User user = createInitAndLoginAnyUser();
 

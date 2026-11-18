@@ -62,19 +62,11 @@ export class ToolbarCreateMenu {
       await fromForm.click();
       const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
       await dialog.waitFor({ state: "visible" });
-      await this.followFormLink(dialog.getByRole("link", { name, exact: true }));
+      // The link submits a POST form. Firefox navigates, but click() never stops waiting for that
+      // navigation, so wait for the new document's URL instead.
+      await dialog.getByRole("link", { name, exact: true }).click({ noWaitAfter: true });
     }
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
-  }
-
-  /** Playwright 1.63's click() never returns on Firefox for this link; remove the branch once it does. */
-  private async followFormLink(link: Locator): Promise<void> {
-    if (this.page.context().browser()?.browserType().name() !== "firefox") {
-      await link.click();
-      return;
-    }
-    await expect(link).toBeVisible();
-    await link.dispatchEvent("click");
   }
 
   private async select(name: string): Promise<void> {

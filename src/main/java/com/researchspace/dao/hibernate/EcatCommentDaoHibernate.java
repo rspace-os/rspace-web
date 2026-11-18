@@ -35,7 +35,7 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
     List<EcatCommentItem> lst = cm.getItems();
     itm.setComId(cm.getComId());
     lst.add(itm);
-    getSession().save(itm);
+    getSession().persist(itm);
   }
 
   @Override
@@ -101,11 +101,6 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
   public void deleteCommentItem(Long itemId) {
     String q1 = "DELETE EcatCommentItem itm where itm.itemId =  :itemId ";
     getSession().createQuery(q1).setParameter("itemId", itemId).executeUpdate();
-  }
-
-  @Override
-  public void updateCommentItem(EcatCommentItem citm) {
-    getSession().update(citm);
   }
 
   @Override

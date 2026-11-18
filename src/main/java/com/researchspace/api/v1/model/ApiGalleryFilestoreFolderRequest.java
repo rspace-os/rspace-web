@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.model;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/folder}. Creates a new

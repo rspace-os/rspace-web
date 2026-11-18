@@ -19,6 +19,7 @@ import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.scheduling.annotation.AsyncResult;
 
 @ExtendWith(MockitoExtension.class)
 public class PostRecordSigningExportHashTest {
@@ -59,7 +59,7 @@ public class PostRecordSigningExportHashTest {
   @Test
   public void testBasicExportAndSigning() throws IOException {
     result.setExportFile(File.createTempFile("test", "html"));
-    when(performMockArchive()).thenReturn(new AsyncResult<ArchiveResult>(result));
+    when(performMockArchive()).thenReturn(CompletableFuture.completedFuture(result));
     setUpPerformPdfExportOk();
     postSigner.postRecordSign(signatureResult);
     final int EXPECTED_TOTAL_EXPORT_COUNT = 3;
@@ -99,6 +99,6 @@ public class PostRecordSigningExportHashTest {
   private void setUpPerformPdfExportOk() throws IOException {
     when(exportImport.asyncExportSelectionToPdfForSigning(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
-        .thenReturn(new AsyncResult<ExportFileResult>(mockPdfExportFile));
+        .thenReturn(CompletableFuture.completedFuture(mockPdfExportFile));
   }
 }

@@ -49,6 +49,8 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.field.InventoryChoiceField;
+import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -1290,15 +1292,37 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     def.setOptions(List.of("Active", "Inactive", "Maintenance"));
     radioField.setDefinition(def);
     templatePost.getFields().add(radioField);
+    ApiInventoryEntityField choiceField =
+        createBasicApiSampleOptionsField("Kind", ApiFieldType.CHOICE, List.of("a"));
+    choiceField.setDefinition(
+        new ApiInventoryEntityField.ApiInventoryFieldDef(List.of("a", "b"), true));
+    templatePost.getFields().add(choiceField);
 
     ApiInstrumentTemplate created =
         instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
 
     assertNotNull(created.getId());
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
-    assertThat(created.getFields()).hasSize(1);
+    assertThat(created.getFields()).hasSize(2);
     assertEquals("Status", created.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
+
+    InstrumentTemplate saved =
+        sessionFactory.getCurrentSession().get(InstrumentTemplate.class, created.getId());
+    InventoryRadioField savedRadio =
+        saved.getActiveFields().stream()
+            .filter(InventoryRadioField.class::isInstance)
+            .map(InventoryRadioField.class::cast)
+            .findFirst()
+            .orElseThrow();
+    InventoryChoiceField savedChoice =
+        saved.getActiveFields().stream()
+            .filter(InventoryChoiceField.class::isInstance)
+            .map(InventoryChoiceField.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertNotNull(savedRadio.getRadioDef().getId());
+    assertNotNull(savedChoice.getChoiceDef().getId());
   }
 
   // --- link field persistence (create / update / clear paths) ---

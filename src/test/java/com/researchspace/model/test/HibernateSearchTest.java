@@ -73,8 +73,13 @@ class HibernateSearchTest extends HibernateTest {
     sample3.addBarcode(new Barcode("Barcode123", null));
 
     sample = saveSampleInContainer(sample);
-    saveAssociatedEntities(sample2);
-    sample2 = saveSampleInContainer(sample2);
+    // the attached file property is shared with the sample, so save both in one session
+    Sample sampleWithFile = sample2;
+    dao.inOneTransaction(
+        () -> {
+          saveAssociatedEntities(sampleWithFile);
+          saveSampleInContainer(sampleWithFile);
+        });
     sample3 = saveComplexSample(sample3);
 
     Session session = null;
@@ -196,17 +201,19 @@ class HibernateSearchTest extends HibernateTest {
   }
 
   private Sample saveComplexSample(Sample sample3) {
-    HibernateSandboxTest t = new HibernateSandboxTest();
-    t.saveRadioAndChoiceDefinitions(dao, sample3.getSTemplate());
-    dao.save(sample3.getSTemplate(), SampleTemplate.class);
-    t.saveRadioAndChoiceDefinitions(dao, sample3);
-    return saveSampleInContainer(sample3);
+    // the template and the sample share definitions, so save them in one session
+    dao.inOneTransaction(
+        () -> {
+          saveRadioAndChoiceDefinitions(dao, sample3.getSTemplate());
+          dao.save(sample3.getSTemplate(), SampleTemplate.class);
+          saveSampleInContainer(sample3);
+        });
+    return sample3;
   }
 
   private Sample saveSampleInContainer(Sample sample) {
-    Container container = sample.getSubSamples().get(0).getParentContainer();
-    dao.update(container, Container.class);
-    return dao.save(sample, Sample.class);
+    dao.saveTogether(sample, sample.getSubSamples().get(0).getParentContainer());
+    return sample;
   }
 
   @SuppressWarnings("unchecked")

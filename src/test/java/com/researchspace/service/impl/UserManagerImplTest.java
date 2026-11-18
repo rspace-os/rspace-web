@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -49,6 +50,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
@@ -189,6 +191,22 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
     userManager.saveNewUser(user);
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
+  }
+
+  @Test
+  public void getUserByUsernameOrAliasWithBlankKeySkipsDbLookup() {
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> userManager.getUserByUsernameOrAlias(null));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> userManager.getUserByUsernameOrAlias("  "));
+    verifyNoInteractions(userDao);
+  }
+
+  @Test
+  public void findUsernameByUsernameOrAliasWithBlankKeySkipsDbLookup() {
+    assertNull(userManager.findUsernameByUsernameOrAlias(null));
+    assertNull(userManager.findUsernameByUsernameOrAlias(""));
+    verifyNoInteractions(userDao);
   }
 
   @Test

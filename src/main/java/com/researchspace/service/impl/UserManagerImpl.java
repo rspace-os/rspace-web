@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -260,6 +261,11 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public User getUserByUsernameOrAlias(String usernameOrAlias) {
+    if (StringUtils.isBlank(usernameOrAlias)) {
+      // a blank key can never match a user; fail as getUserByUsername would, but
+      // without the three database round trips the lookup chain would otherwise issue
+      throw new ObjectRetrievalFailureException(User.class, usernameOrAlias);
+    }
     String usernameToUse = findUsernameByUsernameOrAlias(usernameOrAlias);
     if (usernameToUse == null) {
       // probably not found, but let the downstream method deal with it
@@ -269,6 +275,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   public String findUsernameByUsernameOrAlias(String usernameOrAlias) {
+    if (StringUtils.isBlank(usernameOrAlias)) {
+      return null;
+    }
     if (userExists(usernameOrAlias)) {
       return usernameOrAlias;
     }

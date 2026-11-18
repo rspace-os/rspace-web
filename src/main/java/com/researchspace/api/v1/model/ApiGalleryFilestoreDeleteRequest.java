@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.model;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/delete}. Deletes the file

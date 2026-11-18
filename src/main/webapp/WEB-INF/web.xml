@@ -103,7 +103,7 @@
 
     <filter>
         <filter-name>sitemesh</filter-name>
-        <filter-class>com.researchspace.webapp.filter.FullPathSiteMeshFilter</filter-class>
+        <filter-class>com.researchspace.webapp.filter.ErrorPageSiteMeshFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter>
@@ -184,8 +184,10 @@
     <filter-mapping>
         <filter-name>sitemesh</filter-name>
         <url-pattern>/*</url-pattern>
+        <!-- No FORWARD: SiteMesh decides on the incoming URL only, as SiteMesh 2 did. SiteMesh 3
+             does not mark an excluded request as handled, so on the rewrite filter's forward to
+             /app/* it would decide again, on a path that misses exact excludes. -->
         <dispatcher>REQUEST</dispatcher>
-        <dispatcher>FORWARD</dispatcher>
         <!-- ERROR so container error pages (403.jsp/404.jsp) are decorated, as they were under
              SiteMesh 2's <page:applyDecorator> (which SiteMesh 3 has no JSP-tag equivalent for). -->
         <dispatcher>ERROR</dispatcher>

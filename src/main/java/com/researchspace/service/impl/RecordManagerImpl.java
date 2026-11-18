@@ -100,6 +100,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -252,12 +253,14 @@ public class RecordManagerImpl implements RecordManager {
     return JacksonUtil.toJson(el);
   }
 
-  public boolean canMove(BaseRecord original, Folder targetParent, User user) {
-    if (targetParent == null || original == null) {
-      log.warn("newparent[{}] or original [{}] was null", targetParent, original);
-      return false;
+  @Override
+  public Map<Long, Boolean> canMove(
+      Collection<? extends BaseRecord> originals, Folder targetParent, User user) {
+    if (targetParent == null || originals == null || originals.isEmpty()) {
+      log.warn("newparent[{}] or originals were null or empty", targetParent);
+      return Collections.emptyMap();
     }
-    return movePermissionChecker.checkMovePermissions(user, targetParent, original);
+    return movePermissionChecker.checkMovePermissions(user, targetParent, originals);
   }
 
   public ServiceOperationResult<BaseRecord> move(
@@ -623,6 +626,10 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public StructuredDocument saveTemporaryDocument(Field currField, User subject, String data) {
+    // The next editor loads this draft, and callers such as the API commit it before
+    // saveStructuredDocument checks write access, so check here too.
+    permissnUtils.assertIsPermitted(
+        currField.getStructuredDocument(), PermissionType.WRITE, subject, "save document");
     // collect some info as this might be slow
     StopWatch sw = new StopWatch();
     sw.start();
