@@ -346,6 +346,7 @@ describe("ResourceAccessEditor", () => {
           scheme: "test-collection",
           version: 3,
           assignments: [otherOwner, contributorSelf],
+          inherited: false,
           caller: {
             effectiveRole: "CONTRIBUTOR",
             roleSources: [],

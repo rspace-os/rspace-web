@@ -9,8 +9,8 @@ it("searches through an injected registry entry and omits already assigned grant
   const user = userEvent.setup();
   const request = vi.fn(async () => ({
     docs: [
-      { kind: "USER" as const, id: 1, key: "user:1", name: "Assigned user" },
-      { kind: "USER" as const, id: 2, key: "user:2", name: "Available user" },
+      { kind: "USER" as const, id: 1, key: "user:1", name: "Assigned user", detail: "" },
+      { kind: "USER" as const, id: 2, key: "user:2", name: "Available user", detail: "" },
     ],
   }));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

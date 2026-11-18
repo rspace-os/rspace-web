@@ -228,7 +228,7 @@ function ResourceAccessEditorSession({
     if (!role) return;
     updateDraft((current) => [
       ...current,
-      { grantee: { ...grantee, available: true, effectiveRole: undefined, roleSources: [] }, role: role.key },
+      { grantee: { ...grantee, available: true, effectiveRole: null, roleSources: [] }, role: role.key },
     ]);
     setAnnouncement(t("resourceAccess.stagedAdd", { name: grantee.name }));
   };
