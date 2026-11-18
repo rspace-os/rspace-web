@@ -78,6 +78,7 @@ function showRecordList(result) {
       $("#searchModePanel").slideDown(fadeTime);
     }
   }
+  window.dispatchEvent(new CustomEvent("workspaceRecordListShown"));
 }
 
 function hideRecordList() {

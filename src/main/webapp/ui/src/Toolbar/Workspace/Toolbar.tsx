@@ -30,6 +30,7 @@ import SocialActions from "../ToolbarSocial";
 import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
+import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
@@ -64,6 +65,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   }
 
   componentDidMount() {
+    installAddressBarSync();
     this.checkSavedSettings();
 
     $(document).on("click", "#resetSearch", () => {
