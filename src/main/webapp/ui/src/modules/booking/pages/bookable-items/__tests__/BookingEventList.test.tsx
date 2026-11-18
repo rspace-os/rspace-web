@@ -1,5 +1,5 @@
 import { getListBookingsQueryKey, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
-import { bookableItemEventsQuery } from "../bookableItemEvents";
+import { bookableItemEventsQueryKey } from "../bookableItemEvents";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -131,14 +131,14 @@ describe("BookingEventList", () => {
     expect(totalsRequests).toBe(2);
     expect(
       queryClient.getQueryData([
-        ...bookableItemEventsQuery({
+        ...bookableItemEventsQueryKey({
           globalId: "IN12",
           period: "upcoming",
           cutoff: "2026-08-24T12:00:00Z",
           page: 0,
           limit: 1,
           totals: true,
-        }).queryKey,
+        }),
         "bookableItemEventTotals",
       ]),
     ).toBe(2);

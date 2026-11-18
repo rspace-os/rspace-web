@@ -10,8 +10,8 @@ import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import type { ApiV2ListResultMapStringObject } from "@/modules/common/api/v2/generated/models/apiV2ListResultMapStringObject";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import type { BookingCalendarEventsPage } from "@/modules/common/api/v2/generated/models/bookingCalendarEventsPage";
 
 import {
   bookableItemFixtures,
@@ -233,7 +233,7 @@ describe("CalendarPage", () => {
       );
       expect(
         queryClient
-          .getQueriesData<ApiV2ListResultMapStringObject>({
+          .getQueriesData<BookingCalendarEventsPage>({
             queryKey: getSearchCalendarEventsQueryKey(),
           })
           .map(([, response]) => response?.docs),

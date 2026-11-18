@@ -232,7 +232,7 @@ describe("BookableItemsPage", () => {
                   parentContainer: { relationTo: "containers", globalId: "IC456", value: 456 },
                 },
               },
-              ownerHealth: {},
+              ownerHealth: { hasEffectiveOwner: true },
             },
           ]),
         );

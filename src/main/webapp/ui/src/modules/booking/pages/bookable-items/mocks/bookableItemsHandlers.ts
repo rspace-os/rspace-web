@@ -14,8 +14,6 @@ import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
-import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
-import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
 
