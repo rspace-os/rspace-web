@@ -4830,6 +4830,11 @@ export default interface Resources {
         "title": "Empty {recordType}"
       },
       "errors": {
+        "invalidResultType": {
+          "body": "This link asks for the result type \"{resultType}\", which Inventory cannot list.",
+          "recoveryLink": "Go to Inventory search",
+          "title": "Invalid search link"
+        },
         "performSearchFailed": "Could not perform search.",
         "searchFailed": "Search failed."
       },

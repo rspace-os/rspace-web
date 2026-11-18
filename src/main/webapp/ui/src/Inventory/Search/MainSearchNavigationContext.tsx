@@ -7,6 +7,7 @@ import SearchContext from "../../stores/contexts/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";
+import { invalidResultType } from "./invalidResultType";
 
 type MainSearchNavigationContextArgs = {
   children: React.ReactNode;
@@ -28,6 +29,8 @@ export default function MainSearchNavigationContext({ children }: MainSearchNavi
   const navigate = useNavigate();
 
   const doSearch = async (urlSearchParams: URLSearchParams) => {
+    // SearchRouter shows an error for these URLs instead of a listing
+    if (invalidResultType(urlSearchParams) !== null) return;
     const params = parseCoreFetcherArgsFromUrl(urlSearchParams);
 
     try {
@@ -74,7 +77,7 @@ export default function MainSearchNavigationContext({ children }: MainSearchNavi
          * with either the same or different search parameters, then the
          * search is re-run.
          */
-        void doSearch(new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1]));
+        void doSearch(new URL(url, window.location.origin).searchParams);
         /*
          * We also invoke the parent NavigationContext to propagate the
          * navigation up, until it reaches the root NavigationContext which

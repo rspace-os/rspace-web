@@ -1,4 +1,7 @@
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
+import Link from "@mui/material/Link";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +18,7 @@ import Header from "../components/Layout/Header";
 import Layout from "../components/Layout/Layout2x1";
 import Sidebar from "../components/Layout/Sidebar";
 import Main from "../Main";
+import { invalidResultType } from "./invalidResultType";
 import LeftPanelView from "./LeftPanelView";
 import MainSearchNavigationContext from "./MainSearchNavigationContext";
 import RightPanelView from "./RightPanelView";
@@ -41,9 +45,11 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const location: UseLocation = useLocation();
+  const invalidType = paramsOverride ? null : invalidResultType(new URLSearchParams(location.search));
 
   useEffect(() => {
     void (async () => {
+      if (invalidType !== null) return;
       const params = paramsOverride ?? parseCoreFetcherArgsFromUrl(new URLSearchParams(location.search));
 
       try {
@@ -97,7 +103,25 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />
         <Main>
-          <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
+          {invalidType === null ? (
+            <Layout colLeft={<LeftPanelView />} colRight={<RightPanelView />} />
+          ) : (
+            <Box sx={{ p: 2 }}>
+              <Alert severity="error">
+                <AlertTitle>{t("search.errors.invalidResultType.title")}</AlertTitle>
+                {t("search.errors.invalidResultType.body", { resultType: invalidType })}{" "}
+                <Link
+                  href="/inventory/search"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate("/inventory/search");
+                  }}
+                >
+                  {t("search.errors.invalidResultType.recoveryLink")}
+                </Link>
+              </Alert>
+            </Box>
+          )}
         </Main>
       </Box>
     </>
