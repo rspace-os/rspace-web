@@ -1,9 +1,11 @@
 package com.researchspace.model.field.rule;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonWriteFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.EnumUtils;
 
 /**
  * Shows a field only when another field in the same form or template meets a condition.
@@ -35,6 +38,12 @@ public record FieldDisplayRule(
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+
+  private static final ObjectWriter WRITER =
+      MAPPER
+          .writer()
+          .with(JsonWriteFeature.ESCAPE_NON_ASCII)
+          .without(JsonWriteFeature.WRITE_HEX_UPPER_CASE);
 
   private static final Set<String> PROPERTIES = Set.of("sourceFieldKey", "operator", "values");
 
@@ -93,6 +102,16 @@ public record FieldDisplayRule(
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Invalid display rule: " + e.getOriginalMessage(), e);
     }
+    return fromJson(node);
+  }
+
+  /**
+   * Parses a rule that is already a JSON tree, for example a property of a larger request body,
+   * with the same checks as {@link #fromJson(String)}.
+   *
+   * @throws IllegalArgumentException if {@code node} is not a valid rule
+   */
+  public static FieldDisplayRule fromJson(JsonNode node) {
     if (node == null || !node.isObject()) {
       throw new IllegalArgumentException("A display rule must be a JSON object");
     }
@@ -111,14 +130,15 @@ public record FieldDisplayRule(
   }
 
   private static ConditionOperator parseOperator(JsonNode node) {
-    if (node != null && node.isTextual()) {
-      for (ConditionOperator operator : ConditionOperator.values()) {
-        if (operator.name().equals(node.textValue())) {
-          return operator;
-        }
-      }
+    // Exact, case-sensitive name match; Jackson's own enum binding would trim the name.
+    ConditionOperator operator =
+        node != null && node.isTextual()
+            ? EnumUtils.getEnum(ConditionOperator.class, node.textValue())
+            : null;
+    if (operator == null) {
+      throw new IllegalArgumentException("A display rule needs a known operator");
     }
-    throw new IllegalArgumentException("A display rule needs a known operator");
+    return operator;
   }
 
   private static List<String> parseValues(JsonNode node) {
@@ -141,7 +161,9 @@ public record FieldDisplayRule(
   /**
    * The rule as stored JSON, written by Jackson. Its JSON value equals what the TypeScript {@code
    * serializeDisplayRule} writes ({@code values} omitted when empty); the bytes may differ in
-   * escaping, which does not matter because rules are always read through a JSON parser.
+   * escaping, which does not matter because rules are always read through a JSON parser. Non-ASCII
+   * characters are escaped, so the output is plain ASCII and safe to store even when a value holds
+   * a lone UTF-16 surrogate, which a UTF-8 column could not represent.
    */
   public String toJson() {
     ObjectNode json = MAPPER.createObjectNode();
@@ -152,7 +174,7 @@ public record FieldDisplayRule(
       values.forEach(array::add);
     }
     try {
-      return MAPPER.writeValueAsString(json);
+      return WRITER.writeValueAsString(json);
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Could not serialise display rule", e);
     }

@@ -66,11 +66,7 @@ public final class FieldDisplayRuleEvaluator {
                     .test(fields.get(step.source()).selectedOptions(), step.rule().values());
       }
     }
-    List<Boolean> result = new ArrayList<>(fields.size());
-    for (Boolean shown : visible) {
-      result.add(shown);
-    }
-    return result;
+    return List.of(visible);
   }
 
   /** First index of each non-null key. */

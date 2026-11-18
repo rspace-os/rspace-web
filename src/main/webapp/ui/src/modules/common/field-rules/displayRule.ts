@@ -22,10 +22,7 @@ export function operatorRequiresValues(operator: ConditionOperator): boolean {
 }
 
 /** Empty or only `\s` whitespace; the Java side uses exactly the same character set. */
-const NonBlankStringSchema = v.pipe(
-  v.string(),
-  v.check((text) => !/^\s*$/.test(text), "must not be blank"),
-);
+const NonBlankStringSchema = v.pipe(v.string(), v.regex(/\S/, "must not be blank"));
 
 const RULE_PROPERTIES: ReadonlyArray<string> = ["sourceFieldKey", "operator", "values"];
 
@@ -120,6 +117,11 @@ export type FieldSnapshot = v.InferOutput<typeof FieldSnapshotSchema>;
 /**
  * Parses a stored rule. Unknown properties, unknown operators, non-string keys
  * or values, and values that do not suit the operator are rejected.
+ *
+ * Agreement with the Java parser holds within Jackson's default stream limits
+ * (nesting depth, number length). `JSON.parse` has no such limits, so a
+ * contrived rule whose overridden duplicate property exceeds them is accepted
+ * here and rejected by Java; real rules never come close.
  *
  * @throws {v.ValiError} if `json` is not a valid rule
  */
