@@ -23,7 +23,7 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | Command | Purpose |
 |---|---|
 | `pnpm install --frozen-lockfile` | Install frontend dependencies |
-| `pnpm test` | Run Vitest/jsdom unit tests |
+| `pnpm test` | Run Vitest unit tests (jsdom, plus a Node project for pure utilities) |
 | `pnpm test src/components/MyComponent/__tests__/MyComponent.test.tsx` | Run one unit-test file |
 | `pnpm test --verbose <filter>` | Run tests with an option and filter |
 | `pnpm test-browser` | Run Browser Mode tests in Chromium, Firefox, and WebKit |

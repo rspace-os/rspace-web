@@ -423,12 +423,14 @@ jobs:
           comment_mode: off
           files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
 
-  # Bundle-size comparison: build the frontend on both the PR and the base
-  # branch, then diff the two stats.json files and post the result as a PR
-  # comment. Restricted to same-repo PRs because posting the comment needs a
-  # writable GITHUB_TOKEN, which fork PRs do not receive. Each build produces
+  # Bundle-size comparison: build the PR's frontend, get the base commit's
+  # stats.json (restored from the cache that main's build job saves, or built
+  # when there is no cache entry), then diff the two files and post the result
+  # as a PR comment. Restricted to same-repo PRs because posting the comment
+  # needs a writable GITHUB_TOKEN, which fork PRs do not receive. Builds write
   # src/main/webapp/ui/dist/stats.json via the vite-bundle-analyzer plugin
-  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats).
+  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats); in CI they skip
+  # the stats.html report.
   bundle-size-pr:
     name: Bundle size (PR)
     runs-on: ubuntu-latest
