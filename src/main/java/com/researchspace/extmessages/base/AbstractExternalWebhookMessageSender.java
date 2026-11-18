@@ -16,19 +16,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 /**
  * Helper methods for posting external messages. <br>
@@ -49,7 +47,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
   static final Duration SEND_TIMEOUT = Duration.ofSeconds(10);
 
-  private RestTemplate restTemplate = createRestTemplate(CONNECT_TIMEOUT, SEND_TIMEOUT);
+  private RestClient restClient = createRestClient(CONNECT_TIMEOUT, SEND_TIMEOUT);
   HostResolver hostResolver = WebhookDestinationPolicy.DNS;
 
   @Override
@@ -109,11 +107,17 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    * @param uri
    */
   protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {
-    RestTemplate template = getRestTemplate();
-    HttpEntity<String> requestEntity = new HttpEntity<String>(jsonMessage, createPostHeaders());
     try {
-      // Void: the response body is never read into memory
-      ResponseEntity<Void> resp = template.postForEntity(uri, requestEntity, Void.class);
+      ResponseEntity<Void> resp =
+          getRestClient()
+              .post()
+              .uri(uri)
+              .headers(headers -> headers.addAll(createPostHeaders()))
+              .body(jsonMessage)
+              .retrieve()
+              .onStatus(
+                  HttpStatusCode::isError, AbstractExternalWebhookMessageSender::failWithoutBody)
+              .toBodilessEntity(); // the response body is never read into memory
       if (!resp.getStatusCode().is2xxSuccessful()) {
         log.warn("Status code response was not successful : {}", resp.getStatusCode());
       }
@@ -128,18 +132,18 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   /*
    * Package scoped for testing
    */
-  RestTemplate getRestTemplate() {
-    return restTemplate;
+  RestClient getRestClient() {
+    return restClient;
   }
 
   /*
    * Package scoped so tests can use short timeouts
    */
   void setTimeouts(Duration connectTimeout, Duration sendTimeout) {
-    restTemplate = createRestTemplate(connectTimeout, sendTimeout);
+    restClient = createRestClient(connectTimeout, sendTimeout);
   }
 
-  private static RestTemplate createRestTemplate(Duration connectTimeout, Duration sendTimeout) {
+  private static RestClient createRestClient(Duration connectTimeout, Duration sendTimeout) {
     HttpClient client =
         HttpClient.newBuilder()
             .connectTimeout(connectTimeout)
@@ -148,24 +152,22 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
             .build();
     JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(client);
     factory.setReadTimeout(sendTimeout);
-    RestTemplate template = new RestTemplate(factory);
-    template.setErrorHandler(new BodyIgnoringErrorHandler());
-    return template;
+    return RestClient.builder().requestFactory(factory).build();
   }
 
-  /** Raises the usual status exceptions without reading the error response body. */
-  private static class BodyIgnoringErrorHandler extends DefaultResponseErrorHandler {
-    @Override
-    protected void handleError(
-        ClientHttpResponse response, HttpStatusCode statusCode, URI url, HttpMethod method)
-        throws IOException {
-      String statusText = response.getStatusText();
-      HttpHeaders headers = response.getHeaders();
-      if (statusCode.is4xxClientError()) {
-        throw HttpClientErrorException.create(statusCode, statusText, headers, null, null);
-      }
-      throw HttpServerErrorException.create(statusCode, statusText, headers, null, null);
+  /**
+   * Raises the usual status exceptions without reading the error response body, which RestClient's
+   * default handler would buffer.
+   */
+  private static void failWithoutBody(HttpRequest request, ClientHttpResponse response)
+      throws IOException {
+    HttpStatusCode statusCode = response.getStatusCode();
+    String statusText = response.getStatusText();
+    HttpHeaders headers = response.getHeaders();
+    if (statusCode.is4xxClientError()) {
+      throw HttpClientErrorException.create(statusCode, statusText, headers, null, null);
     }
+    throw HttpServerErrorException.create(statusCode, statusText, headers, null, null);
   }
 
   /**

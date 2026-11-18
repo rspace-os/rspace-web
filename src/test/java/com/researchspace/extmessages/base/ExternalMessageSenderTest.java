@@ -5,17 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.researchspace.model.User;
-import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,105 +24,94 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 
 @ExtendWith(MockitoExtension.class)
 public class ExternalMessageSenderTest {
   @Mock MessageSourceUtils messages;
-  @Mock RestTemplate template;
   @InjectMocks DummyExternalMessageSender msteamsSender;
+  private MockRestServiceServer server;
   private User sender;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
+    RestClient.Builder builder = RestClient.builder();
+    server = MockRestServiceServer.bindTo(builder).build();
+    msteamsSender.restClient = builder.build();
     sender = TestFactory.createAnyUser("sender");
   }
 
-  @AfterEach
-  public void tearDown() throws Exception {}
-
   @Test
-  public void postsJsonAsUtf8ByDefault() {
-    assertEquals(MediaType.APPLICATION_JSON, msteamsSender.createPostHeaders().getContentType());
-  }
+  public void testSendMessageApp() {
+    msteamsSender.message = "{\"text\":\"Grüße ✓\"}";
+    server
+        .expect(requestTo(msteamsSender.url))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        // UTF-8: as ISO-8859-1, non-Latin-1 characters would become "?"
+        .andExpect(content().bytes(msteamsSender.message.getBytes(StandardCharsets.UTF_8)))
+        .andRespond(withSuccess());
 
-  @Test
-  public void testSendMessageApp() throws RestClientException, URISyntaxException {
-    ResponseEntity<Void> okResponse = new ResponseEntity<>(HttpStatus.OK);
-    when(template.postForEntity(
-            Mockito.eq(new URI(msteamsSender.url)),
-            Mockito.any(HttpEntity.class),
-            Mockito.eq(Void.class)))
-        .thenReturn(okResponse);
-    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
     assertEquals(
-        HttpStatus.OK,
-        msteamsSender
-            .sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender)
-            .getStatusCode());
+        HttpStatus.OK, msteamsSender.sendMessage(null, config(sender), sender).getStatusCode());
+    server.verify();
   }
 
   @Test
-  public void testSendMessageAppPostFails() throws RestClientException, URISyntaxException {
-    ResponseEntity<Void> errorResponse = new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
-    when(template.postForEntity(
-            Mockito.eq(new URI(msteamsSender.url)),
-            Mockito.any(HttpEntity.class),
-            Mockito.eq(Void.class)))
-        .thenReturn(errorResponse);
-    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    assertEquals(
-        HttpStatus.SERVICE_UNAVAILABLE,
-        msteamsSender
-            .sendMessage(null, cfg.getAppConfigElementSets().iterator().next(), sender)
-            .getStatusCode());
+  public void testSendMessageAppPostFails() {
+    server
+        .expect(requestTo(msteamsSender.url))
+        .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE).body("error details"));
+    AppConfigElementSet config = config(sender);
+
+    HttpServerErrorException e =
+        assertThrows(
+            HttpServerErrorException.class, () -> msteamsSender.sendMessage(null, config, sender));
+
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatusCode());
+    assertEquals(0, e.getResponseBodyAsByteArray().length); // the error body is never read
   }
 
   @Test
-  public void testSendMessageAppThrowsIAEIfAppNotSupported() throws Exception {
+  public void testSendMessageAppThrowsIAEIfAppNotSupported() {
     msteamsSender.supported = false;
-    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    var config = cfg.getAppConfigElementSets().iterator().next();
+    AppConfigElementSet config = config(sender);
     assertThrows(
         IllegalArgumentException.class, () -> msteamsSender.sendMessage(null, config, sender));
-    // never invoked
-    assertMessageNotPosted();
+    server.verify(); // nothing was posted
   }
 
   @Test
   public void loopbackWebhookIsRejectedBeforePosting() {
     msteamsSender.url = "http://127.0.0.1:9988/x";
-    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    var config = cfg.getAppConfigElementSets().iterator().next();
+    AppConfigElementSet config = config(sender);
     assertThrows(
         WebhookUrlNotAllowedException.class, () -> msteamsSender.sendMessage(null, config, sender));
-    verifyNoInteractions(template);
-  }
-
-  private void assertMessageNotPosted() throws URISyntaxException {
-    Mockito.verify(template, Mockito.never())
-        .postForEntity(
-            Mockito.eq(new URI(msteamsSender.url)),
-            Mockito.any(HttpEntity.class),
-            Mockito.eq(Void.class));
+    server.verify(); // nothing was posted
   }
 
   @Test
-  public void testSendMessageAppThrowsAuthExceptionIfNotUser() throws Exception {
+  public void testSendMessageAppThrowsAuthExceptionIfNotUser() {
     User imposter = TestFactory.createAnyUser("imposter");
-    UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    var config = cfg.getAppConfigElementSets().iterator().next();
+    AppConfigElementSet config = config(sender);
     assertThrows(
         AuthorizationException.class, () -> msteamsSender.sendMessage(null, config, imposter));
-    assertMessageNotPosted();
+    server.verify(); // nothing was posted
     verify(messages)
         .getMessage(
             Mockito.eq("errors.authorization.failure.sendExternalMessage"),
             aryEq(new Object[] {imposter.getUsername()}));
+  }
+
+  private static AppConfigElementSet config(User owner) {
+    return createAnyAppWithConfigElements(owner, "message")
+        .getAppConfigElementSets()
+        .iterator()
+        .next();
   }
 }

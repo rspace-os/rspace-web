@@ -5,11 +5,11 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
 
-  RestTemplate template;
+  RestClient restClient;
 
   boolean supported = true;
   String message = "{'text':'some json'}";
@@ -27,17 +27,14 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
     return message;
   }
 
-  RestTemplate getRestTemplate() {
-    return template != null ? template : super.getRestTemplate();
+  @Override
+  RestClient getRestClient() {
+    return restClient != null ? restClient : super.getRestClient();
   }
 
   @Override
   protected WebhookDestinationPolicy destinationPolicy() {
     return policy;
-  }
-
-  void setTemplate(RestTemplate template) {
-    this.template = template;
   }
 
   @Override
