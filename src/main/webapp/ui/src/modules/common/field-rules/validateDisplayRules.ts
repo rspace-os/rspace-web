@@ -27,7 +27,15 @@ export const DisplayRuleErrorSchema = v.pipe(
 
 export type DisplayRuleError = v.InferOutput<typeof DisplayRuleErrorSchema>;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/**
+ * A field key: a UUID (Valibot's check) in canonical lower case, as the Java
+ * side requires through `UUID.toString()`.
+ */
+const FieldKeySchema = v.pipe(
+  v.string(),
+  v.uuid(),
+  v.check((key) => key === key.toLowerCase()),
+);
 
 /**
  * Which fields lie on a cycle of rule sources. Each rule has one source, so
@@ -81,7 +89,7 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
   const onCycle = fieldsOnCycle(fields, indexByKey);
   const errors: Array<DisplayRuleError> = [];
   fields.forEach(({ key, rule }, index) => {
-    if (key !== null && !UUID.test(key)) {
+    if (key !== null && !v.is(FieldKeySchema, key)) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.keyInvalid });
     } else if (key !== null && duplicateKeys.has(key)) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.keyDuplicate });

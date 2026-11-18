@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.UUID;
 
 /**
  * Checks the display rules of a whole form or template at once, so that rules referencing fields
@@ -27,9 +27,6 @@ public final class FieldDisplayRuleValidator {
   public static final String SOURCE_TYPE = CODE_PREFIX + "sourceType";
   public static final String VALUE_UNKNOWN = CODE_PREFIX + "valueUnknown";
   public static final String CYCLE = CODE_PREFIX + "cycle";
-
-  private static final Pattern UUID =
-      Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
   /**
    * One problem with one field.
@@ -64,7 +61,7 @@ public final class FieldDisplayRuleValidator {
     for (int i = 0; i < fields.size(); i++) {
       FieldSnapshot field = fields.get(i);
       String key = field.key();
-      if (key != null && !UUID.matcher(key).matches()) {
+      if (key != null && !isCanonicalUuid(key)) {
         errors.add(new RuleError(i, KEY_INVALID));
       } else if (key != null && duplicateKeys.contains(key)) {
         errors.add(new RuleError(i, KEY_DUPLICATE));
@@ -130,5 +127,15 @@ public final class FieldDisplayRuleValidator {
       }
     }
     return onCycle;
+  }
+
+  /** A key is valid only in canonical form: what {@link UUID#toString()} writes (lower case). */
+  private static boolean isCanonicalUuid(String key) {
+    try {
+      return UUID.fromString(key).toString().equals(key);
+    } catch (IllegalArgumentException e) {
+      // Not an error: this is how UUID reports "not a UUID", and the caller returns keyInvalid.
+      return false;
+    }
   }
 }
