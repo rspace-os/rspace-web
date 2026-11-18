@@ -303,8 +303,7 @@ describe("DefaultSearch", () => {
     givenWorkspace({});
     const { baseElement } = render(<DefaultSearch />);
     await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" });
-    // @ts-expect-error toBeAccessible is from @sa11y/vitest
-    await expect(baseElement).toBeAccessible();
+    await expectAccessible(baseElement);
   });
 
   test("a search that found nothing still offers to save", async () => {

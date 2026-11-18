@@ -192,6 +192,8 @@ test.describe(`Workspace search operations`, () => {
     await test.step("Then the toolbar has a Default search button and the bar says it is the default", async () => {
       await expect(pageWorkspace.searchBar.defaultSearchButton).toBeVisible();
       await expect(pageWorkspace.searchBar.isDefaultMessage).toBeVisible();
+      await pageWorkspace.searchBar.openSearchUrl(page.url());
+      await expect(pageWorkspace.searchBar.defaultSearchButton).toBeVisible();
     });
 
     await test.step("When I clear the search, the address bar returns to /workspace", async () => {
@@ -208,6 +210,8 @@ test.describe(`Workspace search operations`, () => {
 
     await test.step("And removing the default hides the button", async () => {
       await pageWorkspace.searchBar.removeDefaultSearch();
+      await expect(pageWorkspace.searchBar.defaultSearchButton).toHaveCount(0);
+      await pageWorkspace.open();
       await expect(pageWorkspace.searchBar.defaultSearchButton).toHaveCount(0);
     });
   });
@@ -351,6 +355,29 @@ test.describe(`Workspace search operations`, () => {
     releaseSearch();
     await expect(pageWorkspace.table.row(docName)).toBeVisible();
     await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+  });
+
+  test(`As a user, Back from a search result shows the search again`, async ({
+    page,
+    pageWorkspace,
+    clientDocuments,
+  }) => {
+    const docName = uniqueName("e2e-search-back");
+    await clientDocuments.create({ name: docName });
+    await pageWorkspace.open();
+    await pageWorkspace.searchBar.search(docName);
+    await pageWorkspace.table.openRecord(docName);
+
+    const searches: string[] = [];
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname.endsWith("/workspace/ajax/search")) searches.push(request.url());
+    });
+    await page.goBack();
+
+    await expect(pageWorkspace.table.row(docName)).toBeVisible();
+    await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+    await expect(pageWorkspace.searchBar.searchInput).toHaveValue(docName);
+    expect(searches.length).toBeLessThanOrEqual(1);
   });
 
   test(`As a sysadmin, a too-short search term is rejected with a validation message`, async ({

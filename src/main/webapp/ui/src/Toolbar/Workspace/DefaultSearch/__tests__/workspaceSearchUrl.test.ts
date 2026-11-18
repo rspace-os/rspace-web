@@ -95,6 +95,17 @@ describe("parseSearchQuery", () => {
     expect(toSearchQuery(parsed.state)).toBe(query);
   });
 
+  test.each([
+    ["a date without an end", "created", "2024-01-01T00:00:00.000Z"],
+    ["non-ASCII words", "name", "日本語 café 🧪"],
+  ])("%s round-trips", (_, option, term) => {
+    const query = toSearchQuery({ ...baseSettings, options: [option], terms: [term] });
+    const parsed = parseSearchQuery(`?${query}`);
+    if (parsed.kind !== "search") throw new Error(`expected a search, got ${parsed.kind}`);
+    expect(parsed.state.terms).toEqual([term]);
+    expect(toSearchQuery(parsed.state)).toBe(query);
+  });
+
   test.each(["", "?", "?settingsKey=abc", "?operator=OR&sortOrder=ASC"])("%j holds no search", (search) => {
     expect(parseSearchQuery(search)).toEqual({ kind: "none" });
   });
@@ -105,6 +116,7 @@ describe("parseSearchQuery", () => {
     ["terms with no options", "?terms[]=x"],
     ["options with no terms", "?options[]=name"],
     ["an unknown option", "?options[]=chemical&terms[]=x"],
+    ["an empty term", "?options[]=name&terms[]="],
   ])("%s is invalid", (_, search) => {
     expect(parseSearchQuery(search)).toEqual({ kind: "invalid" });
   });
@@ -161,6 +173,12 @@ describe("summariseSearch", () => {
   test("dates show as a range of days", () => {
     expect(
       summariseSearch({ ...baseSettings, options: ["created"], terms: ["2024-01-01T00:00:00.000Z; null"] }, labels),
+    ).toBe("Creation date: 2024-01-01 to any");
+  });
+
+  test("a date without an end shows an open range", () => {
+    expect(
+      summariseSearch({ ...baseSettings, options: ["created"], terms: ["2024-01-01T00:00:00.000Z"] }, labels),
     ).toBe("Creation date: 2024-01-01 to any");
   });
 

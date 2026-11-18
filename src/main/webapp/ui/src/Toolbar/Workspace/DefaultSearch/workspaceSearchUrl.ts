@@ -97,6 +97,7 @@ export function parseSearchQuery(search: string): ParsedSearchQuery {
   if (options.length === 0 && terms.length === 0) return { kind: "none" };
   if (
     options.length !== terms.length ||
+    terms.some((term) => term.trim() === "") ||
     !options.every((option) => (SEARCH_OPTIONS as ReadonlyArray<string>).includes(option))
   ) {
     return { kind: "invalid" };
