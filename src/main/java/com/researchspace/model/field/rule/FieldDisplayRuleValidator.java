@@ -49,7 +49,7 @@ public final class FieldDisplayRuleValidator {
    *
    * @return the problems found, in field order; empty when the set is valid
    */
-  public static List<RuleError> validate(List<RuleField> fields) {
+  public static List<RuleError> validate(List<FieldSnapshot> fields) {
     List<RuleError> errors = new ArrayList<>();
     Map<String, Integer> indexByKey = new HashMap<>();
     Set<String> duplicateKeys = new HashSet<>();
@@ -62,7 +62,7 @@ public final class FieldDisplayRuleValidator {
     boolean[] onCycle = onCycle(fields, indexByKey);
 
     for (int i = 0; i < fields.size(); i++) {
-      RuleField field = fields.get(i);
+      FieldSnapshot field = fields.get(i);
       String key = field.key();
       if (key != null && !UUID.matcher(key).matches()) {
         errors.add(new RuleError(i, KEY_INVALID));
@@ -79,7 +79,7 @@ public final class FieldDisplayRuleValidator {
       } else if (sourceIndex == i) {
         errors.add(new RuleError(i, SOURCE_SELF));
       } else {
-        RuleField source = fields.get(sourceIndex);
+        FieldSnapshot source = fields.get(sourceIndex);
         if (!source.canBeSource()) {
           errors.add(new RuleError(i, SOURCE_TYPE));
         } else if (!source.allowedOptions().containsAll(rule.values())) {
@@ -97,7 +97,7 @@ public final class FieldDisplayRuleValidator {
    * Which fields lie on a cycle of rule sources. Each rule has one source, so following sources
    * from a field either ends or loops; every field is walked once, so this runs in linear time.
    */
-  private static boolean[] onCycle(List<RuleField> fields, Map<String, Integer> indexByKey) {
+  private static boolean[] onCycle(List<FieldSnapshot> fields, Map<String, Integer> indexByKey) {
     final int unvisited = 0;
     final int onWalk = 1;
     final int done = 2;

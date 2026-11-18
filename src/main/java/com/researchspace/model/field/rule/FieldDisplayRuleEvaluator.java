@@ -35,7 +35,7 @@ public final class FieldDisplayRuleEvaluator {
    * <p>When several fields share a key, the first one is the source. Runs in linear time without
    * recursion, so chain length is not limited by stack depth.
    */
-  public static List<Boolean> visibility(List<RuleField> fields) {
+  public static List<Boolean> visibility(List<FieldSnapshot> fields) {
     Map<String, Integer> indexByKey = indexByKey(fields);
     Boolean[] visible = new Boolean[fields.size()];
     for (int start = 0; start < fields.size(); start++) {
@@ -74,7 +74,7 @@ public final class FieldDisplayRuleEvaluator {
   }
 
   /** First index of each non-null key. */
-  private static Map<String, Integer> indexByKey(List<RuleField> fields) {
+  private static Map<String, Integer> indexByKey(List<FieldSnapshot> fields) {
     Map<String, Integer> indexByKey = new HashMap<>();
     for (int i = 0; i < fields.size(); i++) {
       String key = fields.get(i).key();

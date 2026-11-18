@@ -1,17 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as v from "valibot";
 import { describe, expect, test } from "vitest";
 import {
   createDisplayRule,
-  type FieldDisplayRule,
+  type FieldSnapshot,
+  FieldSnapshotSchema,
   parseDisplayRule,
-  type RuleField,
   serializeDisplayRule,
 } from "../displayRule";
 import { parseElnChoiceValues } from "../elnChoiceValues";
 import { displayRuleVisibility } from "../evaluateDisplayRules";
-import { validateDisplayRules } from "../validateDisplayRules";
+import { DisplayRuleErrorSchema, validateDisplayRules } from "../validateDisplayRules";
 
 /*
  * The vectors are shared with the Java FieldDisplayRuleVectorsTest so that the
@@ -22,38 +23,47 @@ const VECTORS_PATH = path.resolve(
   "../../../../../../../../../src/test/resources/fieldrules/display-rule-vectors.json",
 );
 
-type VectorField = {
-  key: string | null;
-  type: string;
-  rule?: FieldDisplayRule;
-  allowedOptions?: Array<string>;
-  selectedOptions?: Array<string>;
-};
+/** A field as the vectors describe it, turned into a snapshot the way an adapter would. */
+const VectorFieldSchema = v.pipe(
+  v.object({
+    key: v.nullable(v.string()),
+    type: v.string(),
+    rule: v.nullish(v.unknown()),
+    allowedOptions: v.optional(v.array(v.string()), []),
+    selectedOptions: v.optional(v.array(v.string()), []),
+  }),
+  v.transform(
+    ({ key, type, rule, allowedOptions, selectedOptions }): FieldSnapshot =>
+      v.parse(FieldSnapshotSchema, {
+        key,
+        canBeSource: type === "RADIO" || type === "CHOICE",
+        rule: rule ?? null,
+        allowedOptions,
+        selectedOptions,
+      }),
+  ),
+);
 
-type Vectors = {
-  rules: {
-    valid: Array<{ name: string; json: string; canonical: string }>;
-    invalid: Array<{ name: string; json: string }>;
-  };
-  visibility: Array<{ name: string; fields: Array<VectorField>; expected: Array<boolean> }>;
-  validation: Array<{
-    name: string;
-    fields: Array<VectorField>;
-    expectedErrors: Array<{ fieldIndex: number; code: string }>;
-  }>;
-  elnChoice: Array<{ data: string; expected: Array<string> }>;
-};
+const VectorsSchema = v.object({
+  description: v.string(),
+  rules: v.object({
+    valid: v.array(v.object({ name: v.string(), json: v.string(), canonical: v.string() })),
+    invalid: v.array(v.object({ name: v.string(), json: v.string() })),
+  }),
+  visibility: v.array(
+    v.object({ name: v.string(), fields: v.array(VectorFieldSchema), expected: v.array(v.boolean()) }),
+  ),
+  validation: v.array(
+    v.object({
+      name: v.string(),
+      fields: v.array(VectorFieldSchema),
+      expectedErrors: v.array(DisplayRuleErrorSchema),
+    }),
+  ),
+  elnChoice: v.array(v.object({ data: v.string(), expected: v.array(v.string()) })),
+});
 
-const vectors = JSON.parse(fs.readFileSync(VECTORS_PATH, "utf8")) as Vectors;
-
-const toRuleFields = (fields: Array<VectorField>): Array<RuleField> =>
-  fields.map((field) => ({
-    key: field.key,
-    canBeSource: field.type === "RADIO" || field.type === "CHOICE",
-    rule: field.rule ? parseDisplayRule(JSON.stringify(field.rule)) : null,
-    allowedOptions: field.allowedOptions ?? [],
-    selectedOptions: field.selectedOptions ?? [],
-  }));
+const vectors = v.parse(VectorsSchema, JSON.parse(fs.readFileSync(VECTORS_PATH, "utf8")));
 
 describe("display rule vectors shared with Java", () => {
   test.each(vectors.rules.valid)("parses and serialises canonically: $name", ({ json, canonical }) => {
@@ -61,15 +71,15 @@ describe("display rule vectors shared with Java", () => {
   });
 
   test.each(vectors.rules.invalid)("rejects: $name", ({ json }) => {
-    expect(() => parseDisplayRule(json)).toThrow();
+    expect(() => parseDisplayRule(json)).toThrow(v.ValiError);
   });
 
   test.each(vectors.visibility)("visibility: $name", ({ fields, expected }) => {
-    expect(displayRuleVisibility(toRuleFields(fields))).toEqual(expected);
+    expect(displayRuleVisibility(fields)).toEqual(expected);
   });
 
   test.each(vectors.validation)("validation: $name", ({ fields, expectedErrors }) => {
-    expect(validateDisplayRules(toRuleFields(fields))).toEqual(expectedErrors);
+    expect(validateDisplayRules(fields)).toEqual(expectedErrors);
   });
 
   test.each(vectors.elnChoice)("ELN choice data '$data'", ({ data, expected }) => {
@@ -85,7 +95,7 @@ describe("display rule vectors shared with Java", () => {
 test("a deep chain listed dependent first is all shown and valid", () => {
   const length = 20_000;
   const chainKey = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
-  const fields: Array<RuleField> = Array.from({ length }, (_unused, i) => ({
+  const fields: Array<FieldSnapshot> = Array.from({ length }, (_unused, i) => ({
     key: chainKey(i),
     canBeSource: true,
     rule: i === length - 1 ? null : createDisplayRule(chainKey(i + 1), "IS_ANY_OF", ["Yes"]),
