@@ -326,6 +326,14 @@ test.describe(`Workspace search operations`, () => {
       await expect(pageWorkspace.searchBar.searchInput).toHaveValue("");
       await expect(page).toHaveURL(/terms%5B%5D=leftover/);
     });
+
+    await test.step("After a dropped connection, sorting lists the folder again", async () => {
+      await page.unroute("**/workspace/ajax/search**");
+      const folderListing = page.waitForResponse((response) => response.url().includes("/workspace/ajax/view/"));
+      await pageWorkspace.table.sortBy("Name");
+      expect((await folderListing).status()).toBe(200);
+      await expect(pageWorkspace.table.row("Examples")).toBeVisible();
+    });
   });
 
   test(`As a user, the folder listing cannot be clicked while a search link is still loading`, async ({

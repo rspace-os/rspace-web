@@ -237,7 +237,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
     resetToolbar();
     this.simpleSearch.current?.resetState();
     if (jqxhr?.status === 0) {
-      // Keep the link in the address bar, so that reloading tries it again
+      // List the folder again on paging and sorting, as abandonSearch() does, without
+      // reloading it now. Keep the link in the address bar, so that reloading tries it again
+      workspaceSettings.parentFolderId = $("#currFolderId").val();
+      workspaceSettings.url = `/workspace/ajax/view/${workspaceSettings.parentFolderId}`;
+      workspaceSettings.pageNumber = 0;
       RS.confirm(i18n.t("workspace:toolbar.defaultSearch.linkNetworkError"), "warning", 5000);
       return;
     }
