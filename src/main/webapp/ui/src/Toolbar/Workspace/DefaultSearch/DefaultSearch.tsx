@@ -221,7 +221,7 @@ function DefaultSearchControls({
   if (current !== null && current === stored) {
     bar = (
       <>
-        <span id="isDefaultSearch">{t("toolbar.defaultSearch.isDefault")}</span>
+        <span id="isDefaultSearch">{t("toolbar.defaultSearch.isDefault")}</span>{" "}
         <button type="button" id="clearDefaultSearch" disabled={saving} onClick={() => void remove()}>
           {t("toolbar.defaultSearch.remove")}
         </button>

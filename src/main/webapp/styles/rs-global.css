@@ -693,7 +693,8 @@ div .searchButton {
       color: white; }
 
 #searchModePanel #saveDefaultSearch,
-#searchModePanel #isDefaultSearch {
+#searchModePanel #isDefaultSearch,
+#searchModePanel #clearDefaultSearch {
   margin-left: 8px;
 }
 
