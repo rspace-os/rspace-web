@@ -366,6 +366,28 @@ public class WorkspacePermissionsDTOBuilderTest {
   }
 
   @Test
+  public void renameEnabledWhenEditAccessAllowsRenameWithoutRenameAcl() {
+    final StructuredDocument sdoc = TestFactory.createAnySD();
+    sdoc.setOwner(user);
+    sdoc.setId(DOC_ID);
+    permFac.setUpACLForUserRoot(user, parentFolder);
+    parentFolder.addChild(sdoc, user);
+    final User sharee = TestFactory.createAnyUser("sharee");
+    final List<BaseRecord> records = toList(sdoc);
+
+    ActionPermissionsDTO result =
+        dtoBuilder.addCreateAndOptionsMenuPermissions(
+            parentFolder, sharee, model, records, 1L, false);
+    assertFalse(can(result, DOC_ID, PermissionType.RENAME));
+
+    when(permissionUtils.isRenamePermittedByEditAccess(sdoc, sharee)).thenReturn(true);
+    result =
+        dtoBuilder.addCreateAndOptionsMenuPermissions(
+            parentFolder, sharee, model, records, 1L, false);
+    assertTrue(can(result, DOC_ID, PermissionType.RENAME));
+  }
+
+  @Test
   public void batchMoveCheckOnlyReceivesMovableCandidates() {
     final StructuredDocument sdoc = TestFactory.createAnySD();
     sdoc.setOwner(user);

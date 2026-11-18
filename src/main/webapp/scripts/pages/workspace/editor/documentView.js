@@ -498,7 +498,6 @@ function autoCheckEditableStatus() {
         } else if (resultData && resultData.username !== currentUser) {
           editable = 'CANNOT_EDIT_OTHER_EDITING';
           editor = resultData.username;
-          isEditable = false;
         }
         displayStatus(editable);
       }
