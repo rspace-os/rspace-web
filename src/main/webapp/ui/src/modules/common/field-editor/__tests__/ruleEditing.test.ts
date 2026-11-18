@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import { withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import {
+  changesAreInvalid,
   groupDisplayRules,
   type RuleEditorField,
   ruleFromDraft,
+  sanitiseDraft,
   sourceCandidates,
   targetCandidates,
   usableOptions,
-  withoutOptions,
 } from "../ruleEditing";
 
 const field = (key: string, overrides: Partial<RuleEditorField> = {}): RuleEditorField => ({
@@ -91,5 +93,35 @@ describe("ruleFromDraft", () => {
 
   it("drops options an operator does not take", () => {
     expect(ruleFromDraft({ sourceFieldKey: "gmo", operator: "HAS_NO_VALUE", values: ["Yes"] })?.values).toEqual([]);
+  });
+});
+
+describe("sanitiseDraft", () => {
+  it("drops a source that is gone and options the source no longer offers", () => {
+    const draft = { sourceFieldKey: "gmo", operator: "IS_ANY_OF" as const, values: ["Yes", "Unsure"] };
+    expect(sanitiseDraft([radio("gmo"), field("permit")], draft, ["permit", "deleted"])).toEqual({
+      condition: { sourceFieldKey: "gmo", operator: "IS_ANY_OF", values: ["Yes"] },
+      targetKeys: ["permit"],
+    });
+    expect(sanitiseDraft([field("gmo"), field("permit")], draft, ["permit"]).condition.sourceFieldKey).toBeNull();
+  });
+
+  it("drops a source that another rule has since made depend on the draft's target", () => {
+    // a second draft wanted level to read gmo; gmo now reads level
+    const fields = [radio("gmo", createDisplayRule("level", "IS_ANY_OF", ["Yes"])), radio("level")];
+    const draft = { sourceFieldKey: "gmo", operator: "HAS_VALUE" as const, values: [] };
+    expect(sanitiseDraft(fields, draft, ["level"]).condition.sourceFieldKey).toBeNull();
+  });
+});
+
+describe("changesAreInvalid", () => {
+  it("rejects a rule naming an option its source does not offer, but not unrelated errors", () => {
+    const fields = [radio("gmo"), field("permit"), field("old", { rule: createDisplayRule("gone", "HAS_VALUE", []) })];
+    expect(changesAreInvalid(fields, [{ key: "permit", rule: createDisplayRule("gmo", "IS_ANY_OF", ["Maybe"]) }])).toBe(
+      true,
+    );
+    expect(changesAreInvalid(fields, [{ key: "permit", rule: createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]) }])).toBe(
+      false,
+    );
   });
 });

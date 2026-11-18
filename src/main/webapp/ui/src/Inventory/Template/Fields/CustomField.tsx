@@ -168,6 +168,7 @@ function CustomField({
           onErrorStateChange(name === "" || name.length > NAME_MAX_LENGTH);
         }}
         nameError={nameError}
+        nameMaxLength={NAME_MAX_LENGTH}
         type={field.type}
         typeOptions={TYPE_OPTIONS}
         onTypeChange={(type) => void changeType(type)}
@@ -210,11 +211,7 @@ function CustomField({
                 lockedReason: usedByRule ? t("template.displayRules.optionInUse") : undefined,
               };
             })}
-            onOptionChange={(index, value) =>
-              field.setAttributesDirty({
-                options: field.options.toSpliced(index, 1, { value, label: value, editing: true }),
-              })
-            }
+            onOptionChange={(index, value) => field.renameOption(index, value)}
             onOptionRemove={(index) => void removeOption(index)}
             onOptionAdd={() =>
               field.setAttributesDirty({ options: [...field.options, { value: "", label: "", editing: true }] })

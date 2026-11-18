@@ -1140,22 +1140,14 @@
           "keep": "Keep field in existing {recordType}",
           "remove": "Remove field from existing {recordType}"
         },
-        "mandatory": "Mandatory",
-        "name": "Name",
         "noMoreFields": "No more fields",
-        "type": "Type",
         "validation": {
           "duplicateName": "You either already have a field with that name or that name is not permitted",
           "emptyName": "Name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 50 characters",
-          "optionsNotUnique": "All values must be unique.",
-          "optionsRequired": "One or more values are required."
-        },
-        "values": "Values",
-        "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+          "nameTooLong": "Name cannot be longer than 50 characters"
+        }
       },
       "defaultValue": {
-        "addValue": "Add Value",
         "allowedRelationshipTypes": "Allowed relationship types",
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
         "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
@@ -1164,13 +1156,6 @@
         "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
         "defaultLinkTarget": "Default link target",
         "none": "None"
-      },
-      "move": {
-        "down": "Down",
-        "label": "Move",
-        "toBottom": "To Bottom",
-        "toTop": "To Top",
-        "up": "Up"
       },
       "quantityUnits": {
         "defaultScale": "Default Scale",

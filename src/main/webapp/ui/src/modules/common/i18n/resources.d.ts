@@ -2266,6 +2266,7 @@ export default interface Resources {
         "moveUp": "Move {field} up",
         "moveUpTooltip": "Move up",
         "name": "Name",
+        "nameLength": "{length, number} / {max, number}",
         "type": "Type",
         "unnamed": "Unnamed field"
       },
@@ -2290,6 +2291,9 @@ export default interface Resources {
           "sourceMissing": "When a deleted field has a value"
         },
         "incomplete": "This rule is not applied until it has a field, a condition, any options it needs, and at least one field to show.",
+        "incompleteEdit": "This change is not applied until the rule has a field, a condition, any options it needs, and at least one field to show. Until then the saved rule stays as it was.",
+        "invalid": "This rule cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself.",
+        "invalidEdit": "This change cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself. Until it is fixed the saved rule stays as it was.",
         "newRuleHeading": "New rule {position}",
         "noSources": "Add a radio or choice field first. Rules can only read those fields.",
         "none": "No display rules. Every field is always shown.",
@@ -5126,22 +5130,14 @@ export default interface Resources {
             "keep": "Keep field in existing {recordType}",
             "remove": "Remove field from existing {recordType}"
           },
-          "mandatory": "Mandatory",
-          "name": "Name",
           "noMoreFields": "No more fields",
-          "type": "Type",
           "validation": {
             "duplicateName": "You either already have a field with that name or that name is not permitted",
             "emptyName": "Name cannot be empty",
-            "nameTooLong": "Name cannot be longer than 50 characters",
-            "optionsNotUnique": "All values must be unique.",
-            "optionsRequired": "One or more values are required."
-          },
-          "values": "Values",
-          "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+            "nameTooLong": "Name cannot be longer than 50 characters"
+          }
         },
         "defaultValue": {
-          "addValue": "Add Value",
           "allRelationshipTypes": "All relationship types",
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
@@ -5150,13 +5146,6 @@ export default interface Resources {
           "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
           "defaultLinkTarget": "Default link target",
           "none": "None"
-        },
-        "move": {
-          "down": "Down",
-          "label": "Move",
-          "toBottom": "To Bottom",
-          "toTop": "To Top",
-          "up": "Up"
         },
         "quantityUnits": {
           "defaultScale": "Default Scale",

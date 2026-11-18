@@ -32,7 +32,7 @@ function TemplateDisplayRules({ fields, editable }: TemplateDisplayRulesArgs): R
 
   const applyChanges = action((changes: ReadonlyArray<RuleChange>) => {
     for (const { key, rule } of changes) {
-      liveFields.find((field) => field.fieldKey === key)?.setAttributesDirty({ displayRule: rule });
+      liveFields.find((field) => field.fieldKey === key)?.setDisplayRule(rule);
     }
   });
 

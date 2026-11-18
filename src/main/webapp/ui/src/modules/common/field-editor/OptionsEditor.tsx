@@ -8,6 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
+import { isBlankOption } from "./ruleEditing";
 
 export type EditableOption = {
   readonly value: string;
@@ -36,7 +37,7 @@ export default function OptionsEditor({
   const { t } = useTranslation("common");
   const id = useId();
   const errorFor = (value: string, index: number): string | undefined => {
-    if (/^\s*$/.test(value)) return t("fieldEditor.options.blank");
+    if (isBlankOption(value)) return t("fieldEditor.options.blank");
     if (options.findIndex((option) => option.value === value) !== index) return t("fieldEditor.options.duplicate");
     return undefined;
   };

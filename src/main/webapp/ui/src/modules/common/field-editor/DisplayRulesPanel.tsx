@@ -13,21 +13,26 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { partition, sortBy } from "es-toolkit";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import {
   CONDITION_OPERATORS,
   type ConditionOperator,
+  ConditionOperatorSchema,
   type FieldDisplayRule,
   operatorRequiresValues,
 } from "@/modules/common/field-rules/displayRule";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import {
+  changesAreInvalid,
   type DraftCondition,
   groupDisplayRules,
   type RuleChange,
   type RuleEditorField,
   ruleFromDraft,
+  sanitiseDraft,
   sourceCandidates,
   targetCandidates,
 } from "./ruleEditing";
@@ -42,17 +47,26 @@ type DisplayRulesPanelProps = {
 };
 
 /**
- * A rule being edited that cannot be stored yet: its condition is incomplete
- * or it shows no field. Its target fields have no rule until it is complete.
+ * A rule being edited that cannot be stored yet: its condition is incomplete,
+ * it shows no field, or the validator rejects it. A draft that edits a stored
+ * rule leaves that rule on its fields until the edit can be applied.
  */
-type Draft = DraftCondition & { id: string; targetKeys: ReadonlyArray<string> };
+type Draft = DraftCondition & {
+  id: string;
+  targetKeys: ReadonlyArray<string>;
+  /** The fields of the stored rule this draft edits; empty for a new rule. */
+  replaces: ReadonlyArray<string>;
+};
 
 type Row = {
   id: string;
   condition: DraftCondition;
   targetKeys: ReadonlyArray<string>;
-  /** Set for a rule stored on its target fields; unset for a draft. */
-  rule?: FieldDisplayRule;
+  /** The rule on the fields this row covers, which stays until an edit applies. */
+  stored: { rule: FieldDisplayRule; targetKeys: ReadonlyArray<string> } | null;
+  isDraft: boolean;
+  /** A draft whose source can no longer be read, so the author must pick another. */
+  sourceDropped: boolean;
 };
 
 function OperatorLabel({ operator }: { operator: ConditionOperator }): string {
@@ -91,14 +105,16 @@ function RuleCard({
   const { t } = useTranslation("common");
   const { heading } = useDescribeRule();
   const id = useId();
-  const { condition, targetKeys } = row;
+  const { condition, targetKeys, stored } = row;
   const source = fields.find((field) => field.key === condition.sourceFieldKey) ?? null;
   const sources = sourceCandidates(fields, targetKeys);
-  const targets = targetCandidates(fields, condition.sourceFieldKey, targetKeys, claimedKeys);
+  const ownKeys = [...targetKeys, ...(stored?.targetKeys ?? [])];
+  const targets = targetCandidates(fields, condition.sourceFieldKey, ownKeys, claimedKeys);
   const needsValues = operatorRequiresValues(condition.operator);
-  const complete = ruleFromDraft(condition) !== null;
-  const title = row.rule
-    ? heading(row.rule, source?.name ?? null)
+  const complete = ruleFromDraft(condition) !== null && targetKeys.length > 0;
+  const storedSource = stored ? fields.find((field) => field.key === stored.rule.sourceFieldKey) : undefined;
+  const title = stored
+    ? heading(stored.rule, storedSource?.name ?? null)
     : t("fieldEditor.rules.newRuleHeading", { position: position + 1 });
 
   return (
@@ -124,10 +140,8 @@ function RuleCard({
             id={`${id}-source`}
             label={t("fieldEditor.rules.sourceLabel")}
             value={source && sources.includes(source) ? source.key : ""}
-            error={condition.sourceFieldKey !== null && source === null}
-            helperText={
-              condition.sourceFieldKey !== null && source === null ? t("fieldEditor.rules.sourceMissing") : undefined
-            }
+            error={row.sourceDropped}
+            helperText={row.sourceDropped ? t("fieldEditor.rules.sourceMissing") : undefined}
             onChange={({ target: { value } }) => {
               const newSource = fields.find((field) => field.key === value);
               onConditionChange({
@@ -151,7 +165,7 @@ function RuleCard({
             label={t("fieldEditor.rules.operatorLabel")}
             value={condition.operator}
             onChange={({ target: { value } }) =>
-              onConditionChange({ ...condition, operator: value as ConditionOperator })
+              onConditionChange({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
             }
             sx={{ minWidth: 160, width: { xs: "100%", md: "auto" } }}
           >
@@ -199,9 +213,15 @@ function RuleCard({
             />
           )}
         />
-        {(!complete || targetKeys.length === 0) && (
+        {row.isDraft && (
           <Alert severity="warning" variant="outlined">
-            {t("fieldEditor.rules.incomplete")}
+            {stored
+              ? complete
+                ? t("fieldEditor.rules.invalidEdit")
+                : t("fieldEditor.rules.incompleteEdit")
+              : complete
+                ? t("fieldEditor.rules.invalid")
+                : t("fieldEditor.rules.incomplete")}
           </Alert>
         )}
       </Stack>
@@ -224,7 +244,7 @@ function ReadOnlyRules({ fields }: { fields: ReadonlyArray<RuleEditorField> }): 
   return (
     <List dense disablePadding>
       {groups.map((group) => (
-        <ListItem key={group.id} disableGutters>
+        <ListItem key={group.targetKeys[0]} disableGutters>
           <ListItemText
             primary={heading(group.rule, nameOf(group.rule.sourceFieldKey))}
             secondary={t("fieldEditor.rules.shows", {
@@ -244,41 +264,67 @@ function ReadOnlyRules({ fields }: { fields: ReadonlyArray<RuleEditorField> }): 
  * Lists the display rules of a whole form or template, once each. Fields whose
  * rules are identical are shown as one rule with several target fields.
  * Options come from the source field; a rule can only show fields that would
- * not end up depending on themselves.
+ * not end up depending on themselves. A rule is only applied once it is
+ * complete and the shared validator accepts it; until then it stays a draft
+ * and any rule it edits stays on its fields. Only deleting a rule clears it.
  */
 export default function DisplayRulesPanel({ fields, onChange, editable }: DisplayRulesPanelProps): ReactNode {
   const { t } = useTranslation("common");
   const headingId = useId();
   const [drafts, setDrafts] = useState<ReadonlyArray<Draft>>([]);
   /*
-   * A row keeps its React identity while it moves between being a stored rule
-   * and a draft, so the control the author is using keeps focus.
+   * A row keeps its React identity, and its place, while it moves between
+   * being a stored rule and a draft, so the control the author is using keeps
+   * focus. Both are only changed in event handlers.
    */
-  const rowIdByTarget = useRef(new Map<string, string>());
-  const rowOrder = useRef<Array<string>>([]);
+  const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(new Map());
+  const [addedRowIds, setAddedRowIds] = useState<ReadonlyArray<string>>([]);
   const nextDraftId = useRef(0);
 
-  const liveKeys = new Set(fields.map((field) => field.key));
-  const liveDrafts = drafts.map((draft) => ({
-    ...draft,
-    targetKeys: draft.targetKeys.filter((key) => liveKeys.has(key)),
-  }));
-  const usedIds = new Set(liveDrafts.map((draft) => draft.id));
-  const rows: Array<Row> = [
-    ...groupDisplayRules(fields).map((group) => {
-      const remembered = rowIdByTarget.current.get(group.targetKeys[0]);
-      const id = remembered !== undefined && !usedIds.has(remembered) ? remembered : group.id;
-      usedIds.add(id);
-      return { id, condition: group.rule, targetKeys: group.targetKeys, rule: group.rule };
-    }),
-    ...liveDrafts.map((draft) => ({
-      id: draft.id,
-      condition: { sourceFieldKey: draft.sourceFieldKey, operator: draft.operator, values: draft.values },
-      targetKeys: draft.targetKeys,
-    })),
-  ];
-  for (const row of rows) if (!rowOrder.current.includes(row.id)) rowOrder.current.push(row.id);
-  rows.sort((a, b) => rowOrder.current.indexOf(a.id) - rowOrder.current.indexOf(b.id));
+  const groupRows: Array<Row> = [];
+  for (const group of groupDisplayRules(fields)) {
+    const [firstTarget] = group.targetKeys;
+    const preferred = rowIdByTarget.get(firstTarget) ?? firstTarget;
+    const id = groupRows.some((row) => row.id === preferred) ? `${preferred}/${firstTarget}` : preferred;
+    const stored = { rule: group.rule, targetKeys: group.targetKeys };
+    const draft = drafts.find(
+      (candidate) => candidate.id === id || group.targetKeys.every((key) => candidate.replaces.includes(key)),
+    );
+    if (draft) {
+      const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
+      groupRows.push({
+        id: draft.id,
+        ...sanitised,
+        stored,
+        isDraft: true,
+        sourceDropped: draft.sourceFieldKey !== null && sanitised.condition.sourceFieldKey === null,
+      });
+    } else {
+      groupRows.push({
+        id,
+        condition: group.rule,
+        targetKeys: group.targetKeys,
+        stored,
+        isDraft: false,
+        sourceDropped: false,
+      });
+    }
+  }
+  const draftRows: Array<Row> = drafts
+    .filter((draft) => !groupRows.some((row) => row.id === draft.id))
+    .map((draft) => {
+      const sanitised = sanitiseDraft(fields, draft, draft.targetKeys);
+      return {
+        id: draft.id,
+        ...sanitised,
+        stored: null,
+        isDraft: true,
+        sourceDropped: draft.sourceFieldKey !== null && sanitised.condition.sourceFieldKey === null,
+      };
+    });
+  // rules that were already stored keep field order; rules added here keep the order they were added in
+  const [added, loaded] = partition([...groupRows, ...draftRows], (row) => addedRowIds.includes(row.id));
+  const rows = [...loaded, ...sortBy(added, [(row) => addedRowIds.indexOf(row.id)])];
 
   if (!editable) {
     return (
@@ -291,36 +337,41 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
     );
   }
 
-  const remember = (rowId: string, targetKeys: ReadonlyArray<string>) => {
-    for (const key of targetKeys) rowIdByTarget.current.set(key, rowId);
-  };
+  const forgetRow = (rowId: string) =>
+    setRowIdByTarget((current) => new Map([...current].filter(([, id]) => id !== rowId)));
   const replaceDraft = (draft: Draft | null, rowId: string) =>
     setDrafts((current) => {
       const others = current.filter((existing) => existing.id !== rowId);
       return draft ? [...others, draft] : others;
     });
 
-  /** Stores the row's rule on its targets when it is complete; keeps it as a draft otherwise. */
+  /** Applies the row's rule to its targets when it is complete and valid; keeps it as a draft otherwise. */
   const update = (row: Row, condition: DraftCondition, targetKeys: ReadonlyArray<string>) => {
     const rule = ruleFromDraft(condition);
-    for (const key of row.targetKeys) {
-      if (!targetKeys.includes(key) && rowIdByTarget.current.get(key) === row.id) rowIdByTarget.current.delete(key);
-    }
-    const changes: Array<RuleChange> = row.targetKeys
-      .filter((key) => !targetKeys.includes(key) || rule === null)
-      .map((key) => ({ key, rule: null }));
+    const storedKeys = row.stored?.targetKeys ?? [];
     if (rule !== null && targetKeys.length > 0) {
-      remember(row.id, targetKeys);
-      changes.push(...targetKeys.map((key) => ({ key, rule })));
-      replaceDraft(null, row.id);
-    } else {
-      replaceDraft({ id: row.id, ...condition, targetKeys }, row.id);
+      const changes: Array<RuleChange> = [
+        ...storedKeys.filter((key) => !targetKeys.includes(key)).map((key) => ({ key, rule: null })),
+        ...targetKeys.map((key) => ({ key, rule })),
+      ];
+      if (!changesAreInvalid(fields, changes)) {
+        setRowIdByTarget(
+          (current) =>
+            new Map([
+              ...[...current].filter(([, id]) => id !== row.id),
+              ...targetKeys.map((key) => [key, row.id] as const),
+            ]),
+        );
+        replaceDraft(null, row.id);
+        onChange(changes);
+        return;
+      }
     }
-    if (changes.length > 0) onChange(changes);
+    replaceDraft({ id: row.id, ...condition, targetKeys, replaces: storedKeys }, row.id);
   };
 
   const claimedBy = (rowId: string) =>
-    new Set(liveDrafts.filter((draft) => draft.id !== rowId).flatMap((draft) => draft.targetKeys));
+    new Set(rows.filter((row) => row.isDraft && row.id !== rowId).flatMap((row) => row.targetKeys));
   const firstSource = sourceCandidates(fields, [])[0] ?? null;
 
   return (
@@ -349,7 +400,9 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
               onTargetsChange={(targetKeys) => update(row, row.condition, targetKeys)}
               onDelete={() => {
                 replaceDraft(null, row.id);
-                if (row.rule) onChange(row.targetKeys.map((key) => ({ key, rule: null })));
+                forgetRow(row.id);
+                setAddedRowIds((current) => current.filter((id) => id !== row.id));
+                if (row.stored) onChange(row.stored.targetKeys.map((key) => ({ key, rule: null })));
               }}
             />
           ))}
@@ -362,14 +415,17 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
         disabled={firstSource === null}
         onClick={() => {
           nextDraftId.current += 1;
+          const id = `draft-${nextDraftId.current}`;
+          setAddedRowIds((current) => [...current, id]);
           setDrafts((current) => [
             ...current,
             {
-              id: `draft-${nextDraftId.current}`,
+              id,
               sourceFieldKey: firstSource?.key ?? null,
               operator: "IS_ANY_OF",
               values: [],
               targetKeys: [],
+              replaces: [],
             },
           ]);
         }}

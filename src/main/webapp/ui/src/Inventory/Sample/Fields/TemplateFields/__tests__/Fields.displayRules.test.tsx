@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "@/stores/models/__tests__/SampleModel/mocking";
 import type { FieldModelAttrs } from "@/stores/models/FieldModel";
@@ -46,7 +47,7 @@ const gmoFields = (answer: Array<string>, permit = ""): Array<FieldModelAttrs> =
     attachment: null,
     mandatory: true,
     fieldKey: "6f1c2e0a-0000-4000-8000-000000000002",
-    displayRule: { sourceFieldKey: GMO_KEY, operator: "IS_ANY_OF", values: ["Yes"] },
+    displayRule: createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]),
   },
 ];
 
@@ -73,6 +74,38 @@ describe("Template fields with display rules", () => {
     expect(screen.getByRole("textbox", { name: /GMO permit/ })).toBeInTheDocument();
     expect(yes).toHaveFocus();
     expect(screen.getByRole("status")).toHaveTextContent("common:fieldDisplay.fieldsShown");
+  });
+
+  it("announces a field each time it is revealed, keeping focus on the answer", async () => {
+    const user = userEvent.setup();
+    renderSampleFields(gmoFields([]));
+    const status = screen.getByRole("status");
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    expect(status).toHaveTextContent("common:fieldDisplay.fieldsShown");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(status).toBeEmptyDOMElement();
+    const yes = screen.getByRole("radio", { name: "Yes" });
+    await user.click(yes);
+
+    expect(status).toHaveTextContent("common:fieldDisplay.fieldsShown");
+    expect(yes).toHaveFocus();
+  });
+
+  it("does not announce the fields of another record as revealed", () => {
+    const first = makeMockSample({ globalId: "SA1", fields: gmoFields([]) });
+    const second = makeMockSample({ globalId: "SA2", fields: gmoFields(["Yes"]) });
+    for (const sample of [first, second]) sample.currentlyEditableFields.add("fields");
+    const fields = (sample: typeof first) => (
+      <ThemeProvider theme={materialTheme}>
+        <Fields onErrorStateChange={() => {}} sample={sample} />
+      </ThemeProvider>
+    );
+    const { rerender } = render(fields(first));
+    rerender(fields(second));
+
+    expect(screen.getByRole("textbox", { name: /GMO permit/ })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
   it("keeps the value of a field that is hidden and shown again", async () => {
