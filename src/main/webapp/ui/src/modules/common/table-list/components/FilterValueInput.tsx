@@ -7,6 +7,7 @@ import { type RelationshipSource, relationshipSourceForPicker } from "@/modules/
 import { Input } from "@/modules/common/ui/input";
 import { MultiSelect } from "@/modules/common/ui/multi-select";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { tableListRelationshipSources } from "../relationshipSources";
 import { type DraftValue, listValue, scalarValue } from "../utils/filterDrafts";
 import { FilterSelect } from "./FilterSelect";
 
@@ -40,7 +41,7 @@ export function FilterValueInput<TDocument>({
   const { t } = useTranslation("common");
   const ariaLabel = t("tableList.filters.value", { number });
   const multiple = operator === "in" || operator === "notIn";
-  const availableSources = sources ?? {};
+  const availableSources = tableListRelationshipSources(sources);
   const identitySource = identitySourceFor(field, availableSources);
   const selectLabels = {
     placeholder: t("tableList.filters.placeholders.value"),

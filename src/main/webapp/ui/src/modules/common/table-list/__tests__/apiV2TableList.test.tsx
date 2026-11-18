@@ -221,7 +221,7 @@ describe("API v2 optional totals", () => {
 });
 
 describe("API v2 saved views", () => {
-  it("blocks rehydration when a catalogue changes to an unapproved URL", async () => {
+  it("ignores a catalogue that moves to an unpublished URL without requesting it", async () => {
     const user = userEvent.setup();
     const catalogRequests = vi.fn();
     server.use(
@@ -271,7 +271,7 @@ describe("API v2 saved views", () => {
     await user.click(await screen.findByRole("button", { name: "Select definition" }));
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
     await user.click(screen.getByRole("button", { name: "Change catalogue" }));
-    await waitFor(() => expect(screen.getByRole("status")).toMatchTextContent("catalog error"));
+    await waitFor(() => expect(screen.getByRole("status")).toBeEmptyDOMElement());
     expect(catalogRequests).not.toHaveBeenCalled();
   });
 

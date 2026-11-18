@@ -1,6 +1,7 @@
 import type { FieldName, RelationshipFilterPicker, ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { type RelationshipSource, relationshipSourceForPicker } from "@/modules/common/relationship-picker/sources";
+import { tableListRelationshipSources } from "../relationshipSources";
 import type { CollectionQueryState, FilterExpression } from "../types";
 import { RuntimeFieldProjectionLimitError } from "../utils/errors";
 import { serializeSorting } from "../utils/queryString";
@@ -11,7 +12,7 @@ function compatiblePickerSource<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
   picker: RelationshipFilterPicker,
 ): RelationshipSource | undefined {
-  return relationshipSourceForPicker(picker, config.relationshipSources ?? {});
+  return relationshipSourceForPicker(picker, tableListRelationshipSources(config.relationshipSources));
 }
 
 function ownedPickerValue(value: string, source: RelationshipSource): string | null {
