@@ -50,14 +50,18 @@ public class BookingNotificationSubscriptionController {
   private static final String SUBSCRIPTIONS = "/users/me/booking-notification-subscriptions";
   private static final String ITEM = "/booking-configurations/{id}/notification-subscription";
 
+  @Schema(name = "BookingNotificationPreferenceReplacement")
   public record PreferenceReplacement(
       @NotNull Boolean autoSubscribeOwnedItems, @NotNull Boolean notifyOwnActions) {}
 
+  @Schema(name = "BookingNotificationSubscriptionReplacement")
   public record SubscriptionReplacement(@NotNull Boolean enabled) {}
 
+  @Schema(name = "BookingNotificationSubscriptionLookup")
   public record Lookup(
       @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds) {}
 
+  @Schema(name = "BookingNotificationSubscriptionStatus")
   public record SubscriptionStatus(
       long configurationId,
       boolean enabled,
@@ -74,8 +78,10 @@ public class BookingNotificationSubscriptionController {
     }
   }
 
+  @Schema(name = "BookingNotificationSubscriptionStatusList")
   public record StatusList(List<SubscriptionStatus> docs) {}
 
+  @Schema(name = "BookingNotificationUnsubscribeResult")
   public record UnsubscribeResult(int updatedCount) {}
 
   private final BookingNotificationSubscriptionManager manager;

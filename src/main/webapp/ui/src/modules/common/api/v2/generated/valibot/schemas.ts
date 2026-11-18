@@ -43,20 +43,13 @@ export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
 export const BookingDisplayPreferencesReplacementSchema = native.BookingDisplayPreferencesReplacement;
 export const BookingEventKindSchema = native.BookingEventKind;
 export const BookingIncrementUnitSchema = native.BookingIncrementUnit;
-export const BookingNotificationSubscriptionControllerLookupSchema =
-  native.BookingNotificationSubscriptionControllerLookup;
-export const BookingNotificationSubscriptionControllerPreferenceReplacementSchema =
-  native.BookingNotificationSubscriptionControllerPreferenceReplacement;
-export const BookingNotificationSubscriptionControllerStatusListSchema =
-  native.BookingNotificationSubscriptionControllerStatusList;
-export const BookingNotificationSubscriptionControllerSubscriptionReplacementSchema =
-  native.BookingNotificationSubscriptionControllerSubscriptionReplacement;
-export const BookingNotificationSubscriptionControllerSubscriptionStatusSchema =
-  native.BookingNotificationSubscriptionControllerSubscriptionStatus;
-export const BookingNotificationSubscriptionControllerUnsubscribeResultSchema =
-  native.BookingNotificationSubscriptionControllerUnsubscribeResult;
-export const BookingNotificationSubscriptionManagerPreferencesSchema =
-  native.BookingNotificationSubscriptionManagerPreferences;
+export const BookingNotificationPreferenceReplacementSchema = native.BookingNotificationPreferenceReplacement;
+export const BookingNotificationPreferencesSchema = native.BookingNotificationPreferences;
+export const BookingNotificationSubscriptionLookupSchema = native.BookingNotificationSubscriptionLookup;
+export const BookingNotificationSubscriptionReplacementSchema = native.BookingNotificationSubscriptionReplacement;
+export const BookingNotificationSubscriptionStatusSchema = native.BookingNotificationSubscriptionStatus;
+export const BookingNotificationSubscriptionStatusListSchema = native.BookingNotificationSubscriptionStatusList;
+export const BookingNotificationUnsubscribeResultSchema = native.BookingNotificationUnsubscribeResult;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
 export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
 export const BookingSettingsDocumentSchema = native.BookingSettingsDocument;
@@ -323,101 +316,91 @@ export type SchemaModelTypeChecks = {
     Assert<Extends<v.InferOutput<typeof BookingIncrementUnitSchema>, Models.BookingIncrementUnit>>,
     Assert<Extends<Models.BookingIncrementUnit, v.InferOutput<typeof BookingIncrementUnitSchema>>>,
   ];
-  BookingNotificationSubscriptionControllerLookup: [
+  BookingNotificationPreferenceReplacement: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerLookupSchema>,
-        Models.BookingNotificationSubscriptionControllerLookup
+        v.InferOutput<typeof BookingNotificationPreferenceReplacementSchema>,
+        Models.BookingNotificationPreferenceReplacement
       >
     >,
     Assert<
       Extends<
-        Models.BookingNotificationSubscriptionControllerLookup,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerLookupSchema>
-      >
-    >,
-  ];
-  BookingNotificationSubscriptionControllerPreferenceReplacement: [
-    Assert<
-      Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerPreferenceReplacementSchema>,
-        Models.BookingNotificationSubscriptionControllerPreferenceReplacement
-      >
-    >,
-    Assert<
-      Extends<
-        Models.BookingNotificationSubscriptionControllerPreferenceReplacement,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerPreferenceReplacementSchema>
+        Models.BookingNotificationPreferenceReplacement,
+        v.InferOutput<typeof BookingNotificationPreferenceReplacementSchema>
       >
     >,
   ];
-  BookingNotificationSubscriptionControllerStatusList: [
+  BookingNotificationPreferences: [
+    Assert<Extends<v.InferOutput<typeof BookingNotificationPreferencesSchema>, Models.BookingNotificationPreferences>>,
+    Assert<Extends<Models.BookingNotificationPreferences, v.InferOutput<typeof BookingNotificationPreferencesSchema>>>,
+  ];
+  BookingNotificationSubscriptionLookup: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerStatusListSchema>,
-        Models.BookingNotificationSubscriptionControllerStatusList
+        v.InferOutput<typeof BookingNotificationSubscriptionLookupSchema>,
+        Models.BookingNotificationSubscriptionLookup
       >
     >,
     Assert<
       Extends<
-        Models.BookingNotificationSubscriptionControllerStatusList,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerStatusListSchema>
+        Models.BookingNotificationSubscriptionLookup,
+        v.InferOutput<typeof BookingNotificationSubscriptionLookupSchema>
       >
     >,
   ];
-  BookingNotificationSubscriptionControllerSubscriptionReplacement: [
+  BookingNotificationSubscriptionReplacement: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerSubscriptionReplacementSchema>,
-        Models.BookingNotificationSubscriptionControllerSubscriptionReplacement
+        v.InferOutput<typeof BookingNotificationSubscriptionReplacementSchema>,
+        Models.BookingNotificationSubscriptionReplacement
       >
     >,
     Assert<
       Extends<
-        Models.BookingNotificationSubscriptionControllerSubscriptionReplacement,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerSubscriptionReplacementSchema>
-      >
-    >,
-  ];
-  BookingNotificationSubscriptionControllerSubscriptionStatus: [
-    Assert<
-      Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerSubscriptionStatusSchema>,
-        Models.BookingNotificationSubscriptionControllerSubscriptionStatus
-      >
-    >,
-    Assert<
-      Extends<
-        Models.BookingNotificationSubscriptionControllerSubscriptionStatus,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerSubscriptionStatusSchema>
+        Models.BookingNotificationSubscriptionReplacement,
+        v.InferOutput<typeof BookingNotificationSubscriptionReplacementSchema>
       >
     >,
   ];
-  BookingNotificationSubscriptionControllerUnsubscribeResult: [
+  BookingNotificationSubscriptionStatus: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerUnsubscribeResultSchema>,
-        Models.BookingNotificationSubscriptionControllerUnsubscribeResult
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusSchema>,
+        Models.BookingNotificationSubscriptionStatus
       >
     >,
     Assert<
       Extends<
-        Models.BookingNotificationSubscriptionControllerUnsubscribeResult,
-        v.InferOutput<typeof BookingNotificationSubscriptionControllerUnsubscribeResultSchema>
+        Models.BookingNotificationSubscriptionStatus,
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusSchema>
       >
     >,
   ];
-  BookingNotificationSubscriptionManagerPreferences: [
+  BookingNotificationSubscriptionStatusList: [
     Assert<
       Extends<
-        v.InferOutput<typeof BookingNotificationSubscriptionManagerPreferencesSchema>,
-        Models.BookingNotificationSubscriptionManagerPreferences
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusListSchema>,
+        Models.BookingNotificationSubscriptionStatusList
       >
     >,
     Assert<
       Extends<
-        Models.BookingNotificationSubscriptionManagerPreferences,
-        v.InferOutput<typeof BookingNotificationSubscriptionManagerPreferencesSchema>
+        Models.BookingNotificationSubscriptionStatusList,
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusListSchema>
+      >
+    >,
+  ];
+  BookingNotificationUnsubscribeResult: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationUnsubscribeResultSchema>,
+        Models.BookingNotificationUnsubscribeResult
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationUnsubscribeResult,
+        v.InferOutput<typeof BookingNotificationUnsubscribeResultSchema>
       >
     >,
   ];

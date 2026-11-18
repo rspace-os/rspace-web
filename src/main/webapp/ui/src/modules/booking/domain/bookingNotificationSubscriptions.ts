@@ -5,8 +5,8 @@ import {
   getMyBookingNotificationSubscription,
   replaceMyBookingNotificationSubscription,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import type { BookingNotificationSubscriptionControllerPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerPreferenceReplacement";
-import type { BookingNotificationSubscriptionManagerPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionManagerPreferences";
+import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
+import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import {
   getGetMyBookingNotificationPreferencesQueryKey,
   getGetMyBookingNotificationPreferencesSuspenseQueryOptions,
@@ -15,7 +15,6 @@ import {
   replaceMyBookingNotificationPreferences,
   unsubscribeMyBookingNotifications,
 } from "@/modules/common/api/v2/generated/users/users";
-import { requireBookingValue } from "./bookingMapping";
 
 export function bookingNotificationPreferencesQuery(_subjectId: number) {
   return getGetMyBookingNotificationPreferencesSuspenseQueryOptions();
@@ -25,12 +24,12 @@ export function bookingNotificationSubscriptionQuery(_subjectId: number, configu
 }
 export async function fetchBookingNotificationPreferences(
   signal?: AbortSignal,
-): Promise<BookingNotificationSubscriptionManagerPreferences> {
+): Promise<BookingNotificationPreferences> {
   return getMyBookingNotificationPreferences({ signal });
 }
 export async function replaceBookingNotificationPreferences(
-  input: BookingNotificationSubscriptionControllerPreferenceReplacement,
-): Promise<BookingNotificationSubscriptionManagerPreferences> {
+  input: BookingNotificationPreferenceReplacement,
+): Promise<BookingNotificationPreferences> {
   return replaceMyBookingNotificationPreferences(input);
 }
 export async function fetchBookingNotificationSubscription(configurationId: number, signal?: AbortSignal) {
@@ -40,16 +39,12 @@ export async function replaceBookingNotificationSubscription(configurationId: nu
   return replaceMyBookingNotificationSubscription(configurationId, { enabled }, { "If-Match": etag });
 }
 export async function unsubscribeFromAllBookingNotificationSubscriptions(): Promise<number> {
-  return requireBookingValue((await unsubscribeMyBookingNotifications()).updatedCount, "updatedCount");
+  return (await unsubscribeMyBookingNotifications()).updatedCount;
 }
 export function useReplaceBookingNotificationPreferences(_subjectId: number) {
   const queryClient = useQueryClient();
   const options = getReplaceMyBookingNotificationPreferencesMutationOptions(queryClient);
-  return useMutation<
-    BookingNotificationSubscriptionManagerPreferences,
-    ErrorType<unknown>,
-    BookingNotificationSubscriptionControllerPreferenceReplacement
-  >({
+  return useMutation<BookingNotificationPreferences, ErrorType<unknown>, BookingNotificationPreferenceReplacement>({
     mutationFn: replaceBookingNotificationPreferences,
     onSuccess: async (data, input, result, context) => {
       queryClient.setQueryData(getGetMyBookingNotificationPreferencesQueryKey(), data);

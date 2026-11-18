@@ -2,11 +2,13 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /** Manages personal booking-notification preferences and instrument subscriptions. */
 public interface BookingNotificationSubscriptionManager {
 
+  @Schema(name = "BookingNotificationPreferences")
   record Preferences(boolean autoSubscribeOwnedItems, boolean notifyOwnActions) {}
 
   /**

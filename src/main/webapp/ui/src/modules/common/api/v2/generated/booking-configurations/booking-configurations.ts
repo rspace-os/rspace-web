@@ -57,8 +57,8 @@ import type {
   BookingConfigurationsIfMatchRequiredResponse,
   BookingConfigurationsRead,
   BookingConfigurationsUpdate,
-  BookingNotificationSubscriptionControllerSubscriptionReplacement,
-  BookingNotificationSubscriptionControllerSubscriptionStatus,
+  BookingNotificationSubscriptionReplacement,
+  BookingNotificationSubscriptionStatus,
   BulkLimitResponse,
   CountBookingConfigurationsParams,
   CountResultResponse,
@@ -4302,14 +4302,11 @@ export const getGetMyBookingNotificationSubscriptionUrl = (id: number) => {
  * @summary Get the caller's personal subscription and effective event delivery
  */
 export const getMyBookingNotificationSubscription = (id: number, options?: Parameters<typeof apiV2HeadersFetch>[1]) => {
-  return apiV2HeadersFetch<BookingNotificationSubscriptionControllerSubscriptionStatus>(
-    getGetMyBookingNotificationSubscriptionUrl(id),
-    {
-      operationId: "getMyBookingNotificationSubscription",
-      ...options,
-      method: "GET",
-    },
-  );
+  return apiV2HeadersFetch<BookingNotificationSubscriptionStatus>(getGetMyBookingNotificationSubscriptionUrl(id), {
+    operationId: "getMyBookingNotificationSubscription",
+    ...options,
+    method: "GET",
+  });
 };
 
 export const getGetMyBookingNotificationSubscriptionQueryKey = (id: number) => {
@@ -4538,20 +4535,17 @@ export const getReplaceMyBookingNotificationSubscriptionUrl = (id: number) => {
  */
 export const replaceMyBookingNotificationSubscription = (
   id: number,
-  bookingNotificationSubscriptionControllerSubscriptionReplacement: BookingNotificationSubscriptionControllerSubscriptionReplacement,
+  bookingNotificationSubscriptionReplacement: BookingNotificationSubscriptionReplacement,
   headers: ReplaceMyBookingNotificationSubscriptionHeaders,
   options?: Parameters<typeof apiV2HeadersFetch>[1],
 ) => {
-  return apiV2HeadersFetch<BookingNotificationSubscriptionControllerSubscriptionStatus>(
-    getReplaceMyBookingNotificationSubscriptionUrl(id),
-    {
-      operationId: "replaceMyBookingNotificationSubscription",
-      ...options,
-      method: "PUT",
-      headers: getHeaders({ "Content-Type": "application/json" }, headers, options?.headers),
-      body: JSON.stringify(bookingNotificationSubscriptionControllerSubscriptionReplacement),
-    },
-  );
+  return apiV2HeadersFetch<BookingNotificationSubscriptionStatus>(getReplaceMyBookingNotificationSubscriptionUrl(id), {
+    operationId: "replaceMyBookingNotificationSubscription",
+    ...options,
+    method: "PUT",
+    headers: getHeaders({ "Content-Type": "application/json" }, headers, options?.headers),
+    body: JSON.stringify(bookingNotificationSubscriptionReplacement),
+  });
 };
 
 export const getReplaceMyBookingNotificationSubscriptionMutationKey = () =>
@@ -4621,12 +4615,11 @@ export const getReplaceMyBookingNotificationSubscriptionMutationOptions = <
 export type ReplaceMyBookingNotificationSubscriptionMutationResult = NonNullable<
   Awaited<ReturnType<typeof replaceMyBookingNotificationSubscription>>
 >;
-export type ReplaceMyBookingNotificationSubscriptionMutationBody =
-  BodyType<BookingNotificationSubscriptionControllerSubscriptionReplacement>;
+export type ReplaceMyBookingNotificationSubscriptionMutationBody = BodyType<BookingNotificationSubscriptionReplacement>;
 export type ReplaceMyBookingNotificationSubscriptionMutationError = ErrorType<BadRequestResponse | ApiV2Problem>;
 export type ReplaceMyBookingNotificationSubscriptionMutationVariables = {
   id: number;
-  data: BodyType<BookingNotificationSubscriptionControllerSubscriptionReplacement>;
+  data: BodyType<BookingNotificationSubscriptionReplacement>;
   headers: ReplaceMyBookingNotificationSubscriptionHeaders;
 };
 

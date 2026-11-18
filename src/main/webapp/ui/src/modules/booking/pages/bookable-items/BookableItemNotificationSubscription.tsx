@@ -11,7 +11,7 @@ import {
   invalidateListBookingConfigurations,
   useReplaceMyBookingNotificationSubscription,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import type { BookingNotificationSubscriptionControllerSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerSubscriptionStatus";
+import type { BookingNotificationSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionStatus";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { QueryBoundary } from "@/modules/common/queries/QueryBoundary";
 import { Button } from "@/modules/common/ui/button";
@@ -23,9 +23,9 @@ import {
   bookingNotificationChoice,
 } from "../preferences/BookingNotificationChoiceFields";
 
-type SubscriptionResponse = { body: BookingNotificationSubscriptionControllerSubscriptionStatus; headers: Headers };
+type SubscriptionResponse = { body: BookingNotificationSubscriptionStatus; headers: Headers };
 function hasNotificationState(status: SubscriptionResponse | undefined): status is SubscriptionResponse & {
-  body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean };
+  body: BookingNotificationSubscriptionStatus & { enabled: boolean };
 } {
   return typeof status?.body.enabled === "boolean" && status.headers.has("ETag");
 }
@@ -48,7 +48,7 @@ function ItemNotificationEditor({
 
   subjectId: number;
   subscription: SubscriptionResponse & {
-    body: BookingNotificationSubscriptionControllerSubscriptionStatus & { enabled: boolean };
+    body: BookingNotificationSubscriptionStatus & { enabled: boolean };
   };
   feedback: "saved" | "conflict" | "saveError" | null;
   setFeedback: (value: "saved" | "conflict" | "saveError" | null) => void;

@@ -7,9 +7,9 @@ import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
-import type { BookingNotificationSubscriptionControllerPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerPreferenceReplacement";
-import type { BookingNotificationSubscriptionControllerUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerUnsubscribeResult";
-import type { BookingNotificationSubscriptionManagerPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionManagerPreferences";
+import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
+import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
+import type { BookingNotificationUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationUnsubscribeResult";
 import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
 import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
 
@@ -25,15 +25,14 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<
-        never,
-        BookingNotificationSubscriptionControllerPreferenceReplacement,
-        BookingNotificationSubscriptionManagerPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        saved = await request.json();
-        return HttpResponse.json(saved as { autoSubscribeOwnedItems: boolean });
-      }),
-      http.delete<never, never, BookingNotificationSubscriptionControllerUnsubscribeResult | ApiV2Problem>(
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          saved = await request.json();
+          return HttpResponse.json(saved as BookingNotificationPreferences);
+        },
+      ),
+      http.delete<never, never, BookingNotificationUnsubscribeResult | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-subscriptions",
         () => {
           deleted += 1;

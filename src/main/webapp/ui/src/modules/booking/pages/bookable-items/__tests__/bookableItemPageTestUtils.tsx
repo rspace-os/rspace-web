@@ -1,4 +1,4 @@
-import type { BookingNotificationSubscriptionControllerSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionControllerSubscriptionStatus";
+import type { BookingNotificationSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingNotificationSubscriptionStatus";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -58,13 +58,13 @@ export function setupPage() {
       }),
     ),
     http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
-      HttpResponse.json<BookingNotificationSubscriptionControllerSubscriptionStatus>(notificationSubscription, {
+      HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, {
         headers: { ETag: '"v0-000"' },
       }),
     ),
     http.put("/api/v2/booking-configurations/7/notification-subscription", () => {
       notificationSubscription = { ...notificationSubscription, enabled: true };
-      return HttpResponse.json<BookingNotificationSubscriptionControllerSubscriptionStatus>(notificationSubscription, {
+      return HttpResponse.json<BookingNotificationSubscriptionStatus>(notificationSubscription, {
         headers: { ETag: '"v0-000"' },
       });
     }),

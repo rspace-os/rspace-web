@@ -2019,7 +2019,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "canEditConfiguration", "canViewAudit", "canViewAccess", "canManageAssignments", "canManageOwners", "canCreateBooking", "canManageOwnBookings", "canManageAllEvents", "canCreateBlockout", "canSubscribeCalendar", "canLeaveConfiguration" ],
+        "required" : [ "canEditConfiguration", "canViewAudit", "canViewAccess", "canManageAssignments", "canManageOwners", "canCreateBooking", "canManageOwnBookings", "canManageAllEvents", "canCreateBlockout", "canSubscribeCalendar", "canLeaveConfiguration", "canManageNotificationSubscription" ],
         "type" : "object"
       },
       "BookingConfigurationState" : {
@@ -3177,7 +3177,31 @@
         "enum" : [ "MINUTES", "HOURS", "DAYS" ],
         "type" : "string"
       },
-      "BookingNotificationSubscriptionControllerLookup" : {
+      "BookingNotificationPreferenceReplacement" : {
+        "properties" : {
+          "autoSubscribeOwnedItems" : {
+            "type" : "boolean"
+          },
+          "notifyOwnActions" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "autoSubscribeOwnedItems", "notifyOwnActions" ],
+        "type" : "object"
+      },
+      "BookingNotificationPreferences" : {
+        "properties" : {
+          "autoSubscribeOwnedItems" : {
+            "type" : "boolean"
+          },
+          "notifyOwnActions" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "autoSubscribeOwnedItems", "notifyOwnActions" ],
+        "type" : "object"
+      },
+      "BookingNotificationSubscriptionLookup" : {
         "properties" : {
           "configurationIds" : {
             "items" : {
@@ -3193,30 +3217,7 @@
         "required" : [ "configurationIds" ],
         "type" : "object"
       },
-      "BookingNotificationSubscriptionControllerPreferenceReplacement" : {
-        "properties" : {
-          "autoSubscribeOwnedItems" : {
-            "type" : "boolean"
-          },
-          "notifyOwnActions" : {
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "autoSubscribeOwnedItems", "notifyOwnActions" ],
-        "type" : "object"
-      },
-      "BookingNotificationSubscriptionControllerStatusList" : {
-        "properties" : {
-          "docs" : {
-            "items" : {
-              "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerSubscriptionStatus"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "BookingNotificationSubscriptionControllerSubscriptionReplacement" : {
+      "BookingNotificationSubscriptionReplacement" : {
         "properties" : {
           "enabled" : {
             "type" : "boolean"
@@ -3225,7 +3226,7 @@
         "required" : [ "enabled" ],
         "type" : "object"
       },
-      "BookingNotificationSubscriptionControllerSubscriptionStatus" : {
+      "BookingNotificationSubscriptionStatus" : {
         "properties" : {
           "cancelledEnabled" : {
             "type" : "boolean"
@@ -3244,26 +3245,29 @@
             "type" : "boolean"
           }
         },
+        "required" : [ "configurationId", "enabled", "createdEnabled", "cancelledEnabled", "emailEnabled" ],
         "type" : "object"
       },
-      "BookingNotificationSubscriptionControllerUnsubscribeResult" : {
+      "BookingNotificationSubscriptionStatusList" : {
+        "properties" : {
+          "docs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/BookingNotificationSubscriptionStatus"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "docs" ],
+        "type" : "object"
+      },
+      "BookingNotificationUnsubscribeResult" : {
         "properties" : {
           "updatedCount" : {
             "format" : "int32",
             "type" : "integer"
           }
         },
-        "type" : "object"
-      },
-      "BookingNotificationSubscriptionManagerPreferences" : {
-        "properties" : {
-          "autoSubscribeOwnedItems" : {
-            "type" : "boolean"
-          },
-          "notifyOwnActions" : {
-            "type" : "boolean"
-          }
-        },
+        "required" : [ "updatedCount" ],
         "type" : "object"
       },
       "BookingOpeningHoursEntry" : {
@@ -8036,7 +8040,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerSubscriptionStatus"
+                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionStatus"
                 }
               }
             },
@@ -8081,7 +8085,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerSubscriptionReplacement"
+                "$ref" : "#/components/schemas/BookingNotificationSubscriptionReplacement"
               }
             }
           },
@@ -8092,7 +8096,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerSubscriptionStatus"
+                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionStatus"
                 }
               }
             },
@@ -11243,7 +11247,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionManagerPreferences"
+                  "$ref" : "#/components/schemas/BookingNotificationPreferences"
                 }
               }
             },
@@ -11265,7 +11269,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerPreferenceReplacement"
+                "$ref" : "#/components/schemas/BookingNotificationPreferenceReplacement"
               }
             }
           },
@@ -11276,7 +11280,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionManagerPreferences"
+                  "$ref" : "#/components/schemas/BookingNotificationPreferences"
                 }
               }
             },
@@ -11301,7 +11305,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerUnsubscribeResult"
+                  "$ref" : "#/components/schemas/BookingNotificationUnsubscribeResult"
                 }
               }
             },
@@ -11325,7 +11329,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerLookup"
+                "$ref" : "#/components/schemas/BookingNotificationSubscriptionLookup"
               }
             }
           },
@@ -11336,7 +11340,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionControllerStatusList"
+                  "$ref" : "#/components/schemas/BookingNotificationSubscriptionStatusList"
                 }
               }
             },
