@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import ConfirmProvider, { useConfirm } from "@/components/ConfirmProvider";
 import useUiPreference, { fetchPreferences, PREFERENCES, UiPreferences } from "@/hooks/api/useUiPreference";
 import { getFilterLabels } from "../SimpleSearch/SimpleSearch";
-import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID, workspaceSettings } from "./workspaceGlobals";
+import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID, VIEW_MODE_BUTTON_ID, workspaceSettings } from "./workspaceGlobals";
 import { parseSearchQuery, type SummaryLabels, summariseSearch, toSearchQuery } from "./workspaceSearchUrl";
 
 function currentSearchQuery(): string | null {
@@ -84,7 +84,9 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
 
   React.useEffect(() => {
     if (focusAfterStore === "run") runButton.current?.focus();
-    if (focusAfterStore === "search") document.getElementById(SEARCH_INPUT_ID)?.focus();
+    // Tree view has no search box
+    if (focusAfterStore === "search")
+      (document.getElementById(SEARCH_INPUT_ID) ?? document.getElementById(VIEW_MODE_BUTTON_ID))?.focus();
     setFocusAfterStore(null);
   }, [focusAfterStore]);
 

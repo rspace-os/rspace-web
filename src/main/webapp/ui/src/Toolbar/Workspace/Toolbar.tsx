@@ -33,7 +33,7 @@ import CompareDialog from "./CompareDialog";
 import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
 import DefaultSearch from "./DefaultSearch/DefaultSearch";
 import { searchLinkFailureReason } from "./DefaultSearch/searchLinkFailure";
-import { RECORD_LIST_SHOWN } from "./DefaultSearch/workspaceGlobals";
+import { RECORD_LIST_SHOWN, VIEW_MODE_BUTTON_ID } from "./DefaultSearch/workspaceGlobals";
 import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
@@ -441,6 +441,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         ></Box>
         <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
           <IconButton
+            id={VIEW_MODE_BUTTON_ID}
             data-test-id="toolbar-views"
             aria-controls="simple-menu2"
             aria-haspopup="true"

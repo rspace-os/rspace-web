@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } fro
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import DefaultSearch from "../DefaultSearch";
-import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID } from "../workspaceGlobals";
+import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID, VIEW_MODE_BUTTON_ID } from "../workspaceGlobals";
 import { toSearchQuery } from "../workspaceSearchUrl";
 
 const KEY = "WORKSPACE_DEFAULT_SEARCH";
@@ -192,6 +192,26 @@ describe("DefaultSearch", () => {
     await user.keyboard("{Enter}");
 
     await vi.waitFor(() => expect(searchBox).toHaveFocus());
+    expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
+  });
+
+  test("removing with the keyboard in tree view, with no search box, moves focus to the View mode button", async () => {
+    const user = userEvent.setup();
+    const viewModeButton = document.createElement("button");
+    viewModeButton.id = VIEW_MODE_BUTTON_ID;
+    viewModeButton.textContent = "View mode";
+    document.body.appendChild(viewModeButton);
+    onTestFinished(() => viewModeButton.remove());
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch />);
+
+    (await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" })).focus();
+    await user.keyboard("{Enter}");
+    await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" });
+    await user.keyboard("{Enter}");
+
+    await vi.waitFor(() => expect(viewModeButton).toHaveFocus());
     expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
   });
 
