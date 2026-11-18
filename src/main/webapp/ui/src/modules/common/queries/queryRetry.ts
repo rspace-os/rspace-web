@@ -1,3 +1,5 @@
+import { ApiV2SessionEndedError } from "../api/v2/ApiV2ProblemError";
+
 // TanStack Query's default retry count, kept for failures a retry can fix.
 const MAXIMUM_RETRIES = 3;
 
@@ -14,7 +16,10 @@ export function isPermanentClientError(error: unknown): boolean {
   return status !== undefined && status >= 400 && status < 500 && status !== 408 && status !== 429;
 }
 
-/** Retries network failures and server errors, but answers a permanent client error immediately. */
+/**
+ * Retries network failures and server errors, but answers a permanent client error immediately. An ended session is
+ * never retried, whatever its status: the HTML login page carries 200.
+ */
 export function retryUnlessClientError(failureCount: number, error: unknown): boolean {
-  return failureCount < MAXIMUM_RETRIES && !isPermanentClientError(error);
+  return failureCount < MAXIMUM_RETRIES && !(error instanceof ApiV2SessionEndedError) && !isPermanentClientError(error);
 }
