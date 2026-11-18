@@ -1,13 +1,37 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { BondStrengthsDocumentContent } from "../bondStrengths/insertIntoDocument";
 import SidebarInfo from "../SidebarInfo";
 
+const bondStrengthsContent: BondStrengthsDocumentContent = {
+  imageSrc: "data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E",
+  imageAlt: "Structure with bond strengths",
+  caption: "Predicted bond strengths",
+  columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
+  rows: [
+    { bond: "C1-H (×3), weakest bond", kcalMol: "89.3", kjMol: "373.5" },
+    { bond: "C2:C3", notAvailable: "n/a (ring bond)" },
+  ],
+};
+
 vi.mock("../ChemCard", () => ({
-  default: ({ item, onClose }: { item: { id: string }; onClose: (id?: string) => void }) => (
+  default: ({
+    item,
+    onClose,
+    onInsertBondStrengths,
+  }: {
+    item: { id: string };
+    onClose: (id?: string) => void;
+    onInsertBondStrengths: (id: string | undefined, content: BondStrengthsDocumentContent) => void;
+  }) => (
     <section aria-label={`Chemical ${item.id}`}>
       <span>{item.id}</span>
       <button onClick={() => onClose(item.id)} type="button">
         {"Close"}
+      </button>
+      <button onClick={() => onInsertBondStrengths(item.id, bondStrengthsContent)} type="button">
+        {"Insert bond strengths"}
       </button>
     </section>
   ),
@@ -108,5 +132,51 @@ describe("SidebarInfo accessibility", () => {
     await waitFor(() => {
       expect(screen.queryByRole("region", { name: "Chemical chem-3" })).not.toBeInTheDocument();
     });
+  });
+
+  it("inserts bond strengths after the block that holds the chemistry image, as one undo step", async () => {
+    const user = userEvent.setup();
+    const { iframe, iframeDocument } = createIframeWithDocument();
+    const chemicalParagraph = iframeDocument.createElement("p");
+    const nextParagraph = iframeDocument.createElement("p");
+    const chemicalImage = createChemicalImage(iframeDocument, "chem-4");
+    chemicalParagraph.append("Before ", chemicalImage, " after");
+    iframeDocument.body.append(chemicalParagraph, nextParagraph);
+    const transact = vi.fn((change: () => void) => change());
+    const nodeChanged = vi.fn();
+    Object.assign(globalThis, {
+      tinymce: { activeEditor: { execCommand: vi.fn(), undoManager: { transact }, nodeChanged } },
+    });
+    render(<SidebarInfo iframe={iframe} />);
+    act(() => {
+      chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+
+    // The iframe document has no window, so role queries and jest-dom matchers cannot read it.
+    const [, pictureParagraph, table] = Array.from(iframeDocument.body.children) as [
+      Element,
+      HTMLParagraphElement,
+      HTMLTableElement,
+    ];
+    expect(Array.from(iframeDocument.body.children)).toEqual([
+      chemicalParagraph,
+      pictureParagraph,
+      table,
+      nextParagraph,
+    ]);
+    expect(chemicalImage.parentElement).toBe(chemicalParagraph);
+    expect(pictureParagraph.firstElementChild?.tagName).toBe("IMG");
+    expect(pictureParagraph.firstElementChild?.getAttribute("src")).toBe(bondStrengthsContent.imageSrc);
+    expect(pictureParagraph.firstElementChild?.getAttribute("alt")).toBe("Structure with bond strengths");
+    expect(table.caption?.textContent).toBe("Predicted bond strengths");
+    expect(Array.from(table.rows, (row) => Array.from(row.cells, (cell) => cell.textContent))).toEqual([
+      ["Bond", "kcal/mol", "kJ/mol"],
+      ["C1-H (×3), weakest bond", "89.3", "373.5"],
+      ["C2:C3", "n/a (ring bond)"],
+    ]);
+    expect(transact).toHaveBeenCalledOnce();
+    expect(nodeChanged).toHaveBeenCalledOnce();
   });
 });

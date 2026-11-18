@@ -13428,6 +13428,47 @@ export default interface Resources {
       }
     },
     "tinymce": {
+      "bondStrengths": {
+        "action": "Calculate bond strengths",
+        "coverage": "{supported} of {total} bonds have a value.",
+        "dialog": {
+          "error": "Bond strengths could not be calculated. Try again later.",
+          "insert": "Insert into document",
+          "loading": "Calculating bond strengths…",
+          "title": "Bond strengths"
+        },
+        "document": {
+          "caption": "Predicted bond strengths (bond dissociation enthalpy). Model: {name} {version}. Mean absolute error against the DFT reference: {error} kcal/mol. Not validated against experiment. Calculated on {date}.",
+          "weakestBond": "{label}, weakest bond"
+        },
+        "imageAlt": "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
+        "method": "Model: {name} {version}. The values are predicted and are not validated against experiment. Mean absolute error against the DFT reference: {error} kcal/mol.",
+        "notAvailable": {
+          "bondTypeNotCovered": "n/a (bond type not covered)",
+          "lowConfidence": "n/a (low confidence)",
+          "multipleBond": "n/a (double or triple bond)",
+          "other": "n/a",
+          "ringBond": "n/a (ring bond)"
+        },
+        "notSupported": {
+          "charged": "Bond strengths cannot be calculated for this structure. It has a charge.",
+          "elementNotCovered": "Bond strengths cannot be calculated for this structure. The model does not cover these elements: {elements}.",
+          "multipleFragments": "Bond strengths cannot be calculated for this structure. It has more than one fragment. Use a single molecule.",
+          "other": "Bond strengths cannot be calculated for this structure.",
+          "radical": "Bond strengths cannot be calculated for this structure. It is a radical.",
+          "reaction": "Bond strengths cannot be calculated for a reaction. Use a single molecule.",
+          "tooLarge": "Bond strengths cannot be calculated for this structure. It has more than {limit} atoms, not counting hydrogen."
+        },
+        "table": {
+          "bond": "Bond",
+          "equivalentHydrogens": "{label} (×{count})",
+          "kcalMol": "kcal/mol",
+          "kjMol": "kJ/mol",
+          "label": "Bond strengths, weakest first",
+          "weakest": "Weakest"
+        },
+        "weights": "Model weights: {hash}"
+      },
       "chemCard": {
         "atoms": "Atoms",
         "bonds": "Bonds",

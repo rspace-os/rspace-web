@@ -1,10 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot, type Root } from "react-dom/client";
 import SidebarInfo from "@/tinyMCE/SidebarInfo";
 import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
+const queryClient = new QueryClient();
 const sidebarRoots = new WeakMap<HTMLElement, Root>();
 
 function getCustomEventDetail(event: Event): unknown {
@@ -37,11 +39,13 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   sidebarRoots.set(container, root);
   root.render(
     <I18nRoot namespaces={["workspace", "common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
-          <SidebarInfo iframe={iframe} />
-        </ThemeProvider>
-      </StyledEngineProvider>
+      <QueryClientProvider client={queryClient}>
+        <StyledEngineProvider injectFirst enableCssLayer>
+          <ThemeProvider theme={materialTheme}>
+            <SidebarInfo iframe={iframe} />
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </QueryClientProvider>
     </I18nRoot>,
   );
 });

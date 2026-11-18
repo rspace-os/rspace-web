@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import { paperClasses } from "@mui/material/Paper";
 import React, { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { type BondStrengthsDocumentContent, insertBondStrengthsAfter } from "./bondStrengths/insertIntoDocument";
 import ChemCard from "./ChemCard";
 
 interface SidebarItem extends Record<string, string | undefined> {
@@ -16,6 +17,8 @@ interface SidebarInfoProps {
 
 type TinyMCEEditor = {
   execCommand: (command: string, ui: boolean, value?: string) => void;
+  undoManager: { transact: (change: () => void) => unknown };
+  nodeChanged: () => void;
 };
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
@@ -78,6 +81,21 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
     event?.preventDefault();
     setItems([]);
   }, []);
+
+  const insertBondStrengths = useCallback(
+    (id: string | undefined, content: BondStrengthsDocumentContent): void => {
+      const chemImage = id ? (getIframeDocument(iframe)?.getElementById(id) ?? null) : null;
+      const activeEditor = getActiveEditor();
+      if (!isChemImage(chemImage) || !activeEditor) {
+        return;
+      }
+
+      // One undo step for the whole insert; it also marks the editor as changed.
+      activeEditor.undoManager.transact(() => insertBondStrengthsAfter(chemImage, content));
+      activeEditor.nodeChanged();
+    },
+    [iframe],
+  );
 
   useEffect(() => {
     const iframeDocument = getIframeDocument(iframe);
@@ -172,7 +190,15 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
         </Box>
       )}
       {items.map((item, idx) =>
-        item.id ? <ChemCard key={item.id} onClose={removeItem} item={item} idx={idx} /> : null,
+        item.id ? (
+          <ChemCard
+            key={item.id}
+            onClose={removeItem}
+            onInsertBondStrengths={insertBondStrengths}
+            item={item}
+            idx={idx}
+          />
+        ) : null,
       )}
     </Box>
   );

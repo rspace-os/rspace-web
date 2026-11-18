@@ -12,6 +12,9 @@ import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TransRichText from "@/modules/common/i18n/TransRichText";
+import { isPublicDocumentView } from "@/modules/common/utils/auth";
+import BondStrengthsAction from "./bondStrengths/BondStrengthsAction";
+import type { BondStrengthsDocumentContent } from "./bondStrengths/insertIntoDocument";
 
 type MetadataMap = Record<string, string>;
 
@@ -50,6 +53,8 @@ interface ChemCardProps {
   height?: number | string;
   idx?: number;
   onClose?: (id: string | undefined) => void;
+  /** Only the editor can change the document, so only the editor passes this. */
+  onInsertBondStrengths?: (id: string | undefined, content: BondStrengthsDocumentContent) => void;
 }
 
 function renderFormattedFormula(formula?: string): React.ReactNode {
@@ -137,6 +142,8 @@ export default function ChemCard(props: ChemCardProps) {
     molecules: [],
   });
   const chemId = props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
+  const revision = Number.parseInt(props.item["data-rsrevision"] ?? "", 10);
+  const { onInsertBondStrengths } = props;
   const additionalMetadata = getAdditionalMetadata(chem.additionalMetadata);
   const inlineHeight = Number(props.height) < 200 ? "200px" : `${Number.parseInt(String(props.height), 10) + 6}px`;
   const { t } = useTranslation(["workspace", "common"]);
@@ -268,6 +275,13 @@ export default function ChemCard(props: ChemCardProps) {
           paddingBottom: "0px !important",
         }}
       >
+        {!Number.isNaN(chemId) && !isPublicDocumentView() && (
+          <BondStrengthsAction
+            chemId={chemId}
+            revision={Number.isNaN(revision) ? undefined : revision}
+            onInsert={onInsertBondStrengths && ((content) => onInsertBondStrengths(props.item.id, content))}
+          />
+        )}
         <Table
           size="small"
           sx={{
