@@ -54,6 +54,10 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
   FormDefinitionCommand toDefinition(FormPost formPost) {
     List<FormFieldSaveItem> fields = new ArrayList<>();
     for (FormFieldPost<? extends FieldForm> field : formPost.getFields()) {
+      if (field == null) {
+        fields.add(null); // reported as a field error by the form manager
+        continue;
+      }
       FormFieldSaveItem item =
           new FormFieldSaveItem(
               field.getId(),

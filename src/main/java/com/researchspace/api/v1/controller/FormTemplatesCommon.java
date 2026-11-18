@@ -172,6 +172,11 @@ public class FormTemplatesCommon {
 
     private List<String> defaultOptions = new ArrayList<>();
 
+    @Override
+    public List<String> submittedOptions() {
+      return options;
+    }
+
     public void copyValuesIntoFieldForm(ChoiceFieldForm choiceFieldForm) {
       setValues(choiceFieldForm);
       choiceFieldForm.setName(name);
@@ -209,6 +214,11 @@ public class FormTemplatesCommon {
 
     @Size(min = 1)
     private String defaultOption;
+
+    @Override
+    public List<String> submittedOptions() {
+      return options;
+    }
 
     public void copyValuesIntoFieldForm(RadioFieldForm formField) {
       setValues(formField);

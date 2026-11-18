@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -540,6 +541,79 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     ApiDocument apiDoc = getFromJsonResponseBody(docResult, ApiDocument.class);
     assertEquals(gmoKey, apiDoc.getFields().get(0).getFieldKey());
     assertEquals(expectedRule, apiDoc.getFields().get(1).getDisplayRule());
+  }
+
+  @Test
+  public void optionsAndRulesAreCheckedAsSubmitted() throws Exception {
+    // each option is checked before the options are joined into the stored format
+    for (List<String> options : List.of(List.of("A&fieldChoices=B"), List.of("A&"))) {
+      FormTemplatesCommon.RadioFieldPost radio = new FormTemplatesCommon.RadioFieldPost();
+      radio.setName("radio");
+      radio.setOptions(options);
+      FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+      formPost.setName("options form");
+      formPost.setFields(new ArrayList<>(List.of(radio)));
+      MvcResult result =
+          mockMvc
+              .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(result.getResponse().getContentAsString()).contains("blank or contains");
+    }
+
+    // rules are read as the rule core reads them: no coercion, no unknown properties
+    String key = "6f1c2e0a-0000-4000-8000-0000000000bb";
+    String prefix = "{\"sourceFieldKey\":\"" + key + "\",\"operator\":\"IS_ANY_OF\",";
+    for (String rule :
+        List.of(prefix + "\"values\":[1]}", prefix + "\"values\":[\"1\"],\"note\":\"x\"}")) {
+      String body =
+          "{\"name\":\"rules form\",\"fields\":["
+              + "{\"type\":\"Radio\",\"name\":\"source\",\"options\":[\"1\",\"2\"],"
+              + "\"fieldKey\":\""
+              + key
+              + "\"},"
+              + "{\"type\":\"String\",\"name\":\"dependent\",\"displayRule\":"
+              + rule
+              + "}]}";
+      mockMvc
+          .perform(
+              preparePostOrPutRequestBody(
+                  post(createUrl(API_VERSION.ONE, "/forms")), body, anyUser, apiKeyAnyUser))
+          .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Test
+  public void putThatCannotMakeANewVersionIsRejectedAndChangesNothing() throws Exception {
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("versioned form");
+    formPost.setFields(new ArrayList<>(List.of(createAStringField())));
+    ApiForm created = postANewForm(formPost);
+    putUrl(extractLinkByRel(created, "publish"));
+    // versioning refuses system forms
+    doInTransaction(() -> formMgr.get(created.getId(), anyUser).setSystemForm(true));
+    try {
+      FormTemplatesCommon.StringFieldPost renamed = createAStringField();
+      renamed.setId(created.getFields().get(0).getId());
+      renamed.setName("renamed");
+      formPost.setFields(new ArrayList<>(List.of(renamed)));
+
+      MvcResult result =
+          mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+
+      assertThat(result.getResponse().getContentAsString())
+          .contains("could not be made a new version");
+      ApiForm unchanged = getForm(created.getId());
+      assertEquals(created.getFields().get(0).getName(), unchanged.getFields().get(0).getName());
+      assertNull(doInTransaction(() -> formMgr.get(created.getId(), anyUser).getTempForm()));
+    } finally {
+      doInTransaction(() -> formMgr.get(created.getId(), anyUser).setSystemForm(false));
+    }
   }
 
   private ApiForm getForm(Long formId) throws Exception {

@@ -220,8 +220,13 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    * applies the definition with {@link #saveFields(Long, List, User)} and, unless the form has
    * never been published, makes the result the form's new version. Field ids in the definition are
    * the ids of {@code formId}'s fields; on a published form they are mapped to its draft. As the
-   * API always has, omitting a field deletes it, including a field of the published version. A
-   * rejected request leaves the form, any existing draft and the edit lock as they were.
+   * API always has, omitting a field deletes it, including a field of the published version.
+   *
+   * <p>If the form already has a draft that was saved (for example in the form field editor) but
+   * not yet made a new version, the request replaces that draft: fields that exist only in the
+   * draft are deleted unless the request lists them, the draft's edits to listed fields are
+   * overwritten, and the result is published as the new version. A rejected request leaves the
+   * form, any existing draft and the edit lock as they were.
    *
    * @param formId the form to edit
    * @param definition the whole new definition
@@ -229,6 +234,8 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    * @param activeUsers the active users, to judge whether someone else is editing
    * @return the edited form (the new version, if a version was made)
    * @throws IllegalStateException if the form cannot be edited
+   * @throws FormVersionUpdateException if the draft cannot be made the new version (for example,
+   *     the form is a system form); nothing is changed
    * @throws IllegalArgumentException if a field id is unknown or repeated
    * @throws FormFieldsValidationException if the field list is invalid
    */

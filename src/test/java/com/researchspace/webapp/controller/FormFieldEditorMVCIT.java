@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -151,14 +152,50 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void failedUpdateKeepsTheEditLock() throws Exception {
+  public void failedUpdateReportsAnErrorAndKeepsTheDraftAndTheEditLock() throws Exception {
     RSForm form = publishedForm();
-    openInEditor(form);
+    RSForm draft = openInEditor(form);
+    JsonNode before = getFields(draft.getId());
 
     // the published form is not a draft, so there is no version to commit
-    formController.updateForm(form.getId(), principal);
+    AjaxReturnObject<Long> response = formController.updateForm(form.getId(), principal);
 
+    assertNull(response.getData());
+    assertThat(response.getErrorMsg().getErrorMessages())
+        .anySatisfy(message -> assertThat(message).contains("could not be made a new version"));
+    assertEquals(before.get("data"), getFields(draft.getId()).get("data"));
+    assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    formController.unlockForm(form.getId(), principal);
+  }
+
+  @Test
+  public void malformedRulesAndEmptyEntriesAreFieldErrors() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    JsonNode read = getFields(draft.getId());
+    String gmoKey = read.get("data").get(0).get("fieldKey").asText();
+    String prefix = "{\"sourceFieldKey\":\"" + gmoKey + "\",\"operator\":\"IS_ANY_OF\",";
+    // a number where an option is expected, and a property the rule format does not have
+    List<String> malformed =
+        List.of(prefix + "\"values\":[1]}", prefix + "\"values\":[\"Yes\"],\"note\":\"x\"}");
+
+    for (String rule : malformed) {
+      ArrayNode fields = (ArrayNode) read.get("data").deepCopy();
+      ((ObjectNode) fields.get(1)).set("displayRule", mapper.readTree(rule));
+      JsonNode failure = postFields(draft.getId(), fields);
+      assertTrue(failure.get("data").isNull());
+      assertThat(failure.get("errorMsg").get("errorMessages").toString())
+          .contains("display rule on field [Permit] is malformed");
+    }
+    ArrayNode withEmptyEntry = (ArrayNode) read.get("data").deepCopy();
+    withEmptyEntry.addNull();
+    JsonNode failure = postFields(draft.getId(), withEmptyEntry);
+    assertTrue(failure.get("data").isNull());
+    assertThat(failure.get("errorMsg").get("errorMessages").toString())
+        .contains("Field #3 in the list is empty");
+
+    assertEquals(read.get("data"), getFields(draft.getId()).get("data"));
     formController.unlockForm(form.getId(), principal);
   }
 
@@ -181,7 +218,9 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
   private JsonNode postFields(Long formId, JsonNode fields) throws Exception {
     // the read shape carries canDelete, which the save ignores
     for (JsonNode field : fields) {
-      ((ObjectNode) field).remove("canDelete");
+      if (field instanceof ObjectNode object) {
+        object.remove("canDelete");
+      }
     }
     MvcResult result =
         mockMvc

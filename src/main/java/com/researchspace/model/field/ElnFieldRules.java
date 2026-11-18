@@ -6,12 +6,21 @@ import com.researchspace.model.field.rule.FieldDisplayRuleEvaluator;
 import com.researchspace.model.field.rule.FieldSnapshot;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 /** Builds the display-rule engine's view of ELN form fields and document fields. */
 @Slf4j
 public final class ElnFieldRules {
+
+  /**
+   * Form fields whose unreadable rule has been logged at WARN by this process. An unreadable rule
+   * is read on every view of each affected document, so later reads log at DEBUG. Only corrupt
+   * rules are recorded, so the set stays small.
+   */
+  private static final Set<Long> REPORTED_UNREADABLE_RULES = ConcurrentHashMap.newKeySet();
 
   private ElnFieldRules() {}
 
@@ -62,7 +71,8 @@ public final class ElnFieldRules {
 
   /**
    * The field's stored rule. A stored rule that cannot be parsed is treated as no rule, so a
-   * corrupt rule never hides data; it is logged.
+   * corrupt rule never hides data. It is logged by field id and exception type only, because parser
+   * messages can quote the stored rule.
    *
    * @return the rule, or null if the field has none or it cannot be parsed
    */
@@ -74,8 +84,13 @@ public final class ElnFieldRules {
     try {
       return FieldDisplayRule.fromJson(json);
     } catch (IllegalArgumentException e) {
-      log.warn(
-          "Ignoring unreadable display rule on form field {}: {}", field.getId(), e.getMessage());
+      String message = "Ignoring unreadable display rule on form field {} ({})";
+      String reason = e.getClass().getSimpleName();
+      if (field.getId() == null || REPORTED_UNREADABLE_RULES.add(field.getId())) {
+        log.warn(message, field.getId(), reason);
+      } else {
+        log.debug(message, field.getId(), reason);
+      }
       return null;
     }
   }

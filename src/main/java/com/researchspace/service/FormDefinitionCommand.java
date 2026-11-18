@@ -2,6 +2,8 @@ package com.researchspace.service;
 
 import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.record.FormType;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -11,12 +13,13 @@ import java.util.List;
  * @param name the form name
  * @param tags the form tags, possibly null
  * @param formType the form type; only used on create
- * @param fields every field, in order; saved fields the list omits are deleted
+ * @param fields every field, in order; saved fields the list omits are deleted. A null entry is
+ *     kept, so that the save reports it as a field error
  */
 public record FormDefinitionCommand(
     String name, String tags, FormType formType, List<FormFieldSaveItem> fields) {
 
   public FormDefinitionCommand {
-    fields = fields == null ? List.of() : List.copyOf(fields);
+    fields = fields == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(fields));
   }
 }
