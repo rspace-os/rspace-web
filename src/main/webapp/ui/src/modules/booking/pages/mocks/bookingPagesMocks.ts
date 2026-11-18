@@ -192,7 +192,8 @@ export function bookingPagesHandlers(): RequestHandler[] {
         bookingPageRequests.calendarBookingRequests.push(url);
         return apiV2CollectionResponse("bookings", request, [ownBooking, otherBooking, busyBooking]);
       }
-      if (fields === BOOKING_READ_FIELDS) return apiV2CollectionResponse("bookings", request, availabilityBookings);
+      if (fields === apiV2Fields(BOOKING_READ_FIELDS))
+        return apiV2CollectionResponse("bookings", request, availabilityBookings);
       return undefined;
     }),
     http.post("/api/v2/bookings", async ({ request }) => {

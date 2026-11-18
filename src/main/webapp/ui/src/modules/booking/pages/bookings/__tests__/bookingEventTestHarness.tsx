@@ -99,7 +99,7 @@ export function createBookingEventStoryQueryClient() {
       depth: 2,
       limit: 2,
     }),
-    { docs: [bookableItemFixtures[0]], limit: 2, page: 1 } satisfies ListBookingConfigurations200,
+    { docs: [bookableItemFixtures[0]], limit: 2, page: 1, hasNextPage: false } satisfies ListBookingConfigurations200,
   );
   return queryClient;
 }

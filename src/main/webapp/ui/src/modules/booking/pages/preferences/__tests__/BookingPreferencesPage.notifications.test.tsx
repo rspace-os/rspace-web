@@ -128,16 +128,18 @@ describe("BookingPreferencesPage", () => {
       http.get<never, never, BookingDisplayPreferences>("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json(inheritedBrowserBookingPreferences),
       ),
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        attempts += 1;
-        return attempts === 1
-          ? HttpResponse.json({}, { status: 503 })
-          : HttpResponse.json({ ...(await request.json()), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          attempts += 1;
+          return attempts === 1
+            ? HttpResponse.json(
+                { title: "Unavailable", code: "errors.api.v2.unexpected", status: 503 },
+                { status: 503 },
+              )
+            : HttpResponse.json({ ...(await request.json()), emailDelivery: false });
+        },
+      ),
     );
     renderPage();
     const on = await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" });

@@ -132,6 +132,9 @@ export function existingBooking({ id, start, end }: { id: number; start: string;
     canCancel: false,
     createdAt: "2030-10-01T09:00:00Z",
     updatedAt: "2030-10-01T09:00:00Z",
+    canViewConfiguration: true,
+    location: null,
+    createdBy: null,
   };
 }
 

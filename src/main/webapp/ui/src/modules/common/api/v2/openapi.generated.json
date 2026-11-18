@@ -3581,7 +3581,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "createdAt" : {
             "format" : "date-time",

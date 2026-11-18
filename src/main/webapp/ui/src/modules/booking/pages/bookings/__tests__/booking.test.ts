@@ -151,6 +151,7 @@ describe("booking API", () => {
           timezone: null,
           canViewConfiguration: false,
           location: null,
+          cancellationReason: null,
           canEdit: false,
           canCancel: false,
         }),

@@ -81,6 +81,7 @@ describe("booking response intervals", () => {
       version: 1,
       canViewConfiguration: true,
       location: null,
+      cancellationReason: null,
       purpose: null,
       bookedBy: null,
       createdBy: null,
@@ -98,7 +99,7 @@ describe("booking response intervals", () => {
 
 it("requests the booking read fields in a fixed order", () => {
   expect(apiV2Fields(BOOKING_READ_FIELDS)).toBe(
-    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,cancellationReason,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
 });
 

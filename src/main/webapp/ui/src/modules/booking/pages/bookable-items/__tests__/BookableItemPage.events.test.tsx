@@ -37,6 +37,7 @@ const booking = {
   bookedBy: "Ada Lovelace",
   canViewConfiguration: true,
   location: null,
+  cancellationReason: null,
   createdBy: null,
   canEdit: false,
   canCancel: false,
