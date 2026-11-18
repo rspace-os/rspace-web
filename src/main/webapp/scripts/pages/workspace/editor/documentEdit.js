@@ -313,10 +313,17 @@ function _updateFields(fields) {
   if (hasEditLock) {
     if (lastTextEdited != -1) {
       activeFieldId = lastTextEdited;
+      var editor = tinyMCE.get(getTextFieldId(activeFieldId));
+      var wasFullscreen = editor && editor.plugins.fullscreen && editor.plugins.fullscreen.isFullscreen();
       reactivateField = function () {
         editTextField(activeFieldId).done(function () {
-          if (tinyMCE.activeEditor) {
-            tinyMCE.activeEditor.focus();
+          var replacementEditor = tinyMCE.get(getTextFieldId(activeFieldId));
+          if (replacementEditor) {
+            if (wasFullscreen && replacementEditor.plugins.fullscreen &&
+                !replacementEditor.plugins.fullscreen.isFullscreen()) {
+              replacementEditor.execCommand("mceFullScreen");
+            }
+            replacementEditor.focus();
           }
         });
       };

@@ -126,6 +126,22 @@ export class TinyMceEditor {
     }
   }
 
+  /** File Save recreates this editor after refreshing the saved fields. */
+  async saveFromFileMenu(): Promise<void> {
+    const previousEditor = await this.container.elementHandle();
+    await this.openMenu("File");
+    const [saved, refreshed] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
+      this.page.waitForResponse((res) => res.url().includes("/ajax/getUpdatedFields")),
+      this.menuItem("Save").click(),
+    ]);
+    expect(saved.ok()).toBe(true);
+    expect(await saved.json()).toMatchObject({ success: true });
+    expect(refreshed.ok()).toBe(true);
+    await previousEditor?.waitForElementState("hidden");
+    await this.waitForReady();
+  }
+
   async saveAndFinishEditing(): Promise<void> {
     const [response, refreshedFields] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
