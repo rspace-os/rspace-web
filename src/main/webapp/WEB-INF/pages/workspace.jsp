@@ -1,11 +1,12 @@
 <%@ include file="/common/taglibs.jsp"%>
 
+<input type="hidden" id="workspaceConfigJson" value="${workspaceConfigJson}">
 <script>
     var recordId = "${recordId}"; // the record id of the current workspace view.
     <c:if test="${not empty searchConfig}">
       var isWorkspaceSearch = true;
     </c:if>
-    var workspaceSettings = $.parseJSON(RS.unescape('${workspaceConfigJson}'));
+    var workspaceSettings = JSON.parse(document.getElementById("workspaceConfigJson").value);
     workspaceSettings.resultsPerPage = ${numberRecords};
     workspaceSettings.searchMode = false;
     var settingsKey = '${settingsKey}';
