@@ -1,11 +1,10 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
-import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import * as v from "valibot";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { apiV2CollectionResponse, badRequest, calendarEventFilterProblem } from "@/__tests__/mocks/apiV2CollectionMock";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
-import { BOOKING_READ_FIELDS, mapBooking } from "@/modules/booking/domain/booking";
+import { BOOKING_READ_FIELDS, mapSelectedBookings } from "@/modules/booking/domain/booking";
 import { type BookingCatalogueItem, mapBookingCataloguePage } from "@/modules/booking/domain/bookingCatalogue";
 import {
   bookableItemDetailsHandlers,
@@ -18,6 +17,7 @@ import {
   rowAvailabilityIntervals,
 } from "@/modules/booking/pages/calendar/calendarAvailability";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import {
   BookingCataloguePageDocumentSchema,
   BookingsReadSchema,
@@ -75,7 +75,7 @@ const availabilityBookings = [
   updatedAt: "2026-08-01T09:00:00Z",
 }));
 
-const parsedAvailabilityBookings = v.parse(v.array(BookingsReadSchema), availabilityBookings).map(mapBooking);
+const parsedAvailabilityBookings = mapSelectedBookings(v.parse(v.array(BookingsReadSchema), availabilityBookings));
 
 /** The server's quick-filter category for one catalogue item, from the client's own interval helpers. */
 function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
@@ -234,6 +234,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         createdAt: "2026-08-17T08:00:00Z",
         updatedAt: "2026-08-17T08:00:00Z",
         canViewConfiguration: true,
+        location: null,
       });
     }),
   ];

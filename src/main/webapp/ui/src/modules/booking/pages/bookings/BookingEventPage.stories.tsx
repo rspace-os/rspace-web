@@ -35,6 +35,7 @@ const booking = {
     globalId: "IN123",
   },
   canViewConfiguration: true,
+  location: null,
   timezone: "Europe/Berlin",
   start: "2026-10-19T08:00:00Z",
   end: "2026-10-19T10:00:00Z",

@@ -387,6 +387,6 @@ it("continues after a removed row using the exact serialized start and id", asyn
 
 it("requests the dashboard booking fields in a fixed order", () => {
   expect(apiV2Fields(DASHBOARD_BOOKING_FIELDS)).toBe(
-    "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt,requester",
+    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt,requester",
   );
 });

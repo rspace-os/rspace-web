@@ -181,6 +181,7 @@ describe("BookableItemPage", () => {
       state: "CONFIRMED" as const,
       kind: "BOOKING" as const,
       canViewConfiguration: true,
+      location: null,
       createdBy: null,
       privacy: "full" as const,
       purpose: "Future calibration",

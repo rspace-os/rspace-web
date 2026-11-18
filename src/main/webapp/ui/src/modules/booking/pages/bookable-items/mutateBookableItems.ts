@@ -1,7 +1,7 @@
 import type { InvalidateOptions, QueryClient } from "@tanstack/react-query";
-import * as v from "valibot";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { requireBookingValue } from "@/modules/booking/domain/bookingMapping";
+import { ApiV2UnexpectedResponseError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
   deleteManyBookingConfigurations,
   invalidateCountBookingConfigurations,
@@ -40,8 +40,12 @@ export async function mutateBookableItems(
     if (!docs || docs.some(({ id }) => id == null || !Number.isSafeInteger(id) || id < 1)) return null;
     return docs.map((document) => ({ id: requireBookingValue(document.id, "id") }));
   } catch (error) {
-    // A successful response with an unreadable receipt may already have committed.
-    if (error instanceof v.ValiError || error instanceof SyntaxError) return null;
+    // A successful response with an unreadable receipt may already have committed. An undeclared response still throws.
+    if (
+      error instanceof ApiV2UnexpectedResponseError &&
+      (error.reason === "invalidBody" || error.reason === "malformedJson")
+    )
+      return null;
     throw error;
   }
 }

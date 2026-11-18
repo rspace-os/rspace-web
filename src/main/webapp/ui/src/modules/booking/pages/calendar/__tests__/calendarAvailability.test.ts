@@ -41,6 +41,7 @@ const booking = (id: number, target: string, start: string, end: string): Bookin
   bookedBy: `User ${id}`,
   privacy: "full",
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
   canEdit: false,
   canCancel: false,

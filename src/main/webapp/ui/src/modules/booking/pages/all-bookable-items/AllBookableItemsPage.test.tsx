@@ -229,7 +229,7 @@ describe("AllBookableItemsPage", () => {
                     parentContainer: { relationTo: "containers" as const, globalId: "IC456", value: 456 },
                   },
                 },
-                ownerHealth: {},
+                ownerHealth: { hasEffectiveOwner: true },
               },
             ]),
           );
@@ -797,9 +797,22 @@ describe("AllBookableItemsPage", () => {
     expect(bulkRequests).toBe(0);
   });
 
-  it("accepts a committed bulk success with an unreadable receipt", async () => {
-    server.use(http.patch("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [{ id: "invalid" }] })));
+  it.each([
+    ["a body that fails its schema", () => HttpResponse.json({ docs: [{ id: "invalid" }] })],
+    ["malformed JSON", () => new HttpResponse("{", { status: 200, headers: { "Content-Type": "application/json" } })],
+  ])("accepts a committed bulk success with %s as an unreadable receipt", async (_, response) => {
+    server.use(http.patch("/api/v2/booking-configurations", response));
     await expect(mutateBookableItems("disable", ["7"])).resolves.toBeNull();
+  });
+
+  it("rejects an undeclared bulk response instead of treating it as committed", async () => {
+    server.use(
+      http.patch(
+        "/api/v2/booking-configurations",
+        () => new HttpResponse("<html></html>", { status: 200, headers: { "Content-Type": "text/html" } }),
+      ),
+    );
+    await expect(mutateBookableItems("disable", ["7"])).rejects.toMatchObject({ reason: "undeclared" });
   });
 });
 

@@ -81,7 +81,7 @@ export const bookingLocationSource: RelationshipSource = {
     );
   },
   toOption: (document, context) => {
-    const location = v.parse(v.required(v.pick(BookingCatalogueLocationDocumentSchema, ["globalId", "name"])), document);
+    const location = v.parse(BookingCatalogueLocationDocumentSchema, document);
     const value = canonicalLocation(location.globalId);
     if (value === null) throw new Error("Booking location has an invalid global ID");
     return {

@@ -196,4 +196,3 @@ function mapAvailabilityCounts(response: BookingCatalogueAvailabilityCounts) {
     freeLaterToday: response.freeLaterToday,
   };
 }
-

@@ -6,10 +6,6 @@ import {
   getSearchBookingConfigurationTargetsSuspenseQueryOptions,
 } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 import {
-  getSearchBookingConfigurationTargetsQueryOptions,
-  getSearchBookingConfigurationTargetsSuspenseQueryOptions,
-} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
-import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
   getListBookingConfigurationsQueryOptions,

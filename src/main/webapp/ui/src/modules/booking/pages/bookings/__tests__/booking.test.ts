@@ -23,6 +23,7 @@ const document = {
   },
   timezone: "Europe/Berlin",
   canViewConfiguration: true,
+  location: null,
   kind: "BOOKING",
   createdBy: null,
   start: "2026-10-25T00:30:00Z",
@@ -91,7 +92,7 @@ describe("booking API", () => {
     });
     expect(requests[2].body).toEqual({ start: document.start, end: document.end, purpose: "Plate" });
     expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
-      "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+      "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
     );
     expect(requests[0].url.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted,parentContainer");
     expect(requests[0].url.searchParams.get("fields[containers]")).toBe("id,globalId,name");
@@ -147,6 +148,7 @@ describe("booking API", () => {
           target: null,
           timezone: null,
           canViewConfiguration: false,
+          location: null,
           canEdit: false,
           canCancel: false,
         }),
@@ -157,6 +159,7 @@ describe("booking API", () => {
       target: null,
       timezone: null,
       canViewConfiguration: false,
+      location: null,
     });
   });
 
