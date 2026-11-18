@@ -27,7 +27,12 @@ it("retains the maintenance notice during foreground polls and advances the cuto
       filters.push(new URL(request.url).searchParams.get("where") ?? "");
       const startDate = filters.length === 1 ? firstStart : nextStart;
       if (filters.length > 1) await pendingPoll;
-      return HttpResponse.json<ListMaintenances200>({ docs: [{ id: 1, startDate }], page: 1, limit: 1 });
+      return HttpResponse.json<ListMaintenances200>({
+        docs: [{ id: 1, startDate }],
+        page: 1,
+        limit: 1,
+        hasNextPage: false,
+      });
     }),
   );
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

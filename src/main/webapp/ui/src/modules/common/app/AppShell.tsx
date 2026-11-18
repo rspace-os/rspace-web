@@ -16,6 +16,7 @@ import { ContentLoadingSpinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
 import AuthenticatedAppBar, { PublicAppBar } from "./AppBar";
 import type { AppBarConfig } from "./AppBar.types";
+import { resolveAppBarContext } from "./sessionHandlers";
 
 export type AppBarRouteContext = {
   appBar?: AppBarConfig | false;
@@ -51,17 +52,7 @@ function CloseMobileSidebarOnNavigation() {
 }
 
 export default function AppShell() {
-  const context = useMatches({
-    // A failed beforeLoad leaves descendant contexts empty, so retain the loaded ancestors.
-    select: (matches) =>
-      matches.reduce<AppBarRouteContext>(
-        (context, match) => ({
-          appBar: match.context.appBar ?? context.appBar,
-          sidebar: match.context.sidebar ?? context.sidebar,
-        }),
-        {},
-      ),
-  });
+  const context = useMatches({ select: resolveAppBarContext });
   const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace", authenticated: false };
   const renderSidebar = context.sidebar;
 

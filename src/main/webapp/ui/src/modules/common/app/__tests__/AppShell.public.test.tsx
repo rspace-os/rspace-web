@@ -9,11 +9,53 @@ import {
 } from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import { SessionTokenProvider, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import AppShell, { type AppBarRouteContext } from "@/modules/common/app/AppShell";
+import { installAppShellSessionHandlers } from "@/modules/common/app/sessionHandlers";
+
+const aboutTitle = "About";
+const missingTitle = "Page not found";
+
+function renderShell(path: string) {
+  const root = createRootRouteWithContext<AppBarRouteContext>()({
+    component: AppShell,
+    notFoundComponent: () => <h1>{missingTitle}</h1>,
+  });
+  const about = createRoute({
+    getParentRoute: () => root,
+    path: "/about",
+    beforeLoad: () => ({ appBar: { currentPage: "aboutRSpace", authenticated: false } }) satisfies AppBarRouteContext,
+    component: () => <h1>{aboutTitle}</h1>,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([about]),
+    context: {},
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  return { router, queryClient };
+}
+
+async function expectPublicBarAfterSettling(path: string, queryClient: QueryClient) {
+  const title = path === "/about" ? aboutTitle : missingTitle;
+  expect(await screen.findByRole("heading", { name: title })).toBeVisible();
+  expect(await screen.findByRole("link", { name: "common:appBar.logIn" })).toHaveAttribute("href", "/login");
+  await waitFor(() => expect(queryClient.getQueryState(getGetCurrentUserQueryKey())?.status).toBe("error"), {
+    timeout: 9000,
+  });
+  expect(await screen.findByRole("heading", { name: title })).toBeVisible();
+  expect(screen.getByRole("link", { name: "common:appBar.logIn" })).toBeVisible();
+  expect(screen.queryByText("Something went wrong!")).not.toBeInTheDocument();
+}
 
 it.each(["/about", "/about/missing"])(
   "shows the public login bar on %s after authentication fails",
@@ -29,42 +71,43 @@ it.each(["/about", "/about/missing"])(
       ["error", "warn"],
       ["Unauthorized", "The above error occurred", "Warning: Error in route match"],
     );
-    const aboutTitle = "About";
-    const missingTitle = "Page not found";
-    const root = createRootRouteWithContext<AppBarRouteContext>()({
-      component: AppShell,
-      notFoundComponent: () => <h1>{missingTitle}</h1>,
-    });
-    const about = createRoute({
-      getParentRoute: () => root,
-      path: "/about",
-      beforeLoad: () => ({ appBar: { currentPage: "aboutRSpace", authenticated: false } }) satisfies AppBarRouteContext,
-      component: () => <h1>{aboutTitle}</h1>,
-    });
-    const router = createRouter({
-      routeTree: root.addChildren([about]),
-      context: {},
-      history: createMemoryHistory({ initialEntries: [path] }),
-    });
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     try {
-      render(
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>,
-      );
-      expect(await screen.findByRole("heading", { name: path === "/about" ? aboutTitle : missingTitle })).toBeVisible();
-      expect(await screen.findByRole("link", { name: "common:appBar.logIn" })).toHaveAttribute("href", "/login");
-      await waitFor(() => expect(queryClient.getQueryState(getGetCurrentUserQueryKey())?.status).toBe("error"), {
-        timeout: 9000,
-      });
-      expect(await screen.findByRole("heading", { name: path === "/about" ? aboutTitle : missingTitle })).toBeVisible();
-      expect(screen.getByRole("link", { name: "common:appBar.logIn" })).toBeVisible();
+      const { queryClient } = renderShell(path);
+      await expectPublicBarAfterSettling(path, queryClient);
       expect(currentUserRequests).toBeGreaterThan(0);
-      expect(screen.queryByText("Something went wrong!")).not.toBeInTheDocument();
     } finally {
       restoreConsole();
     }
   },
   12000,
 );
+
+it("stays on /about without navigating when the token route refuses an anonymous visitor", async () => {
+  const location = { href: window.location.href, origin: window.location.origin, assign: vi.fn(), reload: vi.fn() };
+  vi.stubGlobal("location", location);
+  server.use(
+    http.post("/api/v2/oauth/tokens", () =>
+      HttpResponse.json(
+        { code: "unauthenticated", status: 401, title: "Unauthorized" },
+        { status: 401, headers: { "Content-Type": "application/problem+json" } },
+      ),
+    ),
+  );
+  const restoreProvider = setApiV2TokenProvider(new SessionTokenProvider());
+  const restoreConsole = silenceConsole(
+    ["error", "warn"],
+    ["browser session ended", "The above error occurred", "Warning: Error in route match"],
+  );
+  let restoreHandlers = () => {};
+  try {
+    const { router, queryClient } = renderShell("/about");
+    restoreHandlers = installAppShellSessionHandlers(router);
+    await expectPublicBarAfterSettling("/about", queryClient);
+    expect(location.assign).not.toHaveBeenCalled();
+  } finally {
+    restoreHandlers();
+    restoreConsole();
+    restoreProvider();
+    vi.unstubAllGlobals();
+  }
+}, 12000);

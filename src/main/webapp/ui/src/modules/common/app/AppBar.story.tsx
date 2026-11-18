@@ -45,7 +45,7 @@ export function AppBarStory() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryDefaults(getListMaintenancesQueryKey(), {
     enabled: false,
-    initialData: { docs: [], limit: 1, page: 1 } satisfies ListMaintenances200,
+    initialData: { docs: [], limit: 1, page: 1, hasNextPage: false } satisfies ListMaintenances200,
   });
   queryClient.setQueryData(getGetCurrentUserQueryKey(), storyUser);
   queryClient.setQueryData(getGetApiV2ConfigQueryKey(), {

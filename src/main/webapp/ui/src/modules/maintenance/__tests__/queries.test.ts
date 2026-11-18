@@ -70,6 +70,7 @@ it("reads public maintenance status without an authenticated browser session", a
         docs: [{ id: 1, canUserLoginNow: true }],
         page: 1,
         limit: 1,
+        hasNextPage: false,
       }),
     ),
   );
