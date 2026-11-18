@@ -83,7 +83,7 @@ it("compares schema keys independently of their order", () => {
   expect(source).toContain('"200":');
   expect(source).toContain('"201":');
 });
-it("skips referenced binary bodies, binary responses and 204", () => {
+it("skips referenced and inline binary bodies, binary responses and 204", () => {
   const content = media({ $ref: "#/components/schemas/Binary" });
   const source = generate(
     spec(
@@ -94,6 +94,8 @@ it("skips referenced binary bodies, binary responses and 204", () => {
     native,
   ).operations;
   expect(source).toContain('"send": {public: true, responses: {}}');
+  const inline = generate(spec(media({ type: "string", format: "binary" }), {}), native).operations;
+  expect(inline).toContain('"send": {public: true, responses: {}}');
 });
 it("fails when the native export required by the registry is absent", () => {
   expect(() => generate(spec(media({ type: "string" }), {}), "")).toThrow("Missing native operation schema SendBody");

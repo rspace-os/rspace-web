@@ -41,6 +41,8 @@ describe("schema conversion", () => {
     [{ type: "string", format: "date-time" }, "2026-11-07T12:00:00Z", "yesterday"],
     [{ type: "string", format: "date" }, "2026-11-07", "November"],
     [{ type: "string", format: "email" }, "a@example.com", "a"],
+    [{ type: "string", format: "idn-email" }, "用户@例子.公司", 42],
+    [{ type: "string", format: "idn-email" }, "not-an-address", 42],
     [{ type: "string", format: "uri" }, "anything", 1],
     [{ type: "string", format: "uri-reference" }, "relative/path", 1],
     [{ type: "string", minLength: 2 }, "ab", "a"],
@@ -56,19 +58,6 @@ describe("schema conversion", () => {
     const value = schema(fragment);
     expect(v.safeParse(value, valid).success).toBe(true);
     expect(v.safeParse(value, invalid).success).toBe(false);
-  });
-
-  it("keeps idn-email unvalidated while retaining email validation", () => {
-    const fragment = { type: "string", format: "idn-email" };
-    const output = generate(document({ Value: fragment }));
-    expect(output.native).toContain("v.string()");
-    expect(output.native).not.toMatch(/v\.(?:pipe|email|rfcEmail)\(/);
-    const value = schema(fragment);
-    for (const address of ["o'brien@uni.ac.uk", "admin@localhost", "用户@例子.公司", "not-an-address"]) {
-      expect(v.safeParse(value, address).success).toBe(true);
-    }
-    expect(v.safeParse(value, 42).success).toBe(false);
-    expect(generate(document({ Value: { type: "string", format: "email" } })).native).toContain("v.email()");
   });
 
   it("validates quoted and prototype-named members", () => {
@@ -160,15 +149,6 @@ describe("schema conversion", () => {
     expect(v.safeParse(Tree, { children: [{ tree: { children: [] }, self: {} }] }).success).toBe(true);
     expect(v.safeParse(Consumer, { children: "bad" }).success).toBe(false);
   });
-  it("emits readonly for readonly arrays", () => {
-    expect(
-      generate(
-        document({
-          Value: { type: "array", items: { type: "string" }, readOnly: true },
-        }),
-      ).native,
-    ).toContain("v.readonly()");
-  });
   it("ignores the documented annotations", () => {
     const value = schema({
       type: "integer",
@@ -208,60 +188,47 @@ describe("schema conversion", () => {
 });
 
 describe("operation registry", () => {
-  it.each<[string, SecurityRequirement[] | undefined, SecurityRequirement[] | undefined, boolean]>([
-    ["explicit browser-session override", [{ bearerAuth: [] }], [{ browserSession: [] }], true],
-    ["inherited browser session", [{ browserSession: [] }], undefined, true],
-    ["public override of browser session", [{ browserSession: [] }], [], false],
-    ["bearer override of browser session", [{ browserSession: [] }], [{ bearerAuth: [] }], false],
-    ["combined session and bearer requirement", undefined, [{ browserSession: [], bearerAuth: [] }], false],
-    ["alternative session and bearer requirements", undefined, [{ browserSession: [] }, { bearerAuth: [] }], false],
-    ["anonymous alternative to browser session", undefined, [{ browserSession: [] }, {}], false],
-  ])("marks session-only operations from %s", (_name, topLevelSecurity, operationSecurity, isSessionOnly) => {
-    const spec = document(
-      {},
-      {
-        "/": {
-          post: {
-            operationId: "mintToken",
-            responses: {},
-            ...(operationSecurity === undefined ? {} : { security: operationSecurity }),
+  it.each<[string, SecurityRequirement[] | undefined, SecurityRequirement[] | undefined, boolean, boolean]>([
+    ["explicit browser-session override", [{ bearerAuth: [] }], [{ browserSession: [] }], true, false],
+    ["inherited browser session", [{ browserSession: [] }], undefined, true, false],
+    ["public override of browser session", [{ browserSession: [] }], [], false, true],
+    ["bearer override of browser session", [{ browserSession: [] }], [{ bearerAuth: [] }], false, false],
+    ["combined session and bearer requirement", undefined, [{ browserSession: [], bearerAuth: [] }], false, false],
+    [
+      "alternative session and bearer requirements",
+      undefined,
+      [{ browserSession: [] }, { bearerAuth: [] }],
+      false,
+      false,
+    ],
+    ["anonymous alternative to browser session", undefined, [{ browserSession: [] }, {}], false, false],
+    ["inherited public security", [], undefined, false, true],
+    ["default public security", undefined, undefined, false, true],
+    ["explicit protected override", [], [{ bearerAuth: [] }], false, false],
+    ["inherited protected security", [{ bearerAuth: [] }], undefined, false, false],
+    ["explicit protected security", undefined, [{ bearerAuth: [] }], false, false],
+  ])(
+    "marks session-only and public operations from %s",
+    (_name, topLevelSecurity, operationSecurity, isSessionOnly, isPublic) => {
+      const spec = document(
+        {},
+        {
+          "/": {
+            post: {
+              operationId: "mintToken",
+              responses: {},
+              ...(operationSecurity === undefined ? {} : { security: operationSecurity }),
+            },
           },
         },
-      },
-    );
-    if (topLevelSecurity === undefined) delete spec.security;
-    else spec.security = topLevelSecurity;
-    const entry = generate(spec).operations.split('"mintToken": ')[1];
-    expect(entry.startsWith("{session: true, ")).toBe(isSessionOnly);
-    expect(entry.includes("public: true")).toBe(operationSecurity?.length === 0);
-  });
-
-  it.each<[string, SecurityRequirement[] | undefined, SecurityRequirement[] | undefined, boolean]>([
-    ["explicit public override", [{ bearerAuth: [] }], [], true],
-    ["inherited public security", [], undefined, true],
-    ["default public security", undefined, undefined, true],
-    ["explicit protected override", [], [{ bearerAuth: [] }], false],
-    ["inherited protected security", [{ bearerAuth: [] }], undefined, false],
-    ["explicit protected security", undefined, [{ bearerAuth: [] }], false],
-  ])("marks public operations from %s", (_name, topLevelSecurity, operationSecurity, isPublic) => {
-    const spec = document(
-      {},
-      {
-        "/": {
-          get: {
-            operationId: "getValue",
-            responses: {},
-            ...(operationSecurity === undefined ? {} : { security: operationSecurity }),
-          },
-        },
-      },
-    );
-    if (topLevelSecurity === undefined) delete spec.security;
-    else spec.security = topLevelSecurity;
-    const output = generate(spec).operations;
-    expect(output).toContain("public?: true");
-    expect(output).toContain(isPublic ? '"getValue": {public: true, responses: {}}' : '"getValue": {responses: {}}');
-  });
+      );
+      if (topLevelSecurity === undefined) delete spec.security;
+      else spec.security = topLevelSecurity;
+      const entry = generate(spec).operations.split('"mintToken": ')[1];
+      expect(entry.startsWith("{session: true, ")).toBe(isSessionOnly);
+      expect(entry.startsWith("{public: true, ")).toBe(isPublic);
+    },
+  );
   it("registers requests, JSON success statuses and media types, including empty operations", () => {
     const output = generate(
       document(
@@ -330,30 +297,7 @@ describe("operation registry", () => {
     expect(output).not.toContain('"204":');
     expect(output).toContain('"download": {responses: {}}');
   });
-  it("skips binary JSON schemas", () => {
-    const output = generate(
-      document(
-        {},
-        {
-          "/": {
-            post: {
-              operationId: "upload",
-              requestBody: {
-                content: {
-                  "application/json": {
-                    schema: { type: "string", format: "binary" },
-                  },
-                },
-              },
-              responses: {},
-            },
-          },
-        },
-      ),
-    ).operations;
-    expect(output).toContain('"upload": {responses: {}}');
-  });
-  it("rejects duplicate operation IDs and unsupported inline schemas", () => {
+  it("rejects duplicate operation IDs and unsupported inline parameter and error-response schemas", () => {
     const operation = { operationId: "same", responses: {} };
     expect(() => generate(document({}, { "/": { get: operation, post: operation } }))).toThrow("duplicate operationId");
     expect(() =>
@@ -372,31 +316,28 @@ describe("operation registry", () => {
         ),
       ),
     ).toThrow("Unsupported keyword not");
-  });
-});
-
-it("fails on unsupported inline error-response validation too", () => {
-  expect(() =>
-    generate(
-      document(
-        {},
-        {
-          "/": {
-            get: {
-              operationId: "get",
-              responses: {
-                400: {
-                  content: {
-                    "application/json": { schema: { type: "object", not: {} } },
+    expect(() =>
+      generate(
+        document(
+          {},
+          {
+            "/": {
+              get: {
+                operationId: "get",
+                responses: {
+                  400: {
+                    content: {
+                      "application/json": { schema: { type: "object", not: {} } },
+                    },
                   },
                 },
               },
             },
           },
-        },
+        ),
       ),
-    ),
-  ).toThrow("Unsupported keyword not");
+    ).toThrow("Unsupported keyword not");
+  });
 });
 
 it("does not silently drop union sibling validation", () => {

@@ -56,11 +56,8 @@ beforeAll(async () => {
 afterAll(() => rmSync(directory, { recursive: true, force: true }));
 
 describe("apiV2SerializeQuery", () => {
-  it("covers every operation with a filtered where", () => {
-    expect(operations.size).toBeGreaterThan(0);
-  });
-
   it("matches Orval's default serialization for each filtered operation", () => {
+    expect(operations.size).toBeGreaterThan(0);
     for (const operationId of operations.keys()) {
       const name = orvalUrlName(operationId);
       const reference = defaults[name];

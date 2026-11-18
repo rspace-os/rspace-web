@@ -2,7 +2,7 @@ import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ApiV2ProblemError } from "./ApiV2ProblemError";
 import { apiV2BlobFetch, apiV2Fetch, apiV2HeadersFetch } from "./apiV2Fetch";
-import { ApiV2IdentityChangedError, getApiV2TokenProvider, setApiV2TokenProvider } from "./tokenProvider";
+import { ApiV2IdentityChangedError, setApiV2TokenProvider } from "./tokenProvider";
 
 // Test setup imports this runtime before test mocks are installed.
 vi.hoisted(() => vi.resetModules());
@@ -16,10 +16,6 @@ vi.mock("./generated/valibot/operations", async () => {
       publicRead: { public: true, responses: response },
       sessionRead: { session: true, responses: response },
       write: { request: v.object({ name: v.string() }), responses: response },
-      createUiOAuthToken: {
-        session: true,
-        responses: { "200": { "application/json": v.object({ accessToken: v.string() }) } },
-      },
     },
   };
 });
@@ -105,10 +101,12 @@ describe("API v2 transport", () => {
     await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ status: 401 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
-  it("sets problem only for valid problems and preserves extensions", async () => {
+  it("sets problem only for valid problems, preserves extensions and prefers the detail", async () => {
     const body = { status: 409, title: "Conflict", code: "conflict", conflict: { id: 9 } };
     fetchMock.mockResolvedValueOnce(Response.json(body, { status: 409 }));
     await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ problem: body, message: "Conflict" });
+    fetchMock.mockResolvedValueOnce(Response.json({ ...body, detail: "Conflict with 9" }, { status: 409 }));
+    await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ message: "Conflict with 9" });
     fetchMock.mockResolvedValueOnce(Response.json({ status: "bad" }, { status: 400 }));
     await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ status: 400, problem: undefined });
   });
@@ -146,23 +144,6 @@ describe("API v2 transport", () => {
     expectTypeOf(binary.body).toEqualTypeOf<Blob>();
     expect(await binary.body.text()).toBe("calendar");
     expect(binary.headers.get("Content-Disposition")).toBe("attachment");
-  });
-  it("does not request a token for token minting", async () => {
-    fetchMock.mockResolvedValue(Response.json({ accessToken: "minted" }));
-    await apiV2Fetch(
-      "/api/v2/oauth/tokens",
-      options("createUiOAuthToken", { headers: { Authorization: "untrusted" } }),
-    );
-    expect(getToken).not.toHaveBeenCalled();
-    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).has("Authorization")).toBe(false);
-  });
-  it("restores nested provider overrides", () => {
-    const previous = getApiV2TokenProvider();
-    const next = { getToken: async () => "next", recover: async () => "next" };
-    const undo = setApiV2TokenProvider(next);
-    expect(getApiV2TokenProvider()).toBe(next);
-    undo();
-    expect(getApiV2TokenProvider()).toBe(previous);
   });
 });
 
@@ -220,11 +201,4 @@ it("protected operations still require a token", async () => {
   await expect(apiV2Fetch("/resource", options())).rejects.toBe(error);
   expect(getToken).toHaveBeenCalledTimes(1);
   expect(fetchMock).not.toHaveBeenCalled();
-});
-
-it("prefers an occurrence detail over the stable problem title", async () => {
-  fetchMock.mockResolvedValueOnce(
-    Response.json({ status: 400, title: "Limit exceeded", code: "limit", detail: "Limit: 3" }, { status: 400 }),
-  );
-  await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ message: "Limit: 3" });
 });

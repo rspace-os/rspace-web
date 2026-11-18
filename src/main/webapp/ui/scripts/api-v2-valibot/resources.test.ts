@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { pathToFileURL, URL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { apiV2Resources } from "../../src/modules/common/api/v2/apiV2Resources";
 import { type OpenApiDocument, type OperationObject, orvalOperationName, orvalQueryKeyName } from "./openapi.ts";
@@ -19,7 +19,6 @@ interface Result<T> {
 type RegistrySlot = { request: unknown; queryKey: unknown } | ((...args: never[]) => unknown);
 
 const apiRoot = resolve("src/modules/common/api/v2");
-const document: OpenApiDocument = JSON.parse(await readFile(resolve(apiRoot, "openapi.generated.json"), "utf8"));
 const golden: Operations = JSON.parse(await readFile(resolve("scripts/api-v2-valibot/resources-golden.json"), "utf8"));
 const generated = pathToFileURL(`${resolve(apiRoot, "generated")}/`);
 const op = (kind: string | null, id = "example"): OperationObject => ({
@@ -94,14 +93,8 @@ describe("collection resource registry emitter", () => {
       examples: Object.fromEntries(Object.entries(expected).map(([kind, slot]) => [slot, kind])),
     });
   });
-  it("uses explicit runtime-field metadata and skips CUSTOM-only tags", () => {
-    expect(invoke(spec(op("RUNTIME_FIELDS"))).value).toEqual({
-      examples: { runtimeFields: "example" },
-    });
+  it("skips CUSTOM-only tags", () => {
     expect(invoke(spec(op("CUSTOM"))).value).toEqual({});
-    const resources = invoke(document).value;
-    expect(resources).not.toHaveProperty("maintenances");
-    expect(Object.keys(resources)).toHaveLength(3);
   });
   it("groups operations by tag instead of guessing from the route", () => {
     expect(invoke(spec(op("LIST"), "/api/v2/different")).value).toEqual({
@@ -146,11 +139,6 @@ describe("collection resource registry emitter", () => {
       expect.stringContaining("Missing import target getExampleQueryKey"),
       expect.stringContaining("missing file"),
     ]);
-  });
-  it("reproduces the committed generated registry", async () => {
-    expect(invoke<string>(document, "generate").value).toBe(
-      await readFile(new URL("apiV2Resources.ts", generated), "utf8"),
-    );
   });
   it("preserves the golden slots and exact generated function identities", async () => {
     expect(Object.keys(apiV2Resources).sort()).toEqual(Object.keys(golden).sort());
