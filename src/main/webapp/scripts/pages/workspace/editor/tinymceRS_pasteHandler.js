@@ -267,9 +267,91 @@ RS.tinymcePasteHandler = function() {
         
     }
 
-    /* 
+    /*
+     * ======================================================
+     *  links to this RSpace server stay absolute (RSDEV-614)
+     * ======================================================
+     */
+
+    // Hrefs under these paths must stay root-relative, because backend code depends on it:
+    // - /globalId: linkedRecord links. FieldContents.isRelativeUrl and the importer
+    //   (AbstractImporterStrategyImpl.updateInternalLinksWithAbsoluteUrlOnImport) treat an absolute href
+    //   as a link to another instance, and coreEditor.js styles a.linkedRecord[href^='http'] as external.
+    // - /Streamfile and /public/publicView/Streamfile: attachment and media anchors (attachmentLink.vm,
+    //   mediaPlayerHTML.vm), selected by RichTextUpdater with href^="/Streamfile".
+    var RELATIVE_ONLY_PATHS = ['/globalId', '/Streamfile', '/public/publicView/Streamfile'];
+    var RELATIVE_ONLY_LINK_CLASSES = ['linkedRecord', 'attachmentLinked'];
+
+    function _isRSpaceElementPath(pathname) {
+        return RELATIVE_ONLY_PATHS.some(function(path) {
+            return pathname === path || pathname.startsWith(path + '/');
+        });
+    }
+
+    // returns the parsed URL if it is an absolute http(s) URL on this server, otherwise null
+    function _parseSameOriginUrl(url) {
+        if (!/^https?:\/\//i.test(url)) {
+            return null;
+        }
+        try {
+            var parsed = new URL(url);
+            return parsed.origin === window.location.origin ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /*
+     * TinyMCE urlconverter_callback, called with the editor as `this`. `node` is a tag name string when
+     * called by the parser and an element when called by DOMUtils. Absolute hrefs to this server are kept
+     * as they are; everything else gets TinyMCE's default conversion (Editor.convertURL in 5.10.9).
+     */
+    function convertEditorUrl(url, node, onSave, name) {
+        var settings = this.settings;
+        if (!settings.convert_urls || (node && node.nodeName === 'LINK') || url.indexOf('file:') === 0 || url.length === 0) {
+            return url;
+        }
+        if (name === 'href') {
+            var sameOriginUrl = _parseSameOriginUrl(url);
+            if (sameOriginUrl && !_isRSpaceElementPath(sameOriginUrl.pathname)) {
+                return url;
+            }
+        }
+        return settings.relative_urls
+            ? this.documentBaseURI.toRelative(url)
+            : this.documentBaseURI.toAbsolute(url, settings.remove_script_host);
+    }
+
+    // makes root-relative hrefs of pasted links absolute, so convertEditorUrl keeps them on this server.
+    // RSpace element links (by class) are made root-relative instead, as TinyMCE did before RSDEV-614.
+    function absolutizePastedLinks(rootNode) {
+        $(rootNode).find('a[href]').each(function() {
+            var anchor = this;
+            var isRSpaceElement = RELATIVE_ONLY_LINK_CLASSES.some(function(cssClass) {
+                return anchor.classList.contains(cssClass);
+            });
+            var href = anchor.getAttribute('href');
+            if (isRSpaceElement) {
+                var sameOriginElementUrl = _parseSameOriginUrl(href);
+                // a path starting with // would become a link to another host, so keep those absolute
+                if (sameOriginElementUrl && sameOriginElementUrl.pathname.indexOf('//') !== 0) {
+                    anchor.setAttribute('href', sameOriginElementUrl.pathname + sameOriginElementUrl.search + sameOriginElementUrl.hash);
+                }
+                return;
+            }
+            if (!/^\/(?!\/)/.test(href)) {
+                return;
+            }
+            var absoluteUrl = _parseSameOriginUrl(window.location.origin + href);
+            if (absoluteUrl && !_isRSpaceElementPath(absoluteUrl.pathname)) {
+                anchor.setAttribute('href', window.location.origin + href);
+            }
+        });
+    }
+
+    /*
      * ==============================
-     *  public API  
+     *  public API
      * ==============================
      */
     function processPastedContent(pastedText, pastedHtml) {
@@ -324,6 +406,8 @@ RS.tinymcePasteHandler = function() {
     return {
         /* main API */
         processPastedContent : processPastedContent,
+        convertEditorUrl : convertEditorUrl,
+        absolutizePastedLinks : absolutizePastedLinks,
 
         /* for testing */
         _isRSpaceLink : _isRSpaceLink,
