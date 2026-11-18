@@ -189,6 +189,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     }
     List<ArchivalNfsFile> nfsLinks = extractNfsLinks(strucDoc, htmlStr);
     scaleImages(exportConfig, jsoupDoc);
+    widenBondStrengthPictures(jsoupDoc);
     addBaseURLToInternalLinks(jsoupDoc);
     replaceIframesWithEmbedCodeLink(jsoupDoc);
 
@@ -355,6 +356,21 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
         }
       }
     }
+  }
+
+  /**
+   * Bond strength pictures carry small labels on every bond, so they print as wide as chemical
+   * structures do instead of at their size in the editor. Runs after scaling, which would otherwise
+   * try to parse the percentage width.
+   */
+  void widenBondStrengthPictures(Document jsoupDoc) {
+    jsoupDoc
+        .select("div[data-bond-strengths-for] img")
+        .forEach(
+            el -> {
+              el.attr("width", "90%");
+              el.removeAttr("height");
+            });
   }
 
   void scaleImages(StructuredDocumentHTMLViewConfig exportConfig, Document jsoupDoc) {
