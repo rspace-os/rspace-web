@@ -62,6 +62,7 @@ describe("metadata-selected relationship filter controls", () => {
           docs: [{ id: 123, name: "Metadata microscope", globalId: "IN123" }],
           limit: 20,
           page: 1,
+          hasNextPage: false,
         }),
       ),
     );

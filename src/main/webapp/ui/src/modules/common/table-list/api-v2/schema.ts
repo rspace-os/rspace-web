@@ -160,7 +160,7 @@ export type ApiV2DocumentMapping<TDocument, TSchema extends ApiV2DocumentSchema<
   | { documentSchema: TSchema & v.GenericSchema<unknown, NoInfer<TDocument>>; mapDocument?: undefined };
 
 export const runtimeFieldSchema = v.object({
-  ...v.required(ApiV2RuntimeFieldCatalogEntrySchema).entries,
+  ...ApiV2RuntimeFieldCatalogEntrySchema.entries,
   id: v.pipe(v.string(), v.minLength(1)),
   selector: v.pipe(v.string(), v.minLength(1)),
   label: v.string(),
@@ -175,7 +175,7 @@ export const runtimeFieldSchema = v.object({
 });
 
 export const catalogSchema = v.object({
-  ...v.required(ApiV2RuntimeFieldCatalogSchema).entries,
+  ...ApiV2RuntimeFieldCatalogSchema.entries,
   fields: v.array(runtimeFieldSchema),
   totalFields: v.optional(v.number()),
   hasMore: v.boolean(),

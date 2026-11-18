@@ -311,6 +311,7 @@ describe("relationship picker restore", () => {
         return HttpResponse.json({
           page: 1,
           limit: 20,
+          hasNextPage: false,
           docs: [
             { id: 123, name: "Confocal microscope", globalId: "IN123" },
             { id: 456, name: "Orbital shaker", globalId: "IN456" },
@@ -340,7 +341,9 @@ describe("relationship picker restore", () => {
 
   it("rejects malformed instruments restore documents", async () => {
     server.use(
-      http.get("/api/v2/instruments", () => HttpResponse.json({ docs: [{ id: 123, name: "Confocal microscope" }] })),
+      http.get("/api/v2/instruments", () =>
+        HttpResponse.json({ docs: [{ id: 123, name: "Confocal microscope" }], page: 1, limit: 20, hasNextPage: false }),
+      ),
     );
     await expect(
       relationshipSources.instruments.resolveMany?.(["IN123"], new AbortController().signal),
@@ -353,6 +356,7 @@ describe("relationship picker restore", () => {
         HttpResponse.json({
           page: 1,
           limit: 20,
+          hasNextPage: false,
           docs: [
             { id: 123, name: "Confocal microscope", globalId: "IN123" },
             { id: 456, name: "Orbital shaker", globalId: "IN456" },

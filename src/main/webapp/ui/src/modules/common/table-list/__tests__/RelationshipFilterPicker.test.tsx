@@ -64,6 +64,7 @@ describe("relationship filter picker", () => {
           docs: [{ id: 123, name: "Confocal microscope", globalId: "IN123" }],
           limit: 20,
           page: 1,
+          hasNextPage: false,
         });
       }),
     );
