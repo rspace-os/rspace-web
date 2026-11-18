@@ -56,7 +56,7 @@ class ApiV2SettingsPatchOpenApiTest {
             .generate();
     var components = (Map<String, Object>) document.get("components");
     var schemas = (Map<String, Object>) components.get("schemas");
-    var schema = (Map<String, Object>) schemas.get("BookingSettingsControllerSettingsPatch");
+    var schema = (Map<String, Object>) schemas.get("BookingSettingsPatch");
     var properties = (Map<String, Object>) schema.get("properties");
     for (var field : SettingsPatch.class.getRecordComponents()) {
       var value = (Map<String, Object>) properties.get(field.getName());

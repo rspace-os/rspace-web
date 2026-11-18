@@ -19,6 +19,7 @@ it("accepts expanded relationships and sparse selected responses", () => {
       docs: [{ id: 1, "target.customFields": { foo: { bar: 1 } } }],
       limit: 10,
       page: 1,
+      hasNextPage: false,
     }).success,
   ).toBe(true);
   const selected = v.required(v.pick(native.BookingsRead, ["purpose"]));

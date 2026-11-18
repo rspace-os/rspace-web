@@ -19,8 +19,10 @@ public interface BookingCatalogueManager {
     CREATE_BLOCKOUT
   }
 
+  @Schema(name = "BookingCatalogueLocationDocument")
   record Location(String globalId, String name) {}
 
+  @Schema(name = "BookingCatalogueItemDocument")
   record Item(
       long configurationId,
       long configurationVersion,
@@ -40,6 +42,7 @@ public interface BookingCatalogueManager {
       BookingConfigurationCapabilities capabilities,
       @Schema(nullable = true) Location location) {}
 
+  @Schema(name = "BookingCatalogueFacets")
   record Facets(List<String> types) {
 
     public Facets {
@@ -47,6 +50,7 @@ public interface BookingCatalogueManager {
     }
   }
 
+  @Schema(name = "BookingCataloguePageDocument")
   record Page(List<Item> items, int page, int pageSize, long total, Facets facets) {
 
     public Page {
@@ -54,6 +58,7 @@ public interface BookingCatalogueManager {
     }
   }
 
+  @Schema(name = "BookingCatalogueLocationPageDocument")
   record LocationPage(List<Location> items, int page, int pageSize, long total) {
 
     public LocationPage {

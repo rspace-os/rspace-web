@@ -55,6 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
         @Extension(properties = @ExtensionProperty(name = "x-tag-group", value = "Booking")))
 public final class BookingSettingsController {
 
+  @Schema(name = "BookingSettingsDocument")
   public record SettingsDocument(
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
@@ -86,6 +87,7 @@ public final class BookingSettingsController {
     }
   }
 
+  @Schema(name = "BookingAdminSettingsDocument")
   public record AdminSettingsDocument(
       long slotGranularityMinutes,
       BookingIncrementUnit incrementUnit,
@@ -120,6 +122,7 @@ public final class BookingSettingsController {
     }
   }
 
+  @Schema(name = "BookingSettingsPatch")
   public record SettingsPatch(
       @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
           @Max(value = 527040, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")

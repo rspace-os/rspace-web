@@ -28,7 +28,6 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 @ApiV2ResourceDefinition(
@@ -151,14 +150,11 @@ public record ApiV2BookingConfigurationResource(
 
   private record RoleSourceGrantee(String kind, String key, Object id, String name) {
     static RoleSourceGrantee from(ResourceRoleSource source) {
-      Map<String, Object> grantee = source.grantee();
+      ResourceRoleSource.Grantee grantee = source.grantee();
       return grantee == null
           ? null
           : new RoleSourceGrantee(
-              (String) grantee.get("kind"),
-              (String) grantee.get("key"),
-              grantee.get("id"),
-              (String) grantee.get("name"));
+              grantee.kind().name(), grantee.key(), grantee.id(), grantee.name());
     }
   }
 

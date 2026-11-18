@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
         @Extension(properties = @ExtensionProperty(name = "x-tag-group", value = "Booking")))
 public class BookingConfigurationTargetController {
 
+  @Schema(name = "BookingConfigurationTargetDirectoryDocument")
   public record TargetDirectoryDocument(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<BookingConfigurationTarget> docs) {
     public TargetDirectoryDocument {
