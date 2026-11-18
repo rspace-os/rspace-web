@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { getListFeatureFlagsQueryKey } from "@/modules/common/api/v2/generated/feature-flags/feature-flags";
 import ChemCard from "../ChemCard";
 
 const bondStrengthsButton = { name: "workspace:tinymce.bondStrengths.action" };
@@ -49,7 +50,9 @@ describe("ChemCard bond strengths action", () => {
 
     expect(await screen.findByText("toluene")).toBeVisible();
     await waitFor(() => {
-      expect(queryClient.getQueryState(["rspace.featureFlags", "flags"])?.status).toBe("success");
+      expect(queryClient.getQueryState([...getListFeatureFlagsQueryKey({ limit: 100 }), "featureFlags"])?.status).toBe(
+        "success",
+      );
     });
     expect(screen.queryByRole("button", bondStrengthsButton)).not.toBeInTheDocument();
   });
