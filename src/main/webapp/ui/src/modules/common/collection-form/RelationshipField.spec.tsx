@@ -104,6 +104,7 @@ describe("RelationshipField", () => {
           docs: where === "id=in=(1,2)" ? [firstInstrument] : [thirdInstrument],
           limit: Number(url.searchParams.get("limit")),
           page: 1,
+          hasNextPage: false,
         });
       }),
     );
