@@ -22,8 +22,9 @@ runs:
   using: composite
   steps:
     - name: Set up JDK
-      uses: actions/setup-java@v6.2.0
+      uses: actions/setup-java@v6.3.0
       with:
+        problem-matcher: true
         distribution: temurin
         java-version: ${{ inputs.java-version }}
 
