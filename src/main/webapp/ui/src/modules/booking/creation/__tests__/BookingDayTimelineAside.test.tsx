@@ -78,6 +78,8 @@ function scheduleBooking({ id, targetId, name }: { id: number; targetId: string;
     canCancel: false,
     createdAt: "2026-08-17T06:00:00Z",
     updatedAt: "2026-08-17T06:00:00Z",
+    canViewConfiguration: true,
+    createdBy: null,
   };
 }
 

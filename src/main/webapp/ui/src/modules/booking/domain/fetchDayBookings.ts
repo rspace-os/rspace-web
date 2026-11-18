@@ -1,5 +1,6 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { type ApiV2WhereObject, apiV2WhereToRsql } from "@/modules/common/api/v2/apiV2Where";
 import {
   getListBookingsQueryKey,
@@ -7,8 +8,7 @@ import {
   listBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { isNonEmpty } from "@/util/ArrayUtils";
-import { BOOKING_READ_FIELDS, type Booking, mapBooking } from "./booking";
-import { requireBookingValue as required } from "./bookingMapping";
+import { BOOKING_READ_FIELDS, type Booking, mapSelectedBookings } from "./booking";
 
 const MAX_TARGETS_PER_BATCH = 500;
 const MAX_REQUEST_BYTES = 6000; // Leaves headroom for browser/proxy headers outside application control.
@@ -48,7 +48,7 @@ function availabilityRequest(globalIds: readonly string[], envelope: { start: st
     page: 1,
     limit: 100,
     depth: 1,
-    fields: { bookings: BOOKING_READ_FIELDS, instruments: "id,globalId,name,deleted" },
+    fields: { bookings: apiV2Fields(BOOKING_READ_FIELDS), instruments: "id,globalId,name,deleted" },
   };
   const url = getListBookingsUrl(parameters);
   const bytes = new TextEncoder().encode(`GET ${url} HTTP/1.1\r\n\r\n`).length;
@@ -91,12 +91,7 @@ async function fetchPage(
   try {
     const result = await listBookings(request.parameters, { signal });
     throwIfAborted(signal);
-    return {
-      ...result,
-      docs: required(result.docs, "docs").map(mapBooking),
-      page: required(result.page, "page"),
-      hasNextPage: required(result.hasNextPage, "hasNextPage"),
-    };
+    return { ...result, docs: mapSelectedBookings(result.docs) };
   } catch (error) {
     if (error instanceof ApiV2ProblemError && (error.status === 414 || error.status === 431))
       throw new CalendarAvailabilityRequestTooLargeError();

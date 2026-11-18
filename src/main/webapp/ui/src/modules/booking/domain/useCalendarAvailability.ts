@@ -9,6 +9,7 @@ import {
 import { BOOKING_READ_FIELDS, type Booking } from "@/modules/booking/domain/booking";
 import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 import { dayBookingsWhere, fetchDayBookings } from "./fetchDayBookings";
@@ -78,7 +79,7 @@ export function useCalendarAvailability(
         page: 1,
         limit: 100,
         depth: 1,
-        fields: { bookings: BOOKING_READ_FIELDS, instruments: "id,globalId,name,deleted" },
+        fields: { bookings: apiV2Fields(BOOKING_READ_FIELDS), instruments: "id,globalId,name,deleted" },
       }),
       "calendarAvailability",
     ],

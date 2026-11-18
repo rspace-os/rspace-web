@@ -23,6 +23,8 @@ const busy: BookingsRead = {
   canCancel: false,
   createdAt: bounds.start,
   updatedAt: bounds.start,
+  canViewConfiguration: true,
+  createdBy: null,
 };
 const pageEnvelope = (docs: readonly BookingsRead[], page = 1, hasNextPage = false): ListBookings200 => ({
   docs: [...docs],
