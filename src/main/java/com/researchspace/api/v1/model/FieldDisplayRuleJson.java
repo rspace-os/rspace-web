@@ -34,7 +34,7 @@ final class FieldDisplayRuleJson {
         throws IOException {
       JsonNode node = parser.readValueAsTree();
       try {
-        return FieldDisplayRule.fromJson(node.toString());
+        return FieldDisplayRule.fromJson(node);
       } catch (IllegalArgumentException e) {
         throw JsonMappingException.from(parser, e.getMessage(), e);
       }

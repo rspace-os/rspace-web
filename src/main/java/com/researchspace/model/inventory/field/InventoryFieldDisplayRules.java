@@ -8,6 +8,7 @@ import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
 import com.researchspace.model.field.rule.FieldSnapshot;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -189,10 +190,13 @@ public final class InventoryFieldDisplayRules {
       return;
     }
     List<Boolean> visible = visibility(fields);
+    // Identity, not equals: these are the same entity instances, possibly still unsaved.
+    Set<InventoryEntityField> flipped = Collections.newSetFromMap(new IdentityHashMap<>());
+    flipped.addAll(becameMandatory);
     for (int i = 0; i < fields.size(); i++) {
       InventoryEntityField field = fields.get(i);
       if (visible.get(i)
-          && becameMandatory.stream().anyMatch(f -> f == field)
+          && flipped.contains(field)
           && field.requiresValueWhenBecomingMandatoryOnTemplateUpdate()
           && !field.isValidValueForMandatoryField(field.getFieldData())) {
         throw new LocalizedIllegalStateException(
