@@ -159,6 +159,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     addUsersToGroup(u1, lg1, u2);
     Group lg2 = createGroup("lg2", u3);
     addUsersToGroup(u3, lg2, u4);
+    addUsersToGroup(u3, lg2, u2);
     Group unrelatedLabGroup = createGroup("unrelated", u5);
     addUsersToGroup(u5, unrelatedLabGroup, u6);
 
@@ -170,7 +171,8 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
 
     // flushDatabaseState();
     // so cg has 2 members; u2 and u4 should be available to add
-    // but not u5, who does not exist in a group
+    // but not u5, who does not exist in a group.
+    // u2 is in both lab groups but must appear only once.
     List<UserView> users = grpDao.getCandidateMembersOfCollabGroup(cg1.getId());
     assertThat(users).hasSize(2);
     // these are the two lab group members that aren't currently in the CG.
