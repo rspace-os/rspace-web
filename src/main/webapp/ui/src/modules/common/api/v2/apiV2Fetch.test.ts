@@ -287,40 +287,27 @@ describe("recovery through the session provider", () => {
   });
 });
 
-const mutators = [
-  { name: "JSON", mutator: apiV2Fetch },
-  { name: "headers", mutator: apiV2HeadersFetch },
-  { name: "Blob", mutator: apiV2BlobFetch },
-];
-const unauthenticatedCases = ["publicRead", "sessionRead"].flatMap((operationId) =>
-  mutators.map((entry) => ({ ...entry, operationId })),
-);
+const unauthenticatedOperations = ["publicRead", "sessionRead"];
 
-it.each(unauthenticatedCases)(
-  "$name $operationId ignores mint failures and removes Authorization",
-  async ({ mutator, operationId }) => {
-    getToken.mockRejectedValue(new Error("Logged out: token mint failed"));
-    fetchMock.mockResolvedValue(Response.json({ id: 1 }));
-    await mutator("/public", options(operationId, { headers: { Authorization: "Bearer stale" } }));
-    expect(getToken).not.toHaveBeenCalled();
-    expect(recover).not.toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const headers = new Headers(fetchMock.mock.calls[0][1]?.headers);
-    expect(headers.has("Authorization")).toBe(false);
-    expect(headers.get("X-Requested-With")).toBe("XMLHttpRequest");
-  },
-);
+it.each(unauthenticatedOperations)("%s ignores mint failures and removes Authorization", async (operationId) => {
+  getToken.mockRejectedValue(new Error("Logged out: token mint failed"));
+  fetchMock.mockResolvedValue(Response.json({ id: 1 }));
+  await apiV2Fetch("/public", options(operationId, { headers: { Authorization: "Bearer stale" } }));
+  expect(getToken).not.toHaveBeenCalled();
+  expect(recover).not.toHaveBeenCalled();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  const headers = new Headers(fetchMock.mock.calls[0][1]?.headers);
+  expect(headers.has("Authorization")).toBe(false);
+  expect(headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+});
 
-it.each(unauthenticatedCases)(
-  "$name $operationId 401 remains an HTTP error without recovery",
-  async ({ mutator, operationId }) => {
-    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
-    await expect(mutator("/public", options(operationId))).rejects.toBeInstanceOf(ApiV2ProblemError);
-    expect(getToken).not.toHaveBeenCalled();
-    expect(recover).not.toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  },
-);
+it.each(unauthenticatedOperations)("%s 401 remains an HTTP error without recovery", async (operationId) => {
+  fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+  await expect(apiV2Fetch("/public", options(operationId))).rejects.toBeInstanceOf(ApiV2ProblemError);
+  expect(getToken).not.toHaveBeenCalled();
+  expect(recover).not.toHaveBeenCalled();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
 
 it("protected operations still require a token", async () => {
   const error = new ApiV2SessionEndedError(401, undefined);

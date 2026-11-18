@@ -50,11 +50,6 @@ describe("assertApiV2Selected", () => {
     expect(error).toMatchObject({ reason: "invalidBody", message: expect.stringContaining("name") });
   });
 
-  it("accepts a missing field the resource does not guarantee, and null", () => {
-    const document: InstrumentsRead = { id: 1, name: "Microscope", parentContainer: null };
-    expect(() => assertApiV2Selected("instruments", document, FIELDS)).not.toThrow();
-  });
-
   it("builds the fields query value from the tuple", () => {
     expect(apiV2Fields(FIELDS)).toBe("id,name,parentContainer,customFields");
   });

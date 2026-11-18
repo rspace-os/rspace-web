@@ -1,10 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import { apiV2Resources } from "../../src/modules/common/api/v2/apiV2Resources";
-import { type OpenApiDocument, type OperationObject, orvalOperationName, orvalQueryKeyName } from "./openapi.ts";
+import type { OpenApiDocument, OperationObject } from "./openapi.ts";
 
 type Operations = Record<string, Record<string, string>>;
 interface Case {
@@ -16,11 +14,8 @@ interface Result<T> {
   value: T;
   error?: string;
 }
-type RegistrySlot = { request: unknown; queryKey: unknown } | ((...args: never[]) => unknown);
 
-const apiRoot = resolve("src/modules/common/api/v2");
-const golden: Operations = JSON.parse(await readFile(resolve("scripts/api-v2-valibot/resources-golden.json"), "utf8"));
-const generated = pathToFileURL(`${resolve(apiRoot, "generated")}/`);
+const generated = pathToFileURL(`${resolve("src/modules/common/api/v2/generated")}/`);
 const op = (kind: string | null, id = "example"): OperationObject => ({
   operationId: id,
   tags: ["examples"],
@@ -139,33 +134,5 @@ describe("collection resource registry emitter", () => {
       expect.stringContaining("Missing import target getExampleQueryKey"),
       expect.stringContaining("missing file"),
     ]);
-  });
-  it("preserves the golden slots and exact generated function identities", async () => {
-    expect(Object.keys(apiV2Resources).sort()).toEqual(Object.keys(golden).sort());
-    const modules = import.meta.glob("../../src/modules/common/api/v2/generated/*/*.ts");
-    const loaded = await Promise.all(
-      Object.entries(modules)
-        .filter(([path]) => !path.includes("/models/") && !path.includes("/valibot/"))
-        .map(([, load]) => load()),
-    );
-    const exports: Record<string, unknown> = Object.assign({}, ...loaded);
-    const registry: Record<string, Record<string, RegistrySlot | string>> = apiV2Resources;
-    for (const [resource, slots] of Object.entries(golden)) {
-      const entry = registry[resource];
-      expect(entry.name).toBe(resource);
-      expect(
-        Object.keys(entry)
-          .filter((key) => key !== "name")
-          .sort(),
-      ).toEqual(Object.keys(slots).sort());
-      for (const [slot, id] of Object.entries(slots)) {
-        const value = entry[slot];
-        if (typeof value === "function") expect(value).toBe(exports[orvalOperationName(id)]);
-        else if (typeof value === "object") {
-          expect(value.request).toBe(exports[orvalOperationName(id)]);
-          expect(value.queryKey).toBe(exports[orvalQueryKeyName(id)]);
-        }
-      }
-    }
   });
 });

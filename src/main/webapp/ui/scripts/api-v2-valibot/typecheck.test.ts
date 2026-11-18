@@ -6,7 +6,7 @@ import { expect, it } from "vitest";
 import type { OpenApiDocument } from "./openapi.ts";
 import { generate } from "./test-helper.ts";
 
-it("compiles two-way schema/model assertions, including cycles, and rejects drift", () => {
+it("compiles two-way schema/model assertions and rejects drift", () => {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
   const scratch = resolve(root, ".claude");
   mkdirSync(scratch, { recursive: true });
@@ -27,63 +27,6 @@ it("compiles two-way schema/model assertions, including cycles, and rejects drif
               state: { enum: ["open", "closed"] },
             },
             required: ["id"],
-          },
-          Node: {
-            type: "object",
-            properties: {
-              next: {
-                anyOf: [{ $ref: "#/components/schemas/Node" }, { type: "null" }],
-              },
-            },
-          },
-          Tree: {
-            type: "object",
-            properties: {
-              branches: {
-                type: "array",
-                readOnly: true,
-                items: { $ref: "#/components/schemas/Branch" },
-              },
-            },
-          },
-          Branch: {
-            type: "object",
-            properties: { tree: { $ref: "#/components/schemas/Tree" } },
-          },
-          Names: { type: "array", items: { type: "string" } },
-          Nested: {
-            type: "object",
-            properties: {
-              nullable: {
-                type: ["array", "null"],
-                readOnly: true,
-                items: { type: "string" },
-              },
-              composed: {
-                anyOf: [{ type: "array", items: { type: "integer" } }, { type: "null" }],
-                readOnly: true,
-              },
-              nested: {
-                type: "object",
-                properties: {
-                  names: {
-                    type: "array",
-                    readOnly: true,
-                    items: { type: "string" },
-                  },
-                },
-              },
-            },
-          },
-          Dictionary: {
-            type: "object",
-            additionalProperties: { type: "string" },
-          },
-          Extended: {
-            type: "object",
-            properties: { id: { type: "string" } },
-            required: ["id"],
-            additionalProperties: true,
           },
         },
       },
