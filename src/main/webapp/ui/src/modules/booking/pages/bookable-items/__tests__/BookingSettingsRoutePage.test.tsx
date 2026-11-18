@@ -19,6 +19,7 @@ import BookingSettingsRoutePage from "@/modules/booking/pages/bookable-items/Boo
 
 const settings = {
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
   bufferBeforeMinutes: 3,
   bufferAfterMinutes: 7,
@@ -28,6 +29,7 @@ const settings = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
+  timeFormat: "AUTOMATIC",
   institutionTimezone: "UTC",
   defaultSharedWith: "ALL_USERS" as const,
   selectedAccessGrantees: [],
