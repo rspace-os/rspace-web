@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.controller.InstrumentsApiController;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -18,8 +19,10 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -31,8 +34,11 @@ import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,9 +57,12 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
 
   private static final String GMO = "Is this a GMO?";
   private static final String PERMIT = "GMO permit number";
+  private static final String PROTOCOL = "Protocol";
+  private static final String LANDING_PAGE = "Landing page";
   private static final String MANDATORY_MISSING = "validation.inventoryField.invalidForFieldType";
 
   private @Autowired SamplesApiController samplesController;
+  private @Autowired InstrumentsApiController instrumentsController;
 
   private User user;
   private String gmoKey;
@@ -365,6 +374,59 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
     ApiSample rename = sampleUpdate(sample);
     rename.setName("renamed");
     assertEquals("renamed", sampleApiMgr.updateApiSample(rename, user).getName());
+
+    // the UI echoes every field, sending "" for empty content
+    ApiSample echo = sampleUpdate(sample);
+    echo.setName("renamed again");
+    echo.getFields().add(optionsUpdate(field(updated, GMO), "Yes"));
+    echo.getFields().add(contentUpdate(field(updated, PERMIT), ""));
+    assertEquals("renamed again", sampleApiMgr.updateApiSample(echo, user).getName());
+  }
+
+  @Test
+  void ruledLinkFieldIsRequiredOnlyWhileShown() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("GMO with protocol");
+    post.getFields().add(gmoField(null));
+    post.getFields().add(protocolField());
+    ApiSampleTemplate template = sampleApiMgr.createSampleTemplate(post, user);
+    String target = createBasicSampleForUser(user).getGlobalId();
+
+    assertMandatoryMissing(() -> createSampleWithProtocol(template, "Yes", null));
+    ApiSampleWithFullSubSamples shown = createSampleWithProtocol(template, "Yes", target);
+    ApiSampleWithFullSubSamples hidden = createSampleWithProtocol(template, "No", target);
+    ApiSampleWithFullSubSamples hiddenEmpty = createSampleWithProtocol(template, "No", null);
+
+    // a field update without a link clears an item's link
+    ApiSample clearShown = sampleUpdate(shown);
+    clearShown.getFields().add(fieldUpdate(field(shown, PROTOCOL)));
+    assertMandatoryMissing(() -> sampleApiMgr.updateApiSample(clearShown, user));
+
+    ApiSample clearHidden = sampleUpdate(hidden);
+    clearHidden.getFields().add(fieldUpdate(field(hidden, PROTOCOL)));
+    assertNull(field(sampleApiMgr.updateApiSample(clearHidden, user), PROTOCOL).getLink());
+
+    ApiSample reveal = sampleUpdate(hiddenEmpty);
+    reveal.getFields().add(optionsUpdate(field(hiddenEmpty, GMO), "Yes"));
+    assertMandatoryMissing(() -> sampleApiMgr.updateApiSample(reveal, user));
+  }
+
+  @Test
+  void nullSelectedOptionIsAFieldErrorNotACrash() {
+    ApiSampleTemplatePost post = new ApiSampleTemplatePost();
+    post.setName("no rules");
+    post.getFields().add(gmoField(null));
+    ApiSampleTemplate template = sampleApiMgr.createSampleTemplate(post, user);
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples();
+    sample.setName("null option");
+    sample.setTemplateId(template.getId());
+    ApiInventoryEntityField nullOption = new ApiInventoryEntityField();
+    nullOption.setSelectedOptions(Collections.singletonList(null));
+    sample.getFields().add(nullOption);
+
+    BindingResult errors = validateCreate(sample);
+    assertEquals(
+        "validation.inventoryField.optionsNotAllowed", errors.getFieldError("fields").getCode());
   }
 
   @Test
@@ -470,7 +532,127 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
     assertNull(field(created, "Landing page").getContent());
   }
 
+  @Test
+  void blankLandingPageIsAcceptedOnCreateAtThePublicEndpoint() throws Exception {
+    ApiInstrumentTemplate ruled = createLandingPageTemplate(showWhenGmoIs("Yes"));
+    ApiInstrument created = postInstrument(ruled, "Yes", "");
+    assertNull(field(created, LANDING_PAGE).getContent());
+
+    ApiInstrumentTemplate unruled = createLandingPageTemplate(null);
+    assertNull(field(postInstrument(unruled, "Yes", ""), LANDING_PAGE).getContent());
+  }
+
+  @Test
+  void userCannotBlankAShownMandatoryLandingPage() throws Exception {
+    ApiInstrumentTemplate template = createLandingPageTemplate(showWhenGmoIs("Yes"));
+    ApiInstrument instrument = postInstrument(template, "Yes", "");
+    putInstrument(instrument, contentUpdate(field(instrument, LANDING_PAGE), "https://lab.org/a"));
+
+    assertMandatoryMissing(
+        () -> {
+          try {
+            putInstrument(instrument, contentUpdate(field(instrument, LANDING_PAGE), ""));
+          } catch (BindException e) {
+            throw new IllegalStateException(e);
+          }
+        });
+  }
+
+  @Test
+  void deletingTheIdentifierThatWroteAShownMandatoryLandingPageClearsIt() throws Exception {
+    ApiInstrumentTemplate template = createLandingPageTemplate(showWhenGmoIs("Yes"));
+    ApiInstrument instrument = postInstrument(template, "Yes", "");
+    String suffix = "abc123XYZ_-456789";
+    putInstrument(
+        instrument,
+        contentUpdate(
+            field(instrument, LANDING_PAGE),
+            "https://rspace.example.com/public/inventory/" + suffix));
+    Instrument entity =
+        sessionFactory.getCurrentSession().get(Instrument.class, instrument.getId());
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier("10.82316/test", "test", suffix);
+    doi.setOwner(user);
+    entity.addIdentifier(doi);
+    sessionFactory.getCurrentSession().flush();
+
+    ApiInstrument deleteIdentifier = new ApiInstrument();
+    ApiInventoryDOI deleteRequest = new ApiInventoryDOI();
+    deleteRequest.setId(doi.getId());
+    deleteRequest.setDeleteIdentifierRequest(true);
+    deleteIdentifier.setIdentifiers(List.of(deleteRequest));
+    ApiInstrument updated =
+        instrumentsController.updateInstrument(
+            instrument.getId(), deleteIdentifier, bindingResult(deleteIdentifier), user);
+
+    assertNull(field(updated, LANDING_PAGE).getContent());
+  }
+
   // ------------------------------------------------------------------ helpers
+
+  private ApiInventoryEntityField protocolField() {
+    ApiInventoryEntityField protocol = new ApiInventoryEntityField();
+    protocol.setName(PROTOCOL);
+    protocol.setType(ApiFieldType.LINK);
+    protocol.setMandatory(true);
+    protocol.setDisplayRule(showWhenGmoIs("Yes"));
+    return protocol;
+  }
+
+  /** Field values in template order: GMO, then the protocol link. */
+  private ApiSampleWithFullSubSamples createSampleWithProtocol(
+      ApiSampleTemplate template, String gmo, String targetGlobalId) {
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples();
+    sample.setName("GMO sample with protocol");
+    sample.setTemplateId(template.getId());
+    sample.getFields().add(optionsValue(gmo));
+    ApiInventoryEntityField protocol = new ApiInventoryEntityField();
+    if (targetGlobalId != null) {
+      ApiInventoryLink link = new ApiInventoryLink();
+      link.setTargetGlobalId(targetGlobalId);
+      link.setRelationType("References");
+      protocol.setLink(link);
+    }
+    sample.getFields().add(protocol);
+    return sampleApiMgr.createNewApiSample(sample, user);
+  }
+
+  /** GMO, then a mandatory Landing page with the given rule and a template value. */
+  private ApiInstrumentTemplate createLandingPageTemplate(FieldDisplayRule rule) {
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    post.setName("instruments with a landing page");
+    post.getFields().add(gmoField(null));
+    ApiInventoryEntityField landingPage = new ApiInventoryEntityField();
+    landingPage.setName(LANDING_PAGE);
+    landingPage.setType(ApiFieldType.URI);
+    landingPage.setContent("https://example.org/template-page");
+    landingPage.setMandatory(true);
+    landingPage.setDisplayRule(rule);
+    post.getFields().add(landingPage);
+    return instrumentApiMgr.createInstrumentTemplate(post, user);
+  }
+
+  /** Through the controller, so the request passes the POST validators as a client's would. */
+  private ApiInstrument postInstrument(
+      ApiInstrumentTemplate template, String gmo, String landingPage) throws BindException {
+    ApiInstrument instrument = new ApiInstrument();
+    instrument.setName("instrument");
+    instrument.setTemplateId(template.getId());
+    instrument.getFields().add(optionsValue(gmo));
+    instrument.getFields().add(contentValue(landingPage));
+    return instrumentsController.createNewInstrument(instrument, bindingResult(instrument), user);
+  }
+
+  private ApiInstrument putInstrument(ApiInstrument instrument, ApiInventoryEntityField fieldUpdate)
+      throws BindException {
+    ApiInstrument update = new ApiInstrument();
+    update.getFields().add(fieldUpdate);
+    return instrumentsController.updateInstrument(
+        instrument.getId(), update, bindingResult(update), user);
+  }
+
+  private static BindingResult bindingResult(ApiInstrument instrument) {
+    return new BeanPropertyBindingResult(instrument, "instrument");
+  }
 
   private FieldDisplayRule showWhenGmoIs(String option) {
     return new FieldDisplayRule(gmoKey, ConditionOperator.IS_ANY_OF, List.of(option));

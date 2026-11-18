@@ -837,8 +837,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       boolean alreadyChanged,
       User user) {
     assertAccessPermissionsChangeAllowed(dbSample, apiSample, user);
+    // templates are not records: their rules are validated instead of their mandatory fields
     RecordBeforeUpdate fieldsBeforeUpdate =
-        InventoryFieldDisplayRules.beforeUpdate(dbSample.getActiveFields());
+        dbSample.isTemplate()
+            ? null
+            : InventoryFieldDisplayRules.beforeUpdate(dbSample.getActiveFields());
     boolean contentChanged = alreadyChanged;
     contentChanged |=
         extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSample(

@@ -168,13 +168,26 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * A blank Landing page is its resting state rather than missing input (see {@link
-   * #assertDefaultFieldsValid}), so it is exempt from the mandatory check for fields with a display
-   * rule too.
+   * A blank Landing page is a new instrument's resting state rather than missing input (see {@link
+   * #assertDefaultFieldsValid}), so on create it is exempt from the mandatory check for fields with
+   * a display rule too.
    */
   private static Predicate<InventoryEntityField> isLandingPageOf(InstrumentEntity record) {
     InventoryEntityField landingPage = landingPageField(record).orElse(null);
     return field -> field == landingPage;
+  }
+
+  /**
+   * On update, a blank Landing page is exempt only when the user did not blank it: it was already
+   * blank before the update, or {@link #clearLandingPageOfDeletedIdentifier} cleared it. A request
+   * that blanks a shown, mandatory Landing page is rejected, as it is for a field without a rule.
+   *
+   * @param landingPage the instrument's Landing page field, resolved before the update
+   */
+  private static Predicate<InventoryEntityField> isBlankLandingPageNotBlankedByUser(
+      InventoryEntityField landingPage, boolean wasBlank, boolean clearedWithIdentifier) {
+    boolean exempt = landingPage != null && (wasBlank || clearedWithIdentifier);
+    return field -> exempt && field == landingPage;
   }
 
   /**
@@ -431,6 +444,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       assertAccessPermissionsChangeAllowed(dbInstrument, apiInstrument, user);
       RecordBeforeUpdate fieldsBeforeUpdate =
           InventoryFieldDisplayRules.beforeUpdate(dbInstrument.getActiveFields());
+      InventoryEntityField landingPage = landingPageField(dbInstrument).orElse(null);
+      boolean landingPageWasBlank =
+          landingPage != null && StringUtils.isBlank(landingPage.getFieldData());
       Container orgParent = dbInstrument.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
@@ -442,15 +458,17 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createDeleteRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       // after the deletion above, which is what makes the identifier's suffix findable as deleted
-      contentChanged |=
+      boolean landingPageCleared =
           clearLandingPageOfDeletedIdentifier(apiInstrument.getIdentifiers(), dbInstrument);
+      contentChanged |= landingPageCleared;
       contentChanged |=
           identifiersHelper.createAssignRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
       contentChanged |= applyLinkFieldValuesOnUpdate(apiInstrument, dbInstrument, user);
       fieldsBeforeUpdate.assertShownMandatoryFieldsFilled(
-          dbInstrument.getActiveFields(), isLandingPageOf(dbInstrument));
+          dbInstrument.getActiveFields(),
+          isBlankLandingPageNotBlankedByUser(landingPage, landingPageWasBlank, landingPageCleared));
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);
