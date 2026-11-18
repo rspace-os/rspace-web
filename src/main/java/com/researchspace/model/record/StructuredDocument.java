@@ -8,6 +8,7 @@ import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldType;
@@ -650,6 +651,16 @@ public class StructuredDocument extends Record implements TaggableElnRecord {
   }
 
   private boolean allFieldsValid = true;
+
+  /**
+   * Whether every mandatory field that is shown has data, evaluating the form's display rules
+   * against this document's current values. A hidden mandatory field is never missing. Callers
+   * store the result with {@link #setAllFieldsValid(boolean)}; stored values on existing documents
+   * are not recomputed.
+   */
+  public boolean everyShownMandatoryFieldHasData() {
+    return ElnFieldRules.everyShownMandatoryFieldHasData(getFields());
+  }
 
   // @Transient
   public boolean isAllFieldsValid() {

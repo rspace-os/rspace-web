@@ -13,12 +13,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
+import com.researchspace.api.v1.model.ApiDocument;
 import com.researchspace.api.v1.model.ApiForm;
 import com.researchspace.api.v1.model.ApiFormField;
 import com.researchspace.api.v1.model.ApiFormSearchResult;
 import com.researchspace.api.v1.model.ApiStringFormField;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.RSForm;
@@ -28,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -476,6 +479,77 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
         ((ApiStringFormField) apiForm5_fieldEdited.getFields().get(newIndex)).getDefaultValue());
     assertThat(apiForm5_fieldEdited.getFields()).hasSize(originalFieldCount - 1);
     assertFieldOrder(apiForm5_fieldEdited, expectedNames);
+  }
+
+  @Test
+  public void displayRulesAreWrittenAndReadThroughTheFormsAndDocumentsApi() throws Exception {
+    String gmoKey = "6f1c2e0a-0000-4000-8000-0000000000aa";
+    FormTemplatesCommon.RadioFieldPost gmo = new FormTemplatesCommon.RadioFieldPost();
+    gmo.setName("GMO?");
+    gmo.setOptions(List.of("Yes", "No"));
+    gmo.setDefaultOption("No");
+    gmo.setFieldKey(gmoKey);
+    FormTemplatesCommon.StringFieldPost permit = createAStringField();
+    permit.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Yes")));
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("GMO form");
+    formPost.setFields(new ArrayList<>(List.of(gmo, permit)));
+
+    ApiForm created = postANewForm(formPost);
+    assertEquals(gmoKey, created.getFields().get(0).getFieldKey());
+    assertNull(created.getFields().get(0).getDisplayRule());
+    FieldDisplayRuleDTO expectedRule = new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Yes"));
+    assertEquals(expectedRule, created.getFields().get(1).getDisplayRule());
+
+    // a PUT that omits the rule keeps it
+    FormTemplatesCommon.StringFieldPost permitWithoutRule = createAStringField();
+    permitWithoutRule.setId(created.getFields().get(1).getId());
+    gmo.setId(created.getFields().get(0).getId());
+    gmo.setFieldKey(null);
+    formPost.setFields(new ArrayList<>(List.of(gmo, permitWithoutRule)));
+    ApiForm edited = doFormEditPut(formPost, created.getId());
+    assertEquals(expectedRule, edited.getFields().get(1).getDisplayRule());
+
+    // a rule naming an option the source does not offer rejects the whole request
+    FormTemplatesCommon.StringFieldPost badRule = createAStringField();
+    badRule.setName("renamed");
+    badRule.setId(created.getFields().get(1).getId());
+    badRule.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Maybe")));
+    formPost.setFields(new ArrayList<>(List.of(gmo, badRule)));
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+        .andExpect(status().is4xxClientError());
+    ApiForm unchanged = getForm(created.getId());
+    assertEquals(permitWithoutRule.getName(), unchanged.getFields().get(1).getName());
+    assertEquals(expectedRule, unchanged.getFields().get(1).getDisplayRule());
+
+    // documents report each field's key and rule from their own form version
+    putUrl(extractLinkByRel(created, "publish"));
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(
+            folderMgr.getRootFolderForUser(anyUser).getId(), created.getId(), anyUser);
+    MvcResult docResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKeyAnyUser, "/documents/" + doc.getId(), anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiDocument apiDoc = getFromJsonResponseBody(docResult, ApiDocument.class);
+    assertEquals(gmoKey, apiDoc.getFields().get(0).getFieldKey());
+    assertEquals(expectedRule, apiDoc.getFields().get(1).getDisplayRule());
+  }
+
+  private ApiForm getForm(Long formId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKeyAnyUser, "/forms/" + formId, anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiForm.class);
   }
 
   private void assertFieldOrder(ApiForm apiFormWithAddedField, List<String> expectedNames) {

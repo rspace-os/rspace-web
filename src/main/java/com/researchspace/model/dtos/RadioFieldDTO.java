@@ -3,10 +3,12 @@ package com.researchspace.model.dtos;
 import com.researchspace.model.field.RadioFieldForm;
 import java.util.Date;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class RadioFieldDTO<T> extends AbstractFormFieldDTO<RadioFieldForm> {
 
   private String radioValues;

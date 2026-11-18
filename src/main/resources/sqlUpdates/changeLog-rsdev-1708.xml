@@ -1,0 +1,23 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-18-rsdev1708-fieldform-key-and-display-rule" context="run" author="tchoi-rs">
+        <comment>RSDEV-1708: ELN form fields gain a field key (a lowercase UUID copied with the field) and an optional display rule (JSON) that shows the field only when another field has a given value</comment>
+        <addColumn tableName="FieldForm">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="longtext"/>
+        </addColumn>
+        <addColumn tableName="FieldForm_AUD">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="longtext"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-11-18-rsdev1708-fieldform-key-backfill" context="run" author="tchoi-rs">
+        <comment>RSDEV-1708: give every existing ELN form field a key, so that any field can be picked as a rule source or target</comment>
+        <sql>update FieldForm set fieldKey = lower(uuid()) where fieldKey is null;</sql>
+    </changeSet>
+</databaseChangeLog>

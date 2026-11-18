@@ -8,13 +8,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
+import com.researchspace.archive.ArchivalFieldForm;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.ArchiveComment;
+import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -30,9 +33,11 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.FieldTestUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.File;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ArchiveModelFactoryTest {
   RSForm form;
@@ -79,6 +84,36 @@ public class ArchiveModelFactoryTest {
     form.setId(1L);
     ArchivalForm arForm = factory.createArchivalForm(form, "form");
     assertThat(arForm.getFieldFormList()).hasSize(4);
+  }
+
+  @Test
+  public void fieldKeysAndDisplayRulesAreExportedAndReadBack(@TempDir File folder)
+      throws Exception {
+    form.setId(1L);
+    RadioFieldForm gmo = new RadioFieldForm("GMO?");
+    gmo.setRadioOption("fieldChoices=Yes&fieldChoices=No");
+    gmo.setFieldKey("6f1c2e0a-0000-4000-8000-000000000001");
+    gmo.setColumnIndex(1);
+    TextFieldForm permit = new TextFieldForm("Permit");
+    permit.setFieldKey("6f1c2e0a-0000-4000-8000-000000000002");
+    permit.setDisplayRule(
+        "{\"sourceFieldKey\":\"6f1c2e0a-0000-4000-8000-000000000001\",\"operator\":\"HAS_VALUE\"}");
+    permit.setColumnIndex(2);
+    form.addFieldForm(gmo);
+    form.addFieldForm(permit);
+
+    ArchivalForm exported = factory.createArchivalForm(form, "form");
+    File xml = new File(folder, "form.xml");
+    XMLReadWriteUtils.toXML(xml, exported, ArchivalForm.class);
+    ArchivalForm read = XMLReadWriteUtils.fromXML(xml, ArchivalForm.class, null, null);
+
+    List<ArchivalFieldForm> fields = read.getFieldFormList();
+    assertThat(fields).hasSize(3);
+    assertNull(fields.get(0).getDisplayRule());
+    assertEquals(gmo.getFieldKey(), fields.get(1).getFieldKey());
+    assertNull(fields.get(1).getDisplayRule());
+    assertEquals(permit.getFieldKey(), fields.get(2).getFieldKey());
+    assertEquals(permit.getDisplayRule(), fields.get(2).getDisplayRule());
   }
 
   @Test

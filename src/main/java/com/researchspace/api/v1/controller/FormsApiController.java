@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
 
 import com.researchspace.api.v1.FormsApi;
-import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.LinkTemplateProvider;
 import com.researchspace.api.v1.model.ApiForm;
@@ -136,16 +135,8 @@ public class FormsApiController extends BaseApiController implements FormsApi {
       @RequestAttribute(name = "user") User user)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    RSForm form = formMgr.create(user);
-    form.setName(formPost.getName());
-    form.setTags(formPost.getTags());
-    form.setFormType(formPost.getFormType());
-    form = formMgr.save(form, user);
-    for (FormFieldPost<? extends FieldForm> toPost : formPost.getFields()) {
-      formMgr.createFieldForm(toPost, form.getId(), user);
-    }
-    form = formMgr.getWithPopulatedFieldForms(form.getId(), user);
-
+    AbstractForm created = formApiHandler.createForm(formPost, user);
+    RSForm form = formMgr.getWithPopulatedFieldForms(created.getId(), user);
     return convertToApiForm(user, form);
   }
 

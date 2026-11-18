@@ -41,6 +41,12 @@ public interface IFieldForm {
 
   FieldType getType();
 
+  /** Identifies the field within its form; see {@link FieldForm#getFieldKey()}. */
+  String getFieldKey();
+
+  /** The stored display rule JSON, or null when the field is always shown. */
+  String getDisplayRule();
+
   /**
    * Persistence ID
    *

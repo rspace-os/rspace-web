@@ -1,32 +1,33 @@
 package com.researchspace.api.v1.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommonTest;
-import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.FormFieldSource;
-import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.service.FormDefinitionCommand;
 import com.researchspace.service.FormManager;
-import com.researchspace.service.JsonMessageSource;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class FormApiHandlerImplTest {
@@ -34,83 +35,61 @@ public class FormApiHandlerImplTest {
   @InjectMocks RSFormApiHandlerImpl impl;
   User anyUser;
   RSForm anyForm;
-  final Long formInitialId = 1L;
-  final Long fieldFormInitialId = -1L;
   UserSessionTracker sessionTracker;
   FormPost toPost;
 
   @BeforeEach
   public void setup() {
-    ReflectionTestUtils.setField(impl, "messages", new MessageSourceUtils(new JsonMessageSource()));
     anyUser = TestFactory.createAnyUser("any");
     sessionTracker = new UserSessionTracker();
-    // single field
     anyForm = TestFactory.createAnyForm();
-    anyForm.setId(formInitialId);
-    anyForm.getFieldForms().get(0).setId(fieldFormInitialId);
-    // creates a post with 6 fields
     toPost = FormTemplatesCommonTest.createValidFormPost();
   }
 
   @Test
-  public void testEditFormRejectedIfCannotEdit() {
-    anyForm.setEditStatus(EditStatus.CAN_NEVER_EDIT);
-    mockGetFormForEditing();
-    assertThrows(
-        IllegalStateException.class,
-        () -> impl.editForm(formInitialId, toPost, anyUser, sessionTracker));
-  }
-
-  @Test
-  public void testEditFormRejectedIfIdDoesntBelongToForm() {
-    anyForm.setEditStatus(EditStatus.CAN_NEVER_EDIT);
-    toPost.getFields().get(0).setId(fieldFormInitialId + 1000);
-    mockGetFormForEditing();
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> impl.editForm(formInitialId, toPost, anyUser, sessionTracker));
-  }
-
-  @Test
-  public void testEditFormWithNewFieldsNeverCallsUpdate() {
-    anyForm.setEditStatus(EditStatus.EDIT_MODE);
-    mockGetFormForEditing();
-    when(formMgr.createFieldForm(
-            Mockito.any(FormFieldSource.class), Mockito.anyLong(), Mockito.eq(anyUser)))
-        .thenReturn(
-            createFieldWithId(10),
-            createFieldWithId(11),
-            createFieldWithId(12),
-            createFieldWithId(13),
-            createFieldWithId(14),
-            createFieldWithId(15));
-    when(formMgr.save(anyForm, anyUser)).thenReturn(anyForm);
-
-    when(formMgr.reorderFields(
-            Mockito.eq(anyForm.getId()), Mockito.any(List.class), Mockito.eq(anyUser)))
+  public void editDelegatesTheWholeDefinitionToTheFormManager() {
+    toPost.getFields().get(0).setId(5L);
+    ArgumentCaptor<FormDefinitionCommand> definition =
+        ArgumentCaptor.forClass(FormDefinitionCommand.class);
+    when(formMgr.editForm(eq(1L), definition.capture(), eq(anyUser), eq(sessionTracker)))
         .thenReturn(anyForm);
 
-    impl.editForm(formInitialId, toPost, anyUser, sessionTracker);
-    verify(formMgr, never())
-        .updateFieldForm(
-            Mockito.any(FormFieldSource.class), Mockito.anyLong(), Mockito.eq(anyUser));
-    final int numberOfNewFields = 9;
-    verify(formMgr, times(numberOfNewFields))
-        .createFieldForm(
-            Mockito.any(FormFieldSource.class), Mockito.anyLong(), Mockito.eq(anyUser));
-    // the original field is deleted.
-    verify(formMgr, times(1))
-        .deleteFieldFromForm(Mockito.eq(fieldFormInitialId), Mockito.eq(anyUser));
+    assertSame(anyForm, impl.editForm(1L, toPost, anyUser, sessionTracker));
+
+    FormDefinitionCommand sent = definition.getValue();
+    assertEquals(toPost.getName(), sent.name());
+    assertEquals(toPost.getTags(), sent.tags());
+    assertThat(sent.fields()).hasSameSizeAs(toPost.getFields());
+    for (int i = 0; i < sent.fields().size(); i++) {
+      FormFieldPost<?> posted = toPost.getFields().get(i);
+      FormFieldSaveItem item = sent.fields().get(i);
+      assertEquals(posted.getId(), item.getId());
+      assertEquals(posted.getType(), item.getType());
+      assertSame(posted, item.getSource());
+    }
   }
 
-  RadioFieldForm createFieldWithId(int i) {
-    RadioFieldForm rc = new RadioFieldForm();
-    rc.setId(Integer.valueOf(i).longValue());
-    return rc;
+  @Test
+  public void anOmittedRuleKeepsTheStoredRuleAndAnExplicitNullClearsIt() {
+    FormFieldPost<?> cleared = toPost.getFields().get(1);
+    cleared.setDisplayRule(null);
+    FormFieldPost<?> set = toPost.getFields().get(2);
+    FieldDisplayRuleDTO rule = new FieldDisplayRuleDTO("k", "HAS_VALUE", List.of());
+    set.setDisplayRule(rule);
+    set.setFieldKey("6f1c2e0a-0000-4000-8000-000000000000");
+
+    List<FormFieldSaveItem> fields = impl.toDefinition(toPost).fields();
+
+    assertTrue(fields.get(0).isKeepStoredDisplayRule());
+    assertFalse(fields.get(1).isKeepStoredDisplayRule());
+    assertFalse(fields.get(2).isKeepStoredDisplayRule());
+    assertEquals(rule, fields.get(2).getDisplayRule());
+    assertEquals(set.getFieldKey(), fields.get(2).getFieldKey());
   }
 
-  private void mockGetFormForEditing() {
-    when(formMgr.get(formInitialId, anyUser)).thenReturn(anyForm);
-    when(formMgr.getForEditing(formInitialId, anyUser, sessionTracker, false)).thenReturn(anyForm);
+  @Test
+  public void createDelegatesToTheFormManager() {
+    when(formMgr.createForm(any(), eq(anyUser))).thenReturn(anyForm);
+    assertSame(anyForm, impl.createForm(toPost, anyUser));
   }
 }

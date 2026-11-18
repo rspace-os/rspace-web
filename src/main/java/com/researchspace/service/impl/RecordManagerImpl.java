@@ -220,8 +220,7 @@ public class RecordManagerImpl implements RecordManager {
       long templateId, String newname, User user, Long targetFolderId) {
     RecordCopyResult copy = copy(templateId, newname, user, targetFolderId);
     StructuredDocument createdDoc = (StructuredDocument) copy.getUniqueCopy();
-    List<Field> listFields = createdDoc.getFields();
-    createdDoc.setAllFieldsValid(listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
+    createdDoc.setAllFieldsValid(createdDoc.everyShownMandatoryFieldHasData());
     createdDoc.notifyDelta(
         DeltaType.CREATED_FROM_TEMPLATE, getTemplateCreationDeltaMsg(templateId, copy, createdDoc));
     // the copy inherits the template owner's createdBy/modifiedBy, so reset to the creator
@@ -383,8 +382,7 @@ public class RecordManagerImpl implements RecordManager {
     } else {
       rc = recordFactory.createStructuredDocument(recordName, user, form, override);
     }
-    List<Field> listFields = rc.getFields();
-    rc.setAllFieldsValid(listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
+    rc.setAllFieldsValid(rc.everyShownMandatoryFieldHasData());
 
     rc.setIconId(form.getIconId());
     cleanTextFieldsContent(rc);
@@ -756,8 +754,7 @@ public class RecordManagerImpl implements RecordManager {
         field.setTempField(null);
       }
     }
-    structuredDocument.setAllFieldsValid(
-        listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
+    structuredDocument.setAllFieldsValid(structuredDocument.everyShownMandatoryFieldHasData());
 
     if (!contentChanged && warningList != null) {
       warningList.addErrorMsg("content.not.changed");
