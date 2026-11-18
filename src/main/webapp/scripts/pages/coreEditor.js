@@ -363,6 +363,14 @@ function updateAttachmentDivs($attachmentDivs) {
   $attachmentDivs.each(function () {
     var $thisDiv = $(this);
 
+    // FLV can't be played by any browser, so it is offered as a download (RSDEV-1405).
+    // Its audio/video markup has no a.attachmentLinked and may hold a legacy Flash player.
+    const avFileName = $thisDiv.find('p.attachmentP a').first().text().trim();
+    const isFlvAttachment = $thisDiv.find('a.attachmentLinked').length === 0 && /\.flv$/i.test(avFileName);
+    if (isFlvAttachment) {
+      $thisDiv.find('.mediaDiv').remove();
+    }
+
     const isAudioVideo = $thisDiv.find('.mediaDiv').length > 0;
     if (isAudioVideo) {
       /* for audio/videos we repackage the content into 'attachmentPanel' div,
@@ -388,10 +396,12 @@ function updateAttachmentDivs($attachmentDivs) {
     }
 
     var id = getAttachmentIdFrom$Div($thisDiv);
-    var revision = $thisDiv.find('a.attachmentLinked').data('rsrevision');
+    var revision = isFlvAttachment
+      ? $thisDiv.find('img.attachmentIcon').data('rsrevision')
+      : $thisDiv.find('a.attachmentLinked').data('rsrevision');
     var $attachmentLink = $thisDiv.find('.attachmentLinked');
     var attachmentType = $attachmentLink.data('type');
-    var fileName = $attachmentLink.text();
+    var fileName = isFlvAttachment ? avFileName : $attachmentLink.text();
     var extension = fileName.substring(fileName.lastIndexOf('.') + 1);
     var oldIconSrc = $thisDiv.find(".attachmentIcon").attr('src');
     var thumbnailId = _getThumbnailIdFromAttachmentIconSrc(oldIconSrc, id);

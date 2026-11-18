@@ -1075,7 +1075,7 @@ RS.ajaxFailed = function (action, pageWasBlocked, jqxhr, showAsToast) {
  * Boolean test for whether the given fileExtension can be handled by jw player
  */
 function isPlayableOnJWPlayer(extension) {
-  if (typeof extension !== 'undefined' && (extension == 'mp4' || extension == 'flv' || extension == 'acc' ||
+  if (typeof extension !== 'undefined' && (extension == 'mp4' || extension == 'acc' ||
     extension == 'mp3' || extension == 'ogg')) {
     return true;
   } else {
@@ -1103,7 +1103,7 @@ function getMediaPlayerHTML(id, name, extension) {
  * Given an id,name and extension, creates a JD media player
  * @param id - a DB id of an ECatVideo or EcatAudio
  * @param name - the file name of the media file to play
- * @param extension - the file extension - currently mp4,flv,acc,mp3,ogg are supported
+ * @param extension - the file extension - currently mp4,acc,mp3,ogg are supported
  * @returns the HTML for the player, that can be inserted where appropriate by the calling code.
  */
 function setUpJWMediaPlayer(id, name, extension) {
