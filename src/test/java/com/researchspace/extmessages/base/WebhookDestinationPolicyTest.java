@@ -47,6 +47,8 @@ class WebhookDestinationPolicyTest {
       strings = {
         "hooks.slack.com",
         "https://h.*.example",
+        "https://*.*.example.org",
+        "https://*.example.org:*",
         "https://",
         "https://*.0.0.1",
         "https://*.[::1]",
