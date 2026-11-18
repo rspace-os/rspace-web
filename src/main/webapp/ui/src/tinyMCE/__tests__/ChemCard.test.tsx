@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import "@/__tests__/__mocks__/matchMedia";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";

@@ -12,6 +12,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -21,8 +22,10 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import React, { useId, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import createAccentedTheme from "@/accentedTheme";
+import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import {
   type Bond,
@@ -245,9 +248,11 @@ function SupportedResult({
               alt={imageAlt}
               sx={{ display: "block", maxWidth: "100%", height: "auto", mx: "auto" }}
             />
-            <Typography component="figcaption" variant="caption" sx={{ display: "block" }}>
-              {legend}
-            </Typography>
+            {rows.length > 0 && (
+              <Typography component="figcaption" variant="caption" sx={{ display: "block" }}>
+                {legend}
+              </Typography>
+            )}
           </Box>
         )}
         <Stack spacing={2}>
@@ -415,12 +420,16 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
 export default function BondStrengthsDialog({ open, onClose, ...resultProps }: BondStrengthsDialogProps) {
   const { t } = useTranslation(["workspace", "common"]);
   const titleId = useId();
+  // The editor sidebar and view mode open the dialog under different themes, so it brings its own.
+  const theme = useMemo(() => createAccentedTheme(ACCENT_COLOR), []);
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="md" fullWidth>
-      <DialogTitle id={titleId}>{t("tinymce.bondStrengths.dialog.title")}</DialogTitle>
-      {/* Dialog only mounts its children while open, so the request is made on open and not before. */}
-      <BondStrengthsResult onClose={onClose} {...resultProps} />
-    </Dialog>
+    <ThemeProvider theme={theme}>
+      <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="md" fullWidth>
+        <DialogTitle id={titleId}>{t("tinymce.bondStrengths.dialog.title")}</DialogTitle>
+        {/* Dialog only mounts its children while open, so the request is made on open and not before. */}
+        <BondStrengthsResult onClose={onClose} {...resultProps} />
+      </Dialog>
+    </ThemeProvider>
   );
 }

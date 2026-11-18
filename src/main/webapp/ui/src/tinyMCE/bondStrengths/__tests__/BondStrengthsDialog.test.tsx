@@ -4,6 +4,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import "@/__tests__/__mocks__/matchMedia";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
@@ -263,6 +264,7 @@ describe("BondStrengthsDialog", () => {
       "2 ring bonds have no value. Ring bonds are not covered.",
     );
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText(legend)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Insert into document" })).not.toBeInTheDocument();
   });
 });
