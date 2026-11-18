@@ -10,9 +10,11 @@ import {
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
+import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
@@ -65,6 +67,11 @@ const projection = {
     "updatedAt",
   ],
 } as const;
+/** Rows carry the fixed projection, so its guaranteed fields are asserted before mapping. */
+function mapProjectedBooking(document: BookingsRead) {
+  assertApiV2Selected("bookings", document, projection.fixed);
+  return mapBookingListDocument(document);
+}
 const emptyDescriptionKeys = {
   upcoming: "myBookings.empty.upcoming",
   past: "myBookings.empty.past",
@@ -149,7 +156,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     resource: bookingListResource,
     config: listConfig,
     documentSchema: BookingListDocumentTableValidation.documentSchema,
-    mapDocument: mapBookingListDocument,
+    mapDocument: mapProjectedBooking,
     request,
     query: { keepPreviousData: true },
     table: {

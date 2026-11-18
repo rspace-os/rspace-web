@@ -23,6 +23,7 @@ export const upcomingBooking = {
   canCancel: true,
   createdAt: "2020-08-01T09:00:00Z",
   updatedAt: "2020-08-01T09:00:00Z",
+  createdBy: null,
 };
 
 export const pastBooking = {
@@ -43,6 +44,7 @@ export const pastBooking = {
   canCancel: false,
   createdAt: "2020-08-01T09:00:00Z",
   updatedAt: "2020-08-01T09:00:00Z",
+  createdBy: null,
 };
 
 export const roleLostBooking = {
@@ -84,7 +86,7 @@ export function bookingHandlers(
     }),
     http.get("/api/v2/bookings/count", ({ request }) => {
       onCountRequest(new URL(request.url));
-      return HttpResponse.json({ totalDocs: 2 });
+      return HttpResponse.json({ totalDocs: 2, totalIsLowerBound: false });
     }),
   ];
 }

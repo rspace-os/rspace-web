@@ -15,6 +15,8 @@ const document = {
   },
   timezone: "Europe/Berlin",
   canViewConfiguration: true,
+  kind: "BOOKING",
+  createdBy: null,
   start: "2026-10-25T00:30:00Z",
   end: "2026-10-25T02:30:00Z",
   state: "CONFIRMED",

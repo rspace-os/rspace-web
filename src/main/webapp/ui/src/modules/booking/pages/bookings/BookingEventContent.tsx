@@ -5,12 +5,11 @@ import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
-import { BOOKING_READ_FIELDS, BookingUnavailableError, mapBookingDetails } from "@/modules/booking/domain/booking";
+import { BookingUnavailableError, bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2Error, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
-  getGetBookingQueryOptions,
   invalidateCountBookings,
   invalidateGetBooking,
   invalidateListBookings,
@@ -41,22 +40,11 @@ export function BookingEventContent() {
   const formId = `booking-event-${useId()}`;
   // Plain useQuery: an invalid ID skips the read, and the page's error states own Retry and Return.
   const booking = useQuery({
-    ...getGetBookingQueryOptions(
-      bookingId,
-      {
-        depth: 2,
-        fields: {
-          bookings: BOOKING_READ_FIELDS,
-          instruments: "id,globalId,name,deleted,parentContainer",
-          containers: "id,globalId,name",
-        },
-      },
-      { query: { select: mapBookingDetails } },
-    ),
-    enabled: validBookingId,
+    ...bookingQueryOptions(validBookingId ? bookingId : undefined),
     retry: (failureCount, error) => {
-      if (error instanceof BookingUnavailableError) return false;
-      if (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500) return false;
+      if (error instanceof BookingUnavailableError || error instanceof ApiV2SessionEndedError) return false;
+      if (error instanceof ApiV2Error && error.status !== undefined && error.status >= 400 && error.status < 500)
+        return false;
       return failureCount < 2;
     },
   });
@@ -75,7 +63,12 @@ export function BookingEventContent() {
     const transportFailure =
       booking.isError &&
       !(booking.error instanceof BookingUnavailableError) &&
-      !(booking.error instanceof ApiV2ProblemError && booking.error.status >= 400 && booking.error.status < 500);
+      !(
+        booking.error instanceof ApiV2Error &&
+        booking.error.status !== undefined &&
+        booking.error.status >= 400 &&
+        booking.error.status < 500
+      );
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">

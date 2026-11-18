@@ -1,9 +1,9 @@
-import type { BookingCatalogueManagerItem } from "@/modules/common/api/v2/generated/models/bookingCatalogueManagerItem";
+import type { BookingCatalogueItemDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueItemDocument";
 import type { BookingConfigurationCapabilities } from "@/modules/common/api/v2/generated/models/bookingConfigurationCapabilities";
 
 export type BookableItemOption = Required<
   Pick<
-    BookingCatalogueManagerItem,
+    BookingCatalogueItemDocument,
     | "configurationId"
     | "targetId"
     | "globalId"
@@ -18,8 +18,8 @@ export type BookableItemOption = Required<
     | "allowDoubleBooking"
   >
 > & {
-  capabilities?: Required<Pick<BookingConfigurationCapabilities, "canCreateBlockout">> &
-    Pick<BookingConfigurationCapabilities, "canCreateBooking" | "canEditConfiguration">;
+  capabilities?: Pick<BookingConfigurationCapabilities, "canCreateBlockout"> &
+    Partial<Pick<BookingConfigurationCapabilities, "canCreateBooking" | "canEditConfiguration">>;
 };
 
 type CompleteBookableItemOptionSource = Omit<

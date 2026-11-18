@@ -5,7 +5,7 @@ import { expect, it } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { server } from "@/__tests__/mswServer";
 import { upcomingBooking } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2ProblemError, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getCountBookingsQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import type { BookingFormSubmission } from "../BookingForm";
@@ -95,6 +95,8 @@ it.each([
   [new ApiV2ProblemError(302, undefined, "Unexpected redirect"), true],
   [new ApiV2ProblemError(400, "errors.api.v2.booking.window", "Rejected"), false],
   [new ApiV2ProblemError(503, undefined, "Unavailable"), true],
+  [new ApiV2SessionEndedError(200, undefined), false],
+  [new ApiV2SessionEndedError(401, undefined), false],
 ])("classifies booking write outcome uncertainty for %s", (error, uncertain) => {
   expect(isBookingOutcomeUncertain(error)).toBe(uncertain);
 });

@@ -5,7 +5,7 @@ import type { BookingMutation } from "@/modules/booking/domain/booking";
 import { createBooking } from "@/modules/booking/domain/booking";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2ProblemError, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import { invalidateListBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import {
@@ -141,9 +141,12 @@ export function bookingProblemFeedback(
   return { message };
 }
 
-/** A booking write may have committed even when its response was not received. */
+/**
+ * A booking write may have committed even when its response was not received. An ended session is certain: either the
+ * token was never issued, so the write was not sent, or the server rejected the token, and writes are never replayed.
+ */
 export function isBookingOutcomeUncertain(error: unknown): boolean {
-  if (error == null) return false;
+  if (error == null || error instanceof ApiV2SessionEndedError) return false;
   return !(error instanceof ApiV2ProblemError) || error.status < 400 || error.status >= 500;
 }
 

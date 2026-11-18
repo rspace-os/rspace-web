@@ -215,6 +215,8 @@ describe("booking layout", () => {
                 state: "ACTIVE",
                 timezone: "Europe/Berlin",
                 ...DEFAULT_SCHEDULING_SETTINGS,
+                createdAt: null,
+                createdByName: null,
                 updatedAt: null,
                 ...ownerBookingAccess,
               },

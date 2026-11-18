@@ -1,12 +1,12 @@
-import { skipToken } from "@tanstack/react-query";
+import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2Error, ApiV2ProblemError, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   createBooking as generatedCreateBooking,
   updateBooking as generatedUpdateBooking,
   getBooking,
-  getGetBookingQueryOptions,
+  getGetBookingQueryKey,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
@@ -84,8 +84,30 @@ export const BOOKING_READ_FIELDS = [
 ] as const;
 /** A booking read with `BOOKING_READ_FIELDS`, or a mutation response, after `assertApiV2Selected`. */
 export type SelectedBooking = ApiV2Selected<"bookings", typeof BOOKING_READ_FIELDS>;
+/**
+ * The guaranteed fields every booking mapper reads. `kind` and `createdBy` stay optional, because the My Bookings table
+ * selects neither; a booking without `kind` is an ordinary booking.
+ */
+export const BOOKING_MAPPED_FIELDS = [
+  "id",
+  "version",
+  "target",
+  "canViewConfiguration",
+  "timezone",
+  "start",
+  "end",
+  "state",
+  "privacy",
+  "purpose",
+  "bookedBy",
+  "canEdit",
+  "canCancel",
+  "createdAt",
+  "updatedAt",
+] as const;
+type MappedBooking = ApiV2Selected<"bookings", typeof BOOKING_MAPPED_FIELDS>;
 
-function mapIdentity<TTarget>(input: SelectedBooking, target: TTarget) {
+function mapIdentity<TTarget>(input: MappedBooking, target: TTarget) {
   const identity = {
     id: input.id,
     version: input.version,
@@ -94,13 +116,13 @@ function mapIdentity<TTarget>(input: SelectedBooking, target: TTarget) {
     start: input.start,
     end: input.end,
     state: input.state,
-    kind: input.kind,
+    kind: input.kind ?? "BOOKING",
   };
   checkBookingInterval(identity);
   return identity;
 }
 
-export function mapBookingSummary(input: SelectedBooking) {
+export function mapBookingSummary(input: MappedBooking) {
   const summary = {
     id: input.id,
     target: mapBookingTarget(input.target),
@@ -108,13 +130,13 @@ export function mapBookingSummary(input: SelectedBooking) {
     start: input.start,
     end: input.end,
     state: input.state,
-    kind: input.kind,
+    kind: input.kind ?? "BOOKING",
   };
   checkBookingInterval(summary);
   return summary;
 }
 
-function mapPrivacy(input: SelectedBooking) {
+function mapPrivacy(input: MappedBooking) {
   const management: {
     createdAt: string;
     updatedAt: string;
@@ -149,22 +171,22 @@ function mapPrivacy(input: SelectedBooking) {
   };
 }
 
-export function mapBooking(input: SelectedBooking) {
+export function mapBooking(input: MappedBooking) {
   return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
 }
-export function mapBookingDetails(input: SelectedBooking) {
+export function mapBookingDetails(input: MappedBooking) {
   const booking = mapBooking(input);
   if (booking.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
   return { ...booking, canViewConfiguration: input.canViewConfiguration };
 }
-export function mapBookingListDocument(input: SelectedBooking) {
+export function mapBookingListDocument(input: MappedBooking) {
   return {
     ...mapBooking(input),
     canViewConfiguration: input.canViewConfiguration,
     requester: input.requester ?? null,
   };
 }
-export function mapBookingMutation(input: SelectedBooking) {
+export function mapBookingMutation(input: MappedBooking) {
   const target = required(input.target, "target");
   return {
     ...mapIdentity(input, typeof target.value === "number" ? target : mapBookingTarget(target)),
@@ -205,10 +227,20 @@ const readParameters = {
   },
 };
 
-export async function fetchBooking(id: number, signal?: AbortSignal): Promise<BookingDetails> {
+/** Reads a booking with `BOOKING_READ_FIELDS`, asserting its guaranteed fields at the fetch boundary. */
+async function requestBookingDetails(id: number, signal?: AbortSignal): Promise<SelectedBooking> {
   const document = await getBooking(id, readParameters, { signal });
   assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
-  return mapBookingDetails(document);
+  return document;
+}
+export async function fetchBooking(id: number, signal?: AbortSignal): Promise<BookingDetails> {
+  return mapBookingDetails(await requestBookingDetails(id, signal));
+}
+/** Retries a booking read twice, but never a 4xx answer, an ended session or a booking the caller cannot see. */
+export function retryBookingRead(failureCount: number, error: unknown): boolean {
+  if (error instanceof BookingUnavailableError || error instanceof ApiV2SessionEndedError) return false;
+  const status = error instanceof ApiV2Error ? error.status : undefined;
+  return failureCount < 2 && !(status !== undefined && status >= 400 && status < 500);
 }
 /** Create and update responses return every readable field, so they carry the same guarantees as a full read. */
 function selectedMutation(document: BookingsRead): BookingMutation {
@@ -216,18 +248,12 @@ function selectedMutation(document: BookingsRead): BookingMutation {
   return mapBookingMutation(document);
 }
 export function bookingQueryOptions(id: number | undefined) {
-  return getGetBookingQueryOptions<BookingDetails>(id ?? 0, readParameters, {
-    query: {
-      queryFn: id === undefined ? skipToken : ({ signal }) => getBooking(id, readParameters, { signal }),
-      enabled: id !== undefined,
-      select: mapBookingDetails,
-      retry: (failureCount, error) =>
-        failureCount < 2 &&
-        !(
-          error instanceof BookingUnavailableError ||
-          (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500)
-        ),
-    },
+  return queryOptions({
+    queryKey: getGetBookingQueryKey(id ?? 0, readParameters),
+    queryFn: id === undefined ? skipToken : ({ signal }) => requestBookingDetails(id, signal),
+    enabled: id !== undefined,
+    select: mapBookingDetails,
+    retry: retryBookingRead,
   });
 }
 export async function createBooking(input: BookingsCreate): Promise<BookingMutation> {

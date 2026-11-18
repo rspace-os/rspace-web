@@ -12,7 +12,9 @@ import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
-  createdBy: undefined,
+  createdBy: null,
+  kind: "BOOKING",
+  canViewConfiguration: true,
   id: 41,
   version: 1,
   target: {
