@@ -43,7 +43,7 @@ describe("schema conversion", () => {
     [{ type: "string", format: "email" }, "a@example.com", "a"],
     [{ type: "string", format: "idn-email" }, "用户@例子.公司", 42],
     [{ type: "string", format: "idn-email" }, "not-an-address", 42],
-    [{ type: "string", format: "uri" }, "anything", 1],
+    [{ type: "string", format: "uri" }, "https://example.org/a", "not a url"],
     [{ type: "string", format: "uri-reference" }, "relative/path", 1],
     [{ type: "string", minLength: 2 }, "ab", "a"],
     [{ type: "string", maxLength: 2 }, "ab", "abc"],
@@ -342,9 +342,4 @@ describe("operation registry", () => {
 
 it("does not silently drop union sibling validation", () => {
   expect(() => schema({ anyOf: [{ type: "string" }], maxLength: 5 })).toThrow("Unsupported union sibling maxLength");
-});
-
-it("preserves literal values that resemble native validation expressions", () => {
-  const literal = "literal, v.url() and v.lazy((): v.GenericSchema => Value)";
-  expect(v.parse(schema({ const: literal }), literal)).toBe(literal);
 });

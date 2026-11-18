@@ -2,7 +2,7 @@
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
 output, then runs `generate.ts`, `resources.ts` and `filters.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
-OpenAPI document. The adapter reads `generated/valibot/native.ts`, removes URL validation from it,
+OpenAPI document. The adapter reads `generated/valibot/native.ts` unchanged
 and writes `schemas.ts` and `operations.ts` beside it. Biome then checks and formats all three
 files, as Orval does for its own output. No schema translator is retained.
 
@@ -19,7 +19,7 @@ headers fail generation.
 The filter step (`filters.ts`) reads `components.x-rspace-filters` and writes `generated/filters.ts`: per filter, each
 filterable selector with its allowed RSQL operators and value type. It then narrows each Orval `<Name>Parameter = string`
 model for a `where` parameter that carries `x-rspace-filter` to `ApiV2Where<"<Filter>">`, and fails if Orval's model shape
-changes. This is the second rewrite of Orval output, after removing `v.url()`. `orval.config.ts` gives the same
+changes. This is the adapter's only rewrite of Orval output. `orval.config.ts` gives the same
 operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
 
 The schema-only preflight rejects unsupported keywords, formats, references and
@@ -28,9 +28,8 @@ explicit extension of the supported subset and tests; Orval accepting a construc
 does not bypass this drift check.
 
 Orval 8.48 emits `v.readonly()` for `readOnly` arrays and types each lazy reference that closes a
-cycle with the exported input and output types it generates. Orval maps `format: uri` to `v.url()`
-and has no option to keep a plain string, so the adapter removes that action to retain plain-string
-URI semantics. Other native validation actions, including Unicode-aware lengths, are preserved.
+cycle with the exported input and output types it generates. Native validation actions are kept as
+Orval emits them, including `v.url()` for `format: uri` and Unicode-aware lengths.
 
 `schemas.ts` preserves `<ComponentName>Schema` exports and two-way assignability
 assertions against Orval's HTTP models, compiled by `pnpm tsc`.

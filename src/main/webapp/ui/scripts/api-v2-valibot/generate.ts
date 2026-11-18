@@ -22,20 +22,6 @@ export interface GeneratedSources {
   operations: string;
 }
 
-// URI values stay plain strings. Orval maps `format: uri` to `v.url()` with no option to keep a
-// plain string, so remove that action from generated code, leaving literals and comments intact.
-function stripUrlValidation(source: string): string {
-  const literals = /(["'`])(?:\\[\s\S]|(?!\1)[^\\])*\1|\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
-  const strip = (code: string) => code.replace(/,\s*v\.url\(\)/g, "");
-  let output = "",
-    cursor = 0;
-  for (const match of source.matchAll(literals)) {
-    output += strip(source.slice(cursor, match.index)) + match[0];
-    cursor = match.index + match[0].length;
-  }
-  return output + strip(source.slice(cursor));
-}
-
 /** Register Orval's reusable Valibot output without translating schema validation. */
 export function generate(
   document: OpenApiDocument,
@@ -127,7 +113,7 @@ export function generate(
       parts.push(`responses: {${responses.join(", ")}}`);
       operations.push(`${json(id)}: {${parts.join(", ")}}`);
     }
-  const native = stripUrlValidation(nativeSource);
+  const native = nativeSource;
   const exports = new Set([...native.matchAll(/export const (\w+)/g)].map((match) => match[1]));
   const names = Object.keys(components).sort();
   for (const name of names) if (!exports.has(orvalTypeName(name))) throw new Error(`Missing native component ${name}`);

@@ -2,8 +2,8 @@
 
 REST API v2 frontend calls use Orval-generated React Query clients and Valibot schemas from the
 backend's OpenAPI 3.1 document. Orval 8.48.0 generates both the HTTP client and reusable Valibot
-schemas, including readonly arrays and typed recursive references. A small adapter removes URL
-validation and supplies the component exports and operation registry used by the frontend.
+schemas, including readonly arrays and typed recursive references. A small adapter supplies the
+component exports and operation registry used by the frontend.
 
 See [REST API v2 queries and access](RestApiV2QueriesAndAccess.md) for query syntax, relationships,
 authorization, conditional requests and server problem responses. API v1, Inventory and ELN clients
@@ -47,7 +47,7 @@ Paths below are relative to `src/main/webapp/ui/`:
 | 1. | `orval.config.ts` | Sequential HTTP and Valibot projects. HTTP generation retains React Query 5, fetch, tag-split output, suspense hooks, cancellation, invalidation and transport overrides. |
 | 2. | `src/modules/common/api/v2/generated/` | HTTP model types, request functions, query options, ordinary and suspense hooks, query keys and `invalidate*` helpers. |
 | 3. | `src/modules/common/api/v2/generated/valibot/native.ts` | Orval's reusable component schemas and operation schemas for bodies, responses and applicable path, query and header parameters. |
-| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.ts` registers native output rather than translating JSON Schema; it removes `v.url()`. `filters.ts` types filtered `where` parameters (see Filtering with `where`). |
+| 4. | `scripts/api-v2-valibot/` | Adapter and schema-subset preflight. `generate.ts` registers native output rather than translating JSON Schema. `filters.ts` types filtered `where` parameters (see Filtering with `where`). |
 | 5. | `src/modules/common/api/v2/generated/valibot/schemas.ts` | Component exports named `<ComponentName>Schema` and two-way type assertions against HTTP models. Existing consumer imports stay here. |
 | 6. | `src/modules/common/api/v2/generated/valibot/operations.ts` | `apiV2Operations`, keyed by operation ID, with optional JSON request schemas, JSON success schemas by status and content type, and public/session flags. Downloads and empty operations retain entries without JSON body schemas. |
 
@@ -275,7 +275,7 @@ construct.
 | 6. | `minimum`, `maximum`, `exclusiveMinimum` | Numeric bounds, including a strict lower bound. |
 | 7. | `minItems`, `maxItems` | Array length checks. |
 | 8. | Formats `date-time`, `date`, `email`, `idn-email` | `isoTimestamp()`, `isoDate()`, and the existing strict `email()` mapping for `email`. Server email fields use `idn-email` (RFC 6531) and deliberately remain unvalidated `string()` schemas. Timestamps accept Z and offsets. |
-| 9. | Formats `uri`, `uri-reference`, `binary` | URI values remain plain strings. The adapter removes native `v.url` checks only from generated Valibot output. Binary media stay outside the JSON registry. |
+| 9. | Formats `uri`, `uri-reference`, `binary` | `uri` values are checked with Valibot's `v.url()`, which uses the WHATWG URL parser; `uri-reference` values stay plain strings. Binary media stay outside the JSON registry. |
 
 Orval emits `v.readonly()` for `readOnly` arrays. Each component's two-way type
 assertions must still pass against its generated HTTP model, including recursive fields. Do not
