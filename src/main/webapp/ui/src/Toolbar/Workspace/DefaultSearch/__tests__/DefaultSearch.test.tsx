@@ -193,6 +193,37 @@ describe("DefaultSearch", () => {
     expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
   });
 
+  test("removing a default another tab already removed announces it and moves focus to the search box", async () => {
+    const user = userEvent.setup();
+    const searchBox = document.createElement("input");
+    searchBox.id = SEARCH_INPUT_ID;
+    document.body.appendChild(searchBox);
+    onTestFinished(() => searchBox.remove());
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } }, {});
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
+    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+
+    await vi.waitFor(() => expect(searchBox).toHaveFocus());
+    expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
+    expect(savedPreferences).toHaveLength(0);
+  });
+
+  test("saving a search another tab already saved announces it and moves focus to the run button", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({}, { [KEY]: { value: ZEBRAFISH } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" }));
+
+    await vi.waitFor(() => expect(runButton()).toHaveFocus());
+    expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.saved");
+    expect(savedPreferences).toHaveLength(0);
+  });
+
   test("a save the server rejects keeps the old state and says it failed", async () => {
     const user = userEvent.setup();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});

@@ -123,7 +123,11 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
   const save = async (query: string) => {
     const latest = await readStoredDefault(stored);
     setShown(latest);
-    if (latest === query) return;
+    if (latest === query) {
+      setAnnouncement(t("toolbar.defaultSearch.saved"));
+      setFocusAfterStore("run");
+      return;
+    }
     if (latest === null || (await confirmReplacing(latest))) await store(query);
   };
 
@@ -131,6 +135,8 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
     const latest = await readStoredDefault(stored);
     if (latest === null) {
       setShown(null);
+      setAnnouncement(t("toolbar.defaultSearch.removed"));
+      setFocusAfterStore("search");
       return;
     }
     if (latest !== stored) {
