@@ -676,7 +676,8 @@ div .searchButton {
 
 #searchModePanel button,
 #searchModePanel #resetSearch,
-#searchModePanel #saveDefaultSearch {
+#searchModePanel #saveDefaultSearch,
+#searchModePanel #clearDefaultSearch {
     background-color: white;
     padding: 4px 5px;
     width: auto;
@@ -688,7 +689,8 @@ div .searchButton {
 
     #searchModePanel button,
     #searchModePanel #resetSearch:hover,
-    #searchModePanel #saveDefaultSearch:hover {
+    #searchModePanel #saveDefaultSearch:hover,
+    #searchModePanel #clearDefaultSearch:hover {
       background-color: #6389a8;
       color: white; }
 
