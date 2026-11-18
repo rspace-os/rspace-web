@@ -215,9 +215,11 @@ class NfsFieldLinkManagerImplTest {
     older.setId(11L);
     StructuredDocument newer = TestFactory.createAnySD();
     newer.setId(12L);
+    StructuredDocument newerAgain = TestFactory.createAnySD();
+    newerAgain.setId(12L);
     when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(0, 1000))).thenReturn(List.of(newer));
     when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(1000, 1001)))
-        .thenReturn(List.of(older, newer));
+        .thenReturn(List.of(older, newerAgain));
     when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
         .thenReturn(true);
 

@@ -19,10 +19,11 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFieldLinkManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -102,8 +103,11 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     // a whole S3 folder listing in one IN list can exceed the database's packet size
     return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
         .flatMap(batch -> nfsDao.getDocumentsLinkingTo(fileSystem.getId(), batch).stream())
-        .distinct()
-        .sorted(Comparator.comparing(StructuredDocument::getId))
+        .collect(
+            Collectors.toMap(
+                StructuredDocument::getId, doc -> doc, (first, duplicate) -> first, TreeMap::new))
+        .values()
+        .stream()
         .map(doc -> toRecordInfoOrPlaceholder(doc, user))
         .toList();
   }
