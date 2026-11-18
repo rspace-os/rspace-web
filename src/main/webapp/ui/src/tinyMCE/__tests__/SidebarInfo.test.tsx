@@ -16,7 +16,7 @@ const bondStrengthsContent: BondStrengthsDocumentContent = {
     { bond: "C1-H (×3), weakest bond", kcalMol: "89.3", kjMol: "373.5" },
     { bond: "C1-C2", kcalMol: "101.0", kjMol: "422.6" },
   ],
-  notes: ["1 ring bond has no value. Ring bonds are not covered."],
+  notes: ["Ring, double and triple bonds have no value (1 bond).", "No value for C3-H. Low confidence."],
 };
 
 const galleryPicture =
@@ -178,13 +178,13 @@ describe("SidebarInfo accessibility", () => {
       HTMLParagraphElement,
       HTMLParagraphElement,
       HTMLTableElement,
-      HTMLUListElement,
+      HTMLParagraphElement,
     ];
     expect(result.children).toHaveLength(4);
     expect(legend.textContent).toBe("Numbers on bonds are in kcal/mol.");
-    expect(Array.from(notes.children, (note) => note.textContent)).toEqual([
-      "1 ring bond has no value. Ring bonds are not covered.",
-    ]);
+    expect(notes.textContent).toBe(
+      "Ring, double and triple bonds have no value (1 bond). No value for C3-H. Low confidence.",
+    );
     expect(chemicalImage.parentElement).toBe(chemicalParagraph);
     expect(pictureParagraph.firstElementChild?.tagName).toBe("IMG");
     // The picture is the Gallery image, never the data URI, which would bloat the field.
@@ -207,5 +207,43 @@ describe("SidebarInfo accessibility", () => {
     expect(afterSecondInsert).toHaveLength(3);
     expect(afterSecondInsert[1]).not.toBe(result);
     expect(afterSecondInsert[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
+  });
+  it("replaces the result after a structure whose id changed, as after an import", async () => {
+    const user = userEvent.setup();
+    const { iframe, iframeDocument } = createIframeWithDocument();
+    const chemicalParagraph = iframeDocument.createElement("p");
+    const chemicalImage = createChemicalImage(iframeDocument, "chem-4");
+    chemicalParagraph.append(chemicalImage);
+    const importedResult = iframeDocument.createElement("div");
+    importedResult.setAttribute("data-bond-strengths-for", "chem-2");
+    const otherParagraph = iframeDocument.createElement("p");
+    const otherImage = createChemicalImage(iframeDocument, "chem-5");
+    otherParagraph.append(otherImage);
+    const otherResult = iframeDocument.createElement("div");
+    otherResult.setAttribute("data-bond-strengths-for", "chem-5");
+    iframeDocument.body.append(chemicalParagraph, importedResult, otherParagraph, otherResult);
+    const nodeChanged = vi.fn();
+    Object.assign(globalThis, {
+      tinymce: {
+        activeEditor: {
+          id: "rtf_12",
+          execCommand: vi.fn(),
+          undoManager: { transact: (change: () => void) => change() },
+          nodeChanged,
+        },
+      },
+    });
+    render(<SidebarInfo iframe={iframe} />);
+    act(() => {
+      chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+    await waitFor(() => expect(nodeChanged).toHaveBeenCalled());
+
+    const children = Array.from(iframeDocument.body.children);
+    expect(children).toHaveLength(4);
+    expect(children[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
+    expect(children[3]).toBe(otherResult);
   });
 });

@@ -14,7 +14,7 @@ export type BondStrengthsDocumentContent = {
   columns: { bond: string; kcalMol: string; kjMol: string };
   /** Only the bonds that have a value. */
   rows: ReadonlyArray<BondStrengthsDocumentRow>;
-  /** One sentence per reason why other bonds have no value. */
+  /** Sentences on why other bonds have no value, shown as one paragraph. */
   notes: ReadonlyArray<string>;
 };
 
@@ -60,7 +60,9 @@ const RESULT_ATTRIBUTE = "data-bond-strengths-for";
 /**
  * Adds the picture and the table after the top-level block that holds the chem image. Going to
  * the top level keeps the HTML valid when the image sits inside a list or a table cell.
- * A result already in the document for the same chemical is replaced where it stands.
+ * A result already in the document for the same chemical is replaced where it stands. So is a
+ * result straight after the structure whose chemical is no longer in the document: import and
+ * copy give the structure a new id but keep the old result.
  * `pictureHtml` is the editor markup for the picture once it is stored in the Gallery.
  */
 export function insertBondStrengthsAfter(
@@ -78,27 +80,34 @@ export function insertBondStrengthsAfter(
   }
   nodes.push(buildTable(doc, content));
   if (content.notes.length > 0) {
-    const list = element(doc, "ul");
-    list.append(...content.notes.map((note) => element(doc, "li", note)));
-    nodes.push(list);
+    nodes.push(element(doc, "p", content.notes.join(" ")));
   }
 
   const result = element(doc, "div");
   result.setAttribute(RESULT_ATTRIBUTE, content.forChemicalId);
   result.append(...nodes);
 
-  const earlier = Array.from(doc.body.querySelectorAll(`div[${RESULT_ATTRIBUTE}]`)).filter(
-    (candidate) => candidate.getAttribute(RESULT_ATTRIBUTE) === content.forChemicalId,
-  );
+  let block: Element = chemImage;
+  while (block.parentElement && block.parentElement !== doc.body) {
+    block = block.parentElement;
+  }
+
+  const chemicalIds = new Set(Array.from(doc.body.querySelectorAll("img.chem"), (image) => image.id));
+  const next = block.nextElementSibling;
+  const orphanAfterStructure =
+    next?.matches(`div[${RESULT_ATTRIBUTE}]`) && !chemicalIds.has(next.getAttribute(RESULT_ATTRIBUTE) ?? "")
+      ? [next]
+      : [];
+  const earlier = [
+    ...orphanAfterStructure,
+    ...Array.from(doc.body.querySelectorAll(`div[${RESULT_ATTRIBUTE}]`)).filter(
+      (candidate) => candidate.getAttribute(RESULT_ATTRIBUTE) === content.forChemicalId,
+    ),
+  ];
   if (earlier.length > 0) {
     earlier[0].replaceWith(result);
     for (const duplicate of earlier.slice(1)) duplicate.remove();
     return;
-  }
-
-  let block: Element = chemImage;
-  while (block.parentElement && block.parentElement !== doc.body) {
-    block = block.parentElement;
   }
   block.after(result);
 }

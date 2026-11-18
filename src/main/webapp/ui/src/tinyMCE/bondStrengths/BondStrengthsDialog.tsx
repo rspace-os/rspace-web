@@ -102,9 +102,10 @@ function bondRows(t: Translate, language: string, bonds: ReadonlyArray<Bond>): B
 
 /**
  * One sentence per reason a bond has no value. Ring and multiple bonds are only counted, because
- * every structure with a ring has them; the rarer cases name the bonds.
+ * every structure with a ring has them; the rarer cases name the bonds. The document version
+ * counts ring and multiple bonds together, to keep the inserted text short.
  */
-function noValueNotes(t: Translate, language: string, result: SupportedBondStrengths): string[] {
+function noValueNotes(t: Translate, language: string, result: SupportedBondStrengths, forDocument = false): string[] {
   const withoutValue = result.bonds.filter((bond) => !hasValue(bond));
   const labelsFor = (reason: string | null) =>
     withoutValue.filter((bond) => (bond.unsupportedReason ?? null) === reason).map((bond) => bondLabel(t, bond));
@@ -112,15 +113,22 @@ function noValueNotes(t: Translate, language: string, result: SupportedBondStren
   const notes: string[] = [];
 
   const ringBonds = labelsFor("RING_BOND").length;
-  if (ringBonds > 0) {
+  const multipleBonds = labelsFor("MULTIPLE_BOND").length;
+  if (forDocument && ringBonds + multipleBonds > 0) {
+    notes.push(
+      t("workspace:tinymce.bondStrengths.document.skippedBonds", {
+        count: ringBonds + multipleBonds,
+      }),
+    );
+  }
+  if (!forDocument && ringBonds > 0) {
     notes.push(
       t("workspace:tinymce.bondStrengths.noValue.ringBonds", {
         count: ringBonds,
       }),
     );
   }
-  const multipleBonds = labelsFor("MULTIPLE_BOND").length;
-  if (multipleBonds > 0) {
+  if (!forDocument && multipleBonds > 0) {
     notes.push(
       t("workspace:tinymce.bondStrengths.noValue.multipleBonds", {
         count: multipleBonds,
@@ -180,12 +188,13 @@ function documentContent(
   language: string,
   result: SupportedBondStrengths,
   rows: ReadonlyArray<BondRow>,
-  notes: ReadonlyArray<string>,
   imageSrc: string | null,
   chemId: number,
 ): BondStrengthsDocumentContent {
   return {
-    ...pictureAndColumnText(t),
+    columns: pictureAndColumnText(t).columns,
+    imageAlt: t("workspace:tinymce.bondStrengths.document.imageAlt"),
+    legend: t("workspace:tinymce.bondStrengths.document.legend"),
     imageSrc,
     forChemicalId: String(chemId),
     caption: t("workspace:tinymce.bondStrengths.document.caption", {
@@ -199,7 +208,7 @@ function documentContent(
       kcalMol: row.kcalMol,
       kjMol: row.kjMol,
     })),
-    notes,
+    notes: noValueNotes(t, language, result, true),
   };
 }
 
@@ -391,7 +400,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
                 ? svgToPngDataUri(supported.imageSvg).catch(() => null)
                 : Promise.resolve(null);
               void picture
-                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, notes, imageSrc, chemId)))
+                .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, imageSrc, chemId)))
                 .finally(onClose);
             }}
           >

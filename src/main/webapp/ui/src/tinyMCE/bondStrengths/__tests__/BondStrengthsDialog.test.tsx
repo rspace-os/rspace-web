@@ -212,9 +212,8 @@ describe("BondStrengthsDialog", () => {
     await waitFor(() => expect(onInsert).toHaveBeenCalled());
     expect(onInsert).toHaveBeenCalledExactlyOnceWith({
       imageSrc: "data:image/png;base64,AAAA",
-      imageAlt:
-        "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
-      legend,
+      imageAlt: "Structure with predicted bond strengths",
+      legend: "Values in kcal/mol. Atom numbers match the table. Red marks the weakest bond.",
       forChemicalId: "42",
       caption:
         "Predicted bond strengths (bond dissociation enthalpy) from RSpace bond strength model 0.1.0-poc. Typical error 0.8 kcal/mol against DFT, not checked against experiment. Calculated on November 18, 2026.",
@@ -224,7 +223,10 @@ describe("BondStrengthsDialog", () => {
         { bond: "C1-C2", kcalMol: "101", kjMol: "423" },
         { bond: "C3-H", kcalMol: "110", kjMol: "462" },
       ],
-      notes: noValueNotes,
+      notes: [
+        "Ring, double and triple bonds have no value (1 bond).",
+        "No value for C4-H. Low confidence: two models disagreed by more than 5 kcal/mol, so the value is not shown.",
+      ],
     });
     expect(onClose).toHaveBeenCalledOnce();
   });
