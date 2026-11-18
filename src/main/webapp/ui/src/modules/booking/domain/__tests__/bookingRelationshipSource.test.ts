@@ -18,6 +18,7 @@ describe("booking relationship source", () => {
         return HttpResponse.json({
           limit: 1,
           page: 1,
+          hasNextPage: false,
           docs: [
             {
               id: 7,
@@ -33,8 +34,10 @@ describe("booking relationship source", () => {
   });
   it("returns unavailable rather than dropping an unresolvable saved ID", async () => {
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [], page: 1, limit: 1 })),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ docs: [], page: 1, limit: 1 })),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json({ docs: [], page: 1, limit: 1, hasNextPage: false }),
+      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ docs: [], page: 1, limit: 1, hasNextPage: false })),
     );
     await expect(bookingInstrumentSource.resolveMany?.(["IN42"], signal())).resolves.toEqual({});
     expect(bookingInstrumentSource.ownsValue("IN42")).toBe(true);
@@ -45,11 +48,11 @@ describe("booking relationship source", () => {
     server.use(
       http.get("/api/v2/booking-configurations", () => {
         request();
-        return HttpResponse.json({ docs: [], page: 1, limit: 1 });
+        return HttpResponse.json({ docs: [], page: 1, limit: 1, hasNextPage: false });
       }),
       http.get("/api/v2/bookings", () => {
         request();
-        return HttpResponse.json({ docs: [], page: 1, limit: 1 });
+        return HttpResponse.json({ docs: [], page: 1, limit: 1, hasNextPage: false });
       }),
     );
 

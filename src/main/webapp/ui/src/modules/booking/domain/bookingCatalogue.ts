@@ -15,6 +15,7 @@ import type { BookingCatalogueAvailabilityCounts } from "@/modules/common/api/v2
 import type { BookingCatalogueItemDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueItemDocument";
 import type { BookingCataloguePageDocument } from "@/modules/common/api/v2/generated/models/bookingCataloguePageDocument";
 import type { SearchBookingCatalogueParams } from "@/modules/common/api/v2/generated/models/searchBookingCatalogueParams";
+import { requireBookingValue as required } from "./bookingMapping";
 
 export function mapBookingCatalogueItem(input: BookingCatalogueItemDocument) {
   const policy = v.parse(SchedulingSettingsSchema, input);

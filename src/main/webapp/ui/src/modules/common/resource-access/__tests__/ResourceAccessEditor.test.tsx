@@ -60,7 +60,7 @@ const second = {
 function document(
   version = 3,
   assignments: ResourceAccessAssignmentDocument[] = [owner],
-  callerKey: string | null = "user:11",
+  callerKey = "user:11",
   inherited = false,
 ): ResourceAccessDocument {
   return {
@@ -71,7 +71,7 @@ function document(
     caller: {
       effectiveRole: "STEWARD",
       roleSources: [],
-      granteeKey: callerKey ?? undefined,
+      granteeKey: callerKey,
       capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
     },
   };

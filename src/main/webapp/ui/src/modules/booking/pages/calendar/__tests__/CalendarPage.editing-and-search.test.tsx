@@ -119,7 +119,7 @@ describe("CalendarPage", () => {
     server.use(
       oauthTokenHandler(),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get<never, never, ApiV2ListResultMapStringObject>("/api/v2/booking-calendar/events", async ({ request }) => {
+      http.get<never, never, BookingCalendarEventsPage>("/api/v2/booking-calendar/events", async ({ request }) => {
         if (
           patches.length > 0 &&
           (new URL(request.url).pathname === "/api/v2/booking-calendar/events" ||
@@ -241,10 +241,10 @@ describe("CalendarPage", () => {
       );
       expect(
         queryClient
-          .getQueriesData<BookingCalendarEventsPage>({
+          .getQueriesData<BookingListDocument[]>({
             queryKey: getSearchCalendarEventsQueryKey(),
           })
-          .map(([, response]) => response?.docs),
+          .map(([, events]) => events),
       ).toContainEqual([expect.objectContaining({ version: 1, start: updated.start, end: updated.end })]);
       expect(within(card).getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep my calendar draft");
       expect(within(card).getByLabelText("Start time")).toHaveValue(originalTime);

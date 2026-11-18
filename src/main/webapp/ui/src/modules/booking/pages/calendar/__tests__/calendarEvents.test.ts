@@ -5,8 +5,8 @@ import { createElement, type PropsWithChildren } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
 
