@@ -144,9 +144,9 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   }
 
   /**
-   * Raises the usual status exceptions without the error response body, which RestClient's default
-   * handler would buffer, or the URL, which it would put in the message (a webhook URL is a
-   * credential, RSDEV-1525).
+   * Raises the usual status exceptions without reading the error response body, which RestClient's
+   * default handler buffers. {@code DefaultResponseErrorHandler}, the obvious replacement, would
+   * quote the URL in the message instead, and a webhook URL is a credential (RSDEV-1525).
    */
   private static void failWithoutBody(HttpRequest request, ClientHttpResponse response)
       throws IOException {

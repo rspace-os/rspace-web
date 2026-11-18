@@ -108,8 +108,13 @@ class WebhookDestinationPolicyTest {
   @Test
   void neverResolvesExactEntries() {
     HostResolver resolver = mock(HostResolver.class);
+    WebhookDestinationPolicy wildcardListedFirst =
+        WebhookDestinationPolicy.parse(
+            "test.allowed.origins", "https://*.logic.azure.com, https://internal.logic.azure.com");
     assertDoesNotThrow(
         () -> policy.checkResolved("http://localhost:9099/msteams/webhook", resolver));
+    assertDoesNotThrow(
+        () -> wildcardListedFirst.checkResolved("https://internal.logic.azure.com/x", resolver));
     verifyNoInteractions(resolver);
   }
 
@@ -134,6 +139,15 @@ class WebhookDestinationPolicyTest {
   void malformedEntryStopsStartup(String entry) {
     assertThrows(
         IllegalStateException.class, () -> WebhookDestinationPolicy.parse("test.origins", entry));
+  }
+
+  @Test
+  void entryDnsLabelsMayHaveUpTo63Characters() {
+    String longest = "https://" + "a".repeat(63) + ".example";
+    String tooLong = "https://" + "a".repeat(64) + ".example";
+    assertDoesNotThrow(() -> WebhookDestinationPolicy.parse("test.origins", longest));
+    assertThrows(
+        IllegalStateException.class, () -> WebhookDestinationPolicy.parse("test.origins", tooLong));
   }
 
   private static HostResolver resolvingTo(InetAddress... addresses) throws UnknownHostException {

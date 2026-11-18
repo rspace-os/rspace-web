@@ -94,15 +94,22 @@ public final class WebhookDestinationPolicy {
     }
     String scheme = Objects.toString(uri.getScheme(), "").toLowerCase(Locale.ROOT);
     int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
+    String host = uri.getHost() == null ? null : normaliseHost(uri.getHost());
     if (!(scheme.equals("http") || scheme.equals("https"))
-        || uri.getHost() == null
+        || !isValidHost(host)
         || port < 1
         || port > 65535
         || !isOriginOnly(uri)
-        || (wildcard && !isWildcardableDomain(normaliseHost(uri.getHost())))) {
+        || (wildcard && !isWildcardableDomain(host))) {
       throw invalid;
     }
-    return new Origin(scheme, normaliseHost(uri.getHost()), port, wildcard);
+    return new Origin(scheme, host, port, wildcard);
+  }
+
+  /** A DNS name within the label and length limits, or an IP literal. */
+  private static boolean isValidHost(String host) {
+    return host != null
+        && (InternetDomainName.isValid(host) || InetAddresses.isUriInetAddress(host));
   }
 
   /** No user info, path, query or fragment: an entry names an origin, never a webhook URL. */
