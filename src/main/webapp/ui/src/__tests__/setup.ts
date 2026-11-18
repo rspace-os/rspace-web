@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
+import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
 import i18n from "@/modules/common/i18n";
 
 await i18n.loadNamespaces([
@@ -81,6 +82,7 @@ beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 
 afterEach(() => {
   cleanup();
+  deploymentPropertyQueryClient.clear();
   globalThis.localStorage?.clear?.();
   globalThis.sessionStorage?.clear?.();
   server.resetHandlers();

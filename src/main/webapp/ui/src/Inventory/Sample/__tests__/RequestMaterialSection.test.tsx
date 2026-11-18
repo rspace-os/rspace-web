@@ -8,7 +8,7 @@ import type React from "react";
 import { beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "@/hooks/api/deploymentPropertyQueryClient";
 import { personAttrs } from "@/stores/models/__tests__/PersonModel/mocking";
 import { makeMockSample } from "@/stores/models/__tests__/SampleModel/mocking";
 import PersonModel from "@/stores/models/PersonModel";
@@ -30,19 +30,19 @@ function setCurrentUser(username: string) {
   });
 }
 
-function deploymentProperties(available: boolean) {
-  return new Map<string, unknown>([["inventory.sampleRequests.available", available ? "ALLOWED" : "DENIED"]]);
+function seedDeploymentProperties(available: boolean) {
+  deploymentPropertyQueryClient.setQueryData(
+    deploymentPropertyQueryKeys.property("inventory.sampleRequests.available"),
+    available ? "ALLOWED" : "DENIED",
+  );
 }
 
 function renderWithProviders(ui: React.ReactNode, { available = true }: { available?: boolean } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  seedDeploymentProperties(available);
   return render(
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={materialTheme}>
-        <DeploymentPropertyContext.Provider value={deploymentProperties(available)}>
-          {ui}
-        </DeploymentPropertyContext.Provider>
-      </ThemeProvider>
+      <ThemeProvider theme={materialTheme}>{ui}</ThemeProvider>
     </QueryClientProvider>,
   );
 }
