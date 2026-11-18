@@ -184,6 +184,22 @@ port). Its working data lives in a per-worktree `chemistry-files` volume,
 removed by `nuke` like the others. Override the image with `CHEMISTRY_IMAGE` in
 `.env`.
 
+### Bond strengths (proof of concept)
+
+`up --bond-strength` also starts the bond strength model service, and swaps the
+chemistry image for a locally built one that has the `/chemistry/bondStrengths`
+endpoint. Neither image is published yet. Build both first, from the bond
+strength branch of the chemistry repo:
+
+```bash
+docker build -t rspace-chemistry:bond-strength-poc .
+docker build -t rspace-bond-strength:poc bond-strength
+```
+
+Then turn on the `bondStrengthsEnabled` [feature flag](../../DevDocs/DeveloperNotes/FeatureFlags.md).
+`up --no-bond-strength` turns the model service off again. Override the images
+with `CHEMISTRY_IMAGE` and `BOND_STRENGTH_IMAGE` in `.env`.
+
 Note: toggling the flag changes the app container's environment, so the next
 `up` recreates the backend (expect the usual startup wait).
 

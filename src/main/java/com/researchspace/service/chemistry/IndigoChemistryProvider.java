@@ -1,5 +1,6 @@
 package com.researchspace.service.chemistry;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
@@ -60,6 +61,11 @@ public class IndigoChemistryProvider implements ChemistryProvider {
   @Override
   public Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement) {
     return chemistryClient.extractStoichiometry(chemicalElement);
+  }
+
+  @Override
+  public JsonNode getBondStrengths(String chemical) {
+    return chemistryClient.bondStrengths(chemical);
   }
 
   @Override

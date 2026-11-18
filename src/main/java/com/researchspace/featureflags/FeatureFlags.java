@@ -4,6 +4,7 @@ package com.researchspace.featureflags;
 
 public final class FeatureFlags {
 
+  public static final String BOND_STRENGTHS_ENABLED = "bondStrengthsEnabled";
   public static final String BOOKING_ENABLED = "bookingEnabled";
 
   private FeatureFlags() {}

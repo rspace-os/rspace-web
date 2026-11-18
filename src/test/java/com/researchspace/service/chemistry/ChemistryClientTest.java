@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
@@ -60,6 +63,26 @@ class ChemistryClientTest {
   public void setup() {
     // set the @Value field to test error messages are generated correctly
     ReflectionTestUtils.setField(chemistryClient, "chemistryServiceUrl", DUMMY_URL);
+  }
+
+  @Test
+  public void whenBondStrengthsReturned_thenChemistryServiceJsonIsPassedBack() {
+    JsonNode result = JsonNodeFactory.instance.objectNode().put("supported", true);
+    when(restTemplate.postForEntity(
+            eq(DUMMY_URL + "/chemistry/bondStrengths"), any(), eq(JsonNode.class)))
+        .thenReturn(new ResponseEntity<>(result, HttpStatus.OK));
+
+    assertEquals(result, chemistryClient.bondStrengths("CCO"));
+  }
+
+  @Test
+  public void whenBondStrengthsRejected_thenExceptionCarriesStatus() {
+    when(restTemplate.postForEntity(anyString(), any(), eq(JsonNode.class)))
+        .thenThrow(new HttpClientErrorException(HttpStatus.SERVICE_UNAVAILABLE));
+
+    ChemistryClientException e =
+        assertThrows(ChemistryClientException.class, () -> chemistryClient.bondStrengths("CCO"));
+    assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatus());
   }
 
   @Test
