@@ -534,6 +534,67 @@ operation or schema refers to it.
 The document service merges Swagger annotations from concrete controllers. It validates the complete
 document before returning it.
 
+### Response requiredness and model names
+
+Response schemas mark every property that Spring's wire mapper always writes as `required`, including a
+nullable one, which is then present as `null`. A property the mapper omits (`@JsonInclude(NON_NULL)` and similar)
+or one annotated `@Schema(requiredMode = NOT_REQUIRED)` stays optional. Generation fails when:
+
+- a component reached by a request body would gain response-only requirements, because components are shared; use a
+  separate response type, or mark the properties `@Schema(requiredMode = REQUIRED)` on the shared type;
+- a response type or property uses `@JsonView` or `@JsonFilter`, which omit keys for some callers, unless each
+  affected property is `@Schema(requiredMode = NOT_REQUIRED)`;
+- a type nested in a `*Controller` or `*Manager` class has no explicit `@Schema(name = ...)`, so implementation
+  class names never reach the public models;
+- two Java types resolve to one component name, whether the names are explicit or derived.
+
+Declared object rows on `*Read` schemas copy `required` from the response component of the same Java type only when
+the row has the same properties with the same nullability, and only for members the embedded renderer always writes:
+those without a read restriction of their own that are nullable or required on create.
+
+### Field read guarantees
+
+The backend silently omits a requested field that the caller may not read, according to that field's own
+`readAccess`. A `*Read` property is marked `x-rspace-read-guaranteed: true` only when that cannot happen: the id
+field, or a field or relationship whose `readAccess` is `AccessFunction.INHERITED`. The published `x-rspace-access`
+names documentation, not the evaluated function, so generated clients rely on the guarantee alone.
+`ResourceFieldSchema.readInherited()` carries the fact from the collection description to the emitter, and
+`ApiV2ReadGuaranteeTest` checks that guaranteed properties are never unreadable and always rendered.
+
+### Compatibility rules for external clients
+
+REST API v2 will have external clients: scripts, integrations and generated SDKs. After the first release, semver
+rules apply to the OpenAPI document, and a breaking change needs a new major version (`/api/v3`). A deprecated
+element stays in the current major version, marked `deprecated: true` and listed in the changelog, and is removed
+only in the next one.
+
+| Change | Response body | Request body |
+| --- | --- | --- |
+| Required to optional | Breaking | Not breaking |
+| Optional to required | Not breaking | Breaking |
+| Not nullable to nullable | Breaking | Not breaking |
+| Nullable to not nullable | Not breaking | Breaking |
+| Removing a published `x-rspace-read-guaranteed` | Breaking for generated clients | n/a |
+
+Removing a read guarantee is breaking even though `required` is unchanged: an already-generated client keeps its old
+guaranteed set and rejects the response when the field disappears.
+
+Field-level read permissions follow these rules:
+
+- **Resource collections:** declare a field's read restriction through its `readAccess`, which drives both the
+  omission (`CollectionAccessEvaluator.unreadableFields`) and the published `x-rspace-access`. Never remove a field
+  ad hoc. `*Read` fields are optional in the contract, so a new restriction does not break the schema, and the read
+  guarantee follows automatically.
+- **Other response types** use one of three patterns: separate types per audience, an explicitly optional property
+  (`@Schema(requiredMode = NOT_REQUIRED)`), or `null` in a property declared nullable. Every pull request that adds
+  required response properties lists them, and its author confirms none can become permission-restricted.
+
+The document itself tells external developers, through `info.description` and the `fields` parameter description,
+that a requested field may be omitted when the caller cannot read it, that clients must ignore unknown response
+fields, and that a newly restricted field is recorded in the API changelog. After the first release, CI should add
+an `oasdiff breaking --fail-on ERR` step against the last released document, with a small script that fails when a
+property loses `x-rspace-read-guaranteed`.
+
 Production creates the document after a context refresh, caches it privately for one hour, and
 supplies an `ETag`. A matching `If-None-Match` request returns 304.
 

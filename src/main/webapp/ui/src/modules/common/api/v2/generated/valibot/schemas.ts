@@ -31,6 +31,7 @@ export const ResourceAccessReplacementSchema = native.ResourceAccessReplacement;
 export const ResourceGranteeDirectoryEntrySchema = native.ResourceGranteeDirectoryEntry;
 export const ResourceGranteeKindSchema = native.ResourceGranteeKind;
 export const ResourceRoleSourceSchema = native.ResourceRoleSource;
+export const ResourceRoleSourceGranteeSchema = native.ResourceRoleSourceGrantee;
 export const ResourceRoleSourceKindSchema = native.ResourceRoleSourceKind;
 export const UsersReadSchema = native.UsersRead;
 export const UsersReferenceSchema = native.UsersReference;
@@ -160,6 +161,10 @@ export type SchemaModelTypeChecks = {
   ResourceRoleSource: [
     Assert<Extends<v.InferOutput<typeof ResourceRoleSourceSchema>, Models.ResourceRoleSource>>,
     Assert<Extends<Models.ResourceRoleSource, v.InferOutput<typeof ResourceRoleSourceSchema>>>,
+  ];
+  ResourceRoleSourceGrantee: [
+    Assert<Extends<v.InferOutput<typeof ResourceRoleSourceGranteeSchema>, Models.ResourceRoleSourceGrantee>>,
+    Assert<Extends<Models.ResourceRoleSourceGrantee, v.InferOutput<typeof ResourceRoleSourceGranteeSchema>>>,
   ];
   ResourceRoleSourceKind: [
     Assert<Extends<v.InferOutput<typeof ResourceRoleSourceKindSchema>, Models.ResourceRoleSourceKind>>,

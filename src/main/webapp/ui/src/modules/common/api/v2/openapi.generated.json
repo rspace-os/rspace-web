@@ -61,7 +61,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "ContainersFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[containers]=id,name.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[containers]=id,name. A requested field is omitted when the caller is not allowed to read it.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -144,7 +144,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "InstrumentsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[instruments]=id,name.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[instruments]=id,name. A requested field is omitted when the caller is not allowed to read it.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -290,7 +290,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "UsersFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[users]=id,name.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[users]=id,name. A requested field is omitted when the caller is not allowed to read it.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -599,7 +599,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "totalDocs" ],
+        "required" : [ "totalDocs", "totalIsLowerBound" ],
         "type" : "object"
       },
       "ApiV2CurrentUser" : {
@@ -811,6 +811,7 @@
             "type" : "integer"
           }
         },
+        "required" : [ "fields", "hasMore", "limit", "page" ],
         "type" : "object"
       },
       "ApiV2RuntimeFieldCatalogEntry" : {
@@ -855,6 +856,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "columnSelectable", "id", "jsonType", "label", "operators", "options", "selector", "sortable", "source", "supportsWildcards", "type" ],
         "type" : "object"
       },
       "ApiV2RuntimeFieldCatalogSource" : {
@@ -866,6 +868,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "id", "label" ],
         "type" : "object"
       },
       "ApiV2UiToken" : {
@@ -887,21 +890,24 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "format" : "int64",
@@ -909,7 +915,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "name" : {
             "maxLength" : 255,
@@ -917,7 +924,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -955,7 +963,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -969,7 +978,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -980,7 +990,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "name" : {
             "description" : "Display name of the instrument.",
@@ -991,7 +1002,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -1017,6 +1029,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -1055,6 +1068,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "grantee", "role" ],
         "type" : "object"
       },
       "ResourceAccessCallerCapabilities" : {
@@ -1069,6 +1083,7 @@
             "type" : "boolean"
           }
         },
+        "required" : [ "canLeave", "canManageAssignments", "canManageOwners" ],
         "type" : "object"
       },
       "ResourceAccessCallerDocument" : {
@@ -1089,6 +1104,7 @@
             "type" : "array"
           }
         },
+        "required" : [ "capabilities", "effectiveRole", "granteeKey", "roleSources" ],
         "type" : "object"
       },
       "ResourceAccessDocument" : {
@@ -1113,6 +1129,7 @@
             "type" : "integer"
           }
         },
+        "required" : [ "assignments", "caller", "inherited", "scheme", "version" ],
         "type" : "object"
       },
       "ResourceAccessGrant" : {
@@ -1154,6 +1171,7 @@
             "type" : "array"
           }
         },
+        "required" : [ "available", "detail", "effectiveRole", "id", "key", "kind", "name", "roleSources" ],
         "type" : "object"
       },
       "ResourceAccessReplacement" : {
@@ -1197,8 +1215,11 @@
       "ResourceRoleSource" : {
         "properties" : {
           "grantee" : {
-            "additionalProperties" : { },
-            "type" : [ "object", "null" ]
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/ResourceRoleSourceGrantee"
+            }, {
+              "type" : "null"
+            } ]
           },
           "kind" : {
             "$ref" : "#/components/schemas/ResourceRoleSourceKind"
@@ -1207,6 +1228,25 @@
             "type" : "string"
           }
         },
+        "required" : [ "grantee", "kind", "role" ],
+        "type" : "object"
+      },
+      "ResourceRoleSourceGrantee" : {
+        "properties" : {
+          "id" : {
+            "type" : [ "integer", "string" ]
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "$ref" : "#/components/schemas/ResourceRoleSourceKind"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "key", "kind", "name" ],
         "type" : "object"
       },
       "ResourceRoleSourceKind" : {
@@ -1223,7 +1263,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "email" : {
             "description" : "User's email address.",
@@ -1233,7 +1274,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -1241,7 +1283,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -1251,7 +1294,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "lastName" : {
             "description" : "User's family name.",
@@ -1259,7 +1303,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -1268,7 +1313,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -1501,7 +1547,7 @@
     }
   },
   "info" : {
-    "description" : "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime.",
+    "description" : "Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.",
     "title" : "RSpace REST API v2",
     "version" : "2.0.0"
   },
@@ -1597,7 +1643,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "limit", "page" ],
+                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -1821,7 +1867,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "limit", "page" ],
+                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
                   "type" : "object"
                 }
               }
@@ -2236,7 +2282,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "limit", "page" ],
+                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
                   "type" : "object"
                 }
               }

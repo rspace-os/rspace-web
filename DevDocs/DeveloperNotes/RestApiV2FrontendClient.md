@@ -16,6 +16,8 @@ Run from the repository root after changing backend endpoint or schema declarati
 ```sh
 mvn test -Dfast=true -Dtest=ApiV2OpenApiDocumentExportTest -DupdateApiV2OpenApiFixture=true
 pnpm generate:api-v2
+pnpm test --project scripts
+pnpm run i18n:types # only when a server catalogue changed
 ```
 
 `ApiV2OpenApiDocumentExportTest` exports the complete document for registered resources and
@@ -23,7 +25,7 @@ controllers without a database. With `-DupdateApiV2OpenApiFixture=true` it write
 `src/main/webapp/ui/src/modules/common/api/v2/openapi.generated.json`; without the flag it fails if
 that file differs from the backend.
 
-`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, the resource registry after it, and the `where` filter types last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
+`pnpm generate:api-v2` runs the HTTP output first, the native Valibot output second, the adapter next, the resource registry and guaranteed read fields after it, and the `where` filter types last. Both Orval projects read the committed spec. Keep this order: the HTTP output's `clean: true`
 can delete validation files generated before it. The Valibot project uses `client: "valibot"`,
 `mode: "single"` and `override.valibot.generateReusableSchemas: true`, with an isolated target and
 no `output.schemas` setting.
@@ -70,15 +72,32 @@ values that contain commas. Generated queries pass their cancellation signal to 
 `apiV2HeadersFetch<T>` returns `{ body: T, headers: Headers }` for operations that need response
 headers. `apiV2BlobFetch` returns `{ body: Blob, headers: Headers }` for file downloads. Both
 live in `apiV2Fetch.ts` and share the default transport authentication and error handling.
-`orval.config.ts` maps each such operation to its mutator and fails on an operation the spec lacks.
+
+`orval.config.ts` derives each operation's mutator from the spec (`scripts/api-v2-valibot/mutators.ts`):
+
+- An operation whose 2xx responses are all binary, after resolving `$ref` responses, uses `apiV2BlobFetch`. A
+  bodyless 204 is not binary: an operation whose only success is 204 keeps `apiV2Fetch`, which resolves `undefined`.
+- Generation fails on mixed JSON and binary successes, on a binary success combined with a bodyless 204 (the Blob
+  mutator would hide the 204 as an empty `Blob`), and on a bodyless 2xx other than 204.
+- `apiV2HeadersFetch` stays an explicit allowlist in `orval.config.ts`. Every operation that declares an `ETag`
+  header must be on that list or on its ETag exclusion list, or generation fails. Exclude an operation only when
+  callers read its version some other way, such as a `version` body field.
 
 `apiV2Fetch.ts` exports `BodyType<B> = B` and `ErrorType<E>` for Orval. Generated hooks do not expose
-separate error types for each status. Every HTTP failure throws `ApiV2ProblemError`, which exposes
-`status`, optional `code`, `message` and optional `problem`. A response the registry does not declare
-for its status and media type throws `ApiV2UnexpectedResponseError`, and a body that fails its schema
-throws Valibot's `ValiError`. A blocked identity change throws `ApiV2IdentityChangedError`, an abort
-rejects with the signal's `DOMException`, and network failures remain the `TypeError` thrown by fetch.
-`ErrorType` is that union.
+separate error types for each status. Transport and token failures extend `ApiV2Error`, which carries an optional
+HTTP `status` and the standard `cause`:
+
+| Error | When |
+| --- | --- |
+| `ApiV2ProblemError` | An HTTP failure. Exposes `status`, optional `code`, `message` and optional `problem`. |
+| `ApiV2UnexpectedResponseError` | A response the client cannot use, with `reason`: `undeclared` (the registry does not declare its status and media type), `invalidBody` (the body fails its schema; the Valibot error is the `cause`) or `malformedJson` (the `SyntaxError` is the `cause`). |
+| `ApiV2NetworkError` | `fetch()` or reading a body failed with a `TypeError` while the request was not cancelled. |
+| `ApiV2SessionEndedError` | Token issuance refused the session (see Tokens and identity changes). Never retry it, whatever its `status`: the HTML login page carries 200. |
+
+A blocked identity change throws `ApiV2IdentityChangedError`, which is not an `ApiV2Error` because the page is
+reloading. Cancellation is never wrapped: an abort rejects with the signal's reason, usually a `DOMException`, but a
+custom `signal.reason` can be any value. `ErrorType` is `ApiV2Error | ApiV2IdentityChangedError | DOMException`. An
+unregistered operation throws a `TypeError`, which is a programming error and not part of `ErrorType`.
 
 `message` uses the occurrence-specific `detail` when supplied, otherwise the stable `title`, then
 the HTTP status text. Generic problems and local request-validation problems omit duplicated detail.
@@ -92,20 +111,40 @@ that case before reading details.
 
 `tokenProvider.ts` exports `ApiV2TokenProvider` with `getToken(signal?: AbortSignal):
 Promise<string>` and `recover(rejected: string, invalid?: boolean): Promise<string>`, plus
-`getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. The setter returns a restore function.
+`getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. The setter is for tests; it returns a restore
+function.
 
-The default provider shares token creation across concurrent callers. It refreshes before expiry and
-uses the legacy token route on public document views. It works independently of a `QueryClient`. V2
-callers neither pass tokens nor call `useOauthTokenQuery`. 401 recovery distinguishes an invalid
-token from a resource permission failure. Only GET requests replay after recovery; writes never
-replay automatically. When token issuance answers 401, 403, an undeclared response or an invalid body,
-the session has ended: recovery clears the stored token and navigates to `/login`.
+The default `SessionTokenProvider` shares token creation across concurrent callers and uses the legacy token route on
+public document views. It refreshes on demand only: `getToken` re-mints a token inside the five-minute expiry
+buffer, so an idle tab does no background work. It works independently of a `QueryClient`. V2 callers neither pass
+tokens nor call `useOauthTokenQuery`. 401 recovery distinguishes an invalid token from a resource permission
+failure. Only GET requests replay after recovery; writes never replay automatically.
+
+The provider decides when a session has ended; session handlers decide what the page does about it.
+`setApiV2SessionHandlers({ onSessionEnded, onIdentityChanged })` installs handlers that the module-level provider
+reads at call time, and returns a restore function. Without it, the defaults clear the stored token and navigate to
+`/login` (session ended) or reload (identity changed). Tests construct `new SessionTokenProvider(handlers)` instead.
+
+| Path | Condition | Handler | Caller receives |
+| --- | --- | --- | --- |
+| Mint, authenticated page | 401 or 403 from token issuance, or the HTML login page | `onSessionEnded` | `ApiV2SessionEndedError` |
+| Mint, public document page, provider already held a token | the same refusals | `onIdentityChanged` (the reload restores the anonymous session) | `ApiV2IdentityChangedError` |
+| Mint, public document page, no prior token | the same refusals | none, since some sessions are always refused and a reload would loop | the `ApiV2ProblemError` or `ApiV2UnexpectedResponseError` |
+| Mint | network failure, 5xx, malformed JSON, invalid or empty token body | none | the `ApiV2Error`; the next call retries |
+| Recovery | permission 401 (`whoami` accepts the token) | none | the original 401 |
+| Recovery | session ended | `onSessionEnded` | `ApiV2SessionEndedError` |
+| Recovery | other failure | none | the original 401 |
+| Any mint | token for another identity | `onIdentityChanged` | `ApiV2IdentityChangedError` |
+| Recovery, public document page | session expired | `onIdentityChanged` | `ApiV2IdentityChangedError` |
+
+A tab that makes no v2 call notices an identity change only on its next mint or rejected-token recovery. Starting
+or ending Operate As rotates the browser authentication context, so the server rejects the old token on the next call.
 
 The provider serves REST API v2 only. API v1 callers (`useOauthToken`, `useOauthTokenQuery`,
 `fetchWithUiToken`, the `common/axios` interceptors and `AuthStore`) keep the legacy
 `/userform/ajax/inventoryOauthToken` route, session storage and their own refresh and recovery.
 
-Every minted token, including scheduled refreshes and 401 recovery, is compared with the current
+Every minted token, including expiry-driven refreshes and 401 recovery, is compared with the current
 token by refresh-token hash. A mismatch reloads the page before any caller receives the new token,
 including concurrent callers waiting for the same mint. An Operate As change therefore discards the
 old page's cache and UI state. A token without the hash claim does not count as a mismatch. This
@@ -197,6 +236,28 @@ dictionaries, runtime metadata and problem extensions keep their values. Read sc
 `id`, so projected responses using `fields`, `exclude` or `depth` pass.
 Generated fieldset types exclude `null`; adapters omit empty selections. The mutator does not
 sanitize fieldsets.
+
+Other response types mark every property the server always sends as required, so a missing key fails as
+`invalidBody`; a nullable key can still be `null`. List envelopes always contain `docs`, `limit`, `page` and
+`hasNextPage`; `totalDocs` is present only when totals were requested.
+
+### Sparse reads with `apiV2Selected.ts`
+
+`*Read` properties marked `x-rspace-read-guaranteed` are always present when requested from a readable document (see
+[field read guarantees](RestApiV2QueriesAndAccess.md#field-read-guarantees)). `pnpm generate:api-v2` writes them to
+`generated/guaranteedReadFields.ts`, keyed like the resource registry, as a type and a runtime set.
+`apiV2Selected.ts` uses them:
+
+- `ApiV2Selected<R, F>`: the resource's `Read` type with each requested guaranteed field present (`undefined`
+  removed, `null` kept). Other fields stay optional. Only a literal tuple narrows; `("id" | "name")[]` or `string[]`
+  leaves the plain `Read` type.
+- `apiV2Fields(fields)`: the `fields[...]` query value for an `as const` tuple, so the request and the type agree.
+- `assertApiV2Selected(resource, document, fields)`: narrows the document, or throws `ApiV2UnexpectedResponseError`
+  with `invalidBody` when a requested guaranteed field is missing.
+
+Run the assertion at the fetch boundary (the request wrapper or `queryFn`), never in a query's `select`, so its
+error goes through the same mapping and retry policy as other response failures. It covers root documents only:
+fields of expanded relationships keep their own checks.
 
 The schema-subset preflight remains a generation gate even when native Orval accepts more
 constructs. It checks keywords, references and formats in all component and inline schemas,
