@@ -44,6 +44,7 @@ describe("BookableItemPage", () => {
                 action: "WRITE",
                 description: "Updated booking configuration IN123",
                 payload: { enabled: true, maxBookingDurationMinutes: 240 },
+                target: null,
               },
             ],
             20,

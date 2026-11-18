@@ -63,7 +63,16 @@ describe("BookableItemPage", () => {
 
   it("confirms a tab change before discarding staged permissions", async () => {
     const assignment = (id: number, role: string) => ({
-      grantee: { kind: "USER", id, key: `user:${id}`, name: `Person ${id}`, available: true },
+      grantee: {
+        kind: "USER",
+        id,
+        key: `user:${id}`,
+        name: `Person ${id}`,
+        detail: null,
+        available: true,
+        effectiveRole: role,
+        roleSources: [],
+      },
       role,
     });
     server.use(
@@ -73,7 +82,10 @@ describe("BookableItemPage", () => {
           scheme: "booking",
           version: 0,
           assignments: [assignment(1, "OWNER"), assignment(2, "BOOKER")],
+          inherited: false,
           caller: {
+            effectiveRole: "OWNER",
+            roleSources: [],
             granteeKey: "user:1",
             capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
           },

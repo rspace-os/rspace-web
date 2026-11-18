@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { parseTableViewState } from "@/modules/common/table-list/utils/viewStorage";
 import {
@@ -9,7 +10,9 @@ import {
   fetchBookingConfigurationByTarget,
   fetchBookingConfigurationDetailsByTarget,
 } from "../bookingConfiguration";
+import { BOOKING_CONFIGURATION_READ_FIELDS } from "../bookingConfigurationApi";
 import { mapBookingConfiguration } from "../bookingConfigurationSchema";
+import { ownerBookingAccess } from "../mocks/bookableItemFixtures";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 
 it.each(["openingStart", "openingEnd", "openDays", "openingExceptions"])(
@@ -64,6 +67,9 @@ const configuration = {
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
   updatedAt: "2026-08-10T12:00:00Z",
+  createdAt: null,
+  createdByName: null,
+  ...ownerBookingAccess,
 };
 
 describe("booking configuration reads", () => {
@@ -163,7 +169,12 @@ describe("booking configuration schedules", () => {
       mapBookingConfiguration({ ...configuration, state: "ACTIVE", target: null, openingHours }).openingHours,
     ).toEqual(openingHours.toReversed());
     expect(() =>
-      mapBookingConfiguration({ ...configuration, state: "ACTIVE", target: null, openingHours: [{ dayOfWeek: 1 }] }),
+      mapBookingConfiguration({
+        ...configuration,
+        state: "ACTIVE",
+        target: null,
+        openingHours: [{ dayOfWeek: 1, start: "17:00", end: "08:00" }],
+      }),
     ).toThrow();
   });
 
@@ -181,4 +192,10 @@ describe("booking configuration schedules", () => {
       { name: "end", required: true, writeConstraints: { format: "time", allow24HourEnd: true } },
     ]);
   });
+});
+
+it("requests the booking configuration read fields in a fixed order", () => {
+  expect(apiV2Fields(BOOKING_CONFIGURATION_READ_FIELDS)).toBe(
+    "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth",
+  );
 });

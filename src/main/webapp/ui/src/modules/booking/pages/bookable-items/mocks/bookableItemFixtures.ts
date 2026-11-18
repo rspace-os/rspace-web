@@ -88,6 +88,8 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "America/New_York",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    createdAt: null,
+    createdByName: null,
     updatedAt: "2026-08-11T11:00:00Z",
   },
   {
@@ -112,6 +114,8 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "UTC",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    createdAt: null,
+    createdByName: null,
     updatedAt: "2026-08-12T12:00:00Z",
   },
   {
@@ -134,6 +138,8 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "Asia/Singapore",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    createdAt: null,
+    createdByName: null,
     updatedAt: "2026-08-13T13:00:00Z",
   },
   {
@@ -158,6 +164,8 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    createdAt: null,
+    createdByName: null,
     updatedAt: "2026-08-14T14:00:00Z",
   },
 ] as const;

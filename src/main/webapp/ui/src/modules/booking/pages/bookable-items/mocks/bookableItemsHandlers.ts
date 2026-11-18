@@ -1,6 +1,7 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
 import { apiV2CollectionResponse, apiV2ListResult } from "@/__tests__/mocks/apiV2CollectionMock";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalog";
 import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
 import type { BookingCataloguePageDocument } from "@/modules/common/api/v2/generated/models/bookingCataloguePageDocument";
@@ -218,7 +219,7 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
     }),
     http.get("/api/v2/bookings", ({ request }) => {
       const url = new URL(request.url);
-      if (url.searchParams.get("fields[bookings]") !== BOOKING_READ_FIELDS) return undefined;
+      if (url.searchParams.get("fields[bookings]") !== apiV2Fields(BOOKING_READ_FIELDS)) return undefined;
       const where = url.searchParams.get("where") ?? "";
       const targetId = where.match(/target==([^;]+)/)?.[1].replaceAll('"', "");
       if (!targetId) return undefined;

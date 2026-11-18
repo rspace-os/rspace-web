@@ -26,6 +26,7 @@ const auditEvent = {
   action: "WRITE",
   description: "Updated booking configuration IN123",
   payload: { maxBookingDurationMinutes: 60 },
+  target: null,
 };
 
 function bookableItemAccessHandlers() {
