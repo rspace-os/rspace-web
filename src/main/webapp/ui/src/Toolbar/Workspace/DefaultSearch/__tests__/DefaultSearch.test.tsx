@@ -29,13 +29,15 @@ const BKMKTAG = toSearchQuery({ ...searchSettings, options: ["tag"], terms: ["bk
 
 let savedPreferences: Array<Record<string, { value: unknown }>>;
 
-/** Each read returns the next of `preferences`, and the last one after that. */
-function givenStoredPreferences(...preferences: Array<Record<string, unknown>>) {
+/** Each read returns the next of `preferences`, and the last one after that. FAILED_READ fails that read. */
+const FAILED_READ = "failed read";
+function givenStoredPreferences(...preferences: Array<Record<string, unknown> | typeof FAILED_READ>) {
   let reads = 0;
   server.use(
-    http.get("/userform/ajax/preference", () =>
-      HttpResponse.json(preferences[Math.min(reads++, preferences.length - 1)]),
-    ),
+    http.get("/userform/ajax/preference", () => {
+      const next = preferences[Math.min(reads++, preferences.length - 1)];
+      return next === FAILED_READ ? new HttpResponse(null, { status: 500 }) : HttpResponse.json(next);
+    }),
     http.post("/userform/ajax/preference", async ({ request }) => {
       const form = await request.formData();
       savedPreferences.push(JSON.parse(form.get("value") as string));
@@ -257,6 +259,36 @@ describe("DefaultSearch", () => {
     await vi.waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
     );
+    expect(runButton()).toBeEnabled();
+  });
+
+  test("a save whose check of the stored default fails stores nothing and says it failed", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({}, FAILED_READ, { [KEY]: { value: BKMKTAG } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.saveFailed"),
+    );
+    expect(savedPreferences).toHaveLength(0);
+  });
+
+  test("a remove whose check of the stored default fails keeps it and says it failed", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, FAILED_READ, { [KEY]: { value: BKMKTAG } });
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
+    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removeFailed"),
+    );
+    expect(savedPreferences).toHaveLength(0);
     expect(runButton()).toBeEnabled();
   });
 

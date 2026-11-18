@@ -55,15 +55,11 @@ function useSummary(): (query: string) => string {
 }
 
 /** The default as stored now, which another tab may have changed since this page loaded. */
-async function readStoredDefault(fallback: string | null): Promise<string | null> {
-  try {
-    const preferences = await fetchPreferences();
-    if (typeof preferences !== "object") return null;
-    const key = Symbol.keyFor(PREFERENCES.WORKSPACE_DEFAULT_SEARCH) as string;
-    return (preferences[key] as { value?: string | null } | undefined)?.value ?? null;
-  } catch {
-    return fallback;
-  }
+async function readStoredDefault(): Promise<string | null> {
+  const preferences = await fetchPreferences();
+  if (typeof preferences !== "object") return null;
+  const key = Symbol.keyFor(PREFERENCES.WORKSPACE_DEFAULT_SEARCH) as string;
+  return (preferences[key] as { value?: string | null } | undefined)?.value ?? null;
 }
 
 type DefaultSearchProps = {
@@ -120,8 +116,20 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
       t("toolbar.defaultSearch.replaceConfirm"),
     );
 
+  // Without the stored value, saving or removing could overwrite another tab's default unasked
+  const readOrAnnounce = async (failed: string): Promise<{ latest: string | null } | null> => {
+    try {
+      return { latest: await readStoredDefault() };
+    } catch {
+      setAnnouncement(failed);
+      return null;
+    }
+  };
+
   const save = async (query: string) => {
-    const latest = await readStoredDefault(stored);
+    const read = await readOrAnnounce(t("toolbar.defaultSearch.saveFailed"));
+    if (!read) return;
+    const { latest } = read;
     setShown(latest);
     if (latest === query) {
       setAnnouncement(t("toolbar.defaultSearch.saved"));
@@ -132,7 +140,9 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
   };
 
   const remove = async () => {
-    const latest = await readStoredDefault(stored);
+    const read = await readOrAnnounce(t("toolbar.defaultSearch.removeFailed"));
+    if (!read) return;
+    const { latest } = read;
     if (latest === null) {
       setShown(null);
       setAnnouncement(t("toolbar.defaultSearch.removed"));
