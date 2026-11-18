@@ -189,8 +189,8 @@
       "firefox": "Firefox",
       "heading": "Browser upgrade recommended to use RSpace",
       "iconAlt": "Icon by Martin Leblanc",
-      "notice1": "It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.",
-      "notice2": "We do fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.",
+      "notice1": "It looks like you are using Internet Explorer or a legacy version of Microsoft Edge, which RSpace does not support. Some RSpace features will not work properly in these browsers.",
+      "notice2": "We fully support Chrome, Firefox, Safari and the latest two versions of Microsoft Edge. You can use the links below to install Chrome, Firefox or Safari if you do not already have one of them.",
       "safari": "Safari"
     },
     "community": {
