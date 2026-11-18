@@ -486,7 +486,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         </Menu>
         {this.state.treeView && <TreeSort />}
         {!this.state.treeView && (
-          <Box component="span" sx={{ display: "flex", flexGrow: "1", minWidth: 0 }}>
+          <Box component="span" sx={{ display: "flex", flexGrow: "1" }}>
             <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
               <IconButton
                 data-test-id="toolbar-views-2"
