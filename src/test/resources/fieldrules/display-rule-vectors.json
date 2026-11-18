@@ -1,0 +1,1180 @@
+{
+  "description": "Shared vectors for display rules (RPD-339). Run by FieldDisplayRuleVectorsTest (Java) and displayRuleVectors.test.ts (TypeScript); both implementations must agree on every case. Keys are UUIDs; K1 is 00000000-0000-4000-8000-000000000001 and so on.",
+  "rules": {
+    "valid": [
+      {
+        "name": "is any of",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"Yes\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "is none of with several values, properties in another order",
+        "json": "{\"values\":[\"CL2\",\"CL3\"],\"operator\":\"IS_NONE_OF\",\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\"}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_NONE_OF\",\"values\":[\"CL2\",\"CL3\"]}"
+      },
+      {
+        "name": "has value omits values",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "has no value with an empty values array",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_NO_VALUE\",\"values\":[]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_NO_VALUE\"}"
+      },
+      {
+        "name": "escaping matches JSON.stringify: control characters, quotes, backslashes and non-ASCII",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}"
+      },
+      {
+        "name": "a lone surrogate is escaped in lowercase hex",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\uD800y\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\ud800y\"]}"
+      },
+      {
+        "name": "a repeated property takes its last value, as JSON.parse does",
+        "json": "{\"sourceFieldKey\":\"x\",\"operator\":\"BAD\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"x\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "vertical tab is escaped in lowercase hex",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}"
+      },
+      {
+        "name": "a repeated source key takes its last value",
+        "json": "{\"sourceFieldKey\":7,\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "repeated values take their last value",
+        "json": "{\"values\":[1],\"values\":[],\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      }
+    ],
+    "invalid": [
+      {
+        "name": "not JSON",
+        "json": "show when yes"
+      },
+      {
+        "name": "not an object",
+        "json": "[]"
+      },
+      {
+        "name": "trailing tokens",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"} {}"
+      },
+      {
+        "name": "unknown operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"EQUALS\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "missing operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "missing source key",
+        "json": "{\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "blank source key",
+        "json": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "unknown property",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"effect\":\"HIDE\"}"
+      },
+      {
+        "name": "is any of without values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\"}"
+      },
+      {
+        "name": "is none of with empty values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_NONE_OF\",\"values\":[]}"
+      },
+      {
+        "name": "has value with values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "blank value",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}"
+      },
+      {
+        "name": "non-string value",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[1]}"
+      },
+      {
+        "name": "null value",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[null]}"
+      },
+      {
+        "name": "numeric operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":2}"
+      },
+      {
+        "name": "numeric source key",
+        "json": "{\"sourceFieldKey\":7,\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "JSON null",
+        "json": "null"
+      },
+      {
+        "name": "empty property name",
+        "json": "{\"\":1,\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "value that is only a non-breaking space",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\\u00a0\"]}"
+      },
+      {
+        "name": "source key that is only an ideographic space",
+        "json": "{\"sourceFieldKey\":\"\\u3000\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "operator with surrounding spaces",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\" HAS_VALUE \"}"
+      },
+      {
+        "name": "operator in lower case",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"has_value\"}"
+      },
+      {
+        "name": "a repeated property whose last value is invalid",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"operator\":\"BAD\"}"
+      },
+      {
+        "name": "values that are not an array",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":\"Yes\"}"
+      },
+      {
+        "name": "empty input",
+        "json": ""
+      }
+    ]
+  },
+  "visibility": [
+    {
+      "name": "field without a rule is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        }
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "keyless field without a rule is shown",
+      "fields": [
+        {
+          "key": null,
+          "type": "STRING"
+        },
+        {
+          "key": null,
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "every operator against a visible source with no value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "every operator against a visible source with a non-matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "is any of with a matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Unsure"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "multi-select choice source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "A",
+            "B",
+            "C"
+          ],
+          "selectedOptions": [
+            "A",
+            "C"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "C"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "B",
+              "C"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "B"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "a hidden source hides its dependents under every operator, even when it holds a matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "CL1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "chain three deep, all conditions met",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "X",
+            "Y"
+          ],
+          "selectedOptions": [
+            "X"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "X"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "chain three deep, top condition fails",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "X",
+            "Y"
+          ],
+          "selectedOptions": [
+            "X"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "X"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "dependent listed before its source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule whose source does not exist leaves the field shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "fields on a cycle and their dependents are hidden; others are not",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING"
+        }
+      ],
+      "expected": [
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "a field that is its own source is hidden",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        false
+      ]
+    },
+    {
+      "name": "when two fields share a key, the first one is the source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "name": "a valid set, including an option that is offered but not selected",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No",
+            "Unsure"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Unsure"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "a forward reference is valid",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "A"
+          ]
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "keyless fields without rules are valid",
+      "fields": [
+        {
+          "key": null,
+          "type": "STRING"
+        },
+        {
+          "key": null,
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "an option the source does not offer",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a duplicated key is reported on every field that has it",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyDuplicate"
+        },
+        {
+          "fieldIndex": 2,
+          "code": "validation.fieldDisplayRule.keyDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "a key that is not a UUID",
+      "fields": [
+        {
+          "key": "permit-number",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        }
+      ]
+    },
+    {
+      "name": "a source that does not exist",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a field that is its own source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceSelf"
+        }
+      ]
+    },
+    {
+      "name": "a source that is not a radio or choice field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.sourceType"
+        }
+      ]
+    },
+    {
+      "name": "a cycle is reported on the fields in it, not on their dependents",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.cycle"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.cycle"
+        }
+      ]
+    },
+    {
+      "name": "a field can have a key problem and a rule problem",
+      "fields": [
+        {
+          "key": "bad",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        },
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a key with upper-case hex digits (keys are compared case-sensitively, so only lower case is allowed)",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-00000000000A",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        }
+      ]
+    },
+    {
+      "name": "a cycle is reported even when its rules also name unknown options",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        },
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.cycle"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.cycle"
+        }
+      ]
+    }
+  ],
+  "elnChoice": [
+    {
+      "data": "",
+      "expected": []
+    },
+    {
+      "data": "   ",
+      "expected": []
+    },
+    {
+      "data": "fieldChoices=a",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "fieldChoices=a&fieldChoices=b",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "data": "fieldChoices=val 1&fieldChoices=val 2",
+      "expected": [
+        "val 1",
+        "val 2"
+      ]
+    },
+    {
+      "data": "fieldChoices=x=y",
+      "expected": [
+        "x"
+      ]
+    },
+    {
+      "data": "fieldChoices=a&",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "&fieldChoices=a",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "fieldChoices=",
+      "expected": []
+    },
+    {
+      "data": "no separator",
+      "expected": []
+    }
+  ]
+}

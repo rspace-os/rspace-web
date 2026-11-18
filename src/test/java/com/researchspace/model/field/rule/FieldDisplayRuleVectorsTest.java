@@ -1,0 +1,172 @@
+package com.researchspace.model.field.rule;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.model.field.FieldType;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+
+/**
+ * Runs the vectors shared with the TypeScript implementation (displayRuleVectors.test.ts), so that
+ * the server and the browser agree on every case.
+ */
+class FieldDisplayRuleVectorsTest {
+
+  private static final JsonNode VECTORS = loadVectors();
+
+  private static JsonNode loadVectors() {
+    try (InputStream in =
+        FieldDisplayRuleVectorsTest.class.getResourceAsStream(
+            "/fieldrules/display-rule-vectors.json")) {
+      return new ObjectMapper().readTree(in);
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not read display rule vectors", e);
+    }
+  }
+
+  /**
+   * Generated rather than a vector: a chain far deeper than any real template, listed dependent
+   * first, must resolve without exhausting the stack (the TypeScript test does the same).
+   */
+  @Test
+  void deepChainListedDependentFirstIsAllShownAndValid() {
+    int length = 20_000;
+    List<RuleField> fields = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      FieldDisplayRule rule =
+          i == length - 1
+              ? null
+              : new FieldDisplayRule(chainKey(i + 1), ConditionOperator.IS_ANY_OF, List.of("Yes"));
+      fields.add(new RuleField(chainKey(i), FieldType.RADIO, rule, List.of("Yes"), List.of("Yes")));
+    }
+
+    assertEquals(Collections.nCopies(length, true), FieldDisplayRuleEvaluator.visibility(fields));
+    assertEquals(List.of(), FieldDisplayRuleValidator.validate(fields));
+  }
+
+  private static String chainKey(int i) {
+    return String.format(Locale.ROOT, "00000000-0000-4000-8000-%012d", i);
+  }
+
+  @TestFactory
+  Stream<DynamicTest> validRulesParseAndSerialiseCanonically() {
+    return cases("rules", "valid")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    vector.get("name").asText(),
+                    () ->
+                        assertEquals(
+                            vector.get("canonical").asText(),
+                            FieldDisplayRule.fromJson(vector.get("json").asText()).toJson())));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> invalidRulesAreRejected() {
+    return cases("rules", "invalid")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    vector.get("name").asText(),
+                    () ->
+                        assertThrows(
+                            IllegalArgumentException.class,
+                            () -> FieldDisplayRule.fromJson(vector.get("json").asText()))));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> visibility() {
+    return cases("visibility")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    vector.get("name").asText(),
+                    () -> {
+                      List<Boolean> expected = new ArrayList<>();
+                      vector.get("expected").forEach(node -> expected.add(node.asBoolean()));
+                      assertEquals(
+                          expected,
+                          FieldDisplayRuleEvaluator.visibility(fields(vector.get("fields"))));
+                    }));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> validation() {
+    return cases("validation")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    vector.get("name").asText(),
+                    () -> {
+                      List<FieldDisplayRuleValidator.RuleError> expected = new ArrayList<>();
+                      vector
+                          .get("expectedErrors")
+                          .forEach(
+                              node ->
+                                  expected.add(
+                                      new FieldDisplayRuleValidator.RuleError(
+                                          node.get("fieldIndex").asInt(),
+                                          node.get("code").asText())));
+                      assertEquals(
+                          expected,
+                          FieldDisplayRuleValidator.validate(fields(vector.get("fields"))));
+                    }));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> elnChoiceData() {
+    return cases("elnChoice")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    "'" + vector.get("data").asText() + "'",
+                    () ->
+                        assertEquals(
+                            strings(vector.get("expected")),
+                            ElnChoiceValues.parse(vector.get("data").asText()))));
+  }
+
+  private static Stream<JsonNode> cases(String... path) {
+    JsonNode node = VECTORS;
+    for (String segment : path) {
+      node = node.get(segment);
+    }
+    return StreamSupport.stream(node.spliterator(), false);
+  }
+
+  private static List<RuleField> fields(JsonNode nodes) {
+    List<RuleField> fields = new ArrayList<>();
+    for (JsonNode node : nodes) {
+      JsonNode key = node.get("key");
+      JsonNode rule = node.get("rule");
+      fields.add(
+          new RuleField(
+              key == null || key.isNull() ? null : key.asText(),
+              FieldType.valueOf(node.get("type").asText()),
+              rule == null || rule.isNull() ? null : FieldDisplayRule.fromJson(rule.toString()),
+              strings(node.get("allowedOptions")),
+              strings(node.get("selectedOptions"))));
+    }
+    return fields;
+  }
+
+  private static List<String> strings(JsonNode array) {
+    List<String> values = new ArrayList<>();
+    if (array != null) {
+      array.forEach(node -> values.add(node.asText()));
+    }
+    return values;
+  }
+}
