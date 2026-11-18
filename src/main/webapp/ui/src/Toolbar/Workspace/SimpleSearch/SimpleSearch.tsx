@@ -25,6 +25,7 @@ import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
 import { SEARCH_INPUT_ID } from "../DefaultSearch/workspaceGlobals";
+import type { SearchOption } from "../DefaultSearch/workspaceSearchUrl";
 import ChemicalSearcher from "./ChemicalSearcher";
 import ScopeDialog from "./SimpleSearchScopeDialog";
 
@@ -41,8 +42,10 @@ function formatDateForTooltip(date: any) /*: string*/ {
   return truncateIsoTimestamp(date, "date").orElse("Invalid date");
 }
 
-function getFilterLabels(includeChemical: boolean): Record<string, string> {
-  const labels: Record<string, string> = {
+type FilterLabels = Record<string, string> & Record<Exclude<SearchOption, "records">, string>;
+
+export function getFilterLabels(includeChemical: boolean): FilterLabels {
+  const labels: FilterLabels = {
     global: i18n.t("workspace:toolbar.simpleSearch.filterTypes.global"),
     fullText: i18n.t("workspace:toolbar.simpleSearch.filterTypes.fullText"),
     tag: i18n.t("workspace:toolbar.simpleSearch.filterTypes.tag"),

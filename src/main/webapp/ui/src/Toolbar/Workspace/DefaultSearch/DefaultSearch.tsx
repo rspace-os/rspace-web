@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import ConfirmProvider, { useConfirm } from "@/components/ConfirmProvider";
 import useUiPreference, { fetchPreferences, PREFERENCES, UiPreferences } from "@/hooks/api/useUiPreference";
+import { getFilterLabels } from "../SimpleSearch/SimpleSearch";
 import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID, workspaceSettings } from "./workspaceGlobals";
 import { parseSearchQuery, type SummaryLabels, summariseSearch, toSearchQuery } from "./workspaceSearchUrl";
 
@@ -38,19 +39,7 @@ function useSummary(): (query: string) => string {
     const parsed = parseSearchQuery(`?${query}`);
     if (parsed.kind !== "search") return "";
     const labels: SummaryLabels = {
-      options: {
-        global: t("toolbar.simpleSearch.filterTypes.global"),
-        fullText: t("toolbar.simpleSearch.filterTypes.fullText"),
-        tag: t("toolbar.simpleSearch.filterTypes.tag"),
-        name: t("toolbar.simpleSearch.filterTypes.name"),
-        created: t("toolbar.simpleSearch.filterTypes.created"),
-        lastModified: t("toolbar.simpleSearch.filterTypes.lastModified"),
-        form: t("toolbar.simpleSearch.filterTypes.form"),
-        template: t("toolbar.simpleSearch.filterTypes.template"),
-        attachment: t("toolbar.simpleSearch.filterTypes.attachment"),
-        owner: t("toolbar.simpleSearch.filterTypes.owner"),
-        records: t("toolbar.defaultSearch.withinRecords"),
-      },
+      options: { ...getFilterLabels(false), records: t("toolbar.defaultSearch.withinRecords") },
       filters: {
         sharedFilter: t("toolbar.workspaceToolbar.sharedWithMe"),
         favoritesFilter: t("toolbar.workspaceToolbar.favorites"),
