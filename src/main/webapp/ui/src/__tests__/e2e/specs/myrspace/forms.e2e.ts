@@ -84,3 +84,46 @@ test.describe
       await expect(forms.formRow(formName)).toHaveCount(2);
     });
   });
+
+test.describe("My RSpace Choice fields", () => {
+  test("As a form author, a single-selection Choice field offers radio buttons and keeps exactly one default", async ({
+    clientForms,
+    pageCreateForm,
+  }) => {
+    const options = ["a", "b", "c"];
+    const form = await clientForms.create({
+      name: uniqueName("ChoiceEditorForm"),
+      fields: [
+        { name: "SingleChoice", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
+        { name: "MultiChoice", type: "Choice", options, defaultOptions: ["a"], multipleChoice: true },
+      ],
+    });
+    await pageCreateForm.openExisting(form.id);
+    await expect(pageCreateForm.fieldPreview("SingleChoice").getByRole("radio")).toHaveCount(3);
+    await expect(pageCreateForm.fieldPreview("MultiChoice").getByRole("checkbox")).toHaveCount(3);
+
+    const editor = await pageCreateForm.openFieldForEditing("SingleChoice");
+    await expect(editor.choiceDefaultOption("radio", "a")).toBeChecked();
+    await editor.setMultipleChoice(true);
+    await editor.choiceDefaultOption("checkbox", "b").check();
+    // Switching back to single with two defaults keeps both ticked until the author picks one.
+    await editor.setMultipleChoice(false);
+    await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
+    await expect(editor.choiceDefaultOption("checkbox", "b")).toBeChecked();
+    await editor.saveExpectingValidationError();
+    await expect(editor.root).toContainText("A single-selection field can have only one default option.");
+
+    await editor.choiceDefaultOption("checkbox", "c").check();
+    await editor.choiceDefaultOption("checkbox", "a").uncheck();
+    await expect(editor.choiceDefaultOption("checkbox", "b")).toBeChecked();
+    await expect(editor.choiceDefaultOption("checkbox", "c")).toBeChecked();
+    // Deleting one of the two ticked defaults leaves one, so the selectors become radios.
+    await editor.deleteChoiceOption("c");
+    await expect(editor.choiceDefaultOption("radio", "a")).not.toBeChecked();
+    await expect(editor.choiceDefaultOption("radio", "b")).toBeChecked();
+    await editor.save();
+    const singlePreview = pageCreateForm.fieldPreview("SingleChoice");
+    await expect(singlePreview.getByRole("radio")).toHaveCount(2);
+    await expect(singlePreview.getByRole("radio", { name: "b", exact: true })).toBeChecked();
+  });
+});

@@ -33,8 +33,9 @@ export class CustomDocumentFields {
     const selectedValues = optionValues.filter((value) => values.includes(value));
     expect(selectedValues.toSorted(), "Every requested option must exist in the field").toEqual(values.toSorted());
 
+    // Choice fields save "fieldChoices=" pairs whether they render as checkboxes or radios.
     const expectedData =
-      (await choices.count()) > 0
+      (await field.getAttribute("name")) === "choice"
         ? selectedValues.map((value) => `fieldChoices=${value}`).join("&")
         : selectedValues[0];
     await this.waitForAutosave(
@@ -48,6 +49,12 @@ export class CustomDocumentFields {
       },
       expectedData,
     );
+  }
+
+  /** A Choice field's option inputs of one role, including those hidden outside edit mode. */
+  async choiceOptions(name: string, role: "checkbox" | "radio"): Promise<Locator> {
+    const id = await resolveFieldId(this.page, name, 0, "choiceOptions");
+    return this.page.locator(`#field_${id}`).getByRole(role, { includeHidden: true });
   }
 
   async value(name: string): Promise<Locator> {

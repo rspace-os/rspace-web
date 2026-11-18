@@ -163,8 +163,8 @@
 				<label><spring:message code="form.fieldEditor.multiple"/></label>
 			</td>
 			<td>
-				<input type="radio" name="fieldMultipleAllowed" value="yes" <c:if test="${fieldTemplate.multipleChoice eq true}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedYes"/> <br/>
-				<input type="radio" name="fieldMultipleAllowed" value="no" <c:if test="${fieldTemplate.multipleChoice eq false}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedNo"/>
+				<label style="font-weight: normal;"><input type="radio" name="fieldMultipleAllowed" value="yes" <c:if test="${fieldTemplate.multipleChoice eq true}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedYes"/></label> <br/>
+				<label style="font-weight: normal;"><input type="radio" name="fieldMultipleAllowed" value="no" <c:if test="${fieldTemplate.multipleChoice eq false}"> checked </c:if> > <spring:message code="form.fieldEditor.multipleAllowedNo"/></label>
 			</td>
 		</tr>
 		<tr>
@@ -175,6 +175,8 @@
 				<span class="bootstrap-custom-flat">
 				    <button type="button" class="btn btn-default" id="addChoice"><spring:message code="form.fieldEditor.addNew"/></button>
 				</span>
+				<c:set var="choiceDefaultInputType"
+				  value="${fieldTemplate.multipleChoice or fn:length(fieldTemplate.defaultChoiceOptionAsList) gt 1 ? 'checkbox' : 'radio'}" />
 				<ul id="choiceFields">
 				<c:forEach var="fieldChoice" items="${fieldTemplate.choiceOptionAsList}">
 					<c:set var="isSelected" value="false" scope="page" />
@@ -183,7 +185,7 @@
 								<c:set var="isSelected" value="true" scope="page" />
 							</c:if>
 						</c:forEach>
-					<li><input type="checkbox" name="fieldSelectedChoices" value="${fieldChoice}" <c:if test="${isSelected eq 'true'}">checked</c:if>> <input type="hidden" name="fieldChoices" value="${fieldChoice}"> ${fieldChoice} <a href="#" style="font-weight:bold;" class="deleteChoice"><spring:message code="form.fieldEditor.deleteOption"/></a></li>
+					<li><label style="font-weight: normal;"><input type="${choiceDefaultInputType}" name="fieldSelectedChoices" value="${fieldChoice}" <c:if test="${isSelected eq 'true'}">checked</c:if>> <input type="hidden" name="fieldChoices" value="${fieldChoice}"> ${fieldChoice}</label> <a href="#" style="font-weight:bold;" class="deleteChoice"><spring:message code="form.fieldEditor.deleteOption"/></a></li>
 				</c:forEach>
 				</ul>
 			</td>

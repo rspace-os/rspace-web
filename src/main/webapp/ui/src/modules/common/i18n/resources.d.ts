@@ -8675,6 +8675,7 @@ export default interface Resources {
           "savingFormAction": "Saving form",
           "savingFormBlock": "Saving form...",
           "savingFormTagsAction": "Saving form tags",
+          "singleChoiceMultipleDefaults": "A single-selection field can have only one default option. Untick the options you do not want as defaults.",
           "submitButton": "Submit",
           "unpublishingFormAction": "Unpublishing form",
           "updatingFormAction": "Updating form",

@@ -125,6 +125,69 @@ test.describe("Document editor menus and history", () => {
   });
 });
 
+dynamicUserTest.describe("Choice fields", () => {
+  dynamicUserTest(
+    "As a user, a single-selection Choice field shows radio buttons, and a field holding several values keeps them all",
+    async ({ clientForms, clientDocuments, pageWorkspace, pageDocument, componentDocumentFields }) => {
+      dynamicUserTest.setTimeout(90_000);
+      const options = ["a", "b", "c"];
+      const form = await clientForms.create({
+        name: uniqueName("ChoiceModesForm"),
+        fields: [
+          { name: "OneOption", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
+          { name: "ManyOptions", type: "Choice", options, defaultOptions: ["a"], multipleChoice: true },
+          { name: "LegacyDefaults", type: "Choice", options, defaultOptions: ["a", "c"], multipleChoice: false },
+          { name: "GrowsLater", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
+          { name: "ShrinksLater", type: "Choice", options, defaultOptions: ["a", "c"], multipleChoice: false },
+        ],
+      });
+      const document = await clientDocuments.create({ name: uniqueName("ChoiceModesDocument"), form: { id: form.id } });
+      await pageWorkspace.openDocument(document.id);
+
+      await expect(await componentDocumentFields.choiceOptions("OneOption", "radio")).toHaveCount(3);
+      await expect(await componentDocumentFields.choiceOptions("OneOption", "checkbox")).toHaveCount(0);
+      await expect(await componentDocumentFields.choiceOptions("ManyOptions", "checkbox")).toHaveCount(3);
+      // A single field that already stores two values keeps checkboxes, so neither value is lost.
+      await expect(await componentDocumentFields.choiceOptions("LegacyDefaults", "checkbox")).toHaveCount(3);
+      await expect(await componentDocumentFields.choiceOptions("GrowsLater", "radio")).toHaveCount(3);
+      await expect(await componentDocumentFields.choiceOptions("ShrinksLater", "checkbox")).toHaveCount(3);
+
+      // Another client changes how many values these fields hold; the refresh on edit recomputes the
+      // input type, so two values become checkboxes and a single field back at one value gets radios.
+      const fieldId = (name: string) => {
+        const field = document.fields.find((f) => f.name === name);
+        if (!field) throw new Error(`The created document has no ${name} field.`);
+        return field.id;
+      };
+      await clientDocuments.update(document.id, {
+        fields: [
+          { id: fieldId("GrowsLater"), content: "a,b" },
+          { id: fieldId("ShrinksLater"), content: "b" },
+        ],
+      });
+
+      await componentDocumentFields.setOptions("OneOption", ["b"]);
+      await componentDocumentFields.setOptions("ManyOptions", ["a", "b"]);
+      await componentDocumentFields.setOptions("LegacyDefaults", ["a", "b", "c"]);
+      await componentDocumentFields.setOptions("GrowsLater", ["a", "b", "c"]);
+      await componentDocumentFields.setOptions("ShrinksLater", ["c"]);
+      await expect(await componentDocumentFields.choiceOptions("ShrinksLater", "radio")).toHaveCount(3);
+
+      await pageDocument.leaveWithoutSaving();
+      await pageWorkspace.openDocument(document.id);
+      for (const [name, value] of Object.entries({
+        OneOption: "b",
+        ManyOptions: "a,b",
+        LegacyDefaults: "a,b,c",
+        GrowsLater: "a,b,c",
+        ShrinksLater: "c",
+      })) {
+        await expect(await componentDocumentFields.value(name)).toHaveText(value);
+      }
+    },
+  );
+});
+
 dynamicUserTest.describe("Document recovery and downloadable exports", () => {
   for (const notebookEntry of [false, true]) {
     dynamicUserTest(
