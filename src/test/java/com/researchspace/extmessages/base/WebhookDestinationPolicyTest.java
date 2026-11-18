@@ -2,21 +2,12 @@ package com.researchspace.extmessages.base;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 
-import com.researchspace.extmessages.base.WebhookDestinationPolicy.HostResolver;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class WebhookDestinationPolicyTest {
-
-  private static final String TEAMS_HOST = "prod-01.westus.logic.azure.com";
 
   private final WebhookDestinationPolicy policy =
       WebhookDestinationPolicy.parse(
@@ -38,7 +29,7 @@ class WebhookDestinationPolicyTest {
         "not a url"
       })
   void rejectsUrlsOutsideTheAllowedOrigins(String url) {
-    assertThrows(WebhookUrlNotAllowedException.class, () -> policy.checkSyntax(url));
+    assertThrows(WebhookUrlNotAllowedException.class, () -> policy.check(url));
   }
 
   @ParameterizedTest
@@ -50,67 +41,7 @@ class WebhookDestinationPolicyTest {
         "http://localhost:9099/msteams/webhook"
       })
   void acceptsUrlsOnAllowedOrigins(String url) {
-    assertDoesNotThrow(() -> policy.checkSyntax(url));
-  }
-
-  @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "10.0.0.5",
-        "127.0.0.1",
-        "169.254.169.254",
-        "fd00::1",
-        "0.0.0.0",
-        "100.100.100.200",
-        "64:ff9b::a00:5",
-        "2002:a00:5::"
-      })
-  void rejectsWildcardHostResolvingToNonPublicAddress(String address) throws Exception {
-    HostResolver resolver = resolvingTo(InetAddress.getByName(address));
-    assertThrows(
-        WebhookUrlNotAllowedException.class,
-        () -> policy.checkResolved("https://" + TEAMS_HOST + "/x", resolver));
-  }
-
-  @Test
-  void rejectsWildcardHostResolvingToIpv4MappedLoopback() throws Exception {
-    byte[] mapped = new byte[16];
-    mapped[10] = (byte) 0xff;
-    mapped[11] = (byte) 0xff;
-    mapped[12] = 127;
-    mapped[15] = 1;
-    HostResolver resolver = resolvingTo(Inet6Address.getByAddress(null, mapped, -1));
-    assertThrows(
-        WebhookUrlNotAllowedException.class,
-        () -> policy.checkResolved("https://" + TEAMS_HOST + "/x", resolver));
-  }
-
-  @Test
-  void rejectsWildcardHostWithAnyNonPublicAddress() throws Exception {
-    HostResolver resolver =
-        resolvingTo(InetAddress.getByName("20.42.0.1"), InetAddress.getByName("10.0.0.5"));
-    assertThrows(
-        WebhookUrlNotAllowedException.class,
-        () -> policy.checkResolved("https://" + TEAMS_HOST + "/x", resolver));
-  }
-
-  @Test
-  void acceptsWildcardHostResolvingToPublicAddress() throws Exception {
-    HostResolver resolver = resolvingTo(InetAddress.getByName("20.42.0.1"));
-    assertDoesNotThrow(() -> policy.checkResolved("https://" + TEAMS_HOST + "/x", resolver));
-  }
-
-  @Test
-  void neverResolvesExactEntries() {
-    HostResolver resolver = mock(HostResolver.class);
-    WebhookDestinationPolicy wildcardListedFirst =
-        WebhookDestinationPolicy.parse(
-            "test.allowed.origins", "https://*.logic.azure.com, https://internal.logic.azure.com");
-    assertDoesNotThrow(
-        () -> policy.checkResolved("http://localhost:9099/msteams/webhook", resolver));
-    assertDoesNotThrow(
-        () -> wildcardListedFirst.checkResolved("https://internal.logic.azure.com/x", resolver));
-    verifyNoInteractions(resolver);
+    assertDoesNotThrow(() -> policy.check(url));
   }
 
   @ParameterizedTest
@@ -140,11 +71,5 @@ class WebhookDestinationPolicyTest {
     assertDoesNotThrow(() -> WebhookDestinationPolicy.parse("test.origins", longest));
     assertThrows(
         IllegalStateException.class, () -> WebhookDestinationPolicy.parse("test.origins", tooLong));
-  }
-
-  private static HostResolver resolvingTo(InetAddress... addresses) throws UnknownHostException {
-    HostResolver resolver = mock(HostResolver.class);
-    when(resolver.resolve(TEAMS_HOST)).thenReturn(addresses);
-    return resolver;
   }
 }

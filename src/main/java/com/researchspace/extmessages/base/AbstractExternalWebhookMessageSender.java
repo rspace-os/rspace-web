@@ -1,7 +1,6 @@
 package com.researchspace.extmessages.base;
 
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.extmessages.base.WebhookDestinationPolicy.HostResolver;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -48,7 +47,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   static final Duration SEND_TIMEOUT = Duration.ofSeconds(10);
 
   private RestClient restClient = createRestClient(CONNECT_TIMEOUT, SEND_TIMEOUT);
-  HostResolver hostResolver = WebhookDestinationPolicy.DNS;
 
   @Override
   public final ResponseEntity<String> sendMessage(
@@ -63,7 +61,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
               "errors.authorization.failure.sendExternalMessage",
               new Object[] {subject.getUsername()}));
     }
-    URI uri = destinationPolicy().checkResolved(doGetPostUrl(messageConfig), hostResolver);
+    URI uri = destinationPolicy().check(doGetPostUrl(messageConfig));
     String jsonMessage = createMessage(message);
 
     ResponseEntity<String> rc = doSendMessage(jsonMessage, uri);

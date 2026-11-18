@@ -2,16 +2,9 @@ package com.researchspace.extmessages.base;
 
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
-import com.google.common.primitives.Ints;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -22,22 +15,12 @@ import java.util.Objects;
  * matches any subdomain (one or more labels) but not the parent domain itself.
  *
  * <p>An exact entry is an explicit administrator decision, so it may name an internal host or
- * address. A wildcard entry is meant for provider-controlled domains: at send time a host it
- * matches must resolve only to public addresses.
+ * address. A wildcard entry must name a DNS zone that a single organisation controls, such as the
+ * provider's own domain: hosts it matches are not resolved or checked for internal addresses.
  */
 public final class WebhookDestinationPolicy {
 
-  /** Resolves a host name; a seam so tests need no DNS. */
-  @FunctionalInterface
-  public interface HostResolver {
-    InetAddress[] resolve(String host) throws UnknownHostException;
-  }
-
-  public static final HostResolver DNS = InetAddress::getAllByName;
-
   private static final String WILDCARD = "*.";
-  private static final byte[] IPV4_MAPPED_PREFIX = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1};
-  private static final byte[] NAT64_PREFIX = {0, 0x64, -1, (byte) 0x9b, 0, 0, 0, 0, 0, 0, 0, 0};
 
   private record Origin(String scheme, String host, int port, boolean wildcard) {
     boolean matches(String otherScheme, String otherHost, int otherPort) {
@@ -51,8 +34,7 @@ public final class WebhookDestinationPolicy {
   private final List<Origin> origins;
 
   private WebhookDestinationPolicy(List<Origin> origins) {
-    // exact entries first, so an explicitly named host is never resolved
-    this.origins = origins.stream().sorted(Comparator.comparing(Origin::wildcard)).toList();
+    this.origins = List.copyOf(origins);
   }
 
   /**
@@ -121,45 +103,30 @@ public final class WebhookDestinationPolicy {
   }
 
   /**
-   * A wildcard must sit below a registrable domain: not over an IP address ("*.0.0.1" would match
-   * 10.0.0.1) and not over a public suffix such as {@code com} or {@code azurewebsites.net}, where
-   * anyone can register a matching host.
+   * A wildcard must sit below a registrable domain, so one organisation controls every host it
+   * matches: not over an IP address ("*.0.0.1" would match 10.0.0.1) and not over a public suffix
+   * such as {@code com} or {@code azurewebsites.net}, where anyone can register a matching host and
+   * point it at an internal address.
    */
   private static boolean isWildcardableDomain(String host) {
     return InternetDomainName.isValid(host) && InternetDomainName.from(host).isUnderPublicSuffix();
   }
 
   /**
-   * Checks the URL's form and origin without any network access; used when a webhook is saved.
+   * Checks the URL's form and origin without any network access; used when a webhook is saved and
+   * before every send.
    *
+   * @return the checked URL, to send to
    * @throws WebhookUrlNotAllowedException if the URL is malformed, has user info, or its origin
    *     matches no entry
    */
-  public void checkSyntax(String url) {
-    match(parseUrl(url));
-  }
-
-  /**
-   * Runs {@link #checkSyntax(String)} and, when only a wildcard entry matches, also rejects a host
-   * that resolves to any loopback, private, link-local or otherwise non-public address. Used just
-   * before sending.
-   *
-   * @return the checked URL, to send to
-   * @throws WebhookUrlNotAllowedException if the URL is not allowed
-   */
-  public URI checkResolved(String url, HostResolver resolver) {
+  public URI check(String url) {
     URI uri = parseUrl(url);
-    if (match(uri).wildcard()) {
-      InetAddress[] addresses;
-      try {
-        addresses = resolver.resolve(normaliseHost(uri.getHost()));
-      } catch (UnknownHostException e) {
-        throw new WebhookUrlNotAllowedException("host does not resolve");
-      }
-      if (addresses.length == 0
-          || Arrays.stream(addresses).anyMatch(WebhookDestinationPolicy::isNonPublic)) {
-        throw new WebhookUrlNotAllowedException("host resolves to a non-public address");
-      }
+    String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+    String host = normaliseHost(uri.getHost());
+    int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
+    if (origins.stream().noneMatch(o -> o.matches(scheme, host, port))) {
+      throw new WebhookUrlNotAllowedException("origin is not in the allowlist");
     }
     return uri;
   }
@@ -180,16 +147,6 @@ public final class WebhookDestinationPolicy {
     return uri;
   }
 
-  private Origin match(URI uri) {
-    String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
-    String host = normaliseHost(uri.getHost());
-    int port = uri.getPort() == -1 ? defaultPort(scheme) : uri.getPort();
-    return origins.stream()
-        .filter(o -> o.matches(scheme, host, port))
-        .findFirst()
-        .orElseThrow(() -> new WebhookUrlNotAllowedException("origin is not in the allowlist"));
-  }
-
   private static int defaultPort(String scheme) {
     return "https".equals(scheme) ? 443 : "http".equals(scheme) ? 80 : -1;
   }
@@ -198,35 +155,5 @@ public final class WebhookDestinationPolicy {
   private static String normaliseHost(String host) {
     String h = host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
     return h.toLowerCase(Locale.ROOT);
-  }
-
-  private static boolean isNonPublic(InetAddress address) {
-    if (address instanceof Inet4Address) {
-      byte[] b = address.getAddress();
-      // 0.0.0.0/8, and 100.64.0.0/10 (carrier-grade NAT, also some cloud metadata endpoints)
-      if (b[0] == 0 || (b[0] == 100 && (b[1] & 0xc0) == 0x40)) {
-        return true;
-      }
-    }
-    if (address instanceof Inet6Address v6) {
-      // IPv4-compatible (::a.b.c.d), 6to4 and Teredo addresses carry an IPv4 address
-      if (InetAddresses.hasEmbeddedIPv4ClientAddress(v6)) {
-        return isNonPublic(InetAddresses.getEmbeddedIPv4ClientAddress(v6));
-      }
-      byte[] b = v6.getAddress();
-      // so do IPv4-mapped (::ffff:a.b.c.d) and NAT64 (64:ff9b::/96) addresses, in the last 4 bytes
-      if (Arrays.equals(b, 0, 12, IPV4_MAPPED_PREFIX, 0, 12)
-          || Arrays.equals(b, 0, 12, NAT64_PREFIX, 0, 12)) {
-        return isNonPublic(InetAddresses.fromInteger(Ints.fromBytes(b[12], b[13], b[14], b[15])));
-      }
-      if ((b[0] & 0xfe) == 0xfc) { // unique local, fc00::/7
-        return true;
-      }
-    }
-    return address.isLoopbackAddress()
-        || address.isAnyLocalAddress()
-        || address.isLinkLocalAddress()
-        || address.isSiteLocalAddress()
-        || address.isMulticastAddress();
   }
 }

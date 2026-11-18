@@ -764,8 +764,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     }
     if (MSTEAMS_APP_NAME.equals(appName)
         && StringUtils.isNotEmpty(originalOptions.get(MSTEAMS_WEBHOOK_URL))) {
-      // syntax only: a temporary DNS failure must not block a save; the send checks resolution
-      msTeamsWebhookPolicy.checkSyntax(originalOptions.get(MSTEAMS_WEBHOOK_URL));
+      msTeamsWebhookPolicy.check(originalOptions.get(MSTEAMS_WEBHOOK_URL));
     }
     UserAppConfig savedConfig =
         appConfigMgr.saveAppConfigElementSet(
