@@ -506,6 +506,25 @@ function autoCheckEditableStatus() {
   }
 }
 
+/*
+ * Records reloaded radio data for display rules, and shows a picklist's new selection. Only
+ * select2's own handler is triggered: the inline onchange would mark the field as edited.
+ */
+function syncRadioFieldValue(fieldId, fieldData) {
+  if (window.elnFieldDisplay) {
+    window.elnFieldDisplay.syncStoredValue(fieldId, fieldData);
+  }
+  var $select = $("select.formPickList." + fieldId);
+  if ($select.length === 0) {
+    return;
+  }
+  var select = $select[0];
+  var onchange = select.onchange;
+  select.onchange = null;
+  $select.trigger("change.select2");
+  select.onchange = onchange;
+}
+
 /* called on document.ready if there is autosaved version of the document */
 function _updateAutosavedFields(data) {
   $.each(data, function (i, value) {
@@ -551,6 +570,12 @@ function _updateAutosavedFields(data) {
           $option.prop("checked", true);
         }
       });
+      syncRadioFieldValue(value.id, value.fieldData);
+      $("#radioText_" + value.id).text(value.fieldData);
+      return;
+    }
+    if (attr == "picklist") {
+      syncRadioFieldValue(value.id, value.fieldData);
       $("#radioText_" + value.id).text(value.fieldData);
       return;
     }
