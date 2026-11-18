@@ -8,28 +8,25 @@ test.describe
     test("As a user, number fields validate names, ranges, and default values", async ({ pageMyRSpace }) => {
       await pageMyRSpace.open();
       const form = await pageMyRSpace.openCreateForm();
-      const editor = await form.openFieldEditor("Number");
+      const field = await form.fields.addField("Number", "a".repeat(51));
+      await expect(field.problem("Use at most 50 characters.")).toBeVisible();
+      await form.saveAndCloseExpectingProblems();
 
-      await editor.setName("a".repeat(51));
-      await editor.saveExpectingValidationError();
-      await expect(editor.root).toBeVisible();
+      await field.setName("measurement");
+      const measurement = form.field("measurement");
+      await measurement.fillNumberValues({ min: "10", max: "0" });
+      await expect(measurement.problem("The minimum cannot be more than the maximum.")).toBeVisible();
 
-      await editor.setName("measurement");
-      await editor.fillNumberValues({ min: "10", max: "0" });
-      await editor.saveExpectingValidationError();
-      await expect(editor.root).toBeVisible();
+      await measurement.fillNumberValues({ defaultValue: "10", min: "15", max: "" });
+      await expect(measurement.problem("The default cannot be less than the minimum.")).toBeVisible();
 
-      await editor.fillNumberValues({ defaultValue: "10", min: "15", max: "" });
-      await editor.saveExpectingValidationError();
-      await expect(editor.root).toBeVisible();
+      await measurement.fillNumberValues({ defaultValue: "10", min: "", max: "5" });
+      await expect(measurement.problem("The default cannot be more than the maximum.")).toBeVisible();
+      await form.saveAndCloseExpectingProblems();
 
-      await editor.fillNumberValues({ defaultValue: "10", min: "", max: "5" });
-      await editor.saveExpectingValidationError();
-      await expect(editor.root).toBeVisible();
-
-      await editor.fillNumberValues({ defaultValue: "", min: "", max: "" });
-      await editor.save();
-      await expect(form.fieldRow("measurement")).toBeVisible();
+      await measurement.fillNumberValues({ defaultValue: "", min: "", max: "" });
+      // saving waits for the list of forms, so this only passes if the save went through
+      await form.saveAndClose();
     });
 
     test("As a user, I can create a form that supports every field type and reorder its fields", async ({
@@ -46,16 +43,35 @@ test.describe
       await form.addField("Radio", "radio choice");
       await form.addField("Choice", "multiple choice");
       await form.addField("Date", "sample date");
-      await form.addField("Time", "sample time");
+      const time = await form.addField("Time", "sample time");
 
-      const reorder = await form.reorderFields();
-      await reorder.select("sample time", "Time");
-      await reorder.move("Top");
-      await reorder.done();
-
-      await expect(form.fieldRowAt(0)).toContainText("sample time");
+      await time.moveToTop();
+      await expect(form.fieldAt(0).nameInput).toHaveValue("sample time");
       const forms = await form.saveAndClose();
       await expect(forms.formRow(formName)).toBeVisible();
+
+      const reopened = await forms.edit(formName);
+      await expect(reopened.fieldAt(0).nameInput).toHaveValue("sample time");
+    });
+
+    test("As a user, I can show a field only when another field has a given answer, before the first save", async ({
+      pageMyRSpace,
+    }) => {
+      const formName = uniqueName("e2e-display-rules");
+      await pageMyRSpace.open();
+      const form = await pageMyRSpace.openCreateForm();
+      await form.rename(formName);
+
+      const gmo = await form.fields.addField("Radio", "Is this a GMO?");
+      await gmo.addOption("Yes");
+      await gmo.addOption("No");
+      await form.addField("String", "GMO permit", true);
+      await form.fields.addRule("Is this a GMO?", ["Yes"], ["GMO permit"]);
+      await expect(form.field("GMO permit").ruleSummary).toHaveText("Shown when Is this a GMO? is Yes");
+
+      const forms = await form.saveAndClose();
+      const reopened = await forms.edit(formName);
+      await expect(reopened.field("GMO permit").ruleSummary).toHaveText("Shown when Is this a GMO? is Yes");
     });
 
     test("As a user, I can publish a form, add it to the create menu, find it, and duplicate it", async ({

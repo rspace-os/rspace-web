@@ -74,19 +74,12 @@ public class NumberFieldDTO<T> extends AbstractFormFieldDTO<NumberFieldForm> {
 
   public void copyValuesIntoFieldForm(NumberFieldForm numberField) {
     copyCommonValuesIntoFieldForm(numberField);
-    if (!StringUtils.isEmpty(getMinNumberValue())) {
-      numberField.setMinNumberValue(Double.parseDouble(getMinNumberValue()));
-    }
-    if (!StringUtils.isEmpty(getMaxNumberValue())) {
-      numberField.setMaxNumberValue(Double.parseDouble(getMaxNumberValue()));
-    }
-    if (!StringUtils.isEmpty(getDefaultNumberValue())) {
-      numberField.setDefaultNumberValue(Double.parseDouble(getDefaultNumberValue()));
-    }
-
-    if (!StringUtils.isEmpty(getDecimalPlaces())) {
-      numberField.setDecimalPlaces(Byte.parseByte(getDecimalPlaces()));
-    }
+    // the editors always send every setting, so an empty one has been cleared
+    numberField.setMinNumberValue(parseOrNull(getMinNumberValue()));
+    numberField.setMaxNumberValue(parseOrNull(getMaxNumberValue()));
+    numberField.setDefaultNumberValue(parseOrNull(getDefaultNumberValue()));
+    numberField.setDecimalPlaces(
+        StringUtils.isEmpty(getDecimalPlaces()) ? null : Byte.parseByte(getDecimalPlaces()));
     numberField.setModificationDate(new Date().getTime());
   }
 
@@ -96,5 +89,9 @@ public class NumberFieldDTO<T> extends AbstractFormFieldDTO<NumberFieldForm> {
     NumberFieldForm fldemplate = new NumberFieldForm(getName());
     copyValuesIntoFieldForm(fldemplate);
     return fldemplate;
+  }
+
+  private static Double parseOrNull(String value) {
+    return StringUtils.isEmpty(value) ? null : Double.parseDouble(value);
   }
 }
