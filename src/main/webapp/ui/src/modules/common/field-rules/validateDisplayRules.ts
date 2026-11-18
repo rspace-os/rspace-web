@@ -16,11 +16,14 @@ export const DisplayRuleErrorCodeSchema = v.picklist(Object.values(DISPLAY_RULE_
 
 export type DisplayRuleErrorCode = v.InferOutput<typeof DisplayRuleErrorCodeSchema>;
 
-export const DisplayRuleErrorSchema = v.object({
-  /** The field's position in the validated list. */
-  fieldIndex: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  code: DisplayRuleErrorCodeSchema,
-});
+export const DisplayRuleErrorSchema = v.pipe(
+  v.object({
+    /** The field's position in the validated list. */
+    fieldIndex: v.pipe(v.number(), v.integer(), v.minValue(0)),
+    code: DisplayRuleErrorCodeSchema,
+  }),
+  v.readonly(),
+);
 
 export type DisplayRuleError = v.InferOutput<typeof DisplayRuleErrorSchema>;
 
