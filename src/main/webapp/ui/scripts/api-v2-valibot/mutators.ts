@@ -28,7 +28,8 @@ function resolveResponse(document: OpenApiDocument, response: BodyObject): BodyO
 /**
  * Chooses each operation's mutator from its declared responses. Binary successes use `apiV2BlobFetch`; the headers
  * allowlist uses `apiV2HeadersFetch`. Fails on success shapes the transport cannot represent, and on an ETag that
- * no caller would see.
+ * no caller would see. Remove once Orval can choose a mutator per operation:
+ * https://github.com/orval-labs/orval/issues/4551
  */
 export function mutatorOverrides(document: OpenApiDocument, rules: MutatorRules): Record<string, MutatorOverride> {
   const overrides: Record<string, MutatorOverride> = {};

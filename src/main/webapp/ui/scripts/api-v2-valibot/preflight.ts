@@ -44,7 +44,10 @@ const formats: ReadonlySet<string> = new Set([
   "int64",
 ]);
 
-/** Reject schema drift before adapting native output. */
+/**
+ * Reject schema drift before adapting native output. Remove once Orval can fail generation on loosely validated
+ * constructs: https://github.com/orval-labs/orval/issues/4550
+ */
 export function assertSupportedSpec(document: OpenApiDocument): void {
   const components = document.components?.schemas ?? {};
   const names = Object.keys(components).sort();

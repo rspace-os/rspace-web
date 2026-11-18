@@ -121,6 +121,7 @@ export function generate(
     for (const [, name] of entry.matchAll(/native\.(\w+)/g)) {
       if (!exports.has(name)) throw new Error(`Missing native operation schema ${name}`);
     }
+  // Remove once Orval emits schema/model type checks itself: https://github.com/orval-labs/orval/issues/4549
   const checks = names
     .map(
       (name) =>

@@ -29,6 +29,8 @@ export function queryFile(operation: Operation) {
   return `./${tag}/${tag}.ts`;
 }
 
+// Pass this to a function-valued `mutationInvalidates` once Orval supports it:
+// https://github.com/orval-labs/orval/issues/4552
 export function buildInvalidationRules(document: Document, cross: typeof crossResourceInvalidation = []) {
   const operations = getOperations(document);
   const queries = operations.filter((operation) => operation.method === "get");

@@ -103,6 +103,9 @@ final class ApiV2OpenApiSchemas {
    * Records the Java type behind every component the resolver defines, whether its name is explicit
    * or derived, and fails when one name would describe two types. Components are keyed by name
    * alone, so the second type would otherwise silently share the first one's schema.
+   *
+   * <p>Remove once swagger-core detects colliding component names itself:
+   * https://github.com/swagger-api/swagger-core/issues/4789
    */
   private static final class ComponentNameGuard implements ModelConverter {
     private final Map<String, Class<?>> named = new ConcurrentHashMap<>();
@@ -198,6 +201,9 @@ final class ApiV2OpenApiSchemas {
     return schema;
   }
 
+  // Marks always-written properties required by re-reading Jackson's bean description. Move this
+  // into a resolveRequiredMode override once swagger-core passes the property to it:
+  // https://github.com/swagger-api/swagger-core/issues/5409
   private static void normalizeResponse(
       JavaType type,
       Map<String, Object> schema,
