@@ -4,7 +4,7 @@ import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/ap
 import type { ResourceAccessDocument } from "@/modules/common/api/v2/generated/models/resourceAccessDocument";
 import type { ResourceAccessReplacement } from "@/modules/common/api/v2/generated/models/resourceAccessReplacement";
 import type { ResourceGranteeDirectoryDocument } from "@/modules/common/api/v2/generated/models/resourceGranteeDirectoryDocument";
-import { accessDocument, directoryEntry } from "./domain";
+import { accessDocument } from "./domain";
 
 export type AccessResource = ApiV2ResourceEntry<
   string,
@@ -78,5 +78,5 @@ export async function searchResourceGrantees(
   signal?: AbortSignal,
 ) {
   const document = await resource.grantees.request(id, { q: query, limit: 20 }, { signal });
-  return (document.docs ?? []).map(directoryEntry);
+  return document.docs;
 }
