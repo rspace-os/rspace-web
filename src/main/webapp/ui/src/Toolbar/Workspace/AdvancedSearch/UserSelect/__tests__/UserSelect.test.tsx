@@ -13,19 +13,24 @@ describe("UserSelect", () => {
     );
   });
 
-  test("a username the viewer cannot see selects nothing", async () => {
+  test("a username the viewer cannot see stays selected, shown by its username", async () => {
     const updateSelected = vi.fn();
     render(<UserSelect selected="nosuchuser" updateSelected={updateSelected} />);
 
-    await vi.waitFor(() => expect(updateSelected).toHaveBeenCalledWith([], "username"));
+    expect(await screen.findByText("nosuchuser")).toBeVisible();
+    expect(updateSelected).toHaveBeenCalledWith([{ username: "nosuchuser" }], "username");
     expect(screen.getByRole("combobox")).toBeVisible();
   });
 
-  test("only the usernames the viewer can see are selected", async () => {
+  test("usernames the viewer can and cannot see are all kept, in order", async () => {
     const updateSelected = vi.fn();
     render(<UserSelect selected="user3c<<>>nosuchuser" updateSelected={updateSelected} />);
 
     expect(await screen.findByText("Ada Lovelace - user3c")).toBeVisible();
-    expect(updateSelected).toHaveBeenCalledWith([expect.objectContaining({ username: "user3c" })], "username");
+    expect(screen.getByText("nosuchuser")).toBeVisible();
+    expect(updateSelected).toHaveBeenCalledWith(
+      [expect.objectContaining({ username: "user3c" }), { username: "nosuchuser" }],
+      "username",
+    );
   });
 });

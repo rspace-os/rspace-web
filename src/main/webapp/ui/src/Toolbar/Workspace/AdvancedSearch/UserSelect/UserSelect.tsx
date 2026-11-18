@@ -25,11 +25,11 @@ export default function UserSelect(props: any) {
       setSuggestions(result.data.data);
       if (props.selected) {
         const usernames: string[] = props.selected.split("<<>>");
-        // A link can name a user this viewer cannot see
-        const local_selected = usernames
+        // A link can name a user this viewer cannot see. Keep them, so that running the search again is unchanged
+        const local_selected = usernames.map(
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          .map((username) => result.data.data.find((r: any) => r.username === username))
-          .filter((user) => user !== undefined);
+          (username) => result.data.data.find((r: any) => r.username === username) ?? { username },
+        );
         handleChangeMulti(local_selected);
       }
     };
@@ -42,12 +42,11 @@ export default function UserSelect(props: any) {
       sx={{ flexGrow: 1, mt: "9px" }}
       options={suggestions}
       getOptionLabel={(option) =>
-        option
-          ? `${typeof option.firstName !== "undefined" ? option.firstName : ""} ${
-              typeof option.lastName !== "undefined" ? option.lastName : ""
-            } - ${option.username}`
-          : ""
+        option.firstName === undefined && option.lastName === undefined
+          ? option.username
+          : `${option.firstName ?? ""} ${option.lastName ?? ""} - ${option.username}`
       }
+      isOptionEqualToValue={(option, value) => option.username === value.username}
       onChange={(_, selection) => handleChangeMulti(selection)}
       renderInput={(props) => (
         <TextField
