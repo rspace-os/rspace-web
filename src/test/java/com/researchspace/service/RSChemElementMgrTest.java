@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -272,15 +273,22 @@ public class RSChemElementMgrTest {
     when(chemistryProvider.convert(chemFile.getChemString(), chemFile.getExtension(), "smiles"))
         .thenReturn(expectedSmiles);
     when(chemistryProvider.exportToImage(any(), any(), any())).thenReturn(new byte[] {1, 2, 3});
-    when(chemDao.save(any(RSChemElement.class))).thenReturn(new RSChemElement());
+    when(chemDao.save(any(RSChemElement.class)))
+        .thenAnswer(
+            invocation -> {
+              RSChemElement element = invocation.getArgument(0);
+              element.setId(5L);
+              return element;
+            });
     when(filestore.createAndSaveFileProperty(any(), any(), anyString(), any()))
         .thenReturn(new FileProperty());
 
     chemElementManager.generateRsChemElementForNewlyUploadedChemistryFile(chemFile, user);
 
-    verify(chemDao, times(2)).save(chemElementCaptor.capture());
+    verify(chemDao, times(3)).save(chemElementCaptor.capture());
     RSChemElement savedElement = chemElementCaptor.getAllValues().get(0);
     assertEquals(expectedSmiles, savedElement.getSmilesString());
+    verify(filestore).createAndSaveFileProperty(eq("chemImages"), any(), eq("chem_5.png"), any());
   }
 
   @Test
@@ -298,13 +306,19 @@ public class RSChemElementMgrTest {
     when(chemistryProvider.convert(chemFile.getChemString(), chemFile.getExtension(), "smiles"))
         .thenThrow(new RuntimeException("SMILES conversion failed"));
     when(chemistryProvider.exportToImage(any(), any(), any())).thenReturn(new byte[] {1, 2, 3});
-    when(chemDao.save(any(RSChemElement.class))).thenReturn(new RSChemElement());
+    when(chemDao.save(any(RSChemElement.class)))
+        .thenAnswer(
+            invocation -> {
+              RSChemElement element = invocation.getArgument(0);
+              element.setId(5L);
+              return element;
+            });
     when(filestore.createAndSaveFileProperty(any(), any(), anyString(), any()))
         .thenReturn(new FileProperty());
 
     chemElementManager.generateRsChemElementForNewlyUploadedChemistryFile(chemFile, user);
 
-    verify(chemDao, times(2)).save(chemElementCaptor.capture());
+    verify(chemDao, times(3)).save(chemElementCaptor.capture());
     RSChemElement savedElement = chemElementCaptor.getAllValues().get(0);
     assertNull(savedElement.getSmilesString());
   }
