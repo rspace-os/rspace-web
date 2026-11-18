@@ -317,7 +317,7 @@ public class ApiExtraFieldsHelper implements Validator {
       newField =
           recordFactory.createExtraField(
               apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
-      newField.setData(apiField.getContent());
+      newField.setData(StringUtils.defaultString(apiField.getContent()));
     }
     // Read-only on the DTO, so this value is already server-authored or null, never client input.
     newField.setOperationFieldKey(apiField.getOperationFieldKey());
