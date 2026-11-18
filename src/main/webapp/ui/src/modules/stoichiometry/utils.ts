@@ -53,7 +53,7 @@ export const resolveStoichiometryErrorMessage = (error: unknown, t: TFunction, f
     // t's overloads infer their return type from a literal key; a value typed
     // as `string` defeats that inference, so call through a simpler view of
     // the same function (see the analogous cast in lazyT.ts).
-    const translate = t as (key: string, options?: Record<string, unknown>) => string;
+    const translate = t as unknown as (key: string, options?: Record<string, unknown>) => string;
     return translate(error.key, error.values);
   }
   return error instanceof Error ? error.message : fallback;

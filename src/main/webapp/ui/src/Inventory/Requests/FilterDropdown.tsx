@@ -7,7 +7,10 @@ import { useTranslation } from "react-i18next";
 import DropdownButton from "../../components/DropdownButton";
 import StyledMenu from "../../components/StyledMenu";
 
-export type FilterOption<T extends string> = { value: T; labelKey: ParseKeys<"inventory"> };
+// Filter labels take no variables; i18next 27 requires options when a key might.
+type FilterLabelKey = Extract<ParseKeys<"inventory">, `requestsManagement.filters.${string}`>;
+
+export type FilterOption<T extends string> = { value: T; labelKey: FilterLabelKey };
 
 /**
  * A DropdownButton + StyledMenu filter chip, generic over the filter's own value type - the
