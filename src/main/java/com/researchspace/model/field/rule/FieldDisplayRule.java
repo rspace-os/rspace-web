@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 import org.apache.commons.lang3.EnumUtils;
 
 /**
@@ -48,21 +47,12 @@ public record FieldDisplayRule(
   private static final Set<String> PROPERTIES = Set.of("sourceFieldKey", "operator", "values");
 
   /**
-   * Blank means empty or only whitespace, where whitespace is exactly JavaScript's {@code \s} set
-   * (Java's {@code \s} omits the Unicode spaces), so the TypeScript side agrees on every input.
-   */
-  private static final Pattern BLANK =
-      Pattern.compile(
-          "^[ \\t\\n"
-              + "\\x0B\\f\\r"
-              + "\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]*$");
-
-  /**
-   * @throws IllegalArgumentException if the source key is blank, the operator is missing, or the
-   *     values do not suit the operator
+   * @throws IllegalArgumentException if the source key or operator is missing, a value is null, or
+   *     the values do not suit the operator. Whether the key names a real field and the values are
+   *     real options is checked by {@link FieldDisplayRuleValidator}.
    */
   public FieldDisplayRule {
-    if (sourceFieldKey == null || isBlank(sourceFieldKey)) {
+    if (sourceFieldKey == null) {
       throw new IllegalArgumentException("A display rule needs a source field key");
     }
     if (operator == null) {
@@ -72,9 +62,6 @@ public record FieldDisplayRule(
       throw new IllegalArgumentException("Display rule values cannot be null");
     }
     values = values == null ? List.of() : List.copyOf(values);
-    if (values.stream().anyMatch(FieldDisplayRule::isBlank)) {
-      throw new IllegalArgumentException("Display rule values cannot be blank");
-    }
     if (operator.requiresValues() && values.isEmpty()) {
       throw new IllegalArgumentException(operator + " needs at least one value");
     }
@@ -178,9 +165,5 @@ public record FieldDisplayRule(
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Could not serialise display rule", e);
     }
-  }
-
-  static boolean isBlank(String text) {
-    return BLANK.matcher(text).matches();
   }
 }

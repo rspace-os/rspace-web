@@ -51,6 +51,26 @@
         "name": "repeated values take their last value",
         "json": "{\"values\":[1],\"values\":[],\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}",
         "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "blank source key parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "blank value parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}"
+      },
+      {
+        "name": "value that is only a non-breaking space parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\\u00a0\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\" \"]}"
+      },
+      {
+        "name": "source key that is only an ideographic space parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"\\u3000\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"　\",\"operator\":\"HAS_VALUE\"}"
       }
     ],
     "invalid": [
@@ -79,10 +99,6 @@
         "json": "{\"operator\":\"HAS_VALUE\"}"
       },
       {
-        "name": "blank source key",
-        "json": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}"
-      },
-      {
         "name": "unknown property",
         "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"effect\":\"HIDE\"}"
       },
@@ -97,10 +113,6 @@
       {
         "name": "has value with values",
         "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"values\":[\"Yes\"]}"
-      },
-      {
-        "name": "blank value",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}"
       },
       {
         "name": "non-string value",
@@ -125,14 +137,6 @@
       {
         "name": "empty property name",
         "json": "{\"\":1,\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
-      },
-      {
-        "name": "value that is only a non-breaking space",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\\u00a0\"]}"
-      },
-      {
-        "name": "source key that is only an ideographic space",
-        "json": "{\"sourceFieldKey\":\"\\u3000\",\"operator\":\"HAS_VALUE\"}"
       },
       {
         "name": "operator with surrounding spaces",
@@ -1135,6 +1139,86 @@
           "code": "validation.fieldDisplayRule.cycle"
         }
       ]
+    },
+    {
+      "name": "a blank source key names no field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": " ",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a whitespace-only value that is not an option",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              " "
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a whitespace-only value is valid when the source offers it",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            " "
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              " "
+            ]
+          }
+        }
+      ],
+      "expectedErrors": []
     }
   ],
   "elnChoice": [
