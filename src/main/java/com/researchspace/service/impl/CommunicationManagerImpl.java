@@ -566,6 +566,9 @@ public class CommunicationManagerImpl implements CommunicationManager {
         toNotify.add((User) g);
       }
     }
+    if (cfg.getNotificationType() == NotificationType.NOTIFICATION_DOCUMENT_EDITED) {
+      toNotify.add(record.getOwner());
+    }
     return toNotify;
   }
 
