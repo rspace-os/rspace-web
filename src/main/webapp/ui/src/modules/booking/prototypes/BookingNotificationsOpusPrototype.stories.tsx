@@ -25,7 +25,7 @@ import {
   bookingNotificationChoice,
 } from "@/modules/booking/pages/preferences/BookingNotificationChoiceFields";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { Badge } from "@/modules/common/ui/badge";
@@ -236,7 +236,7 @@ function NotificationsPrototype(props: PrototypeProps) {
     overridden: _overridden,
     ...initialDisplay
   } = mapBookingDisplayPreferences(inheritedBrowserBookingPreferences);
-  const [display, setDisplay] = useState<BookingDisplayPreferencesControllerReplacement>({
+  const [display, setDisplay] = useState<BookingDisplayPreferencesReplacement>({
     ...initialDisplay,
     timeFormat: initialDisplay.timeFormat ?? "AUTOMATIC",
   });

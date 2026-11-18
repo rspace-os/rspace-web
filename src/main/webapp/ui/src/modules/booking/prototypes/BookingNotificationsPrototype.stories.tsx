@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { BellIcon, BellOffIcon, CalendarDaysIcon, MicroscopeIcon, SaveIcon, SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import * as v from "valibot";
-import type { BookingDisplayPreferencesControllerReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesControllerReplacement";
+import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -93,7 +93,7 @@ function BookingNotificationsPrototype({
   globallyCancelled?: boolean;
   emailEnabled?: boolean;
 }) {
-  const [display, setDisplay] = useState<BookingDisplayPreferencesControllerReplacement>({
+  const [display, setDisplay] = useState<BookingDisplayPreferencesReplacement>({
     availabilityWindowStart: "08:00",
     availabilityWindowEnd: "18:00",
     timezoneMode: "BROWSER",
