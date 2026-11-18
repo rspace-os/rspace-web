@@ -13773,11 +13773,13 @@ export default interface Resources {
         "removeConfirm": "Remove",
         "removeMessage": "Another tab has changed your default search. This removes it:",
         "removeTitle": "Remove default search?",
+        "removed": "Default search removed",
         "replaceConfirm": "Replace",
         "replaceMessage": "This replaces your current default search:",
         "replaceTitle": "Replace default search?",
         "run": "Default search",
         "save": "Save as default search",
+        "saved": "Default search saved",
         "withinRecords": "Within records"
       },
       "filePicker": {

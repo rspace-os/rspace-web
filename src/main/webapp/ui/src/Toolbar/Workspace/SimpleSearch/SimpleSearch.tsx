@@ -24,6 +24,7 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
+import { SEARCH_INPUT_ID } from "../DefaultSearch/workspaceGlobals";
 import ChemicalSearcher from "./ChemicalSearcher";
 import ScopeDialog from "./SimpleSearchScopeDialog";
 
@@ -389,7 +390,12 @@ class SimpleSearch extends React.Component<any, any> {
                   placeholder={i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder")}
                   value={this.state.term}
                   onChange={this.handleChange}
-                  slotProps={{ input: { "aria-label": i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder") } }}
+                  slotProps={{
+                    input: {
+                      id: SEARCH_INPUT_ID,
+                      "aria-label": i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder"),
+                    },
+                  }}
                 />
               )}
               {this.state.filter === "owner" && (

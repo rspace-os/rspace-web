@@ -1,10 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw/http";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import DefaultSearch from "../DefaultSearch";
-import { RECORD_LIST_SHOWN } from "../workspaceGlobals";
+import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID } from "../workspaceGlobals";
 import { toSearchQuery } from "../workspaceSearchUrl";
 
 const KEY = "WORKSPACE_DEFAULT_SEARCH";
@@ -155,6 +156,41 @@ describe("DefaultSearch", () => {
 
     expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" })).toBeVisible();
     expect(savedPreferences).toHaveLength(0);
+  });
+
+  test("saving with the keyboard moves focus to the run button and announces it", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({});
+    givenWorkspace({});
+    const { baseElement } = render(<DefaultSearch />);
+
+    (await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" })).focus();
+    await user.keyboard("{Enter}");
+
+    await vi.waitFor(() => expect(runButton()).toHaveFocus());
+    expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.saved");
+    await expectAccessible(baseElement);
+  });
+
+  test("removing with the keyboard moves focus to the search box and announces it", async () => {
+    const user = userEvent.setup();
+    const searchBox = document.createElement("input");
+    searchBox.id = SEARCH_INPUT_ID;
+    searchBox.setAttribute("aria-label", "search");
+    document.body.appendChild(searchBox);
+    onTestFinished(() => searchBox.remove());
+    givenStoredPreferences({ [KEY]: { value: BKMKTAG } });
+    givenWorkspace({ searchMode: false });
+    const { baseElement } = render(<DefaultSearch />);
+
+    (await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" })).focus();
+    await user.keyboard("{Enter}");
+    await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" });
+    await expectAccessible(baseElement);
+    await user.keyboard("{Enter}");
+
+    await vi.waitFor(() => expect(searchBox).toHaveFocus());
+    expect(screen.getByRole("status")).toHaveTextContent("workspace:toolbar.defaultSearch.removed");
   });
 
   test("clicking Default search opens the stored search", async () => {

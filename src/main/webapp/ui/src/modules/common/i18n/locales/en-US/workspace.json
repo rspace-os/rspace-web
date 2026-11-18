@@ -585,6 +585,7 @@
       "options": "Default search options",
       "remove": "Remove default search",
       "removeConfirm": "Remove",
+      "removed": "Default search removed",
       "removeMessage": "Another tab has changed your default search. This removes it:",
       "removeTitle": "Remove default search?",
       "replaceConfirm": "Replace",
@@ -592,6 +593,7 @@
       "replaceTitle": "Replace default search?",
       "run": "Default search",
       "save": "Save as default search",
+      "saved": "Default search saved",
       "withinRecords": "Within records"
     },
     "filePicker": {

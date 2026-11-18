@@ -6,12 +6,13 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
+import { visuallyHidden } from "@mui/utils";
 import React from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import ConfirmProvider, { useConfirm } from "@/components/ConfirmProvider";
 import useUiPreference, { fetchPreferences, PREFERENCES, UiPreferences } from "@/hooks/api/useUiPreference";
-import { RECORD_LIST_SHOWN, workspaceSettings } from "./workspaceGlobals";
+import { RECORD_LIST_SHOWN, SEARCH_INPUT_ID, workspaceSettings } from "./workspaceGlobals";
 import { parseSearchQuery, type SummaryLabels, summariseSearch, toSearchQuery } from "./workspaceSearchUrl";
 
 function currentSearchQuery(): string | null {
@@ -92,10 +93,21 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
   const confirm = useConfirm();
   const [menuAnchor, setMenuAnchor] = React.useState<HTMLElement | null>(null);
   const slot = document.getElementById("defaultSearchSlot");
+  const runButton = React.useRef<HTMLButtonElement>(null);
+  const [announcement, setAnnouncement] = React.useState("");
+  const [focusAfterStore, setFocusAfterStore] = React.useState<"run" | "search" | null>(null);
+
+  React.useEffect(() => {
+    if (focusAfterStore === "run") runButton.current?.focus();
+    if (focusAfterStore === "search") document.getElementById(SEARCH_INPUT_ID)?.focus();
+    setFocusAfterStore(null);
+  }, [focusAfterStore]);
 
   const store = (query: string | null) => {
     setShown(query);
     setStored(query);
+    setAnnouncement(query === null ? t("toolbar.defaultSearch.removed") : t("toolbar.defaultSearch.saved"));
+    setFocusAfterStore(query === null ? "search" : "run");
   };
 
   const confirmReplacing = (query: string) =>
@@ -157,6 +169,7 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
         <>
           <Tooltip title={summarise(stored)} enterDelay={300} describeChild>
             <IconButton
+              ref={runButton}
               color="inherit"
               aria-label={t("toolbar.defaultSearch.run")}
               onClick={() => navigate(`/workspace?${stored}`)}
@@ -193,6 +206,9 @@ function DefaultSearchControls({ navigate }: Required<DefaultSearchProps>): Reac
         </>
       )}
       {slot && createPortal(bar, slot)}
+      <Box component="span" role="status" sx={visuallyHidden}>
+        {announcement}
+      </Box>
     </>
   );
 }
