@@ -697,7 +697,7 @@ div .searchButton {
 #searchModePanel #saveDefaultSearch,
 #searchModePanel #isDefaultSearch,
 #searchModePanel #clearDefaultSearch {
-  margin-left: 8px;
+  margin-left: 2px;
 }
 
 #searchModePanel .search-highlight-toggle{
