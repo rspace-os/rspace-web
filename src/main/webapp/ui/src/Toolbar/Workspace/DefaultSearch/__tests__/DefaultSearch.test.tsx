@@ -28,9 +28,13 @@ const BKMKTAG = toSearchQuery({ ...searchSettings, options: ["tag"], terms: ["bk
 
 let savedPreferences: Array<Record<string, { value: unknown }>>;
 
-function givenStoredPreferences(preferences: Record<string, unknown>) {
+/** Each read returns the next of `preferences`, and the last one after that. */
+function givenStoredPreferences(...preferences: Array<Record<string, unknown>>) {
+  let reads = 0;
   server.use(
-    http.get("/userform/ajax/preference", () => HttpResponse.json(preferences)),
+    http.get("/userform/ajax/preference", () =>
+      HttpResponse.json(preferences[Math.min(reads++, preferences.length - 1)]),
+    ),
     http.post("/userform/ajax/preference", async ({ request }) => {
       const form = await request.formData();
       savedPreferences.push(JSON.parse(form.get("value") as string));
@@ -120,6 +124,37 @@ describe("DefaultSearch", () => {
     expect(await screen.findByText("workspace:toolbar.defaultSearch.isDefault")).toBeVisible();
     await vi.waitFor(() => expect(savedPreferences).toHaveLength(1));
     expect(savedPreferences[0][KEY].value).toBe(ZEBRAFISH);
+  });
+
+  test("saving asks first when another tab has since stored a default", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({}, { [KEY]: { value: BKMKTAG } });
+    givenWorkspace({});
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.save" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/bkmktag/)).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
+
+    expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" })).toBeVisible();
+    expect(savedPreferences).toHaveLength(0);
+  });
+
+  test("removing asks first when another tab has since stored a different default", async () => {
+    const user = userEvent.setup();
+    givenStoredPreferences({ [KEY]: { value: ZEBRAFISH } }, { [KEY]: { value: BKMKTAG } });
+    givenWorkspace({ searchMode: false });
+    render(<DefaultSearch />);
+
+    await user.click(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.options" }));
+    await user.click(await screen.findByRole("menuitem", { name: "workspace:toolbar.defaultSearch.remove" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/bkmktag/)).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
+
+    expect(await screen.findByRole("button", { name: "workspace:toolbar.defaultSearch.run" })).toBeVisible();
+    expect(savedPreferences).toHaveLength(0);
   });
 
   test("clicking Default search opens the stored search", async () => {
