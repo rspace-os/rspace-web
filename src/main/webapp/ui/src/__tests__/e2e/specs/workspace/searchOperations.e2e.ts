@@ -336,7 +336,7 @@ test.describe(`Workspace search operations`, () => {
     });
   });
 
-  test(`As a user, the folder listing cannot be clicked while a search link is still loading`, async ({
+  test(`As a user, a folder opened while a search link is loading is not replaced by its results`, async ({
     page,
     pageWorkspace,
     clientDocuments,
@@ -360,9 +360,23 @@ test.describe(`Workspace search operations`, () => {
       pageWorkspace.table.row("Examples").getByRole("link", { name: "Examples", exact: true }).click({ timeout: 1000 }),
     ).rejects.toThrow();
 
+    // The overlay stops the mouse but not the keyboard
+    await pageWorkspace.table.row("Examples").getByRole("link", { name: "Examples", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await pageWorkspace.waitUntilBreadcrumbShows("Examples");
+
+    const searchResponse = page.waitForResponse((response) => response.url().includes("/workspace/ajax/search"));
     releaseSearch();
-    await expect(pageWorkspace.table.row(docName)).toBeVisible();
-    await expect(pageWorkspace.searchBar.clearSearchButton).toBeVisible();
+    await searchResponse;
+    // Past the fade before a listing is drawn
+    await page.waitForTimeout(1000);
+
+    await expect(pageWorkspace.breadcrumbFolderName).toHaveText(/Examples/);
+    await expect(pageWorkspace.table.row(docName)).toHaveCount(0);
+    // The new user's Examples folder is empty, so there is no column to sort by
+    expect(
+      await page.evaluate(() => (window as unknown as { workspaceSettings: { url: string } }).workspaceSettings.url),
+    ).toContain("/workspace/ajax/view/");
   });
 
   test(`As a user, the folder listing stays covered until a slow search link's results are shown`, async ({

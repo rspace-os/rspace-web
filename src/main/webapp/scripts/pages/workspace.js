@@ -48,6 +48,8 @@ function showRecordList(result) {
 
   updateSearchModePanel(noOfRows > 0);
   $('#record_list').show(effect, effectDuration);
+  // A newer listing may have replaced a search link's results before they arrived
+  endSearchLinkWait();
   window.dispatchEvent(new CustomEvent("workspaceRecordListShown"));
 }
 
@@ -163,15 +165,26 @@ function configurePermittedActions() {
   $('.createMenuItemDivider').toggle(canCreateRecord);
 }
 
+// Only the latest listing request may draw, so a slow reply cannot replace
+// a folder or search the user has moved on to.
+var listingRequestId = 0;
+
 // Open a specific folder.
 function navigateToFolder(folderId) {
   workspaceSettings.url = "/workspace/ajax/view/" + folderId;
   workspaceSettings.pageNumber = 0;
   resetToolbar();
+  var requestId = ++listingRequestId;
   var jqxhr = $.get(workspaceSettings.url, workspaceSettings,
       function (result) {
+        if (requestId !== listingRequestId) {
+          return;
+        }
         hideRecordList();
         setTimeout(function () {
+          if (requestId !== listingRequestId) {
+            return;
+          }
           showRecordList(result);
           workspaceSettings.grandparentFolderId = workspaceSettings.parentFolderId;
           workspaceSettings.parentFolderId = folderId;
@@ -179,6 +192,9 @@ function navigateToFolder(folderId) {
         }, effectDuration);
       });
   jqxhr.fail(function () {
+    if (requestId !== listingRequestId) {
+      return;
+    }
     RS.ajaxFailed(RS.msg("legacyjs.workspace.main.openFolderAction"), false, jqxhr);
   });
 }
@@ -417,23 +433,35 @@ function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
   // block page so that user knows something is loading
   RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
 
+  var requestId = ++listingRequestId;
   var jqxhr = $.get(url, data, function (result) {
+    if (requestId !== listingRequestId) {
+      return;
+    }
     onLoad(result);
     hideRecordList();
     setTimeout(function () {
+      if (requestId !== listingRequestId) {
+        return;
+      }
       showRecordList(result);
       init();
       displayOrderIcon();
       balanceTableColumns();
     }, effectDuration);
   }).fail(function () {
+    if (requestId !== listingRequestId) {
+      return;
+    }
     if (onFail) {
       onFail(jqxhr);
     } else {
       RS.ajaxFailed(RS.msg("legacyjs.workspace.main.displaySettingsAction"), true, jqxhr);
     }
   }).always(function () {
-    RS.unblockPage($('.rs-working-area'));
+    if (requestId === listingRequestId) {
+      RS.unblockPage($('.rs-working-area'));
+    }
   });
 }
 
