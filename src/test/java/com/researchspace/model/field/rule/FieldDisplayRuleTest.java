@@ -2,6 +2,7 @@ package com.researchspace.model.field.rule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,18 @@ class FieldDisplayRuleTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new FieldDisplayRule(KEY, ConditionOperator.IS_ANY_OF, values));
+  }
+
+  /** A UTF-8 column cannot store a lone surrogate, so stored rules must be plain ASCII. */
+  @Test
+  void storedJsonIsAsciiAndRoundTripsNonAsciiValues() {
+    List<String> values = List.of("x\uD800y", "😀", "é");
+    FieldDisplayRule rule = new FieldDisplayRule(KEY, ConditionOperator.IS_ANY_OF, values);
+
+    String json = rule.toJson();
+
+    assertTrue(json.chars().allMatch(c -> c < 0x80), json);
+    assertEquals(rule, FieldDisplayRule.fromJson(json));
   }
 
   @Test

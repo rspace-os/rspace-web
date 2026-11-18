@@ -25,12 +25,8 @@ public final class ElnChoiceValues {
       return selected;
     }
     for (String segment : data.split("&")) {
-      int start = segment.indexOf('=');
-      if (start < 0) {
-        continue;
-      }
-      int end = segment.indexOf('=', start + 1);
-      String value = segment.substring(start + 1, end < 0 ? segment.length() : end);
+      // The text between the first and second '='; empty when the segment has no '='.
+      String value = StringUtils.substringBefore(StringUtils.substringAfter(segment, "="), "=");
       if (!value.isEmpty()) {
         selected.add(value);
       }
