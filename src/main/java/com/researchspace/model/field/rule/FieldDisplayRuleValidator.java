@@ -17,16 +17,13 @@ import java.util.UUID;
  */
 public final class FieldDisplayRuleValidator {
 
-  /** Message code prefix for display rule errors. */
-  public static final String CODE_PREFIX = "validation.fieldDisplayRule.";
-
-  public static final String KEY_INVALID = CODE_PREFIX + "keyInvalid";
-  public static final String KEY_DUPLICATE = CODE_PREFIX + "keyDuplicate";
-  public static final String SOURCE_MISSING = CODE_PREFIX + "sourceMissing";
-  public static final String SOURCE_SELF = CODE_PREFIX + "sourceSelf";
-  public static final String SOURCE_TYPE = CODE_PREFIX + "sourceType";
-  public static final String VALUE_UNKNOWN = CODE_PREFIX + "valueUnknown";
-  public static final String CYCLE = CODE_PREFIX + "cycle";
+  public static final String KEY_INVALID = "validation.fieldDisplayRule.keyInvalid";
+  public static final String KEY_DUPLICATE = "validation.fieldDisplayRule.keyDuplicate";
+  public static final String SOURCE_MISSING = "validation.fieldDisplayRule.sourceMissing";
+  public static final String SOURCE_SELF = "validation.fieldDisplayRule.sourceSelf";
+  public static final String SOURCE_TYPE = "validation.fieldDisplayRule.sourceType";
+  public static final String VALUE_UNKNOWN = "validation.fieldDisplayRule.valueUnknown";
+  public static final String CYCLE = "validation.fieldDisplayRule.cycle";
 
   /**
    * One problem with one field.
