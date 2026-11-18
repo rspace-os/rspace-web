@@ -892,9 +892,10 @@ paths:
 
         If the form has a draft that was saved in the form editor but not yet
         Updated, the request replaces that draft: fields that exist only in the
-        draft are deleted unless the request lists them, the draft's changes to
-        the fields the request lists are overwritten, and the result is published
-        as the new version.
+        draft are always deleted (the request can only name fields of the form
+        being edited, and a draft-only field id is rejected as unknown), the
+        draft's changes to the fields the request lists are overwritten, and the
+        result is published as the new version.
 
 
         Radio and Choice options that the request adds or changes must not be
@@ -3889,6 +3890,9 @@ components:
             was created from. Display rules name their source field by this key.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
+          description: Read-only, from the field's form field. A document request that
+            sends a malformed rule here is rejected with 400; echoing a rule read from
+            this API is always accepted.
         files:
           $ref: "#/components/schemas/FileList"
         listOfMaterials:

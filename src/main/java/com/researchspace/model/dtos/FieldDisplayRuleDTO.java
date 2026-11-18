@@ -55,7 +55,7 @@ public class FieldDisplayRuleDTO {
    * @throws IllegalArgumentException if {@code json} is not a valid rule
    */
   public static FieldDisplayRuleDTO parse(JsonNode json) {
-    return from(FieldDisplayRule.fromJson(json.toString()));
+    return from(FieldDisplayRule.fromJson(json));
   }
 
   /**
