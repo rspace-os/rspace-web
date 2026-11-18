@@ -1,5 +1,7 @@
 package com.researchspace.extmessages.base;
 
+import com.google.common.net.InetAddresses;
+import com.google.common.net.InternetDomainName;
 import java.net.IDN;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -95,7 +97,7 @@ public final class WebhookDestinationPolicy {
         || port < 1
         || port > 65535
         || !isOriginOnly(uri)
-        || (wildcard && isIpLiteral(host.get()))) {
+        || (wildcard && !isWildcardableDomain(host.get()))) {
       throw invalid;
     }
     return new Origin(scheme, host.get(), port, wildcard);
@@ -109,9 +111,13 @@ public final class WebhookDestinationPolicy {
         && uri.getRawFragment() == null;
   }
 
-  /** A wildcard is for provider domain names; over an address, "*.0.0.1" would match 10.0.0.1. */
-  private static boolean isIpLiteral(String host) {
-    return host.startsWith("[") || host.chars().allMatch(c -> c == '.' || Character.isDigit(c));
+  /**
+   * A wildcard must sit below a registrable domain: not over an IP address ("*.0.0.1" would match
+   * 10.0.0.1) and not over a public suffix such as {@code com} or {@code azurewebsites.net}, where
+   * anyone can register a matching host.
+   */
+  private static boolean isWildcardableDomain(String host) {
+    return InternetDomainName.isValid(host) && InternetDomainName.from(host).isUnderPublicSuffix();
   }
 
   /**
@@ -209,9 +215,13 @@ public final class WebhookDestinationPolicy {
         return true;
       }
     }
-    if (address instanceof Inet6Address) {
-      byte[] b = address.getAddress();
-      if (isEmbeddedIpv4(b) || isNat64(b)) {
+    if (address instanceof Inet6Address v6) {
+      // IPv4-compatible (::a.b.c.d), 6to4 and Teredo addresses carry an IPv4 address
+      if (InetAddresses.hasEmbeddedIPv4ClientAddress(v6)) {
+        return isNonPublic(InetAddresses.getEmbeddedIPv4ClientAddress(v6));
+      }
+      byte[] b = v6.getAddress();
+      if (InetAddresses.isMappedIPv4Address(InetAddresses.toAddrString(v6)) || isNat64(b)) {
         return isNonPublic(ipv4From(b));
       }
       if ((b[0] & 0xfe) == 0xfc) { // unique local, fc00::/7
@@ -221,18 +231,6 @@ public final class WebhookDestinationPolicy {
     return address.isLinkLocalAddress()
         || address.isSiteLocalAddress()
         || address.isMulticastAddress();
-  }
-
-  /** IPv4-mapped (::ffff:a.b.c.d) or IPv4-compatible (::a.b.c.d) forms. */
-  private static boolean isEmbeddedIpv4(byte[] b) {
-    for (int i = 0; i < 10; i++) {
-      if (b[i] != 0) {
-        return false;
-      }
-    }
-    boolean mapped = b[10] == (byte) 0xff && b[11] == (byte) 0xff;
-    boolean compatible = b[10] == 0 && b[11] == 0;
-    return mapped || compatible;
   }
 
   /** NAT64 well-known prefix 64:ff9b::/96, which embeds an IPv4 address in the last 4 bytes. */

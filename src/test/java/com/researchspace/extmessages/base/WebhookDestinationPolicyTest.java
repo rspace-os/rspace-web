@@ -67,7 +67,8 @@ class WebhookDestinationPolicyTest {
         "fd00::1",
         "0.0.0.0",
         "100.100.100.200",
-        "64:ff9b::a00:5"
+        "64:ff9b::a00:5",
+        "2002:a00:5::"
       })
   void rejectsWildcardHostResolvingToNonPublicAddress(String address) throws Exception {
     HostResolver resolver = resolvingTo(InetAddress.getByName(address));
@@ -126,7 +127,9 @@ class WebhookDestinationPolicyTest {
         "https://[123]",
         "https://*.10.0.0.1",
         "https://*.0.0.1",
-        "https://*.[::1]"
+        "https://*.[::1]",
+        "https://*.com",
+        "https://*.azurewebsites.net"
       })
   void malformedEntryStopsStartup(String entry) {
     assertThrows(
