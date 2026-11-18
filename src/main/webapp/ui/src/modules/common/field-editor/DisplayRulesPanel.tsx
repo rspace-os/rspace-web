@@ -14,7 +14,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { partition, sortBy } from "es-toolkit";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -277,7 +277,8 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
   /*
    * A row keeps its React identity, and its place, while it moves between
    * being a stored rule and a draft, so the control the author is using keeps
-   * focus. Both are only changed in event handlers.
+   * focus. Both change in event handlers, plus a layout effect that only adds
+   * saved rows the first time they appear.
    */
   // every field of a rule maps to its row, so the row keeps its identity when its first field is deleted
   const [rowIdByTarget, setRowIdByTarget] = useState<ReadonlyMap<string, string>>(
@@ -325,12 +326,13 @@ export default function DisplayRulesPanel({ fields, onChange, editable }: Displa
   /*
    * Saved rules that arrive after the first render (fields loading late) get
    * a place and an identity as soon as they appear, so deleting one of their
-   * fields before any edit does not rekey or move them.
+   * fields before any edit does not rekey or move them. A layout effect
+   * records them before paint, so no click can run before they are recorded.
    */
   const savedRows = rows.filter((row) => !row.isDraft);
   const savedSignature = JSON.stringify(savedRows.map(({ id, targetKeys }) => [id, targetKeys]));
   // the signature stands for savedRows, which is a new array on every render
-  useEffect(() => {
+  useLayoutEffect(() => {
     setRowOrder((current) => {
       const unseen = savedRows.map(({ id }) => id).filter((id) => !current.includes(id));
       return unseen.length === 0 ? current : [...current, ...unseen];
