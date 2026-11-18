@@ -327,11 +327,11 @@ export const ResourceAccessReplacement = v.object({
 });
 
 export const ResourceGranteeDirectoryEntry = v.object({
-  detail: v.optional(v.string()),
-  id: v.optional(v.pipe(v.number(), v.integer())),
-  key: v.optional(v.string()),
-  kind: v.optional(ResourceGranteeKind),
-  name: v.optional(v.string()),
+  detail: v.string(),
+  id: v.pipe(v.number(), v.integer()),
+  key: v.string(),
+  kind: ResourceGranteeKind,
+  name: v.string(),
 });
 
 export const ResourceGranteeDirectoryDocument = v.object({
@@ -781,7 +781,7 @@ export const ListMaintenancesQueryParams = v.object({
         maintenances: v.optional(v.string()),
       }),
       v.description(
-        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.",
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name. A requested field is omitted when the caller is not allowed to read it.",
       ),
     ),
   ),
@@ -799,7 +799,7 @@ export const ListMaintenancesQueryParams = v.object({
 
 export const ListMaintenancesResponse = v.object({
   docs: v.array(MaintenancesRead),
-  hasNextPage: v.optional(v.boolean()),
+  hasNextPage: v.boolean(),
   limit: v.pipe(v.number(), v.integer()),
   page: v.pipe(v.number(), v.integer()),
   totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description("Present only when totals=true."))),
@@ -922,7 +922,7 @@ export const GetMaintenanceQueryParams = v.object({
         maintenances: v.optional(v.string()),
       }),
       v.description(
-        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.",
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name. A requested field is omitted when the caller is not allowed to read it.",
       ),
     ),
   ),

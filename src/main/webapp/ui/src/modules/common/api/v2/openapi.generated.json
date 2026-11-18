@@ -268,7 +268,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "MaintenancesFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[maintenances]=id,name. A requested field is omitted when the caller is not allowed to read it.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -1229,7 +1229,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "endDate" : {
             "description" : "End of the maintenance window.",
@@ -1238,7 +1239,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable maintenance identifier.",
@@ -1249,7 +1251,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "message" : {
             "description" : "User-facing maintenance message.",
@@ -1257,7 +1260,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "startDate" : {
             "description" : "Beginning of the maintenance window.",
@@ -1266,7 +1270,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "stopUserLoginDate" : {
             "description" : "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
@@ -1274,7 +1279,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "version" : {
             "description" : "Version for conditional updates and deletes.",
@@ -1284,7 +1290,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "id" ],
@@ -1509,6 +1516,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "detail", "id", "key", "kind", "name" ],
         "type" : "object"
       },
       "ResourceGranteeKind" : {
@@ -2618,7 +2626,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "limit", "page" ],
+                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
                   "type" : "object"
                 }
               }
