@@ -606,8 +606,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
               .andExpect(status().isUnprocessableEntity())
               .andReturn();
 
-      assertThat(result.getResponse().getContentAsString())
-          .contains("System forms cannot be given a new version");
+      assertThat(result.getResponse().getContentAsString()).contains("It may be a system form");
       ApiForm unchanged = getForm(created.getId());
       assertEquals(created.getFields().get(0).getName(), unchanged.getFields().get(0).getName());
       assertNull(doInTransaction(() -> formMgr.get(created.getId(), anyUser).getTempForm()));
