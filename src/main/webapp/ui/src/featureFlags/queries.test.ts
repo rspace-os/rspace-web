@@ -2,8 +2,14 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
+import {
+  ApiV2NetworkError,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+} from "@/modules/common/api/v2/ApiV2ProblemError";
 import { FEATURE_FLAGS } from "./generatedFeatureFlags";
-import { getFeatureFlags } from "./queries";
+import { getFeatureFlags, retryFeatureFlagRead } from "./queries";
 
 const validFlagResponse = {
   ...v2ListEnvelope([
@@ -110,5 +116,22 @@ describe("feature flag queries", () => {
     );
 
     await expect(getFeatureFlags()).rejects.toThrow("Feature flag pagination did not advance");
+  });
+});
+
+describe("feature flag read retries", () => {
+  test.each([
+    ["a 403 problem", new ApiV2ProblemError(403, undefined, "Forbidden")],
+    ["an undeclared 404", new ApiV2UnexpectedResponseError("undeclared", { status: 404, media: "text/html" })],
+    ["an ended session on the login page", new ApiV2SessionEndedError(200, undefined)],
+  ])("does not retry %s", (_, error) => {
+    expect(retryFeatureFlagRead(0, error)).toBe(false);
+  });
+
+  test.each([
+    ["a network failure", new ApiV2NetworkError(new TypeError("offline"))],
+    ["a 503 problem", new ApiV2ProblemError(503, undefined, "Unavailable")],
+  ])("retries %s twice", (_, error) => {
+    expect([0, 1, 2].map((count) => retryFeatureFlagRead(count, error))).toEqual([true, true, false]);
   });
 });

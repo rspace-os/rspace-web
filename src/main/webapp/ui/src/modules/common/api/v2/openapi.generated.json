@@ -184,7 +184,7 @@
         "x-rspace-mutually-exclusive-with" : "fields"
       },
       "FeatureFlagsFields" : {
-        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.",
+        "description" : "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name. A requested field is omitted when the caller is not allowed to read it.",
         "explode" : true,
         "in" : "query",
         "name" : "fields",
@@ -1299,7 +1299,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "canOverride" : {
             "description" : "Whether this caller can set a user override.",
@@ -1307,7 +1308,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "name" : {
             "description" : "Stable lower-camel-case feature flag name.",
@@ -1317,7 +1319,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "overrideValue" : {
             "description" : "Caller override. Set null to clear the override.",
@@ -1333,7 +1336,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "value" : {
             "description" : "Effective value for this caller.",
@@ -1341,7 +1345,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           }
         },
         "required" : [ "name" ],
@@ -2706,7 +2711,7 @@
                       "type" : "boolean"
                     }
                   },
-                  "required" : [ "docs", "limit", "page" ],
+                  "required" : [ "docs", "hasNextPage", "limit", "page" ],
                   "type" : "object"
                 }
               }

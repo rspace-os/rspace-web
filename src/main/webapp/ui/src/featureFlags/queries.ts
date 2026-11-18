@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { ApiV2Error, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import {
   getListFeatureFlagsQueryKey,
@@ -30,9 +30,15 @@ export function useFeatureFlags() {
     placeholderData: disabledFeatureFlags,
     staleTime: Infinity,
     gcTime: Infinity,
-    retry: (failureCount, error) =>
-      !(error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500) && failureCount < 2,
+    retry: retryFeatureFlagRead,
   });
+}
+
+/** Retries twice, but never a 4xx answer or an ended session (whose status may be the login page's 200). */
+export function retryFeatureFlagRead(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiV2SessionEndedError) return false;
+  const status = error instanceof ApiV2Error ? error.status : undefined;
+  return !(status !== undefined && status >= 400 && status < 500) && failureCount < 2;
 }
 
 export function useIsFeatureFlagEnabled(flagName: FeatureFlagName): boolean {

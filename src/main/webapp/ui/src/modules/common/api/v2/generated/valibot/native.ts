@@ -745,7 +745,7 @@ export const ListFeatureFlagsQueryParams = v.object({
         "feature-flags": v.optional(v.string()),
       }),
       v.description(
-        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.",
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name. A requested field is omitted when the caller is not allowed to read it.",
       ),
     ),
   ),
@@ -763,7 +763,7 @@ export const ListFeatureFlagsQueryParams = v.object({
 
 export const ListFeatureFlagsResponse = v.object({
   docs: v.array(FeatureFlagsRead),
-  hasNextPage: v.optional(v.boolean()),
+  hasNextPage: v.boolean(),
   limit: v.pipe(v.number(), v.integer()),
   page: v.pipe(v.number(), v.integer()),
   totalDocs: v.optional(v.pipe(v.number(), v.integer(), v.description("Present only when totals=true."))),
@@ -836,7 +836,7 @@ export const GetFeatureFlagQueryParams = v.object({
         "feature-flags": v.optional(v.string()),
       }),
       v.description(
-        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name.",
+        "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[feature-flags]=id,name. A requested field is omitted when the caller is not allowed to read it.",
       ),
     ),
   ),
