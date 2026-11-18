@@ -23,7 +23,7 @@ vi.mock("../bondStrengthsApi", async (importOriginal) => ({
 
 const method = {
   name: "RSpace bond strength model",
-  version: "0.1.0-poc",
+  version: "0.1.0",
   weightsSha256: "af085c02bbbc372c177ff0b256b25aa7f0f6a8d9988276ca02e5c85ba0a9e890",
   meanAbsoluteErrorKcalMol: 0.8,
   crossCheck: { maxDifferenceKcalMol: 5 },
@@ -172,7 +172,7 @@ describe("BondStrengthsDialog", () => {
     await user.click(await screen.findByRole("button", { name: "About this calculation" }));
 
     const details = screen.getByRole("region", { name: "About this calculation" });
-    expect(within(details).getByText("RSpace bond strength model 0.1.0-poc")).toBeVisible();
+    expect(within(details).getByText("RSpace bond strength model 0.1.0")).toBeVisible();
     expect(within(details).getByText("Mean absolute error 0.8 kcal/mol")).toBeVisible();
     expect(within(details).getByText("DFT, M06-2X/def2-TZVP")).toBeVisible();
     expect(within(details).getByText("af085c02bbbc")).toBeVisible();
@@ -217,7 +217,7 @@ describe("BondStrengthsDialog", () => {
       legend: "Values in kcal/mol. Atom numbers match the table. Red marks the weakest bond.",
       forChemicalId: "42",
       caption:
-        "Predicted bond strengths (bond dissociation enthalpy) from RSpace bond strength model 0.1.0-poc. Typical error 0.8 kcal/mol against DFT, not checked against experiment. Calculated on November 18, 2026.",
+        "Predicted bond strengths (bond dissociation enthalpy) from RSpace bond strength model 0.1.0. Typical error 0.8 kcal/mol against DFT, not checked against experiment. Calculated on November 18, 2026.",
       columns: { bond: "Bond", kcalMol: "kcal/mol", kjMol: "kJ/mol" },
       rows: [
         { bond: "C1-H (×3), weakest bond", kcalMol: "89", kjMol: "374" },
