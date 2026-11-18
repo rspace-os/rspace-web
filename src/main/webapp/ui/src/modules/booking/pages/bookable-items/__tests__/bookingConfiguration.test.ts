@@ -2,9 +2,8 @@ import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { SchedulingSettingsSchema } from "@/modules/booking/configuration/schedulingSettingsSchema";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { createApiV2FilterFields } from "@/modules/common/table-list/api-v2/filterFields";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import {

@@ -173,7 +173,8 @@ describe("CalendarPage", () => {
       .getQueryCache()
       .findAll({ queryKey: getSearchCalendarEventsQueryKey() })
       .find((query) => query.state.data !== undefined && query.state.fetchStatus === "fetching");
-    expect(cachedRefetch?.state.data).toMatchObject({ docs: [] });
+    // Calendar events cache the mapped documents of every page.
+    expect(cachedRefetch?.state.data).toEqual([]);
 
     await act(async () => {
       window.history.replaceState(

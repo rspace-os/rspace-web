@@ -81,6 +81,8 @@ describe("BookableItemPage", () => {
               requester: { relationTo: "users", value: { id: 1 } },
               privacy: "full",
               canViewConfiguration: true,
+              location: null,
+              createdBy: null,
               purpose,
               cancellationReason: null,
               bookedBy: "Alexandra Montgomery-Wellington with a very long name",

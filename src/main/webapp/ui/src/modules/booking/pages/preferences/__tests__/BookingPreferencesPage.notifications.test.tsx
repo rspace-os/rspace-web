@@ -6,8 +6,8 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
-import type { BookingNotificationUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationUnsubscribeResult";
 import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
+import type { BookingNotificationUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationUnsubscribeResult";
 
 import {
   expectStatusMessage,
@@ -23,14 +23,13 @@ describe("BookingPreferencesPage", () => {
     let saved: unknown;
     let deleted = 0;
     server.use(
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        saved = await request.json();
-        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          saved = await request.json();
+          return HttpResponse.json({ ...(saved as BookingNotificationPreferenceReplacement), emailDelivery: false });
+        },
+      ),
       http.delete<never, never, BookingNotificationUnsubscribeResult | ApiV2Problem>(
         "/api/v2/users/me/booking-notification-subscriptions",
         () => {
@@ -76,14 +75,13 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let saved: unknown;
     server.use(
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        saved = await request.json();
-        return HttpResponse.json({ ...(saved as object), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          saved = await request.json();
+          return HttpResponse.json({ ...(saved as BookingNotificationPreferenceReplacement), emailDelivery: false });
+        },
+      ),
     );
     const { container } = renderPage();
 
@@ -121,16 +119,18 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let attempts = 0;
     server.use(
-      http.put<
-        never,
-        BookingNotificationPreferenceReplacement,
-        BookingNotificationPreferences | ApiV2Problem
-      >("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
-        attempts += 1;
-        return attempts === 1
-          ? HttpResponse.json({}, { status: 503 })
-          : HttpResponse.json({ ...(await request.json()), emailDelivery: false });
-      }),
+      http.put<never, BookingNotificationPreferenceReplacement, BookingNotificationPreferences | ApiV2Problem>(
+        "/api/v2/users/me/booking-notification-preferences",
+        async ({ request }) => {
+          attempts += 1;
+          return attempts === 1
+            ? HttpResponse.json(
+                { title: "Unavailable", code: "errors.api.v2.unexpected", status: 503 },
+                { status: 503 },
+              )
+            : HttpResponse.json({ ...(await request.json()), emailDelivery: false });
+        },
+      ),
     );
     renderPage();
     const on = await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" });

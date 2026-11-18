@@ -11,7 +11,7 @@ it("shares completed and in-flight administration lookups for the same user", as
   server.use(
     http.get("/api/v2/booking-configurations/count", () => {
       requests.count += 1;
-      return HttpResponse.json<ApiV2CountResult>({ totalDocs: 1 });
+      return HttpResponse.json<ApiV2CountResult>({ totalDocs: 1, totalIsLowerBound: false });
     }),
     http.get("/api/v2/booking-configuration-targets", () => {
       requests.targets += 1;

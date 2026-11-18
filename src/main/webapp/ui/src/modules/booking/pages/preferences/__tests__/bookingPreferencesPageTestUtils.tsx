@@ -11,9 +11,6 @@ import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV
 import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
 import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
-import type { BookingNotificationUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationUnsubscribeResult";
-import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
-import type { BookingNotificationPreferenceReplacement } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferenceReplacement";
 import type { BookingNotificationPreferences } from "@/modules/common/api/v2/generated/models/bookingNotificationPreferences";
 import type { BookingNotificationUnsubscribeResult } from "@/modules/common/api/v2/generated/models/bookingNotificationUnsubscribeResult";
 import BookingPreferencesPage from "../BookingPreferencesPage";

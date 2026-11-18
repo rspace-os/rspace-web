@@ -3,7 +3,6 @@ import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { getListBookingsQueryKey, invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import appI18n from "@/modules/common/i18n";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
-import { bookableItemEventsQuery } from "../bookableItemEvents";
 import { bookableItemEventsQueryKey } from "../bookableItemEvents";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
