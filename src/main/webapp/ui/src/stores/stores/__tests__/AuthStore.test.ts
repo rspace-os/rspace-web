@@ -1,10 +1,8 @@
 import "@/stores/stores/RootStore";
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, describe, expect, it, onTestFinished as restoreAfterTest, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
-import { createUiOAuthToken } from "@/modules/common/api/v2/generated/oauth/oauth";
-import { SessionTokenProvider, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
 
@@ -15,21 +13,7 @@ const tokenExpiringIn = (seconds: number) =>
   `eyJhbGciOiJub25lIn0.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
 let store: AuthStore;
 
-const MINT_URL = "*/api/v2/oauth/tokens";
-
 beforeEach(() => {
-  restoreAfterTest(
-    setApiV2TokenProvider({
-      // Like the session provider, an aborted caller rejects at once while the shared mint carries on.
-      getToken: (signal?: AbortSignal) =>
-        new Promise<string>((resolve, reject) => {
-          signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
-          createUiOAuthToken().then((token) => resolve(token.accessToken), reject);
-        }),
-      recover: async () => (await createUiOAuthToken()).accessToken,
-    }),
-  );
-  document.getElementById("public_document_view")?.remove();
   vi.useFakeTimers();
   vi.stubGlobal("location", { href: initialLocation, origin: initialOrigin });
   sessionStorage.clear();
@@ -40,21 +24,21 @@ afterEach(() => {
   store.signOut();
   vi.useRealTimers();
   vi.unstubAllGlobals();
-  document.getElementById("public_document_view")?.remove();
 });
 
 const failWith = (status: number | "network") =>
   server.use(
-    http.post(MINT_URL, () => (status === "network" ? HttpResponse.error() : new HttpResponse(null, { status }))),
+    http.get("*/userform/ajax/inventoryOauthToken", () =>
+      status === "network" ? HttpResponse.error() : new HttpResponse(null, { status }),
+    ),
   );
 
 describe("AuthStore refresh recovery", () => {
   it.each([429, 500, 503, "network"] as const)("retains the mounted session and recovers after %s", async (status) => {
     const authenticate = vi.spyOn(store, "authenticate");
     const token = tokenExpiringIn(3600);
-    server.use(http.post(MINT_URL, () => HttpResponse.json({ accessToken: token })));
-    await store.refreshAuthentication();
-    authenticate.mockClear();
+    JwtService.saveToken(token);
+    await store.synchronizeWithSessionStorage();
     failWith(status);
     await store.authenticate();
     expect(store.isAuthenticated).toBe(true);
@@ -65,11 +49,8 @@ describe("AuthStore refresh recovery", () => {
     expect(authenticate).toHaveBeenCalledTimes(2);
     authenticate.mockRestore();
     const fresh = tokenExpiringIn(7200);
-    server.use(http.post(MINT_URL, () => HttpResponse.json({ accessToken: fresh })));
-    // msw's fetch interception needs a fake-timer tick once a retry timer has run.
-    const refreshed = store.authenticate();
-    await vi.advanceTimersByTimeAsync(0);
-    await refreshed;
+    server.use(http.get("*/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: fresh })));
+    await store.authenticate();
     expect(JwtService.getToken()).toBe(fresh);
     expect(store.isAuthenticated).toBe(true);
     expect(store.isSynchronizing).toBe(false);
@@ -81,7 +62,7 @@ describe("AuthStore refresh recovery", () => {
     store.isAuthenticated = true;
     let requests = 0;
     server.use(
-      http.post(MINT_URL, () => {
+      http.get("*/userform/ajax/inventoryOauthToken", () => {
         requests++;
         return new HttpResponse(null, { status: 500 });
       }),
@@ -105,7 +86,7 @@ describe("AuthStore refresh recovery", () => {
     let requests = 0;
     failWith(500);
     server.use(
-      http.post(MINT_URL, () => {
+      http.get("*/userform/ajax/inventoryOauthToken", () => {
         requests++;
         return undefined;
       }),
@@ -118,7 +99,9 @@ describe("AuthStore refresh recovery", () => {
       await authenticate.mock.results.at(-1)?.value;
       expect(requests).toBe(index + 2);
     }
-    server.use(http.post(MINT_URL, () => HttpResponse.json({ accessToken: tokenExpiringIn(3600) })));
+    server.use(
+      http.get("*/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: tokenExpiringIn(3600) })),
+    );
     await store.authenticate();
     failWith(500);
     await store.authenticate();
@@ -162,7 +145,7 @@ describe("AuthStore refresh recovery", () => {
     const response = Promise.withResolvers<Response>();
     const started = Promise.withResolvers<void>();
     server.use(
-      http.post(MINT_URL, () => {
+      http.get("*/userform/ajax/inventoryOauthToken", () => {
         started.resolve();
         return response.promise;
       }),
@@ -170,7 +153,7 @@ describe("AuthStore refresh recovery", () => {
     const pending = store.authenticate();
     await started.promise;
     store.signOut();
-    response.resolve(HttpResponse.json({ accessToken: tokenExpiringIn(3600) }));
+    response.resolve(HttpResponse.json({ data: tokenExpiringIn(3600) }));
     await pending;
     expect(store.isAuthenticated).toBe(false);
     expect(JwtService.getToken()).toBeNull();
@@ -183,7 +166,7 @@ describe("AuthStore refresh recovery", () => {
     store.isAuthenticated = true;
     failWith(503);
     await store.authenticate();
-    server.use(http.post(MINT_URL, () => new Promise<Response>(() => {})));
+    server.use(http.get("*/userform/ajax/inventoryOauthToken", () => new Promise<Response>(() => {})));
     await vi.advanceTimersByTimeAsync(20_000);
     expect(window.location.href).toBe("/login");
     expect(store.isAuthenticated).toBe(true);
@@ -197,7 +180,7 @@ describe("AuthStore refresh recovery", () => {
     const response = Promise.withResolvers<Response>();
     const started = Promise.withResolvers<void>();
     server.use(
-      http.post(MINT_URL, () => {
+      http.get("*/userform/ajax/inventoryOauthToken", () => {
         started.resolve();
         return response.promise;
       }),
@@ -212,55 +195,5 @@ describe("AuthStore refresh recovery", () => {
     expect(JwtService.getToken()).toBeNull();
     expect(window.location.href).toBe("/login");
     expect(store.timeoutId).toBeNull();
-  });
-});
-
-describe("AuthStore initialization", () => {
-  it("mints a fresh session-bound token on authenticated initialization", async () => {
-    JwtService.saveToken(tokenExpiringIn(3600));
-    const freshToken = tokenExpiringIn(3600);
-    let requestCount = 0;
-    server.use(
-      http.post(MINT_URL, () => {
-        requestCount += 1;
-        return HttpResponse.json({ accessToken: freshToken });
-      }),
-    );
-    const authStore = new AuthStore({} as RootStore);
-
-    try {
-      await authStore.refreshAuthentication();
-
-      expect(requestCount).toBe(1);
-      expect(JwtService.getToken()).toBe(freshToken);
-      expect(authStore.isAuthenticated).toBe(true);
-      expect(authStore.isSynchronizing).toBe(false);
-    } finally {
-      if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
-    }
-  });
-
-  it("mints a fresh legacy token on public document initialization", async () => {
-    restoreAfterTest(setApiV2TokenProvider(new SessionTokenProvider()));
-    document.body.appendChild(Object.assign(document.createElement("div"), { id: "public_document_view" }));
-    JwtService.saveToken(tokenExpiringIn(3600));
-    let requestCount = 0;
-    server.use(
-      http.get("/public/publicView/userform/ajax/inventoryOauthToken", () => {
-        requestCount += 1;
-        return HttpResponse.json({ data: "public-legacy-token" });
-      }),
-    );
-    const authStore = new AuthStore({} as RootStore);
-
-    try {
-      await authStore.refreshAuthentication();
-
-      expect(requestCount).toBe(1);
-      expect(JwtService.getToken()).toBe("public-legacy-token");
-      expect(authStore.isAuthenticated).toBe(true);
-    } finally {
-      if (authStore.timeoutId) clearTimeout(authStore.timeoutId);
-    }
   });
 });

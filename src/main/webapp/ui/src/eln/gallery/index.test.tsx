@@ -10,6 +10,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
@@ -107,6 +108,12 @@ function folderDetails({
  * than the global fetch mock.
  */
 function mockNetwork() {
+  // OAuth token (also covered by the useOauthToken mock, but the analytics
+  // instance and others may still hit this endpoint directly).
+  mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
+    data: "token",
+  });
+
   // Analytics provider (axios.create with baseURL /session/ajax).
   mockAxios.onGet("/session/ajax/analyticsProperties").reply(200, { analyticsEnabled: false });
 
@@ -197,7 +204,7 @@ describe("Gallery", () => {
   beforeEach(() => {
     mockAxios.reset();
     mockNetwork();
-    server.use(raidIntegrationInfoHandler(), emptyShareListingHandler());
+    server.use(oauthTokenHandler(), raidIntegrationInfoHandler(), emptyShareListingHandler());
     document.title = "";
   });
 

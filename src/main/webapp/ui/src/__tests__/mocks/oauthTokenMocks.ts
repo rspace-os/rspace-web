@@ -11,4 +11,8 @@ export const OAUTH_TOKEN =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6NDEwMjQ0NDgwMCwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.dumm-signature_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 export const oauthTokenHandler = (): RequestHandler =>
+  http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: OAUTH_TOKEN }));
+
+/* REST API v2 calls mint their own token through the session token provider. */
+export const apiV2TokenHandler = (): RequestHandler =>
   http.post("/api/v2/oauth/tokens", () => HttpResponse.json<ApiV2UiToken>({ accessToken: OAUTH_TOKEN }));

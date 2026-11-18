@@ -1,8 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
-import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
-import { onApiV2TokenRefresh } from "@/modules/common/api/v2/tokenProvider";
+import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
-import { getUiToken } from "@/modules/common/utils/auth";
+import { tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -20,6 +19,9 @@ import {
   type SystemSettings,
   systemSettingsFromApiResponse,
 } from "./systemSettingsMapping";
+
+/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
+const publicView = document.getElementById("public_document_view") !== null;
 
 export type {
   B2InstSettings,
@@ -47,7 +49,6 @@ export default class AuthStore {
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
   private refreshFailures = 0;
-  private stopFollowingRefreshes?: () => void;
   systemSettings: SystemSettings | undefined;
   pidinstEnabled: boolean = false;
 
@@ -60,7 +61,7 @@ export default class AuthStore {
       pidinstEnabled: observable,
       authenticate: action,
       signOut: action,
-      refreshAuthentication: action,
+      synchronizeWithSessionStorage: action,
       getSystemSettings: action,
       setSystemSettings: action,
       fetchPidinstEnabled: action,
@@ -74,14 +75,13 @@ export default class AuthStore {
     }
     this.timeoutId = null;
     if (this.isSigningOut) return Promise.resolve();
-    // The token provider owns the refresh timer; follow its refreshes to keep the services' header current.
-    this.stopFollowingRefreshes ??= onApiV2TokenRefresh(() => void this.authenticate().catch(() => undefined));
     /*
      * Never clear isAuthenticated here, even on 401 or expiry: Router renders the
      * Inventory routes only while it is true, so clearing it would unmount the
      * page for every refresh, and on failure would empty the page behind the
      * "leave page?" prompt that the redirect to /login can raise.
      */
+    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     // Abort a request still pending when the stored token expires, so the catch below redirects.
     // A retry that starts at or after expiry is aborted at once; a first request may still mint from the session.
     const request = new AbortController();
@@ -90,10 +90,18 @@ export default class AuthStore {
       (validityMs > 0 || this.refreshFailures > 0) && validityMs <= MAX_TIMER_DELAY_MS
         ? setTimeout(() => request.abort(), Math.max(validityMs, 0))
         : undefined;
-    return getUiToken(request.signal)
+    return axios
+      .get<{ data: string }>(oAuthUrl, { signal: request.signal })
       .finally(() => clearTimeout(expiryTimer))
       .then(
-        action((token: string) => {
+        action((response) => {
+          const token = response.data.data;
+
+          if (typeof token === "undefined") {
+            // Usually this means that backend returned login.html in response.data
+            window.location.href = "/login";
+            return Promise.resolve();
+          }
           if (this.isSigningOut) return;
           JwtService.saveToken(token);
           InvApiService.setAuthorizationHeader();
@@ -101,24 +109,26 @@ export default class AuthStore {
           this.refreshFailures = 0;
           this.isAuthenticated = true;
           this.isSynchronizing = false;
+          this.scheduleRefresh(tokenRefreshDelayMs(token));
         }),
       )
+      .then(() => {})
       .catch(
         action((error: unknown) => {
           this.isSynchronizing = false;
           if (this.isSigningOut) return;
           const validityMs = storedTokenValidityMs();
-          const status = error instanceof ApiV2ProblemError ? error.status : undefined;
+          const status = axios.isAxiosError(error) ? error.response?.status : undefined;
           if (status === 401 || !(validityMs > 0)) {
             JwtService.destroyToken();
             window.location.href = "/login";
             throw error;
           }
-          // Network failures and other errors without an HTTP status retry too, while the token is usable.
+          // Network failures and non-Axios errors have no status; retry while the token is usable.
           if (status === undefined || status === 429 || status >= 500) {
-            if (!(error instanceof ApiV2ProblemError)) console.error("Inventory token refresh failed", error);
+            if (!axios.isAxiosError(error)) console.error("Inventory token refresh failed", error);
             const backoffMs = 1000 * 2 ** Math.min(this.refreshFailures++, 5);
-            this.scheduleRetry(Math.min(backoffMs, validityMs));
+            this.scheduleRefresh(Math.min(backoffMs, validityMs));
             this.isAuthenticated = true;
             InvApiService.setAuthorizationHeader();
             ElnApiService.setAuthorizationHeader();
@@ -129,15 +139,13 @@ export default class AuthStore {
       );
   }
 
-  private scheduleRetry(delay: number) {
+  private scheduleRefresh(delay: number) {
     this.timeoutId = setTimeout(() => void this.authenticate().catch(() => undefined), delay);
   }
 
   signOut() {
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.timeoutId = null;
-    this.stopFollowingRefreshes?.();
-    this.stopFollowingRefreshes = undefined;
     this.isSigningOut = true;
     this.isAuthenticated = false;
     JwtService.destroyToken();
@@ -147,8 +155,21 @@ export default class AuthStore {
     await ElnApiService.get<void>("status");
   }
 
-  refreshAuthentication(): Promise<void> {
+  synchronizeWithSessionStorage(): Promise<void> {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
     this.isSynchronizing = true;
+    const token = JwtService.getToken();
+
+    if (token && !JwtService.isExpiringSoon(token)) {
+      this.isAuthenticated = true;
+      InvApiService.setAuthorizationHeader();
+      ElnApiService.setAuthorizationHeader();
+      this.isSynchronizing = false;
+      this.scheduleRefresh(tokenRefreshDelayMs(token));
+      return Promise.resolve();
+    }
 
     return this.authenticate();
   }

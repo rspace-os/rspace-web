@@ -1,5 +1,4 @@
 import { jwtDecode } from "jwt-decode";
-import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 
 export type TokenParams = {
   token?: string;
@@ -9,10 +8,8 @@ export type TokenParams = {
 export const ID_TOKEN_KEY = "id_token";
 export const TOKEN_EXPIRY_BUFFER_SECONDS = 300;
 
-/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
-export const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
-
 const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
+let pendingOauthTokenRequest: Promise<string> | null = null;
 
 function getSessionStorage(): Storage | null {
   try {
@@ -46,19 +43,14 @@ export function clearStoredToken(): void {
   }
 }
 
-/** Reuses the page's UI token or mints one; aborting the signal rejects this caller only, never the shared mint. */
-export function getUiToken(signal?: AbortSignal): Promise<string> {
-  return getApiV2TokenProvider().getToken(signal);
-}
-
-/** The session a UI token belongs to; tokens without one (or malformed tokens) yield undefined. */
-export function refreshTokenHash(token: string): string | undefined {
-  try {
-    const hash = jwtDecode<{ refreshTokenHash?: unknown }>(token).refreshTokenHash;
-    return typeof hash === "string" && hash ? hash : undefined;
-  } catch {
-    return undefined;
-  }
+/**
+ * @deprecated For new usages, use the TanStack Query `useOauthTokenQuery` hook instead.
+ */
+export function fetchOauthToken(fetchToken: () => Promise<string>): Promise<string> {
+  pendingOauthTokenRequest ??= fetchToken().finally(() => {
+    pendingOauthTokenRequest = null;
+  });
+  return pendingOauthTokenRequest;
 }
 
 export function secondsToExpiry(token: string): number {

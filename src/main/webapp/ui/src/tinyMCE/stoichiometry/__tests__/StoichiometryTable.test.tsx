@@ -12,6 +12,7 @@ import "@/__tests__/__mocks__/resizeObserver";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/useOauthToken";
 import MockAdapter from "axios-mock-adapter";
+import * as Jwt from "jsonwebtoken";
 import { HttpResponse, http } from "msw/http";
 import { uiNavigationData } from "@/__tests__/helpers/appChrome";
 import { server } from "@/__tests__/mswServer";
@@ -225,8 +226,19 @@ const subSampleResponses: Record<number, unknown> = {
   125: { id: 125, globalId: "SS125", quantity: { numericValue: 25, unitId: 3 } },
 };
 
+function oauthToken() {
+  const payload = {
+    iss: "http://localhost:8080",
+    iat: Date.now(),
+    exp: Math.floor(Date.now() / 1000) + 300,
+    refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+  };
+  return Jwt.sign(payload, "dummySecretKey");
+}
+
 function routeNetwork() {
   server.use(
+    http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: oauthToken() })),
     http.get("/api/v1/stoichiometry", () => HttpResponse.json(createMockStoichiometryResponse())),
     http.post("/api/v1/stoichiometry/molecule/info", () =>
       HttpResponse.json({ molecularWeight: 46.07, formula: "C2 H6 O" }),

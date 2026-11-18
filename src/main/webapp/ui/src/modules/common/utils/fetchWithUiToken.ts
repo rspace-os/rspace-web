@@ -1,8 +1,16 @@
 import { jwtDecode } from "jwt-decode";
-import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
-import { getStoredToken, refreshTokenHash, saveStoredToken } from "./auth";
+import { clearStoredToken, getStoredToken, saveStoredToken } from "./auth";
 
 const recoveries = new Map<string, Promise<string | undefined>>();
+
+function refreshTokenHash(token: string): string | undefined {
+  try {
+    const hash = jwtDecode<{ refreshTokenHash?: unknown }>(token).refreshTokenHash;
+    return typeof hash === "string" && hash ? hash : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function isUiApiUrl(url: string): boolean {
   // A timer can still send a request after a test's page has been torn down.
@@ -26,18 +34,53 @@ export function getUiAuthorization(authorization: string): string {
 }
 
 async function recoverSession(authorization: string, identityRejected: boolean): Promise<string | undefined> {
-  const rejected = authorization.slice("Bearer ".length);
-  const token = await getApiV2TokenProvider().recover(rejected, identityRejected);
-  if (token === rejected) return;
+  // Resource permission failures also use 401. Only recover an invalid token.
+  if (!identityRejected) {
+    const currentIdentity = await fetch("/api/v1/userDetails/whoami", {
+      headers: { Authorization: authorization, "X-Requested-With": "XMLHttpRequest" },
+    });
+    if (currentIdentity.status !== 401) return;
+  }
+
+  // The public controller restores the anonymous session when the document reloads.
+  if (document.getElementById("public_document_view")) {
+    clearStoredToken();
+    globalThis.location.reload();
+    return;
+  }
+
+  const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken", {
+    headers: { "X-Requested-With": "XMLHttpRequest" },
+  });
+  if (tokenResponse.status === 401 || tokenResponse.status === 403) {
+    clearStoredToken();
+    globalThis.location.assign("/login");
+    return;
+  }
+  if (!tokenResponse.ok) return;
+  // A successful HTML response is the login page reached by a redirect; error pages are not.
+  if (tokenResponse.headers.get("Content-Type")?.includes("text/html")) {
+    clearStoredToken();
+    globalThis.location.assign("/login");
+    return;
+  }
+  const { data: token } = (await tokenResponse.json()) as { data?: unknown };
+  if (typeof token !== "string" || !token) {
+    clearStoredToken();
+    globalThis.location.assign("/login");
+    return;
+  }
+
   // Validate the replacement to avoid a reload loop for disabled accounts.
   const response = await fetch("/api/v1/userDetails/whoami", {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
   });
   if (!response.ok) return;
+  clearStoredToken();
   saveStoredToken(token);
   // The server keeps one refresh token per user, so a matching hash means the old token
   // merely expired and requests can safely keep using the page's identity.
-  const previousHash = refreshTokenHash(rejected);
+  const previousHash = refreshTokenHash(authorization.slice("Bearer ".length));
   if (previousHash !== undefined && previousHash === refreshTokenHash(token)) return token;
   // Reload to discard caches and page state belonging to the previous identity.
   globalThis.location.reload();

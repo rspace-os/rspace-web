@@ -20,7 +20,7 @@ export function App(): React.ReactNode {
 
   useEffect(() => {
     void (async () => {
-      await authStore.refreshAuthentication();
+      await authStore.synchronizeWithSessionStorage();
       if (!authStore.isAuthenticated) {
         setLoadingDone(true);
       } else {

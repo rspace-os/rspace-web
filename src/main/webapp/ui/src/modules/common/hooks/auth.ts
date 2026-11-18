@@ -1,5 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { getUiToken, secondsToExpiry, TOKEN_EXPIRY_BUFFER_SECONDS } from "@/modules/common/utils/auth";
+import {
+  fetchOauthToken,
+  getStoredToken,
+  isExpiringSoon,
+  saveStoredToken,
+  secondsToExpiry,
+  TOKEN_EXPIRY_BUFFER_SECONDS,
+} from "@/modules/common/utils/auth";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const queryKeys = {
@@ -11,6 +18,27 @@ const queryKeys = {
 const API_BASE_URL = "/api/v1";
 
 /**
+ * Fetches a new OAuth token from the server.
+ * This is used internally by the useOauthTokenQuery hook.
+ */
+async function fetchToken(): Promise<string> {
+  const response = await fetch("/userform/ajax/inventoryOauthToken", {
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch token: ${response.statusText}`);
+  }
+
+  const json = (await response.json()) as { data: string };
+  const newToken = json.data;
+  saveStoredToken(newToken);
+  return newToken;
+}
+
+/**
  * This custom hook provides a TanStack Query-powered way to get a token for
  * making calls to the API endpoints that expect an API key. This hook uses
  * Suspense for loading states and leverages TanStack Query's built-in
@@ -19,7 +47,7 @@ const API_BASE_URL = "/api/v1";
  * The hook automatically:
  * - Caches the token and reuses it across components
  * - Refetches the token when it's about to expire
- * - Persists public document page tokens to session storage
+ * - Persists the token to session storage
  * - Integrates with React Suspense for loading states
  * - Manages token lifetime using TanStack Query's staleTime
  *
@@ -46,10 +74,15 @@ const API_BASE_URL = "/api/v1";
 export function useOauthTokenQuery() {
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(),
-    // The page-wide provider mints once per page load (the shared storage key may hold a token from
-    // another session context, such as before an operate-as start or release) and covers public
-    // document pages too.
-    queryFn: () => getUiToken(),
+    queryFn: async () => {
+      // First, check if we have a valid token in session storage
+      const savedToken = getStoredToken();
+      if (savedToken && !isExpiringSoon(savedToken)) {
+        return savedToken;
+      }
+      // If no valid token exists, fetch a new one
+      return fetchOauthToken(fetchToken);
+    },
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
     staleTime: (query) => {

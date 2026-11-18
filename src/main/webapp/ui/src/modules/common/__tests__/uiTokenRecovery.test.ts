@@ -1,13 +1,9 @@
 import { HttpResponse, http } from "msw";
-import { afterEach, beforeEach, expect, onTestFinished, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
-import { SessionTokenProvider, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
 import { fetchWithUiToken, isUiApiUrl } from "@/modules/common/utils/fetchWithUiToken";
-
-// Recovery delegates to the page's session provider; each test starts with a fresh one, like a fresh page.
-beforeEach(() => onTestFinished(setApiV2TokenProvider(new SessionTokenProvider())));
 
 afterEach(() => {
   document.getElementById("public_document_view")?.remove();
@@ -98,9 +94,9 @@ test.each(clients)("%s retries a same-user GET and upgrades a later captured tok
       freshWhoamiRequests++;
       return HttpResponse.json({ username: "current-user" });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -133,9 +129,9 @@ test.each(clients)("%s does not replay a same-user write", async (client) => {
         ? HttpResponse.json({}, { status: 401 })
         : HttpResponse.json({ username: "current-user" }),
     ),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -167,9 +163,9 @@ test.each(clients)("%s bounds recovery when the retried GET still returns 401", 
         ? HttpResponse.json({}, { status: 401 })
         : HttpResponse.json({ username: "current-user" });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -194,9 +190,9 @@ test.each(clients)("%s does not roll back to an older stored token", async (clie
       return HttpResponse.json({});
     }),
     http.get("/api/v1/userDetails/whoami", () => HttpResponse.json({ username: "current-user" })),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: olderStoredToken });
+      return HttpResponse.json({ data: olderStoredToken });
     }),
   );
 
@@ -242,9 +238,9 @@ test.each(clients)("%s does not replay a request after recovering a different id
         ? HttpResponse.json({}, { status: 401 })
         : HttpResponse.json({ username: "new-user" }),
     ),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -275,9 +271,9 @@ test.each(["missing", "empty"])(
           ? HttpResponse.json({}, { status: 401 })
           : HttpResponse.json({ username: "current-user" }),
       ),
-      http.post("/api/v2/oauth/tokens", () => {
+      http.get("/userform/ajax/inventoryOauthToken", () => {
         tokenRequests++;
-        return HttpResponse.json({ accessToken: freshToken });
+        return HttpResponse.json({ data: freshToken });
       }),
     );
 
@@ -309,9 +305,9 @@ test("a public document 401 clears its token and reloads without issuing a new o
       whoamiRequests++;
       return HttpResponse.json({}, { status: 401 });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: jwt("public-user", 2) });
+      return HttpResponse.json({ data: jwt("public-user", 2) });
     }),
   );
 
@@ -346,9 +342,9 @@ test.each(
         status: authorization === `Bearer ${staleToken}` ? 401 : 200,
       });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -377,9 +373,9 @@ test.each([
       recoveryRequests++;
       return HttpResponse.json({}, { status: 401 });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       recoveryRequests++;
-      return HttpResponse.json({ accessToken: jwt("same-user", 2) });
+      return HttpResponse.json({ data: jwt("same-user", 2) });
     }),
   );
 
@@ -408,9 +404,9 @@ test("an unvalidated replacement token is not stored or replayed", async () => {
       whoamiRequests++;
       return HttpResponse.json({}, { status: 401 });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: unvalidatedToken });
+      return HttpResponse.json({ data: unvalidatedToken });
     }),
   );
 
@@ -440,9 +436,9 @@ test.each(clients)("%s keeps a valid token on a permission-denied 401", async (c
       whoamiAuthorizations.push(request.headers.get("Authorization") ?? "");
       return HttpResponse.json({ username: "current-user" });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: jwt("same-user", 2) });
+      return HttpResponse.json({ data: jwt("same-user", 2) });
     }),
   );
 
@@ -466,7 +462,7 @@ test.each([
   server.use(
     http.get("/api/v1/test-read", () => HttpResponse.json({}, { status: 401 })),
     http.get("/api/v1/userDetails/whoami", () => HttpResponse.json({}, { status: 401 })),
-    http.post("/api/v2/oauth/tokens", tokenResponse),
+    http.get("/userform/ajax/inventoryOauthToken", tokenResponse),
   );
 
   expect(
@@ -500,9 +496,9 @@ test.each([
         ? HttpResponse.json({}, { status: 401 })
         : HttpResponse.json({ username: "current-user" }),
     ),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return tokenRequests === 1 ? failure() : HttpResponse.json({ accessToken: freshToken });
+      return tokenRequests === 1 ? failure() : HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -542,9 +538,9 @@ test("concurrent rejected writes share recovery and are not replayed", async () 
       }
       return HttpResponse.json({ username: "current-user" });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 
@@ -594,9 +590,9 @@ test("a valid-token identity check in flight does not suppress another token's r
       expect(authorization).toBe(`Bearer ${freshToken}`);
       return HttpResponse.json({ username: "current-user" });
     }),
-    http.post("/api/v2/oauth/tokens", () => {
+    http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return HttpResponse.json({ accessToken: freshToken });
+      return HttpResponse.json({ data: freshToken });
     }),
   );
 

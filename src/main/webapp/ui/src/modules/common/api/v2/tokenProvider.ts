@@ -1,9 +1,8 @@
+import { jwtDecode } from "jwt-decode";
 import * as v from "valibot";
 import {
   clearStoredToken,
   isExpiringSoon,
-  isPublicDocumentView,
-  refreshTokenHash,
   saveStoredToken,
   secondsToExpiry,
   tokenRefreshDelayMs,
@@ -28,14 +27,18 @@ export interface ApiV2TokenProvider {
 }
 
 const REFRESH_RETRY_DELAY_MS = 60_000;
-const refreshListeners = new Set<() => void>();
 
-/** The session provider owns the refresh timer; listeners run as each scheduled refresh starts. */
-export function onApiV2TokenRefresh(listener: () => void): () => void {
-  refreshListeners.add(listener);
-  return () => {
-    refreshListeners.delete(listener);
-  };
+/* The public view is for a document made accessible to non RSpace users. */
+const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
+
+/** The session a UI token belongs to; tokens without one (or malformed tokens) yield undefined. */
+function refreshTokenHash(token: string): string | undefined {
+  try {
+    const hash = jwtDecode<{ refreshTokenHash?: unknown }>(token).refreshTokenHash;
+    return typeof hash === "string" && hash ? hash : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Token issuance answers like this only when the browser session has ended. */
@@ -84,9 +87,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
     clearTimeout(this.timer);
     if (!Number.isFinite(secondsToExpiry(token))) return;
     this.timer = setTimeout(() => {
-      const refresh = this.mint();
-      for (const listener of refreshListeners) listener();
-      void refresh.catch(() => {
+      void this.mint().catch(() => {
         if (!this.identityChanged) {
           console.warn("Unable to refresh the browser session token.");
           // Rescheduling the expired token adds its one-minute floor, so the retry fires after two minutes.

@@ -337,9 +337,9 @@ private, no-transform`. Public configuration and OpenAPI responses keep their ex
 policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 validates
-session-bound REST API v2 UI tokens against the matching live browser session. AuthStore keeps the
-current token in session storage for legacy API clients; the query hooks keep theirs in memory.
-Every page initialization mints the token appropriate to its current authentication context.
+session-bound REST API v2 UI tokens against the matching live browser session. API v1 clients in the
+browser (AuthStore and the token hooks) keep the legacy token in session storage; the REST API v2
+token provider keeps its own in memory.
 
 ### Rate limits
 

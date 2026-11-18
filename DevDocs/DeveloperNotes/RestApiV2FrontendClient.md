@@ -101,17 +101,15 @@ token from a resource permission failure. Only GET requests replay after recover
 replay automatically. When token issuance answers 401, 403, an undeclared response or an invalid body,
 the session has ended: recovery clears the stored token and navigates to `/login`.
 
-The provider owns the refresh timer. `onApiV2TokenRefresh(listener)` runs listeners as each scheduled
-refresh starts; `AuthStore` follows it to keep the legacy services' Authorization header current.
-`fetchWithUiToken` and the `common/axios` interceptors recover API v1 requests through the same
-`recover`. They validate the replacement with `whoami` before storing it.
+The provider serves REST API v2 only. API v1 callers (`useOauthToken`, `useOauthTokenQuery`,
+`fetchWithUiToken`, the `common/axios` interceptors and `AuthStore`) keep the legacy
+`/userform/ajax/inventoryOauthToken` route, session storage and their own refresh and recovery.
 
 Every minted token, including scheduled refreshes and 401 recovery, is compared with the current
 token by refresh-token hash. A mismatch reloads the page before any caller receives the new token,
 including concurrent callers waiting for the same mint. An Operate As change therefore discards the
 old page's cache and UI state. A token without the hash claim does not count as a mismatch. This
-prevents reload loops. Same-identity refreshes do not reload. API v1 recovery also compares the
-replacement with the rejected token and reloads unless both carry the same hash.
+prevents reload loops. Same-identity refreshes do not reload.
 
 ## Filtering with `where`
 
