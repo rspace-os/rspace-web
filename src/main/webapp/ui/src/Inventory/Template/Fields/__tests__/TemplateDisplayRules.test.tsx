@@ -255,6 +255,132 @@ describe("Template display rules", () => {
   });
 });
 
+const NOTES_KEY = "6f1c2e0a-0000-4000-8000-000000000003";
+
+/** GMO? → GMO permit (a radio shown when GMO? is Yes) → Notes (shown when the permit is Granted). */
+const chainTemplate = () =>
+  makeMockTemplate({
+    fields: [
+      savedField({
+        id: 1,
+        globalId: "SF1",
+        name: "Is this a GMO?",
+        type: "radio",
+        definition: { options: ["Yes", "No"] },
+        fieldKey: GMO_KEY,
+      }),
+      savedField({
+        id: 2,
+        globalId: "SF2",
+        name: "GMO permit",
+        type: "radio",
+        definition: { options: ["Granted", "Pending"] },
+        fieldKey: PERMIT_KEY,
+        displayRule: createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]),
+      }),
+      savedField({
+        id: 3,
+        globalId: "SF3",
+        name: "Notes",
+        type: "string",
+        fieldKey: NOTES_KEY,
+        displayRule: createDisplayRule(PERMIT_KEY, "IS_ANY_OF", ["Granted"]),
+      }),
+    ],
+  });
+
+const ruleCards = () =>
+  within(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).queryAllByRole("listitem");
+
+/** Deletes a field, keeping it in existing samples when it is saved. */
+async function deleteField(user: ReturnType<typeof userEvent.setup>, name: string, saved = true) {
+  const card = fieldCard(name);
+  if (!saved) {
+    await user.click(
+      within(card).getByRole("button", { name: "inventory:fields.templateFields.customField.deleteNewField" }),
+    );
+    return;
+  }
+  await user.click(
+    within(card).getByRole("button", { name: "inventory:fields.templateFields.customField.deleteField" }),
+  );
+  await user.click(
+    screen.getByRole("menuitem", { name: "inventory:fields.templateFields.customField.deleteOptions.keep" }),
+  );
+}
+
+describe("Deleting fields while editing display rules", () => {
+  it("deletes a saved dependent without asking, leaving its source alone and removing its rule", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    const { confirm } = renderEditor(template);
+
+    await deleteField(user, "GMO permit");
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(fieldAt(template, gmo).deleteFieldRequest).toBe(false);
+    expect(fieldAt(template, gmo).options.map((option) => option.value)).toEqual(["Yes", "No"]);
+    expect(ruleCards()).toHaveLength(0);
+  });
+
+  it("sends no rule for a dependent and its source that are both deleted", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    const { confirm } = renderEditor(template);
+
+    await deleteField(user, "GMO permit");
+    await deleteField(user, "Is this a GMO?");
+
+    expect(confirm).not.toHaveBeenCalled();
+    for (const field of template.fields as Array<FieldModel>) {
+      expect(field.paramsForBackend).toMatchObject({ deleteFieldRequest: true });
+      expect(field.paramsForBackend).not.toHaveProperty("displayRule");
+    }
+  });
+
+  it("asks before deleting the middle of a chain, then clears the rule that read it", async () => {
+    const user = userEvent.setup();
+    const template = chainTemplate();
+    const { confirm } = renderEditor(template);
+
+    await deleteField(user, "GMO permit");
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(fieldAt(template, 2).paramsForBackend).toHaveProperty("displayRule", null);
+    expect(fieldAt(template, gmo).deleteFieldRequest).toBe(false);
+    expect(fieldAt(template, gmo).paramsForBackend).not.toHaveProperty("displayRule");
+  });
+
+  it("removes an unsaved source from an unsaved template and clears the rule that read it", async () => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({ id: null, globalId: null });
+    template.addField(newField({ name: "Is this a GMO?", type: "radio", definition: { options: ["Yes", "No"] } }));
+    template.addField(newField({ name: "GMO permit", type: "string" }));
+    const [source, dependent] = [fieldAt(template, gmo), fieldAt(template, permit)];
+    dependent.setDisplayRule(createDisplayRule(source.fieldKey ?? "", "IS_ANY_OF", ["Yes"]));
+    const { confirm } = renderEditor(template);
+
+    await deleteField(user, "Is this a GMO?", false);
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(template.fields).toEqual([dependent]);
+    expect(dependent.displayRule).toBeNull();
+  });
+
+  it("drops an incomplete edit whose only field is deleted", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+
+    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
+    await user.keyboard("{Backspace}{Escape}");
+    expect(ruleCards()).toHaveLength(1);
+    await deleteField(user, "GMO permit");
+
+    expect(ruleCards()).toHaveLength(0);
+  });
+});
+
 describe("Instrument template display rules", () => {
   it("gives new fields a key and mounts the rules panel above the fields", () => {
     const template = makeMockInstrumentTemplate();
