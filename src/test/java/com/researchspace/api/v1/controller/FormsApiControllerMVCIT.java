@@ -607,7 +607,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
               .andReturn();
 
       assertThat(result.getResponse().getContentAsString())
-          .contains("could not be made a new version");
+          .contains("System forms cannot be given a new version");
       ApiForm unchanged = getForm(created.getId());
       assertEquals(created.getFields().get(0).getName(), unchanged.getFields().get(0).getName());
       assertNull(doInTransaction(() -> formMgr.get(created.getId(), anyUser).getTempForm()));

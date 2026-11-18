@@ -10309,7 +10309,7 @@ export default interface Resources {
         "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
         "systemFormUnpublish": "Attempted to unpublish a system form",
         "unknownFieldType": "Unknown field type [{0}]",
-        "versionNotUpdated": "Form [{0}] could not be made a new version"
+        "versionNotUpdated": "This form could not be made a new version. System forms cannot be given a new version."
       },
       "experiment": {
         "conclusionFieldName": "Conclusion",

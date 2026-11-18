@@ -224,9 +224,10 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    *
    * <p>If the form already has a draft that was saved (for example in the form field editor) but
    * not yet made a new version, the request replaces that draft: fields that exist only in the
-   * draft are deleted unless the request lists them, the draft's edits to listed fields are
-   * overwritten, and the result is published as the new version. A rejected request leaves the
-   * form, any existing draft and the edit lock as they were.
+   * draft are always deleted (the request can only name fields of {@code formId}, and a draft-only
+   * field id is rejected as unknown), the draft's edits to listed fields are overwritten, and the
+   * result is published as the new version. A rejected request leaves the form, any existing draft
+   * and the edit lock as they were.
    *
    * @param formId the form to edit
    * @param definition the whole new definition

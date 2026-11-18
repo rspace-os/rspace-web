@@ -400,7 +400,7 @@ public class RSFormController extends BaseController {
       // nothing was written (for example, a system form, or an id that is not a draft); the
       // editor keeps its lock and reports the failure
       ErrorList errors = new ErrorList();
-      errors.addErrorMsg(getText("form.errors.versionNotUpdated", new Object[] {formId}));
+      errors.addErrorMsg(getText("form.errors.versionNotUpdated"));
       return new AjaxReturnObject<>(null, errors);
     }
     // The version is committed. Release the edit lock, which is held on whichever id the editor

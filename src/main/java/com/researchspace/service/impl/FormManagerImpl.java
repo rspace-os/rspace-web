@@ -575,8 +575,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       editing = updateVersion(draftId, user);
       if (editing == null) {
         // unchecked, so the draft changes saved above roll back with the rest
-        throw new FormVersionUpdateException(
-            messages.getMessage("form.errors.versionNotUpdated", new Object[] {formId}));
+        throw new FormVersionUpdateException(messages.getMessage("form.errors.versionNotUpdated"));
       }
     }
     return editing;
