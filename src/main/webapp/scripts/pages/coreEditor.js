@@ -878,19 +878,23 @@ function _updateImageFilename($imgDiv, name) {
 }
 
 function _updateChemImgsWithLastestInfo(info) {
-  $('img.chem').each(function () {
-    if ($(this).data('chemfileid') === info.id) {
-      _updateChemImageThumbnailWithInfo($(this), info);
-      _updateChemImagePanelWithInfo($(this), info);
-    }
+  var $chemImgs = $('img.chem').filter(function () {
+    return $(this).data('chemfileid') === info.id;
   });
+  $chemImgs.each(function () {
+    _updateChemImageThumbnailWithInfo($(this), info);
+    _updateChemImagePanelWithInfo($(this), info);
+  });
+  if ($chemImgs.length) {
+    document.dispatchEvent(new CustomEvent('document-placed'));
+  }
 }
 
 function _updateChemImageThumbnailWithInfo($chemImg, info) {
   let chemFileId = $chemImg.data('chemfileid');
   if (chemFileId === info.id) {
     var src = $chemImg.attr('src');
-    var newSrc = src.replace(/&time=\d+$/, '&time=' + info.modificationDate);
+    var newSrc = src.replace(/([?&]time=|\/chemical\/getImageChem\/\d+\/)\d+(?=[?&#]|$)/, '$1' + info.modificationDate);
     $chemImg.attr('alt', info.name);
     if (newSrc != src) {
       console.log('found chemical image to refresh with new date');
@@ -900,12 +904,6 @@ function _updateChemImageThumbnailWithInfo($chemImg, info) {
       return false;
     }
   }
-}
-
-function _updateChemInfoPanelWithInfo($chemImg, info) {
-  let closestP = $chemImg.closest("p");
-  closestP.find("div.MuiPaper-root").remove();
-  document.dispatchEvent(new CustomEvent('document-placed'));
 }
 
 function _updateChemImagePanelWithInfo($chemImage, info) {

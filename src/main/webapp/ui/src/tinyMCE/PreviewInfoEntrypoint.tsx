@@ -56,6 +56,15 @@ function render(attributes: PreviewInfoItem, element: Element) {
 }
 
 function renderChemPreview(domContainer: HTMLImageElement) {
+  let previewContainer = domContainer.parentElement;
+  while (previewContainer) {
+    if (previewInfoRoots.has(previewContainer)) {
+      render(getAttributes(domContainer), previewContainer);
+      return;
+    }
+    previewContainer = previewContainer.parentElement;
+  }
+
   const parent = domContainer.parentElement;
   if (!parent) {
     return;

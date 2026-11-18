@@ -107,6 +107,98 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     await pageApps.setEnabled("Chemistry", true);
   });
 
+  test("As a user, replacing methane with water refreshes every displayed properties card without reloading", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    let replaced = false;
+    let version = 1;
+    const infoRequests = new Map<string, number>();
+    await page.route("**/chemical/ajax/getInfo?chemId=*", async (route) => {
+      const chemId = new URL(route.request().url()).searchParams.get("chemId") ?? "";
+      infoRequests.set(chemId, (infoRequests.get(chemId) ?? 0) + 1);
+      const water = replaced && chemId !== "991003";
+      await route.fulfill({
+        json: {
+          data: {
+            reactants: [],
+            products: [],
+            molecules: [
+              { name: water ? "Water" : "Methane", formula: water ? "H2O" : "CH4", mass: water ? 18.015 : 16.043 },
+            ],
+          },
+        },
+      });
+    });
+    await page.route("**/gallery/getMediaFileSummaryInfo?*", (route) =>
+      route.fulfill({
+        json: {
+          data: {
+            "991001-null": {
+              id: 991001,
+              type: "Chemistry",
+              name: replaced ? "water.mol" : "methane.mol",
+              modificationDate: version,
+            },
+          },
+        },
+      }),
+    );
+
+    await page.route("**/chemical/getImageChem/991002/*", (route) =>
+      route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+      }),
+    );
+
+    await pageWorkspace.open();
+    const editor = await pageWorkspace.createBasicDocument();
+    await editor.saveAndView();
+    // Isolate the replacement callback and real preview lifecycle from chemistry conversion.
+    await page.evaluate(() => {
+      const fixture = document.createElement("div");
+      fixture.id = "replacement-previews";
+      fixture.innerHTML = [991001, 991002, 991003]
+        .map(
+          (id) => `<p id="replacement-${id}"><span><img id="${id}" class="chem"
+            data-chemfileid="${id === 991003 ? 991003 : 991001}" alt="methane.mol"
+            src="${id === 991002 ? "/chemical/getImageChem/991002/1" : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7#&time=1"}"></span></p>`,
+        )
+        .join("");
+      document.body.append(fixture);
+      document.dispatchEvent(new CustomEvent("document-placed"));
+    });
+    // Legacy document-rendered wrappers have no semantic role or accessible name.
+    const previews = page.locator("#replacement-previews");
+    await expect(previews.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(3);
+    const unrelated = page.locator("#replacement-991003");
+
+    for (const nextVersion of [2, 3, 4]) {
+      version = nextVersion;
+      replaced = version % 2 === 0;
+      await page.evaluate(() => {
+        const refresh = Reflect.get(window, "_updateAttachedMediaFileWithLastestVersionDetails");
+        refresh("991001");
+      });
+
+      for (const id of [991001, 991002]) {
+        const preview = page.locator(`#replacement-${id}`);
+        await expect(preview.getByRole("cell", { name: replaced ? "Water" : "Methane", exact: true })).toHaveCount(1);
+        await expect(preview.getByRole("cell", { name: replaced ? "18.015" : "16.043", exact: true })).toBeVisible();
+        await expect(preview.locator("img.chem")).toHaveAttribute(
+          "src",
+          id === 991002 ? `/chemical/getImageChem/991002/${version}` : new RegExp(`&time=${version}$`),
+        );
+      }
+      await expect(unrelated.getByRole("cell", { name: "Methane", exact: true })).toHaveCount(1);
+      await expect(unrelated.getByRole("table")).toHaveCount(1);
+      await expect(unrelated.locator("img.chem")).toHaveAttribute("src", /&time=1$/);
+      await expect(previews.getByRole("table")).toHaveCount(3);
+      expect(infoRequests.get("991003")).toBe(1);
+    }
+  });
+
   test("As a user, converting a SMILES structure returns a real MOL block from the chemistry service", async ({
     page,
   }) => {
