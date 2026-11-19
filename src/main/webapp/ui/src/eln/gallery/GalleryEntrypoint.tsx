@@ -2,8 +2,16 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import LoaderCircular from "../../components/LoadingCircular";
+import {
+  defaultApiV2SessionHandlers,
+  SessionTokenProvider,
+  setApiV2TokenProvider,
+} from "../../modules/common/api/v2/tokenProvider";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import { Gallery } from "./index";
+
+// The feature-flag devtools make REST API v2 calls, which need the page's token provider.
+setApiV2TokenProvider(new SessionTokenProvider(defaultApiV2SessionHandlers));
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
