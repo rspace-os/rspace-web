@@ -2,6 +2,7 @@ package com.researchspace.model.field.rule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +57,33 @@ class FieldDisplayRuleVectorsTest {
 
     assertEquals(Collections.nCopies(length, true), FieldDisplayRuleEvaluator.visibility(fields));
     assertEquals(List.of(), FieldDisplayRuleValidator.validate(fields));
+  }
+
+  /**
+   * Java only: pins the server's NFC to ICU4J. Todhri U+105D2 followed by U+0307 composes to
+   * U+105C9 (Unicode 16), which ICU4J 79 does and the JDK's {@code java.text.Normalizer} on Java 17
+   * and 21 does not. Browsers keep their own Unicode version, so this is not a shared vector.
+   */
+  @Test
+  void textIsComposedWithIcuNfc() {
+    String decomposed = new StringBuilder().appendCodePoint(0x105D2).append('\u0307').toString();
+    String composed = Character.toString(0x105C9);
+    FieldDisplayRule rule =
+        new FieldDisplayRule(chainKey(1), ConditionOperator.EQUALS, List.of(composed));
+    List<FieldSnapshot> fields =
+        List.of(
+            new FieldSnapshot(
+                chainKey(1),
+                FieldType.STRING,
+                null,
+                List.of(),
+                List.of(),
+                SourceKind.TEXT,
+                decomposed),
+            new FieldSnapshot(
+                chainKey(2), FieldType.STRING, rule, List.of(), List.of(), SourceKind.TEXT, ""));
+
+    assertEquals(List.of(true, true), FieldDisplayRuleEvaluator.visibility(fields));
   }
 
   private static String chainKey(int i) {
@@ -175,6 +203,21 @@ class FieldDisplayRuleVectorsTest {
                                 ? null
                                 : vector.get("canonical").asText(),
                             RuleValues.canonicalNumber(vector.get("value").asText()))));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> canonicalNumbersAreNumbersAndTheirOwnCanonicalForm() {
+    return cases("canonicalNumbers", "cases")
+        .filter(vector -> !vector.get("canonical").isNull())
+        .map(vector -> vector.get("canonical").asText())
+        .map(
+            canonical ->
+                DynamicTest.dynamicTest(
+                    "'" + canonical + "'",
+                    () -> {
+                      assertTrue(RuleValues.isNumber(canonical));
+                      assertEquals(canonical, RuleValues.canonicalNumber(canonical));
+                    }));
   }
 
   @TestFactory

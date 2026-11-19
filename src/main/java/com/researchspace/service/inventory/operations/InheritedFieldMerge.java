@@ -5,10 +5,13 @@ import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -68,27 +71,39 @@ public final class InheritedFieldMerge {
 
   /**
    * {@code templateFields} as a sample created from them will hold them once the generated values
-   * are merged in. The merge is planned and written on copies, so the template itself is not
-   * changed; when nothing merges, the given list is returned.
+   * are merged in. Each merged field is replaced by a copy holding its new value, so the template
+   * itself is not changed; when nothing merges, the given list is returned.
    *
-   * <p>Planning on copies matches the save path, which plans on the sample's own copies: {@link
-   * InventoryEntityField#validate} skips the mandatory check for a field a template owns, so the
-   * template's fields would accept a blank value that the sample's copies reject.
+   * <p>Only the fields that can match are copied: this runs before the request's transaction, and
+   * copying an unrelated field such as an attachment would read its lazy content without a session.
+   * The match is then re-planned on those copies, as the save path plans on the sample's own
+   * copies: {@link InventoryEntityField#validate} skips the mandatory check for a field a template
+   * owns, so the template's fields would accept a blank value that the sample's copies reject.
    */
   public static List<InventoryEntityField> withMergedValues(
       List<ApiExtraField> extraFields, List<InventoryEntityField> templateFields) {
     if (extraFields == null || extraFields.isEmpty() || templateFields == null) {
       return templateFields;
     }
-    List<InventoryEntityField> copies =
-        templateFields.stream().map(InventoryEntityField::shallowCopy).toList();
-    List<Merge> merges = plan(extraFields, copies);
+    Map<InventoryEntityField, InventoryEntityField> copies = new IdentityHashMap<>();
+    for (Merge candidate : plan(extraFields, templateFields)) {
+      copies.computeIfAbsent(candidate.target(), InventoryEntityField::shallowCopy);
+    }
+    List<Merge> merges = plan(extraFields, new ArrayList<>(copies.values()));
     if (merges.isEmpty()) {
       return templateFields;
     }
+    Set<InventoryEntityField> merged = Collections.newSetFromMap(new IdentityHashMap<>());
     for (Merge merge : merges) {
       merge.target().setFieldData(merge.generated().getContent());
+      merged.add(merge.target());
     }
-    return copies;
+    return templateFields.stream()
+        .map(
+            field -> {
+              InventoryEntityField copy = copies.get(field);
+              return copy != null && merged.contains(copy) ? copy : field;
+            })
+        .toList();
   }
 }
