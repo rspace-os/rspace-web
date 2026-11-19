@@ -19,6 +19,7 @@ import com.researchspace.model.dtos.RadioFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.TextFieldForm;
@@ -269,7 +270,15 @@ public class FormImporterImpl implements FormImporter {
             type == FieldType.RADIO || type == FieldType.CHOICE
                 ? ElnChoiceValues.parse(field.getOptions())
                 : List.of();
-        snapshots.add(new FieldSnapshot(field.getFieldKey(), type, rule, options, List.of()));
+        snapshots.add(
+            new FieldSnapshot(
+                field.getFieldKey(),
+                type,
+                rule,
+                options,
+                List.of(),
+                ElnFieldRules.sourceKind(type, field.isPassword()),
+                ""));
       }
       List<RuleError> errors = FieldDisplayRuleValidator.validate(snapshots);
       boolean keysValid =

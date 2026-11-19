@@ -27,10 +27,20 @@ final class RuleValues {
 
   /**
    * A field's number value, after trimming: everything ELN and Inventory already store, such as
-   * {@code .5}, {@code 5.}, {@code +5} and {@code 1e-3}.
+   * {@code .5}, {@code 5.}, {@code +5} and {@code 1e-3}. The fraction's digits follow only a point,
+   * so no run of digits can be split two ways and rejection stays linear.
    */
   private static final Pattern DATA_NUMBER =
-      Pattern.compile("[+-]?([0-9]+\\.?[0-9]*|\\.[0-9]+)([eE][+-]?[0-9]{1,3})?");
+      Pattern.compile("[+-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]{1,3})?");
+
+  /**
+   * Lower-casing maps capital sigma to final sigma by context, and Java and JavaScript judge that
+   * context differently (Java lowers {@code A1Σ} to {@code a1ς}, JavaScript to {@code a1σ}), so
+   * both map final sigma to sigma afterwards.
+   */
+  private static final char FINAL_SIGMA = '\u03C2';
+
+  private static final char SIGMA = '\u03C3';
 
   private RuleValues() {}
 
@@ -58,10 +68,13 @@ final class RuleValues {
 
   /**
    * Text as compared: trimmed, Unicode NFC so that composed and decomposed accents match, then
-   * lower case. Lower-casing is not case folding, so {@code STRASSE} does not match {@code straße}.
+   * lower case, with final sigma read as sigma. Lower-casing is not case folding, so {@code
+   * STRASSE} does not match {@code straße}.
    */
   static String normaliseText(String value) {
-    return Normalizer.normalize(trim(value), Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+    return Normalizer.normalize(trim(value), Normalizer.Form.NFC)
+        .toLowerCase(Locale.ROOT)
+        .replace(FINAL_SIGMA, SIGMA);
   }
 
   /** Whether a rule's value is a valid number operand. */
@@ -69,10 +82,21 @@ final class RuleValues {
     return RULE_NUMBER.matcher(value).matches();
   }
 
-  /** A field's value as a number, or null when it is blank or not a number. */
+  /**
+   * The longest trimmed field value read as a number. Far beyond any real measurement, and it keeps
+   * parsing cheap: {@code BigDecimal} takes seconds on a million digits.
+   */
+  static final int MAX_NUMBER_LENGTH = 1000;
+
+  /**
+   * A field's value as a number, or null when it is blank, not a number, or longer than {@link
+   * #MAX_NUMBER_LENGTH} characters after trimming.
+   */
   static BigDecimal readNumber(String value) {
     String trimmed = trim(value);
-    return DATA_NUMBER.matcher(trimmed).matches() ? new BigDecimal(trimmed) : null;
+    return trimmed.length() <= MAX_NUMBER_LENGTH && DATA_NUMBER.matcher(trimmed).matches()
+        ? new BigDecimal(trimmed)
+        : null;
   }
 
   /**
