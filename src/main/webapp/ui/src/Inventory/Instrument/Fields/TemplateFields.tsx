@@ -31,14 +31,16 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
     instrument,
     reportErrorState,
   );
+  // a blank Landing page may be exempt from mandatory, so the model decides what needs a value
+  const hasError = (field: Field) => (instrument.requiresValue(field) && !field.hasContent) || field.error;
   const renderField = (field: Field) => {
     // a field the values hide is on screen only while it holds focus, and is not checked
     const checked = !hiddenByValues(field);
-    const mandatory = checked && field.mandatory;
+    const mandatory = checked && instrument.requiresValue(field);
     const commonProps = {
       disabled: !instrument.isFieldEditable("fields"),
       label: field.name,
-      error: checked && ((field.mandatory && !field.hasContent) || field.error),
+      error: checked && hasError(field),
       helperText: mandatory
         ? t("instrument.templateFields.mandatory")
         : checked && field.error
@@ -63,7 +65,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               fieldOwner={instrument}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
               attachment={value.attachment}
               onAttachmentChange={(file: GalleryFile | File) => {
@@ -95,7 +97,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               }))}
               onChange={({ target }) => {
                 field.setAttributesDirty({ selectedOptions: target.value });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -118,7 +120,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
                 field.setAttributesDirty({
                   content: target.value ? truncateIsoTimestamp(target.value, "date").orElse("NaN-NaN-NaN") : null,
                 });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -138,7 +140,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
                 field.setError(!target.checkValidity());
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
               slotProps={{ htmlInput: { step: "any" } }}
             />
@@ -167,7 +169,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               }))}
               onChange={({ target }) => {
                 field.setAttributesDirty({ selectedOptions: [target.value] });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -191,7 +193,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               {...props}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -212,7 +214,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               {...props}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -236,8 +238,8 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               {...props}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                field.setError(target.value ? Number.isNaN(Number(target.value)) : false);
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                field.setError(!target.valid);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -258,7 +260,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
                 field.setError(false);
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
+                onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
           )}
@@ -281,9 +283,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               field={field}
               sourceGlobalId={instrument.globalId ?? ""}
               disabled={!instrument.isFieldEditable("fields")}
-              onChange={() =>
-                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
-              }
+              onChange={() => onErrorStateChange(`template_${field.name}`, hasError(field))}
             />
           )}
         />
