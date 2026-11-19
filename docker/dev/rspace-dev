@@ -24,6 +24,10 @@
 #                  --mailpit starts the optional Mailpit SMTP catcher and points
 #                  the app's outbound mail at it (email.enabled=true); the choice
 #                  persists in .env until --no-mailpit.
+#                  --bond-strength starts the bond strength model service and
+#                  the chemistry service, both from locally built images (see
+#                  README); the choice persists in .env until --no-bond-strength
+#                  or --no-chemistry.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -164,14 +168,14 @@ compose() {
   fi
   # The bond strength endpoint only exists in a locally built chemistry image, so
   # the profile swaps the chemistry image as well as starting the model service.
-  local chemistry_image bond_strength_url=""
-  chemistry_image="$(env_get CHEMISTRY_IMAGE || true)"
+  # A CHEMISTRY_IMAGE in .env still wins; compose reads it from there.
+  local chemistry_image_default="" bond_strength_url=""
   if [ "$(env_get RSPACE_BOND_STRENGTH)" = "true" ]; then
     profiles="${profiles:+${profiles},}bond-strength"
-    chemistry_image="${chemistry_image:-rspace-chemistry:bond-strength-poc}"
+    chemistry_image_default="rspace-chemistry:bond-strength-poc"
     bond_strength_url="http://bond-strength:8000"
   fi
-  CHEMISTRY_IMAGE="${chemistry_image:-rspaceops/oss-chemistry:latest}" \
+  CHEMISTRY_IMAGE_DEFAULT="${chemistry_image_default}" \
   BONDSTRENGTH_SERVICE_URL="${bond_strength_url}" \
   COMPOSE_PROFILES="${profiles}" docker compose \
     --project-directory "${SCRIPT_DIR}" \

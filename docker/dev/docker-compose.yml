@@ -190,7 +190,8 @@ services:
   # at http://chemistry:8090 over the project network; no host port is published.
   # ---------------------------------------------------------------------------
   chemistry:
-    image: ${CHEMISTRY_IMAGE:-rspaceops/oss-chemistry:latest}
+    # rspace-dev sets CHEMISTRY_IMAGE_DEFAULT when `up --bond-strength` is on.
+    image: ${CHEMISTRY_IMAGE:-${CHEMISTRY_IMAGE_DEFAULT:-rspaceops/oss-chemistry:latest}}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-chemistry
     profiles: ["chemistry"]
     environment:
