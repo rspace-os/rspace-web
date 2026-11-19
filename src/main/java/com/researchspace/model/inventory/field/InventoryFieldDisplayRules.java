@@ -69,6 +69,10 @@ public final class InventoryFieldDisplayRules {
    */
   public record FieldContent(List<String> selectedOptions, String content) {
 
+    public FieldContent {
+      selectedOptions = selectedOptions == null ? List.of() : selectedOptions;
+    }
+
     /** The field's current value. */
     public static FieldContent of(InventoryEntityField field) {
       return new FieldContent(
