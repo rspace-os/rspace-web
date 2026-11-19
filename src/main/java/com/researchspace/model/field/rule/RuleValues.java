@@ -1,8 +1,9 @@
 package com.researchspace.model.field.rule;
 
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.text.Normalizer2;
+import com.ibm.icu.util.ULocale;
 import java.math.BigDecimal;
-import java.text.Normalizer;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -16,31 +17,29 @@ final class RuleValues {
    * The characters trimmed from values: JavaScript's {@code \s} set, written out so that Java and
    * TypeScript trim identically. {@code String.trim()} and {@code strip()} each use another set.
    */
-  private static final Pattern WHITESPACE =
-      Pattern.compile(
-          "[\\t\\n"
-              + "\\u000B\\f\\r"
-              + " \\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]");
-
-  /** A rule's number value: plain decimal notation only, as the editor writes it. */
-  private static final Pattern RULE_NUMBER = Pattern.compile("-?(0|[1-9][0-9]*)(\\.[0-9]+)?");
+  private static final String WHITESPACE =
+      "\t\n\u000B\f\r \u00A0\u1680"
+          + "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A"
+          + "\u2028\u2029\u202F\u205F\u3000\uFEFF";
 
   /**
-   * A field's number value, after trimming: everything ELN and Inventory already store, such as
-   * {@code .5}, {@code 5.}, {@code +5} and {@code 1e-3}. The fraction's digits follow only a point,
-   * so no run of digits can be split two ways and rejection stays linear.
+   * A number, as a field value after trimming or as a rule's value: everything ELN and Inventory
+   * already store, such as {@code 5}, {@code .5}, {@code 5.}, {@code +5} and {@code 1e-3}. The
+   * fraction's digits follow only a point, so no run of digits can be split two ways and rejection
+   * stays linear. The exponent has at most three digits because {@code BigDecimal} and {@code
+   * decimal.js} treat larger exponents differently.
    */
-  private static final Pattern DATA_NUMBER =
+  private static final Pattern NUMBER =
       Pattern.compile("[+-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]{1,3})?");
 
   /**
-   * Lower-casing maps capital sigma to final sigma by context, and Java and JavaScript judge that
-   * context differently (Java lowers {@code A1Σ} to {@code a1ς}, JavaScript to {@code a1σ}), so
-   * both map final sigma to sigma afterwards.
+   * The longest number read. Far beyond any real measurement; it keeps parsing cheap ({@code
+   * BigDecimal} takes seconds on a million digits) and bounds what Java and TypeScript must agree
+   * on.
    */
-  private static final char FINAL_SIGMA = '\u03C2';
+  private static final int MAX_NUMBER_LENGTH = 1000;
 
-  private static final char SIGMA = '\u03C3';
+  private static final Normalizer2 NFC = Normalizer2.getNFCInstance();
 
   private RuleValues() {}
 
@@ -58,7 +57,7 @@ final class RuleValues {
   }
 
   private static boolean isWhitespace(char c) {
-    return WHITESPACE.matcher(String.valueOf(c)).matches();
+    return WHITESPACE.indexOf(c) >= 0;
   }
 
   /** Whether the value is empty after trimming; a source with such a value has no value. */
@@ -70,33 +69,27 @@ final class RuleValues {
    * Text as compared: trimmed, Unicode NFC so that composed and decomposed accents match, then
    * lower case, with final sigma read as sigma. Lower-casing is not case folding, so {@code
    * STRASSE} does not match {@code straße}.
+   *
+   * <p>ICU4J does both steps, so the result depends on the ICU4J version's Unicode tables, not the
+   * JDK's: Java 17 and 21 compare alike. Lower-casing still picks final sigma from the surrounding
+   * letters ({@code ΟΔΟΣ} becomes {@code οδος}), and that context depends on each engine's rules
+   * and Unicode tables (the JDK lowers {@code A1Σ} to {@code a1ς}, ICU and V8 to {@code a1σ}), so
+   * both sides read final sigma as sigma.
    */
   static String normaliseText(String value) {
-    return Normalizer.normalize(trim(value), Normalizer.Form.NFC)
-        .toLowerCase(Locale.ROOT)
-        .replace(FINAL_SIGMA, SIGMA);
+    return UCharacter.toLowerCase(ULocale.ROOT, NFC.normalize(trim(value)))
+        .replace('\u03C2', '\u03C3');
   }
 
-  /** Whether a rule's value is a valid number operand. */
-  static boolean isRuleNumber(String value) {
-    return RULE_NUMBER.matcher(value).matches();
-  }
-
-  /**
-   * The longest trimmed field value read as a number. Far beyond any real measurement, and it keeps
-   * parsing cheap: {@code BigDecimal} takes seconds on a million digits.
-   */
-  static final int MAX_NUMBER_LENGTH = 1000;
-
-  /**
-   * A field's value as a number, or null when it is blank, not a number, or longer than {@link
-   * #MAX_NUMBER_LENGTH} characters after trimming.
-   */
+  /** A field's value as a number, or null when it is not a {@link #NUMBER} after trimming. */
   static BigDecimal readNumber(String value) {
     String trimmed = trim(value);
-    return trimmed.length() <= MAX_NUMBER_LENGTH && DATA_NUMBER.matcher(trimmed).matches()
-        ? new BigDecimal(trimmed)
-        : null;
+    return isNumber(trimmed) ? new BigDecimal(trimmed) : null;
+  }
+
+  /** Whether the value, as given, is a {@link #NUMBER}; rule values are checked untrimmed. */
+  static boolean isNumber(String value) {
+    return value.length() <= MAX_NUMBER_LENGTH && NUMBER.matcher(value).matches();
   }
 
   /**
@@ -122,7 +115,7 @@ final class RuleValues {
     if (isBlank(value)) {
       return FieldDisplayRuleValidator.VALUE_BLANK;
     }
-    if (kind == SourceKind.NUMBER && !isRuleNumber(value)) {
+    if (kind == SourceKind.NUMBER && !isNumber(value)) {
       return FieldDisplayRuleValidator.VALUE_NOT_A_NUMBER;
     }
     return null;

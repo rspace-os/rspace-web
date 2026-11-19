@@ -2900,7 +2900,7 @@
     <bucket4j.version>8.22.0</bucket4j.version>
     <commons.fileupload.version>1.6.0</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
-    <icu4j.version>78.3</icu4j.version>
+    <icu4j.version>79.1</icu4j.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>
     <lucene.version>9.8.0</lucene.version>
