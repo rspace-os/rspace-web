@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import i18n from "@/modules/common/i18n";
 import {
   ApiV2NetworkError,
   ApiV2ProblemError,
@@ -160,8 +161,11 @@ describe("API v2 transport", () => {
       () => new HttpResponse("html", { status: 500 }),
       () => new HttpResponse("{", { status: 500, headers: { "Content-Type": "application/problem+json" } }),
     );
+    await i18n.changeLanguage("en-US");
     for (let attempt = 0; attempt < 2; attempt++) {
-      await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2ProblemError);
+      const error = await apiV2Fetch("/resource", options()).catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(ApiV2ProblemError);
+      expect(error).toHaveProperty("message", "The request failed with status 500.");
     }
   });
   it("returns undefined for 204", async () => {

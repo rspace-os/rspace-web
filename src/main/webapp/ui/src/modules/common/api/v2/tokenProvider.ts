@@ -1,9 +1,11 @@
 import { jwtDecode } from "jwt-decode";
+import i18n from "@/modules/common/i18n";
 import { clearStoredToken, isExpiringSoon, saveStoredToken } from "../../utils/auth";
 import {
   ApiV2ProblemError,
   ApiV2SessionEndedError,
   ApiV2UnexpectedResponseError,
+  httpStatusMessage,
   readJsonBody,
   responseMedia,
   transportFailure,
@@ -11,8 +13,8 @@ import {
 import { createUiOAuthToken } from "./generated/oauth/oauth";
 
 export class ApiV2IdentityChangedError extends Error {
-  constructor(message = "Browser identity changed") {
-    super(message);
+  constructor() {
+    super(i18n.t("common:apiErrors.apiV2.identityChanged"));
     this.name = "ApiV2IdentityChangedError";
   }
 }
@@ -99,17 +101,13 @@ async function mintPublicDocumentToken(): Promise<string> {
   } catch (error) {
     throw transportFailure(error);
   }
-  if (!response.ok) throw new ApiV2ProblemError(response.status, undefined, response.statusText);
+  if (!response.ok) throw new ApiV2ProblemError(response.status, undefined, httpStatusMessage(response.status));
   const media = responseMedia(response);
   // A redirect to the login page answers successfully with HTML.
   if (media === "text/html") throw new ApiV2UnexpectedResponseError("undeclared", { status: response.status, media });
   const body = await readJsonBody(response);
   if (!body || typeof body !== "object" || !("data" in body) || typeof body.data !== "string") {
-    throw new ApiV2UnexpectedResponseError("invalidBody", {
-      status: response.status,
-      media,
-      message: "Invalid public document token",
-    });
+    throw new ApiV2UnexpectedResponseError("invalidBody", { status: response.status, media });
   }
   return body.data;
 }
@@ -132,10 +130,10 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
   }
 
   /** Stops delivering tokens and lets the page discard every state of the previous identity. */
-  private abandonIdentity(message?: string): never {
+  private abandonIdentity(): never {
     this.identityChanged = true;
     this.sessionHandlers.onIdentityChanged();
-    throw new ApiV2IdentityChangedError(message);
+    throw new ApiV2IdentityChangedError();
   }
 
   private checkIdentity(next: string): void {
@@ -150,7 +148,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
     if (!sessionEnded(error)) return error;
     if (publicView) {
       // Some sessions are always refused (run-as, login-disabled users), so only a lost session reloads.
-      if (hadToken) this.abandonIdentity("Public document session expired");
+      if (hadToken) this.abandonIdentity();
       return error;
     }
     const ended = new ApiV2SessionEndedError(error.status, error);
@@ -168,7 +166,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
       } catch (error) {
         throw this.mintFailure(error, publicView, this.token !== undefined);
       }
-      if (!token) throw new ApiV2UnexpectedResponseError("invalidBody", { message: "Empty browser session token" });
+      if (!token) throw new ApiV2UnexpectedResponseError("invalidBody");
       this.checkIdentity(token);
       this.token = token;
       if (publicView) saveStoredToken(token);
@@ -201,7 +199,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
           if (response.status !== 401) return rejected;
         }
         // The public controller restores the anonymous session when the document reloads.
-        if (isPublicDocumentView()) this.abandonIdentity("Public document session expired");
+        if (isPublicDocumentView()) this.abandonIdentity();
         return this.mint();
       })().finally(() => {
         this.recovering.delete(rejected);

@@ -1,9 +1,11 @@
 import * as v from "valibot";
+import i18n from "@/modules/common/i18n";
 import {
   type ApiV2Error,
   ApiV2ProblemError,
   ApiV2SessionEndedError,
   ApiV2UnexpectedResponseError,
+  httpStatusMessage,
   readJsonBody,
   responseMedia,
   transportFailure,
@@ -21,7 +23,7 @@ export type ErrorType<_E> = ApiV2Error | ApiV2IdentityChangedError | DOMExceptio
 export type BodyType<B> = B;
 
 function invalidRequest(issues: readonly v.BaseIssue<unknown>[]): ApiV2ProblemError {
-  const message = "Invalid API request";
+  const message = i18n.t("common:apiErrors.apiV2.invalidRequest");
   return new ApiV2ProblemError(400, "errors.api.v2.invalidRequest", message, {
     status: 400,
     title: message,
@@ -52,7 +54,7 @@ async function httpError(response: Response, signal?: AbortSignal | null): Promi
       body as typeof parsed.output,
     );
   }
-  return new ApiV2ProblemError(response.status, undefined, response.statusText || `HTTP ${response.status}`);
+  return new ApiV2ProblemError(response.status, undefined, httpStatusMessage(response.status));
 }
 
 /** Shared transport for the JSON, response-header and binary generated clients. */
@@ -78,7 +80,7 @@ async function apiV2Response(
           input: init.body,
           expected: "JSON",
           received: "invalid JSON",
-          message: "Invalid JSON body",
+          message: i18n.t("common:apiErrors.apiV2.invalidJson"),
         },
       ]);
     }

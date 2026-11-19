@@ -1,3 +1,4 @@
+import i18n from "@/modules/common/i18n";
 import type { ApiV2Problem } from "./generated/models/apiV2Problem";
 
 /** Base class of every failure the API v2 transport and token provider normalise. */
@@ -33,21 +34,20 @@ export class ApiV2ProblemError extends ApiV2Error {
  */
 export type ApiV2UnexpectedResponseReason = "undeclared" | "invalidBody" | "malformedJson";
 
-const UNEXPECTED_RESPONSE_MESSAGES: Record<ApiV2UnexpectedResponseReason, string> = {
-  undeclared: "Unregistered API v2 response",
-  invalidBody: "Invalid API v2 response body",
-  malformedJson: "Malformed API v2 response JSON",
-};
+/** The user-facing message for an HTTP failure without a problem body. */
+export function httpStatusMessage(status: number): string {
+  return i18n.t("common:apiErrors.apiV2.httpStatus", { status });
+}
 
 export class ApiV2UnexpectedResponseError extends ApiV2Error {
   readonly media?: string;
 
   constructor(
     readonly reason: ApiV2UnexpectedResponseReason,
-    details: { status?: number; media?: string; cause?: unknown; message?: string } = {},
+    details: { status?: number; media?: string; cause?: unknown } = {},
   ) {
-    const { message, media, ...options } = details;
-    super(message ?? [UNEXPECTED_RESPONSE_MESSAGES[reason], options.status, media].filter(Boolean).join(" "), options);
+    const { media, ...options } = details;
+    super(i18n.t("common:apiErrors.apiV2.unexpectedResponse"), options);
     this.name = "ApiV2UnexpectedResponseError";
     this.media = media;
   }
@@ -56,7 +56,7 @@ export class ApiV2UnexpectedResponseError extends ApiV2Error {
 /** `fetch()` or reading a body failed while the request was not cancelled. */
 export class ApiV2NetworkError extends ApiV2Error {
   constructor(cause: TypeError) {
-    super("API v2 network failure", { cause });
+    super(i18n.t("common:apiErrors.apiV2.network"), { cause });
     this.name = "ApiV2NetworkError";
   }
 }
@@ -67,7 +67,7 @@ export class ApiV2NetworkError extends ApiV2Error {
  */
 export class ApiV2SessionEndedError extends ApiV2Error {
   constructor(status: number | undefined, cause: unknown) {
-    super("API v2 browser session ended", { status, cause });
+    super(i18n.t("common:apiErrors.apiV2.sessionEnded"), { status, cause });
     this.name = "ApiV2SessionEndedError";
   }
 }

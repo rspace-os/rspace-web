@@ -37,6 +37,6 @@ describe("assertApiV2Selected", () => {
       }
     })();
     expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
-    expect(error).toMatchObject({ reason: "invalidBody", message: expect.stringContaining("id") });
+    expect(error).toMatchObject({ reason: "invalidBody", cause: { message: expect.stringContaining("id") } });
   });
 });

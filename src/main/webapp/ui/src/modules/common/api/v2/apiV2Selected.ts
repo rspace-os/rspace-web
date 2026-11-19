@@ -55,7 +55,7 @@ export function assertApiV2Selected<R extends ApiV2ReadResource, const F extends
   const missing = fields.filter((field) => guaranteed.has(field) && Reflect.get(document, field) === undefined);
   if (missing.length > 0) {
     throw new ApiV2UnexpectedResponseError("invalidBody", {
-      message: `Missing guaranteed ${resource} fields: ${missing.join(", ")}`,
+      cause: new Error(`Missing guaranteed ${resource} fields: ${missing.join(", ")}`),
     });
   }
 }
