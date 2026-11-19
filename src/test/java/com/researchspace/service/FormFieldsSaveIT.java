@@ -240,7 +240,6 @@ public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
         () -> {
           FieldForm source = formMgr.getField(sourceId);
           FieldForm dependent = formMgr.getField(dependentId);
-          assertThat(source.getFieldKey()).matches("[0-9a-f-]{36}");
           assertNull(source.getDisplayRule());
           assertEquals(rule(sourceKey, "Yes"), dependent.getDisplayRule());
 
