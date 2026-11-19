@@ -23,7 +23,23 @@ public final class FieldDisplayRuleValidator {
   public static final String SOURCE_SELF = "validation.fieldDisplayRule.sourceSelf";
   public static final String SOURCE_TYPE = "validation.fieldDisplayRule.sourceType";
   public static final String VALUE_UNKNOWN = "validation.fieldDisplayRule.valueUnknown";
+  public static final String VALUE_DUPLICATE = "validation.fieldDisplayRule.valueDuplicate";
+  public static final String VALUE_TOO_MANY = "validation.fieldDisplayRule.valueTooMany";
+  public static final String RULE_TOO_LONG = "validation.fieldDisplayRule.ruleTooLong";
   public static final String CYCLE = "validation.fieldDisplayRule.cycle";
+
+  /**
+   * The most values one rule may list. Far more than any real radio or choice field offers, and it
+   * keeps the per-save work small.
+   */
+  public static final int MAX_VALUES = 1000;
+
+  /**
+   * The longest a rule may be as stored, in characters of {@link FieldDisplayRule#toJson()}. That
+   * output is plain ASCII, so this is also its size in bytes. The rule is stored in a MariaDB TEXT
+   * column, which holds 65,535 bytes; half of that leaves ample headroom.
+   */
+  public static final int MAX_JSON_LENGTH = 32_768;
 
   /**
    * One problem with one field.
@@ -37,9 +53,10 @@ public final class FieldDisplayRuleValidator {
 
   /**
    * Validates every key and rule in the field set. Keys may be null (legacy fields), but non-null
-   * keys must be lowercase UUIDs and unique. Each rule's source must exist, differ from the field
-   * itself, be a radio or choice field and offer every value the rule names, and rules must not
-   * form a cycle.
+   * keys must be lowercase UUIDs and unique. Each rule must list each value once, at most {@link
+   * #MAX_VALUES} values, and fit in {@link #MAX_JSON_LENGTH} characters as stored. Each rule's
+   * source must exist, differ from the field itself, be a radio or choice field and offer every
+   * value the rule names, and rules must not form a cycle.
    *
    * @return the problems found, in field order; empty when the set is valid
    */
@@ -67,6 +84,13 @@ public final class FieldDisplayRuleValidator {
       if (rule == null) {
         continue;
       }
+      if (rule.values().size() > MAX_VALUES) {
+        errors.add(new RuleError(i, VALUE_TOO_MANY));
+      } else if (rule.toJson().length() > MAX_JSON_LENGTH) {
+        errors.add(new RuleError(i, RULE_TOO_LONG));
+      } else if (new HashSet<>(rule.values()).size() < rule.values().size()) {
+        errors.add(new RuleError(i, VALUE_DUPLICATE));
+      }
       Integer sourceIndex = indexByKey.get(rule.sourceFieldKey());
       if (sourceIndex == null) {
         errors.add(new RuleError(i, SOURCE_MISSING));
@@ -76,7 +100,7 @@ public final class FieldDisplayRuleValidator {
         FieldSnapshot source = fields.get(sourceIndex);
         if (!source.canBeSource()) {
           errors.add(new RuleError(i, SOURCE_TYPE));
-        } else if (!source.allowedOptions().containsAll(rule.values())) {
+        } else if (!new HashSet<>(source.allowedOptions()).containsAll(rule.values())) {
           errors.add(new RuleError(i, VALUE_UNKNOWN));
         }
         if (onCycle[i]) {
