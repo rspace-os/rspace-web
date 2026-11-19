@@ -25,7 +25,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
-import FieldModel, { clearRulesReading, type FieldModelAttrs } from "./FieldModel";
+import FieldModel, { assertDisplayConditionsComplete, clearRulesReading, type FieldModelAttrs } from "./FieldModel";
 import InventoryBaseRecord, {
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
@@ -93,6 +93,7 @@ export default class InstrumentTemplateModel
       addField: action,
       removeCustomField: action,
       moveField: action,
+      create: override,
       update: override,
       updateInstrumentsToLatest: action,
       paramsForBackend: override,
@@ -280,7 +281,13 @@ export default class InstrumentTemplateModel
     return latest;
   }
 
+  async create(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
+    await super.create();
+  }
+
   async update(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
     const oldVersion = this.version;
     await super.update(false);
     const latest = await this.setActiveResultToLatest();

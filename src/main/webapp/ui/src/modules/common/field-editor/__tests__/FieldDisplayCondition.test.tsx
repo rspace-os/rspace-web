@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { renderWithRealI18n, wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { createDisplayRule, type FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import materialTheme from "@/theme";
@@ -50,6 +50,17 @@ function Harness({
             type="button"
             aria-label={`Delete ${field.name}`}
             onClick={() => setFields((current) => current.filter((other) => other.key !== field.key))}
+          />
+          <button
+            type="button"
+            aria-label={`Remove the first option of ${field.name}`}
+            onClick={() =>
+              setFields((current) =>
+                current.map((other) =>
+                  other.key === field.key ? { ...other, options: other.options.slice(1) } : other,
+                ),
+              )
+            }
           />
           <FieldDisplayCondition
             fieldKey={field.key}
@@ -225,13 +236,77 @@ describe("FieldDisplayCondition", () => {
 
     await user.click(conditional("Is this a GMO?"));
     const field = card("Is this a GMO?").getByRole("combobox", { name: "Field" });
-    expect(field).toHaveAccessibleDescription("Choose a field.");
+    // the menu skips its disabled item, so the description is what says there is nothing to choose
+    expect(field).toHaveAccessibleDescription("No other fields");
     expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("gmo", true);
 
     await user.click(field);
     const option = screen.getByRole("option", { name: "No other fields" });
     expect(screen.getAllByRole("option")).toEqual([option]);
     expect(option).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("says why a complete condition that cannot be stored is not applied", async () => {
+    const user = userEvent.setup();
+    // together the two options are longer than a stored rule may be
+    const [long, longer] = ["a".repeat(20_000), "b".repeat(20_000)];
+    const { onChange, onIncompleteChange } = await renderConditions([
+      { ...gmo, options: [long, longer] },
+      { ...permit, rule: createDisplayRule("gmo", "IS_ANY_OF", [long]) },
+    ]);
+
+    const options = card("GMO permit").getByRole("combobox", { name: "Options" });
+    await user.click(options);
+    await user.click(screen.getByRole("option", { name: longer }));
+
+    expect(options).toHaveAccessibleDescription("This condition cannot be applied. Choose fewer or shorter options.");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("permit", true);
+  });
+
+  it("keeps saying a refused condition is not applied after another edit would let it be stored", async () => {
+    const user = userEvent.setup();
+    const [long, longer] = ["a".repeat(20_000), "b".repeat(20_000)];
+    const { onChange } = await renderConditions([
+      { ...gmo, options: [long, longer] },
+      { ...permit, rule: createDisplayRule("gmo", "IS_ANY_OF", [long]) },
+    ]);
+    const options = card("GMO permit").getByRole("combobox", { name: "Options" });
+    await user.click(options);
+    await user.click(screen.getByRole("option", { name: longer }));
+    await user.keyboard("{Escape}");
+
+    // the draft now holds only the shorter option, which could be stored, but it is still not applied
+    await user.click(screen.getByRole("button", { name: "Remove the first option of Is this a GMO?" }));
+
+    expect(options).toHaveAccessibleDescription("This condition cannot be applied. Choose fewer or shorter options.");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("clears the field it was showing, and reports the new one, when given another field", async () => {
+    const calls: Array<[string, boolean]> = [];
+    const orphan = (key: string): RuleEditorField => ({ ...permit, key, name: key, rule: yes });
+    const fields = [orphan("first"), orphan("second")];
+    const conditionOf = (key: string) =>
+      wrapWithRealI18n(
+        <FieldDisplayCondition
+          fieldKey={key}
+          fields={fields}
+          editable
+          onChange={() => {}}
+          onIncompleteChange={(incomplete) => calls.push([key, incomplete])}
+        />,
+        { resources: { common }, defaultNS: "common" },
+      );
+    const { rerender } = render(await conditionOf("first"));
+
+    rerender(await conditionOf("second"));
+
+    expect(calls).toEqual([
+      ["first", true],
+      ["first", false],
+      ["second", true],
+    ]);
   });
 
   it("stops reporting an unfinished condition once its field is deleted", async () => {
@@ -248,7 +323,8 @@ describe("FieldDisplayCondition", () => {
   });
 
   it("says when the field a saved condition read is gone, and reports the condition incomplete", async () => {
-    const { onIncompleteChange } = await renderConditions([{ ...permit, rule: yes }]);
+    const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
+    const { onIncompleteChange } = await renderConditions([{ ...permit, rule: yes }, colour]);
 
     expect(conditional("GMO permit")).toBeChecked();
     expect(card("GMO permit").getByRole("combobox", { name: "Field" })).toHaveAccessibleDescription(

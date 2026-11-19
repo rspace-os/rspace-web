@@ -75,6 +75,14 @@ const ALWAYS = "always";
 const CONDITIONAL = "conditional";
 
 /**
+ * A condition not applied, and whether the shared validator refused it when it
+ * was kept. That is decided once, not on every render, so a refused draft keeps
+ * saying so until the author touches it, even if later edits elsewhere would
+ * now let it apply.
+ */
+type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
+
+/**
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
  * edit mode the author picks "Always" or a condition on another radio or
  * choice field; only fields that would not end up depending on this one are
@@ -91,9 +99,9 @@ const CONDITIONAL = "conditional";
  * Choosing "Always" clears the rule, but the condition is remembered: going
  * back to "Only when…" restores it, and applies it again if it is still valid.
  *
- * A draft lives as long as the component, so it survives a spell of
- * read-only, such as a save that fails. Hosts give the component a new key
- * (for example the record and its edit state) to start a new edit session.
+ * A draft lives as long as the component, and hosts refuse to save while one
+ * exists. Hosts give the component a new key (for example the record and its
+ * edit state) to start a new edit session.
  */
 export default function FieldDisplayCondition({
   fieldKey,
@@ -105,7 +113,7 @@ export default function FieldDisplayCondition({
 }: FieldDisplayConditionProps): ReactNode {
   const { t, i18n } = useTranslation("common");
   const id = useId();
-  const [draft, setDraft] = useState<DraftCondition | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
   /**
    * What "Always" set aside, restored by "Only when…": the rule that was applied, and any
    * unfinished edit on top of it, so arrowing through the radios never loses a stored rule.
@@ -127,17 +135,19 @@ export default function FieldDisplayCondition({
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
-  const shown = draft ?? rule;
+  const shown = draft?.condition ?? rule;
   // read-only, the rule is only summarised, so the fields it may read are not worked out
   const condition = editable && shown ? sanitiseCondition(graph, fieldKey, shown) : null;
   // a stored rule whose field is gone cannot be saved as shown either
   const incomplete = draft !== null || (condition !== null && ruleFromDraft(condition) === null);
-  const reportIncomplete = useEffectEvent((value: boolean) => onIncompleteChange?.(value));
+  const currentReporter = useEffectEvent(() => onIncompleteChange);
+  // another fieldKey is another field: the old one is cleared, by its own reporter, and the new one reported
   useEffect(() => {
     if (!incomplete) return;
-    reportIncomplete(true);
-    return () => reportIncomplete(false);
-  }, [incomplete]);
+    const report = currentReporter();
+    report?.(true);
+    return () => report?.(false);
+  }, [incomplete, fieldKey]);
   const dependentsNote = dependents.length > 0 && (
     <Typography variant="body2" color="text.secondary">
       {t("fieldEditor.condition.dependents", {
@@ -164,18 +174,27 @@ export default function FieldDisplayCondition({
   const sources = graph.sourcesFor(fieldKey);
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
+  // complete, but the shared validator refused it: too many options, or too long to store
+  const rejected = draft?.rejected ?? false;
+
+  /** Whether the shared validator refuses `condition`, complete, as this field's rule. */
+  const isRejected = (condition: DraftCondition) => {
+    const candidate = ruleFromDraft(condition);
+    return candidate !== null && ruleIsInvalid(fields, fieldKey, candidate);
+  };
 
   /** Applies the condition when it makes a valid rule; keeps it as this field's draft otherwise. */
   const update = (edited: DraftCondition) => {
     // options the chosen source does not offer are dropped, rather than kept invisibly in the draft
     const next = sanitiseCondition(graph, fieldKey, edited);
     const nextRule = ruleFromDraft(next);
-    if (nextRule !== null && !ruleIsInvalid(fields, fieldKey, nextRule)) {
+    const nextRejected = isRejected(next);
+    if (nextRule !== null && !nextRejected) {
       setDraft(null);
       if (!sameDisplayRule(rule, nextRule)) onChange(nextRule);
       return;
     }
-    setDraft(next);
+    setDraft({ condition: next, rejected: nextRejected });
   };
 
   return (
@@ -187,7 +206,7 @@ export default function FieldDisplayCondition({
         value={condition ? CONDITIONAL : ALWAYS}
         onChange={({ target: { value } }) => {
           if (value === ALWAYS) {
-            setRemembered({ applied: rule, draft });
+            setRemembered({ applied: rule, draft: draft?.condition ?? null });
             setDraft(null);
             if (rule !== null) onChange(null);
             return;
@@ -197,7 +216,7 @@ export default function FieldDisplayCondition({
             // the stored rule comes back as it was, with any unfinished edit still pending on top
             onChange(applied);
             const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
-            setDraft(pending?.sourceFieldKey != null ? pending : null);
+            setDraft(pending?.sourceFieldKey != null ? { condition: pending, rejected: isRejected(pending) } : null);
             return;
           }
           // a saved rule that no longer validates as it was still comes back with whatever of it still applies
@@ -224,13 +243,16 @@ export default function FieldDisplayCondition({
             value={source?.key ?? ""}
             error={source === null}
             helperText={
-              sourceDropped
-                ? t("fieldEditor.condition.sourceMissing")
-                : source === null
-                  ? t("fieldEditor.condition.sourceRequired")
-                  : isBelow(source)
-                    ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
-                    : undefined
+              source === null
+                ? // MenuList skips a disabled item, so the helper text is what says there is nothing to choose
+                  sources.length === 0
+                  ? t("fieldEditor.condition.noOtherFields")
+                  : sourceDropped
+                    ? t("fieldEditor.condition.sourceMissing")
+                    : t("fieldEditor.condition.sourceRequired")
+                : isBelow(source)
+                  ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
+                  : undefined
             }
             onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
             slotProps={{
@@ -282,8 +304,14 @@ export default function FieldDisplayCondition({
                 <TextField
                   {...params}
                   label={t("fieldEditor.condition.valuesLabel")}
-                  error={condition.values.length === 0}
-                  helperText={condition.values.length === 0 ? t("fieldEditor.condition.valuesRequired") : undefined}
+                  error={condition.values.length === 0 || rejected}
+                  helperText={
+                    condition.values.length === 0
+                      ? t("fieldEditor.condition.valuesRequired")
+                      : rejected
+                        ? t("fieldEditor.condition.valuesRejected")
+                        : undefined
+                  }
                 />
               )}
               sx={{ flex: "2 1 200px" }}

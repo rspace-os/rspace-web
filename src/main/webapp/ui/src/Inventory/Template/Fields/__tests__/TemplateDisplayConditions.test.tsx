@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { observable, runInAction } from "mobx";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import FormSectionsContext from "@/stores/contexts/FormSections";
 import { makeMockInstrumentTemplate } from "@/stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { makeMockTemplate, templateAttrs } from "@/stores/models/__tests__/TemplateModel/mocking";
 import type FieldModel from "@/stores/models/FieldModel";
@@ -16,15 +17,22 @@ import { storesContext } from "@/stores/stores-context";
 import materialTheme from "@/theme";
 import StepperActions from "../../../components/Stepper/StepperActions";
 import InstrumentTemplateFields from "../../../InstrumentTemplate/Fields/CustomFields";
+import TemplateForm from "../../Form";
 import CustomFields from "../CustomFields";
 
-const { update, post } = vi.hoisted(() => ({ update: vi.fn(), post: vi.fn() }));
+const { update, post, addAlert } = vi.hoisted(() => ({ update: vi.fn(), post: vi.fn(), addAlert: vi.fn() }));
 vi.mock("@/common/InvApiService", () => ({ default: { update, post } }));
+vi.mock("../SamplesList", () => ({ default: () => null }));
+afterEach(() => {
+  update.mockReset();
+  post.mockReset();
+  addAlert.mockReset();
+});
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: { assertValidUnitId: () => {}, getUnit: () => ({ label: "ml" }) },
     trackingStore: { trackEvent: () => {} },
-    uiStore: { addAlert: () => {}, setPageNavigationConfirmation: () => {}, setDirty: () => {}, unsetDirty: () => {} },
+    uiStore: { addAlert, setPageNavigationConfirmation: () => {}, setDirty: () => {}, unsetDirty: () => {} },
     searchStore: { search: { setActiveResult: () => Promise.resolve() } },
     peopleStore: { currentUser: null },
   }),
@@ -104,6 +112,7 @@ function renderEditor(template: TemplateModel, confirm = vi.fn(() => Promise.res
 }
 
 const fieldCard = (name: string) => screen.getByRole("region", { name });
+const INCOMPLETE = "inventory:template.displayRules.conditionIncomplete";
 const CONDITIONAL = "common:fieldEditor.condition.conditional";
 const OPTIONS = "common:fieldEditor.condition.valuesLabel";
 
@@ -303,6 +312,25 @@ describe("Template display conditions", () => {
     expect(onErrorStateChange).toHaveBeenLastCalledWith(sectionError, false);
   });
 
+  it("keeps a name error on the badge while another new field's name is still blank", async () => {
+    const user = userEvent.setup();
+    const { onErrorStateChange } = renderEditor(newGmoTemplate());
+    const nameOf = (card: HTMLElement) => within(card).getByRole("textbox", { name: "common:fieldEditor.card.name" });
+
+    await user.clear(nameOf(fieldCard("GMO permit")));
+    await user.clear(nameOf(fieldCard("Is this a GMO?")));
+    const [first] = screen.getAllByRole("region", { name: "common:fieldEditor.card.unnamed" });
+    await user.type(nameOf(first), "Permit");
+
+    // the section badge counts the identifiers last reported in error
+    const inError = new Set<string>();
+    for (const [identifier, value] of onErrorStateChange.mock.calls as Array<[string, boolean]>) {
+      if (value) inError.add(identifier);
+      else inError.delete(identifier);
+    }
+    expect(inError.size).toBe(1);
+  });
+
   it("sends only the rules this edit changed, so a stale tab does not undo another author's change", async () => {
     const user = userEvent.setup();
     const attrs = savedGmoTemplateAttrs();
@@ -469,6 +497,28 @@ describe("Deleting fields while editing display rules", () => {
     expect(screen.getByRole("button", { name: "common:actions.save" })).toBeEnabled();
   });
 
+  it("keeps a draft whose only field to read is deleted, saying so and refusing to save", async () => {
+    const user = userEvent.setup();
+    const template = newGmoTemplate();
+    renderEditor(template);
+    await user.click(within(fieldCard("GMO permit")).getByRole("radio", { name: CONDITIONAL }));
+
+    await deleteField(user, "Is this a GMO?", false);
+
+    expect(within(fieldCard("GMO permit")).getByRole("radio", { name: CONDITIONAL })).toBeChecked();
+    const source = within(fieldCard("GMO permit")).getByRole("combobox", {
+      name: "common:fieldEditor.condition.sourceLabel",
+    });
+    expect(source).toHaveAccessibleDescription("common:fieldEditor.condition.noOtherFields");
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
+    expect(template.submittable.isOk).toBe(false);
+    await user.click(source);
+    expect(screen.getByRole("option", { name: "common:fieldEditor.condition.noOtherFields" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
   it("deletes a saved dependent without asking, leaving its source alone and removing its rule", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
@@ -538,31 +588,42 @@ describe("Display condition drafts across saves and edit sessions", () => {
   };
   const draftCards = () => screen.queryAllByText("common:fieldEditor.condition.valuesRequired");
 
-  it("keeps drafts and incomplete edits when a save fails", async () => {
+  it("sends no update while a condition is incomplete", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
     renderEditor(template);
     await addDraft(user);
-    const save = Promise.withResolvers<never>();
-    update.mockReturnValueOnce(save.promise);
 
-    let saving: Promise<void> = Promise.resolve();
-    act(() => {
-      saving = template.update().catch(() => {});
+    await expect(template.update()).rejects.toThrow(INCOMPLETE);
+
+    expect(update).not.toHaveBeenCalled();
+    expect(draftCards()).toHaveLength(1);
+  });
+
+  it("sends nothing on Retry after a refused save when a condition was left unfinished since", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+    update.mockRejectedValueOnce({
+      response: { status: 400, data: { data: { validationErrors: [{ field: "name", message: "Taken" }] } } },
     });
-    // while saving the fields are read-only
-    expect(screen.queryByRole("radio", { name: CONDITIONAL })).not.toBeInTheDocument();
     await act(async () => {
-      save.reject(new Error("The save failed"));
-      await saving;
+      await template.update().catch(() => {});
+    });
+    const [[{ retryFunction }]] = addAlert.mock.calls as Array<[{ retryFunction: () => Promise<void> }]>;
+    await addDraft(user);
+
+    await act(async () => {
+      await expect(retryFunction()).resolves.toBeUndefined();
     });
 
     expect(update).toHaveBeenCalledOnce();
-    expect(draftCards()).toHaveLength(1);
-    expect(template.submittable.isOk).toBe(false);
+    // a failed upload leaves a progress bar in the button, which joins its name
+    expect(screen.getByRole("button", { name: /common:actions\.save/ })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent(INCOMPLETE);
   });
 
-  it("starts without drafts for another template, or after leaving and re-entering edit mode", async () => {
+  it("starts without drafts, and can be saved, for another template or after leaving and re-entering edit mode", async () => {
     const user = userEvent.setup();
     const first = savedGmoTemplate();
     const second = makeMockTemplate({ ...savedGmoTemplateAttrs(), id: 2, globalId: "IT2" });
@@ -577,6 +638,7 @@ describe("Display condition drafts across saves and edit sessions", () => {
           value={makeMockRootStore({ searchStore, uiStore: { isLarge: true, confirm: vi.fn() } })}
         >
           <CustomFields onErrorStateChange={() => {}} />
+          <StepperActions onSubmit={() => {}} />
         </storesContext.Provider>
       </ThemeProvider>,
     );
@@ -584,6 +646,7 @@ describe("Display condition drafts across saves and edit sessions", () => {
     await addDraft(user);
     act(() => runInAction(() => (searchStore.activeResult = second)));
     expect(draftCards()).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeEnabled();
 
     await addDraft(user);
     act(() => second.setAttributes({ editing: false }));
@@ -598,24 +661,73 @@ describe("Display condition drafts across saves and edit sessions", () => {
     expect(draftCards()).toHaveLength(0);
   });
 
-  it("keeps drafts when creating the template fails, and starts afresh once it is created", async () => {
+  it("sends no create while a condition is incomplete, and keeps a completed one when creating fails", async () => {
     const user = userEvent.setup();
     const template = newGmoTemplate();
     renderEditor(template);
     await addDraft(user);
 
+    await expect(template.create()).rejects.toThrow(INCOMPLETE);
+    expect(post).not.toHaveBeenCalled();
+    expect(draftCards()).toHaveLength(1);
+
+    await user.click(within(fieldCard("GMO permit")).getByRole("combobox", { name: OPTIONS }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+    await user.keyboard("{Escape}");
     post.mockRejectedValueOnce(new Error("The create failed"));
     await act(async () => {
       await template.create().catch(() => {});
     });
-    expect(draftCards()).toHaveLength(1);
+    expect(post).toHaveBeenCalledOnce();
+    expect(within(fieldCard("GMO permit")).getByRole("button", { name: "Yes" })).toBeInTheDocument();
 
     post.mockResolvedValueOnce({ data: { ...templateAttrs({ id: 9, globalId: "IT9" }), attachments: [] } });
     await act(async () => {
       await template.create();
     });
     expect(template.globalId).toBe("IT9");
-    expect(draftCards()).toHaveLength(0);
+  });
+});
+
+describe("Display conditions in the template form", () => {
+  it("marks the collapsed Custom Fields section when a stored condition cannot be saved as it is", () => {
+    // the field this rule reads is not in the template
+    const template = makeMockTemplate({ fields: savedGmoTemplateAttrs()?.fields?.slice(1) });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({
+            searchStore: {
+              activeResult: template,
+              search: { activeResult: template, processingContextActions: false, fetcher: { basketSearch: false } },
+            },
+            uiStore: { isLarge: true, confirm: vi.fn() },
+            unitStore: {
+              getUnit: () => ({ id: 1, label: "items", category: "dimensionless", description: "" }),
+              unitsOfCategory: () => [],
+            },
+          })}
+        >
+          <FormSectionsContext.Provider
+            value={{
+              isExpanded: (_type, section) => section !== "customFields",
+              setExpanded: () => {},
+              setAllExpanded: () => {},
+            }}
+          >
+            <TemplateForm />
+          </FormSectionsContext.Provider>
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    act(() => {
+      template.currentlyEditableFields.add("fields");
+      template.setAttributes({ editing: true });
+    });
+
+    const section = screen.getByRole("region", { name: "inventory:formSections.customFields" });
+    expect(within(section).getByLabelText("inventory:formSections.expandSection")).toHaveTextContent("1");
   });
 });
 
@@ -665,6 +777,10 @@ describe("Instrument template display conditions", () => {
     await user.click(within(fieldCard("Calibrated?")).getByRole("radio", { name: CONDITIONAL }));
 
     expect(template.submittable.isOk).toBe(false);
+    await expect(template.update()).rejects.toThrow(INCOMPLETE);
+    await expect(template.create()).rejects.toThrow(INCOMPLETE);
+    expect(update).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
   });
 
   it("moves focus to the name of a field when it is added", async () => {
