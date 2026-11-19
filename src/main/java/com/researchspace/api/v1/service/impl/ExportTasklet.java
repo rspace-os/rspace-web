@@ -62,7 +62,8 @@ public class ExportTasklet implements Tasklet {
    * org.springframework.batch.core.scope.context.ChunkContext)
    */
   @Override
-  public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
+  public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
+      throws Exception {
     JobParameters jobParams = chunkContext.getStepContext().getStepExecution().getJobParameters();
     addToContext(chunkContext, JOB_TYPE_KEY, JOB_TYPE);
     log.info("In ExportTasklet {}", toString());
@@ -93,6 +94,7 @@ public class ExportTasklet implements Tasklet {
         updateContext(chunkContext, result);
       } catch (Exception e) {
         log.error("Error syncing user work: ", e);
+        throw e;
       } finally {
         clearUp(externalExportId);
       }
@@ -106,6 +108,7 @@ public class ExportTasklet implements Tasklet {
           updateContext(chunkContext, result);
         } catch (Exception e) {
           log.error("Error syncing group: ", e);
+          throw e;
         } finally {
           clearUp(externalExportId);
         }
@@ -119,6 +122,7 @@ public class ExportTasklet implements Tasklet {
         updateContext(chunkContext, result);
       } catch (Exception e) {
         log.error("Error syncing record selection: ", e);
+        throw e;
       } finally {
         clearUp(externalExportId);
       }

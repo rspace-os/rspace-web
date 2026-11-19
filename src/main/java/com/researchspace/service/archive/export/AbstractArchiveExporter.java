@@ -232,6 +232,10 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       if (ex instanceof DiskSpaceLimitException) {
         throw (DiskSpaceLimitException) ex;
       }
+      // a document or its form could not be written, so the archive would be incomplete
+      if (ex instanceof ExportFailureException) {
+        throw (ExportFailureException) ex;
+      }
       log.warn("Error exporting record {} : {}", rid, ex.getMessage());
       log.warn("Exception:", ex);
     }
