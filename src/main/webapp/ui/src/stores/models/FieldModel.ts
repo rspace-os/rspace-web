@@ -10,7 +10,7 @@ import {
 import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { UnparsableString } from "../../util/error";
 import type { URL as URLType } from "../../util/types";
@@ -66,6 +66,20 @@ function parseRule(json: unknown): FieldDisplayRule | null {
 export function clearRulesReading(field: Field | undefined): void {
   if (!(field instanceof FieldModel)) return;
   for (const dependent of field.dependentFields) dependent.setDisplayRule(null);
+}
+
+/** Why a template was not sent: a display condition is still unfinished. */
+export class DisplayConditionIncomplete extends Error {}
+
+/**
+ * Throws a DisplayConditionIncomplete with the reason the first of `fields`
+ * gives for not saving its display condition, so a template is never sent
+ * while a condition is unfinished.
+ */
+export function assertDisplayConditionsComplete(fields: ReadonlyArray<Field>): void {
+  allAreValid(fields.map((field) => field.validateDisplayCondition()))
+    .mapError(([first]) => new DisplayConditionIncomplete(first?.message))
+    .elseThrow();
 }
 
 export default class FieldModel implements Field {

@@ -985,6 +985,7 @@ export default interface Resources {
         "sourceRequired": "Choose a field.",
         "title": "Display this field when…",
         "valuesLabel": "Options",
+        "valuesRejected": "This condition cannot be applied. Choose fewer or shorter options.",
         "valuesRequired": "Choose at least one option."
       },
       "options": {
