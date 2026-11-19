@@ -50,33 +50,32 @@ function Toggle({
   const reasonId = useId();
   // read-only, the toggle is disabled anyway
   const locked = editable && lockedReason !== undefined;
-  const toggle = (
-    <FormControlLabel
-      control={
-        <Switch
-          checked={checked}
-          disabled={!editable}
-          onChange={({ target }) => {
-            if (!locked) onChange(target.checked);
-          }}
-          slotProps={
-            locked
-              ? {
-                  switchBase: { className: "Mui-disabled" },
-                  input: { "aria-disabled": true, "aria-describedby": reasonId },
-                }
-              : undefined
-          }
-        />
-      }
-      label={label}
-    />
-  );
-  if (!locked) return toggle;
+  // the wrapper stays while the lock comes and goes, so a focused toggle keeps its focus
   return (
     <div>
-      {toggle}
-      <FormHelperText id={reasonId}>{lockedReason}</FormHelperText>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={checked}
+            disabled={!editable}
+            onChange={({ target }) => {
+              if (!locked) onChange(target.checked);
+            }}
+            slotProps={
+              locked
+                ? {
+                    switchBase: { className: "Mui-disabled" },
+                    input: { "aria-disabled": true, "aria-describedby": reasonId },
+                  }
+                : undefined
+            }
+          />
+        }
+        label={label}
+        // dimmed like a disabled label; FormControlLabel's own disabled would disable the switch too
+        slotProps={locked ? { typography: { sx: { color: "text.disabled" } } } : undefined}
+      />
+      {locked && <FormHelperText id={reasonId}>{lockedReason}</FormHelperText>}
     </div>
   );
 }

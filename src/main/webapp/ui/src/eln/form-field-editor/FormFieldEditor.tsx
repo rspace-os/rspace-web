@@ -389,7 +389,13 @@ export default function FormFieldEditor({
     renameOption: (key, index, value) => setFields((current) => renameOption(current, key, index, value)),
     removeOption: (key, index) => void dropOption(key, index),
     addOption: (key) => update(key, (f) => (hasOptions(f) ? { ...f, options: [...f.options, ""] } : f)),
-    changeSettings: (key, settings) => update(key, (f) => ({ ...f, ...settings, type: f.type }) as EditorField),
+    changeSettings: (key, settings) =>
+      setFields((current) =>
+        // a field a rule reads cannot become a password field, whatever asks for it
+        "password" in settings && settings.password === true && dependentsOf(current, key).length > 0
+          ? current
+          : updateField(current, key, (f) => ({ ...f, ...settings, type: f.type }) as EditorField),
+      ),
     changeRule: (key, rule) => update(key, (f) => ({ ...f, rule })),
     showSources: (key, shown) =>
       setSourcesShownBy((current) => {
