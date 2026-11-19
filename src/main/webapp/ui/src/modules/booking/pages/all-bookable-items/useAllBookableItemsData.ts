@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { dropInvalidMeRules } from "@/modules/common/table-list/presets";
