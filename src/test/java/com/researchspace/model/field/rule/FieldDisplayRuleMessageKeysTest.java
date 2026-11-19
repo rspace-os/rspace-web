@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.JsonMessageSource;
 import java.util.Locale;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -27,6 +28,9 @@ class FieldDisplayRuleMessageKeysTest {
         FieldDisplayRuleValidator.SOURCE_SELF,
         FieldDisplayRuleValidator.SOURCE_TYPE,
         FieldDisplayRuleValidator.VALUE_UNKNOWN,
+        FieldDisplayRuleValidator.VALUE_DUPLICATE,
+        FieldDisplayRuleValidator.VALUE_TOO_MANY,
+        FieldDisplayRuleValidator.RULE_TOO_LONG,
         FieldDisplayRuleValidator.CYCLE
       })
   void everyCodeResolvesToTextNamingTheField(String code) {
@@ -34,5 +38,15 @@ class FieldDisplayRuleMessageKeysTest {
     String message = MESSAGES.getMessage(code, new Object[] {FIELD}, EN_US);
 
     assertTrue(message.contains(FIELD), code + " must name the field, but said: " + message);
+  }
+
+  @Test
+  void tooManyValuesMessageStatesTheLimit() {
+    String message =
+        MESSAGES.getMessage(FieldDisplayRuleValidator.VALUE_TOO_MANY, new Object[] {FIELD}, EN_US);
+
+    assertTrue(
+        message.contains(String.valueOf(FieldDisplayRuleValidator.MAX_VALUES)),
+        "the message must state the current limit, but said: " + message);
   }
 }
