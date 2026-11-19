@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { HttpResponse, http } from "msw";
-import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 
 const WEBAPP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
@@ -176,6 +176,26 @@ describe("form.js toolbar", () => {
     expect(sent[0].get("fieldsRevision")).toBe("7");
     expect(sent[0].get("lockToken")).toBe("page-token");
     expect(ajaxFailed).not.toHaveBeenCalled();
+  });
+
+  test("neither updates nor publishes while the editor refuses to save its fields, which says why itself", async () => {
+    // as the editor does while a display condition is not filled out
+    const editor = fakeEditor(() => Promise.reject(Object.assign(new Error(""), { name: "FormFieldsSaveError" })));
+    const sent = serveForm({ current: 7 });
+    // each action unblocks the page once the editor has answered, and would have sent its request by then
+    const unblockPage = vi.spyOn((window as unknown as { RS: { unblockPage: () => void } }).RS, "unblockPage");
+    onTestFinished(() => unblockPage.mockRestore());
+
+    legacy.$("#publish").trigger("click");
+    await vi.waitFor(() => expect(unblockPage).toHaveBeenCalledTimes(1));
+    legacy.$("#update").trigger("click");
+    await vi.waitFor(() => expect(unblockPage).toHaveBeenCalledTimes(2));
+
+    expect(editor.save).toHaveBeenCalledTimes(2);
+    expect(editor.setReadOnly).toHaveBeenLastCalledWith(false);
+    expect(opened.has("publishShareDlg")).toBe(false);
+    expect(sent).toHaveLength(0);
+    expect(apprise).not.toHaveBeenCalled();
   });
 
   test.each([
