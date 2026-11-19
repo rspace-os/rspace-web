@@ -19,7 +19,7 @@ function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
     <IconButtonWithTooltip
       title={t("actions.retry")}
       icon={retrying ? <FontAwesomeIcon icon={faSpinner} spin size="sm" /> : <RefreshIcon />}
-      // a second click while the first retry runs would repeat it, creating a record twice
+      // a second click while the first retry runs would run the retry twice
       disabled={retrying}
       onClick={(_event: React.MouseEvent<HTMLButtonElement>) => {
         void (async () => {
