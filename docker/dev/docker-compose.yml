@@ -268,7 +268,7 @@ services:
     restart: unless-stopped
 
   gotenberg:
-    image: gotenberg/gotenberg@sha256:53073e798c8ef39ea2187e44cb67bab77894ea2509100b94c4fe3b461f7b2996
+    image: gotenberg/gotenberg@sha256:2f4945f698c3d02f691a27d56bb8e7ba4585e6ab50bd233329a36eb0423ae587
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-gotenberg
     command:
       - gotenberg
@@ -276,8 +276,10 @@ services:
       - --api-body-limit=200MB
       - --api-disable-download-from=true
       - --chromium-disable-routes=true
-      - --pdfengines-disable-routes=true
+      - --pdf-disable-routes=true
+      - --pdf-disable-stages=true
       - --libreoffice-max-queue-size=2
+      - --libreoffice-max-memory=1500MB
       - --libreoffice-deny-private-ips=true
       - --libreoffice-deny-public-ips=true
       - --webhook-disable=true
