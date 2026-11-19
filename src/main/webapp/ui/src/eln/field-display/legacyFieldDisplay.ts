@@ -47,23 +47,26 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
 
   function announce(shown: ReadonlyArray<string>, hidden: ReadonlyArray<string>): void {
     const change = ++latestChange;
-    const message = (key: typeof SHOWN | typeof HIDDEN, names: ReadonlyArray<string>) =>
-      names.length === 0
-        ? []
-        : [i18n.t(key, { count: names.length, fields: formatList(names, i18n.resolvedLanguage ?? i18n.language) })];
-    const show = () => {
-      if (change !== latestChange) return;
-      region.textContent = [...message(SHOWN, shown), ...message(HIDDEN, hidden)].join(" ");
+    const parts = (
+      [
+        { key: SHOWN, names: shown },
+        { key: HIDDEN, names: hidden },
+      ] as const
+    ).filter(({ names }) => names.length > 0);
+    // Never show a raw key: say only the messages the catalog has, so a catalog cached from before a
+    // message was added still announces the rest, and nothing if the catalog failed to load (a
+    // failed load can still count as loaded).
+    const available = () => (i18n.isInitialized ? parts.filter(({ key }) => i18n.exists(key, { ns: "common" })) : []);
+    const show = (said: typeof parts) => {
+      if (change !== latestChange || said.length === 0) return;
+      region.textContent = said
+        .map(({ key, names }) =>
+          i18n.t(key, { count: names.length, fields: formatList(names, i18n.resolvedLanguage ?? i18n.language) }),
+        )
+        .join(" ");
     };
-    // Never show a raw key: wait for the messages this change needs, and say nothing if their catalog
-    // failed to load (a failed load can still count as loaded).
-    const keys = [...(shown.length > 0 ? [SHOWN] : []), ...(hidden.length > 0 ? [HIDDEN] : [])];
-    const ready = () => i18n.isInitialized && keys.every((key) => i18n.exists(key, { ns: "common" }));
-    if (ready()) show();
-    else
-      void i18n.loadNamespaces("common").then(() => {
-        if (ready()) show();
-      });
+    if (available().length === parts.length) show(parts);
+    else void i18n.loadNamespaces("common").then(() => show(available()));
   }
 
   function refresh(

@@ -210,7 +210,12 @@ describe("Template display rules", () => {
 
   it("gives no reason on a saved option a rule uses, since saved options can never be renamed", () => {
     renderEditor(savedGmoTemplate());
+    const [yes] = within(fieldCard("Is this a GMO?")).getAllByRole("textbox", {
+      name: "common:fieldEditor.options.optionLabel",
+    });
 
+    expect(yes).toHaveValue("Yes");
+    expect(yes).toHaveAttribute("readonly");
     expect(
       within(fieldCard("Is this a GMO?")).queryByText("inventory:template.displayRules.optionInUse"),
     ).not.toBeInTheDocument();
