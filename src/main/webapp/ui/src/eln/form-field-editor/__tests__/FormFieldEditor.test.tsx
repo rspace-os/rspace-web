@@ -1067,17 +1067,41 @@ describe("FormFieldEditor with one-line text and number sources", () => {
     expect(within(targetCard).getByRole("radio", { name: "Always" })).toBeChecked();
   });
 
+  it("asks before an unsaved source becomes a type of another kind, and keeps the rule when cancelled", async () => {
+    const user = userEvent.setup();
+    serveFields([]);
+    await renderEditor();
+    await addField(user, /^Number/, "Source");
+    await addField(user, /^String/, "Target");
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.type(within(card("Target")).getByRole("textbox", { name: "Value" }), "5");
+
+    await user.click(within(card("Source")).getByRole("menuitem", { name: /Change type/ }));
+    await user.click(screen.getByRole("menuitem", { name: /^Radio/ }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
+
+    const source = await screen.findByRole("region", { name: "Source" });
+    expect(within(source).getByRole("textbox", { name: "Decimal places" })).toBeInTheDocument();
+    expect(
+      within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }),
+    ).toBeChecked();
+    expect(within(card("Target")).getByRole("combobox", { name: "Field" })).toHaveTextContent("Source");
+    expect(within(card("Target")).getByRole("textbox", { name: "Value" })).toHaveValue("5");
+  });
+
   it("locks the password toggle of a field a rule reads, saying why, until no rule reads it", async () => {
     const user = userEvent.setup();
     const posts = serveFields([batch, target({ sourceFieldKey: BATCH, operator: "EQUALS", values: ["LOT"] })]);
     const { handle } = await renderEditor();
     const reason = "A display rule reads this field, so it cannot be a password field.";
 
-    // focusable, unlike a disabled control, so the reason can be reached and heard
-    expect(passwordSwitch("Batch code")).toBeEnabled();
+    // reachable by Tab, unlike a disabled control, so the reason can be heard
+    act(() => within(card("Batch code")).getByRole("switch", { name: "Mandatory" }).focus());
+    await user.tab();
+    expect(passwordSwitch("Batch code")).toHaveFocus();
     expect(passwordSwitch("Batch code")).toHaveAttribute("aria-disabled", "true");
     expect(passwordSwitch("Batch code")).toHaveAccessibleDescription(reason);
-    act(() => passwordSwitch("Batch code").focus());
+    expect(within(card("Batch code")).getByText(reason)).toBeVisible();
     await user.keyboard(" ");
     expect(passwordSwitch("Batch code")).not.toBeChecked();
     expect(passwordSwitch("Target")).not.toHaveAttribute("aria-disabled");
@@ -1088,6 +1112,46 @@ describe("FormFieldEditor with one-line text and number sources", () => {
     await handle.current?.save();
 
     expect(posts[0][0].source).toMatchObject({ ifPassword: "yes" });
+  });
+
+  it("leaves a password field a rule reads free to stop being one", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([
+      saved(3, "String", { name: "Batch code", ifPassword: "yes", defaultStringValue: "" }, { fieldKey: BATCH }),
+      target({ sourceFieldKey: BATCH, operator: "EQUALS", values: ["LOT"] }),
+    ]);
+    const { handle } = await renderEditor();
+
+    expect(passwordSwitch("Batch code")).not.toHaveAttribute("aria-disabled");
+    await user.click(passwordSwitch("Batch code"));
+    expect(passwordSwitch("Batch code")).not.toBeChecked();
+    // now locked, as a rule reads it, but still focused where it was
+    expect(passwordSwitch("Batch code")).toHaveAttribute("aria-disabled", "true");
+    expect(passwordSwitch("Batch code")).toHaveFocus();
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({ ifPassword: "no" });
+  });
+
+  it("stops offering a field as a source while it is a password field", async () => {
+    const user = userEvent.setup();
+    serveFields([batch, weight, target()]);
+    await renderEditor();
+    const offeredSources = async () => {
+      await user.click(within(card("Target")).getByRole("combobox", { name: "Field" }));
+      const names = within(await screen.findByRole("listbox"))
+        .getAllByRole("option")
+        .map((option) => option.textContent);
+      await user.keyboard("{Escape}");
+      return names;
+    };
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+
+    await user.click(passwordSwitch("Batch code"));
+    expect(await offeredSources()).toEqual(["Weight"]);
+
+    await user.click(passwordSwitch("Batch code"));
+    expect(await offeredSources()).toEqual(["Batch code", "Weight"]);
   });
 
   it("refuses to save or publish while a number condition's value is not a number", async () => {
