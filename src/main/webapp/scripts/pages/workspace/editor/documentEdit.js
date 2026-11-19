@@ -637,7 +637,8 @@ function _autosavePickList($field) {
   const pickListSelected = $field
       .find("option[class='radioLi " + fieldId + "' ]:selected")
       .val();
-  // the empty placeholder is no answer: send empty data, as jQuery drops an undefined dataValue
+  // no option selected (the empty placeholder, or reloaded empty data) is no answer: send empty
+  // data, as $.ajax drops an undefined dataValue and autosaveField requires it
   return _postAutosave(pickListSelected === undefined ? "" : pickListSelected, $field);
 }
 
