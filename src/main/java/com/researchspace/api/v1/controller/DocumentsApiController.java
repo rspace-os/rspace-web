@@ -293,8 +293,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
     StructuredDocument doc = retrieveDocumentForApiUser(id, user);
     validateDocIsMutable(errors, doc);
     convertApiFieldsToMatchDocFields(apiDocument, doc.getFields());
-    apiFieldsHelper.checkApiFieldsMatchingFormFields(
-        apiDocument.getFields(), doc.getForm().getFieldForms(), user);
+    apiFieldsHelper.checkApiFieldsMatchingDocumentFields(
+        apiDocument.getFields(), doc.getForm().getFieldForms(), doc.getFields(), user);
 
     recordApiMgr.createNewRevision(doc, apiDocument, user);
     return getDocumentById(id, user);
