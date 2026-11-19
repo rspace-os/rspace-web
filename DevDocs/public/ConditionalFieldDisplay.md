@@ -158,9 +158,9 @@ that field is shown after the update.
 
 ### Revisions and earlier versions
 
-Earlier revisions of an ELN document, and earlier versions of an Inventory sample, instrument or
-template, show and hide fields by the rules they had and the answers saved in that revision or
-version. An ELN document takes its rules from the form version it was created from. Revisions
+Earlier revisions of an ELN document, and earlier versions of an Inventory sample or instrument,
+show and hide fields by the rules they had and the answers saved in that revision or version. An
+earlier template version shows every field, with the rule summaries it had. An ELN document takes its rules from the form version it was created from. Revisions
 and versions saved before any rule existed, including everything from before the upgrade, have
 no rules, so they show every field.
 
@@ -175,8 +175,8 @@ no rules, so they show every field.
 
 ## Known limitations
 
-This list matches "Known limitations of conditional field display" in the release notes
-([Changelog-OS.md](Changelog-OS.md)).
+This list matches the published limitations in "Known limitations of conditional field display"
+in the release notes ([Changelog-OS.md](Changelog-OS.md)).
 
 - Uploading radio options from a file is not yet available in the new ELN form field editor
   (RSDEV-1712).

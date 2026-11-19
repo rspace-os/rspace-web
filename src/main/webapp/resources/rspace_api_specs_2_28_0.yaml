@@ -3929,8 +3929,10 @@ components:
             - HAS_NO_VALUE
         values:
           type: array
+          nullable: true
           description: Options of the source field. Required and non-empty for IS_ANY_OF
-            and IS_NONE_OF; empty for HAS_VALUE and HAS_NO_VALUE.
+            and IS_NONE_OF. For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send
+            an empty array or null; responses return an empty array.
           items:
             type: string
       example:
