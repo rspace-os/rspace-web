@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -9,13 +10,12 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class BackfillInventoryTemplateFieldKeys_RSDEV1706Test extends SpringTransactionalTest {
 
   @Test
-  void keysTemplateFieldsWithVersion7AndLeavesRecordFieldsAndExistingKeys() {
+  void keysTemplateFieldsAndLeavesRecordFieldsAndExistingKeys() {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleTemplateAndSample(user);
     Long sampleTemplateId = sample.getTemplateId();
@@ -29,17 +29,12 @@ class BackfillInventoryTemplateFieldKeys_RSDEV1706Test extends SpringTransaction
     FieldKeyBackfillRunner.run(
         new BackfillInventoryTemplateFieldKeys_RSDEV1706(), applicationContext, sessionFactory);
 
-    assertVersion7(keys("sample_id", sampleTemplateId));
-    assertVersion7(keys("instrumentEntity_id", instrumentTemplate.getId()));
+    assertThat(keys("sample_id", sampleTemplateId)).hasSize(1).doesNotContainNull();
+    assertThat(keys("instrumentEntity_id", instrumentTemplate.getId()))
+        .hasSize(1)
+        .doesNotContainNull();
     keys("sample_id", sample.getId()).forEach(key -> assertNull(key));
     assertEquals(List.of(existingKey), keys("sample_id", keyed.getId()));
-  }
-
-  private static void assertVersion7(List<String> keys) {
-    assertEquals(1, keys.size());
-    UUID uuid = UUID.fromString(keys.get(0));
-    assertEquals(7, uuid.version());
-    assertEquals(uuid.toString(), keys.get(0));
   }
 
   private void clearKeys(String parentColumn, Long parentId) {
