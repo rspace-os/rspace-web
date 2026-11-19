@@ -1,6 +1,5 @@
 import type { AnyRouter } from "@tanstack/react-router";
 import { setApiV2SessionHandlers } from "@/modules/common/api/v2/tokenProvider";
-import { clearStoredToken } from "@/modules/common/utils/auth";
 import type { AppBarRouteContext } from "./AppShell";
 
 /** Merges the route contexts the app shell reads, keeping loaded ancestors when a descendant's beforeLoad failed. */
@@ -28,12 +27,8 @@ export function installAppShellSessionHandlers(router: Pick<AnyRouter, "state">)
   return setApiV2SessionHandlers({
     onSessionEnded: () => {
       if (!requiresAuthentication(resolveAppBarContext(router.state.matches))) return;
-      clearStoredToken();
       globalThis.location.assign("/login");
     },
-    onIdentityChanged: () => {
-      clearStoredToken();
-      globalThis.location.reload();
-    },
+    onIdentityChanged: () => globalThis.location.reload(),
   });
 }

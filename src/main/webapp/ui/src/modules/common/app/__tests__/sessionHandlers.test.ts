@@ -84,6 +84,6 @@ it("reloads when the identity changes", async () => {
   restore = installAppShellSessionHandlers(await routerAt("/about"));
   const provider = new SessionTokenProvider();
   const first = await provider.getToken();
-  await expect(provider.recover(first, true)).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
+  await expect(provider.recover(first)).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
   expect(location.reload).toHaveBeenCalledOnce();
 });
