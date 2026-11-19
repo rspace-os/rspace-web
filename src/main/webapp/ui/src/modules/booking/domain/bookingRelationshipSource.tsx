@@ -1,3 +1,4 @@
+import { uniq } from "es-toolkit";
 import * as v from "valibot";
 import { listBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { InstrumentsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
@@ -28,7 +29,7 @@ export const bookingInstrumentSource: RelationshipSource = {
     return page.items.map((item) => ({ id: item.targetId, name: item.name, globalId: item.globalId }));
   },
   resolveMany: async (values, signal) => {
-    const targets = [...new Set(values.map(canonicalId).filter((value): value is string => value !== null))];
+    const targets = uniq(values.map(canonicalId).filter((value): value is string => value !== null));
     if (!isNonEmpty(targets)) return {};
     const result = await listBookingConfigurations(
       {
