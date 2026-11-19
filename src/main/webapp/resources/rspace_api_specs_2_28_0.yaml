@@ -3894,7 +3894,8 @@ components:
             option as it is, commas included. A document request whose Choice or Radio
             content names a value that is not an option of the field is rejected with
             422, as is Choice content with an empty value, such as `Yes,`; empty content
-            clears the selection. On a document update, Choice content equal to the
+            clears the selection. Values are not trimmed, so `Yes, No` names the value
+            ` No`. On a document update, Choice content equal to the
             field's current content is accepted unchecked.
         fieldKey:
           type: string
@@ -3946,7 +3947,9 @@ components:
             option text, so a comma in an option is written as a comma, not as the
             `&#44;` escape of Choice field content. Required and non-empty for IS_ANY_OF
             and IS_NONE_OF. For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send
-            an empty array or null; responses return an empty array.
+            an empty array or null; responses return an empty array. At most 1000 values,
+            and the stored rule at most 32768 characters; a form request with a rule over
+            either limit, or with a value listed twice, is rejected with 422.
           items:
             type: string
       example:

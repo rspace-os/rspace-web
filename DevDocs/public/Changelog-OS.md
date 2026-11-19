@@ -8,21 +8,24 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 ### Server
 
-- RSDEV-1706, RSDEV-1708 two Liquibase changelogs (four changesets) add `fieldKey` and `displayRule` columns to `InventoryEntityField`, `FieldForm` and their audit tables, and give every existing form field and Inventory template field a key. Sample and instrument fields are not backfilled.
+- RSDEV-1706, RSDEV-1708 two Liquibase changelogs (five changesets) add `fieldKey` and `displayRule` columns to `InventoryEntityField`, `FieldForm` and their audit tables, and give every existing form field and Inventory template field a key. Sample and instrument fields are not backfilled. The unsaved draft copy of a published form's field gets its original's key, so a form whose new version was in progress at the upgrade can still be edited through the API by GET then PUT
 
 ### ELN Features
 
 - RSDEV-1708, RSDEV-1709 conditional field display in Forms: a field can be shown only when a radio or choice field has (or lacks) certain answers. Mandatory applies only while a field is shown, and hidden fields keep their values. Applied in document edit and view, notebooks, document templates, and public documents and notebooks. See [ConditionalFieldDisplay.md](ConditionalFieldDisplay.md)
-- RSDEV-1709 new form field editor: fields, options, order and display rules are edited on the form page and saved together with Save and Close, Update or Publish. The Add Field and Reorder Fields dialogs are replaced
+- RSDEV-1709 new form field editor: fields, options, order and display rules are edited on the form page and saved together with Save and Close, Update or Publish. Each field has its own "Display this field when…" setting. The Add Field and Reorder Fields dialogs are replaced
+- RSDEV-1709 a field save from a page that loaded an older field list, for example a second tab, is refused instead of overwriting the newer fields; the editor says "This form was changed elsewhere" and offers Reload
+- RSDEV-1709 a radio field shown as a drop-down list in a document starts on an empty "Select an option" choice when it has no value, instead of showing its first option
 - RSDEV-1708 the Sign button and the workspace warning ignore mandatory fields hidden by a display rule
 
 ### Inventory Features
 
-- RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, Display rules panel and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard
+- RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, per-field "Display this field when…" editor and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard
 
 ### API
 
-- RSDEV-1706, RSDEV-1708 `fieldKey` and `displayRule` on form fields, document fields and Inventory template, sample and instrument fields; stricter radio and choice option checks on the forms API; a failed form version update returns 422. See [ApiChangelog.md](ApiChangelog.md)
+- RSDEV-1706, RSDEV-1708 `fieldKey` and `displayRule` on form fields, document fields and Inventory template, sample and instrument fields; display rules limited to 1,000 distinct values and 32,768 characters; stricter radio and choice option checks on the forms API; a failed form version update returns 422; a form PUT returns the form's fields. See [ApiChangelog.md](ApiChangelog.md)
+- RSDEV-1708 document POST and PUT now reject choice field content that names values that are not options, or has an empty value (such as `Yes,`), with 422. This can affect existing API clients: `Yes, No`, with a space after the comma, is now rejected; send `Yes,No`, and write a comma inside an option as `&#44;`. Content left as a GET returned it is still accepted
 
 ### Known limitations of conditional field display
 
@@ -32,6 +35,8 @@ You can find our official changelog at https://documentation.researchspace.com/a
 - Inventory extra fields cannot have display rules
 - ELN form versions created before the upgrade do not share field keys with each other. This is harmless today, because rules are only ever read within one form version
 - A field deleted from an Inventory template but kept in existing samples and instruments is always shown there once they are updated to the latest template version: its rule no longer applies, and if it had one it is no longer mandatory
+
+Because hidden fields keep their values, signing an ELN document (RSDEV-1719) and search (RSDEV-1720) also include hidden values. A notebook can show the autosaved, not yet saved, answers of an entry that someone else is editing, and shows or hides that entry's fields by those answers (RSDEV-1724).
 
 # 2.28.0 2026-11-06
 

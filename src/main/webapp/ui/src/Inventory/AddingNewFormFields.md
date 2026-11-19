@@ -320,16 +320,34 @@ Each template field ([FieldModel]) has two properties for this:
 The template editor is built on shared, plain-props components in
 [modules/common/field-editor][field-editor], which the ELN form field editor
 also uses: `FieldCard`, `FieldTypeSelect`, `OptionsEditor`, `MoveButtons`,
-`DisplayRulesPanel` and `DisplayRuleSummary`. [CustomField] adapts a MobX
-`FieldModel` onto `FieldCard`, and [TemplateDisplayRules] adapts the template's
-fields onto `DisplayRulesPanel`. Pure helpers for pruning rules live in
-`ruleEditing.ts`.
+`FieldDisplayCondition`, `DisplayConditionsNote` and `DisplayRuleSummary`.
+[CustomField] adapts a MobX `FieldModel` onto `FieldCard` and passes each field's
+`FieldDisplayCondition` in its `displayCondition` slot. [TemplateFieldList]
+renders `DisplayConditionsNote` once above the fields while editing.
+
+- `FieldDisplayCondition` is the "Display this field when…" section of one
+  field. In edit mode it offers "Always" or a condition on another radio or
+  choice field; read-only, it shows the "Shown when…" summary. It also lists
+  the fields that depend on this one.
+- It reports a rule through `onChange` only once the condition is complete and
+  the shared validator accepts it. An unfinished condition stays a draft inside
+  the component, and the field keeps its stored rule meanwhile. Give the
+  component a new React key to start a new edit session.
+- [templateRuleFields] gives every condition of a template the same
+  `RuleEditorField` list, a MobX computed that does not read names, so
+  `ruleGraphFor` works out candidate sources once per change rather than once
+  per field, and renaming a field re-renders only the cards that show its name.
+- Pure helpers for candidate sources, drafts and pruning rules live in
+  `ruleEditing.ts`.
 
 Any new action that can break a rule must confirm first, naming the dependent
 fields, and then prune the dependent rules in the same model change. Today
 these are: deleting a field that rules read (`FieldModel.dependentFields`),
 removing an option that a rule uses, and changing an unsaved source field to a
-type that cannot be a source. The server validates every rule of the template
+type that cannot be a source. An option that a rule uses cannot be renamed: the
+`OptionsEditor` row is locked with the `template.displayRules.optionInUse`
+reason, which only new options show, because saved options cannot be renamed
+anyway. The server validates every rule of the template
 together after a save, so a save that leaves a dangling rule is rejected.
 
 
@@ -364,7 +382,8 @@ together after a save, so a save that leaves a dangling rule is rejected.
 [InstrumentModel]: /src/main/webapp/ui/src/stores/models/InstrumentModel.tsx
 [RevealedFieldsAnnouncer]: /src/main/webapp/ui/src/modules/common/field-display/RevealedFieldsAnnouncer.tsx
 [SampleModel]: /src/main/webapp/ui/src/stores/models/SampleModel.tsx
-[TemplateDisplayRules]: /src/main/webapp/ui/src/Inventory/Template/Fields/TemplateDisplayRules.tsx
+[TemplateFieldList]: /src/main/webapp/ui/src/Inventory/Template/Fields/TemplateFieldList.tsx
 [TemplateModel]: /src/main/webapp/ui/src/stores/models/TemplateModel.tsx
+[templateRuleFields]: /src/main/webapp/ui/src/Inventory/Template/Fields/templateRuleFields.ts
 [templateResolution.ts]: /src/main/webapp/ui/src/Inventory/components/Operations/templateResolution.ts
 [useShownTemplateFields]: /src/main/webapp/ui/src/Inventory/components/Fields/useShownTemplateFields.tsx
