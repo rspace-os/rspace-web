@@ -111,20 +111,21 @@ that case before reading details.
 
 `tokenProvider.ts` exports `ApiV2TokenProvider` with `getToken(signal?: AbortSignal):
 Promise<string>` and `recover(rejected: string): Promise<string>`, plus
-`getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. The setter is for tests; it returns a restore
-function.
+`getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. There is no default provider: each entry point
+that makes token-bearing calls installs one before rendering, and `getApiV2TokenProvider()` throws until it has.
+Public and session operations never ask for one. The setter returns a restore function, which tests use to swap
+providers; `setup.ts`, `browserSetup.ts` and the Storybook preview install one for tests and stories.
 
-The default `SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:
+`SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:
 `getToken` re-mints a token inside the five-minute expiry buffer, so an idle tab does no background work. It works
 independently of a `QueryClient`. V2 callers neither pass tokens nor call `useOauthTokenQuery`. API v2 answers 401
 only when it rejects the credentials and 403 when it refuses a permission, so 401 recovery mints a replacement
 without probing the rejected token. Only GET requests replay after recovery; writes never replay automatically.
 
 The provider decides when a session has ended; session handlers decide what the page does about it.
-`setApiV2SessionHandlers({ onSessionEnded, onIdentityChanged })` installs handlers that the module-level provider
-reads at call time, and returns a restore function. Without it, the defaults navigate to `/login` (session ended) or
-reload (identity changed). The provider keeps its token in memory and never reads or writes the API v1 token in
-session storage. Tests construct `new SessionTokenProvider(handlers)` instead.
+`new SessionTokenProvider({ onSessionEnded, onIdentityChanged })` requires them. `defaultApiV2SessionHandlers`
+navigates to `/login` (session ended) or reloads (identity changed). The provider keeps its token in memory and never
+reads or writes the API v1 token in session storage.
 
 | Path | Condition | Handler | Caller receives |
 | --- | --- | --- | --- |

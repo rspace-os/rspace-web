@@ -25,24 +25,11 @@ export interface ApiV2SessionHandlers {
   onIdentityChanged(): void;
 }
 
-const defaultSessionHandlers: ApiV2SessionHandlers = {
+/** For entry points without handlers of their own: session ended navigates to `/login`, identity changed reloads. */
+export const defaultApiV2SessionHandlers: ApiV2SessionHandlers = {
   onSessionEnded: () => globalThis.location.assign("/login"),
   onIdentityChanged: () => globalThis.location.reload(),
 };
-let installedSessionHandlers = defaultSessionHandlers;
-
-/**
- * Installs the session handlers that the module-level provider uses, read at call time; returns a function restoring
- * the previous ones. Entry points that install nothing keep the defaults: session ended navigates to `/login`, identity
- * changed reloads.
- */
-export function setApiV2SessionHandlers(next: ApiV2SessionHandlers): () => void {
-  const previous = installedSessionHandlers;
-  installedSessionHandlers = next;
-  return () => {
-    installedSessionHandlers = previous;
-  };
-}
 
 /** The session a UI token belongs to; tokens without one (or malformed tokens) yield undefined. */
 function refreshTokenHash(token: string): string | undefined {
@@ -81,17 +68,12 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
   private minting?: Promise<string>;
   private identityChanged = false;
 
-  /** Without handlers, the provider reads those installed through `setApiV2SessionHandlers` at call time. */
-  constructor(private readonly handlers?: ApiV2SessionHandlers) {}
-
-  private get sessionHandlers(): ApiV2SessionHandlers {
-    return this.handlers ?? installedSessionHandlers;
-  }
+  constructor(private readonly handlers: ApiV2SessionHandlers) {}
 
   /** Stops delivering tokens and lets the page discard every state of the previous identity. */
   private abandonIdentity(): never {
     this.identityChanged = true;
-    this.sessionHandlers.onIdentityChanged();
+    this.handlers.onIdentityChanged();
     throw new ApiV2IdentityChangedError();
   }
 
@@ -106,7 +88,7 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
   private mintFailure(error: unknown): unknown {
     if (!sessionEnded(error)) return error;
     const ended = new ApiV2SessionEndedError(error.status, error);
-    this.sessionHandlers.onSessionEnded(ended);
+    this.handlers.onSessionEnded(ended);
     return ended;
   }
 
@@ -145,13 +127,19 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
   }
 }
 
-let provider: ApiV2TokenProvider = new SessionTokenProvider();
+let provider: ApiV2TokenProvider | undefined;
+
+/** The provider the page's entry point installed. A token-bearing call fails fast when none was installed. */
 export function getApiV2TokenProvider(): ApiV2TokenProvider {
+  if (!provider) {
+    throw new Error("No API v2 token provider is installed; the page's entry point must call setApiV2TokenProvider.");
+  }
   return provider;
 }
+
 /**
- * Replaces the module-level provider and returns a function restoring the previous one. For tests only (`setup.ts`,
- * the provider and transport tests, and query tests); application code always uses the session provider.
+ * Installs the page's provider and returns a function restoring the previous one. Each entry point that makes
+ * token-bearing calls installs one before rendering; tests swap it.
  */
 export function setApiV2TokenProvider(next: ApiV2TokenProvider): () => void {
   const previous = provider;

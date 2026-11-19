@@ -6,9 +6,15 @@ import {
   ApiV2SessionEndedError,
   ApiV2UnexpectedResponseError,
 } from "./ApiV2ProblemError";
-import { ApiV2IdentityChangedError, SessionTokenProvider, setApiV2SessionHandlers } from "./tokenProvider";
+import {
+  ApiV2IdentityChangedError,
+  defaultApiV2SessionHandlers,
+  getApiV2TokenProvider,
+  SessionTokenProvider,
+  setApiV2TokenProvider,
+} from "./tokenProvider";
 
-// Test setup imports this runtime before test mocks are installed.
+// Test setup imports this runtime and installs a provider before test mocks are installed; reset to a fresh module.
 const { mint } = vi.hoisted(() => {
   vi.resetModules();
   return { mint: vi.fn() };
@@ -152,12 +158,12 @@ describe("getToken mint failures", () => {
   });
 });
 
-describe("session handlers", () => {
-  it("defaults to navigating to the login page, or reloading", async () => {
+describe("defaultApiV2SessionHandlers", () => {
+  it("navigates to the login page when the session ends, and reloads when the identity changes", async () => {
     const location = { assign: vi.fn(), reload: vi.fn() };
     vi.stubGlobal("location", location);
     mint.mockRejectedValueOnce(new ApiV2ProblemError(401, undefined, "Unauthorized"));
-    const p = new SessionTokenProvider();
+    const p = new SessionTokenProvider(defaultApiV2SessionHandlers);
     await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
     expect(location.assign).toHaveBeenCalledWith("/login");
 
@@ -167,19 +173,13 @@ describe("session handlers", () => {
     await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
     expect(location.reload).toHaveBeenCalledTimes(1);
   });
-  it("reads installed handlers at call time until restored", async () => {
-    const installed = { onSessionEnded: vi.fn(), onIdentityChanged: vi.fn() };
-    const location = { assign: vi.fn(), reload: vi.fn() };
-    vi.stubGlobal("location", location);
-    const p = new SessionTokenProvider();
-    const restore = setApiV2SessionHandlers(installed);
-    mint.mockRejectedValue(new ApiV2ProblemError(403, undefined, "Forbidden"));
-    await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
-    expect(installed.onSessionEnded).toHaveBeenCalledTimes(1);
-    expect(location.assign).not.toHaveBeenCalled();
-    restore();
-    await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
-    expect(installed.onSessionEnded).toHaveBeenCalledTimes(1);
-    expect(location.assign).toHaveBeenCalledWith("/login");
-  });
+});
+
+it("fails fast until an entry point installs a provider, and restores the previous one", () => {
+  expect(() => getApiV2TokenProvider()).toThrow(/setApiV2TokenProvider/);
+  const installed = provider();
+  const restore = setApiV2TokenProvider(installed);
+  expect(getApiV2TokenProvider()).toBe(installed);
+  restore();
+  expect(() => getApiV2TokenProvider()).toThrow(/setApiV2TokenProvider/);
 });
