@@ -47,11 +47,12 @@ export class TemplateFieldsEditor {
 
     await this.root.getByRole("button", { name: "Add new field" }).click();
 
+    // the new field's card is the last region; the display rules panel comes before the cards
     const newField = this.root.getByRole("region").last();
-    await newField.getByRole("group", { name: "Name" }).getByRole("textbox").fill(name);
+    await newField.getByRole("textbox", { name: "Name", exact: true }).fill(name);
 
     const fieldRegion = this.fieldRegion(name);
-    await fieldRegion.getByRole("group", { name: "Type" }).getByRole("menuitem").click();
+    await fieldRegion.getByRole("menuitem", { name: /^Change type/ }).click();
     await this.page
       .getByRole("menu")
       .last()
@@ -60,8 +61,8 @@ export class TemplateFieldsEditor {
       .click();
 
     if (option !== undefined) {
-      await fieldRegion.getByRole("button", { name: "Add Value" }).click();
-      await fieldRegion.getByRole("textbox", { name: "Option 1", exact: true }).first().fill(option);
+      await fieldRegion.getByRole("button", { name: "Add option" }).click();
+      await fieldRegion.getByRole("textbox", { name: "Option 1", exact: true }).fill(option);
     }
   }
 
