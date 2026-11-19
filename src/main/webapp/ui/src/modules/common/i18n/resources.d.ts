@@ -13435,6 +13435,8 @@ export default interface Resources {
           "modelValue": "{name} {version}",
           "quantity": "What is predicted",
           "referenceMethod": "Reference method",
+          "showAll": "All details",
+          "showFewer": "Fewer details",
           "title": "About this calculation",
           "trainingData": "Training data",
           "weights": "Model weights"

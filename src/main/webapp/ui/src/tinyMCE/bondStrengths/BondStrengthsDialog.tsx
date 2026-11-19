@@ -1,7 +1,4 @@
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
+import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -11,8 +8,9 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
+import { alpha, ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -224,8 +222,7 @@ function SupportedResult({
   rows: ReadonlyArray<BondRow>;
   notes: ReadonlyArray<string>;
 }) {
-  const { t, i18n } = useTranslation(["workspace", "common"]);
-  const language = i18n.resolvedLanguage ?? i18n.language;
+  const { t } = useTranslation(["workspace", "common"]);
   const { imageAlt, legend, columns } = pictureAndColumnText(t);
 
   return (
@@ -295,31 +292,30 @@ function SupportedResult({
           )}
         </Stack>
       </Box>
-      <Box>
-        <Typography variant="body2">
-          {t("tinymce.bondStrengths.coverage", {
-            supported: result.supportedBondCount,
-            total: result.totalBondCount,
-          })}
-        </Typography>
-        <Typography variant="body2">
-          {t("tinymce.bondStrengths.method", {
-            error: formatNumber(result.method.meanAbsoluteErrorKcalMol, language),
-          })}
-        </Typography>
-      </Box>
+      <Typography variant="body2">
+        {t("tinymce.bondStrengths.coverage", {
+          supported: result.supportedBondCount,
+          total: result.totalBondCount,
+        })}
+      </Typography>
       <AboutCalculation method={result.method} />
     </Stack>
   );
 }
 
-/** Provenance for the record: collapsed, because most readers only need the short line above it. */
+/**
+ * Provenance for the record. The model, its accuracy and the training data credit are always shown,
+ * so every reader sees that the values are predictions and where they come from; the rest is one
+ * click away.
+ */
 function AboutCalculation({ method }: { method: SupportedBondStrengths["method"] }) {
   const { t, i18n } = useTranslation(["workspace", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const summaryId = useId();
+  const [showAll, setShowAll] = useState(false);
+  const titleId = useId();
   const detailsId = useId();
-  const details: ReadonlyArray<[label: string, value: string | null | undefined]> = [
+  const error = formatNumber(method.meanAbsoluteErrorKcalMol, language);
+  const always: ReadonlyArray<[label: string, value: string | null | undefined]> = [
     [
       t("tinymce.bondStrengths.about.model"),
       t("tinymce.bondStrengths.about.modelValue", {
@@ -327,45 +323,74 @@ function AboutCalculation({ method }: { method: SupportedBondStrengths["method"]
         version: method.version,
       }),
     ],
+    [t("tinymce.bondStrengths.about.accuracy"), t("tinymce.bondStrengths.about.accuracyValue", { error })],
+    [t("tinymce.bondStrengths.about.trainingData"), method.trainingData],
+  ];
+  const more: ReadonlyArray<[label: string, value: string | null | undefined]> = [
     [t("tinymce.bondStrengths.about.quantity"), method.quantity],
-    [
-      t("tinymce.bondStrengths.about.accuracy"),
-      t("tinymce.bondStrengths.about.accuracyValue", {
-        error: formatNumber(method.meanAbsoluteErrorKcalMol, language),
-      }),
-    ],
     [t("tinymce.bondStrengths.about.accuracyNote"), method.accuracyNote],
     [t("tinymce.bondStrengths.about.referenceMethod"), method.referenceMethod],
-    [t("tinymce.bondStrengths.about.trainingData"), method.trainingData],
     [t("tinymce.bondStrengths.about.weights"), method.weightsSha256.slice(0, 12)],
   ];
 
   return (
-    <Accordion disableGutters elevation={0} sx={{ "&::before": { display: "none" } }}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />} id={summaryId} aria-controls={detailsId} sx={{ px: 0 }}>
-        <Typography variant="body2">{t("tinymce.bondStrengths.about.title")}</Typography>
-      </AccordionSummary>
-      <AccordionDetails id={detailsId} sx={{ px: 0 }}>
-        <Box
-          component="dl"
-          sx={{ m: 0, display: "grid", gridTemplateColumns: "max-content minmax(0, 1fr)", columnGap: 2, rowGap: 0.5 }}
-        >
-          {details.map(
-            ([label, value]) =>
-              value && (
-                <React.Fragment key={label}>
-                  <Typography component="dt" variant="body2" sx={{ fontWeight: "bold" }}>
-                    {label}
-                  </Typography>
-                  <Typography component="dd" variant="body2" sx={{ m: 0, overflowWrap: "anywhere" }}>
-                    {value}
-                  </Typography>
-                </React.Fragment>
-              ),
-          )}
-        </Box>
-      </AccordionDetails>
-    </Accordion>
+    <Paper
+      component="section"
+      variant="outlined"
+      aria-labelledby={titleId}
+      sx={(theme) => ({
+        p: 2,
+        borderLeft: `4px solid ${theme.palette.primary.dark}`,
+        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+      })}
+    >
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+        <ScienceOutlinedIcon sx={{ color: "primary.dark" }} />
+        <Stack spacing={1} sx={{ minWidth: 0, flexGrow: 1 }}>
+          <Typography id={titleId} variant="subtitle2" component="h3" sx={{ color: "primary.dark" }}>
+            {t("tinymce.bondStrengths.about.title")}
+          </Typography>
+          <Typography variant="body2">{t("tinymce.bondStrengths.method", { error })}</Typography>
+          <Box
+            component="dl"
+            id={detailsId}
+            sx={{
+              m: 0,
+              display: "grid",
+              // A minimum width keeps the values from jumping sideways when the longer labels appear.
+              gridTemplateColumns: "minmax(max-content, 12em) minmax(0, 1fr)",
+              columnGap: 2,
+              rowGap: 0.5,
+            }}
+          >
+            {(showAll ? [...always, ...more] : always).map(
+              ([label, value]) =>
+                value && (
+                  <React.Fragment key={label}>
+                    <Typography component="dt" variant="body2" sx={{ fontWeight: "bold" }}>
+                      {label}
+                    </Typography>
+                    <Typography component="dd" variant="body2" sx={{ m: 0, overflowWrap: "anywhere" }}>
+                      {value}
+                    </Typography>
+                  </React.Fragment>
+                ),
+            )}
+          </Box>
+          <Box>
+            <Button
+              size="small"
+              variant="outlined"
+              aria-expanded={showAll}
+              aria-controls={detailsId}
+              onClick={() => setShowAll((shown) => !shown)}
+            >
+              {showAll ? t("tinymce.bondStrengths.about.showFewer") : t("tinymce.bondStrengths.about.showAll")}
+            </Button>
+          </Box>
+        </Stack>
+      </Stack>
+    </Paper>
   );
 }
 

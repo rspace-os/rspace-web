@@ -164,18 +164,27 @@ describe("BondStrengthsDialog", () => {
     expect(screen.queryByRole("button", { name: "Insert into document" })).not.toBeInTheDocument();
   });
 
-  it("keeps the provenance in a section the reader can open", async () => {
+  it("always shows the model, accuracy and training data, and the rest on request", async () => {
     const user = userEvent.setup();
-    respondWith({ ...toluene, method: { ...method, referenceMethod: "DFT, M06-2X/def2-TZVP" } });
+    respondWith({
+      ...toluene,
+      method: { ...method, referenceMethod: "DFT, M06-2X/def2-TZVP", trainingData: "BDE-db2 (CC BY 4.0)" },
+    });
     await renderDialog({});
 
-    await user.click(await screen.findByRole("button", { name: "About this calculation" }));
+    const about = await screen.findByRole("region", { name: "About this calculation" });
+    expect(within(about).getByText("RSpace bond strength model 0.1.0")).toBeVisible();
+    expect(within(about).getByText("Mean absolute error 0.8 kcal/mol")).toBeVisible();
+    expect(within(about).getByText("BDE-db2 (CC BY 4.0)")).toBeVisible();
+    expect(within(about).queryByText("DFT, M06-2X/def2-TZVP")).not.toBeInTheDocument();
 
-    const details = screen.getByRole("region", { name: "About this calculation" });
-    expect(within(details).getByText("RSpace bond strength model 0.1.0")).toBeVisible();
-    expect(within(details).getByText("Mean absolute error 0.8 kcal/mol")).toBeVisible();
-    expect(within(details).getByText("DFT, M06-2X/def2-TZVP")).toBeVisible();
-    expect(within(details).getByText("af085c02bbbc")).toBeVisible();
+    const showAll = within(about).getByRole("button", { name: "All details" });
+    expect(showAll).toHaveAttribute("aria-expanded", "false");
+    await user.click(showAll);
+
+    expect(within(about).getByRole("button", { name: "Fewer details" })).toHaveAttribute("aria-expanded", "true");
+    expect(within(about).getByText("DFT, M06-2X/def2-TZVP")).toBeVisible();
+    expect(within(about).getByText("af085c02bbbc")).toBeVisible();
   });
 
   it("explains why a structure is not supported, without a table", async () => {
