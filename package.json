@@ -169,6 +169,7 @@
     "react-zoom-pan-pinch": "4.0.4",
     "sockjs-client": "1.6.1",
     "tinymce": "8.9.3",
+    "uuid": "14.0.3",
     "valibot": "1.4.2"
   }
 }

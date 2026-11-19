@@ -370,9 +370,12 @@
       "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
       "keyDuplicate": "Field [{0}] has the same field key as another field",
       "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
+      "ruleTooLong": "The display rule on field [{0}] is too long to save; choose fewer or shorter options",
       "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
       "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
       "sourceType": "The display rule on field [{0}] must depend on a radio or choice field",
+      "valueDuplicate": "The display rule on field [{0}] lists the same option more than once",
+      "valueTooMany": "The display rule on field [{0}] lists more than 1000 options",
       "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
     },
     "form": {
