@@ -61,12 +61,12 @@ describe("schema conversion", () => {
     expect(v.safeParse(value, invalid).success).toBe(false);
   });
 
-  it("validates quoted and prototype-named members", () => {
-    const fragment = JSON.parse(
-      '{"type":"object","properties":{"odd-key":{"type":"string"},"__proto__":{"type":"number"}},"required":["__proto__"]}',
-    );
-    expect(v.safeParse(schema(fragment), JSON.parse('{"__proto__":2}')).success).toBe(true);
-    expect(v.safeParse(schema(fragment), {}).success).toBe(false);
+  it("validates quoted members and rejects prototype-named ones", () => {
+    const value = schema({ type: "object", properties: { "odd-key": { type: "string" } }, required: ["odd-key"] });
+    expect(v.safeParse(value, { "odd-key": "x" }).success).toBe(true);
+    expect(v.safeParse(value, {}).success).toBe(false);
+    const prototypeNamed = JSON.parse('{"type":"object","properties":{"__proto__":{"type":"number"}}}');
+    expect(() => schema(prototypeNamed)).toThrow("Unsupported property name __proto__");
   });
   it("keeps optional members optional and tolerates undeclared members", () => {
     const value = schema({
