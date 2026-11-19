@@ -294,19 +294,32 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
 const joinOptions = (name: string, options: ReadonlyArray<string>) =>
   options.map((option) => `${name}=${option}`).join("&");
 
+const sameValues = (a: ReadonlyArray<string>, b: ReadonlyArray<string>) =>
+  a.length === b.length && a.every((value, i) => value === b[i]);
+
 const isStored = (values: ReadonlyArray<string>, stored: StoredList | undefined): stored is StoredList =>
-  stored !== undefined &&
-  stored.values.length === values.length &&
-  stored.values.every((value, i) => value === values[i]);
+  stored !== undefined && sameValues(stored.values, values);
 
 /** The stored text while the list is as it was read, so untouched legacy data is not rewritten. */
 const writeOptions = (name: string, options: ReadonlyArray<string>, stored: StoredList | undefined) =>
   isStored(options, stored) ? stored.text : joinOptions(name, options);
 
 /**
+ * A default as the new options offer it, or null if they do not. A stored
+ * default is read the way its options were, so `Y=1` beside the stored option
+ * `fieldRadios=Y=1`, which reads as `Y`, is `Y`.
+ */
+function offeredDefault(options: ReadonlyArray<string>, value: string): string | null {
+  if (options.includes(value)) return value;
+  const parsed = parseElnChoiceValues(`default=${value}`)[0];
+  return parsed !== undefined && options.includes(parsed) ? parsed : null;
+}
+
+/**
  * Defaults go back as stored only beside options that go back as stored. Once
- * the options are written anew, so are the defaults, keeping only those the
- * new options offer: stored default text may name values its options do not.
+ * the options are written anew, so are the defaults, read as the options are
+ * and kept only if the new options offer them: stored default text may name
+ * values its options do not.
  */
 function writeDefaults<D>(
   field: { options: ReadonlyArray<string>; stored?: { options: StoredList } },
@@ -339,7 +352,7 @@ function source(field: EditorField): Record<string, string | boolean> {
         radioSelected: writeDefaults(
           field,
           () => field.defaultValue,
-          (options) => (options.includes(field.defaultValue) ? field.defaultValue : ""),
+          (options) => offeredDefault(options, field.defaultValue) ?? "",
         ),
         showAsPickList: field.showAsPickList,
         sortAlphabetic: field.sortAlphabetic,
@@ -356,7 +369,7 @@ function source(field: EditorField): Record<string, string | boolean> {
           (options) =>
             joinOptions(
               "fieldSelectedChoices",
-              field.defaults.filter((value) => options.includes(value)),
+              uniq(field.defaults.flatMap((value) => offeredDefault(options, value) ?? [])),
             ),
         ),
       };
@@ -437,18 +450,35 @@ export function problemsFor(field: EditorField, checks: FieldChecks): FieldProbl
 /**
  * The server's ids for fields saved while the author kept editing, and the
  * option and default text they were saved with, so that taking an edit back
- * sends what the server now holds; the newer edits stay.
+ * sends what the server now holds; the newer edits stay. A default the author
+ * has not changed since the save was sent becomes the default the server
+ * saved, which may differ: writing new options can rewrite or clear it.
+ *
+ * @param sent the fields as the save sent them
  */
 export function adoptSavedIds(
   current: ReadonlyArray<EditorField>,
   saved: ReadonlyArray<EditorField>,
+  sent: ReadonlyArray<EditorField>,
 ): Array<EditorField> {
   return current.map((field): EditorField => {
     const match = saved.find(({ key }) => key === field.key);
     if (!match) return field;
+    const before = sent.find(({ key }) => key === field.key);
     const ids = { id: match.id, canDelete: match.canDelete };
-    if (field.type === "Radio" && match.type === "Radio") return { ...field, ...ids, stored: match.stored };
-    if (field.type === "Choice" && match.type === "Choice") return { ...field, ...ids, stored: match.stored };
+    if (field.type === "Radio" && match.type === "Radio") {
+      const unchanged = before?.type === "Radio" && before.defaultValue === field.defaultValue;
+      return {
+        ...field,
+        ...ids,
+        stored: match.stored,
+        defaultValue: unchanged ? match.defaultValue : field.defaultValue,
+      };
+    }
+    if (field.type === "Choice" && match.type === "Choice") {
+      const unchanged = before?.type === "Choice" && sameValues(before.defaults, field.defaults);
+      return { ...field, ...ids, stored: match.stored, defaults: unchanged ? match.defaults : field.defaults };
+    }
     return { ...field, ...ids };
   });
 }
@@ -613,7 +643,9 @@ export function renameOption(
     const options = field.options.map((option, i) => (i === index ? value : option));
     // a blank option is never a default, so an unset default must not follow one being typed into
     const follows = !isBlankOption(old) && !options.includes(old);
-    return withOptionsChange(field, options, (selected) => (follows && selected === old ? value : selected));
+    // read as the options before the rename read it, so a stored `Y=1` that is option `Y` follows it
+    const isOld = (selected: string) => offeredDefault(field.options, selected) === old;
+    return withOptionsChange(field, options, (selected) => (follows && isOld(selected) ? value : selected));
   });
 }
 

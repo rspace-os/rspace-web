@@ -10,7 +10,7 @@ import {
 import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { UnparsableString } from "../../util/error";
 import type { URL as URLType } from "../../util/types";
@@ -68,6 +68,20 @@ export function clearRulesReading(field: Field | undefined): void {
   for (const dependent of field.dependentFields) dependent.setDisplayRule(null);
 }
 
+/** Why a template was not sent: a display condition is still unfinished. */
+export class DisplayConditionIncomplete extends Error {}
+
+/**
+ * Throws a DisplayConditionIncomplete with the reason the first of `fields`
+ * gives for not saving its display condition, so a template is never sent
+ * while a condition is unfinished.
+ */
+export function assertDisplayConditionsComplete(fields: ReadonlyArray<Field>): void {
+  allAreValid(fields.map((field) => field.validateDisplayCondition()))
+    .mapError(([first]) => new DisplayConditionIncomplete(first?.message))
+    .elseThrow();
+}
+
 export default class FieldModel implements Field {
   // @ts-expect-error Initialised by setAttributes
   id: Id;
@@ -98,6 +112,8 @@ export default class FieldModel implements Field {
   mandatory: boolean;
   error: boolean;
   linkEditInProgress: boolean = false;
+  /** Set by the template editor while this field's display condition is unfinished or invalid. */
+  displayConditionIncomplete: boolean = false;
   /** Link template fields: permitted DataCite relation types; empty = all allowed. */
   allowedRelationTypes: Array<string> = [];
   /** Link fields: the single link value, or null when unset. */
@@ -127,6 +143,7 @@ export default class FieldModel implements Field {
       mandatory: observable,
       error: observable,
       linkEditInProgress: observable,
+      displayConditionIncomplete: observable,
       allowedRelationTypes: observable,
       link: observable,
       fieldKey: observable,
@@ -140,6 +157,7 @@ export default class FieldModel implements Field {
       setEditing: action,
       setError: action,
       setLinkEditInProgress: action,
+      setDisplayConditionIncomplete: action,
       fieldType: computed,
       optionsAreUnique: computed,
       hasContent: computed,
@@ -259,6 +277,19 @@ export default class FieldModel implements Field {
     this.linkEditInProgress = value;
   }
 
+  setDisplayConditionIncomplete(value: boolean) {
+    this.displayConditionIncomplete = value;
+  }
+
+  validateDisplayCondition(): ValidationResult {
+    if (!this.displayConditionIncomplete) return IsValid();
+    return IsInvalid(
+      i18n.t("inventory:template.displayRules.conditionIncomplete", {
+        field: this.name || i18n.t("common:fieldEditor.card.unnamed"),
+      }),
+    );
+  }
+
   get fieldType(): FieldTypeSymbol {
     return apiStringToFieldType(this.type);
   }
@@ -348,6 +379,8 @@ export default class FieldModel implements Field {
   }
 
   validate(): ValidationResult {
+    const condition = this.validateDisplayCondition();
+    if (!condition.isOk) return condition;
     // a hidden field keeps its value but is not checked (RPD-339)
     if (this.owner.isFieldHidden?.(this)) return IsValid();
     if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");

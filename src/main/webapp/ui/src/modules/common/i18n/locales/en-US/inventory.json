@@ -2802,6 +2802,7 @@
       }
     },
     "displayRules": {
+      "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
       "confirmDeleteField": {
         "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
         "title": "Delete {field}?"

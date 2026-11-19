@@ -9,6 +9,7 @@ import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.FieldKeys;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -35,7 +36,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -548,7 +548,7 @@ public abstract class InventoryEntityField
     // safety net: template fields get their key when created, so this only covers a template
     // field that reaches the database some other way
     if (fieldKey == null && belongsToTemplate()) {
-      fieldKey = UUID.randomUUID().toString();
+      fieldKey = FieldKeys.newFieldKey();
     }
   }
 

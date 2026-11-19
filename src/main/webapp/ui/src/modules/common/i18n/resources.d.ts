@@ -972,11 +972,7 @@ export default interface Resources {
         "conditional": "Only when another field has certain values",
         "dependents": "Other fields depend on this field: {fields}",
         "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
-        "incomplete": "This condition is not applied until it has a field and any options it needs. Until then this field is always shown.",
-        "incompleteEdit": "This change is not applied until the condition has a field and any options it needs. Until then the saved condition stays as it was.",
-        "invalid": "This condition cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself.",
-        "invalidEdit": "This change cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself. Until it is fixed the saved condition stays as it was.",
-        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
+        "noOtherFields": "No other fields",
         "operator": {
           "hasNoValue": "has no value",
           "hasValue": "has a value",
@@ -986,8 +982,10 @@ export default interface Resources {
         "operatorLabel": "Condition",
         "sourceLabel": "Field",
         "sourceMissing": "The field this condition read no longer exists. Choose another field.",
+        "sourceRequired": "Choose a field.",
         "title": "Display this field when…",
         "valuesLabel": "Options",
+        "valuesRejected": "This condition cannot be applied. Choose fewer or shorter options.",
         "valuesRequired": "Choose at least one option."
       },
       "options": {
@@ -5140,6 +5138,7 @@ export default interface Resources {
         }
       },
       "displayRules": {
+        "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
         "confirmDeleteField": {
           "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
           "title": "Delete {field}?"
@@ -6076,6 +6075,7 @@ export default interface Resources {
         "missing": "No id to retrieve"
       },
       "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
+      "concurrentChangeRetry": "Another change was being saved at the same time, so nothing was saved. Try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -8732,6 +8732,7 @@ export default interface Resources {
           "deletingFieldBlock": "Deleting field...",
           "doneButton": "Done",
           "editButton": "Edit",
+          "fieldEditorUnavailable": "The fields of this form are not loaded, so they cannot be checked before the form is saved, updated or published. Reload the page and try again.",
           "fieldErrors": "Errors: {0}",
           "fieldNameMaxLength": "Field name maximum length is {0} characters",
           "fieldNamePicklist": "{0} (Picklist)",
@@ -11400,6 +11401,7 @@ export default interface Resources {
     },
     "formFieldEditor": {
       "addField": "Add field",
+      "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
       "confirm": {
         "abandon": "Abandon the changes to this form?",
         "abandonAction": "Abandon changes",
@@ -11412,6 +11414,7 @@ export default interface Resources {
       },
       "conflict": "Its fields were saved in another tab or window after this page loaded them, so nothing was saved from this page. Reload to see the latest fields, then make your changes again.",
       "conflictTitle": "This form was changed elsewhere.",
+      "conflictUnsaved": "The changes you made on this page that were not saved will be lost when you reload.",
       "errorTitle": "The fields were not saved.",
       "firstProblem": "The first is in {field}.",
       "heading": "Fields",

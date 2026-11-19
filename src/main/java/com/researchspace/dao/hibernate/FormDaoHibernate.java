@@ -652,6 +652,26 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
   }
 
   @Override
+  public boolean lockFieldsRevision(Long formId, long expectedRevision) {
+    try {
+      Long revision =
+          getSession()
+              .createNativeQuery(
+                  "select fieldsRevision from RSForm where id = :id for update", Long.class)
+              .setParameter("id", formId)
+              .addSynchronizedQuerySpace(FIELDS_REVISION_SPACE)
+              .uniqueResult();
+      return revision != null && revision == expectedRevision;
+    } catch (JDBCException e) {
+      if (e.getErrorCode() != RECORD_CHANGED_SINCE_LAST_READ) {
+        throw e;
+      }
+      log.warn("The fields of form {} changed after this action first read the database", formId);
+      return false;
+    }
+  }
+
+  @Override
   public void advanceFieldsRevision(Long formId) {
     getSession()
         .createNativeQuery("update RSForm set fieldsRevision = fieldsRevision + 1 where id = :id")

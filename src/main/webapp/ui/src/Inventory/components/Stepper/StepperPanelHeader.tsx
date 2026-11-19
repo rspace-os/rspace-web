@@ -25,23 +25,25 @@ export function useFormSectionError({
   editing: boolean;
   globalId: GlobalId | null;
 }): FormSectionError {
-  const [errors, setErrors] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
+  const [session, setSession] = useState({ editing, globalId });
+  // reset while rendering, so the errors that fields report as they mount for the new session are kept
+  if (session.editing !== editing || session.globalId !== globalId) {
+    setSession({ editing, globalId });
     setErrors(new Set());
-  }, [editing, globalId]);
+  }
 
   return [errors, setErrors];
 }
 
-export function setFormSectionError([errors, setErrors]: FormSectionError, error: string, value: boolean): void {
-  if (value) {
-    errors.add(error);
-    setErrors(errors);
-  } else {
-    errors.delete(error);
-    setErrors(errors);
-  }
+export function setFormSectionError([, setErrors]: FormSectionError, error: string, value: boolean): void {
+  setErrors((errors) => {
+    if (errors.has(error) === value) return errors;
+    const next = new Set(errors);
+    if (value) next.add(error);
+    else next.delete(error);
+    return next;
+  });
 }
 
 type StepperPanelHeaderArgs = {

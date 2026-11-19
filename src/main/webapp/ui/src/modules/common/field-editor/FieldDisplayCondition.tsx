@@ -1,8 +1,6 @@
-import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
@@ -10,7 +8,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useEffect, useEffectEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -43,6 +41,19 @@ type FieldDisplayConditionProps = {
   fields: ReadonlyArray<RuleEditorField>;
   /** Stores a new rule for this field; null means the field is always shown. */
   onChange: (rule: FieldDisplayRule | null) => void;
+  /**
+   * Told when the condition starts or stops showing names of fields it could
+   * read besides its rule's source: while it has a draft, or its field menu is
+   * open. A host that re-renders a condition only when names it shows change
+   * then knows when to include those names.
+   */
+  onShowsSourcesChange?: (fieldKey: string, shows: boolean) => void;
+  /**
+   * Called with true when this field's condition can no longer be applied as
+   * shown, and with false once it can again, the author chooses "Always", or
+   * the component unmounts. Hosts block saving while any field reports true.
+   */
+  onIncompleteChange?: (incomplete: boolean) => void;
   editable: boolean;
 };
 
@@ -64,12 +75,22 @@ const ALWAYS = "always";
 const CONDITIONAL = "conditional";
 
 /**
+ * A condition not applied, and whether the shared validator refused it when it
+ * was kept. That is decided once, not on every render, so a refused draft keeps
+ * saying so until the author touches it, even if later edits elsewhere would
+ * now let it apply.
+ */
+type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
+
+/**
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
  * edit mode the author picks "Always" or a condition on another radio or
  * choice field; only fields that would not end up depending on this one are
- * offered. A condition is applied once it is complete and the shared validator
- * accepts it. Until then it is a draft in this field only, and the field keeps
- * the rule it had. Either mode notes which fields depend on this one.
+ * offered; with none, the field menu says so. A condition is applied once it is
+ * complete and the shared validator accepts it. Until then it is a draft in
+ * this field only, the field keeps the rule it had, the controls show what is
+ * missing, and `onIncompleteChange` tells the host to refuse saving. Either
+ * mode notes which fields depend on this one.
  *
  * Names are read only for the fields on screen: the chosen source, the
  * dependents, and the candidates while the menu is open. A MobX host can wrap
@@ -78,19 +99,21 @@ const CONDITIONAL = "conditional";
  * Choosing "Always" clears the rule, but the condition is remembered: going
  * back to "Only when…" restores it, and applies it again if it is still valid.
  *
- * A draft lives as long as the component, so it survives a spell of
- * read-only, such as a save that fails. Hosts give the component a new key
- * (for example the record and its edit state) to start a new edit session.
+ * A draft lives as long as the component, and hosts refuse to save while one
+ * exists. Hosts give the component a new key (for example the record and its
+ * edit state) to start a new edit session.
  */
 export default function FieldDisplayCondition({
   fieldKey,
   fields,
   onChange,
+  onShowsSourcesChange,
+  onIncompleteChange,
   editable,
 }: FieldDisplayConditionProps): ReactNode {
   const { t, i18n } = useTranslation("common");
   const id = useId();
-  const [draft, setDraft] = useState<DraftCondition | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
   /**
    * What "Always" set aside, restored by "Only when…": the rule that was applied, and any
    * unfinished edit on top of it, so arrowing through the radios never loses a stored rule.
@@ -100,12 +123,31 @@ export default function FieldDisplayCondition({
     draft: DraftCondition | null;
   } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
+  const showsSources = editable && (draft !== null || sourceMenuOpen);
+  useEffect(() => {
+    if (!showsSources || !onShowsSourcesChange) return;
+    onShowsSourcesChange(fieldKey, true);
+    return () => onShowsSourcesChange(fieldKey, false);
+  }, [showsSources, onShowsSourcesChange, fieldKey]);
 
   const graph = ruleGraphFor(fields);
   const rule = graph.byKey.get(fieldKey)?.rule ?? null;
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
+  const shown = draft?.condition ?? rule;
+  // read-only, the rule is only summarised, so the fields it may read are not worked out
+  const condition = editable && shown ? sanitiseCondition(graph, fieldKey, shown) : null;
+  // a stored rule whose field is gone cannot be saved as shown either
+  const incomplete = draft !== null || (condition !== null && ruleFromDraft(condition) === null);
+  const currentReporter = useEffectEvent(() => onIncompleteChange);
+  // another fieldKey is another field: the old one is cleared, by its own reporter, and the new one reported
+  useEffect(() => {
+    if (!incomplete) return;
+    const report = currentReporter();
+    report?.(true);
+    return () => report?.(false);
+  }, [incomplete, fieldKey]);
   const dependentsNote = dependents.length > 0 && (
     <Typography variant="body2" color="text.secondary">
       {t("fieldEditor.condition.dependents", {
@@ -130,38 +172,30 @@ export default function FieldDisplayCondition({
   }
 
   const sources = graph.sourcesFor(fieldKey);
-  if (draft !== null && rule === null && sources.length === 0) {
-    // with nothing left to read, a new condition can never be completed, so it is set aside like "Always" sets it aside
-    setRemembered({ applied: null, draft });
-    setDraft(null);
-  }
-  const shown = draft ?? rule;
-  const condition = shown ? sanitiseCondition(graph, fieldKey, shown) : null;
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
+  // complete, but the shared validator refused it: too many options, or too long to store
+  const rejected = draft?.rejected ?? false;
+
+  /** Whether the shared validator refuses `condition`, complete, as this field's rule. */
+  const isRejected = (condition: DraftCondition) => {
+    const candidate = ruleFromDraft(condition);
+    return candidate !== null && ruleIsInvalid(fields, fieldKey, candidate);
+  };
 
   /** Applies the condition when it makes a valid rule; keeps it as this field's draft otherwise. */
   const update = (edited: DraftCondition) => {
     // options the chosen source does not offer are dropped, rather than kept invisibly in the draft
     const next = sanitiseCondition(graph, fieldKey, edited);
     const nextRule = ruleFromDraft(next);
-    if (nextRule !== null && !ruleIsInvalid(fields, fieldKey, nextRule)) {
+    const nextRejected = isRejected(next);
+    if (nextRule !== null && !nextRejected) {
       setDraft(null);
       if (!sameDisplayRule(rule, nextRule)) onChange(nextRule);
       return;
     }
-    setDraft(next);
+    setDraft({ condition: next, rejected: nextRejected });
   };
-
-  const noSourcesId = `${id}-no-sources`;
-  const complete = condition !== null && ruleFromDraft(condition) !== null;
-  const draftMessage = rule
-    ? complete
-      ? t("fieldEditor.condition.invalidEdit")
-      : t("fieldEditor.condition.incompleteEdit")
-    : complete
-      ? t("fieldEditor.condition.invalid")
-      : t("fieldEditor.condition.incomplete");
 
   return (
     <FormControl component="fieldset" sx={{ minWidth: 0 }}>
@@ -172,7 +206,7 @@ export default function FieldDisplayCondition({
         value={condition ? CONDITIONAL : ALWAYS}
         onChange={({ target: { value } }) => {
           if (value === ALWAYS) {
-            setRemembered({ applied: rule, draft });
+            setRemembered({ applied: rule, draft: draft?.condition ?? null });
             setDraft(null);
             if (rule !== null) onChange(null);
             return;
@@ -182,7 +216,7 @@ export default function FieldDisplayCondition({
             // the stored rule comes back as it was, with any unfinished edit still pending on top
             onChange(applied);
             const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
-            setDraft(pending?.sourceFieldKey != null ? pending : null);
+            setDraft(pending?.sourceFieldKey != null ? { condition: pending, rejected: isRejected(pending) } : null);
             return;
           }
           // a saved rule that no longer validates as it was still comes back with whatever of it still applies
@@ -196,96 +230,92 @@ export default function FieldDisplayCondition({
         }}
       >
         <FormControlLabel value={ALWAYS} control={<Radio />} label={t("fieldEditor.condition.always")} />
-        <FormControlLabel
-          value={CONDITIONAL}
-          control={
-            <Radio slotProps={{ input: { "aria-describedby": sources.length === 0 ? noSourcesId : undefined } }} />
-          }
-          label={t("fieldEditor.condition.conditional")}
-          disabled={sources.length === 0 && condition === null}
-        />
+        <FormControlLabel value={CONDITIONAL} control={<Radio />} label={t("fieldEditor.condition.conditional")} />
       </RadioGroup>
-      {sources.length === 0 && (
-        <FormHelperText id={noSourcesId} sx={{ mx: 0 }}>
-          {t("fieldEditor.condition.noSources")}
-        </FormHelperText>
-      )}
       {condition && (
-        <Stack spacing={1.5} sx={{ mt: 1 }}>
-          {/* wraps by the card's own width, which in a side panel is much narrower than the window */}
-          <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "flex-start", flexWrap: "wrap" }}>
-            <TextField
-              select
-              size="small"
-              id={`${id}-source`}
-              label={t("fieldEditor.condition.sourceLabel")}
-              value={source?.key ?? ""}
-              error={sourceDropped}
-              helperText={
-                sourceDropped
-                  ? t("fieldEditor.condition.sourceMissing")
-                  : source && isBelow(source)
-                    ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
-                    : undefined
-              }
-              onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
-              slotProps={{
-                select: {
-                  open: sourceMenuOpen,
-                  onOpen: () => setSourceMenuOpen(true),
-                  onClose: () => setSourceMenuOpen(false),
-                },
-              }}
-              sx={{ flex: "1 1 200px" }}
-            >
-              {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
-              {(sourceMenuOpen ? sources : source ? [source] : []).map((candidate) => (
-                <MenuItem key={candidate.key} value={candidate.key}>
-                  {nameOf(candidate)}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              id={`${id}-operator`}
-              label={t("fieldEditor.condition.operatorLabel")}
-              value={condition.operator}
-              onChange={({ target: { value } }) =>
-                update({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
-              }
-              sx={{ flex: "1 1 160px" }}
-            >
-              {CONDITION_OPERATORS.map((operator) => (
-                <MenuItem key={operator} value={operator}>
-                  <OperatorLabel operator={operator} />
-                </MenuItem>
-              ))}
-            </TextField>
-            {operatorRequiresValues(condition.operator) && (
-              <Autocomplete
-                multiple
-                size="small"
-                id={`${id}-values`}
-                options={[...(source?.options ?? [])]}
-                value={[...condition.values]}
-                onChange={(_event, values) => update({ ...condition, values })}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t("fieldEditor.condition.valuesLabel")}
-                    error={condition.values.length === 0}
-                    helperText={condition.values.length === 0 ? t("fieldEditor.condition.valuesRequired") : undefined}
-                  />
-                )}
-                sx={{ flex: "2 1 200px" }}
-              />
+        // wraps by the card's own width, which in a side panel is much narrower than the window
+        <Stack direction="row" spacing={1.5} useFlexGap sx={{ mt: 1, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <TextField
+            select
+            size="small"
+            id={`${id}-source`}
+            label={t("fieldEditor.condition.sourceLabel")}
+            value={source?.key ?? ""}
+            error={source === null}
+            helperText={
+              source === null
+                ? // MenuList skips a disabled item, so the helper text is what says there is nothing to choose
+                  sources.length === 0
+                  ? t("fieldEditor.condition.noOtherFields")
+                  : sourceDropped
+                    ? t("fieldEditor.condition.sourceMissing")
+                    : t("fieldEditor.condition.sourceRequired")
+                : isBelow(source)
+                  ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
+                  : undefined
+            }
+            onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
+            slotProps={{
+              select: {
+                open: sourceMenuOpen,
+                onOpen: () => setSourceMenuOpen(true),
+                onClose: () => setSourceMenuOpen(false),
+              },
+            }}
+            sx={{ flex: "1 1 200px" }}
+          >
+            {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
+            {(sourceMenuOpen ? sources : source ? [source] : []).map((candidate) => (
+              <MenuItem key={candidate.key} value={candidate.key}>
+                {nameOf(candidate)}
+              </MenuItem>
+            ))}
+            {/* no value, so the select does not take it for the chosen field */}
+            {sourceMenuOpen && sources.length === 0 && (
+              <MenuItem disabled>{t("fieldEditor.condition.noOtherFields")}</MenuItem>
             )}
-          </Stack>
-          {draft !== null && (
-            <Alert severity="warning" variant="outlined">
-              {draftMessage}
-            </Alert>
+          </TextField>
+          <TextField
+            select
+            size="small"
+            id={`${id}-operator`}
+            label={t("fieldEditor.condition.operatorLabel")}
+            value={condition.operator}
+            onChange={({ target: { value } }) =>
+              update({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
+            }
+            sx={{ flex: "1 1 160px" }}
+          >
+            {CONDITION_OPERATORS.map((operator) => (
+              <MenuItem key={operator} value={operator}>
+                <OperatorLabel operator={operator} />
+              </MenuItem>
+            ))}
+          </TextField>
+          {operatorRequiresValues(condition.operator) && (
+            <Autocomplete
+              multiple
+              size="small"
+              id={`${id}-values`}
+              options={[...(source?.options ?? [])]}
+              value={[...condition.values]}
+              onChange={(_event, values) => update({ ...condition, values })}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t("fieldEditor.condition.valuesLabel")}
+                  error={condition.values.length === 0 || rejected}
+                  helperText={
+                    condition.values.length === 0
+                      ? t("fieldEditor.condition.valuesRequired")
+                      : rejected
+                        ? t("fieldEditor.condition.valuesRejected")
+                        : undefined
+                  }
+                />
+              )}
+              sx={{ flex: "2 1 200px" }}
+            />
           )}
         </Stack>
       )}
