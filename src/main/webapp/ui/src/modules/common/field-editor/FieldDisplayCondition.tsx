@@ -1,8 +1,6 @@
-import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
@@ -10,7 +8,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useEffect, useEffectEvent, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -43,6 +41,12 @@ type FieldDisplayConditionProps = {
   fields: ReadonlyArray<RuleEditorField>;
   /** Stores a new rule for this field; null means the field is always shown. */
   onChange: (rule: FieldDisplayRule | null) => void;
+  /**
+   * Called with true when this field's condition can no longer be applied as
+   * shown, and with false once it can again, the author chooses "Always", or
+   * the component unmounts. Hosts block saving while any field reports true.
+   */
+  onIncompleteChange?: (incomplete: boolean) => void;
   editable: boolean;
 };
 
@@ -67,9 +71,11 @@ const CONDITIONAL = "conditional";
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
  * edit mode the author picks "Always" or a condition on another radio or
  * choice field; only fields that would not end up depending on this one are
- * offered. A condition is applied once it is complete and the shared validator
- * accepts it. Until then it is a draft in this field only, and the field keeps
- * the rule it had. Either mode notes which fields depend on this one.
+ * offered; with none, the field menu says so. A condition is applied once it is
+ * complete and the shared validator accepts it. Until then it is a draft in
+ * this field only, the field keeps the rule it had, the controls show what is
+ * missing, and `onIncompleteChange` tells the host to refuse saving. Either
+ * mode notes which fields depend on this one.
  *
  * Names are read only for the fields on screen: the chosen source, the
  * dependents, and the candidates while the menu is open. A MobX host can wrap
@@ -86,6 +92,7 @@ export default function FieldDisplayCondition({
   fieldKey,
   fields,
   onChange,
+  onIncompleteChange,
   editable,
 }: FieldDisplayConditionProps): ReactNode {
   const { t, i18n } = useTranslation("common");
@@ -106,6 +113,17 @@ export default function FieldDisplayCondition({
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
+  const shown = draft ?? rule;
+  // read-only, the rule is only summarised, so the fields it may read are not worked out
+  const condition = editable && shown ? sanitiseCondition(graph, fieldKey, shown) : null;
+  // a stored rule whose field is gone cannot be saved as shown either
+  const incomplete = draft !== null || (condition !== null && ruleFromDraft(condition) === null);
+  const reportIncomplete = useEffectEvent((value: boolean) => onIncompleteChange?.(value));
+  useEffect(() => {
+    if (!incomplete) return;
+    reportIncomplete(true);
+    return () => reportIncomplete(false);
+  }, [incomplete]);
   const dependentsNote = dependents.length > 0 && (
     <Typography variant="body2" color="text.secondary">
       {t("fieldEditor.condition.dependents", {
@@ -130,13 +148,6 @@ export default function FieldDisplayCondition({
   }
 
   const sources = graph.sourcesFor(fieldKey);
-  if (draft !== null && rule === null && sources.length === 0) {
-    // with nothing left to read, a new condition can never be completed, so it is set aside like "Always" sets it aside
-    setRemembered({ applied: null, draft });
-    setDraft(null);
-  }
-  const shown = draft ?? rule;
-  const condition = shown ? sanitiseCondition(graph, fieldKey, shown) : null;
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
 
@@ -152,16 +163,6 @@ export default function FieldDisplayCondition({
     }
     setDraft(next);
   };
-
-  const noSourcesId = `${id}-no-sources`;
-  const complete = condition !== null && ruleFromDraft(condition) !== null;
-  const draftMessage = rule
-    ? complete
-      ? t("fieldEditor.condition.invalidEdit")
-      : t("fieldEditor.condition.incompleteEdit")
-    : complete
-      ? t("fieldEditor.condition.invalid")
-      : t("fieldEditor.condition.incomplete");
 
   return (
     <FormControl component="fieldset" sx={{ minWidth: 0 }}>
@@ -196,96 +197,83 @@ export default function FieldDisplayCondition({
         }}
       >
         <FormControlLabel value={ALWAYS} control={<Radio />} label={t("fieldEditor.condition.always")} />
-        <FormControlLabel
-          value={CONDITIONAL}
-          control={
-            <Radio slotProps={{ input: { "aria-describedby": sources.length === 0 ? noSourcesId : undefined } }} />
-          }
-          label={t("fieldEditor.condition.conditional")}
-          disabled={sources.length === 0 && condition === null}
-        />
+        <FormControlLabel value={CONDITIONAL} control={<Radio />} label={t("fieldEditor.condition.conditional")} />
       </RadioGroup>
-      {sources.length === 0 && (
-        <FormHelperText id={noSourcesId} sx={{ mx: 0 }}>
-          {t("fieldEditor.condition.noSources")}
-        </FormHelperText>
-      )}
       {condition && (
-        <Stack spacing={1.5} sx={{ mt: 1 }}>
-          {/* wraps by the card's own width, which in a side panel is much narrower than the window */}
-          <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "flex-start", flexWrap: "wrap" }}>
-            <TextField
-              select
-              size="small"
-              id={`${id}-source`}
-              label={t("fieldEditor.condition.sourceLabel")}
-              value={source?.key ?? ""}
-              error={sourceDropped}
-              helperText={
-                sourceDropped
-                  ? t("fieldEditor.condition.sourceMissing")
-                  : source && isBelow(source)
+        // wraps by the card's own width, which in a side panel is much narrower than the window
+        <Stack direction="row" spacing={1.5} useFlexGap sx={{ mt: 1, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <TextField
+            select
+            size="small"
+            id={`${id}-source`}
+            label={t("fieldEditor.condition.sourceLabel")}
+            value={source?.key ?? ""}
+            error={source === null}
+            helperText={
+              sourceDropped
+                ? t("fieldEditor.condition.sourceMissing")
+                : source === null
+                  ? t("fieldEditor.condition.sourceRequired")
+                  : isBelow(source)
                     ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
                     : undefined
-              }
-              onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
-              slotProps={{
-                select: {
-                  open: sourceMenuOpen,
-                  onOpen: () => setSourceMenuOpen(true),
-                  onClose: () => setSourceMenuOpen(false),
-                },
-              }}
-              sx={{ flex: "1 1 200px" }}
-            >
-              {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
-              {(sourceMenuOpen ? sources : source ? [source] : []).map((candidate) => (
-                <MenuItem key={candidate.key} value={candidate.key}>
-                  {nameOf(candidate)}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              id={`${id}-operator`}
-              label={t("fieldEditor.condition.operatorLabel")}
-              value={condition.operator}
-              onChange={({ target: { value } }) =>
-                update({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
-              }
-              sx={{ flex: "1 1 160px" }}
-            >
-              {CONDITION_OPERATORS.map((operator) => (
-                <MenuItem key={operator} value={operator}>
-                  <OperatorLabel operator={operator} />
-                </MenuItem>
-              ))}
-            </TextField>
-            {operatorRequiresValues(condition.operator) && (
-              <Autocomplete
-                multiple
-                size="small"
-                id={`${id}-values`}
-                options={[...(source?.options ?? [])]}
-                value={[...condition.values]}
-                onChange={(_event, values) => update({ ...condition, values })}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={t("fieldEditor.condition.valuesLabel")}
-                    error={condition.values.length === 0}
-                    helperText={condition.values.length === 0 ? t("fieldEditor.condition.valuesRequired") : undefined}
-                  />
-                )}
-                sx={{ flex: "2 1 200px" }}
-              />
+            }
+            onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
+            slotProps={{
+              select: {
+                open: sourceMenuOpen,
+                onOpen: () => setSourceMenuOpen(true),
+                onClose: () => setSourceMenuOpen(false),
+              },
+            }}
+            sx={{ flex: "1 1 200px" }}
+          >
+            {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
+            {(sourceMenuOpen ? sources : source ? [source] : []).map((candidate) => (
+              <MenuItem key={candidate.key} value={candidate.key}>
+                {nameOf(candidate)}
+              </MenuItem>
+            ))}
+            {/* no value, so the select does not take it for the chosen field */}
+            {sourceMenuOpen && sources.length === 0 && (
+              <MenuItem disabled>{t("fieldEditor.condition.noOtherFields")}</MenuItem>
             )}
-          </Stack>
-          {draft !== null && (
-            <Alert severity="warning" variant="outlined">
-              {draftMessage}
-            </Alert>
+          </TextField>
+          <TextField
+            select
+            size="small"
+            id={`${id}-operator`}
+            label={t("fieldEditor.condition.operatorLabel")}
+            value={condition.operator}
+            onChange={({ target: { value } }) =>
+              update({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
+            }
+            sx={{ flex: "1 1 160px" }}
+          >
+            {CONDITION_OPERATORS.map((operator) => (
+              <MenuItem key={operator} value={operator}>
+                <OperatorLabel operator={operator} />
+              </MenuItem>
+            ))}
+          </TextField>
+          {operatorRequiresValues(condition.operator) && (
+            <Autocomplete
+              multiple
+              size="small"
+              id={`${id}-values`}
+              options={[...(source?.options ?? [])]}
+              value={[...condition.values]}
+              onChange={(_event, values) => update({ ...condition, values })}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t("fieldEditor.condition.valuesLabel")}
+                  error={condition.values.length === 0}
+                  helperText={condition.values.length === 0 ? t("fieldEditor.condition.valuesRequired") : undefined}
+                />
+              )}
+              sx={{ flex: "2 1 200px" }}
+            />
           )}
         </Stack>
       )}

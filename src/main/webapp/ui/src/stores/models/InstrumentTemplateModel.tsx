@@ -7,6 +7,7 @@ import type { _LINK } from "@/util/types";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { allAreValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
 import { mkAlert } from "../contexts/Alert";
@@ -226,6 +227,11 @@ export default class InstrumentTemplateModel
 
   get fieldNamesInUse(): Array<string> {
     return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
+  }
+
+  /** Instrument template fields are not validated client-side, apart from an unfinished display condition. */
+  validate(): ValidationResult {
+    return super.validate().flatMap(() => allAreValid(this.fields.map((field) => field.validateDisplayCondition())));
   }
 
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {

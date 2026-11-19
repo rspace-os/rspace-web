@@ -14,6 +14,7 @@ import type TemplateModel from "@/stores/models/TemplateModel";
 import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "@/stores/stores-context";
 import materialTheme from "@/theme";
+import StepperActions from "../../../components/Stepper/StepperActions";
 import InstrumentTemplateFields from "../../../InstrumentTemplate/Fields/CustomFields";
 import CustomFields from "../CustomFields";
 
@@ -83,20 +84,23 @@ const newGmoTemplate = () => {
   return template;
 };
 
+/** Renders the template's fields with the form's Save button. */
 function renderEditor(template: TemplateModel, confirm = vi.fn(() => Promise.resolve(true))) {
   template.currentlyEditableFields.add("fields");
   const rootStore = makeMockRootStore({
     searchStore: { activeResult: template },
     uiStore: { isLarge: true, confirm, addAlert: () => {} },
   });
+  const onErrorStateChange = vi.fn();
   const view = render(
     <ThemeProvider theme={materialTheme}>
       <storesContext.Provider value={rootStore}>
-        <CustomFields onErrorStateChange={() => {}} />
+        <CustomFields onErrorStateChange={onErrorStateChange} />
+        <StepperActions onSubmit={() => {}} />
       </storesContext.Provider>
     </ThemeProvider>,
   );
-  return { ...view, confirm };
+  return { ...view, confirm, onErrorStateChange };
 }
 
 const fieldCard = (name: string) => screen.getByRole("region", { name });
@@ -262,16 +266,41 @@ describe("Template display conditions", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
-  it("keeps the saved rule while an edit leaves it incomplete, so the save leaves it as it is", async () => {
+  it("keeps the saved rule while an edit leaves it incomplete", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
     renderEditor(template);
 
     await clearOptions(user, "GMO permit");
 
-    expect(within(fieldCard("GMO permit")).getByText("common:fieldEditor.condition.incompleteEdit")).toBeVisible();
     expect(fieldAt(template, permit).displayRule).toEqual(createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]));
     expect(fieldAt(template, permit).paramsForBackend).not.toHaveProperty("displayRule");
+  });
+
+  it("refuses to save while a condition is incomplete, until it is completed or set to Always", async () => {
+    const user = userEvent.setup();
+    const { onErrorStateChange } = renderEditor(savedGmoTemplate());
+    const save = screen.getByRole("button", { name: "common:actions.save" });
+    const sectionError = `displayCondition:${PERMIT_KEY}`;
+    expect(save).toBeEnabled();
+
+    await clearOptions(user, "GMO permit");
+    expect(save).toBeDisabled();
+    expect(onErrorStateChange).toHaveBeenLastCalledWith(sectionError, true);
+
+    await user.click(within(fieldCard("GMO permit")).getByRole("combobox", { name: OPTIONS }));
+    await user.click(screen.getByRole("option", { name: "No" }));
+    await user.keyboard("{Escape}");
+    expect(save).toBeEnabled();
+    expect(onErrorStateChange).toHaveBeenLastCalledWith(sectionError, false);
+
+    await clearOptions(user, "GMO permit");
+    expect(save).toBeDisabled();
+    await user.click(
+      within(fieldCard("GMO permit")).getByRole("radio", { name: "common:fieldEditor.condition.always" }),
+    );
+    expect(save).toBeEnabled();
+    expect(onErrorStateChange).toHaveBeenLastCalledWith(sectionError, false);
   });
 
   it("sends only the rules this edit changed, so a stale tab does not undo another author's change", async () => {
@@ -429,6 +458,17 @@ async function deleteField(user: ReturnType<typeof userEvent.setup>, name: strin
 }
 
 describe("Deleting fields while editing display rules", () => {
+  it("lets the template be saved once a field with an incomplete condition is deleted", async () => {
+    const user = userEvent.setup();
+    renderEditor(savedGmoTemplate());
+    await clearOptions(user, "GMO permit");
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
+
+    await deleteField(user, "GMO permit");
+
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeEnabled();
+  });
+
   it("deletes a saved dependent without asking, leaving its source alone and removing its rule", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
@@ -496,7 +536,7 @@ describe("Display condition drafts across saves and edit sessions", () => {
     if ((conditional as HTMLInputElement).checked) await clearOptions(user, "GMO permit");
     else await user.click(conditional);
   };
-  const draftCards = () => screen.queryAllByText(/^common:fieldEditor\.condition\.incomplete/);
+  const draftCards = () => screen.queryAllByText("common:fieldEditor.condition.valuesRequired");
 
   it("keeps drafts and incomplete edits when a save fails", async () => {
     const user = userEvent.setup();
@@ -519,7 +559,7 @@ describe("Display condition drafts across saves and edit sessions", () => {
 
     expect(update).toHaveBeenCalledOnce();
     expect(draftCards()).toHaveLength(1);
-    expect(screen.getByText("common:fieldEditor.condition.incompleteEdit")).toBeInTheDocument();
+    expect(template.submittable.isOk).toBe(false);
   });
 
   it("starts without drafts for another template, or after leaving and re-entering edit mode", async () => {
@@ -601,6 +641,30 @@ describe("Instrument template display conditions", () => {
     expect(
       within(fieldCard("Calibrated?")).getByRole("group", { name: "common:fieldEditor.condition.title" }),
     ).toBeInTheDocument();
+  });
+
+  it("refuses to save while a condition has no field to read", async () => {
+    const user = userEvent.setup();
+    const template = makeMockInstrumentTemplate();
+    template.currentlyEditableFields.add("fields");
+    template.addField(newField({ name: "Calibrated?", type: "radio", definition: { options: ["Yes"] } }));
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({
+            searchStore: { activeResult: template },
+            uiStore: { isLarge: true, confirm: vi.fn() },
+          })}
+        >
+          <InstrumentTemplateFields onErrorStateChange={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+    expect(template.submittable.isOk).toBe(true);
+
+    await user.click(within(fieldCard("Calibrated?")).getByRole("radio", { name: CONDITIONAL }));
+
+    expect(template.submittable.isOk).toBe(false);
   });
 
   it("moves focus to the name of a field when it is added", async () => {
