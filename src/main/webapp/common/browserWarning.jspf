@@ -1,0 +1,32 @@
+<spring:message code="signup.browserWarning.iconAlt" var="browserIconCredit"/>
+<div id="browser-warning" class="bootstrap-custom-flat">
+  <h4><spring:message code="signup.browserWarning.heading"/></h4>
+  <p><spring:message code="signup.browserWarning.notice1"/></p>
+  <p><spring:message code="signup.browserWarning.notice2"/></p>
+  <div class="row">
+    <div class="col-md-3 text-center">
+      <a class="browser-container" href="https://www.google.co.uk/chrome/" target="_blank" rel="noreferrer">
+        <img src="/images/icons/chrome-icon.png" alt="" title="${browserIconCredit}" aria-hidden="true"><br />
+        <spring:message code="signup.browserWarning.chrome"/>
+      </a>
+    </div>
+    <div class="col-md-3 text-center">
+      <a class="browser-container" href="https://www.mozilla.org/en-GB/firefox/" target="_blank" rel="noreferrer">
+        <img src="/images/icons/firefox-icon.png" alt="" title="${browserIconCredit}" aria-hidden="true"><br />
+        <spring:message code="signup.browserWarning.firefox"/>
+      </a>
+    </div>
+    <div class="col-md-3 text-center">
+      <a class="browser-container" href="https://www.apple.com/uk/safari/" target="_blank" rel="noreferrer">
+        <img src="/images/icons/safari-icon.png" alt="" title="${browserIconCredit}" aria-hidden="true"><br />
+        <spring:message code="signup.browserWarning.safari"/>
+      </a>
+    </div>
+    <div class="col-md-3 text-center">
+      <a class="browser-container" href="https://www.microsoft.com/en-us/edge/download" target="_blank" rel="noreferrer">
+        <img src="/images/download.png" width="64" height="64" alt=""><br />
+        <spring:message code="signup.browserWarning.edge"/>
+      </a>
+    </div>
+  </div>
+</div>

@@ -186,11 +186,12 @@
     "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please sign in now using the same method you just used to sign up.",
     "browserWarning": {
       "chrome": "Chrome",
+      "edge": "Microsoft Edge",
       "firefox": "Firefox",
       "heading": "Browser upgrade recommended to use RSpace",
       "iconAlt": "Icon by Martin Leblanc",
       "notice1": "It looks like you are using Internet Explorer or a legacy version of Microsoft Edge, which RSpace does not support. Some RSpace features will not work properly in these browsers.",
-      "notice2": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge. You can use the links below to install Chrome, Firefox or Safari if you do not already have one of them.",
+      "notice2": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge. Use the links below to get a supported browser.",
       "safari": "Safari"
     },
     "community": {
