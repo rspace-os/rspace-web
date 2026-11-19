@@ -1,4 +1,4 @@
-import type { Locator } from "@playwright/test";
+import type { FrameLocator, Locator } from "@playwright/test";
 import {
   FieldEditorDialogComponent,
   type FormFieldType,
@@ -51,6 +51,10 @@ export class CreateFormPage extends BasePage {
 
   fieldRow(name: string): Locator {
     return this.page.getByRole("row").filter({ has: this.page.getByText(name, { exact: false }) });
+  }
+
+  textFieldPreview(name: string): FrameLocator {
+    return this.fieldRow(name).locator("iframe").contentFrame();
   }
 
   fieldRowAt(index: number): Locator {
