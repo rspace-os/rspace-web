@@ -132,10 +132,12 @@ public class CsvImporterTemplateFieldMatchingTest {
         List.of(
             new String[] {"s1", "[\"Bio\",\"Chem\"]", "A"},
             new String[] {"s2", "Bio, Rad", "B"},
-            new String[] {"s3", "Chem", "[\"A\"]"});
+            new String[] {"s3", "Chem", "[\"A\"]"},
+            new String[] {"s4", "[]", "B"});
 
     sampleImporter.convertLinesToSamples(result, lines, Map.of(0, "name"), 3, user);
 
+    assertEquals(List.of(), sampleFields(result, 3).get(0).getSelectedOptions());
     assertEquals(List.of("Bio", "Chem"), sampleFields(result, 0).get(0).getSelectedOptions());
     assertEquals(List.of("A"), sampleFields(result, 0).get(1).getSelectedOptions());
     assertEquals(List.of("Bio", "Rad"), sampleFields(result, 1).get(0).getSelectedOptions());

@@ -66,10 +66,13 @@ public abstract class InventoryItemCsvImporter {
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
 
-  /** The exporter's template field header: {@code Name (TYPE)} or {@code Name (TYPE, IT<n>)}. */
   private static final ObjectReader STRICT_JSON_READER =
       new ObjectMapper().reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
+  /**
+   * The exporter's template field header: {@code Name (TYPE)}, or {@code Name (TYPE, IT<n>)} for
+   * sample templates and {@code Name (TYPE, NT<n>)} for instrument templates.
+   */
   private static final Pattern EXPORTED_FIELD_COLUMN_NAME =
       Pattern.compile(
           "^(.*?)\\s*\\(("
@@ -348,7 +351,7 @@ public abstract class InventoryItemCsvImporter {
   protected List<String> getSelectedOptionsFromCsvValue(
       String value, ApiInventoryEntityField templateField) {
     List<String> allowedOptions =
-        templateField.getDefinition() == null
+        templateField.getDefinition() == null || templateField.getDefinition().getOptions() == null
             ? List.of()
             : templateField.getDefinition().getOptions();
     if (allowedOptions.contains(value)) {
