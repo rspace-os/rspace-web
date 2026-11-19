@@ -35,6 +35,8 @@ export type FieldCardActions = {
   changeRule: (key: string, rule: FieldDisplayRule | null) => void;
   /** Whether the card's condition lists the fields it can read: while it has a draft or its field menu is open. */
   showSources: (key: string, shown: boolean) => void;
+  /** Whether the card's condition is unfinished or cannot be applied as shown, which blocks saving. */
+  markIncomplete: (key: string, incomplete: boolean) => void;
 };
 
 type ElnFieldCardProps = {
@@ -106,13 +108,17 @@ function ElnFieldCard({
         onDelete={() => actions.remove(key)}
         editable={editable}
         displayCondition={
-          <FieldDisplayCondition
-            fieldKey={key}
-            fields={ruleFields}
-            onChange={(rule) => actions.changeRule(key, rule)}
-            onShowsSourcesChange={actions.showSources}
-            editable={editable}
-          />
+          // the host looks here for an incomplete condition to focus
+          <Box data-field-condition>
+            <FieldDisplayCondition
+              fieldKey={key}
+              fields={ruleFields}
+              onChange={(rule) => actions.changeRule(key, rule)}
+              onShowsSourcesChange={actions.showSources}
+              onIncompleteChange={(incomplete) => actions.markIncomplete(key, incomplete)}
+              editable={editable}
+            />
+          </Box>
         }
       >
         {/* the host looks here, after the name, for the first problem to focus */}

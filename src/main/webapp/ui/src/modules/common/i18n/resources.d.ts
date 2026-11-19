@@ -11400,6 +11400,7 @@ export default interface Resources {
     },
     "formFieldEditor": {
       "addField": "Add field",
+      "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
       "confirm": {
         "abandon": "Abandon the changes to this form?",
         "abandonAction": "Abandon changes",

@@ -55,7 +55,8 @@ export type FieldEditorHandle = {
    * Saves the fields if they changed; if they did not, checks that they are
    * still the server's. Resolves with the version of the field list that the
    * server then holds, which the toolbar sends with the action it takes next.
-   * Rejects, leaving the editor dirty and showing why, if the save fails. Once
+   * Rejects, leaving the editor dirty and showing why, if the save fails, and
+   * without sending anything while a display condition is not filled out. Once
    * the fields have changed elsewhere, rejects every call until the page is
    * reloaded. A call while a save is in flight returns that save.
    */
@@ -83,10 +84,16 @@ export type ServerFields = { fields: ReadonlyArray<EditorField>; version: number
 export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
 export type FormFieldEditorChangeDetail = { dirty: boolean; fieldCount: number };
 
-type Status = { kind: "problems"; field: string } | { kind: "error"; messages: ReadonlyArray<string> } | null;
+type Status =
+  | { kind: "problems" | "incompleteCondition"; field: string }
+  | { kind: "error"; messages: ReadonlyArray<string> }
+  | null;
 
-/** Where focus goes after the next render: a field's name, its first invalid control, or "Add field". */
-type FocusTarget = { kind: "name" | "problem"; key: string } | { kind: "add" } | null;
+/**
+ * Where focus goes after the next render: a field's name, its first invalid control, its
+ * incomplete display condition, or "Add field".
+ */
+type FocusTarget = { kind: "name" | "problem" | "condition"; key: string } | { kind: "add" } | null;
 
 type FormFieldEditorProps = {
   initialFields: ReadonlyArray<EditorField>;
@@ -160,15 +167,18 @@ export default function FormFieldEditor({
   const [conflicted, setConflicted] = useState(false);
   const reloadRef = useRef<HTMLButtonElement>(null);
   const [sourcesShownBy, setSourcesShownBy] = useState<ReadonlySet<string>>(() => new Set());
+  // fields whose display condition is unfinished or cannot be applied as shown; none can be saved until fixed
+  const [incompleteKeys, setIncompleteKeys] = useState<ReadonlySet<string>>(() => new Set());
   const editable = editableForm && !published && !heldReadOnly && !conflicted;
   const listRef = useRef<HTMLDivElement>(null);
 
   const dirty = saveSignature(fields) !== baseline;
   const checks = fields.map((field) => checksFor(field, baselineItems));
   const firstInvalid = fields.find((field, i) => Object.keys(problemsFor(field, checks[i])).length > 0) ?? null;
+  const firstIncomplete = fields.find((field) => incompleteKeys.has(field.key)) ?? null;
   // the handle is called from legacy code at any time, so it reads the latest render
-  const latest = useRef({ fields, dirty, firstInvalid });
-  latest.current = { fields, dirty, firstInvalid };
+  const latest = useRef({ fields, dirty, firstInvalid, firstIncomplete });
+  latest.current = { fields, dirty, firstInvalid, firstIncomplete };
 
   const unnamed = t("common:fieldEditor.card.unnamed");
   const nameOf = (field: EditorField) => field.name || unnamed;
@@ -190,10 +200,16 @@ export default function FormFieldEditor({
     save: () => {
       if (conflict.current) return Promise.reject(conflict.current);
       if (saveInFlight.current) return saveInFlight.current;
-      const { fields: sent, dirty, firstInvalid: invalid } = latest.current;
+      const { fields: sent, dirty, firstInvalid: invalid, firstIncomplete: incomplete } = latest.current;
       if (dirty && invalid) {
         setStatus({ kind: "problems", field: nameOf(invalid) });
         setFocusTarget({ kind: "problem", key: invalid.key });
+        return Promise.reject(new FormFieldsSaveError([]));
+      }
+      // even with nothing to save, the toolbar must not act while a condition the author is setting is not applied
+      if (incomplete) {
+        setStatus({ kind: "incompleteCondition", field: nameOf(incomplete) });
+        setFocusTarget({ kind: "condition", key: incomplete.key });
         return Promise.reject(new FormFieldsSaveError([]));
       }
       const sentSignature = saveSignature(sent);
@@ -261,12 +277,22 @@ export default function FormFieldEditor({
     } else {
       const card = listRef.current?.querySelector(`[data-field-key="${focusTarget.key}"]`);
       const name = card?.querySelector<HTMLElement>('input[name="name"]');
+      const condition = card?.querySelector("[data-field-condition]");
       // a display condition still being drafted is not a problem with the field
       const invalid =
         name?.getAttribute("aria-invalid") === "true"
           ? name
           : card?.querySelector<HTMLElement>('[data-field-settings] [aria-invalid="true"]');
-      (focusTarget.kind === "problem" ? (invalid ?? name) : name)?.focus();
+      // its first marked control, or the chosen "Only when…" radio when nothing is marked
+      const unfinished =
+        condition?.querySelector<HTMLElement>('input[aria-invalid="true"]:not([aria-hidden="true"])') ??
+        condition?.querySelector<HTMLElement>('input[type="radio"]:checked');
+      (focusTarget.kind === "problem"
+        ? (invalid ?? name)
+        : focusTarget.kind === "condition"
+          ? (unfinished ?? name)
+          : name
+      )?.focus();
     }
     setFocusTarget(null);
   }, [focusTarget, editable]);
@@ -357,6 +383,14 @@ export default function FormFieldEditor({
         else next.delete(key);
         return next;
       }),
+    markIncomplete: (key, incomplete) =>
+      setIncompleteKeys((current) => {
+        if (current.has(key) === incomplete) return current;
+        const next = new Set(current);
+        if (incomplete) next.add(key);
+        else next.delete(key);
+        return next;
+      }),
   };
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
@@ -373,6 +407,7 @@ export default function FormFieldEditor({
       changeSettings: (...args) => handlersRef.current.changeSettings(...args),
       changeRule: (...args) => handlersRef.current.changeRule(...args),
       showSources: (...args) => handlersRef.current.showSources(...args),
+      markIncomplete: (...args) => handlersRef.current.markIncomplete(...args),
     }),
   );
 
@@ -426,10 +461,13 @@ export default function FormFieldEditor({
       {status !== null && !conflicted && (
         <Alert severity="error" role="alert" aria-labelledby={statusId} onClose={() => setStatus(null)}>
           <AlertTitle id={statusId}>
-            {status.kind === "problems" ? t("formFieldEditor.problemsTitle") : t("formFieldEditor.errorTitle")}
+            {status.kind === "error" ? t("formFieldEditor.errorTitle") : t("formFieldEditor.problemsTitle")}
           </AlertTitle>
           {status.kind === "problems" && (
             <Typography variant="body2">{t("formFieldEditor.firstProblem", { field: status.field })}</Typography>
+          )}
+          {status.kind === "incompleteCondition" && (
+            <Typography variant="body2">{t("formFieldEditor.conditionIncomplete", { field: status.field })}</Typography>
           )}
           {status.kind === "error" && (
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>

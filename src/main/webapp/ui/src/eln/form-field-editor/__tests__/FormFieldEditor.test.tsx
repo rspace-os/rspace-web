@@ -687,7 +687,8 @@ describe("FormFieldEditor", () => {
     const user = userEvent.setup();
     // written through the forms API, which does not check options the way the editor does
     const apiField = saved(3, "Radio", { name: "x".repeat(60), radioValues: "fieldRadios=a=b&fieldRadios=a=b" });
-    const posts = serveFields([apiField, permit]);
+    // without its rule, whose source is not among these fields
+    const posts = serveFields([apiField, { ...permit, displayRule: null }]);
     const { handle } = await renderEditor();
 
     await user.click(within(card("GMO permit")).getByRole("switch", { name: "Mandatory" }));
@@ -822,6 +823,63 @@ describe("FormFieldEditor", () => {
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
     expect(screen.getByText("Enter a name.")).toBeInTheDocument();
     expect(posts).toHaveLength(0);
+  });
+
+  describe("with a display condition that is not filled out", () => {
+    const target = saved(2, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" });
+
+    async function renderWithIncompleteCondition(user: ReturnType<typeof userEvent.setup>) {
+      const posts = serveFields([gmo, target]);
+      const rendered = await renderEditor();
+      // the condition reads the first radio field, but has no options yet
+      await user.click(
+        within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }),
+      );
+      return { posts, ...rendered };
+    }
+
+    it("refuses to save, says which field it is on, focuses it, and sends nothing", async () => {
+      const user = userEvent.setup();
+      const { posts, handle } = await renderWithIncompleteCondition(user);
+
+      await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+      const alert = screen.getByRole("alert", { name: "Fix the problems marked below, then save again." });
+      expect(
+        within(alert).getByText("Complete the display condition of Target, or choose Always, before saving."),
+      ).toBeVisible();
+      expect(within(card("Target")).getByRole("combobox", { name: "Options" })).toHaveFocus();
+      expect(posts).toHaveLength(0);
+    });
+
+    it.each([
+      ["once it is completed", "Yes", { sourceFieldKey: GMO, operator: "IS_ANY_OF", values: ["Yes"] }],
+      ["once it is set to Always", null, null],
+    ])("saves %s", async (_case, option, displayRule) => {
+      const user = userEvent.setup();
+      const { posts, handle } = await renderWithIncompleteCondition(user);
+
+      if (option) {
+        await user.click(within(card("Target")).getByRole("combobox", { name: "Options" }));
+        await user.click(screen.getByRole("option", { name: option }));
+      } else {
+        await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+      }
+      await act(() => expect(handle.current?.save()).resolves.toEqual(expect.any(Number)));
+
+      // Always leaves the fields as they were, so they are only checked
+      expect(posts.map((body) => body[1].displayRule)).toEqual(displayRule ? [displayRule] : []);
+    });
+
+    it("saves once the field it is on is deleted", async () => {
+      const user = userEvent.setup();
+      const { posts, handle } = await renderWithIncompleteCondition(user);
+
+      await user.click(screen.getByRole("button", { name: "Delete field Target" }));
+      await act(() => expect(handle.current?.save()).resolves.toEqual(expect.any(Number)));
+
+      expect(posts[0].map(({ fieldKey }) => fieldKey)).toEqual([GMO]);
+    });
   });
 
   it("stops editing once the toolbar has published the form, and says how to change it", async () => {
