@@ -14,7 +14,7 @@ import axios from "@/common/axios";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { isPublicDocumentView } from "@/modules/common/utils/auth";
 import BondStrengthsAction from "./bondStrengths/BondStrengthsAction";
-import type { BondStrengthsDocumentContent } from "./bondStrengths/insertIntoDocument";
+import type { BondStrengthsDocumentContent, BondStrengthsInsertOutcome } from "./bondStrengths/insertIntoDocument";
 
 type MetadataMap = Record<string, string>;
 
@@ -54,7 +54,10 @@ interface ChemCardProps {
   idx?: number;
   onClose?: (id: string | undefined) => void;
   /** Only the editor can change the document, so only the editor passes this. */
-  onInsertBondStrengths?: (id: string | undefined, content: BondStrengthsDocumentContent) => void | Promise<void>;
+  onInsertBondStrengths?: (
+    id: string | undefined,
+    content: BondStrengthsDocumentContent,
+  ) => Promise<BondStrengthsInsertOutcome>;
 }
 
 function renderFormattedFormula(formula?: string): React.ReactNode {

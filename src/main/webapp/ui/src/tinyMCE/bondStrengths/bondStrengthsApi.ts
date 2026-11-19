@@ -80,16 +80,18 @@ export function svgToPngDataUri(svg: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = DOCUMENT_PICTURE_WIDTH;
-      canvas.height = Math.round((DOCUMENT_PICTURE_WIDTH * image.naturalHeight) / image.naturalWidth);
-      const context = canvas.getContext("2d");
-      if (!context) {
-        reject(new Error("No 2D canvas is available"));
-        return;
+      // A throw in an event handler would leave the promise pending for ever.
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = DOCUMENT_PICTURE_WIDTH;
+        canvas.height = Math.round((DOCUMENT_PICTURE_WIDTH * image.naturalHeight) / image.naturalWidth);
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("No 2D canvas is available");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error("The picture could not be drawn"));
       }
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/png"));
     };
     image.onerror = () => reject(new Error("The picture could not be drawn"));
     image.src = svgDataUri(svg);

@@ -34,7 +34,7 @@ import {
   svgToPngDataUri,
   type UnsupportedBondStrengths,
 } from "./bondStrengthsApi";
-import type { BondStrengthsDocumentContent } from "./insertIntoDocument";
+import type { BondStrengthsDocumentContent, BondStrengthsInsertOutcome } from "./insertIntoDocument";
 
 type Translate = TFunction<["workspace", "common"]>;
 
@@ -51,7 +51,7 @@ type BondStrengthsDialogProps = {
   chemId: number;
   revision?: number;
   /** When given, the dialog offers to put the result into the document. */
-  onInsert?: (content: BondStrengthsDocumentContent) => void | Promise<void>;
+  onInsert?: (content: BondStrengthsDocumentContent) => Promise<BondStrengthsInsertOutcome>;
 };
 
 function structureNotSupportedText(t: Translate, result: UnsupportedBondStrengths): string {
@@ -400,6 +400,7 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
   const { data, isPending, isError } = useQuery(bondStrengthsQuery(chemId, revision));
   const supported = data?.supported ? data : null;
   const [inserting, setInserting] = useState(false);
+  const [insertProblem, setInsertProblem] = useState<"noPicture" | "failed" | null>(null);
   const rows = supported ? bondRows(t, language, supported.bonds) : [];
   const notes = supported ? noValueNotes(t, language, supported) : [];
 
@@ -414,6 +415,16 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
         )}
         {isError && <Alert severity="error">{t("tinymce.bondStrengths.dialog.error")}</Alert>}
         {data && !data.supported && <Alert severity="info">{structureNotSupportedText(t, data)}</Alert>}
+        {insertProblem === "noPicture" && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t("tinymce.bondStrengths.dialog.insertedWithoutPicture")}
+          </Alert>
+        )}
+        {insertProblem === "failed" && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {t("tinymce.bondStrengths.dialog.insertFailed")}
+          </Alert>
+        )}
         {supported && <SupportedResult result={supported} rows={rows} notes={notes} />}
       </DialogContent>
       <DialogActions>
@@ -425,13 +436,25 @@ function BondStrengthsResult({ onClose, chemId, revision, onInsert }: Omit<BondS
             loading={inserting}
             onClick={() => {
               setInserting(true);
+              setInsertProblem(null);
               // Without a picture the table still goes in.
               const picture = supported.imageSvg
                 ? svgToPngDataUri(supported.imageSvg).catch(() => null)
                 : Promise.resolve(null);
               void picture
                 .then((imageSrc) => onInsert(documentContent(t, language, supported, rows, imageSrc, chemId)))
-                .finally(onClose);
+                .then((outcome) => {
+                  if (supported.imageSvg && outcome === "insertedWithoutPicture") {
+                    setInsertProblem("noPicture");
+                  } else {
+                    onClose();
+                  }
+                })
+                .catch((error: unknown) => {
+                  console.warn("The bond strengths could not be inserted", error);
+                  setInsertProblem("failed");
+                })
+                .finally(() => setInserting(false));
             }}
           >
             {t("tinymce.bondStrengths.dialog.insert")}

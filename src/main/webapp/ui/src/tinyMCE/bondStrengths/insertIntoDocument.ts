@@ -18,6 +18,8 @@ export type BondStrengthsDocumentContent = {
   notes: ReadonlyArray<string>;
 };
 
+export type BondStrengthsInsertOutcome = "inserted" | "insertedWithoutPicture";
+
 function element<K extends keyof HTMLElementTagNameMap>(
   doc: Document,
   tagName: K,
@@ -64,6 +66,8 @@ const RESULT_ATTRIBUTE = "data-bond-strengths-for";
  * result straight after the structure whose chemical is no longer in the document, when that
  * structure is the only one in its block: import and copy give the structure a new id but keep
  * the old result.
+ * The result cannot be edited in place, because the next insert replaces it whole and would take
+ * anything typed inside it along. When it ends the field, an empty line follows to keep writing on.
  * `pictureHtml` is the editor markup for the picture once it is stored in the Gallery.
  */
 export function insertBondStrengthsAfter(
@@ -86,6 +90,8 @@ export function insertBondStrengthsAfter(
 
   const result = element(doc, "div");
   result.setAttribute(RESULT_ATTRIBUTE, content.forChemicalId);
+  result.className = "mceNonEditable";
+  result.setAttribute("contenteditable", "false");
   result.append(...nodes);
 
   let block: Element = chemImage;
@@ -111,7 +117,14 @@ export function insertBondStrengthsAfter(
   if (earlier.length > 0) {
     earlier[0].replaceWith(result);
     for (const duplicate of earlier.slice(1)) duplicate.remove();
-    return;
+  } else {
+    block.after(result);
   }
-  block.after(result);
+  if (!result.nextElementSibling) {
+    const emptyLine = element(doc, "p");
+    const placeholder = element(doc, "br");
+    placeholder.setAttribute("data-mce-bogus", "1");
+    emptyLine.append(placeholder);
+    result.after(emptyLine);
+  }
 }

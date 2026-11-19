@@ -437,6 +437,10 @@ img.commentIcon {
   font-size: 12px;
 }
 
+div[data-bond-strengths-for].mceNonEditable {
+  font-size: inherit;
+}
+
 .imageViewModePanel {
   display: inline-flex;
   flex-direction: column;

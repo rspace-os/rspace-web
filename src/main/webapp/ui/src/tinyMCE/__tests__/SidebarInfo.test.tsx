@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { galleryPictureHtml } from "../bondStrengths/galleryPicture";
 import type { BondStrengthsDocumentContent } from "../bondStrengths/insertIntoDocument";
 import SidebarInfo from "../SidebarInfo";
@@ -25,6 +26,9 @@ vi.mock("../bondStrengths/galleryPicture", () => ({
   galleryPictureHtml: vi.fn(() => Promise.resolve(galleryPicture)),
 }));
 
+const insertOutcome = vi.fn();
+const insertFailure = vi.fn();
+
 vi.mock("../ChemCard", () => ({
   default: ({
     item,
@@ -33,14 +37,17 @@ vi.mock("../ChemCard", () => ({
   }: {
     item: { id: string };
     onClose: (id?: string) => void;
-    onInsertBondStrengths: (id: string | undefined, content: BondStrengthsDocumentContent) => void;
+    onInsertBondStrengths: (id: string | undefined, content: BondStrengthsDocumentContent) => Promise<unknown>;
   }) => (
     <section aria-label={`Chemical ${item.id}`}>
       <span>{item.id}</span>
       <button onClick={() => onClose(item.id)} type="button">
         {"Close"}
       </button>
-      <button onClick={() => onInsertBondStrengths(item.id, bondStrengthsContent)} type="button">
+      <button
+        onClick={() => void onInsertBondStrengths(item.id, bondStrengthsContent).then(insertOutcome, insertFailure)}
+        type="button"
+      >
         {"Insert bond strengths"}
       </button>
     </section>
@@ -77,6 +84,8 @@ function createChemicalImage(iframeDocument: Document, id: string) {
 describe("SidebarInfo accessibility", () => {
   beforeEach(() => {
     delete (globalThis as { tinymce?: unknown }).tinymce;
+    insertOutcome.mockClear();
+    insertFailure.mockClear();
   });
 
   afterEach(() => {
@@ -174,6 +183,10 @@ describe("SidebarInfo accessibility", () => {
     const [, result] = Array.from(iframeDocument.body.children);
     expect(Array.from(iframeDocument.body.children)).toEqual([chemicalParagraph, result, nextParagraph]);
     expect(result.getAttribute("data-bond-strengths-for")).toBe("chem-4");
+    // A later insert replaces the block whole, so it must not take typed text.
+    expect(result.className).toBe("mceNonEditable");
+    expect(result.getAttribute("contenteditable")).toBe("false");
+    expect(insertOutcome).toHaveBeenCalledExactlyOnceWith("inserted");
     const [pictureParagraph, legend, table, notes] = Array.from(result.children) as [
       HTMLParagraphElement,
       HTMLParagraphElement,
@@ -279,5 +292,57 @@ describe("SidebarInfo accessibility", () => {
     expect(children).toHaveLength(3);
     expect(children[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
     expect(children[2]).toBe(importedResult);
+  });
+
+  it("inserts the table alone when the picture cannot be stored, and leaves a line to write on", async () => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["warn"], ["The bond strengths picture could not be stored"]);
+    vi.mocked(galleryPictureHtml).mockRejectedValueOnce(new Error("upload refused"));
+    const { iframe, iframeDocument } = createIframeWithDocument();
+    const chemicalParagraph = iframeDocument.createElement("p");
+    const chemicalImage = createChemicalImage(iframeDocument, "chem-4");
+    chemicalParagraph.append(chemicalImage);
+    iframeDocument.body.append(chemicalParagraph);
+    Object.assign(globalThis, {
+      tinymce: {
+        activeEditor: {
+          id: "rtf_12",
+          execCommand: vi.fn(),
+          undoManager: { transact: (change: () => void) => change() },
+          nodeChanged: vi.fn(),
+        },
+      },
+    });
+    render(<SidebarInfo iframe={iframe} />);
+    act(() => {
+      chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+    await waitFor(() => expect(insertOutcome).toHaveBeenCalledExactlyOnceWith("insertedWithoutPicture"));
+    restoreConsole();
+
+    const [, result, emptyLine] = Array.from(iframeDocument.body.children);
+    expect(iframeDocument.body.children).toHaveLength(3);
+    expect(result.querySelector("img")).toBeNull();
+    expect(result.querySelector("table")).not.toBeNull();
+    expect(emptyLine.tagName).toBe("P");
+    expect(emptyLine.textContent).toBe("");
+  });
+
+  it("reports a failed insert when no field is being edited", async () => {
+    const user = userEvent.setup();
+    const { iframe, iframeDocument } = createIframeWithDocument();
+    const chemicalImage = createChemicalImage(iframeDocument, "chem-4");
+    render(<SidebarInfo iframe={iframe} />);
+    act(() => {
+      chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+
+    await waitFor(() => expect(insertFailure).toHaveBeenCalledOnce());
+    expect(insertOutcome).not.toHaveBeenCalled();
+    expect(iframeDocument.body.children).toHaveLength(1);
   });
 });

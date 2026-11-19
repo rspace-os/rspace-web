@@ -7,13 +7,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import materialTheme from "@/theme";
 import BondStrengthsDialog from "../BondStrengthsDialog";
 import { svgToPngDataUri } from "../bondStrengthsApi";
-import type { BondStrengthsDocumentContent } from "../insertIntoDocument";
+import type { BondStrengthsDocumentContent, BondStrengthsInsertOutcome } from "../insertIntoDocument";
 
 // jsdom has no canvas, so the PNG conversion is replaced.
 vi.mock("../bondStrengthsApi", async (importOriginal) => ({
@@ -81,7 +82,9 @@ function respondWith(result: unknown) {
   server.use(http.get("/chemical/ajax/bondStrengths", () => HttpResponse.json({ data: result })));
 }
 
-function renderDialog(props: { onClose?: () => void; onInsert?: (content: BondStrengthsDocumentContent) => void }) {
+type OnInsert = (content: BondStrengthsDocumentContent) => Promise<BondStrengthsInsertOutcome>;
+
+function renderDialog(props: { onClose?: () => void; onInsert?: OnInsert }) {
   const queryClient = new QueryClient();
   return renderWithRealI18n(
     <ThemeProvider theme={materialTheme}>
@@ -212,7 +215,7 @@ describe("BondStrengthsDialog", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 10, 18, 12));
     const user = userEvent.setup();
-    const onInsert = vi.fn<(content: BondStrengthsDocumentContent) => void>();
+    const onInsert = vi.fn<OnInsert>(() => Promise.resolve("inserted"));
     const onClose = vi.fn();
     respondWith(toluene);
     await renderDialog({ onInsert, onClose });
@@ -241,18 +244,39 @@ describe("BondStrengthsDialog", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("inserts the table without a picture when the picture cannot be drawn", async () => {
+  it("inserts the table without a picture when the picture cannot be drawn, and says so", async () => {
     const user = userEvent.setup();
-    const onInsert = vi.fn<(content: BondStrengthsDocumentContent) => void>();
+    const onInsert = vi.fn<OnInsert>(() => Promise.resolve("insertedWithoutPicture"));
+    const onClose = vi.fn();
     vi.mocked(svgToPngDataUri).mockRejectedValueOnce(new Error("no canvas"));
     respondWith(toluene);
-    await renderDialog({ onInsert });
+    await renderDialog({ onInsert, onClose });
 
     await user.click(await screen.findByRole("button", { name: "Insert into document" }));
 
-    await waitFor(() => expect(onInsert).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The table is in the document, but the picture could not be added. Insert again to retry.",
+    );
     expect(onInsert.mock.calls[0][0].imageSrc).toBeNull();
     expect(onInsert.mock.calls[0][0].rows).toHaveLength(3);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Insert into document" })).toBeEnabled();
+  });
+
+  it("stays open with a message when the result cannot be inserted", async () => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["warn"], ["The bond strengths could not be inserted"]);
+    const onClose = vi.fn();
+    respondWith(toluene);
+    await renderDialog({ onInsert: () => Promise.reject(new Error("no editor")), onClose });
+
+    await user.click(await screen.findByRole("button", { name: "Insert into document" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The result could not be inserted into the document. Check that the structure is still in the field you are editing, then try again.",
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    restoreConsole();
   });
 
   it("says so and offers no insert when no bond has a value", async () => {

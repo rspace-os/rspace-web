@@ -13446,6 +13446,8 @@ export default interface Resources {
         "dialog": {
           "error": "Bond strengths could not be calculated. Try again later.",
           "insert": "Insert into document",
+          "insertFailed": "The result could not be inserted into the document. Check that the structure is still in the field you are editing, then try again.",
+          "insertedWithoutPicture": "The table is in the document, but the picture could not be added. Insert again to retry.",
           "loading": "Calculating bond strengths…",
           "title": "Bond strengths"
         },

@@ -4,17 +4,17 @@ import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import BondStrengthsDialog from "./BondStrengthsDialog";
-import type { BondStrengthsDocumentContent } from "./insertIntoDocument";
+import type { BondStrengthsDocumentContent, BondStrengthsInsertOutcome } from "./insertIntoDocument";
 
 type BondStrengthsActionProps = {
   chemId: number;
   revision?: number;
-  onInsert?: (content: BondStrengthsDocumentContent) => void | Promise<void>;
+  onInsert?: (content: BondStrengthsDocumentContent) => Promise<BondStrengthsInsertOutcome>;
 };
 
 /**
- * The feature flag check suspends while it gets a token and throws when it cannot get one. This
- * keeps such a failure to the button, so the chemistry card and its host stay on screen.
+ * Keeps a failure while rendering the button or the dialog, such as a host without a
+ * `QueryClientProvider`, to the button, so the chemistry card and its host stay on screen.
  */
 class HideOnError extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
   state = { failed: false };

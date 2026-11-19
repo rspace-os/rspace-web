@@ -4,7 +4,11 @@ import { paperClasses } from "@mui/material/Paper";
 import React, { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { galleryPictureHtml } from "./bondStrengths/galleryPicture";
-import { type BondStrengthsDocumentContent, insertBondStrengthsAfter } from "./bondStrengths/insertIntoDocument";
+import {
+  type BondStrengthsDocumentContent,
+  type BondStrengthsInsertOutcome,
+  insertBondStrengthsAfter,
+} from "./bondStrengths/insertIntoDocument";
 import ChemCard from "./ChemCard";
 
 interface SidebarItem extends Record<string, string | undefined> {
@@ -85,11 +89,11 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   }, []);
 
   const insertBondStrengths = useCallback(
-    async (id: string | undefined, content: BondStrengthsDocumentContent): Promise<void> => {
+    async (id: string | undefined, content: BondStrengthsDocumentContent): Promise<BondStrengthsInsertOutcome> => {
       const chemImage = id ? (getIframeDocument(iframe)?.getElementById(id) ?? null) : null;
       const activeEditor = getActiveEditor();
       if (!isChemImage(chemImage) || !activeEditor) {
-        return;
+        throw new Error("The structure is no longer in a field that is being edited");
       }
 
       const fieldId = activeEditor.id.replace(/^\D+/g, "");
@@ -106,6 +110,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
       // One undo step for the whole insert; it also marks the editor as changed.
       activeEditor.undoManager.transact(() => insertBondStrengthsAfter(chemImage, content, pictureHtml));
       activeEditor.nodeChanged();
+      return pictureHtml ? "inserted" : "insertedWithoutPicture";
     },
     [iframe],
   );
