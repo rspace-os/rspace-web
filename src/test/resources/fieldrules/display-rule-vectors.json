@@ -1219,6 +1219,135 @@
         }
       ],
       "expectedErrors": []
+    },
+    {
+      "name": "a value listed twice",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "a value listed twice among others",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "No",
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "values that differ only in case are not duplicates",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a duplicate unknown value is reported as both",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe",
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
     }
   ],
   "elnChoice": [
@@ -1276,5 +1405,72 @@
       "data": "no separator",
       "expected": []
     }
-  ]
+  ],
+  "limits": {
+    "description": "Generated rules at the size limits. Field 0 (K1) is a RADIO field offering every value; field 1 (K2) is a STRING field with an IS_ANY_OF rule on K1. Value i (from 0) is pad repeated padCount times followed by i as five zero-padded digits; when tailLength is positive, one more value of that many 'x' characters follows. jsonLength is the length of the rule as Java's toJson() writes it, with every non-ASCII UTF-16 unit escaped.",
+    "maxValues": 1000,
+    "maxJsonLength": 32768,
+    "cases": [
+      {
+        "name": "the most values a rule may list",
+        "valueCount": 1000,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 8091,
+        "expectedErrors": []
+      },
+      {
+        "name": "one value more than the most a rule may list",
+        "valueCount": 1001,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 8099,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.valueTooMany"
+          }
+        ]
+      },
+      {
+        "name": "far too many values is reported as too many, not too long",
+        "valueCount": 20000,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 160091,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.valueTooMany"
+          }
+        ]
+      },
+      {
+        "name": "exactly the longest a rule may be, counting non-ASCII and control characters as stored escapes",
+        "valueCount": 400,
+        "pad": "é😀\n\"\u0001",
+        "padCount": 2,
+        "tailLength": 7074,
+        "jsonLength": 32768,
+        "expectedErrors": []
+      },
+      {
+        "name": "one character longer than a rule may be",
+        "valueCount": 400,
+        "pad": "é😀\n\"\u0001",
+        "padCount": 2,
+        "tailLength": 7075,
+        "jsonLength": 32769,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
+      }
+    ]
+  }
 }
