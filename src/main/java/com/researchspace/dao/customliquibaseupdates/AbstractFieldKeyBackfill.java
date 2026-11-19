@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import liquibase.database.Database;
@@ -33,8 +34,8 @@ public abstract class AbstractFieldKeyBackfill extends AbstractCustomLiquibaseUp
 
   /**
    * Native SQL selecting, in id order, the ids of the next page of rows of {@link #table()} to key.
-   * Its first parameter is the last id of the previous page (0 for the first page) and its second
-   * the page size.
+   * Its first parameter is the last id of the previous page ({@link Long#MIN_VALUE} for the first
+   * page) and its second the page size.
    */
   protected abstract String pageOfIdsToKeySql();
 
@@ -65,7 +66,7 @@ public abstract class AbstractFieldKeyBackfill extends AbstractCustomLiquibaseUp
     String updateSql = "update " + table() + " set fieldKey = ? where id = ? and fieldKey is null";
     try (PreparedStatement select = connection.prepareStatement(pageOfIdsToKeySql());
         PreparedStatement update = connection.prepareStatement(updateSql)) {
-      long lastId = 0;
+      long lastId = Long.MIN_VALUE;
       List<Long> page;
       do {
         page = nextPage(select, lastId);
@@ -78,7 +79,8 @@ public abstract class AbstractFieldKeyBackfill extends AbstractCustomLiquibaseUp
           update.addBatch();
         }
         for (int count : update.executeBatch()) {
-          keyed += Math.max(count, 0);
+          // a driver may report a successful update without its row count
+          keyed += count == Statement.SUCCESS_NO_INFO ? 1 : Math.max(count, 0);
         }
         lastId = page.get(page.size() - 1);
         logger.info("Gave {} {} rows a field key so far, up to id {}", keyed, table(), lastId);

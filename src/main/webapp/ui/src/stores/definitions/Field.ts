@@ -87,4 +87,6 @@ export interface Field extends BaseRecord {
   setAttachment(file: File | GalleryFile): void;
   setError(error: boolean): void;
   setLinkEditInProgress(value: boolean): void;
+  /** Invalid while the template editor holds a display condition that cannot be applied yet. */
+  validateDisplayCondition(): ValidationResult;
 }
