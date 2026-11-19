@@ -284,6 +284,44 @@ describe("Template display conditions", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
+  it("asks before giving an unsaved text source a number type, then clears the rules that read it", async () => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({ id: null, globalId: null });
+    template.addField(newField({ name: "Batch code", type: "string" }));
+    template.addField(newField({ name: "GMO permit", type: "string" }));
+    const source = fieldAt(template, 0);
+    fieldAt(template, permit).setDisplayRule(createDisplayRule(source.fieldKey ?? "", "CONTAINS", ["LOT"]));
+    const { confirm } = renderEditor(template);
+
+    await user.click(
+      within(fieldCard("Batch code")).getByRole("menuitem", { name: "common:fieldEditor.card.changeType" }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: /^Number/ }));
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(source.type).toBe("number");
+    expect(fieldAt(template, permit).displayRule).toBeNull();
+  });
+
+  it("stores a number condition, trimmed, on a field that reads a number field", async () => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({
+      fields: [
+        savedField({ id: 1, globalId: "SF1", name: "Weight", type: "number", fieldKey: GMO_KEY }),
+        savedField({ id: 2, globalId: "SF2", name: "Heavy goods permit", type: "string", fieldKey: PERMIT_KEY }),
+      ],
+    });
+    renderEditor(template);
+    const card = within(fieldCard("Heavy goods permit"));
+
+    await user.click(card.getByRole("radio", { name: CONDITIONAL }));
+    await user.click(card.getByRole("combobox", { name: "common:fieldEditor.condition.operatorLabel" }));
+    await user.click(screen.getByRole("option", { name: "common:fieldEditor.condition.operator.greaterThan" }));
+    await user.type(card.getByRole("textbox", { name: "common:fieldEditor.condition.valueLabel" }), " 2 ");
+
+    expect(fieldAt(template, permit).displayRule).toEqual(createDisplayRule(GMO_KEY, "GREATER_THAN", ["2"]));
+  });
+
   it("keeps the saved rule while an edit leaves it incomplete", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();

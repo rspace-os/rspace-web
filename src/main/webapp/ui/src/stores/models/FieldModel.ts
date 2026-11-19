@@ -4,6 +4,7 @@ import * as v from "valibot";
 import {
   type FieldDisplayRule,
   FieldDisplayRuleSchema,
+  operatorRequiresValues,
   sameDisplayRule,
   serializeDisplayRule,
 } from "@/modules/common/field-rules/displayRule";
@@ -20,6 +21,7 @@ import type { Field, FieldLink, FieldType, Option, OptionValue } from "../defini
 import type { Sample } from "../definitions/Sample";
 import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
 import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
+import { sourceKindOfType } from "./fieldVisibility";
 import type InventoryBaseRecord from "./InventoryBaseRecord";
 
 const formatOption = (option: OptionValue): Option => ({
@@ -312,9 +314,12 @@ export default class FieldModel implements Field {
     return this.liveSiblings.filter((field) => field.displayRule?.sourceFieldKey === key);
   }
 
-  /** Fields whose display rule names this option of this field. */
+  /** Fields whose display rule names this option of this field; text and number values are not options. */
   fieldsUsingOption(option: string): Array<FieldModel> {
-    return this.dependentFields.filter((field) => field.displayRule?.values.includes(option));
+    return this.dependentFields.filter(
+      ({ displayRule }) =>
+        displayRule && operatorRequiresValues(displayRule.operator) && displayRule.values.includes(option),
+    );
   }
 
   setDisplayRule(displayRule: FieldDisplayRule | null): void {
@@ -365,11 +370,11 @@ export default class FieldModel implements Field {
 
   /**
    * Changes the type of a field that has not been saved, resetting its value.
-   * If the new type cannot be read by a display rule, the rules that read this
-   * field are cleared in the same change.
+   * If a display rule would read the new type differently (another source
+   * kind), the rules that read this field are cleared in the same change.
    */
   changeType(type: FieldType): void {
-    if (!hasOptions(type)) {
+    if (sourceKindOfType(type) !== sourceKindOfType(this.type)) {
       for (const dependent of this.dependentFields) dependent.setDisplayRule(null);
     }
     this.setAttributesDirty({
