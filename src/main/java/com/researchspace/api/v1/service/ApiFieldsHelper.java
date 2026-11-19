@@ -14,6 +14,7 @@ import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EcatVideo;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
@@ -60,6 +61,7 @@ public class ApiFieldsHelper {
   private static final String MANDATORY_FIELD_NO_SELECTION =
       "errors.inventory.field.mandatoryFieldNoSelection";
   private static final String OPTIONS_NOT_ALLOWED = "validation.inventoryField.optionsNotAllowed";
+  private static final String CHOICE_NOT_AN_OPTION = "validation.fieldData.choiceNotAnOption";
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
@@ -204,18 +206,28 @@ public class ApiFieldsHelper {
   private ApiFieldContent convertChoiceFieldContentReceivedFromClient(String incomingChoices) {
     String content = incomingChoices;
     if (StringUtils.isNotEmpty(incomingChoices)) {
-      String[] choices = incomingChoices.split(",");
       StringBuilder sb = new StringBuilder();
-      for (String selectedChoice : choices) {
+      for (String choiceToSave : splitIncomingChoices(incomingChoices)) {
         if (sb.length() > 0) {
           sb.append("&");
         }
-        String choiceToSave = selectedChoice.replace(commaReplacement, ",");
         sb.append("fieldChoices=").append(choiceToSave);
       }
       content = sb.toString();
     }
     return new ApiFieldContent(content, null, Collections.emptyList());
+  }
+
+  /**
+   * The options named by choice field content sent by an API client: comma-separated, with each
+   * comma that is part of an option written as {@link #commaReplacement}.
+   */
+  private static List<String> splitIncomingChoices(String incomingChoices) {
+    List<String> choices = new ArrayList<>();
+    for (String choice : incomingChoices.split(",")) {
+      choices.add(choice.replace(commaReplacement, ","));
+    }
+    return choices;
   }
 
   /**
@@ -263,7 +275,21 @@ public class ApiFieldsHelper {
     if (FieldType.CHOICE.equals(formField.getType())) {
       toValidate = convertChoiceFieldContentReceivedFromClient(incomingContent).getContent();
     }
-    return messages.resolve(formField.validate(toValidate));
+    ErrorList errors = formField.validate(toValidate);
+    if (!errors.hasErrorMessages()
+        && formField instanceof ChoiceFieldForm choiceField
+        && StringUtils.isNotEmpty(incomingContent)) {
+      List<String> options = choiceField.getChoiceOptionAsList();
+      List<String> notOptions =
+          splitIncomingChoices(incomingContent).stream()
+              .filter(choice -> !options.contains(choice))
+              .map(choice -> "[" + choice + "]")
+              .toList();
+      if (!notOptions.isEmpty()) {
+        errors.addErrorMsgCode(CHOICE_NOT_AN_OPTION, String.join(", ", notOptions));
+      }
+    }
+    return messages.resolve(errors);
   }
 
   /**
