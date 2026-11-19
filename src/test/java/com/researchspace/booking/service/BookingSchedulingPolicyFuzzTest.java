@@ -63,7 +63,10 @@ class BookingSchedulingPolicyFuzzTest {
     assertConflict(
         configuration, start, end, policy.validate(configuration, date(start), date(end)));
     assertMaintenanceConflict(
-        start, end, policy.validateMaintenance(configuration, date(start), date(end)));
+        configuration,
+        start,
+        end,
+        policy.validateMaintenance(configuration, date(start), date(end)));
   }
 
   @FuzzTest(maxDuration = "30s")
@@ -95,10 +98,12 @@ class BookingSchedulingPolicyFuzzTest {
       assertRejection(Reason.GRANULARITY, configuration, start, shiftedEnd, true);
     } else {
       assertMaintenanceConflict(
+          configuration,
           shiftedStart,
           end,
           policy.validateMaintenance(configuration, date(shiftedStart), date(end)));
       assertMaintenanceConflict(
+          configuration,
           start,
           shiftedEnd,
           policy.validateMaintenance(configuration, date(start), date(shiftedEnd)));
@@ -110,6 +115,7 @@ class BookingSchedulingPolicyFuzzTest {
     Instant beyondMaximum = end.plus(granularity, ChronoUnit.MINUTES);
     assertRejection(Reason.MAXIMUM_DURATION, configuration, start, beyondMaximum, false);
     assertMaintenanceConflict(
+        configuration,
         start,
         beyondMaximum,
         policy.validateMaintenance(configuration, date(start), date(beyondMaximum)));
@@ -125,10 +131,12 @@ class BookingSchedulingPolicyFuzzTest {
     assertRejection(Reason.OPENING_HOURS, configuration, beforeOpening, closing, false);
     assertRejection(Reason.OPENING_HOURS, configuration, start, afterClosing, false);
     assertMaintenanceConflict(
+        configuration,
         beforeOpening,
         closing,
         policy.validateMaintenance(configuration, date(beforeOpening), date(closing)));
     assertMaintenanceConflict(
+        configuration,
         start,
         afterClosing,
         policy.validateMaintenance(configuration, date(start), date(afterClosing)));
@@ -158,6 +166,7 @@ class BookingSchedulingPolicyFuzzTest {
     // Maintenance ignores duration increments and the finite item maximum.
     Instant maintenanceEnd = end.plus(1, ChronoUnit.MINUTES);
     assertMaintenanceConflict(
+        configuration,
         start,
         maintenanceEnd,
         policy.validateMaintenance(configuration, date(start), date(maintenanceEnd)));
@@ -214,6 +223,7 @@ class BookingSchedulingPolicyFuzzTest {
         new BookingPolicyException.MissingDayEnd(missingTime, gapDate, ZoneId.of(gapZone)),
         failure.missingDayEnd().orElseThrow());
     assertMaintenanceConflict(
+        configuration,
         gapStart,
         shiftedEnd,
         new BookingSchedulingPolicy()
@@ -275,10 +285,13 @@ class BookingSchedulingPolicyFuzzTest {
     return configuration;
   }
 
+  /** Maintenance keeps its granularity check and is widened by the same shared gap as a booking. */
   private static void assertMaintenanceConflict(
-      Instant start, Instant end, BookingSchedulingPolicy.ConflictInterval actual) {
-    assertEquals(date(start), actual.start());
-    assertEquals(date(end), actual.end());
+      BookingConfiguration configuration,
+      Instant start,
+      Instant end,
+      BookingSchedulingPolicy.ConflictInterval actual) {
+    assertConflict(configuration, start, end, actual);
   }
 
   private static void assertConflict(
@@ -286,11 +299,11 @@ class BookingSchedulingPolicyFuzzTest {
       Instant start,
       Instant end,
       BookingSchedulingPolicy.ConflictInterval actual) {
-    assertEquals(
-        date(start.minus(configuration.getBufferBeforeMinutes(), ChronoUnit.MINUTES)),
-        actual.start());
-    assertEquals(
-        date(end.plus(configuration.getBufferAfterMinutes(), ChronoUnit.MINUTES)), actual.end());
+    // The larger buffer is one shared gap on both sides, rather than each buffer on its own side.
+    long sharedGap =
+        Math.max(configuration.getBufferBeforeMinutes(), configuration.getBufferAfterMinutes());
+    assertEquals(date(start.minus(sharedGap, ChronoUnit.MINUTES)), actual.start());
+    assertEquals(date(end.plus(sharedGap, ChronoUnit.MINUTES)), actual.end());
   }
 
   private static BookingPolicyException assertRejection(
