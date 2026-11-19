@@ -13,11 +13,9 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.persistence.metamodel.EntityType;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.Session;
@@ -121,28 +119,6 @@ class InventoryStructureSearchDaoTest extends SpringTransactionalTest {
     assertThat(files)
         .extracting(file -> file.getInventoryRecord().getGlobalIdentifier())
         .containsExactlyInAnyOrder(first.getGlobalId(), second.getGlobalId());
-  }
-
-  private void replaceInGallery(EcatChemistryFile galleryFile) throws IOException {
-    try (InputStream newVersion =
-        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Amfetamine.mol")) {
-      mediaMgr.updateMediaFile(galleryFile.getId(), newVersion, "Amfetamine.mol", user, null);
-    }
-    sessionFactory.getCurrentSession().flush();
-  }
-
-  @Test
-  void excludesAttachmentsHoldingAReplacedGalleryVersion() throws IOException {
-    ApiSampleWithFullSubSamples sample = createComplexSampleForUser(user);
-    EcatChemistryFile galleryFile = chemistryFileInGallery();
-    attach(galleryFile, sample.getGlobalId());
-    attach(galleryFile, sample.getFields().get(6).getGlobalId());
-
-    replaceInGallery(galleryFile);
-
-    List<Long> galleryFileIds = List.of(galleryFile.getId());
-    assertThat(inventoryFileDao.findByMediaFileIds(galleryFileIds)).isEmpty();
-    assertThat(inventoryFileDao.findAttachmentFieldsByMediaFileIds(galleryFileIds)).isEmpty();
   }
 
   @Test

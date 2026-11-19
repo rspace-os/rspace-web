@@ -65,8 +65,7 @@ public class InventoryFileDaoHibernate extends GenericDaoHibernate<InventoryFile
             "select distinct f from InventoryFile f join fetch f.mediaFile mf"
                 + " left join fetch f.sample left join fetch f.subSample"
                 + " left join fetch f.container left join fetch f.instrumentEntity"
-                + " where mf.id in (:mediaFileIds) and f.deleted = false"
-                + " and f.fileProperty.id = mf.fileProperty.id",
+                + " where mf.id in (:mediaFileIds) and f.deleted = false",
             InventoryFile.class)
         .setParameterList("mediaFileIds", mediaFileIds)
         .list();
@@ -87,7 +86,7 @@ public class InventoryFileDaoHibernate extends GenericDaoHibernate<InventoryFile
                 + " left join fetch af.sample left join fetch af.instrumentEntity"
                 + " left join fetch af.templateField"
                 + " where mf.id in (:mediaFileIds) and f.deleted = false"
-                + " and af.deleted = false and f.fileProperty.id = mf.fileProperty.id",
+                + " and af.deleted = false",
             InventoryAttachmentField.class)
         .setParameterList("mediaFileIds", mediaFileIds)
         .list();

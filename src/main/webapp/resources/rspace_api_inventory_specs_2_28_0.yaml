@@ -2721,7 +2721,6 @@ paths:
         A structure search returns at most 1000 items, after every other filter is applied, and sorts
         and pages only those. If more items matched, the response includes
         `"structureSearchLimitReached": true`; a narrower structure or more filters find the rest.
-        An item holding an older version of a Gallery file that has since been replaced is not found.
       tags:
         - Search
       parameters:

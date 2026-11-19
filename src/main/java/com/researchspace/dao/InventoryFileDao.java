@@ -32,7 +32,7 @@ public interface InventoryFileDao extends GenericDao<InventoryFile, Long> {
 
   /**
    * Batched form of {@link #findByMediaFileId}: all live attachments of any of the given Gallery
-   * media files that hold the Gallery file's current version, with their owning record fetched.
+   * media files, with their owning record fetched.
    *
    * @param mediaFileIds db ids of Gallery {@code EcatMediaFile}s
    */
@@ -40,8 +40,7 @@ public interface InventoryFileDao extends GenericDao<InventoryFile, Long> {
 
   /**
    * Batched form of {@link #findAttachmentFieldsByMediaFileId}: live attachment fields holding a
-   * live attachment of the current version of any of the given Gallery media files, with their
-   * owning record fetched.
+   * live attachment of any of the given Gallery media files, with their owning record fetched.
    *
    * @param mediaFileIds db ids of Gallery {@code EcatMediaFile}s
    */

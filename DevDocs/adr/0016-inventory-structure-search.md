@@ -30,11 +30,7 @@ that load no file content. Stale ids with no matching row simply drop out.
 A separate Inventory structure index was rejected: it would need its own schema, backfill and sync,
 and would drift from the Workspace's matching rules. Reusing the provider keeps one source of truth.
 
-An attachment only counts while it holds the Gallery file's **current** version
-(`InventoryFile.fileProperty` equals `EcatMediaFile.fileProperty`). Replacing a Gallery file updates
-its `RSChemElement` to the new structure, but existing attachments keep the old file. Resolving them
-through the Gallery link alone would return them for the new structure and miss them for the old one,
-so after a replacement they are found by neither. Copies (duplicated records, records created from a
+Copies (duplicated records, records created from a
 template, copied attachment fields) keep the Gallery link in `InventoryFile#shallowCopy`, so they are
 found like the original. The batch queries fetch the owning-record links, so each record arrives with
 its attachment instead of in a follow-up query. The records' own eager collections still load per
