@@ -39,7 +39,31 @@ const TYPE_OPTIONS: ReadonlyArray<FieldTypeOption<ApiFieldType>> = [...SUPPORTED
 const NAME_MAX_LENGTH = 50;
 
 // observed on its own, so a rename re-renders only the conditions that show that name
-const FieldDisplayCondition = observer(SharedFieldDisplayCondition);
+const ObservedFieldDisplayCondition = observer(SharedFieldDisplayCondition);
+
+/**
+ * Reads the template's rule fields here rather than in the card, so an edit to
+ * any field's options, type or rule re-renders the display conditions, not
+ * every card.
+ */
+const FieldDisplayCondition = observer(function FieldDisplayCondition({
+  field,
+  fieldKey,
+  editable,
+}: {
+  field: FieldModel;
+  fieldKey: string;
+  editable: boolean;
+}): React.ReactNode {
+  return (
+    <ObservedFieldDisplayCondition
+      fieldKey={fieldKey}
+      fields={templateRuleFields(field.owner)}
+      onChange={(rule) => field.setDisplayRule(rule)}
+      editable={editable}
+    />
+  );
+});
 
 type CustomFieldArgs = {
   field: FieldModel;
@@ -200,12 +224,7 @@ function CustomField({
         columnLayout={forceColumnLayout}
         displayCondition={
           field.fieldKey !== null && (
-            <FieldDisplayCondition
-              fieldKey={field.fieldKey}
-              fields={templateRuleFields(field.owner)}
-              onChange={(rule) => field.setDisplayRule(rule)}
-              editable={editable}
-            />
+            <FieldDisplayCondition field={field} fieldKey={field.fieldKey} editable={editable} />
           )
         }
       >
