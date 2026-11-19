@@ -102,6 +102,23 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
+  void plainTextSourceIsReadByItsStoredText() {
+    InventoryStringField notes = string(3L, "Notes", NOTES_KEY);
+    template.addSampleField(notes);
+    permit.setDisplayRule(
+        new FieldDisplayRule(NOTES_KEY, ConditionOperator.CONTAINS, List.of("permit")));
+
+    assertDoesNotThrow(template::assertFieldDisplayRulesValid);
+
+    List<InventoryEntityField> fields = template.getActiveFields();
+    int permitIndex = fields.indexOf(permit);
+    notes.setFieldData("permit pending");
+    assertTrue(InventoryFieldDisplayRules.visibility(fields).get(permitIndex));
+    notes.setFieldData("none");
+    assertFalse(InventoryFieldDisplayRules.visibility(fields).get(permitIndex));
+  }
+
+  @Test
   void ruleOnAFormattedTextSourceIsRejected() {
     InventoryTextField notes = new InventoryTextField("Notes");
     notes.setId(3L);

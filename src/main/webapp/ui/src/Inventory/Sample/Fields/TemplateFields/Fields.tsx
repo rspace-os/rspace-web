@@ -29,8 +29,8 @@ type FieldsArgs = {
 
 function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer } = useShownTemplateFields(sample, onErrorStateChange);
-  const rendered = shownFields.map((field: Field) => {
+  const { shownFields, announcer, wrapField } = useShownTemplateFields(sample, onErrorStateChange);
+  const renderField = (field: Field) => {
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
       label: field.name,
@@ -315,7 +315,8 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     return <Box key={field.name}>{t("sample.fields.unknownFieldType", { type: field.type })}</Box>;
-  });
+  };
+  const rendered = shownFields.map((field) => wrapField(field, renderField(field)));
   return (
     <>
       {rendered}
