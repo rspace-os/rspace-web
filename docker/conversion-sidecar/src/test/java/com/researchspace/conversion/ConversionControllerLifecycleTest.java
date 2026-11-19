@@ -148,11 +148,10 @@ class ConversionControllerLifecycleTest {
     Path resultDirectory = Files.createDirectory(directory.resolve("result"));
     Path output = Files.write(resultDirectory.resolve("output.html"), new byte[1024 * 1024]);
     when(runner.convert(any(), any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Thread.sleep(200);
-              return new ConvertedFile(resultDirectory, output, "text/html");
-            });
+        .thenAnswer(invocation -> {
+          Thread.sleep(200);
+          return new ConvertedFile(resultDirectory, output, "text/html");
+        });
     long started = System.nanoTime();
     var response = controller.toHtml(request("file", "input.doc", new byte[] {1}));
     assertFalse(limiter.hasWordCapacity());

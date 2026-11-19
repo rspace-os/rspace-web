@@ -123,15 +123,14 @@ class OfficeConversionRunner {
       deadline.check();
       LocalOfficeManager startingManager = manager;
       var started =
-          processes.start(
-              () -> {
-                try {
-                  startingManager.start();
-                } catch (OfficeException e) {
-                  LOG.warn("LibreOffice startup failed", e);
-                  throw new CompletionException(e);
-                }
-              });
+          processes.start(() -> {
+            try {
+              startingManager.start();
+            } catch (OfficeException e) {
+              LOG.warn("LibreOffice startup failed", e);
+              throw new CompletionException(e);
+            }
+          });
       try {
         started.get();
       } catch (InterruptedException e) {
@@ -197,14 +196,13 @@ class OfficeConversionRunner {
       LocalOfficeManager officeManager = manager;
       Path alias = pipeAlias;
       var stopped =
-          processes.stop(
-              () -> {
-                try {
-                  OfficeUtils.stopQuietly(officeManager);
-                } finally {
-                  deletePipeAlias(alias);
-                }
-              });
+          processes.stop(() -> {
+            try {
+              OfficeUtils.stopQuietly(officeManager);
+            } finally {
+              deletePipeAlias(alias);
+            }
+          });
       if (!deadline.isExpired()) {
         try {
           stopped.get(deadline.remainingNanos(), TimeUnit.NANOSECONDS);

@@ -63,11 +63,10 @@ class OfficeConversionLimiter {
         reject();
       }
       active.incrementAndGet();
-      return new Permit(
-          () -> {
-            active.decrementAndGet();
-            slots.release();
-          });
+      return new Permit(() -> {
+        active.decrementAndGet();
+        slots.release();
+      });
     }
 
     private boolean hasCapacity() {

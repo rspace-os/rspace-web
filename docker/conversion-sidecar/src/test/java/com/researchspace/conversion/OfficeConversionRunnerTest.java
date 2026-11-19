@@ -71,13 +71,12 @@ class OfficeConversionRunnerTest {
     var limiter = mock(OfficeConversionLimiter.class);
     when(limiter.acquireWord())
         .thenReturn(
-            new OfficeConversionLimiter.Permit(
-                () -> {
-                  releasedWhileAlive.set(
-                      root.get().isAlive()
-                          || descendants.get().stream().anyMatch(ProcessHandle::isAlive));
-                  released.countDown();
-                }));
+            new OfficeConversionLimiter.Permit(() -> {
+              releasedWhileAlive.set(
+                  root.get().isAlive()
+                      || descendants.get().stream().anyMatch(ProcessHandle::isAlive));
+              released.countDown();
+            }));
     var runner =
         new OfficeConversionRunner(properties, mock(LibreOfficeSandbox.class)) {
           @Override

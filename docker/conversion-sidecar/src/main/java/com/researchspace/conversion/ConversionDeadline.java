@@ -91,16 +91,15 @@ final class ConversionDeadline implements AutoCloseable {
   }
 
   synchronized void releaseAfterCleanup(Runnable release) {
-    cleanup.whenComplete(
-        (ignored, failure) -> {
-          try {
-            if (failure != null) {
-              LOG.warn("Conversion cleanup failed", failure);
-            }
-          } finally {
-            release.run();
-          }
-        });
+    cleanup.whenComplete((ignored, failure) -> {
+      try {
+        if (failure != null) {
+          LOG.warn("Conversion cleanup failed", failure);
+        }
+      } finally {
+        release.run();
+      }
+    });
   }
 
   void check() {

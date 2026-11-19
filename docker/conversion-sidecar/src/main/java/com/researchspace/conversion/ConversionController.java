@@ -116,11 +116,10 @@ final class ConversionController {
                         : officeRunner.convert(upload, extension, target, deadline);
                   })
               .withDeadline(deadline)
-              .withCloseAction(
-                  () -> {
-                    deadline.close();
-                    deadline.releaseAfterCleanup(permit::close);
-                  });
+              .withCloseAction(() -> {
+                deadline.close();
+                deadline.releaseAfterCleanup(permit::close);
+              });
       try {
         deadline.handoff(() -> closeExpired(result));
         return stream(result, "output." + target);

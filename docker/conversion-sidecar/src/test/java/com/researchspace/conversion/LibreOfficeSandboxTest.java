@@ -43,17 +43,16 @@ class LibreOfficeSandboxTest {
     var stopEntered = new CountDownLatch(1);
     var allowStop = new CountDownLatch(1);
     var stopped =
-        scope.stop(
-            () -> {
-              stopEntered.countDown();
-              try {
-                allowStop.await();
-              } catch (InterruptedException e) {
-                LoggerFactory.getLogger(getClass()).warn("Test stop interrupted", e);
-                Thread.currentThread().interrupt();
-                throw new CompletionException(e);
-              }
-            });
+        scope.stop(() -> {
+          stopEntered.countDown();
+          try {
+            allowStop.await();
+          } catch (InterruptedException e) {
+            LoggerFactory.getLogger(getClass()).warn("Test stop interrupted", e);
+            Thread.currentThread().interrupt();
+            throw new CompletionException(e);
+          }
+        });
     try {
       assertTrue(stopEntered.await(1, TimeUnit.SECONDS));
       var first = requestProcess();
@@ -91,18 +90,16 @@ class LibreOfficeSandboxTest {
     var allowStartup = new CountDownLatch(1);
     var launched = new AtomicReference<Process>();
     var startup =
-        scope.start(
-            () -> {
-              try {
-                allowStartup.await();
-                launched.set(
-                    new ProcessBuilder("sh", "-c", "sleep 30 & wait", directory.toString())
-                        .start());
-              } catch (Exception e) {
-                LoggerFactory.getLogger(getClass()).warn("Test startup failed", e);
-                throw new CompletionException(e);
-              }
-            });
+        scope.start(() -> {
+          try {
+            allowStartup.await();
+            launched.set(
+                new ProcessBuilder("sh", "-c", "sleep 30 & wait", directory.toString()).start());
+          } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).warn("Test startup failed", e);
+            throw new CompletionException(e);
+          }
+        });
     var stopped = scope.stop(() -> assertNotNull(launched.get()));
     var terminated = scope.terminate();
     var released = terminated.thenRun(() -> assertFalse(launched.get().isAlive()));
@@ -147,25 +144,23 @@ class LibreOfficeSandboxTest {
     Process replacement = null;
     try (var deadline = new ConversionDeadline(Duration.ofSeconds(10))) {
       scope.start(() -> {}).get(1, TimeUnit.SECONDS);
-      scope.stop(
-          () -> {
-            stopEntered.countDown();
-            try {
-              allowStop.await();
-            } catch (InterruptedException e) {
-              LoggerFactory.getLogger(getClass()).warn("Test stop interrupted", e);
-              Thread.currentThread().interrupt();
-            }
-          });
+      scope.stop(() -> {
+        stopEntered.countDown();
+        try {
+          allowStop.await();
+        } catch (InterruptedException e) {
+          LoggerFactory.getLogger(getClass()).warn("Test stop interrupted", e);
+          Thread.currentThread().interrupt();
+        }
+      });
       assertTrue(stopEntered.await(1, TimeUnit.SECONDS));
       var terminated = scope.terminate();
       deadline.cleanupBeforeRelease(terminated);
       var permitReleased = new CountDownLatch(1);
-      deadline.releaseAfterCleanup(
-          () -> {
-            released.set(true);
-            permitReleased.countDown();
-          });
+      deadline.releaseAfterCleanup(() -> {
+        released.set(true);
+        permitReleased.countDown();
+      });
       first.onExit().get(2, TimeUnit.SECONDS);
       assertFalse(terminated.isDone());
       assertFalse(released.get());
@@ -197,10 +192,9 @@ class LibreOfficeSandboxTest {
         .waitFor(2, TimeUnit.SECONDS);
     ProcessHandle orphan =
         ProcessHandle.allProcesses()
-            .filter(
-                process ->
-                    List.of(process.info().arguments().orElse(new String[0]))
-                        .contains(directory.toString()))
+            .filter(process ->
+                List.of(process.info().arguments().orElse(new String[0]))
+                    .contains(directory.toString()))
             .findFirst()
             .orElseThrow();
     try {
