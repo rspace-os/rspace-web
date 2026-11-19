@@ -504,9 +504,7 @@ arguments from its resource attributes.
 Do not put credentials in URLs. Browser URL attributes are sanitized before
 export and identity-normalized again by the Collector, but all browser
 telemetry remains untrusted. Production telemetry stores also require access
-controls, retention limits, and an incident-response path. Rotate affected
-GitHub tokens if an earlier vulnerable build was deployed with browser
-telemetry enabled.
+controls, retention limits, and an incident-response path.
 
 See
 [`DevDocs/DeveloperNotes/Observability.md`](/DevDocs/DeveloperNotes/Observability.md)
