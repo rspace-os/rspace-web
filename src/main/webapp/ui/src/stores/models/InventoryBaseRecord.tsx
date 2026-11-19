@@ -1105,7 +1105,7 @@ export default class InventoryBaseRecord
             )
               .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
-            retryFunction: () => this.retryUpdate(),
+            retryFunction: () => this.retrySave(() => this.create()),
           });
           getRootStore().uiStore.addAlert(newAlert);
           getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
@@ -1129,13 +1129,14 @@ export default class InventoryBaseRecord
   }
 
   /**
-   * The validation alert's Retry. A template refuses to send an unfinished
-   * display condition, and the disabled Save button already says why, so that
-   * refusal is not rethrown; every other failure is.
+   * The validation alert's Retry, repeating the save that failed. A template
+   * refuses to send an unfinished display condition, and the disabled Save
+   * button already says why, so that refusal is not rethrown; every other
+   * failure is.
    */
-  private async retryUpdate(): Promise<void> {
+  private async retrySave(save: () => Promise<void>): Promise<void> {
     try {
-      await this.update();
+      await save();
     } catch (error) {
       if (!(error instanceof DisplayConditionIncomplete)) throw error;
     }
@@ -1226,7 +1227,7 @@ export default class InventoryBaseRecord
             )
               .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
-            retryFunction: () => this.retryUpdate(),
+            retryFunction: () => this.retrySave(() => this.update()),
           });
           getRootStore().uiStore.addAlert(newAlert);
           getRootStore().searchStore.activeResult?.addScopedToast(newAlert);

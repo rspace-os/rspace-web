@@ -214,9 +214,22 @@ export default function FieldDisplayCondition({
           const applied = remembered?.applied ?? null;
           if (applied !== null && !ruleIsInvalid(fields, fieldKey, applied)) {
             // the stored rule comes back as it was, with any unfinished edit still pending on top
-            onChange(applied);
             const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
-            setDraft(pending?.sourceFieldKey != null ? { condition: pending, rejected: isRejected(pending) } : null);
+            if (pending?.sourceFieldKey == null) {
+              onChange(applied);
+              setDraft(null);
+              return;
+            }
+            // an edit that later changes elsewhere made storable is applied, not left blocking the save with no error shown
+            const pendingRule = ruleFromDraft(pending);
+            const pendingRejected = isRejected(pending);
+            if (pendingRule !== null && !pendingRejected) {
+              onChange(pendingRule);
+              setDraft(null);
+              return;
+            }
+            onChange(applied);
+            setDraft({ condition: pending, rejected: pendingRejected });
             return;
           }
           // a saved rule that no longer validates as it was still comes back with whatever of it still applies
