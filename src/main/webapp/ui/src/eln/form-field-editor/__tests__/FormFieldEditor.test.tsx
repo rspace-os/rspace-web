@@ -384,6 +384,18 @@ describe("FormFieldEditor", () => {
     restoreConsole();
   });
 
+  it("holds the fields read-only while the toolbar publishes, and gives them back if it does not", async () => {
+    serveFields([gmo]);
+    const { handle } = await renderEditor();
+
+    act(() => handle.current?.setReadOnly(true));
+    expect(screen.queryByRole("textbox", { name: "Name" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add field" })).not.toBeInTheDocument();
+
+    act(() => handle.current?.setReadOnly(false));
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Is this a GMO?");
+  });
+
   it("is read-only when the form cannot be edited", async () => {
     serveFields([gmo, permit]);
     await renderEditor({ editable: false });
@@ -519,6 +531,45 @@ describe("ELN field settings", () => {
       maxValue: "05:30 PM",
       defaultValue: "",
     });
+  });
+
+  // "F" is a Java pattern letter the editor cannot write, from a form imported from an archive
+  const unlistedTime = saved(3, "Time", {
+    name: "Start",
+    timeFormat: "HH:mm F",
+    minValue: "09:00 2",
+    maxValue: "",
+    defaultValue: "",
+  });
+
+  it("time: keeps a value stored in a format the editor cannot write until a listed format is chosen", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([unlistedTime]);
+    const { handle } = await renderEditor();
+
+    const earliest = within(card("Start")).getByLabelText("Earliest");
+    expect(earliest).toBeDisabled();
+    expect(earliest).toHaveAccessibleDescription(
+      "Stored as 09:00 2, which cannot be shown here. It is kept unless you enter a new value. Choose a listed format to change this value.",
+    );
+    await user.click(within(card("Start")).getByRole("switch", { name: "Mandatory" }));
+    await handle.current?.save();
+    expect(posts[0][0].source).toMatchObject({ timeFormat: "HH:mm F", minValue: "09:00 2" });
+
+    await user.click(within(card("Start")).getByRole("combobox", { name: "Time format" }));
+    await user.click(screen.getByRole("option", { name: "24-hour (14:30)" }));
+    expect(within(card("Start")).getByLabelText("Earliest")).toBeEnabled();
+  });
+
+  it("time: clears a stored value it cannot read on request", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([unlistedTime]);
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("Start")).getByRole("button", { name: "Clear stored Earliest" }));
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({ timeFormat: "HH:mm F", minValue: "" });
   });
 
   it("text: shows the sanitised default", async () => {

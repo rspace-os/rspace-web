@@ -9,6 +9,21 @@ var leavingFormEditor = false;
  */
 var formSaveIncomplete = false;
 
+/* Set while the access dialog's publish request runs, so closing the dialog does not cancel it. */
+var publishRequestRunning = false;
+
+/*
+ * Ends a Publish. The fields were held read-only from the field save until now, so no edit is made
+ * that the save did not include; if the form was not published, editing resumes.
+ */
+function finishPublish(published) {
+  publishRequestRunning = false;
+  if (!published && window.formFieldEditor) {
+    window.formFieldEditor.setReadOnly(false);
+  }
+  endToolbarAction();
+}
+
 /* One toolbar action (Save, Update, Publish, Revert) at a time; a second click while one runs is ignored. */
 var toolbarActionRunning = false;
 
@@ -74,11 +89,18 @@ $(document).ready(function () {
     autoOpen: false,
     width: 350,
     title: RS.msg("legacyjs.workspace.form.publishShareDialogTitle"),
+    // closing the dialog any way but OK cancels publishing
+    close: function () {
+      if (!publishRequestRunning) {
+        finishPublish(false);
+      }
+    },
     buttons: {
       [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
         $(this).dialog('close');
       },
       [RS.msg("legacyjs.workspace.form.okButton")]: function () {
+        publishRequestRunning = true;
         $(this).dialog('close');
         var $form = $('#rsFormSharingForm');
         var data = $form.serialize();
@@ -95,8 +117,12 @@ $(document).ready(function () {
             if (window.formFieldEditor) {
               window.formFieldEditor.markPublished();
             }
+            finishPublish(true);
           },
-          error: function (xhr, err) { alert(RS.msg("legacyjs.workspace.form.genericError")); }
+          error: function (xhr, err) {
+            finishPublish(false);
+            alert(RS.msg("legacyjs.workspace.form.genericError"));
+          }
         });
       }
     },
@@ -184,9 +210,17 @@ $(document).ready(function () {
   }
 });
 
+/*
+ * Releases the edit lock this page acquired, by its token: a page left earlier (another tab, or this
+ * page before a reload) holds another token, so it can never release this page's lock.
+ */
 function unlockform() {
+  if (!editLockToken) {
+    // this page took no lock (a new form, or another user is editing)
+    return;
+  }
   var url = createURL('/workspace/editor/form/unlockform');
-  var data = new URLSearchParams({ id: recordId });
+  var data = new URLSearchParams({ id: recordId, lockToken: editLockToken });
   if (navigator.sendBeacon && navigator.sendBeacon(url, data)) {
     return;
   }
@@ -228,20 +262,27 @@ function setUpPublishButtons() {
       if (!startToolbarAction()) {
         return;
       }
-      // the page is blocked while the fields save, so no edit made meanwhile can be overwritten
+      // Read-only from the field save until publishing ends: an edit made meanwhile would miss the
+      // saved fields and then be locked in by the published editor.
+      if (window.formFieldEditor) {
+        window.formFieldEditor.setReadOnly(true);
+      }
       RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
       saveFieldEditor(true).then(function (saved) {
         RS.unblockPage();
         if (!saved) {
-          endToolbarAction();
+          finishPublish(false);
           return;
         }
-        //get the access control dialog
+        //get the access control dialog; closing it ends publishing
         var jqxhr = $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
           $('#publishShareDlgContent').html(data);
           $('#publishShareDlg').dialog('open');
         });
-        jqxhr.always(endToolbarAction);
+        jqxhr.fail(function () {
+          finishPublish(false);
+          alert(RS.msg("legacyjs.workspace.form.genericError"));
+        });
       });
     } else {
       // unpublishing
@@ -294,7 +335,8 @@ function saveForm() {
     }
     saveFormTag().always(function () {
       var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
-        templateId: recordId
+        templateId: recordId,
+        lockToken: editLockToken
       }, function (success) {
         if (success.data !== null) {
           formSaveIncomplete = false;
@@ -335,7 +377,8 @@ function updateForm() {
       return;
     }
     var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
-      templateId: recordId
+      templateId: recordId,
+      lockToken: editLockToken
     }, function (data) {
       RS.unblockPage();
       if (data.data !== null) {

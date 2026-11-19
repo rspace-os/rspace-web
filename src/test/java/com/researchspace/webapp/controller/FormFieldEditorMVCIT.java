@@ -3,6 +3,8 @@ package com.researchspace.webapp.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,6 +23,7 @@ import com.researchspace.model.dtos.RadioFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.impl.RecordEditorTracker;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.util.List;
 import java.util.UUID;
@@ -114,7 +117,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     JsonNode reread = getFields(draft.getId());
     assertEquals(saved.get("data"), reread.get("data"));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
-    formController.unlockForm(form.getId(), principal);
+    formController.unlockForm(form.getId(), null, principal);
   }
 
   @Test
@@ -123,7 +126,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm draft = openInEditor(form);
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
 
-    Long newVersionId = formController.updateForm(draft.getId(), principal).getData();
+    Long newVersionId = formController.updateForm(draft.getId(), null, principal).getData();
 
     assertEquals(draft.getId(), newVersionId);
     assertTrue(recordTracker.isEditing(form).isEmpty());
@@ -143,29 +146,89 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm draft = openInEditor(form);
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
 
-    // the page's unlock beacon sends the id it shows, the draft's
-    formController.unlockForm(draft.getId(), principal);
+    // the page shows the draft but its token names the lock it took, on the original
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
 
     assertTrue(recordTracker.isEditing(form).isEmpty());
+    assertEquals(EditStatus.EDIT_MODE, anotherUserAttemptsToEdit(form));
+  }
+
+  @Test
+  public void aStalePagesUnlockAfterAReloadKeepsTheCurrentPagesLock() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String stalePage = pageLockToken();
+    // a reload, or a back-forward restore that reloads, opens the editor again in the same session
+    formController.editForm(model, principal, form.getId());
+    String currentPage = pageLockToken();
+    assertNotEquals(stalePage, currentPage);
+
+    // the stale page's unlock arrives late, and twice
+    formController.unlockForm(draft.getId(), stalePage, principal);
+    formController.unlockForm(draft.getId(), stalePage, principal);
+
+    assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
+    formController.unlockForm(draft.getId(), currentPage, principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  @Test
+  public void anotherUserCannotReleaseAPagesLockWithItsToken() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String token = pageLockToken();
+    User other = createAndSaveUser(getRandomAlphabeticString("other"));
+
+    formController.unlockForm(draft.getId(), token, new MockPrincipal(other.getUsername()));
+
+    assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    formController.unlockForm(draft.getId(), token, principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  @Test
+  public void theSameUserInAnotherSessionCannotReleaseAPagesLock() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String token = pageLockToken();
+    String editingSession = SessionAttributeUtils.getSessionId();
+
+    logoutAndLoginAs(user);
+    formController.unlockForm(draft.getId(), token, principal);
+
+    assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    recordTracker.unlockRecord(form, user, () -> editingSession);
+  }
+
+  /** What another user, in another session, gets on trying to edit the form. */
+  private EditStatus anotherUserAttemptsToEdit(RSForm form) {
     User other = createAndSaveUser(getRandomAlphabeticString("other"));
     UserSessionTracker active = new UserSessionTracker();
     active.addUser(user.getUsername(), new MockHttpSession());
-    assertEquals(
-        EditStatus.EDIT_MODE,
-        recordTracker.attemptToEdit(form.getId(), other, active, () -> "other session"));
+    EditStatus status =
+        recordTracker.attemptToEdit(form.getId(), other, active, () -> "other session");
     recordTracker.unlockRecord(form, other, () -> "other session");
+    return status;
+  }
+
+  /** The token the form editor page that last loaded was given with its lock. */
+  private String pageLockToken() {
+    String token = (String) model.asMap().get("editLockToken");
+    assertNotNull(token);
+    return token;
   }
 
   @Test
   public void updateOfAResumedDraftReleasesTheLockOnTheDraft() throws Exception {
     RSForm form = publishedForm();
     RSForm draft = openInEditor(form);
-    formController.unlockForm(form.getId(), principal);
+    formController.unlockForm(form.getId(), null, principal);
     // resuming opens the draft's own id
     formController.editForm(model, principal, draft.getId());
     assertEquals(user.getUsername(), recordTracker.isEditing(draft).orElse(null));
 
-    formController.updateForm(draft.getId(), principal);
+    formController.updateForm(draft.getId(), null, principal);
 
     assertTrue(recordTracker.isEditing(draft).isEmpty());
   }
@@ -177,7 +240,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     JsonNode before = getFields(draft.getId());
 
     // the published form is not a draft, so there is no version to commit
-    AjaxReturnObject<Long> response = formController.updateForm(form.getId(), principal);
+    AjaxReturnObject<Long> response = formController.updateForm(form.getId(), null, principal);
 
     assertNull(response.getData());
     assertThat(response.getErrorMsg().getErrorMessages())
@@ -185,7 +248,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     assertEquals(before.get("data"), getFields(draft.getId()).get("data"));
     assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
-    formController.unlockForm(form.getId(), principal);
+    formController.unlockForm(form.getId(), null, principal);
   }
 
   @Test
@@ -215,7 +278,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
         .contains("Field #3 in the list is empty");
 
     assertEquals(read.get("data"), getFields(draft.getId()).get("data"));
-    formController.unlockForm(form.getId(), principal);
+    formController.unlockForm(form.getId(), null, principal);
   }
 
   private RSForm openInEditor(RSForm form) throws Exception {

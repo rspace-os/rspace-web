@@ -64,6 +64,7 @@ export default function FormFieldEditorRoot({ formId, editable, ref }: FormField
     isDirty: () => editor.current?.isDirty() ?? false,
     fieldCount: () => editor.current?.fieldCount() ?? 0,
     markPublished: () => editor.current?.markPublished(),
+    setReadOnly: (readOnly) => editor.current?.setReadOnly(readOnly),
     confirmAbandon: () =>
       confirm(
         t("formFieldEditor.confirm.abandon"),
