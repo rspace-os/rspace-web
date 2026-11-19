@@ -287,7 +287,14 @@ public class RSFormController extends BaseController {
     if (eo != null) {
       return new AjaxReturnObject<StringFieldForm>(null, eo);
     }
-    StringFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
+    StringFieldForm updated;
+    try {
+      updated = formManager.updateFieldForm(dto, fieldId, subject);
+    } catch (FormFieldsValidationException e) {
+      ErrorList errors = new ErrorList();
+      e.getErrors().forEach(errors::addErrorMsg);
+      return new AjaxReturnObject<>(null, errors);
+    }
     return new AjaxReturnObject<StringFieldForm>(updated, null);
   }
 
