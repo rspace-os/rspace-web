@@ -15,7 +15,7 @@ function renderEditBar(profileText: string) {
   domContainer.setAttribute("data-profile-hiding-enabled", "true");
   domContainer.setAttribute("data-can-hide-group-profile", "true");
   domContainer.setAttribute("data-group-private-profile", "false");
-  render(<GroupEditBar domContainer={domContainer} />);
+  return render(<GroupEditBar domContainer={domContainer} />);
 }
 
 function mockEndpoints() {
@@ -42,6 +42,33 @@ const saveButton = () => screen.getByRole("button", { name: /actions\.save/ });
 const description = () => screen.getByRole("textbox", { name: /profileDescription/ });
 
 describe("GroupEditBar", () => {
+  it("shows the saved description as readable read-only text until editing starts", async () => {
+    const user = userEvent.setup();
+    const { baseElement } = renderEditBar("Saved description");
+
+    expect(description()).toHaveValue("Saved description");
+    expect(description()).toBeEnabled();
+    expect(description()).toHaveAttribute("readonly");
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(baseElement).toBeAccessible();
+
+    await user.click(editButton());
+    expect(description()).not.toHaveAttribute("readonly");
+    await user.type(description(), "!");
+    expect(description()).toHaveValue("Saved description!");
+  });
+
+  it("shows the no-profile wording outside edit mode and an empty field when editing", async () => {
+    const user = userEvent.setup();
+    renderEditBar("");
+
+    expect(description()).toHaveDisplayValue(/noProfile/);
+    expect(description()).toBeEnabled();
+
+    await user.click(editButton());
+    expect(description()).toHaveValue("");
+  });
+
   it("hides a group whose empty description is unchanged without saving the description", async () => {
     const user = userEvent.setup();
     const { profilePosts, hidePosts } = mockEndpoints();

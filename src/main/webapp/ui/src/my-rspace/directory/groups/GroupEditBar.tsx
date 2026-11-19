@@ -171,8 +171,9 @@ class GroupEditBar extends React.Component<any, any> {
               <CardContent>
                 <TextField
                   variant="standard"
-                  disabled={!this.state.editing}
-                  value={this.state.profile_text}
+                  value={
+                    this.state.editing ? this.state.profile_text : this.state.profile_text || this.state.default_text
+                  }
                   onChange={this.handleChange}
                   placeholder={i18n.t("profile.groups.editBar.placeholder")}
                   multiline={true}
@@ -182,6 +183,7 @@ class GroupEditBar extends React.Component<any, any> {
                   margin="dense"
                   data-test-id="profile-description"
                   slotProps={{
+                    input: { readOnly: !this.state.editing, disableUnderline: !this.state.editing },
                     htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
                   }}
                 />
