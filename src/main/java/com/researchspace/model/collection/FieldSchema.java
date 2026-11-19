@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +23,7 @@ public record FieldSchema(
     AccessDocumentation createAccess,
     AccessDocumentation updateAccess,
     boolean readInherited,
-    boolean readGuaranteed,
+    // Child rows never carry a guarantee; only the OpenAPI marker publishes it.
+    @JsonIgnore boolean readGuaranteed,
     List<FieldSchema> fields)
     implements ResourceFieldSchema {}
