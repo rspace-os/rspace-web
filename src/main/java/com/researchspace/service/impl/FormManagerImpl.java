@@ -49,6 +49,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -270,6 +273,26 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   public RSForm getForEditing(
       Long id, User user, UserSessionTracker activeUsers, boolean useSessionToCalculateEditStatus) {
+    return open(id, user, activeUsers, useSessionToCalculateEditStatus, false).form();
+  }
+
+  @RequiresPermissions("FORM:READ") // the minimal permission, as for getForEditing
+  @Override
+  public FormEditorPage getForEditorPage(Long id, User user, UserSessionTracker activeUsers) {
+    Opened opened = open(id, user, activeUsers, true, true);
+    return new FormEditorPage(opened.form(), opened.lockToken());
+  }
+
+  /** A form opened for editing, and the token of an editor page's hold on its lock, if any. */
+  private record Opened(RSForm form, String lockToken) {}
+
+  private Opened open(
+      Long id,
+      User user,
+      UserSessionTracker activeUsers,
+      boolean useSessionToCalculateEditStatus,
+      boolean holdForEditorPage) {
+    String lockToken = null;
     // if it's a new form, we'll return this - it's not been published yet
     RSForm formToEdit = get(id, user);
 
@@ -284,8 +307,23 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
         // this *is* a temp form so we'll just return it
         log.info("loading a temp form");
       }
-      EditStatus es =
-          calculateEditStatus(id, user, activeUsers, useSessionToCalculateEditStatus, formToEdit);
+      EditStatus es;
+      if (holdForEditorPage) {
+        // atomic with the hold, so a release by id cannot take the acquisition before it is held
+        synchronized (editLockHolds) {
+          es =
+              formTracker.attemptToEdit(id, user, activeUsers, SessionAttributeUtils::getSessionId);
+          if (EditStatus.EDIT_MODE.equals(es)) {
+            lockToken = UUID.randomUUID().toString();
+            editLockHolds.put(
+                lockToken,
+                new EditLockHold(id, user.getUsername(), SessionAttributeUtils.getSessionId()));
+          }
+        }
+      } else {
+        es =
+            calculateEditStatus(id, user, activeUsers, useSessionToCalculateEditStatus, formToEdit);
+      }
       formToEdit.setEditStatus(es);
     } else if (permissionUtils.isPermitted(formToEdit, PermissionType.READ, user)) {
       formToEdit.setEditStatus(EditStatus.CANNOT_EDIT_NO_PERMISSION);
@@ -293,7 +331,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       formToEdit.setEditStatus(EditStatus.ACCESS_DENIED);
     }
     formToEdit.getFieldForms().size(); // initialize FTs from lazy-loading
-    return formToEdit;
+    return new Opened(formToEdit, lockToken);
   }
 
   private EditStatus calculateEditStatus(
@@ -326,7 +364,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     }
   }
 
-  /** A form editor page's hold on an edit lock, see {@link #registerEditLockHolder}. */
+  /** A form editor page's hold on an edit lock, see {@link #getForEditorPage}. */
   private record EditLockHold(long formId, String username, String sessionId) {}
 
   /**
@@ -344,7 +382,11 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     if (form == null || form.getId() == null || user == null) {
       return;
     }
-    String sessionId = SessionAttributeUtils.getSessionId();
+    // outside a session (an archive import, a startup task) no lock can have been taken
+    String sessionId = currentSessionId();
+    if (sessionId == null) {
+      return;
+    }
     EditLockHold thisAcquisition = new EditLockHold(form.getId(), user.getUsername(), sessionId);
     synchronized (editLockHolds) {
       long heldByToken = editLockHolds.values().stream().filter(thisAcquisition::equals).count();
@@ -354,37 +396,29 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     }
   }
 
-  @Override
-  public String registerEditLockHolder(long lockedFormId, User user) {
-    String token = UUID.randomUUID().toString();
-    synchronized (editLockHolds) {
-      editLockHolds.put(
-          token,
-          new EditLockHold(lockedFormId, user.getUsername(), SessionAttributeUtils.getSessionId()));
-    }
-    return token;
+  /** The current Shiro session's id, or null when there is no subject or session. */
+  private static String currentSessionId() {
+    Subject subject = ThreadContext.getSubject();
+    Session session = subject == null ? null : subject.getSession(false);
+    return session == null ? null : session.getId().toString();
   }
 
   @Override
   public boolean releaseEditLock(String token, User user) {
-    if (StringUtils.isBlank(token)) {
+    String sessionId = currentSessionId();
+    if (StringUtils.isBlank(token) || sessionId == null) {
       return false;
     }
-    String sessionId = SessionAttributeUtils.getSessionId();
-    EditLockHold hold = editLockHolds.get(token);
-    if (hold == null
-        || !hold.username().equals(user.getUsername())
-        || !hold.sessionId().equals(sessionId)
-        || !formDao.exists(hold.formId())) {
-      return false;
-    }
-    RSForm form = formDao.get(hold.formId());
     synchronized (editLockHolds) {
-      // a token released twice at once still releases once
-      if (!editLockHolds.remove(token, hold)) {
+      EditLockHold hold = editLockHolds.get(token);
+      if (hold == null
+          || !hold.username().equals(user.getUsername())
+          || !hold.sessionId().equals(sessionId)) {
         return false;
       }
-      formTracker.unlockRecord(form, user, () -> sessionId);
+      editLockHolds.remove(token);
+      // by id, so a hold on a form deleted since (a reverted draft) is released too
+      formTracker.unlockRecordById(hold.formId(), user, () -> sessionId);
     }
     return true;
   }

@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,8 +29,11 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.util.List;
 import java.util.UUID;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 
 /** The form field editor's read and save endpoints, and the edit lock around Update. */
@@ -275,6 +284,114 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
     formController.unlockForm(draft.getId(), nextPage, principal);
     assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  @Test
+  public void savingAFormOutsideASessionSavesItAndReleasesNoLock() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    // as an archive import under /api/** or a startup task saves forms: no session
+    Subject noSession =
+        new Subject.Builder()
+            .principals(SecurityUtils.getSubject().getPrincipals())
+            .authenticated(true)
+            .sessionCreationEnabled(false)
+            .buildSubject();
+    draft.setName("saved without a session");
+
+    RSForm saved = noSession.execute(() -> formMgr.save(draft, user));
+
+    assertEquals("saved without a session", saved.getName());
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
+  }
+
+  @Test
+  public void aReleaseByIdAsThePageGetsTheLockCannotTakeIt() throws Exception {
+    RSForm form = publishedForm();
+    Object manager = AopTestUtils.getUltimateTargetObject(formMgr);
+    RecordEditorTracker racing = spy(recordTracker);
+    Thread[] release = new Thread[1];
+    doAnswer(
+            acquiring -> {
+              Object status = acquiring.callRealMethod();
+              // right after the acquisition, a release by id from the same session
+              release[0] =
+                  new Thread(
+                      SecurityUtils.getSubject()
+                          .associateWith(() -> formMgr.unlockForm(form, user)));
+              release[0].start();
+              awaitDoneOrBlockedOnThisThread(release[0]);
+              return status;
+            })
+        .when(racing)
+        .attemptToEdit(any(), any(), any(), any());
+    ReflectionTestUtils.setField(manager, "formTracker", racing);
+    try {
+      formController.editForm(model, principal, form.getId());
+    } finally {
+      ReflectionTestUtils.setField(manager, "formTracker", recordTracker);
+    }
+    release[0].join(10_000);
+
+    assertEquals(1, editCount(form));
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
+    formController.unlockForm(form.getId(), pageLockToken(), principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  /** Waits until a thread has finished, or is blocked on a monitor the current thread holds. */
+  private static void awaitDoneOrBlockedOnThisThread(Thread thread) throws InterruptedException {
+    long self = Thread.currentThread().getId();
+    long deadline = System.currentTimeMillis() + 10_000;
+    while (thread.getState() != Thread.State.TERMINATED) {
+      ThreadInfo info = ManagementFactory.getThreadMXBean().getThreadInfo(thread.getId());
+      if (info != null && info.getLockOwnerId() == self) {
+        return;
+      }
+      if (System.currentTimeMillis() > deadline) {
+        fail("the release neither finished nor waited for the editor page");
+      }
+      Thread.sleep(5);
+    }
+  }
+
+  @Test
+  public void theEndOfOneOfAUsersSessionsReleasesItsLocksAndHoldsOnEveryForm() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String formPage = pageLockToken();
+    RSForm second = publishedForm();
+    openInEditor(second);
+    String secondPage = pageLockToken();
+    // the same user has the first form open in another session too
+    recordTracker.attemptToEdit(form.getId(), user, anySessionTracker(), () -> "another session");
+
+    formMgr.removeFromEditorTracker(SessionAttributeUtils.getSessionId());
+
+    assertEquals(0, editCount(form));
+    assertEquals(
+        1, recordTracker.getEditCount(form.getId(), user.getUsername(), "another session"));
+    assertTrue(recordTracker.isEditing(second).isEmpty());
+    assertFalse(formMgr.releaseEditLock(formPage, user));
+    assertFalse(formMgr.releaseEditLock(secondPage, user));
+    recordTracker.unlockRecord(form, user, () -> "another session");
+    assertTrue(recordTracker.isEditing(draft).isEmpty());
+  }
+
+  @Test
+  public void leavingAfterRevertingAResumedDraftReleasesItsLock() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
+    formController.editForm(model, principal, draft.getId());
+    String resumedDraftPage = pageLockToken();
+
+    formController.abandonUpdateForm(draft.getId(), principal);
+    formController.unlockForm(draft.getId(), resumedDraftPage, principal);
+
+    assertTrue(recordTracker.isEditing(draft).isEmpty());
+    assertFalse(formMgr.releaseEditLock(resumedDraftPage, user));
   }
 
   private int editCount(RSForm form) {
