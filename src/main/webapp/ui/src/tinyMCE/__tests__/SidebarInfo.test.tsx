@@ -246,4 +246,38 @@ describe("SidebarInfo accessibility", () => {
     expect(children[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
     expect(children[3]).toBe(otherResult);
   });
+
+  it("keeps an imported result when its block holds several structures", async () => {
+    const user = userEvent.setup();
+    const { iframe, iframeDocument } = createIframeWithDocument();
+    const chemicalParagraph = iframeDocument.createElement("p");
+    const chemicalImage = createChemicalImage(iframeDocument, "chem-4");
+    chemicalParagraph.append(chemicalImage, createChemicalImage(iframeDocument, "chem-5"));
+    const importedResult = iframeDocument.createElement("div");
+    importedResult.setAttribute("data-bond-strengths-for", "chem-2");
+    iframeDocument.body.append(chemicalParagraph, importedResult);
+    const nodeChanged = vi.fn();
+    Object.assign(globalThis, {
+      tinymce: {
+        activeEditor: {
+          id: "rtf_12",
+          execCommand: vi.fn(),
+          undoManager: { transact: (change: () => void) => change() },
+          nodeChanged,
+        },
+      },
+    });
+    render(<SidebarInfo iframe={iframe} />);
+    act(() => {
+      chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Insert bond strengths" }));
+    await waitFor(() => expect(nodeChanged).toHaveBeenCalled());
+
+    const children = Array.from(iframeDocument.body.children);
+    expect(children).toHaveLength(3);
+    expect(children[1].getAttribute("data-bond-strengths-for")).toBe("chem-4");
+    expect(children[2]).toBe(importedResult);
+  });
 });

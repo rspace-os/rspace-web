@@ -61,8 +61,9 @@ const RESULT_ATTRIBUTE = "data-bond-strengths-for";
  * Adds the picture and the table after the top-level block that holds the chem image. Going to
  * the top level keeps the HTML valid when the image sits inside a list or a table cell.
  * A result already in the document for the same chemical is replaced where it stands. So is a
- * result straight after the structure whose chemical is no longer in the document: import and
- * copy give the structure a new id but keep the old result.
+ * result straight after the structure whose chemical is no longer in the document, when that
+ * structure is the only one in its block: import and copy give the structure a new id but keep
+ * the old result.
  * `pictureHtml` is the editor markup for the picture once it is stored in the Gallery.
  */
 export function insertBondStrengthsAfter(
@@ -94,8 +95,11 @@ export function insertBondStrengthsAfter(
 
   const chemicalIds = new Set(Array.from(doc.body.querySelectorAll("img.chem"), (image) => image.id));
   const next = block.nextElementSibling;
+  const onlyStructureInBlock = block === chemImage || block.querySelectorAll("img.chem").length === 1;
   const orphanAfterStructure =
-    next?.matches(`div[${RESULT_ATTRIBUTE}]`) && !chemicalIds.has(next.getAttribute(RESULT_ATTRIBUTE) ?? "")
+    onlyStructureInBlock &&
+    next?.matches(`div[${RESULT_ATTRIBUTE}]`) &&
+    !chemicalIds.has(next.getAttribute(RESULT_ATTRIBUTE) ?? "")
       ? [next]
       : [];
   const earlier = [
