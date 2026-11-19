@@ -97,4 +97,12 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    * @return a List of RSForms used by other users
    */
   List<RSForm> getFormsUsedByOtherUsers(User formOwner);
+
+  /**
+   * Locks the form's row until the transaction ends, so saves of its fields run one at a time.
+   *
+   * @return false if another transaction changed the form after this transaction first read the
+   *     database, so what this transaction reads of the form may already be out of date
+   */
+  boolean lockUnchangedSinceTransactionStart(Long formId);
 }

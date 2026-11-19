@@ -36,8 +36,10 @@ public final class FieldDisplayRuleValidator {
 
   /**
    * The longest a rule may be as stored, in characters of {@link FieldDisplayRule#toJson()}. That
-   * output is plain ASCII, so this is also its size in bytes. The rule is stored in a MariaDB TEXT
-   * column, which holds 65,535 bytes; half of that leaves ample headroom.
+   * output is plain ASCII, so this is also its size in bytes. Inventory stores the rule in a
+   * MariaDB TEXT column, which holds 65,535 bytes, so half of that leaves ample headroom there. ELN
+   * stores it in a LONGTEXT column, which has no practical limit; the same bound applies so that a
+   * rule valid in one is valid in the other.
    */
   public static final int MAX_JSON_LENGTH = 32_768;
 
@@ -86,7 +88,7 @@ public final class FieldDisplayRuleValidator {
       }
       if (rule.values().size() > MAX_VALUES) {
         errors.add(new RuleError(i, VALUE_TOO_MANY));
-      } else if (rule.toJson().length() > MAX_JSON_LENGTH) {
+      } else if (hasValueLongerThanBudget(rule) || rule.toJson().length() > MAX_JSON_LENGTH) {
         errors.add(new RuleError(i, RULE_TOO_LONG));
       } else if (new HashSet<>(rule.values()).size() < rule.values().size()) {
         errors.add(new RuleError(i, VALUE_DUPLICATE));
@@ -148,6 +150,14 @@ public final class FieldDisplayRuleValidator {
       }
     }
     return onCycle;
+  }
+
+  /**
+   * Whether one value alone is longer than {@link #MAX_JSON_LENGTH}, so the rule is too long
+   * without serialising it (which escapes each non-ASCII unit to six characters).
+   */
+  private static boolean hasValueLongerThanBudget(FieldDisplayRule rule) {
+    return rule.values().stream().anyMatch(value -> value.length() > MAX_JSON_LENGTH);
   }
 
   /** A key is valid only in canonical form: what {@link UUID#toString()} writes (lower case). */

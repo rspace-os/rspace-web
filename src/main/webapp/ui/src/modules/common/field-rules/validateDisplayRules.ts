@@ -20,8 +20,9 @@ export const MAX_DISPLAY_RULE_VALUES = 1000;
 
 /**
  * The longest a rule may be as stored (see `storedDisplayRuleLength`); the
- * same as Java's `FieldDisplayRuleValidator.MAX_JSON_LENGTH`, half of the
- * 65,535-byte TEXT column that holds it.
+ * same as Java's `FieldDisplayRuleValidator.MAX_JSON_LENGTH`. That is half of
+ * the 65,535-byte TEXT column that holds an Inventory rule; ELN's LONGTEXT
+ * column has no practical limit, but the same bound keeps the two alike.
  */
 export const MAX_DISPLAY_RULE_JSON_LENGTH = 32_768;
 
@@ -112,7 +113,11 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
     if (rule === null) return;
     if (rule.values.length > MAX_DISPLAY_RULE_VALUES) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueTooMany });
-    } else if (storedDisplayRuleLength(rule) > MAX_DISPLAY_RULE_JSON_LENGTH) {
+    } else if (
+      // One value alone over the budget is too long; skip serialising it.
+      rule.values.some((value) => value.length > MAX_DISPLAY_RULE_JSON_LENGTH) ||
+      storedDisplayRuleLength(rule) > MAX_DISPLAY_RULE_JSON_LENGTH
+    ) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.ruleTooLong });
     } else if (new Set(rule.values).size < rule.values.length) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueDuplicate });

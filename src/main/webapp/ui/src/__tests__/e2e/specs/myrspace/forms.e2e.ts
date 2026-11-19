@@ -64,12 +64,13 @@ test.describe("My RSpace forms", () => {
     await gmo.addOption("Yes");
     await gmo.addOption("No");
     await form.addField("String", "GMO permit", true);
-    await form.fields.addRule("Is this a GMO?", ["Yes"], ["GMO permit"]);
-    await expect(form.field("GMO permit").ruleSummary).toHaveText("Shown when Is this a GMO? is Yes");
+    await form.field("GMO permit").showOnlyWhen("Is this a GMO?", ["Yes"]);
+    await expect(form.field("Is this a GMO?").root).toContainText("Other fields depend on this field: GMO permit");
 
     const forms = await form.saveAndClose();
     const reopened = await forms.edit(formName);
-    await expect(reopened.field("GMO permit").ruleSummary).toHaveText("Shown when Is this a GMO? is Yes");
+    await expect(reopened.field("GMO permit").conditionSource).toHaveText("Is this a GMO?");
+    await expect(reopened.field("GMO permit").displayCondition.getByRole("button", { name: "Yes" })).toBeVisible();
   });
 
   test("As a user, publishing blocks the page while the fields save, and a second click does nothing", async ({

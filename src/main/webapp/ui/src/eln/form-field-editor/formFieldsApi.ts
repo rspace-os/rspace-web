@@ -2,10 +2,11 @@
  * The form field editor's server contract: `GET` and `POST
  * /workspace/editor/form/ajax/fields?formId=` (RSFormController). Each item is
  * a field as the legacy field DTOs describe it, plus its id, key, display rule
- * and whether it can be deleted.
+ * and whether it can be deleted. The list comes with its version, which a save
+ * sends back so that it cannot overwrite a newer save from elsewhere.
  */
 import * as v from "valibot";
-import axios from "@/common/axios";
+import axios, { isAxiosError } from "@/common/axios";
 
 export const ELN_FIELD_TYPES = [
   "Number",
@@ -106,8 +107,13 @@ export type FormFieldSaveItem = {
   source: Record<string, string | boolean>;
 };
 
+const FieldListSchema = v.object({ fields: v.array(ItemSchema), version: v.string() });
+
+/** The form's saved fields, in order, and the version of that list. */
+export type FormFieldList = v.InferOutput<typeof FieldListSchema>;
+
 const ResponseSchema = v.object({
-  data: v.nullable(v.array(ItemSchema)),
+  data: v.nullable(FieldListSchema),
   errorMsg: v.nullish(v.object({ errorMessages: v.array(v.string()) }), null),
 });
 
@@ -122,7 +128,15 @@ export class FormFieldsSaveError extends Error {
   }
 }
 
-function itemsFrom(body: unknown): Array<FormFieldEditorItem> {
+/** The fields changed elsewhere, for example in another tab, after this editor read them; nothing was saved. */
+export class FormFieldsConflictError extends FormFieldsSaveError {
+  constructor(messages: ReadonlyArray<string>) {
+    super(messages);
+    this.name = "FormFieldsConflictError";
+  }
+}
+
+function fieldListFrom(body: unknown): FormFieldList {
   const response = v.parse(ResponseSchema, body);
   if (response.data === null) throw new FormFieldsSaveError(response.errorMsg?.errorMessages ?? []);
   return response.data;
@@ -130,21 +144,32 @@ function itemsFrom(body: unknown): Array<FormFieldEditorItem> {
 
 const fieldsUrl = (formId: number) => `/workspace/editor/form/ajax/fields?formId=${formId}`;
 
-export async function fetchFormFields(formId: number): Promise<Array<FormFieldEditorItem>> {
+export async function fetchFormFields(formId: number): Promise<FormFieldList> {
   const { data } = await axios.get<unknown>(fieldsUrl(formId));
-  return itemsFrom(data);
+  return fieldListFrom(data);
 }
 
 /**
  * Saves the full, ordered field list; the server applies every change in one
- * transaction and returns the saved fields.
+ * transaction and returns the saved fields with their new version.
  *
+ * @param version the version of the field list the items were edited from
+ * @throws {FormFieldsConflictError} when the fields changed after that version
  * @throws {FormFieldsSaveError} when the server rejects the save
  */
 export async function saveFormFields(
   formId: number,
   items: ReadonlyArray<FormFieldSaveItem>,
-): Promise<Array<FormFieldEditorItem>> {
-  const { data } = await axios.post<unknown>(fieldsUrl(formId), items);
-  return itemsFrom(data);
+  version: string,
+): Promise<FormFieldList> {
+  try {
+    const { data } = await axios.post<unknown>(fieldsUrl(formId), items, { params: { version } });
+    return fieldListFrom(data);
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 409) {
+      const parsed = v.safeParse(ResponseSchema, error.response.data);
+      throw new FormFieldsConflictError(parsed.success ? (parsed.output.errorMsg?.errorMessages ?? []) : []);
+    }
+    throw error;
+  }
 }

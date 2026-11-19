@@ -49,22 +49,32 @@ const permit = saved(
   { fieldKey: PERMIT, displayRule: { sourceFieldKey: GMO, operator: "IS_ANY_OF", values: ["Yes"] } },
 );
 
-/** Serves the fields, echoes each save back with ids for new fields, and records what was sent. */
+/** The server's answer with these fields, as the version after `saves` saves. */
+const fieldList = (fields: ReadonlyArray<unknown>, saves = 0) =>
+  HttpResponse.json({ data: { fields, version: `v${saves}` }, errorMsg: null });
+
+/** A save's fields as the server returns them, with ids for new fields. */
+const echoed = (body: ReadonlyArray<FormFieldSaveItem>) =>
+  body.map((item, i) => ({ ...item, id: item.id ?? 100 + i, canDelete: true }));
+
+/**
+ * Serves the fields, echoes each save back with ids for new fields and a new
+ * version, and records what was sent and the version each save was made from.
+ */
 function serveFields(items: Array<FormFieldEditorItem>, saveResponse?: () => Response | Promise<Response>) {
   const posts: Array<Array<FormFieldSaveItem>> = [];
+  const versions: Array<string | null> = [];
   server.use(
-    http.get(FIELDS_URL, () => HttpResponse.json({ data: items, errorMsg: null })),
+    http.get(FIELDS_URL, () => fieldList(items)),
     http.post(FIELDS_URL, async ({ request }) => {
       const body = (await request.json()) as Array<FormFieldSaveItem>;
       posts.push(body);
+      versions.push(new URL(request.url).searchParams.get("version"));
       if (saveResponse) return saveResponse();
-      return HttpResponse.json({
-        data: body.map((item, i) => ({ ...item, id: item.id ?? 100 + i, canDelete: true })),
-        errorMsg: null,
-      });
+      return fieldList(echoed(body), posts.length);
     }),
   );
-  return posts;
+  return Object.assign(posts, { versions });
 }
 
 async function renderRoot({ editable = true } = {}) {
@@ -84,8 +94,7 @@ async function renderRoot({ editable = true } = {}) {
 
 async function renderEditor(options: { editable?: boolean } = {}) {
   const rendered = await renderRoot(options);
-  // the rules panel appears once there is a field
-  await screen.findByText(/^(This form has no fields yet\.|Display rules)$/);
+  await screen.findByRole("heading", { name: "Fields", level: 2 });
   return rendered;
 }
 
@@ -107,6 +116,14 @@ async function addOption(user: ReturnType<typeof userEvent.setup>, fieldName: st
   await user.paste(option);
 }
 
+/** Gives a field a condition on the first field it may read: is any of `option`. */
+async function showOnlyWhen(user: ReturnType<typeof userEvent.setup>, fieldName: string, option: string) {
+  const target = card(fieldName);
+  await user.click(within(target).getByRole("radio", { name: "Only when another field has certain values" }));
+  await user.click(within(target).getByRole("combobox", { name: "Options" }));
+  await user.click(screen.getByRole("option", { name: option }));
+}
+
 /** A response the test releases, to act while a save is in flight. */
 function heldResponse() {
   let release: () => void = () => {};
@@ -121,12 +138,118 @@ afterEach(() => {
 });
 
 describe("FormFieldEditor", () => {
-  it("shows each field's rule summary and is accessible", async () => {
+  it("edits each field's display condition in its own card, and is accessible", async () => {
     serveFields([gmo, permit]);
     const { container } = await renderEditor();
 
-    expect(within(card("GMO permit")).getByText("Shown when Is this a GMO? is Yes")).toBeInTheDocument();
+    const condition = within(card("GMO permit")).getByRole("group", { name: "Display this field when…" });
+    expect(within(condition).getByRole("radio", { name: "Only when another field has certain values" })).toBeChecked();
+    expect(within(condition).getByRole("combobox", { name: "Field" })).toHaveTextContent("Is this a GMO?");
+    expect(within(condition).getByRole("button", { name: "Yes" })).toBeInTheDocument();
+    expect(within(card("Is this a GMO?")).getByText("Other fields depend on this field: GMO permit")).toBeVisible();
+    expect(screen.getAllByText(/A mandatory field is mandatory only while it is shown/)).toHaveLength(1);
     await expectAccessible(container);
+  });
+
+  it("clears a field's rule when it is set to Always", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([gmo, permit]);
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("GMO permit")).getByRole("radio", { name: "Always" }));
+    await handle.current?.save();
+
+    expect(posts[0][1]).toMatchObject({ fieldKey: PERMIT, displayRule: null });
+  });
+
+  it("shows read-only fields' rules as summaries, with no editor", async () => {
+    serveFields([gmo, permit]);
+    await renderEditor({ editable: false });
+
+    expect(within(card("GMO permit")).getByText("Shown when Is this a GMO? is Yes")).toBeVisible();
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+
+  it("adds a field where crypto.randomUUID is missing, as on a plain-HTTP site", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([]);
+    const randomUUID = Object.getOwnPropertyDescriptor(crypto, "randomUUID");
+    Object.defineProperty(crypto, "randomUUID", { value: undefined, configurable: true });
+    try {
+      const { handle } = await renderEditor();
+      await addField(user, /^String/, "Notes");
+      await handle.current?.save();
+    } finally {
+      if (randomUUID) Object.defineProperty(crypto, "randomUUID", randomUUID);
+      else Reflect.deleteProperty(crypto, "randomUUID");
+    }
+
+    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  it("sends each save with the version of the fields it was made from", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([gmo]);
+    const { handle } = await renderEditor();
+    const mandatory = within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" });
+
+    await user.click(mandatory);
+    await handle.current?.save();
+    await user.click(mandatory);
+    await handle.current?.save();
+
+    expect(posts.versions).toEqual(["v0", "v1"]);
+  });
+
+  it("says the form was changed elsewhere, and keeps refusing to save over it", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([gmo], () =>
+      HttpResponse.json(
+        { data: null, errorMsg: { errorMessages: ["This form's fields were changed elsewhere"] } },
+        { status: 409 },
+      ),
+    );
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).rejects.toThrow();
+
+    const alert = await screen.findByRole("alert", { name: "This form was changed elsewhere." });
+    expect(within(alert).getByText(/saved in another tab or window after this page loaded them/)).toBeVisible();
+    expect(within(alert).getByRole("button", { name: "Reload" })).toBeVisible();
+    expect(handle.current?.isDirty()).toBe(true);
+    await expect(handle.current?.save()).rejects.toThrow();
+    expect(posts.versions).toEqual(["v0", "v0"]);
+  });
+
+  it("sends options and defaults stored in an old format back as they were, until they are edited", async () => {
+    const user = userEvent.setup();
+    const choice = saved(3, "Choice", {
+      name: "C",
+      choiceValues: "fieldChoices=pH=7&fieldChoices=&fieldChoices=B",
+      multipleChoice: "no",
+      selectedValues: "fieldSelectedChoices=B",
+    });
+    const radio = saved(4, "Radio", {
+      name: "R",
+      radioValues: "fieldChoices=X&&fieldChoices=Y=1",
+      radioSelected: "Y=1",
+    });
+    const text = saved(5, "String", { name: "S", ifPassword: "no", defaultStringValue: "" });
+    const posts = serveFields([choice, radio, text]);
+    const { handle } = await renderEditor();
+
+    await user.type(within(card("S")).getByRole("textbox", { name: "Name" }), "2");
+    await handle.current?.save();
+    await addOption(user, "C", "D");
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({
+      choiceValues: "fieldChoices=pH=7&fieldChoices=&fieldChoices=B",
+      selectedValues: "fieldSelectedChoices=B",
+    });
+    expect(posts[0][1].source).toMatchObject({ radioValues: "fieldChoices=X&&fieldChoices=Y=1", radioSelected: "Y=1" });
+    expect(posts[1][0].source).toMatchObject({ choiceValues: "fieldChoices=pH&fieldChoices=B&fieldChoices=D" });
   });
 
   it("gives a new field its key when it is added, and sends it as new", async () => {
@@ -150,11 +273,7 @@ describe("FormFieldEditor", () => {
     await addOption(user, "Hazardous?", "Yes");
     await addField(user, /^String/, "Hazard details");
 
-    await user.click(screen.getByRole("button", { name: "Add rule" }));
-    await user.click(screen.getByRole("combobox", { name: "Options" }));
-    await user.click(screen.getByRole("option", { name: "Yes" }));
-    await user.click(screen.getByRole("combobox", { name: "Show these fields" }));
-    await user.click(screen.getByRole("option", { name: "Hazard details" }));
+    await showOnlyWhen(user, "Hazard details", "Yes");
     await handle.current?.save();
 
     const [source, target] = posts[0];
@@ -170,11 +289,7 @@ describe("FormFieldEditor", () => {
         release = false;
         await held.released;
       }
-      const body = posts.at(-1) ?? [];
-      return HttpResponse.json({
-        data: body.map((item, i) => ({ ...item, id: item.id ?? 100 + i, canDelete: true })),
-        errorMsg: null,
-      });
+      return fieldList(echoed(posts.at(-1) ?? []), posts.length);
     });
     const { handle } = await renderEditor();
     await addField(user, /^String/, "Permit");
@@ -200,7 +315,7 @@ describe("FormFieldEditor", () => {
     const held = heldResponse();
     const posts = serveFields([gmo], async () => {
       await held.released;
-      return HttpResponse.json({ data: [gmo], errorMsg: null });
+      return fieldList([gmo], 1);
     });
     const { handle } = await renderEditor();
     await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
@@ -263,7 +378,7 @@ describe("FormFieldEditor", () => {
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
 
     expect(await screen.findByRole("region", { name: "Is this a GMO?" })).toBeInTheDocument();
-    expect(within(card("GMO permit")).getByText("Shown when Is this a GMO? is Yes")).toBeInTheDocument();
+    expect(within(card("GMO permit")).getByRole("combobox", { name: "Field" })).toHaveTextContent("Is this a GMO?");
   });
 
   it("moves focus to the next field after a delete", async () => {
@@ -315,18 +430,14 @@ describe("FormFieldEditor", () => {
     await addField(user, /^Radio/, "Source");
     await addOption(user, "Source", "A");
     await addField(user, /^Number/, "Target");
-    await user.click(screen.getByRole("button", { name: "Add rule" }));
-    await user.click(screen.getByRole("combobox", { name: "Options" }));
-    await user.click(screen.getByRole("option", { name: "A" }));
-    await user.click(screen.getByRole("combobox", { name: "Show these fields" }));
-    await user.click(screen.getByRole("option", { name: "Target" }));
+    await showOnlyWhen(user, "Target", "A");
 
     await user.click(within(card("Source")).getByRole("menuitem", { name: /Change type/ }));
     await user.click(screen.getByRole("menuitem", { name: "Date" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Change type" }));
 
     const target = await screen.findByRole("region", { name: "Target" });
-    expect(within(target).queryByText(/Shown when/)).not.toBeInTheDocument();
+    expect(within(target).getByRole("radio", { name: "Always" })).toBeChecked();
   });
 
   it("keeps the editor dirty and shows the server's reasons when a save is rejected", async () => {
