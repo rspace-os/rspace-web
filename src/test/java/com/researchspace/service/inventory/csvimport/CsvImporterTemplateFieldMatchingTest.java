@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.csvimport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -101,6 +102,34 @@ public class CsvImporterTemplateFieldMatchingTest {
     assertEquals(List.of("Yes"), fields.get(0).getSelectedOptions());
     assertEquals(List.of("No"), fields.get(1).getSelectedOptions());
     assertEquals("p-1", fields.get(2).getContent());
+  }
+
+  @Test
+  void headersMatchFieldNamesTheUniquenessValidatorKeepsDistinct() throws IOException {
+    reportErrorsAsTheirMessage(sampleImporter);
+    String microSign = "\u00B5g";
+    String greekMu = "\u03BCg";
+    ApiSampleTemplate template = new ApiSampleTemplate();
+    for (String name : List.of(microSign, greekMu)) {
+      ApiInventoryEntityField field = new ApiInventoryEntityField();
+      field.setName(name);
+      field.setType(ApiFieldType.STRING);
+      template.getFields().add(field);
+    }
+    ApiInventoryImportSampleImportResult result = sampleResult(template);
+    ApiInventoryImportResult importResult = new ApiInventoryImportResult();
+    importResult.setSampleResult(result);
+
+    sampleImporter.readCsvIntoImportResult(
+        IOUtils.toInputStream("Name," + greekMu + "," + microSign + "\ns1,mu,micro\n"),
+        Map.of("Name", "name"),
+        importResult,
+        user);
+
+    assertNull(result.getTemplate().getError());
+    List<ApiInventoryEntityField> fields = sampleFields(result, 0);
+    assertEquals("micro", fields.get(0).getContent());
+    assertEquals("mu", fields.get(1).getContent());
   }
 
   @Test

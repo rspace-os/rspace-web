@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -328,11 +329,15 @@ public abstract class InventoryItemCsvImporter {
     return index;
   }
 
+  /**
+   * Compares names as InventoryFieldNameUniquenessValidator does, so distinct fields stay distinct.
+   */
   private Integer findTemplateFieldIndexForName(
       String name, List<ApiInventoryEntityField> templateFields) {
+    String normalisedName = name.toLowerCase(Locale.ROOT);
     for (int i = 0; i < templateFields.size(); i++) {
       String fieldName = templateFields.get(i).getName();
-      if (fieldName != null && fieldName.trim().equalsIgnoreCase(name)) {
+      if (fieldName != null && fieldName.trim().toLowerCase(Locale.ROOT).equals(normalisedName)) {
         return i;
       }
     }
