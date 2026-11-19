@@ -120,10 +120,12 @@ describe("createLegacyFieldDisplay", () => {
     await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit"));
   });
 
-  test("clears the message when fields hide, so revealing them again is announced again", () => {
+  test("announces the fields a change hides, and announces them again when shown again", () => {
     choose("Yes");
     choose("No");
-    expect(document.querySelector('[role="status"]')).toHaveTextContent("");
+    expect(document.querySelector('[role="status"]')).toHaveTextContent(
+      "2 fields are hidden: Containment level and GMO permit",
+    );
 
     choose("Yes");
     expect(document.querySelector('[role="status"]')).toHaveTextContent(

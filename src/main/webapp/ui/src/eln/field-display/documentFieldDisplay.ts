@@ -29,8 +29,8 @@ export type FieldDisplayResult = {
   readonly shownById: ReadonlyMap<string, boolean>;
   /** Names of fields with a rule that were hidden and are now shown, in page order. */
   readonly revealedNames: ReadonlyArray<string>;
-  /** Whether any field was shown and is now hidden. */
-  readonly anyNewlyHidden: boolean;
+  /** Names of fields that were shown and are now hidden, in page order. */
+  readonly concealedNames: ReadonlyArray<string>;
 };
 
 /** A stored rule that cannot be read is treated as no rule, as on the server, so it never hides data. */
@@ -104,15 +104,15 @@ export function applyFieldDisplayRules(root: ParentNode): FieldDisplayResult {
 
   const shownById = new Map<string, boolean>();
   const revealedNames: Array<string> = [];
-  let anyNewlyHidden = false;
+  const concealedNames: Array<string> = [];
   elements.forEach((element, i) => {
     const shown = visibility[i];
     if (element.dataset.fieldId !== undefined) shownById.set(element.dataset.fieldId, shown);
     if (shown && element.hidden && rules[i] !== null) revealedNames.push(element.dataset.fieldName ?? "");
-    if (!shown && !element.hidden) anyNewlyHidden = true;
+    if (!shown && !element.hidden) concealedNames.push(element.dataset.fieldName ?? "");
     element.hidden = !shown;
   });
-  return { shownById, revealedNames, anyNewlyHidden };
+  return { shownById, revealedNames, concealedNames };
 }
 
 /** Records that the user changed a field's control, so a picklist's value counts from now on. */
