@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { isNil } from "es-toolkit";
 import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -43,7 +44,7 @@ function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
 ): FilterExpression<TDocument> | null {
   const children = filters.flatMap((filter) =>
-    filter === null || filter === undefined ? [] : filter.kind === "and" ? filter.children : [filter],
+    isNil(filter) ? [] : filter.kind === "and" ? filter.children : [filter],
   );
   if (children.length === 0) return null;
   if (children.length === 1) return children[0];
