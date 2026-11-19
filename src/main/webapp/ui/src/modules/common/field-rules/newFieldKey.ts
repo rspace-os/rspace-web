@@ -1,11 +1,12 @@
-import { v4 } from "uuid";
+import { v7 } from "uuid";
 
 /**
- * A new field key: a random, lowercase RFC 4122 version 4 UUID. Unlike
- * `crypto.randomUUID`, which only exists in secure contexts (HTTPS or
- * localhost), this also works on plain-HTTP deployments, where the `uuid`
- * package falls back to `crypto.getRandomValues`.
+ * A new field key: a lowercase RFC 9562 version 7 UUID, a millisecond
+ * timestamp followed by random bits, as the server's `FieldKeys` generates.
+ * Unlike `crypto.randomUUID`, which only exists in secure contexts (HTTPS or
+ * localhost), this also works on plain-HTTP deployments, because the `uuid`
+ * package draws its random bits from `crypto.getRandomValues`.
  */
 export function newFieldKey(): string {
-  return v4();
+  return v7();
 }
