@@ -16,7 +16,7 @@ import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { server } from "@/__tests__/mswServer";
 import { createDisplayRule, serializeDisplayRule } from "@/modules/common/field-rules/displayRule";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
-import { createLegacyFieldDisplay } from "../legacyFieldDisplay";
+import { createLegacyFieldDisplay, TYPING_PAUSE_MS } from "../legacyFieldDisplay";
 
 const WEBAPP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const HAZARD_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
@@ -33,6 +33,8 @@ type LegacyPage = Window & {
     fields: Array<{ id: number; fieldData: string; choiceOptionSelectedAsList?: Array<string> }>,
   ) => void;
   checkAndMarkField: (control: Element) => void;
+  numberFieldInput: (control: Element) => void;
+  checkAndMarkNumber: (control: Element) => void;
   _autosavePickList: ($field: JQuery) => PromiseLike<unknown>;
 };
 const legacy = window as unknown as LegacyPage;
@@ -60,6 +62,7 @@ beforeAll(() => {
     },
     createURL: (url: string) => url,
     renderToolbar,
+    apprise: () => {},
     recordId: "552",
   });
   runScript("scripts/pages/workspace/editor/documentView.js");
@@ -270,5 +273,48 @@ describe("restoring autosaved data on load (_updateAutosavedFields)", () => {
 
     expect(glovesBox()).not.toBeChecked();
     expect(controlsNoteRow()).not.toBeVisible();
+  });
+});
+
+describe("a number source whose typed value is not a number", () => {
+  const DOSE_KEY = "6f1c2e0a-0000-4000-8000-000000000021";
+  const showWhenOver5 = serializeDisplayRule(createDisplayRule(DOSE_KEY, "GREATER_THAN", ["5"]));
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("shows its dependents again as soon as checkAndMarkNumber restores the last value", async () => {
+    // as numberField.jsp renders it
+    document.body.innerHTML = `
+      <table>
+        <tr id="field_21" name="number" class="field" data-field-id="21" data-field-key="${DOSE_KEY}"
+            data-field-type="NUMBER" data-field-source-kind="NUMBER" data-field-name="Dose" data-field-value="7">
+          <td><input id="21" class="inputField 21" name="fieldData" type="text" value="7">
+            <input type="hidden" name="wasChanged" value="false"><input type="hidden" name="lastValue" value="7">
+            <input type="hidden" name="minValue" value=""><input type="hidden" name="maxValue" value=""></td>
+        </tr>
+        <tr id="field_22" name="string" class="field" data-field-id="22" data-field-type="STRING"
+            data-field-source-kind="TEXT" data-field-name="High dose reason" data-display-rule='${showWhenOver5}'>
+          <td><input id="22" name="fieldData" type="text" value=""></td>
+        </tr>
+      </table>`;
+    Object.assign(window, {
+      elnFieldDisplay: createLegacyFieldDisplay(await createTestI18n({ common: commonEn }, "common")),
+    });
+    window.elnFieldDisplay.refresh();
+    vi.useFakeTimers();
+    const dose = document.getElementById("21") as HTMLInputElement;
+    const reasonRow = document.getElementById("field_22");
+
+    dose.value = "abc";
+    legacy.numberFieldInput(dose);
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+    expect(reasonRow).not.toBeVisible();
+
+    legacy.checkAndMarkNumber(dose);
+
+    expect(dose).toHaveValue("7");
+    expect(reasonRow).toBeVisible();
   });
 });

@@ -38,6 +38,24 @@ public class ElnFieldRulesTest {
   }
 
   @Test
+  public void signingReadsTheValueOfATextSource() {
+    StringFieldForm hazard = new StringFieldForm("Hazard");
+    hazard.setFieldKey("6f1c2e0a-0000-4000-8000-000000000002");
+    StringFieldForm precautions = new StringFieldForm("Precautions");
+    precautions.setMandatory(true);
+    precautions.setDisplayRule(
+        new FieldDisplayRule(hazard.getFieldKey(), ConditionOperator.CONTAINS, List.of("toxic"))
+            .toJson());
+    StringField hazardField = new StringField(hazard);
+    List<Field> fields = List.of(hazardField, new StringField(precautions));
+
+    hazardField.setFieldData("Flammable");
+    assertTrue(ElnFieldRules.everyShownMandatoryFieldHasData(fields));
+    hazardField.setFieldData("Highly Toxic");
+    assertFalse(ElnFieldRules.everyShownMandatoryFieldHasData(fields));
+  }
+
+  @Test
   public void unreadableStoredRuleIsLoggedOnceWithoutItsContent() {
     StringFieldForm unknownProperty = fieldWithRule(-9_001L, "{\"leakedPropertyName\":\"x\"}");
     StringFieldForm badToken = fieldWithRule(-9_002L, "{\"sourceFieldKey\":leakedStoredToken}");
