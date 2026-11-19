@@ -31,7 +31,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 - Hidden fields keep their values, which remain in exports (ELN PDF, Word, HTML and XML; Inventory CSV) and in API responses
 - Inventory extra fields cannot have display rules
 - ELN form versions created before the upgrade do not share field keys with each other. This is harmless today, because rules are only ever read within one form version
-- TODO (awaiting product decision): what happens to a rule on an Inventory template field that is deleted from the template but kept in existing records
+- A field deleted from an Inventory template but kept in existing samples and instruments is always shown there once they are updated to the latest template version: its rule no longer applies, and if it had one it is no longer mandatory
 
 # 2.28.0 2026-11-06
 
