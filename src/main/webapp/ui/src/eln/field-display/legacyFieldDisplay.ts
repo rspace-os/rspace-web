@@ -19,7 +19,7 @@ export type LegacyFieldDisplay = {
   refresh(root?: ParentNode, options?: { announce?: boolean }): FieldDisplayResult;
   /** Call from a field control's change handler. Focus stays on the control. */
   fieldChanged(control: Element): FieldDisplayResult;
-  /** Call when legacy code reloads a radio or picklist field's data; then `refresh`. */
+  /** Call when legacy code reloads a radio, picklist or choice field's data; then `refresh`. */
   syncStoredValue(fieldId: string | number, value: string | null | undefined): void;
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
 };

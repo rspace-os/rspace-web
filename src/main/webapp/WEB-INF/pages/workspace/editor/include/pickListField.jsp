@@ -27,7 +27,9 @@
 				</tr>
 				<tr>
 					<td class="field-value-inner" style="font-size: 100%">
-						<select id="${field.id}" class="formPickList ${field.id}" style="width: 80%" name="items" onchange="checkAndMarkField(this)" >
+						<%-- Without data the select shows an empty placeholder, not the first option: the shown value matches the stored one, and picking the first option fires a change. select2 reads data-placeholder and leaves the placeholder out of the dropdown. --%>
+						<select id="${field.id}" class="formPickList ${field.id}" style="width: 80%" name="items" onchange="checkAndMarkField(this)"<c:if test="${empty field.fieldData}"> data-placeholder="<spring:message code='form.field.picklistPlaceholder' htmlEscape='true'/>"</c:if>>
+							<c:if test="${empty field.fieldData}"><option value="" selected></option></c:if>
 							<c:forEach var="radioItem" items="${field.radioOptionAsList}">
 								<option class= 'radioLi ${field.id}'
 								value="${radioItem}"
