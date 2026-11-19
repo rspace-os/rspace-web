@@ -3900,7 +3900,9 @@ components:
         fieldKey:
           type: string
           description: The key of this field's form field, in the form version the document
-            was created from. Display rules name their source field by this key.
+            was created from. Display rules name their source field by this key. Newly
+            generated keys are UUID version 7, but this can be any lower-case UUID, as
+            existing keys may be other versions.
         displayRule:
           description: Read-only, from the field's form field. A document request that
             sends a malformed rule here is rejected with 400; echoing a rule read from
@@ -4395,8 +4397,9 @@ components:
           type: string
           description: Optional, and only for a new field. A lower-case UUID, unique among
             the form's fields, that display rules can use to name this field as their
-            source in the same request; generated when omitted. RSpace generates UUID
-            version 7 keys, but any lower-case UUID is accepted. A saved field's key
+            source in the same request; generated when omitted. Newly generated keys are
+            UUID version 7, but any lower-case UUID is accepted, and responses can contain
+            keys of any version, as existing keys may be other versions. A saved field's key
             cannot change, so on PUT a saved field's fieldKey must be omitted or equal
             its current key.
         displayRule:
@@ -4501,10 +4504,10 @@ components:
             - Radio
         fieldKey:
           type: string
-          description: Identifies the field within its form. A lower-case UUID, version 7
-            when RSpace generated it, of any version when an API client supplied it.
-            Display rules name their source field by this key. Copied unchanged into new
-            form versions and form copies.
+          description: Identifies the field within its form. A lower-case UUID of any
+            version. Newly generated keys are UUID version 7, but existing keys may be
+            other versions. Display rules name their source field by this key. Copied
+            unchanged into new form versions and form copies.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
     FolderPost:

@@ -5956,7 +5956,9 @@ components:
           description: |
             Identifies the field within its template, and in the samples and instruments made from
             it, for display rules. A lower-case UUID, copied with the field when a template is
-            duplicated or a record is created.
+            duplicated or a record is created. Newly generated keys are UUID version 7, but a
+            response can contain a lower-case UUID of any version, as existing keys may be other
+            versions.
 
             On template fields it is optional when the field is created (a UUID version 7 is
             generated if omitted; a key sent by the client may be any lower-case UUID) and cannot be
