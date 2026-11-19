@@ -68,12 +68,18 @@ export function clearRulesReading(field: Field | undefined): void {
   for (const dependent of field.dependentFields) dependent.setDisplayRule(null);
 }
 
+/** Why a template was not sent: a display condition is still unfinished. */
+export class DisplayConditionIncomplete extends Error {}
+
 /**
- * Throws the reason the first of `fields` gives for not saving its display
- * condition, so a template is never sent while a condition is unfinished.
+ * Throws a DisplayConditionIncomplete with the reason the first of `fields`
+ * gives for not saving its display condition, so a template is never sent
+ * while a condition is unfinished.
  */
 export function assertDisplayConditionsComplete(fields: ReadonlyArray<Field>): void {
-  allAreValid(fields.map((field) => field.validateDisplayCondition())).elseThrow();
+  allAreValid(fields.map((field) => field.validateDisplayCondition()))
+    .mapError(([first]) => new DisplayConditionIncomplete(first?.message))
+    .elseThrow();
 }
 
 export default class FieldModel implements Field {

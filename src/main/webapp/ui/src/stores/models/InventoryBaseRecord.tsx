@@ -46,6 +46,7 @@ import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import type { ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
+import { DisplayConditionIncomplete } from "./FieldModel";
 import IdentifierModel, { externalMetadataUpdateAlerts } from "./IdentifierModel";
 import type { SampleInContainerParams } from "./SampleModel";
 
@@ -1104,7 +1105,7 @@ export default class InventoryBaseRecord
             )
               .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
-            retryFunction: () => this.update().then(() => {}),
+            retryFunction: () => this.retryUpdate(),
           });
           getRootStore().uiStore.addAlert(newAlert);
           getRootStore().searchStore.activeResult?.addScopedToast(newAlert);
@@ -1124,6 +1125,19 @@ export default class InventoryBaseRecord
       throw error;
     } finally {
       this.setLoading(false);
+    }
+  }
+
+  /**
+   * The validation alert's Retry. A template refuses to send an unfinished
+   * display condition, and the disabled Save button already says why, so that
+   * refusal is not rethrown; every other failure is.
+   */
+  private async retryUpdate(): Promise<void> {
+    try {
+      await this.update();
+    } catch (error) {
+      if (!(error instanceof DisplayConditionIncomplete)) throw error;
     }
   }
 
@@ -1212,7 +1226,7 @@ export default class InventoryBaseRecord
             )
               .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
-            retryFunction: () => this.update().then(() => {}),
+            retryFunction: () => this.retryUpdate(),
           });
           getRootStore().uiStore.addAlert(newAlert);
           getRootStore().searchStore.activeResult?.addScopedToast(newAlert);

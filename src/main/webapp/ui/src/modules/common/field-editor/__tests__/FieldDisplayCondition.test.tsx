@@ -51,6 +51,17 @@ function Harness({
             aria-label={`Delete ${field.name}`}
             onClick={() => setFields((current) => current.filter((other) => other.key !== field.key))}
           />
+          <button
+            type="button"
+            aria-label={`Remove the first option of ${field.name}`}
+            onClick={() =>
+              setFields((current) =>
+                current.map((other) =>
+                  other.key === field.key ? { ...other, options: other.options.slice(1) } : other,
+                ),
+              )
+            }
+          />
           <FieldDisplayCondition
             fieldKey={field.key}
             fields={fields}
@@ -248,9 +259,28 @@ describe("FieldDisplayCondition", () => {
     await user.click(options);
     await user.click(screen.getByRole("option", { name: longer }));
 
-    expect(options).toHaveAccessibleDescription("This condition cannot be applied. Choose fewer options.");
+    expect(options).toHaveAccessibleDescription("This condition cannot be applied. Choose fewer or shorter options.");
     expect(onChange).not.toHaveBeenCalled();
     expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("permit", true);
+  });
+
+  it("keeps saying a refused condition is not applied after another edit would let it be stored", async () => {
+    const user = userEvent.setup();
+    const [long, longer] = ["a".repeat(20_000), "b".repeat(20_000)];
+    const { onChange } = await renderConditions([
+      { ...gmo, options: [long, longer] },
+      { ...permit, rule: createDisplayRule("gmo", "IS_ANY_OF", [long]) },
+    ]);
+    const options = card("GMO permit").getByRole("combobox", { name: "Options" });
+    await user.click(options);
+    await user.click(screen.getByRole("option", { name: longer }));
+    await user.keyboard("{Escape}");
+
+    // the draft now holds only the shorter option, which could be stored, but it is still not applied
+    await user.click(screen.getByRole("button", { name: "Remove the first option of Is this a GMO?" }));
+
+    expect(options).toHaveAccessibleDescription("This condition cannot be applied. Choose fewer or shorter options.");
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("clears the field it was showing, and reports the new one, when given another field", async () => {
@@ -293,7 +323,8 @@ describe("FieldDisplayCondition", () => {
   });
 
   it("says when the field a saved condition read is gone, and reports the condition incomplete", async () => {
-    const { onIncompleteChange } = await renderConditions([{ ...permit, rule: yes }]);
+    const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
+    const { onIncompleteChange } = await renderConditions([{ ...permit, rule: yes }, colour]);
 
     expect(conditional("GMO permit")).toBeChecked();
     expect(card("GMO permit").getByRole("combobox", { name: "Field" })).toHaveAccessibleDescription(

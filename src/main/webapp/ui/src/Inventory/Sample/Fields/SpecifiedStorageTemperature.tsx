@@ -104,15 +104,18 @@ function SpecifiedStorageTemperature({
     if (!Number.isNaN(storageTempMax.numericValue)) setMaxField(`${storageTempMax.numericValue}`);
   }, [storageTempMin, storageTempMax]);
 
+  /** Stores the range and marks the section in error while either end is invalid. */
+  const storeRange = (storageTempMin: Temperature, storageTempMax: Temperature): void => {
+    setTemperatures({ storageTempMin, storageTempMax });
+    onErrorStateChange(validateTemperature(storageTempMin).isError || validateTemperature(storageTempMax).isError);
+  };
+
   const handleButtonPressed = (newMin: number, newMax: number): void => {
     setMin(newMin);
     setMax(newMax);
     setMinField(`${newMin}`);
     setMaxField(`${newMax}`);
-    setTemperatures({
-      storageTempMin: { numericValue: newMin, unitId },
-      storageTempMax: { numericValue: newMax, unitId },
-    });
+    storeRange({ numericValue: newMin, unitId }, { numericValue: newMax, unitId });
   };
 
   const handleUnitIdChange = (event: SelectChangeEvent<number>) => {
@@ -123,10 +126,10 @@ function SpecifiedStorageTemperature({
     setMax(maxValueInNewUnit);
     setMinField(`${minValueInNewUnit}`);
     setMaxField(`${maxValueInNewUnit}`);
-    setTemperatures({
-      storageTempMin: { numericValue: minValueInNewUnit, unitId: newUnitId },
-      storageTempMax: { numericValue: maxValueInNewUnit, unitId: newUnitId },
-    });
+    storeRange(
+      { numericValue: minValueInNewUnit, unitId: newUnitId },
+      { numericValue: maxValueInNewUnit, unitId: newUnitId },
+    );
   };
 
   const handleMinFieldChange = (value: string) => {
@@ -137,8 +140,7 @@ function SpecifiedStorageTemperature({
     setMax(newMax);
     const newMinTemp: Temperature = { numericValue: newMin, unitId };
     const newMaxTemp: Temperature = { numericValue: newMax, unitId };
-    setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
-    onErrorStateChange(!validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError);
+    storeRange(newMinTemp, newMaxTemp);
   };
 
   const handleMaxFieldChange = (value: string) => {
@@ -149,8 +151,7 @@ function SpecifiedStorageTemperature({
     setMin(newMin);
     const newMinTemp: Temperature = { numericValue: newMin, unitId };
     const newMaxTemp: Temperature = { numericValue: newMax, unitId };
-    setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
-    onErrorStateChange(!validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError);
+    storeRange(newMinTemp, newMaxTemp);
   };
 
   return (
