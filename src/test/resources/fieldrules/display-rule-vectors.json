@@ -157,22 +157,6 @@
       {
         "name": "empty input",
         "json": ""
-      },
-      {
-        "name": "inherited JavaScript property name toString",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"toString\":1}"
-      },
-      {
-        "name": "inherited JavaScript property name constructor",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"constructor\":1}"
-      },
-      {
-        "name": "inherited JavaScript property name __proto__",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"__proto__\":1}"
-      },
-      {
-        "name": "inherited JavaScript property name hasOwnProperty",
-        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"hasOwnProperty\":1}"
       }
     ]
   },

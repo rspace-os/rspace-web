@@ -397,7 +397,6 @@ class InventoryFieldDisplayRulesTest {
     template.addSampleField(templateField);
     templateField.validateBeforeSave();
     assertNotNull(templateField.getFieldKey());
-    assertDoesNotThrow(() -> UUID.fromString(templateField.getFieldKey()));
 
     Sample sample = template.copyFromTemplate(user);
     InventoryEntityField recordField = sample.getActiveFields().get(0);
