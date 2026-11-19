@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
+import { LANDING_PAGE_FIELD_NAME } from "@/stores/models/InstrumentModel";
 import materialTheme from "@/theme";
 import TemplateFields from "../TemplateFields";
 
@@ -103,5 +105,68 @@ describe("TemplateFields -- link field", () => {
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
     expect(screen.getByText("References")).toBeInTheDocument();
     expect(screen.getByText("SA20")).toBeInTheDocument();
+  });
+});
+
+describe("TemplateFields -- time field", () => {
+  it("accepts a valid time, so the instrument can still be saved", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({
+      fields: [
+        {
+          id: 11,
+          globalId: "IF11",
+          name: "Start time",
+          type: "time",
+          content: "08:00",
+          selectedOptions: null,
+          columnIndex: 1,
+          attachment: null,
+          mandatory: true,
+        },
+      ],
+    });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Hours" }));
+    await user.keyboard("0930");
+
+    expect(instrument.fields[0].content).toBe("09:30");
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+});
+
+describe("TemplateFields -- Landing page", () => {
+  const landingPage = (content: string) => ({
+    id: 12,
+    globalId: "IF12",
+    name: LANDING_PAGE_FIELD_NAME,
+    type: "uri" as const,
+    content,
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: true,
+  });
+
+  it("shows no mandatory error for the blank Landing page of a new instrument", () => {
+    const instrument = makeMockInstrument({ id: null, globalId: null, fields: [landingPage("")] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    expect(screen.getByRole("textbox", { name: LANDING_PAGE_FIELD_NAME })).toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.templateFields.mandatory")).not.toBeInTheDocument();
+  });
+
+  it("shows a mandatory error once a Landing page that was filled in is cleared", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: [landingPage("https://lab.example.org/lsm980")] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.clear(screen.getByRole("textbox", { name: LANDING_PAGE_FIELD_NAME }));
+
+    expect(screen.getByText("inventory:instrument.templateFields.mandatory")).toBeInTheDocument();
   });
 });
