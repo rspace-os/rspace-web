@@ -12,19 +12,33 @@ public final class FeatureFlagResource {
 
   @Getter private final String name;
 
-  @Getter(onMethod_ = @AuditTrailProperty(name = "value"))
   private final boolean value;
 
-  @Getter(onMethod_ = @AuditTrailProperty(name = "baselineValue"))
-  @Setter
-  private boolean baselineValue;
+  @AuditTrailProperty(name = "value")
+  public boolean isValue() {
+    return value;
+  }
 
-  @Getter(onMethod_ = @AuditTrailProperty(name = "overrideValue"))
-  @Setter
-  private Boolean overrideValue;
+  @Setter private boolean baselineValue;
 
-  @Getter(onMethod_ = @AuditTrailProperty(name = "source"))
+  @AuditTrailProperty(name = "baselineValue")
+  public boolean isBaselineValue() {
+    return baselineValue;
+  }
+
+  @Setter private Boolean overrideValue;
+
+  @AuditTrailProperty(name = "overrideValue")
+  public Boolean getOverrideValue() {
+    return overrideValue;
+  }
+
   private final String source;
+
+  @AuditTrailProperty(name = "source")
+  public String getSource() {
+    return source;
+  }
 
   @Getter private final boolean canOverride;
 
