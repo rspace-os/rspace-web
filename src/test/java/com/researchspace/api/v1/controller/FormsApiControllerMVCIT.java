@@ -22,6 +22,7 @@ import com.researchspace.api.v1.model.ApiStringFormField;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.FieldDisplayRuleDTO;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.RSForm;
@@ -34,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -612,6 +614,85 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
       assertNull(doInTransaction(() -> formMgr.get(created.getId(), anyUser).getTempForm()));
     } finally {
       doInTransaction(() -> formMgr.get(created.getId(), anyUser).setSystemForm(false));
+    }
+  }
+
+  @Test
+  public void putThatReplacesEveryFieldReturnsTheNewFields() throws Exception {
+    for (boolean published : List.of(false, true)) {
+      FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+      formPost.setName("replaced form");
+      formPost.setFields(new ArrayList<>(List.of(createAStringField())));
+      ApiForm created = postANewForm(formPost);
+      if (published) {
+        putUrl(extractLinkByRel(created, "publish"));
+      }
+      FormTemplatesCommon.StringFieldPost replacement = createAStringField();
+      replacement.setName("replacement");
+      formPost.setFields(new ArrayList<>(List.of(replacement)));
+
+      ApiForm edited = doFormEditPut(formPost, created.getId());
+
+      assertThat(edited.getFields())
+          .extracting(ApiFormField::getName)
+          .containsExactly("replacement");
+      assertThat(getForm(edited.getId()).getFields())
+          .extracting(ApiFormField::getName)
+          .containsExactly("replacement");
+    }
+  }
+
+  @Test
+  public void oversizedOrRepeatedRuleValuesAreRejectedOnPostAndPut() throws Exception {
+    String gmoKey = "6f1c2e0a-0000-4000-8000-0000000000cc";
+    List<String> tooMany = new ArrayList<>();
+    for (int i = 0; i <= FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooMany.add("option " + i);
+    }
+    List<String> tooLong = new ArrayList<>();
+    for (int i = 0; i < FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooLong.add("x".repeat(40) + i);
+    }
+    Map<String, List<String>> valuesByCode =
+        Map.of(
+            FieldDisplayRuleValidator.VALUE_TOO_MANY, tooMany,
+            FieldDisplayRuleValidator.RULE_TOO_LONG, tooLong,
+            FieldDisplayRuleValidator.VALUE_DUPLICATE, List.of("Yes", "Yes"));
+    FormTemplatesCommon.RadioFieldPost gmo = new FormTemplatesCommon.RadioFieldPost();
+    gmo.setName("GMO?");
+    gmo.setOptions(List.of("Yes", "No"));
+    gmo.setFieldKey(gmoKey);
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("GMO form");
+    formPost.setFields(new ArrayList<>(List.of(gmo, createAStringField())));
+    ApiForm created = postANewForm(formPost);
+    Long formCount = getCountOfEntityTable("RSForm");
+
+    for (Map.Entry<String, List<String>> entry : valuesByCode.entrySet()) {
+      String expectedMessage = getMsgFromResourceBundler(entry.getKey(), "sff2");
+      FormTemplatesCommon.StringFieldPost permit = createAStringField();
+      permit.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", entry.getValue()));
+      gmo.setId(null);
+      formPost.setFields(new ArrayList<>(List.of(gmo, permit)));
+      MvcResult postResult =
+          mockMvc
+              .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(postResult.getResponse().getContentAsString()).contains(expectedMessage);
+      assertEquals(formCount, getCountOfEntityTable("RSForm"));
+
+      gmo.setId(created.getFields().get(0).getId());
+      permit.setId(created.getFields().get(1).getId());
+      MvcResult putResult =
+          mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(putResult.getResponse().getContentAsString()).contains(expectedMessage);
+      assertNull(getForm(created.getId()).getFields().get(1).getDisplayRule());
     }
   }
 

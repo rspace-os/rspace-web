@@ -248,7 +248,9 @@ paths:
               (images or files) which can be added through main app or API
            * `string` - represents short text content
            * `number` - represents numeric value, may have some validation rules
-           * `choice` - represents multiple-choice field with predefined options
+           * `choice` - represents multiple-choice field with predefined options; its content
+              lists the selected options separated by commas, with a comma inside an option
+              written as `&#44;`
            * `radio`  - represents single-choice field with predefined options
            * `date`   - represents a date in particular format, may have some validation rules
            * `time`   - represents a time in particular format, may have some validation rules
@@ -3883,7 +3885,15 @@ components:
             - time
         content:
           type: string
-          description: The content as a string. For Fields of type 'Text' this will be HTML.
+          description: >
+            The content as a string. For Fields of type 'Text' this will be HTML.
+            For Fields of type 'Choice' it lists the selected options, separated by
+            commas; a comma that is part of an option is written as `&#44;`, so the
+            options "Yes, with permit" and "No" are sent and returned as
+            `Yes&#44; with permit,No`. For Fields of type 'Radio' it is the selected
+            option as it is, commas included. A document request whose Choice or Radio
+            content names a value that is not an option of the field is rejected with
+            422; empty content clears the selection.
         fieldKey:
           type: string
           description: The key of this field's form field, in the form version the document
@@ -3930,7 +3940,9 @@ components:
         values:
           type: array
           nullable: true
-          description: Options of the source field. Required and non-empty for IS_ANY_OF
+          description: Options of the source field, each listed once and as the raw
+            option text, so a comma in an option is written as a comma, not as the
+            `&#44;` escape of Choice field content. Required and non-empty for IS_ANY_OF
             and IS_NONE_OF. For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send
             an empty array or null; responses return an empty array.
           items:
