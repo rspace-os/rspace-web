@@ -1,9 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import type { FieldModelAttrs } from "../../FieldModel";
 import { LANDING_PAGE_FIELD_NAME } from "../../InstrumentModel";
 import { makeMockInstrumentTemplate } from "../InstrumentTemplateModel/mocking";
-import { makeMockInstrument } from "./mocking";
+import { instrumentAttrs, makeMockInstrument } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: { query: vi.fn(), get: vi.fn() } }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
@@ -15,8 +16,8 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 
 const WEIGHT_KEY = "6f1c2e0a-0000-4000-8000-000000000031";
 
-/** A number source and a mandatory, empty permit shown while it is greater than 2. */
-const weightFields = (weight: string): Array<FieldModelAttrs> => [
+/** A number source and a mandatory permit shown while it is greater than 2. */
+const weightFields = (weight: string, permit = ""): Array<FieldModelAttrs> => [
   {
     id: 1,
     globalId: "IF1",
@@ -34,7 +35,7 @@ const weightFields = (weight: string): Array<FieldModelAttrs> => [
     globalId: "IF2",
     name: "Heavy goods permit",
     type: "string",
-    content: "",
+    content: permit,
     selectedOptions: null,
     columnIndex: 2,
     attachment: null,
@@ -45,7 +46,7 @@ const weightFields = (weight: string): Array<FieldModelAttrs> => [
 ];
 
 /** A mandatory Landing page holding `landingPage`, and a mandatory serial number. */
-const landingPageFields = (landingPage: string): Array<FieldModelAttrs> => [
+const landingPageFields = (landingPage: string, serial = "SN-1"): Array<FieldModelAttrs> => [
   {
     id: 1,
     globalId: "IF1",
@@ -62,7 +63,7 @@ const landingPageFields = (landingPage: string): Array<FieldModelAttrs> => [
     globalId: "IF2",
     name: "Serial number",
     type: "string",
-    content: "SN-1",
+    content: serial,
     selectedOptions: null,
     columnIndex: 2,
     attachment: null,
@@ -79,8 +80,8 @@ describe("InstrumentModel.submittable", () => {
     expect(instrument.submittable.isOk).toBe(false);
   });
 
-  test("allows an empty mandatory field once a typed number hides it", () => {
-    const instrument = makeMockInstrument({ fields: weightFields("4") });
+  test("allows an empty mandatory field on a new instrument once a typed number hides it", () => {
+    const instrument = makeMockInstrument({ id: null, globalId: null, fields: weightFields("4") });
     expect(instrument.submittable.isOk).toBe(false);
 
     instrument.fields[0].setAttributesDirty({ content: "1" });
@@ -123,9 +124,20 @@ describe("InstrumentModel.submittable", () => {
     expect(instrument.submittable.isOk).toBe(false);
   });
 
-  test("refuses clearing a Landing page that was filled in when loaded", () => {
+  test.each(["", "   "])("refuses clearing a Landing page that was filled in when loaded to %j", (cleared) => {
     const instrument = makeMockInstrument({ fields: landingPageFields("https://lab.example.org/lsm980") });
     expect(instrument.requiresValue(instrument.fields[0])).toBe(true);
+
+    instrument.fields[0].setAttributesDirty({ content: cleared });
+    expect(instrument.submittable.isOk).toBe(false);
+  });
+
+  test("refuses clearing a Landing page saved since it was loaded blank", () => {
+    const address = "https://lab.example.org/lsm980";
+    const instrument = makeMockInstrument({ fields: landingPageFields("") });
+    instrument.fields[0].setAttributesDirty({ content: address });
+    // a save refetches the instrument
+    instrument.populateFromJson(new AlwaysNewFactory(), instrumentAttrs({ fields: landingPageFields(address) }));
 
     instrument.fields[0].setAttributesDirty({ content: "" });
     expect(instrument.submittable.isOk).toBe(false);
@@ -138,14 +150,67 @@ describe("InstrumentModel.submittable", () => {
     expect(instrument.submittable.isOk).toBe(true);
   });
 
-  test("exempts only the first field named Landing page", () => {
+  test("exempts only the first field named Landing page on a new instrument", () => {
     const [landingPage, serial] = landingPageFields("");
     const instrument = makeMockInstrument({
+      id: null,
+      globalId: null,
       fields: [landingPage, serial, { ...landingPage, id: 3, globalId: "IF3", name: " landing PAGE ", columnIndex: 3 }],
     });
     expect(instrument.submittable.isOk).toBe(false);
 
     instrument.fields[2].setAttributesDirty({ content: "https://lab.example.org/lsm980" });
     expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  test("allows an unrelated edit while a shown mandatory field with a rule stays empty as loaded", () => {
+    const instrument = makeMockInstrument({ fields: weightFields("4") });
+
+    instrument.setAttributesDirty({ name: "Renamed" });
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  test("refuses emptying a shown mandatory field with a rule", () => {
+    const instrument = makeMockInstrument({ fields: weightFields("4", "P-1") });
+
+    instrument.fields[1].setAttributesDirty({ content: "" });
+    expect(instrument.submittable.isOk).toBe(false);
+  });
+
+  test("allows an unrelated edit while a mandatory field without a rule stays empty as loaded", () => {
+    const instrument = makeMockInstrument({ fields: landingPageFields("https://lab.example.org/lsm980", "") });
+
+    instrument.setAttributesDirty({ name: "Renamed" });
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  test("keeps a mandatory Filestore link as a value: Save stays enabled until the link is removed", () => {
+    const instrument = makeMockInstrument({
+      fields: [
+        {
+          id: 1,
+          globalId: "IF1",
+          name: "Raw data",
+          type: "link",
+          content: null,
+          selectedOptions: null,
+          columnIndex: 1,
+          attachment: null,
+          mandatory: true,
+          link: {
+            relationType: "IsDocumentedBy",
+            targetGlobalId: "",
+            versionPin: null,
+            filestoreTarget: { filestoreId: 3, remotePath: "/scans/lsm980.tif" },
+          },
+        },
+      ],
+    });
+
+    instrument.setAttributesDirty({ name: "Renamed" });
+    expect(instrument.submittable.isOk).toBe(true);
+
+    instrument.fields[0].setAttributesDirty({ link: null });
+    expect(instrument.submittable.isOk).toBe(false);
   });
 });

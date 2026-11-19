@@ -27,6 +27,8 @@ export type FieldLink = {
   relationType: string;
   targetGlobalId: string;
   versionPin: number | null;
+  /** Present only on a link to a Filestore item, which has no Global ID. */
+  filestoreTarget?: { filestoreId: number; remotePath: string } | null;
 };
 
 export type Option = {

@@ -137,6 +137,82 @@ describe("TemplateFields -- time field", () => {
   });
 });
 
+describe("TemplateFields -- date field", () => {
+  const calibrated = {
+    id: 13,
+    globalId: "IF13",
+    name: "Calibrated on",
+    type: "date" as const,
+    content: "",
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: false,
+  };
+
+  it("refuses an impossible date until it is corrected", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: [calibrated] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    expect(instrument.submittable.isOk).toBe(false);
+    expect(instrument.fields[0].paramsForBackend).toHaveProperty("content", "");
+
+    await user.keyboard("15");
+    expect(instrument.fields[0].content).toBe("2024-02-15");
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  it("allows clearing an optional date that was impossible", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: [calibrated] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    expect(instrument.submittable.isOk).toBe(false);
+
+    await user.keyboard("{Control>}a{/Control}{Backspace}");
+    expect(instrument.fields[0].content).toBe("");
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+});
+
+describe("TemplateFields -- URI field", () => {
+  const manual = {
+    id: 14,
+    globalId: "IF14",
+    name: "Manual",
+    type: "uri" as const,
+    content: "",
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: false,
+  };
+
+  it("marks a URI the server cannot parse invalid until it is corrected", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: [manual] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+    const textbox = screen.getByRole("textbox", { name: "Manual" });
+
+    await user.type(textbox, "https://lab.example.org/lsm 980");
+    expect(screen.getByText("inventory:instrument.templateFields.invalid")).toBeInTheDocument();
+    expect(instrument.submittable.isOk).toBe(false);
+
+    await user.clear(textbox);
+    await user.type(textbox, "manuals/lsm980.pdf");
+    expect(screen.queryByText("inventory:instrument.templateFields.invalid")).not.toBeInTheDocument();
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+});
+
 describe("TemplateFields -- Landing page", () => {
   const landingPage = (content: string) => ({
     id: 12,
@@ -159,14 +235,16 @@ describe("TemplateFields -- Landing page", () => {
     expect(screen.queryByText("inventory:instrument.templateFields.mandatory")).not.toBeInTheDocument();
   });
 
-  it("shows a mandatory error once a Landing page that was filled in is cleared", async () => {
+  it.each(["", "   "])("refuses a Landing page that was filled in and is cleared to %j", async (cleared) => {
     const user = userEvent.setup();
     const instrument = makeMockInstrument({ fields: [landingPage("https://lab.example.org/lsm980")] });
     instrument.currentlyEditableFields.add("fields");
     renderTemplateFields(instrument);
+    const textbox = screen.getByRole("textbox", { name: LANDING_PAGE_FIELD_NAME });
 
-    await user.clear(screen.getByRole("textbox", { name: LANDING_PAGE_FIELD_NAME }));
+    await user.clear(textbox);
+    if (cleared) await user.type(textbox, cleared);
 
-    expect(screen.getByText("inventory:instrument.templateFields.mandatory")).toBeInTheDocument();
+    expect(instrument.submittable.isOk).toBe(false);
   });
 });

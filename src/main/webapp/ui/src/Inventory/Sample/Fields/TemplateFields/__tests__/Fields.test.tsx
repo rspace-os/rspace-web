@@ -104,4 +104,72 @@ describe("Fields", () => {
     expect(sample.fields[0].content).toBe("09:30");
     expect(sample.fields[0].validate().isOk).toBe(true);
   });
+
+  test("Sample with URI field marks a value the server cannot parse invalid until it is corrected", async () => {
+    const user = userEvent.setup();
+    const sample = makeMockSample({
+      fields: [
+        {
+          attachment: null,
+          columnIndex: 1,
+          content: "",
+          definition: null,
+          globalId: "SF21",
+          id: 21,
+          mandatory: false,
+          name: "Protocol",
+          selectedOptions: null,
+          type: "uri",
+        },
+      ],
+    });
+    sample.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <Fields onErrorStateChange={() => {}} sample={sample} />
+      </ThemeProvider>,
+    );
+    const textbox = screen.getByRole("textbox", { name: "Protocol" });
+
+    await user.type(textbox, "https://lab.example.org/protocol 7");
+    expect(sample.fields[0].validate().isOk).toBe(false);
+
+    await user.clear(textbox);
+    await user.type(textbox, "protocols/7.pdf");
+    expect(sample.fields[0].validate().isOk).toBe(true);
+  });
+
+  test("Sample with date field refuses an impossible date until it is corrected", async () => {
+    const user = userEvent.setup();
+    const sample = makeMockSample({
+      fields: [
+        {
+          attachment: null,
+          columnIndex: 1,
+          content: "",
+          definition: null,
+          globalId: "SF22",
+          id: 22,
+          mandatory: false,
+          name: "Collected on",
+          selectedOptions: null,
+          type: "date",
+        },
+      ],
+    });
+    sample.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <Fields onErrorStateChange={() => {}} sample={sample} />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    expect(sample.fields[0].validate().isOk).toBe(false);
+
+    await user.keyboard("15");
+    expect(sample.fields[0].content).toBe("2024-02-15");
+    expect(sample.fields[0].validate().isOk).toBe(true);
+  });
 });
