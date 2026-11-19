@@ -18,6 +18,7 @@ import {
   OPERATORS_BY_SOURCE_KIND,
   operatorComparesValue,
   operatorRequiresValues,
+  type SourceKind,
   sameDisplayRule,
   sourceKindOf,
 } from "@/modules/common/field-rules/displayRule";
@@ -28,6 +29,7 @@ import {
   comparisonValueProblem,
   type DraftCondition,
   type RuleEditorField,
+  type RuleGraph,
   ruleFromDraft,
   ruleGraphFor,
   ruleIsInvalid,
@@ -99,7 +101,22 @@ const CONDITIONAL = "conditional";
  * now let it apply. It is never applied without the author editing it: one that
  * has become storable is dropped on the way back from "Always" instead.
  */
-type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
+type Draft = {
+  readonly condition: DraftCondition;
+  readonly rejected: boolean;
+  /** The kind of field it reads, as when it was kept; null with no field to read. */
+  readonly sourceKind: SourceKind | null;
+};
+
+/**
+ * Whether the field a condition reads is still there but now offers another
+ * kind than `sourceKind`. Hosts clear the rules that read a field when it
+ * changes kind, so a condition written for the old kind is dropped with them.
+ */
+function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKind: SourceKind | null): boolean {
+  const source = sourceFieldKey === null ? undefined : graph.byKey.get(sourceFieldKey);
+  return sourceKind !== null && source !== undefined && sourceKindOf(source) !== sourceKind;
+}
 
 /**
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
@@ -117,11 +134,13 @@ type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
  * the component in `observer` so that only those names re-render it.
  *
  * Choosing "Always" clears the rule, but the condition is remembered: going
- * back to "Only when…" restores it, and applies it again if it is still valid.
+ * back to "Only when…" restores it, and applies it again if it is still valid,
+ * unless the field it read has since changed kind.
  *
- * A draft lives as long as the component, and hosts refuse to save while one
- * exists. Hosts give the component a new key (for example the record and its
- * edit state) to start a new edit session.
+ * A draft lives as long as the component, or until the field it reads changes
+ * kind, and hosts refuse to save while one exists. Hosts give the component a
+ * new key (for example the record and its edit state) to start a new edit
+ * session.
  */
 export default function FieldDisplayCondition({
   fieldKey,
@@ -133,15 +152,17 @@ export default function FieldDisplayCondition({
 }: FieldDisplayConditionProps): ReactNode {
   const { t, i18n } = useTranslation("common");
   const id = useId();
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [keptDraft, setDraft] = useState<Draft | null>(null);
   /**
-   * What "Always" set aside, restored by "Only when…": the rule that was applied, and any
-   * unfinished edit on top of it, so arrowing through the radios never loses a stored rule.
-   * Used once, and forgotten when a rule is applied, so an abandoned edit never resurfaces.
+   * What "Always" set aside, restored by "Only when…": the rule that was applied, with the kind
+   * of field it read, and any unfinished edit on top of it, so arrowing through the radios never
+   * loses a stored rule. Used once, and forgotten when a rule is applied, so an abandoned edit
+   * never resurfaces; either is left out if its field has since changed kind.
    */
   const [remembered, setRemembered] = useState<{
     applied: FieldDisplayRule | null;
-    draft: DraftCondition | null;
+    appliedKind: SourceKind | null;
+    draft: Draft | null;
   } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
   const showsSources = editable && (draft !== null || sourceMenuOpen);
@@ -159,6 +180,15 @@ export default function FieldDisplayCondition({
 
   const graph = ruleGraphFor(fields);
   const rule = graph.byKey.get(fieldKey)?.rule ?? null;
+  const kindOf = (key: string | null) => {
+    const field = key === null ? undefined : graph.byKey.get(key);
+    return field ? sourceKindOf(field) : null;
+  };
+  // the field it reads has since changed kind, as the author confirmed, so the edit goes rather than blocking the save
+  const draftRetyped =
+    keptDraft !== null && sourceRetyped(graph, keptDraft.condition.sourceFieldKey, keptDraft.sourceKind);
+  if (draftRetyped) setDraft(null);
+  const draft = draftRetyped ? null : keptDraft;
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
@@ -229,7 +259,7 @@ export default function FieldDisplayCondition({
       if (!sameDisplayRule(rule, nextRule)) onChange(nextRule);
       return;
     }
-    setDraft({ condition: next, rejected: nextRejected });
+    setDraft({ condition: next, rejected: nextRejected, sourceKind: kindOf(next.sourceFieldKey) });
   };
 
   return (
@@ -241,12 +271,20 @@ export default function FieldDisplayCondition({
         value={condition ? CONDITIONAL : ALWAYS}
         onChange={({ target: { value } }) => {
           if (value === ALWAYS) {
-            setRemembered({ applied: rule, draft: draft?.condition ?? null });
+            setRemembered({ applied: rule, appliedKind: kindOf(rule?.sourceFieldKey ?? null), draft });
             setDraft(null);
             if (rule !== null) onChange(null);
             return;
           }
-          const applied = remembered?.applied ?? null;
+          const applied =
+            remembered?.applied && !sourceRetyped(graph, remembered.applied.sourceFieldKey, remembered.appliedKind)
+              ? remembered.applied
+              : null;
+          const unfinished =
+            remembered?.draft &&
+            !sourceRetyped(graph, remembered.draft.condition.sourceFieldKey, remembered.draft.sourceKind)
+              ? remembered.draft.condition
+              : null;
           setRemembered(null);
           if (applied !== null && !ruleIsInvalid(fields, fieldKey, applied)) {
             onChange(applied);
@@ -255,12 +293,12 @@ export default function FieldDisplayCondition({
              * it still cannot be applied: the author only ever saw it refused, so one that changes
              * elsewhere made storable is dropped rather than applied, and does not block saving
              */
-            const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+            const pending = unfinished ? sanitiseCondition(graph, fieldKey, unfinished) : null;
             if (pending?.sourceFieldKey == null || (ruleFromDraft(pending) !== null && !isRejected(pending))) {
               setDraft(null);
               return;
             }
-            setDraft({ condition: pending, rejected: isRejected(pending) });
+            setDraft({ condition: pending, rejected: isRejected(pending), sourceKind: kindOf(pending.sourceFieldKey) });
             return;
           }
           /*
@@ -268,14 +306,10 @@ export default function FieldDisplayCondition({
            * applied, as above; otherwise a saved rule that no longer validates as it was comes back
            * with whatever of it still applies
            */
-          const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+          const pending = unfinished ? sanitiseCondition(graph, fieldKey, unfinished) : null;
           const stillRefused =
             pending?.sourceFieldKey != null && (ruleFromDraft(pending) === null || isRejected(pending));
-          const restored = stillRefused
-            ? pending
-            : remembered?.applied
-              ? sanitiseCondition(graph, fieldKey, remembered.applied)
-              : null;
+          const restored = stillRefused ? pending : applied ? sanitiseCondition(graph, fieldKey, applied) : null;
           update(
             restored?.sourceFieldKey != null
               ? restored

@@ -64,6 +64,31 @@ describe("FieldModel display rules", () => {
     expect(field.displayRule).toBeNull();
   });
 
+  it("locks an option only for the rules that name it as an option, not for a compared value", () => {
+    const optionField = (id: number, name: string, displayRule: FieldDisplayRule | null, fieldKey: string) => ({
+      id,
+      globalId: `SF${id}`,
+      name,
+      type: "string" as const,
+      selectedOptions: null,
+      columnIndex: id,
+      attachment: null,
+      mandatory: false,
+      fieldKey,
+      displayRule,
+    });
+    const template = makeMockTemplate({
+      fields: [
+        { ...optionField(1, "Answer", null, KEY), type: "radio", definition: { options: ["Yes", "No"] } },
+        optionField(2, "Named", createDisplayRule(KEY, "IS_ANY_OF", ["Yes"]), "6f1c2e0a-0000-4000-8000-000000000002"),
+        optionField(3, "Compared", createDisplayRule(KEY, "EQUALS", ["Yes"]), "6f1c2e0a-0000-4000-8000-000000000003"),
+      ],
+    });
+    const [source, named] = template.fields as Array<FieldModel>;
+
+    expect(source.fieldsUsingOption("Yes")).toEqual([named]);
+  });
+
   it("gives each field added to a template its own key, but not a field built from a record", () => {
     const template = makeMockTemplate();
     template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
