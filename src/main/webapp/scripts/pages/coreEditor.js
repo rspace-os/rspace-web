@@ -1982,6 +1982,8 @@ function initGalleryFileUpload() {
       }
       // otherwise standard edit mode upload
       var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
+      // postDone receives this options object, so the file is inserted into the field it was uploaded to
+      this.destinationFieldId = fieldId;
       return [{ name: 'fieldId', value: fieldId }];
     },
     postDone: function (data) {
@@ -1997,9 +1999,11 @@ function initGalleryFileUpload() {
       }
 
       // insert new file into editor
-      var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
       var result = data.result.data;
-      insertContentAfterFileUpload(fieldId, result);
+      if (!result) {
+        return;
+      }
+      return insertContentAfterFileUpload(data.destinationFieldId, result);
     }
   });
 }
@@ -2057,8 +2061,20 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
           fieldId: data.fieldId,
           tstamp: milliseconds
         };
-        RS.insertTemplateIntoTinyMCE("chemElementLink", json);
-        result.resolve();
+        // the template is inserted into the active editor, which must still be the requested field
+        var activeEditor = tinyMCE.activeEditor;
+        if (!activeEditor || activeEditor.removed
+            || String(getFieldIdFromTextFieldId(activeEditor.id)) !== String(fieldId)) {
+          handleChemistryInsertionFailure(fileName, result);
+          return;
+        }
+        RS.insertTemplateIntoTinyMCE("chemElementLink", json, undefined, function (inserted) {
+          if (inserted) {
+            result.resolve();
+          } else {
+            handleChemistryInsertionFailure(fileName, result);
+          }
+        });
       } else if (response.error) {
         handleChemistryError(response, fileName);
         result.reject();
@@ -2075,8 +2091,12 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
   return result;
 }
 
+function handleChemistryInsertionFailure(fileName, result) {
+  handleChemistryError({ error: { errorMessages: [RS.msg("legacyjs.workspace.coreEditor.requestFailed")] } }, fileName);
+  result.reject();
+}
+
 function handleChemistryError(response, fileName) {
-  RS.unblockPage();
   console.error(response.error.errorMessages);
   var detail = (response.error && response.error.errorMessages[0].includes('Index 0 out of bounds for length 0'))
     ? RS.msg("legacyjs.workspace.coreEditor.markushNotSupported")
