@@ -27,10 +27,12 @@ import org.apache.commons.lang3.EnumUtils;
  * browser always agree on what a stored rule means. Both use standard JSON libraries (Jackson here,
  * {@code JSON.parse} and {@code JSON.stringify} there).
  *
- * @param sourceFieldKey key of the radio or choice field the condition reads
- * @param operator how the source's selected options are compared
- * @param values option values; non-empty for {@link ConditionOperator#requiresValues()} operators
- *     and empty otherwise
+ * @param sourceFieldKey key of the field the condition reads
+ * @param operator how the source's value is compared
+ * @param values option values, non-empty, for {@link ConditionOperator#requiresValues()} operators;
+ *     empty for {@link ConditionOperator#takesNoValues()} operators; for {@link
+ *     ConditionOperator#comparesValue()} operators the one text or number compared, though any
+ *     count is accepted here and reported by {@link FieldDisplayRuleValidator}
  */
 public record FieldDisplayRule(
     String sourceFieldKey, ConditionOperator operator, List<String> values) {
@@ -65,7 +67,7 @@ public record FieldDisplayRule(
     if (operator.requiresValues() && values.isEmpty()) {
       throw new IllegalArgumentException(operator + " needs at least one value");
     }
-    if (!operator.requiresValues() && !values.isEmpty()) {
+    if (operator.takesNoValues() && !values.isEmpty()) {
       throw new IllegalArgumentException(operator + " does not take values");
     }
   }

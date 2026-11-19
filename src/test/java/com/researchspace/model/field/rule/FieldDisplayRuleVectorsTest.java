@@ -188,13 +188,19 @@ class FieldDisplayRuleVectorsTest {
     for (JsonNode node : nodes) {
       JsonNode key = node.get("key");
       JsonNode rule = node.get("rule");
+      FieldType type = FieldType.valueOf(node.get("type").asText());
+      JsonNode sourceKind = node.get("sourceKind");
       fields.add(
           new FieldSnapshot(
               key == null || key.isNull() ? null : key.asText(),
-              FieldType.valueOf(node.get("type").asText()),
+              type,
               rule == null || rule.isNull() ? null : FieldDisplayRule.fromJson(rule.toString()),
               strings(node.get("allowedOptions")),
-              strings(node.get("selectedOptions"))));
+              strings(node.get("selectedOptions")),
+              sourceKind == null
+                  ? SourceKind.ofType(type)
+                  : SourceKind.valueOf(sourceKind.asText()),
+              node.path("value").asText("")));
     }
     return fields;
   }
