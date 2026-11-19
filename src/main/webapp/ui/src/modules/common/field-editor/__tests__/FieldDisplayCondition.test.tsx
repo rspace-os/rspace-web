@@ -33,10 +33,12 @@ const yes = createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]);
 function Harness({
   initial,
   onChange,
+  onIncompleteChange,
   editable,
 }: {
   initial: Array<RuleEditorField>;
   onChange: (key: string, rule: FieldDisplayRule | null) => void;
+  onIncompleteChange: (key: string, incomplete: boolean) => void;
   editable: boolean;
 }) {
   const [fields, setFields] = useState(initial);
@@ -57,6 +59,7 @@ function Harness({
               onChange(field.key, rule);
               setFields((current) => current.map((other) => (other.key === field.key ? { ...other, rule } : other)));
             }}
+            onIncompleteChange={(incomplete) => onIncompleteChange(field.key, incomplete)}
           />
         </section>
       ))}
@@ -66,11 +69,12 @@ function Harness({
 
 const renderConditions = (initial: Array<RuleEditorField>, { editable = true } = {}) => {
   const onChange = vi.fn();
-  const view = renderWithRealI18n(<Harness initial={initial} onChange={onChange} editable={editable} />, {
-    resources: { common },
-    defaultNS: "common",
-  });
-  return view.then((rendered) => ({ ...rendered, onChange }));
+  const onIncompleteChange = vi.fn();
+  const view = renderWithRealI18n(
+    <Harness initial={initial} onChange={onChange} onIncompleteChange={onIncompleteChange} editable={editable} />,
+    { resources: { common }, defaultNS: "common" },
+  );
+  return view.then((rendered) => ({ ...rendered, onChange, onIncompleteChange }));
 };
 
 const card = (name: string) => within(screen.getByRole("region", { name }));
@@ -78,13 +82,13 @@ const conditional = (name: string) =>
   card(name).getByRole("radio", { name: "Only when another field has certain values" });
 
 describe("FieldDisplayCondition", () => {
-  it("applies a condition once it has a field, an operator and an option", async () => {
+  it("applies a condition once it has a field, an operator and an option, reporting it incomplete until then", async () => {
     const user = userEvent.setup();
-    const { onChange } = await renderConditions([gmo, permit]);
+    const { onChange, onIncompleteChange } = await renderConditions([gmo, permit]);
 
     await user.click(conditional("GMO permit"));
     expect(card("GMO permit").getByRole("combobox", { name: "Field" })).toHaveTextContent("Is this a GMO?");
-    expect(card("GMO permit").getByText(/This condition is not applied until/)).toBeInTheDocument();
+    expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("permit", true);
     expect(onChange).not.toHaveBeenCalled();
 
     await user.click(card("GMO permit").getByRole("combobox", { name: "Condition" }));
@@ -93,7 +97,7 @@ describe("FieldDisplayCondition", () => {
     await user.click(screen.getByRole("option", { name: "No" }));
 
     expect(onChange).toHaveBeenCalledExactlyOnceWith("permit", createDisplayRule("gmo", "IS_NONE_OF", ["No"]));
-    expect(card("GMO permit").queryByRole("alert")).not.toBeInTheDocument();
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("permit", false);
   });
 
   it("applies an operator without options as soon as it is chosen", async () => {
@@ -110,14 +114,15 @@ describe("FieldDisplayCondition", () => {
 
   it("keeps the stored rule while an edit leaves the condition incomplete", async () => {
     const user = userEvent.setup();
-    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+    const { onChange, onIncompleteChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
 
     const options = card("GMO permit").getByRole("combobox", { name: "Options" });
     await user.click(options);
     await user.keyboard("{Backspace}");
 
     expect(onChange).not.toHaveBeenCalled();
-    expect(card("GMO permit").getByText(/Until then the saved condition stays as it was/)).toBeInTheDocument();
+    expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("permit", true);
+    expect(options).toHaveAccessibleDescription("Choose at least one option.");
     expect(options).toHaveFocus();
 
     await user.click(screen.getByRole("option", { name: "No" }));
@@ -126,7 +131,7 @@ describe("FieldDisplayCondition", () => {
 
   it("clears the rule and any draft when Always is chosen", async () => {
     const user = userEvent.setup();
-    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+    const { onChange, onIncompleteChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
 
     await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
     await user.keyboard("{Backspace}{Escape}");
@@ -135,7 +140,7 @@ describe("FieldDisplayCondition", () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith("permit", null);
     expect(card("GMO permit").getByRole("radio", { name: "Always" })).toBeChecked();
     expect(card("GMO permit").queryByRole("combobox", { name: "Field" })).not.toBeInTheDocument();
-    expect(card("GMO permit").queryByText(/not applied/)).not.toBeInTheDocument();
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("permit", false);
   });
 
   it("restores a saved condition that the arrow keys moved away from", async () => {
@@ -156,7 +161,7 @@ describe("FieldDisplayCondition", () => {
 
   it("restores both the saved condition and an unfinished edit of it after a round trip through Always", async () => {
     const user = userEvent.setup();
-    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+    const { onChange, onIncompleteChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
 
     await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
     await user.keyboard("{Backspace}{Escape}");
@@ -168,7 +173,14 @@ describe("FieldDisplayCondition", () => {
       ["permit", null],
       ["permit", yes],
     ]);
-    expect(card("GMO permit").getByText(/Until then the saved condition stays as it was/)).toBeInTheDocument();
+    expect(onIncompleteChange.mock.calls).toEqual([
+      ["permit", true],
+      ["permit", false],
+      ["permit", true],
+    ]);
+    expect(card("GMO permit").getByRole("combobox", { name: "Options" })).toHaveAccessibleDescription(
+      "Choose at least one option.",
+    );
   });
 
   it("restores what still applies of a saved condition that no longer validates after a round trip through Always", async () => {
@@ -207,42 +219,42 @@ describe("FieldDisplayCondition", () => {
     ]);
   });
 
-  it("explains, and disables the condition, when no radio or choice field can be read", async () => {
-    await renderConditions([gmo, permit]);
+  it("offers the condition when no other field can be read, with a field menu that says so", async () => {
+    const user = userEvent.setup();
+    const { onIncompleteChange } = await renderConditions([gmo, permit]);
 
-    const onlyWhen = conditional("Is this a GMO?");
-    expect(onlyWhen).toBeDisabled();
-    expect(onlyWhen).toHaveAccessibleDescription(
-      "Add a radio or choice field first. Rules can only read those fields.",
-    );
+    await user.click(conditional("Is this a GMO?"));
+    const field = card("Is this a GMO?").getByRole("combobox", { name: "Field" });
+    expect(field).toHaveAccessibleDescription("Choose a field.");
+    expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("gmo", true);
+
+    await user.click(field);
+    const option = screen.getByRole("option", { name: "No other fields" });
+    expect(screen.getAllByRole("option")).toEqual([option]);
+    expect(option).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("sets an unfinished condition aside, and explains why, once the only field it could read is deleted", async () => {
+  it("stops reporting an unfinished condition once its field is deleted", async () => {
     const user = userEvent.setup();
-    const { onChange } = await renderConditions([gmo, permit]);
+    const { onIncompleteChange } = await renderConditions([gmo, permit]);
     await user.click(conditional("GMO permit"));
 
-    await user.click(screen.getByRole("button", { name: "Delete Is this a GMO?" }));
+    await user.click(screen.getByRole("button", { name: "Delete GMO permit" }));
 
-    expect(card("GMO permit").getByRole("radio", { name: "Always" })).toBeChecked();
-    expect(conditional("GMO permit")).toBeDisabled();
-    expect(conditional("GMO permit")).toHaveAccessibleDescription(
-      "Add a radio or choice field first. Rules can only read those fields.",
-    );
-    expect(card("GMO permit").queryByRole("combobox", { name: "Field" })).not.toBeInTheDocument();
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onIncompleteChange.mock.calls).toEqual([
+      ["permit", true],
+      ["permit", false],
+    ]);
   });
 
-  it("says when the field a saved condition read is gone, and how to add one to read", async () => {
-    await renderConditions([{ ...permit, rule: yes }]);
+  it("says when the field a saved condition read is gone, and reports the condition incomplete", async () => {
+    const { onIncompleteChange } = await renderConditions([{ ...permit, rule: yes }]);
 
     expect(conditional("GMO permit")).toBeChecked();
     expect(card("GMO permit").getByRole("combobox", { name: "Field" })).toHaveAccessibleDescription(
       "The field this condition read no longer exists. Choose another field.",
     );
-    expect(conditional("GMO permit")).toHaveAccessibleDescription(
-      "Add a radio or choice field first. Rules can only read those fields.",
-    );
+    expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("permit", true);
   });
 
   it("names the choice once, by its legend", async () => {
