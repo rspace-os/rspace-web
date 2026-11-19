@@ -30,6 +30,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -221,9 +222,13 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     if (runtimeStale
         && snapshot != null
         && TransactionSynchronizationManager.isActualTransactionActive()) {
+      // Manager calls always run inside the service transaction advice. Starting another
+      // transaction here would hold a second connection, so the shared snapshot is repaired once
+      // this transaction commits, and this caller reads the baselines through its own transaction.
+      refreshSharedRuntimeAfterCommit();
       try {
         // Keep transaction-local (possibly uncommitted or older snapshot) values out of the
-        // shared cache. Leave it stale so later readers retry until a committed refresh succeeds.
+        // shared cache.
         return new RuntimeFeatureFlags(
             snapshot.definitions(), featureFlagDao.getBaselineValues(), snapshot.forcedValues());
       } catch (RuntimeException ex) {
@@ -232,21 +237,43 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       }
     }
     if (runtimeStale && snapshot != null) {
-      if (refreshLock.tryLock()) {
-        try {
-          if (runtimeStale) reloadRuntime();
-          snapshot = runtime;
-        } catch (RuntimeException ex) {
-          log.warn("Could not refresh feature flag snapshot; serving the previous snapshot", ex);
-        } finally {
-          refreshLock.unlock();
-        }
-      }
+      recoverSharedRuntime();
+      snapshot = runtime;
     }
     if (snapshot == null) {
       throw new IllegalStateException("Feature flags have not been reconciled");
     }
     return snapshot;
+  }
+
+  /** Reloads a stale shared snapshot unless another thread is already doing so. */
+  private void recoverSharedRuntime() {
+    if (refreshLock.tryLock()) {
+      try {
+        if (runtimeStale) reloadRuntime();
+      } catch (RuntimeException ex) {
+        log.warn("Could not refresh feature flag snapshot; serving the previous snapshot", ex);
+      } finally {
+        refreshLock.unlock();
+      }
+    }
+  }
+
+  /** Registers one shared-snapshot recovery per transaction, run after it commits. */
+  private void refreshSharedRuntimeAfterCommit() {
+    if (!TransactionSynchronizationManager.isSynchronizationActive()
+        || TransactionSynchronizationManager.getSynchronizations().stream()
+            .anyMatch(SharedRuntimeRecovery.class::isInstance)) {
+      return;
+    }
+    TransactionSynchronizationManager.registerSynchronization(new SharedRuntimeRecovery());
+  }
+
+  private final class SharedRuntimeRecovery implements TransactionSynchronization {
+    @Override
+    public void afterCommit() {
+      recoverSharedRuntime();
+    }
   }
 
   private void assertWritable(String flagName, RuntimeFeatureFlags snapshot) {

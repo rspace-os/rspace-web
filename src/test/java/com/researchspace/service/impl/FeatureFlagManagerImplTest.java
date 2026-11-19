@@ -242,6 +242,30 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void staleSnapshotReadInsideTransactionRepairsTheSharedSnapshotAfterCommit() {
+    initialiseRuntime(Map.of(FLAG, false), false);
+    ReflectionTestUtils.setField(featureFlagManager, "runtimeStale", true);
+    when(featureFlagDao.getBaselineValues()).thenReturn(Map.of(FLAG, true));
+    TransactionSynchronizationManager.initSynchronization();
+    TransactionSynchronizationManager.setActualTransactionActive(true);
+    try {
+      assertTrue(resource(null).isBaselineValue());
+      assertTrue(resource(null).isBaselineValue());
+      assertEquals(1, TransactionSynchronizationManager.getSynchronizations().size());
+      assertEquals(true, ReflectionTestUtils.getField(featureFlagManager, "runtimeStale"));
+      TransactionSynchronizationManager.getSynchronizations()
+          .forEach(TransactionSynchronization::afterCommit);
+    } finally {
+      TransactionSynchronizationManager.setActualTransactionActive(false);
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+    assertEquals(false, ReflectionTestUtils.getField(featureFlagManager, "runtimeStale"));
+    clearInvocations(featureFlagDao);
+    assertTrue(resource(null).isBaselineValue());
+    verify(featureFlagDao, never()).getBaselineValues();
+  }
+
+  @Test
   void failedTransactionLocalRefreshRetainsStaleMarkerAndRetries() {
     initialiseRuntime(Map.of(FLAG, true), false);
     ReflectionTestUtils.setField(featureFlagManager, "runtimeStale", true);
