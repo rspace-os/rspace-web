@@ -424,7 +424,10 @@ public abstract class InventoryEntityField
    * This method applies changes from latest template field: - updates name of the field (if
    * changed) - updates columnIndex of the field (if changed) - applies 'deleted' flag to the field,
    * but only if field value is empty. If field value is not empty, an exception is thrown. - copies
-   * the mandatory flag, field key and display rule.
+   * the field key and, unless the field is deleted, the mandatory flag and display rule.
+   *
+   * <p>A deleted field, whether removed by this sync or earlier, keeps its mandatory flag and
+   * display rule, even when template versions between the record's and the latest changed them.
    *
    * <p>A field whose template field is deleted, and kept in this record, gets no display rule: it
    * is always shown. If the template field had a rule, the record field is no longer mandatory
@@ -463,24 +466,28 @@ public abstract class InventoryEntityField
       setDeleted(true);
       fieldUpdated = true;
     }
-    // only a field that survives its template field's deletion; a removed one keeps its state
-    boolean keptAfterTemplateDeletion = templateField.isDeleted() && !isDeleted();
-    FieldDisplayRule latestRule = keptAfterTemplateDeletion ? null : templateField.getDisplayRule();
-    boolean latestMandatory =
-        templateField.isMandatory()
-            && !(keptAfterTemplateDeletion && templateField.getDisplayRule() != null);
-    if (isMandatory() != latestMandatory) {
-      setMandatory(latestMandatory);
-      fieldUpdated = true;
-    }
     // unconditionally, so a record field made before field keys existed gets its template's key
     if (!Objects.equals(getFieldKey(), templateField.getFieldKey())) {
       setFieldKey(templateField.getFieldKey());
       fieldUpdated = true;
     }
-    if (!Objects.equals(getDisplayRule(), latestRule)) {
-      setDisplayRule(latestRule);
-      fieldUpdated = true;
+    // a removed field, by this sync or earlier, keeps the rule and mandatory flag it had, even if
+    // template versions skipped here changed them
+    if (!isDeleted()) {
+      boolean keptAfterTemplateDeletion = templateField.isDeleted();
+      FieldDisplayRule latestRule =
+          keptAfterTemplateDeletion ? null : templateField.getDisplayRule();
+      boolean latestMandatory =
+          templateField.isMandatory()
+              && !(keptAfterTemplateDeletion && templateField.getDisplayRule() != null);
+      if (isMandatory() != latestMandatory) {
+        setMandatory(latestMandatory);
+        fieldUpdated = true;
+      }
+      if (!Objects.equals(getDisplayRule(), latestRule)) {
+        setDisplayRule(latestRule);
+        fieldUpdated = true;
+      }
     }
 
     return fieldUpdated;
