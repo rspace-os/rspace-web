@@ -354,7 +354,7 @@
           <excludedGroups>${excludedTestGroups}</excludedGroups>
           <!-- ${argLine} parameter comes from JaCoCo plugin. -->
           <!-- 'add-opens' required when running on j17, until we upgrade xml jars -->
-          <argLine>-Xmx1536m
+          <argLine>-Xmx2g
             --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED
             --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
             ${argLine}</argLine>
