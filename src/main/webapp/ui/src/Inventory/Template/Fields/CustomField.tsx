@@ -157,6 +157,8 @@ function CustomField({
       ))
     )
       return;
+    // a removed field's name no longer needs fixing, so it stops counting towards the section's errors
+    onErrorStateChange(false);
     onRemove(deleteFromRecords);
   };
 
