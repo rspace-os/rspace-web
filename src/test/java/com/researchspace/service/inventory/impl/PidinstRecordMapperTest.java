@@ -24,6 +24,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryStringField;
@@ -357,6 +358,26 @@ class PidinstRecordMapperTest {
     assertThrows(
         ApiRuntimeException.class,
         () -> PidinstRecordMapper.toApiInstrument(record, template, Map.of()));
+  }
+
+  @Test
+  void anUnmappedScalarSourceIsJudgedOnTheBlankSentNotOnItsTemplateDefault() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
+    record.getManufacturers().clear();
+    String sourceKey = "0b7d4c1e-3f2a-4e6b-8c9d-1a2b3c4d5e6f";
+    InventoryNumberField channels = new InventoryNumberField("Channels");
+    channels.setFieldKey(sourceKey);
+    channels.setFieldData("4");
+    InstrumentTemplate template = defaultTemplate();
+    addField(template, channels);
+    template
+        .getActiveFields()
+        .get(1) // Manufacturer, mandatory
+        .setDisplayRule(
+            new FieldDisplayRule(sourceKey, ConditionOperator.GREATER_THAN, List.of("2")));
+
+    ApiInstrument instrument = PidinstRecordMapper.toApiInstrument(record, template, Map.of());
+    assertEquals("", content(instrument, 12));
   }
 
   @Test

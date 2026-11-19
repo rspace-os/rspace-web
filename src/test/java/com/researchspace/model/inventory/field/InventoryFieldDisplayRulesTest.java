@@ -102,12 +102,14 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
-  void ruleOnAStringSourceIsRejected() {
-    InventoryStringField notes = string(3L, "Notes", NOTES_KEY);
-    notes.setDisplayRule(new FieldDisplayRule(PERMIT_KEY, ConditionOperator.HAS_VALUE, null));
+  void ruleOnAFormattedTextSourceIsRejected() {
+    InventoryTextField notes = new InventoryTextField("Notes");
+    notes.setId(3L);
+    notes.setFieldKey(NOTES_KEY);
     template.addSampleField(notes);
+    permit.setDisplayRule(new FieldDisplayRule(NOTES_KEY, ConditionOperator.HAS_VALUE, null));
 
-    assertRejected(FieldDisplayRuleValidator.SOURCE_TYPE, "Notes");
+    assertRejected(FieldDisplayRuleValidator.SOURCE_TYPE, "GMO permit number");
   }
 
   @Test
