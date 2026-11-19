@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_APP_CONFIG, getAppConfig } from "@/modules/common/app/queries/config";
 
@@ -21,7 +22,8 @@ describe("getAppConfig", () => {
     );
 
     await expect(getAppConfig()).resolves.toEqual(response);
-    expect(request?.headers.get("Authorization")).toBeNull();
+    // A public read still carries the signed-in caller's token when the page has one.
+    expect(request?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 

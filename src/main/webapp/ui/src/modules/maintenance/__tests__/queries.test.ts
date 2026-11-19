@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { ListMaintenances200 } from "@/modules/common/api/v2/generated/models/listMaintenances200";
 import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
@@ -20,7 +21,7 @@ describe("getMaintenanceStatus", () => {
     const requestUrl = new URL(capturedRequest?.url ?? "");
     expect(requestUrl.searchParams.get("limit")).toBe("1");
     expect(requestUrl.searchParams.get("fields[maintenances]")).toBe("canUserLoginNow");
-    expect(capturedRequest?.headers.get("Authorization")).toBeNull();
+    expect(capturedRequest?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
@@ -64,17 +65,21 @@ it("reads public maintenance status without an authenticated browser session", a
     throw new TypeError("No authenticated session");
   });
   onTestFinished(setApiV2TokenProvider({ getToken, recover }));
+  let capturedRequest: Request | undefined;
   server.use(
-    http.get("/api/v2/maintenances", () =>
-      HttpResponse.json<ListMaintenances200>({
+    http.get("/api/v2/maintenances", ({ request }) => {
+      capturedRequest = request;
+      return HttpResponse.json<ListMaintenances200>({
         docs: [{ id: 1, canUserLoginNow: true }],
         page: 1,
         limit: 1,
         hasNextPage: false,
-      }),
-    ),
+      });
+    }),
   );
   await expect(getMaintenanceStatus()).resolves.toBe("clear");
-  expect(getToken).not.toHaveBeenCalled();
+  // Without a session the token cannot be minted, so the public read goes anonymously.
+  expect(getToken).toHaveBeenCalledTimes(1);
   expect(recover).not.toHaveBeenCalled();
+  expect(capturedRequest?.headers.has("Authorization")).toBe(false);
 });

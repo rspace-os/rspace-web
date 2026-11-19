@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { getNextMaintenance } from "@/modules/common/app/queries/nextMaintenance";
 
@@ -30,7 +31,8 @@ describe("getNextMaintenance", () => {
     expect(requestUrl.searchParams.get("limit")).toBe("1");
     expect(requestUrl.searchParams.get("where")).toMatch(/^endDate=gt=\d{4}-\d{2}-\d{2}T/);
     expect(requestUrl.searchParams.get("fields[maintenances]")).toBe("startDate");
-    expect(capturedRequest?.headers.get("Authorization")).toBeNull();
+    // Signed-in callers keep their view of maintenance history.
+    expect(capturedRequest?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
