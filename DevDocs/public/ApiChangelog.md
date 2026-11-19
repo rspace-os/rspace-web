@@ -36,6 +36,8 @@ behaviour in the product.
   `operator` is `IS_ANY_OF`, `IS_NONE_OF`, `HAS_VALUE` or `HAS_NO_VALUE`. `values` is required
   and non-empty for the first two. For `HAS_VALUE` and `HAS_NO_VALUE`, omit `values` or send
   `[]`; the server also accepts `null`. A rule with any other property is rejected with 400.
+- `values` hold the raw option text. A comma that is part of an option is written as a comma,
+  not as the `&#44;` escape used in ELN choice field content.
 - The two APIs write an empty `values` differently. The Inventory API omits it; the ELN forms
   and documents API always returns `"values": []`. Treat a missing `values` as an empty list.
 - The API does not compute visibility. Every field and value is returned whether or not the field
@@ -63,6 +65,12 @@ behaviour in the product.
   - names a source that does not exist, is the field itself, or is not a radio or choice field;
   - names an option that the source does not offer;
   - is part of a loop of fields that depend on each other.
+- **Size limits.** A rule may list at most 1,000 values, each at most once, and the rule as
+  stored may be at most 32,768 characters. A request that breaks a limit is rejected with 422,
+  naming the field, and nothing changes. The messages are
+  `validation.fieldDisplayRule.valueTooMany`, `validation.fieldDisplayRule.ruleTooLong` and
+  `validation.fieldDisplayRule.valueDuplicate`. This applies to the ELN forms API and to the
+  Inventory sample and instrument template APIs.
 - **Mandatory fields.** A mandatory field is only required while its rule shows it. This applies
   to Inventory sample and instrument create and update, CSV import validation and the operations
   wizard, and to the ELN Sign button calculation. Values for hidden fields are accepted and
@@ -70,6 +78,21 @@ behaviour in the product.
 
 #### Other changes
 
+- **Choice field content is checked (ELN documents API).** On POST and PUT `/api/v1/documents`,
+  choice field `content` lists the selected options separated by commas, with a comma that is
+  part of an option written as `&#44;`.
+  - Content that names a value that is not an option of the field is rejected with 422
+    (`validation.fieldData.choiceNotAnOption`). The message lists at most 10 such values, then
+    how many more there are.
+  - Content with an empty value, such as `","`, `"Yes,"` or `"Yes,,No"`, is rejected with 422
+    (`validation.fieldData.choiceEmptyValue`). Only wholly empty content clears the selection.
+  - On PUT, content equal to what a GET returns for the field is accepted without these checks,
+    so a document that already holds values that are not options can still be updated by
+    sending back the fields it was read with.
+  - **Compatibility:** values are not trimmed, so `"Yes, No"`, with a space after the comma, is
+    now rejected because ` No` is not an option. Send `"Yes,No"`.
+- **Form PUT response (ELN forms API).** PUT `/api/v1/forms/{id}` now returns the form's fields,
+  as POST does. Before, a PUT that replaced every field returned `"fields": []`.
 - **Stricter radio and choice options (ELN forms API).** On POST and PUT `/api/v1/forms`, radio and
   choice options that the request adds or changes must not be blank and must not contain `&` or
   `=`. Options already stored are not re-checked unless the request changes them.

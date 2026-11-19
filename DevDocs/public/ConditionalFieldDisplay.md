@@ -13,7 +13,7 @@ A display rule shows a field only when a radio or choice field in the same form 
 GMO?" is "Yes".
 
 - A rule reads one radio or choice field, its **source**. Rules cannot read other field types.
-- A field can have at most one rule. One rule can show several fields.
+- A field can have at most one rule. Several fields can have rules that read the same source.
 - Conditions:
   - **is any of** the chosen options. For a choice field, at least one selected option is in the
     list.
@@ -31,38 +31,44 @@ GMO?" is "Yes".
 ## Writing rules
 
 The ELN form editor and the Inventory template editor work the same way. Both edit in memory
-and save once, so you can add a field and use it in a rule before you save.
+and save once, so you can add a field and use it in a rule before you save. A short note above
+the fields explains that a mandatory field is mandatory only while it is shown, and that a
+hidden field keeps its value.
 
-![The Display rules panel of a sample template, with a rule that shows Containment level when Is this a GMO? is Yes, and a second rule that reads Containment level](images/conditional-field-display/inventory-rules-panel.png)
+### "Display this field when…"
 
-### The Display rules panel
+Each field's card has a **Display this field when…** section. It offers two choices:
 
-The **Display rules** panel sits above the list of fields. Each rule reads "When [field] is
-[options]", followed by the fields it shows.
+- **Always**: the field has no rule and is always shown. This is the default.
+- **Only when another field has certain values**: the field has a rule.
 
-1. Add at least one radio or choice field. Until there is one, the panel says so.
-2. Select **Add rule**.
-3. Choose the **Field** the rule reads, the **Condition** and, for "is any of" and "is none of",
-   the **Options**.
-4. In **Show these fields**, choose the fields to show when the condition is true. The list
-   leaves out fields that would make a loop.
-5. Save the form or template.
+To give a field a rule:
 
-To change a rule, edit it in the panel. To remove it, use its delete button; the fields it
-showed are then always shown. Fields that have identical rules are listed together under one
-rule.
+1. Add at least one other radio or choice field. Until there is one, **Only when another field
+   has certain values** is disabled, and the card explains that rules can only read radio and
+   choice fields.
+2. In the field's card, choose **Only when another field has certain values**.
+3. Choose the **Field** the rule reads and the **Condition**. For "is any of" and "is none of",
+   also choose the **Options**. The **Field** list leaves out fields that would make a loop.
+4. Save the form or template.
 
-A rule that is not finished (for example, no options chosen yet) stays in the panel with a
-warning and is not applied. If you were editing a saved rule, the saved rule stays as it was
-until your change is complete.
+A condition that is not finished (for example, no options chosen yet) is kept as a draft in that
+card, with a warning, and is not applied. Until the draft is complete, the field keeps the rule
+it had when you started, or stays always shown if it had none.
+
+To remove a rule, choose **Always**; the field is then always shown. If you switch back to
+**Only when another field has certain values** before you save, the condition you had comes
+back.
+
+The card of a field that rules read lists the fields that depend on it, for example "Other
+fields depend on this field: Containment level, CL3 approval".
 
 ### The "Shown when..." summary
 
-Each field with a rule shows a one-line summary in the field list, for example "Shown when Is
-this a GMO? is Yes". If a field sits above the field its rule reads, the summary suggests
-moving it below, which reads better for the person filling it in. Order is otherwise up to you.
-
-![A field in the ELN form editor, with the summary "Shown when Containment level is CL3"](images/conditional-field-display/eln-shown-when.png)
+When the form or template is not being edited, each field with a rule shows a one-line summary
+instead of the editor, for example "Shown when Is this a GMO? is Yes". If a field sits above
+the field its rule reads, the summary, and the **Field** choice while editing, suggest moving it
+below, which reads better for the person filling it in. Order is otherwise up to you.
 
 ### When a change affects rules
 
@@ -75,14 +81,14 @@ The editor asks before a change that would break a rule, and names the fields af
 - **Changing the type of an unsaved radio or choice field** to a type a rule cannot read. On
   confirm, the dependent rules are removed.
 
-An option that a rule uses cannot be edited in place, so typing cannot quietly break a rule. To
-rename it, add the new option, update the rule, then remove the old option.
+An option that a rule uses cannot be edited in place, so typing cannot quietly break a rule. The
+option says "A display rule uses this option, so it cannot be renamed." To rename it, add the
+new option, update the rule, then remove the old option. In Inventory templates, saved options
+cannot be renamed anyway, so the message appears only on an option added in the current edit.
 
 ### ELN Forms: the form editor
 
 Use this part for the ELN Forms article.
-
-![The Display rules panel in the ELN form editor](images/conditional-field-display/eln-rules-panel.png)
 
 - The field editor is built into the form page. Add fields with **Add field**; reorder them with
   the move buttons on each field. There is no separate "Reorder Fields" dialog any more.
@@ -90,6 +96,11 @@ Use this part for the ELN Forms article.
   fields first. If a field has a problem, nothing is saved, the problem is marked on the field,
   and the editor stays open. **Revert** asks before it discards your changes.
 - If you leave the page with unsaved field changes, the browser asks you to confirm.
+- If the form's fields were saved somewhere else (for example in another tab) after this page
+  loaded them, your field changes are not saved, so they cannot overwrite the other changes.
+  This applies to **Save and Close**, **Update** and **Publish** alike, and none of them goes
+  ahead. The editor says "This form was changed elsewhere." and offers **Reload**. Reload, then
+  make your changes again.
 - On a published form, fields copied from the published version cannot be deleted, and a saved
   field cannot change type. Fields you add in the new version can.
 - Uri, Reference and Attachment fields can only be created through the API. In the editor you
@@ -102,8 +113,8 @@ Use this part for the ELN Forms article.
 
 Use this part for the Inventory templates article.
 
-- The Display rules panel is in the template's fields section, for both sample templates and
-  instrument templates.
+- Each field in the template's fields section has its own **Display this field when…** section,
+  in both sample templates and instrument templates.
 - Rules apply to template fields only. Extra fields (the fields you add to a single sample,
   subsample, container or instrument) cannot have rules and are always shown.
 - When you duplicate a template, its rules come with it and still point at the right fields.
@@ -129,6 +140,9 @@ Use this part for the Inventory templates article.
   views. A subsample shows its sample's template fields read-only, with the same rules applied.
 - Exports and the API include every field and value, shown or hidden: ELN PDF, Word, HTML and
   XML exports, and Inventory CSV export.
+- In an ELN document, a radio field shown as a drop-down list starts on an empty "Select an
+  option" choice when it has no value, instead of showing its first option. A rule that reads
+  it therefore sees no value until you choose one.
 
 ### ELN form versions
 
@@ -175,8 +189,9 @@ no rules, so they show every field.
   screen readers name the fields, for example "2 more fields are shown: Containment level and
   CL3 approval." or "One field is hidden: GMO permit." The announcement is polite, so it does
   not interrupt.
-- Everything in the Display rules panel, including choosing options and fields, works with the
-  keyboard. Each field's move and delete buttons name the field they act on.
+- Everything in **Display this field when…**, including choosing the field, condition and
+  options, works with the keyboard. Each field's move and delete buttons name the field they
+  act on.
 
 ## Known limitations
 
@@ -191,3 +206,14 @@ in the release notes ([Changelog-OS.md](Changelog-OS.md)).
 - Inventory extra fields cannot have display rules.
 - ELN form versions created before the upgrade do not share field keys with each other. This is
   harmless today, because rules are only ever read within one form version.
+- A field deleted from an Inventory template but kept in existing samples and instruments is
+  always shown there once they are updated to the latest template version: its rule no longer
+  applies, and if it had one it is no longer mandatory.
+
+Because hidden fields keep their values, these also include hidden values:
+
+- signing an ELN document (RSDEV-1719);
+- search (RSDEV-1720).
+
+A notebook can show the autosaved, not yet saved, answers of an entry that someone else is
+editing, and shows or hides that entry's fields by those answers (RSDEV-1724).
