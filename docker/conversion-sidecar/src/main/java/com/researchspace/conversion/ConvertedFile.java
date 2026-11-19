@@ -73,15 +73,14 @@ final class ConvertedFile implements AutoCloseable {
   void transferTo(OutputStream output) throws IOException {
     try (var input = Files.newInputStream(file)) {
       if (deadline != null) {
-        deadline.resume(
-            () -> {
-              try {
-                // The writing thread must fail; closing servlet output can finish a truncated 200.
-                input.close();
-              } catch (IOException e) {
-                LOG.warn("Could not abort response transfer", e);
-              }
-            });
+        deadline.resume(() -> {
+          try {
+            // The writing thread must fail; closing servlet output can finish a truncated 200.
+            input.close();
+          } catch (IOException e) {
+            LOG.warn("Could not abort response transfer", e);
+          }
+        });
       }
       byte[] buffer = new byte[8192];
       int read;

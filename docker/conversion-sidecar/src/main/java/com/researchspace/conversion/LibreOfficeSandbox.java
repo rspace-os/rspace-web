@@ -218,29 +218,27 @@ class LibreOfficeSandbox {
     synchronized CompletableFuture<Void> terminate() {
       if (termination == null) {
         termination = new CompletableFuture<>();
-        Thread.startVirtualThread(
-            () -> {
-              try {
-                // JOD can restart after a lost connection until its manager has stopped.
-                while (!startupFinished.isDone() || !stopFinished.isDone()) {
-                  killProcesses();
-                  Thread.sleep(10);
-                }
-                killProcesses()
-                    .whenComplete(
-                        (ignored, failure) -> {
-                          if (failure == null) {
-                            termination.complete(null);
-                          } else {
-                            LOG.error("Could not confirm request process termination", failure);
-                            termination.completeExceptionally(failure);
-                          }
-                        });
-              } catch (Exception e) {
-                LOG.error("Could not terminate request processes", e);
-                termination.completeExceptionally(e);
-              }
-            });
+        Thread.startVirtualThread(() -> {
+          try {
+            // JOD can restart after a lost connection until its manager has stopped.
+            while (!startupFinished.isDone() || !stopFinished.isDone()) {
+              killProcesses();
+              Thread.sleep(10);
+            }
+            killProcesses()
+                .whenComplete((ignored, failure) -> {
+                  if (failure == null) {
+                    termination.complete(null);
+                  } else {
+                    LOG.error("Could not confirm request process termination", failure);
+                    termination.completeExceptionally(failure);
+                  }
+                });
+          } catch (Exception e) {
+            LOG.error("Could not terminate request processes", e);
+            termination.completeExceptionally(e);
+          }
+        });
       }
       return termination;
     }
@@ -249,13 +247,10 @@ class LibreOfficeSandbox {
       // Match a whole workspace argument or a path below it, never another request's prefix.
       var roots =
           descendants.get().stream()
-              .filter(
-                  process ->
-                      Arrays.stream(process.info().arguments().orElse(new String[0]))
-                          .anyMatch(
-                              argument ->
-                                  argument.equals(request.toString())
-                                      || argument.contains(request + "/")))
+              .filter(process ->
+                  Arrays.stream(process.info().arguments().orElse(new String[0]))
+                      .anyMatch(argument ->
+                          argument.equals(request.toString()) || argument.contains(request + "/")))
               .toList();
       for (ProcessHandle root : roots) {
         var descendants = root.descendants().toList();

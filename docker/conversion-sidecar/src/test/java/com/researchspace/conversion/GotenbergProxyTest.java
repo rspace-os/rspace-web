@@ -64,14 +64,13 @@ class GotenbergProxyTest {
               100000,
               directory);
       var proxy = spy(new GotenbergProxy(properties));
-      doAnswer(
-              invocation ->
-                  RestClient.builder()
-                      .baseUrl("http://127.0.0.1:" + server.getAddress().getPort())
-                      .requestFactory(
-                          new HttpComponentsClientHttpRequestFactory(
-                              invocation.<CloseableHttpClient>getArgument(0)))
-                      .build())
+      doAnswer(invocation ->
+              RestClient.builder()
+                  .baseUrl("http://127.0.0.1:" + server.getAddress().getPort())
+                  .requestFactory(
+                      new HttpComponentsClientHttpRequestFactory(
+                          invocation.<CloseableHttpClient>getArgument(0)))
+                  .build())
           .when(proxy)
           .client(any());
       Path input = Files.writeString(directory.resolve("uploaded.txt"), "hello");

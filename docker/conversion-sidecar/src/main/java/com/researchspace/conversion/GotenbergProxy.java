@@ -123,26 +123,25 @@ class GotenbergProxy {
           .contentType(MediaType.MULTIPART_FORM_DATA)
           .header("Gotenberg-Trace", correlationId)
           .body(body)
-          .exchange(
-              (request, response) -> {
-                if (response.getStatusCode() != HttpStatus.OK) {
-                  throw new ConversionException(
-                      HttpStatus.BAD_GATEWAY,
-                      ConversionError.SERVICE_UNAVAILABLE,
-                      "The PDF converter rejected the request");
-                }
-                if (!MediaType.APPLICATION_PDF.isCompatibleWith(
-                    response.getHeaders().getContentType())) {
-                  throw new ConversionException(
-                      HttpStatus.BAD_GATEWAY,
-                      ConversionError.OUTPUT_INVALID,
-                      "The PDF converter returned an unexpected content type");
-                }
-                try (var inputStream = response.getBody()) {
-                  copyBounded(inputStream, output);
-                }
-                return null;
-              });
+          .exchange((request, response) -> {
+            if (response.getStatusCode() != HttpStatus.OK) {
+              throw new ConversionException(
+                  HttpStatus.BAD_GATEWAY,
+                  ConversionError.SERVICE_UNAVAILABLE,
+                  "The PDF converter rejected the request");
+            }
+            if (!MediaType.APPLICATION_PDF.isCompatibleWith(
+                response.getHeaders().getContentType())) {
+              throw new ConversionException(
+                  HttpStatus.BAD_GATEWAY,
+                  ConversionError.OUTPUT_INVALID,
+                  "The PDF converter returned an unexpected content type");
+            }
+            try (var inputStream = response.getBody()) {
+              copyBounded(inputStream, output);
+            }
+            return null;
+          });
       if (!Files.isRegularFile(output)
           || Files.size(output) < 5
           || Files.size(output) > properties.maxOutputBytes()
