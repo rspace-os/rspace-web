@@ -424,7 +424,7 @@ jobs:
         if: failure()
         run: |
           echo "=== Jetty stdout (last 100 lines) ===" && tail -100 /tmp/jetty.log || true
-          if [ "${{ matrix.project }}" = "conversion" ]; then
+          if [ "${{ matrix.suite.project }}" = "conversion" ]; then
             echo "=== conversion-sidecar ===" && docker logs conversion-sidecar || true
             echo "=== gotenberg ===" && docker logs --tail 200 gotenberg || true
           fi
