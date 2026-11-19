@@ -213,6 +213,12 @@ describe("form.js toolbar", () => {
     const leaving = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(leaving);
     expect(leaving.defaultPrevented).toBe(false);
+
+    // unpublishing does not save fields, so the translated label still takes it there
+    legacy.$("#unpublish").trigger("click");
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0].get("publish")).toBe("false");
+    expect(editor.save).toHaveBeenCalledTimes(3);
   });
 
   test.each([
