@@ -17,6 +17,7 @@ import type { FieldType as ApiFieldType } from "../../../stores/definitions/Fiel
 import type FieldModel from "../../../stores/models/FieldModel";
 import { hasOptions } from "../../../stores/models/FieldModel";
 import { FIELD_DATA, FIELD_LABEL, fieldTypeToApiString, SUPPORTED_TYPES } from "../../../stores/models/FieldTypes";
+import { sourceKindOfType } from "../../../stores/models/fieldVisibility";
 import useStores from "../../../stores/use-stores";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
 import DefaultValueField from "./DefaultValueField";
@@ -163,7 +164,7 @@ function CustomField({
   };
 
   const changeType = async (type: ApiFieldType) => {
-    const dependents = hasOptions(type) ? [] : field.dependentFields;
+    const dependents = sourceKindOfType(type) === sourceKindOfType(field.type) ? [] : field.dependentFields;
     if (
       dependents.length > 0 &&
       !(await uiStore.confirm(

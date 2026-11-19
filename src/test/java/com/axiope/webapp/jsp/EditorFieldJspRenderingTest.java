@@ -29,7 +29,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.util.HtmlUtils;
 
 /**
  * Renders the document editor's field JSPs from source with the real Jakarta EL implementation and
@@ -129,6 +128,8 @@ class EditorFieldJspRenderingTest {
 
   private static Document render(String jsp, Field field) {
     ELProcessor el = new ELProcessor();
+    // as EscapeXmlELResolverListener registers it, so String values are escaped as on the page
+    el.getELManager().addELResolver(new EscapeXmlELResolver());
     el.defineBean("field", field);
     String html = new Renderer(el).render(preprocess(read(INCLUDE_DIR.resolve(jsp))));
     return Jsoup.parse("<table>" + html + "</table>");
@@ -260,14 +261,14 @@ class EditorFieldJspRenderingTest {
       return expression.matches() ? el.eval(expression.group(1)) : value;
     }
 
-    /** Like EscapeXmlELResolver, every value is escaped. */
+    /** Writes each value as the JSP would: escaping is left to the registered resolver. */
     private String substitute(String text) {
       Matcher expression = EXPRESSION.matcher(text);
       StringBuilder out = new StringBuilder();
       while (expression.find()) {
         Object value = el.eval(expression.group(1));
-        String escaped = value == null ? "" : HtmlUtils.htmlEscape(String.valueOf(value));
-        expression.appendReplacement(out, Matcher.quoteReplacement(escaped));
+        String written = value == null ? "" : String.valueOf(value);
+        expression.appendReplacement(out, Matcher.quoteReplacement(written));
       }
       return expression.appendTail(out).toString();
     }

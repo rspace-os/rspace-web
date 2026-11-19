@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -11,10 +12,12 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryStringField;
+import com.researchspace.service.inventory.operations.InheritedFieldMerge;
 import com.researchspace.service.inventory.operations.OperationFieldNames;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,5 +227,19 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     assertEquals("", ruled.getFieldData());
     assertEquals(1, sample.getExtraFields().size());
     assertEquals("Cryomedium", sample.getExtraFields().get(0).getName());
+  }
+
+  @Test
+  void theRequestValidatorLeavesUnmergedTheBlankValueTheSavePathLeavesUnmerged() {
+    SampleTemplate template = new SampleTemplate();
+    InventoryEntityField plain = new InventoryStringField("Cryomedium");
+    plain.setMandatory(true);
+    template.addSampleField(plain);
+
+    List<InventoryEntityField> merged =
+        InheritedFieldMerge.withMergedValues(
+            List.of(operationField("Cryomedium", "")), template.getActiveFields());
+
+    assertSame(plain, merged.get(0));
   }
 }

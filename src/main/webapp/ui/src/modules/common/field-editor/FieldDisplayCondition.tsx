@@ -16,12 +16,16 @@ import {
   ConditionOperatorSchema,
   type FieldDisplayRule,
   OPERATORS_BY_SOURCE_KIND,
+  operatorComparesValue,
   operatorRequiresValues,
   sameDisplayRule,
+  sourceKindOf,
 } from "@/modules/common/field-rules/displayRule";
+import { trimRuleValue } from "@/modules/common/field-rules/ruleValues";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import DisplayRuleSummary from "./DisplayRuleSummary";
 import {
+  comparisonValueProblem,
   type DraftCondition,
   type RuleEditorField,
   ruleFromDraft,
@@ -99,9 +103,10 @@ type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
 
 /**
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
- * edit mode the author picks "Always" or a condition on another radio or
- * choice field; only fields that would not end up depending on this one are
- * offered; with none, the field menu says so. A condition is applied once it is
+ * edit mode the author picks "Always" or a condition on another field that a
+ * rule can read: options, one-line text or a number, each with its own
+ * conditions and value control. Only fields that would not end up depending
+ * on this one are offered; with none, the field menu says so. A condition is applied once it is
  * complete and the shared validator accepts it. Until then it is a draft in
  * this field only, the field keeps the rule it had, the controls show what is
  * missing, and `onIncompleteChange` tells the host to refuse saving. Either
@@ -145,6 +150,12 @@ export default function FieldDisplayCondition({
     onShowsSourcesChange(fieldKey, true);
     return () => onShowsSourcesChange(fieldKey, false);
   }, [showsSources, onShowsSourcesChange, fieldKey]);
+  /**
+   * The comparison value as typed. The applied rule holds it trimmed, so the
+   * box shows this while it trims to the condition's value, and a space typed
+   * between words is not lost.
+   */
+  const [typedValue, setTypedValue] = useState<string | null>(null);
 
   const graph = ruleGraphFor(fields);
   const rule = graph.byKey.get(fieldKey)?.rule ?? null;
@@ -180,6 +191,7 @@ export default function FieldDisplayCondition({
         <DisplayRuleSummary
           rule={rule}
           sourceName={source ? nameOf(source) : null}
+          sourceKind={source ? sourceKindOf(source) : undefined}
           sourceIsBelow={source !== null && isBelow(source)}
         />
         {dependentsNote}
@@ -190,8 +202,15 @@ export default function FieldDisplayCondition({
   const sources = graph.sourcesFor(fieldKey);
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
-  // complete, but the shared validator refused it: too many options, or too long to store
+  // complete, but the shared validator refused it: too many options, not a number, or too long to store
   const rejected = draft?.rejected ?? false;
+  const sourceKind = source ? sourceKindOf(source) : null;
+  // with no source chosen, only the current condition is listed, since which ones apply depends on the field
+  const operators = sourceKind ? OPERATORS_BY_SOURCE_KIND[sourceKind] : condition ? [condition.operator] : [];
+  const valueProblem = condition && sourceKind ? comparisonValueProblem(sourceKind, condition) : null;
+  const conditionValue = condition?.values[0] ?? "";
+  const shownValue =
+    typedValue !== null && trimRuleValue(typedValue) === trimRuleValue(conditionValue) ? typedValue : conditionValue;
 
   /** Whether the shared validator refuses `condition`, complete, as this field's rule. */
   const isRejected = (condition: DraftCondition) => {
@@ -260,7 +279,11 @@ export default function FieldDisplayCondition({
           update(
             restored?.sourceFieldKey != null
               ? restored
-              : { sourceFieldKey: sources[0]?.key ?? null, operator: "IS_ANY_OF", values: [] },
+              : {
+                  sourceFieldKey: sources[0]?.key ?? null,
+                  operator: OPERATORS_BY_SOURCE_KIND[sources[0] ? sourceKindOf(sources[0]) : "OPTIONS"][0],
+                  values: [],
+                },
           );
         }}
       >
@@ -289,7 +312,17 @@ export default function FieldDisplayCondition({
                   ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
                   : undefined
             }
-            onChange={({ target: { value } }) => update({ ...condition, sourceFieldKey: value })}
+            onChange={({ target: { value } }) => {
+              const chosen = graph.byKey.get(value);
+              const kind = chosen ? sourceKindOf(chosen) : null;
+              // another kind of field takes other conditions, so the condition starts again
+              if (kind !== null && kind !== sourceKind) {
+                setTypedValue(null);
+                update({ sourceFieldKey: value, operator: OPERATORS_BY_SOURCE_KIND[kind][0], values: [] });
+                return;
+              }
+              update({ ...condition, sourceFieldKey: value });
+            }}
             slotProps={{
               select: {
                 open: sourceMenuOpen,
@@ -321,7 +354,7 @@ export default function FieldDisplayCondition({
             }
             sx={{ flex: "1 1 160px" }}
           >
-            {OPERATORS_BY_SOURCE_KIND.OPTIONS.map((operator) => (
+            {operators.map((operator) => (
               <MenuItem key={operator} value={operator}>
                 <OperatorLabel operator={operator} />
               </MenuItem>
@@ -349,6 +382,31 @@ export default function FieldDisplayCondition({
                   }
                 />
               )}
+              sx={{ flex: "2 1 200px" }}
+            />
+          )}
+          {operatorComparesValue(condition.operator) && (
+            // plain text with no inputMode: a decimal keypad would have no minus key
+            <TextField
+              size="small"
+              type="text"
+              id={`${id}-value`}
+              label={t("fieldEditor.condition.valueLabel")}
+              value={shownValue}
+              onChange={({ target: { value } }) => {
+                setTypedValue(value);
+                update({ ...condition, values: [value] });
+              }}
+              error={valueProblem !== null || rejected}
+              helperText={
+                valueProblem === "blank"
+                  ? t("fieldEditor.condition.valueRequired")
+                  : valueProblem === "notANumber"
+                    ? t("fieldEditor.condition.numberRequired")
+                    : rejected
+                      ? t("fieldEditor.condition.valueTooLong")
+                      : undefined
+              }
               sx={{ flex: "2 1 200px" }}
             />
           )}

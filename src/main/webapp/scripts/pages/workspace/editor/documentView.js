@@ -590,7 +590,14 @@ function _updateAutosavedFields(data) {
     }
     if (attr == "string" || attr == "number") {
       $field.find("input[name='fieldData']").val(value.fieldData);
-      $("#plainText_" + value.id).html(value.fieldData);
+      // the value an invalid number reverts to
+      $field.find("input[name='lastValue']").val(value.fieldData);
+      // password display is unchanged here; it is being reworked separately
+      if ($field.find("input[name='isPassword']").val() === "true") {
+        $("#plainText_" + value.id).html(value.fieldData);
+      } else {
+        $("#plainText_" + value.id).text(value.fieldData);
+      }
       if (window.elnFieldDisplay) {
         window.elnFieldDisplay.syncStoredValue(value.id, value.fieldData);
       }

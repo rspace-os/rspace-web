@@ -163,5 +163,12 @@ public class ApiFieldsHelperTest {
     helper.validateMandatoryFieldsForEntityPost(
         List.of(light, new ApiInventoryEntityField()), templateFields, hiddenBySubmittedValue);
     assertFalse(hiddenBySubmittedValue.hasErrors());
+
+    Errors hiddenByBlankEntry = new MapBindingResult(new HashMap<>(), "sample");
+    helper.validateMandatoryFieldsForEntityPost(
+        List.of(new ApiInventoryEntityField(), new ApiInventoryEntityField()),
+        templateFields,
+        hiddenByBlankEntry);
+    assertFalse(hiddenByBlankEntry.hasErrors());
   }
 }
