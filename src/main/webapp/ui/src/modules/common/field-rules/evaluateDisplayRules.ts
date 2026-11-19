@@ -18,18 +18,17 @@ function optionsHold({ operator, values }: FieldDisplayRule, selected: ReadonlyA
 }
 
 function textHolds({ operator, values }: FieldDisplayRule, value: string): boolean {
+  if (operator === "HAS_VALUE") return !isBlankRuleValue(value);
+  if (operator === "HAS_NO_VALUE") return isBlankRuleValue(value);
   const text = normaliseRuleText(value);
+  const operand = normaliseRuleText(values[0]);
   switch (operator) {
-    case "HAS_VALUE":
-      return !isBlankRuleValue(value);
-    case "HAS_NO_VALUE":
-      return isBlankRuleValue(value);
     case "EQUALS":
-      return text === normaliseRuleText(values[0]);
+      return text === operand;
     case "NOT_EQUALS":
-      return text !== normaliseRuleText(values[0]);
+      return text !== operand;
     case "CONTAINS":
-      return text.includes(normaliseRuleText(values[0]));
+      return text.includes(operand);
     default:
       throw new Error(`${operator} cannot read text`);
   }
