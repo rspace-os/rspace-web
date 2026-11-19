@@ -188,7 +188,7 @@ describe("Template display rules", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
-  it("explains why a new option a rule uses cannot be renamed, but not a saved one, which never can be", async () => {
+  it("explains why a new option a rule uses cannot be renamed", async () => {
     const user = userEvent.setup();
     renderEditor(newGmoTemplate());
     await user.click(
@@ -206,10 +206,14 @@ describe("Template display rules", () => {
     await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.targetsLabel" }));
     await user.click(screen.getByRole("option", { name: "GMO permit" }));
     expect(within(fieldCard("Is this a GMO?")).getByText("inventory:template.displayRules.optionInUse")).toBeVisible();
+  });
 
+  it("gives no reason on a saved option a rule uses, since saved options can never be renamed", () => {
     renderEditor(savedGmoTemplate());
-    const [, savedCard] = screen.getAllByRole("region", { name: "Is this a GMO?" });
-    expect(within(savedCard).queryByText("inventory:template.displayRules.optionInUse")).not.toBeInTheDocument();
+
+    expect(
+      within(fieldCard("Is this a GMO?")).queryByText("inventory:template.displayRules.optionInUse"),
+    ).not.toBeInTheDocument();
   });
 
   it("moves focus to the name of a field when it is added", async () => {
@@ -544,5 +548,31 @@ describe("Instrument template display rules", () => {
 
     expect(v.is(UUID, (template.fields[0] as FieldModel).fieldKey)).toBe(true);
     expect(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).toBeInTheDocument();
+  });
+
+  it("moves focus to the name of a field when it is added", async () => {
+    const user = userEvent.setup();
+    const template = makeMockInstrumentTemplate();
+    template.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({
+            searchStore: { activeResult: template },
+            uiStore: { isLarge: true, confirm: vi.fn() },
+          })}
+        >
+          <InstrumentTemplateFields onErrorStateChange={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
+
+    expect(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("textbox", {
+        name: "common:fieldEditor.card.name",
+      }),
+    ).toHaveFocus();
   });
 });

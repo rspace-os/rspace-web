@@ -2247,8 +2247,8 @@ export default interface Resources {
       "warning": "Baseline changes affect every user. Changes made without RSpace support are not covered by RSpace support agreements."
     },
     "fieldDisplay": {
-      "fieldsHidden": "{count, plural, one {One field is hidden: {fields}} other {# fields are hidden: {fields}}}",
-      "fieldsShown": "{count, plural, one {One more field is shown: {fields}} other {# more fields are shown: {fields}}}"
+      "fieldsHidden": "{count, plural, one {One field is hidden: {fields}.} other {# fields are hidden: {fields}.}}",
+      "fieldsShown": "{count, plural, one {One more field is shown: {fields}.} other {# more fields are shown: {fields}.}}"
     },
     "fieldEditor": {
       "card": {

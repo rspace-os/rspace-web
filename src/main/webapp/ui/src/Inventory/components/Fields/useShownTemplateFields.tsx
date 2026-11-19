@@ -5,7 +5,7 @@ import type { Field } from "../../../stores/definitions/Field";
 
 /**
  * The template fields of a sample or instrument that display rules leave
- * shown, and a live region announcing the ones an answer reveals. Hidden
+ * shown, and a live region announcing the ones an answer shows or hides. Hidden
  * fields keep their values but leave the page, so they also stop counting
  * towards the form section's error state.
  */
