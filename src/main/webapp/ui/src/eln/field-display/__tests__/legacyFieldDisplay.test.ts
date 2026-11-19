@@ -53,7 +53,7 @@ describe("createLegacyFieldDisplay", () => {
 
     expect(document.querySelector('[role="status"]')).toHaveAttribute("aria-live", "polite");
     expect(document.querySelector('[role="status"]')).toHaveTextContent(
-      "2 more fields are shown: Containment level and GMO permit",
+      "2 more fields are shown: Containment level and GMO permit.",
     );
     expect(answer("Yes")).toHaveFocus();
   });
@@ -110,6 +110,14 @@ describe("createLegacyFieldDisplay", () => {
     restoreConsole();
   });
 
+  test("still announces a reveal from a cached catalog that predates the hidden-fields message", async () => {
+    const { fieldsHidden: _absent, ...olderFieldDisplay } = commonEn.fieldDisplay;
+    const olderCatalog = { ...commonEn, fieldDisplay: olderFieldDisplay } as unknown as typeof commonEn;
+    const region = changeWith(await i18nWithCatalog(() => Promise.resolve(olderCatalog)));
+
+    await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit."));
+  });
+
   test("announces in words once a delayed catalog arrives", async () => {
     let arrive: (catalog: typeof commonEn) => void = () => {};
     const region = changeWith(await i18nWithCatalog(() => new Promise((resolve) => (arrive = resolve))));
@@ -117,19 +125,19 @@ describe("createLegacyFieldDisplay", () => {
 
     arrive(commonEn);
 
-    await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit"));
+    await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit."));
   });
 
   test("announces the fields a change hides, and announces them again when shown again", () => {
     choose("Yes");
     choose("No");
     expect(document.querySelector('[role="status"]')).toHaveTextContent(
-      "2 fields are hidden: Containment level and GMO permit",
+      "2 fields are hidden: Containment level and GMO permit.",
     );
 
     choose("Yes");
     expect(document.querySelector('[role="status"]')).toHaveTextContent(
-      "2 more fields are shown: Containment level and GMO permit",
+      "2 more fields are shown: Containment level and GMO permit.",
     );
   });
 
