@@ -205,10 +205,12 @@ function CustomField({
           <OptionsEditor
             options={field.options.map((option) => {
               const usedByRule = field.fieldsUsingOption(option.value).length > 0;
+              // saved options cannot be renamed anyway, so only a new option needs the reason
               return {
                 value: option.value,
                 editable: option.editing && !usedByRule,
-                lockedReason: usedByRule ? t("template.displayRules.optionInUse") : undefined,
+                lockedReason:
+                  editable && option.editing && usedByRule ? t("template.displayRules.optionInUse") : undefined,
               };
             })}
             onOptionChange={(index, value) => field.renameOption(index, value)}
