@@ -3,6 +3,7 @@ package com.researchspace.service;
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.DocumentTagManager.FINAL_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -195,6 +196,29 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     // tag deletion allowed
     assertThat(recordDao.get(any.getId()).asStrucDoc().getDocTag()).isEmpty();
     assertThat(recordDao.get(any.getId()).asStrucDoc().getTagMetaData()).isEmpty();
+  }
+
+  @Test
+  public void validateApiTagsForNewDocumentOntologiesNotEnforced() {
+    User user = createAndSaveRandomUser();
+    logoutAndLoginAs(user);
+    assertThrows(
+        IllegalArgumentException.class, () -> tagMgr.validateApiTagsForNewDocument("tag/", user));
+    assertThrows(
+        IllegalArgumentException.class, () -> tagMgr.validateApiTagsForNewDocument("tag<", user));
+    assertDoesNotThrow(() -> tagMgr.validateApiTagsForNewDocument(null, user));
+    assertDoesNotThrow(() -> tagMgr.validateApiTagsForNewDocument("", user));
+    assertDoesNotThrow(() -> tagMgr.validateApiTagsForNewDocument("tag1", user));
+  }
+
+  @Test
+  public void validateApiTagsForNewDocumentOntologiesEnforced() {
+    User user = setupUserWithOntologyDocAndDocWithTagsEnforceOntologiesAndOntologyNotShared();
+    logoutAndLoginAs(user);
+    assertThrows(
+        IllegalArgumentException.class, () -> tagMgr.validateApiTagsForNewDocument("tag2", user));
+    assertDoesNotThrow(() -> tagMgr.validateApiTagsForNewDocument(null, user));
+    assertDoesNotThrow(() -> tagMgr.validateApiTagsForNewDocument("", user));
   }
 
   @Test
