@@ -53,10 +53,12 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
@@ -409,6 +411,23 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
     formMgr.unlockForm(form.getId(), user);
+  }
+
+  @Test
+  public void aRevisionCheckedActionOnAFormThatIsMissingOrNotTheUsersIsNotAConflict()
+      throws Exception {
+    long missing = Long.MAX_VALUE;
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> formMgr.publish(missing, null, 0, user));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> formMgr.updateVersion(missing, 0, user));
+
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    logoutAndLoginAs(other);
+    RSForm othersForm = formMgr.create(other);
+    logoutAndLoginAs(user);
+    assertThrows(
+        AuthorizationException.class, () -> formMgr.publish(othersForm.getId(), null, 99, user));
   }
 
   @Test

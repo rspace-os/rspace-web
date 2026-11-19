@@ -107,37 +107,50 @@ public class RSFormController extends BaseController {
   private @Autowired RSFormApiHandler formHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
-  /** MariaDB's "record has changed since last read" (innodb_snapshot_isolation) and deadlock. */
-  private static final Set<Integer> CONCURRENT_CHANGE_ERRORS = Set.of(1020, 1213);
+  /** MariaDB's "record has changed since last read" (innodb_snapshot_isolation). */
+  private static final int RECORD_CHANGED_SINCE_LAST_READ = 1020;
+
+  /** MariaDB's "deadlock found when trying to get lock". */
+  private static final int DEADLOCK = 1213;
 
   /**
-   * A change refused by the database because another transaction changed the same form at the same
-   * time, as a single-field save can be while the field list is saved elsewhere, is a 409 with the
-   * usual Ajax error body, not a server fault: nothing was saved, and the page can reload and
-   * retry.
+   * A change the database refused because another transaction changed the same form at the same
+   * time is not a server fault, and nothing was saved; the response has the usual Ajax error body.
+   * A row changed since this transaction read it, as a single-field save can be while the field
+   * list is saved elsewhere, is a 409: the page must reload before it saves again. A deadlock only
+   * rolled this transaction back, whatever the other one did, so it is a 503 the page can retry.
    */
   @Override
   @ExceptionHandler()
   public ModelAndView handleExceptions(
       HttpServletRequest request, HttpServletResponse response, Exception e) {
-    if (!isConcurrentChange(e)) {
+    Integer errorCode = concurrentChangeError(e);
+    if (errorCode == null) {
       return super.handleExceptions(request, response, e);
     }
     log.warn("A change to a form was refused as concurrent: {}", e.getMessage());
-    response.setStatus(HttpServletResponse.SC_CONFLICT);
-    ModelAndView conflict = new ModelAndView(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME);
-    conflict.addObject(
-        ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME, getText("errors.concurrentChange"));
-    return conflict;
+    boolean changedSinceRead = errorCode == RECORD_CHANGED_SINCE_LAST_READ;
+    response.setStatus(
+        changedSinceRead
+            ? HttpServletResponse.SC_CONFLICT
+            : HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    ModelAndView refused = new ModelAndView(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME);
+    refused.addObject(
+        ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME,
+        getText(changedSinceRead ? "errors.concurrentChange" : "errors.concurrentChangeRetry"));
+    return refused;
   }
 
-  private static boolean isConcurrentChange(Throwable e) {
+  /** The MariaDB error code of a concurrent change in the cause chain, or null if there is none. */
+  private static Integer concurrentChangeError(Throwable e) {
     for (Throwable t = e; t != null; t = t.getCause()) {
-      if (t instanceof SQLException sql && CONCURRENT_CHANGE_ERRORS.contains(sql.getErrorCode())) {
-        return true;
+      if (t instanceof SQLException sql
+          && (sql.getErrorCode() == RECORD_CHANGED_SINCE_LAST_READ
+              || sql.getErrorCode() == DEADLOCK)) {
+        return sql.getErrorCode();
       }
     }
-    return false;
+    return null;
   }
 
   @PostMapping

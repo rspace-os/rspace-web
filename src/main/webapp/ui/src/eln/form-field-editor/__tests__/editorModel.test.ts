@@ -245,6 +245,17 @@ describe("edits that keep rules consistent", () => {
     });
   });
 
+  it("carry a default stored in an old format over a rename of the option it was read as", () => {
+    const stored = fromServer(item("Radio", { radioValues: "fieldRadios=X&fieldRadios=Y=1", radioSelected: "Y=1" }));
+
+    const [renamed] = renameOption([stored], GMO, 1, "Yes");
+
+    expect(toSaveItem(renamed).source).toMatchObject({
+      radioValues: "fieldRadios=X&fieldRadios=Yes",
+      radioSelected: "Yes",
+    });
+  });
+
   it("leave an unset default alone while a new option is typed", () => {
     expect(renameOption([radio(GMO, ["Yes", ""])], GMO, 1, "No")[0]).toMatchObject({
       options: ["Yes", "No"],
