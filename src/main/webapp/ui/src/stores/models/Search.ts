@@ -1098,7 +1098,7 @@ export default class Search implements SearchInterface {
         newBase64Image,
         fields: [
           ...instrument.fields.map((f) => {
-            const params = { ...(f.paramsForBackend as Record<string, unknown>) };
+            const params = { ...(f.paramsForNewRecord as Record<string, unknown>) };
             if (!includeContentForFields.has(params.id as Id)) {
               params.content = "";
               params.selectedOptions = null;

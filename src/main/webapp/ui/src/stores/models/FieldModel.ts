@@ -404,7 +404,17 @@ export default class FieldModel implements Field {
     return this.owner.permalinkURL;
   }
 
+  /** The field for saving its own record: a new record sends every rule, a saved one only the rules this edit changed. */
   get paramsForBackend(): object {
+    return this.backendParams(this.owner.id ? "update" : "create");
+  }
+
+  /** The field for a new record built from this one's, such as a template made from a sample; it sends every rule. */
+  get paramsForNewRecord(): object {
+    return this.backendParams("create");
+  }
+
+  private backendParams(request: "create" | "update"): object {
     const ret: typeof this & { newFieldRequest?: boolean } = { ...this };
     if (!ret.id) ret.newFieldRequest = true;
 
@@ -453,12 +463,12 @@ export default class FieldModel implements Field {
     // a field being deleted sends no rule, so the request never depends on rules of deleted fields
     if (this.deleteFieldRequest) return params;
     /*
-     * The API reads an absent rule as unchanged. Updating a saved record, a
-     * saved field sends its rule only when this edit changed it, as null when
+     * The API reads an absent rule as unchanged. Updating a record, a saved
+     * field sends its rule only when this edit changed it, as null when
      * cleared, so a tab opened before someone else changed the rule does not
-     * put the old rule back. A record being created sends every rule.
+     * put the old rule back.
      */
-    if (this.owner.id && this.id && sameDisplayRule(this.displayRule, this.loadedRule)) return params;
+    if (request === "update" && this.id && sameDisplayRule(this.displayRule, this.loadedRule)) return params;
     if (this.displayRule !== null) params.displayRule = JSON.parse(serializeDisplayRule(this.displayRule));
     else if (this.loadedRule !== null) params.displayRule = null;
     return params;
