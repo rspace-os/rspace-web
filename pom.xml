@@ -59,7 +59,19 @@
       <dependency>
         <groupId>org.apache.httpcomponents.client5</groupId>
         <artifactId>httpclient5</artifactId>
-        <version>5.6.4</version>
+        <version>5.6.5</version>
+      </dependency>
+      <!-- httpclient5 5.6.5 needs httpcore5 5.4.4; managed so the AWS SDK's apache5-client
+           resolves the same version instead of its 5.4.3 -->
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5</artifactId>
+        <version>5.4.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <version>5.4.4</version>
       </dependency>
       <dependency>
         <groupId>javax.cache</groupId>
@@ -781,12 +793,10 @@
     <dependency>
       <groupId>org.apache.httpcomponents.core5</groupId>
       <artifactId>httpcore5</artifactId>
-      <version>5.4.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents.core5</groupId>
       <artifactId>httpcore5-h2</artifactId>
-      <version>5.4.3</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -1655,7 +1665,6 @@
     <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.6.4</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
