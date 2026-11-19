@@ -114,8 +114,9 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
     if (rule.values.length > MAX_DISPLAY_RULE_VALUES) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueTooMany });
     } else if (
-      // One value alone over the budget is too long; skip serialising it.
-      rule.values.some((value) => value.length > MAX_DISPLAY_RULE_JSON_LENGTH) ||
+      // Each UTF-16 unit is stored as at least one character, so values that
+      // together exceed the budget are too long; skip serialising them.
+      rule.values.reduce((total, value) => total + value.length, 0) > MAX_DISPLAY_RULE_JSON_LENGTH ||
       storedDisplayRuleLength(rule) > MAX_DISPLAY_RULE_JSON_LENGTH
     ) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.ruleTooLong });

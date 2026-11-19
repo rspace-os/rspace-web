@@ -154,6 +154,39 @@ describe("FieldDisplayCondition", () => {
     expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
   });
 
+  it("restores both the saved condition and an unfinished edit of it after a round trip through Always", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+
+    await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
+    await user.keyboard("{Backspace}{Escape}");
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+    await user.keyboard("{ArrowDown}");
+
+    expect(onChange.mock.calls).toEqual([
+      ["permit", null],
+      ["permit", yes],
+    ]);
+    expect(card("GMO permit").getByText(/Until then the saved condition stays as it was/)).toBeInTheDocument();
+  });
+
+  it("restores what still applies of a saved condition that no longer validates after a round trip through Always", async () => {
+    const user = userEvent.setup();
+    // "Maybe" is not an option of the source, as if it was removed while Always was chosen
+    const { onChange } = await renderConditions([
+      gmo,
+      { ...permit, rule: createDisplayRule("gmo", "IS_ANY_OF", ["Yes", "Maybe"]) },
+    ]);
+
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+    await user.keyboard("{ArrowDown}");
+
+    expect(onChange).toHaveBeenLastCalledWith("permit", yes);
+    expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
+  });
+
   it("does not offer the field itself, or a field that depends on it, as the field to read", async () => {
     const user = userEvent.setup();
     const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
