@@ -36,6 +36,15 @@
     </ul>
   </div>
 </shiro:hasAnyRoles>
+<shiro:hasRole name="ROLE_SYSADMIN">
+  <form id="storageAlertForm" class="bootstrap-custom-flat" style="margin: 0 0 10px 8px;">
+    <label for="storageAlertThresholdMb"><spring:message code="system.groupList.storageAlert.label"/></label>
+    <input type="number" id="storageAlertThresholdMb" name="thresholdMb" min="1" max="999999999999" step="1"
+           value="<c:out value='${storageAlertThresholdMb}'/>" aria-describedby="storageAlertHelp"/>
+    <button type="submit" id="storageAlertSave"><spring:message code="common:actions.save"/></button>
+    <p id="storageAlertHelp"><spring:message code="system.groupList.storageAlert.help"/></p>
+  </form>
+</shiro:hasRole>
 
 <div class="tabularViewTop">
   <h2 class="title"><spring:message code="system:usersPage.groupMembership.panelLabel"/></h2>

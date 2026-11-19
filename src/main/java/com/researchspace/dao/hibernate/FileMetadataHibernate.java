@@ -220,6 +220,19 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
         .list();
   }
 
+  @Override
+  public List<DatabaseUsageByGroupGroupByResult> getTotalFileUsageForAllLabGroups() {
+    // not getBasicQuery(true): that starts from Community and misses Lab Groups in no community
+    StringBuilder querySB = getBasicQuery(false);
+    addLabGroupRestriction(querySB);
+    querySB.append(" group by g.id");
+
+    return getSession()
+        .createNativeQuery(querySB.toString(), Object[].class)
+        .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByGroupGroupByResult.class))
+        .list();
+  }
+
   public Long getCountOfUsersWithFilesInFileSystem() {
     Query<Long> q =
         getSession().createQuery("select count( distinct fileOwner) from FileProperty", Long.class);

@@ -21,6 +21,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -191,6 +192,24 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
 
     Group result = grpDao.getByCommunalGroupFolderId(communalFolderId);
     assertEquals(grp, result);
+  }
+
+  @Test
+  public void storageAlertSentFlagIsSetReadAndCleared() {
+    User pi = createAndSaveAPi();
+    initialiseContentWithEmptyContent(pi);
+    Group flagged = createGroup(getRandomAlphabeticString("flagged"), pi);
+    Group untouched = createGroup(getRandomAlphabeticString("untouched"), pi);
+
+    grpDao.setStorageAlertSent(Set.of(flagged.getId()), true);
+
+    assertThat(grpDao.getStorageAlertSentGroupIds())
+        .contains(flagged.getId())
+        .doesNotContain(untouched.getId());
+
+    grpDao.setStorageAlertSent(Set.of(flagged.getId()), false);
+
+    assertThat(grpDao.getStorageAlertSentGroupIds()).doesNotContain(flagged.getId());
   }
 
   private boolean userViewHasUser(User user, List<UserView> users) {

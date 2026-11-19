@@ -1,0 +1,37 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-19-labgroup-storage-alert-threshold-setting" context="run" author="nferrante">
+        <comment>Add labgroup.storage.alert.threshold.mb system property, empty (no alert) by default</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value=""/>
+            <column name="name" type="STRING" value="labgroup.storage.alert.threshold.mb"/>
+            <column name="type" type="NUMERIC" value="2"/>
+        </insert>
+        <insert tableName="SystemProperty">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="dependent_id" type="NUMERIC" value="NULL"/>
+            <column name="descriptor_id" type="NUMERIC"
+                    valueComputed="(select id from PropertyDescriptor where name = 'labgroup.storage.alert.threshold.mb')"/>
+        </insert>
+        <insert tableName="SystemPropertyValue">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="value" type="String" value=""/>
+            <column name="property_id" type="NUMERIC"
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id = pd.id where pd.name = 'labgroup.storage.alert.threshold.mb')"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2026-11-19-rsgroup-storage-alert-sent" context="run" author="nferrante">
+        <comment>Add storageAlertSent to rsGroup: whether sysadmins were already alerted about the Lab Group storage usage</comment>
+        <addColumn tableName="rsGroup">
+            <column name="storageAlertSent" type="bit" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

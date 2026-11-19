@@ -13,6 +13,7 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.Group;
+import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
@@ -72,6 +73,53 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
   @Test
   public void fileUsageForGroupsHandlesEmptyList() {
     assertThat(filedao.getTotalFileUsageForGroups(Collections.emptyList())).isEmpty();
+  }
+
+  @Test
+  public void usageForAllLabGroupsMatchesTheGroupsListFigure() {
+    User pi = createAndSaveAPi();
+    User member = createAndSaveRandomUser();
+    User outsider = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, member, outsider);
+    Group grp = createGroup(getRandomAlphabeticString("grp_"), pi);
+    grp = addUsersToGroup(pi, grp, member);
+    Group project = createGroup(getRandomAlphabeticString("proj_"), pi);
+    project = addUsersToGroup(pi, project);
+    project.setGroupType(GroupType.PROJECT_GROUP);
+    grpdao.save(project);
+    createAndSaveFileProperty("1000000", "any1", pi.getUsername());
+    createAndSaveFileProperty("1500000", "any2", member.getUsername());
+    createAndSaveFileProperty("9000000", "any3", outsider.getUsername());
+    flushDatabaseState();
+    final Long groupId = grp.getId();
+    final Long projectId = project.getId();
+
+    List<DatabaseUsageByGroupGroupByResult> all = filedao.getTotalFileUsageForAllLabGroups();
+
+    DatabaseUsageByGroupGroupByResult row =
+        all.stream().filter(r -> r.getGroupId().equals(groupId)).findFirst().orElseThrow();
+    double fromGroupsList = filedao.getTotalFileUsageForGroups(List.of(grp)).get(0).getFileusage();
+    assertEquals(fromGroupsList, row.getFileusage(), 0.0);
+    assertThat(row.getFileusage()).isGreaterThanOrEqualTo(2_500_000d);
+    assertThat(all).noneMatch(r -> r.getGroupId().equals(projectId));
+  }
+
+  @Test
+  public void usageForAllLabGroupsIncludesALabGroupInNoCommunity() {
+    User pi = createAndSaveAPi();
+    initialiseContentWithEmptyContent(pi);
+    Group noCommunity = new Group(getRandomAlphabeticString("nocomm_"), pi);
+    noCommunity.setDisplayName(noCommunity.getUniqueName());
+    noCommunity.setCommunityId(null);
+    noCommunity = grpdao.save(noCommunity);
+    noCommunity = addUsersToGroup(pi, noCommunity);
+    createAndSaveFileProperty("1000000", "any1", pi.getUsername());
+    flushDatabaseState();
+    final Long groupId = noCommunity.getId();
+    assertNull(grpdao.getGroupWithCommunities(groupId).getCommunity());
+
+    assertThat(filedao.getTotalFileUsageForAllLabGroups())
+        .anyMatch(r -> r.getGroupId().equals(groupId) && r.getFileusage() >= 1_000_000d);
   }
 
   private int getTotalFileUsage() {

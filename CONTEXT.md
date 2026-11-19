@@ -639,6 +639,23 @@ resolved during design. This file is a glossary only — no implementation detai
   this check.
   _Avoid_: enabled (that is the user's own per-app toggle)
 
+- **Lab Group storage usage** — the total size of all files owned by the members of a Lab
+  Group, the figure the sysadmin Groups list shows as File Usage. It counts every file of
+  each member, not what is shared with the group, so a user in two Lab Groups counts in
+  full in both; deleting documents or files in RSpace does not lower it. Project Groups
+  and Collaboration Groups have no such figure.
+  _Avoid_: group quota, shared storage, group size (that is the member count)
+
+- **Storage alert threshold** — the one size, a whole number of MB, that a sysadmin sets
+  for the whole instance and against which every Lab Group's storage usage is checked, on
+  a schedule (each day unless the installation changes it) and whenever the threshold is
+  saved. Every sysadmin with an enabled account is told once about each Lab Group that
+  reaches it, by notification and, unless they have switched notification emails off, by
+  email, and not again until that group has dropped below it and reached it again. It
+  warns and never blocks; an empty threshold switches the alert off, which is how every
+  instance starts.
+  _Avoid_: storage limit, quota, size limit
+
 ## Content search (Workspace, Inventory and the API)
 
 - **Search term** — one piece of text RSpace matches against a chosen field: everything,

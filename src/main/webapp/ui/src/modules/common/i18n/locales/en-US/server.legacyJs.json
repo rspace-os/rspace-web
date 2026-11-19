@@ -466,7 +466,10 @@
         "confirmDeletionConsequences": "Are you sure you want to delete the following group: <strong>{0}</strong>?",
         "groupRemoved": "Group removed",
         "removingGroupAction": "Removing group",
-        "searchingGroupsAction": "Searching groups list"
+        "savingStorageAlertAction": "Saving the storage alert threshold",
+        "searchingGroupsAction": "Searching groups list",
+        "storageAlertRemoved": "Storage alert switched off",
+        "storageAlertSaved": "Storage alert threshold set to {0} MB"
       },
       "ldap": {
         "allUsersHaveSid": "all users have non-empty SID assigned.",

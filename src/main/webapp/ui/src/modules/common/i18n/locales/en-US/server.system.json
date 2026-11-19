@@ -321,7 +321,15 @@
       },
       "deleteLink": "Delete group",
       "pageTitle": "Lab Groups",
-      "showAllLink": "Show All"
+      "showAllLink": "Show All",
+      "storageAlert": {
+        "errors": {
+          "invalidThreshold": "Enter a whole number of MB from 1 to 999,999,999,999, or leave the field empty to switch the alert off."
+        },
+        "help": "Every sysadmin is notified once when the file usage of a Lab Group reaches this size. Leave the field empty to switch the alert off.",
+        "label": "Storage alert threshold (MB)",
+        "notification": "The members of Lab Group {0} (PI: {1}) are using {2} MB of file storage, which has reached the storage alert threshold of {3} MB. Checked on {4}."
+      }
     },
     "ldap": {
       "authenticationEnabledMessage": "LDAP authentication is enabled.",

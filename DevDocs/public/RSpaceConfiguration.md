@@ -581,6 +581,7 @@ All of these options have sensible defaults.
 * **email.signup.authoriser.emails** Only applicable if  `authorised.signup` is true. A comma separated list of email addresses
 * **liquibase.context** Controls which database changesets are applied. Enterprise/on-prem installations use `run` (the default). You normally do not need to change this unless ResearchSpace advises pre-loading installation-specific data.
 * **licenseserver.poll.cron** Crontab value defining how often to poll license server for updates. Default is every 30 minutes.
+* **labgroup.storage.alert.cron** Crontab value defining when RSpace checks the storage usage of Lab Groups against the storage alert threshold a sysadmin sets on the System > Groups page. Default is 03:30 every day. The check also runs whenever the threshold is saved, and does nothing while no threshold is set.
 
 ### Using an external file store
 
