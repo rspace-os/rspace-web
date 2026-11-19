@@ -85,7 +85,9 @@ export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
 export type FormFieldEditorChangeDetail = { dirty: boolean; fieldCount: number };
 
 type Status =
-  | { kind: "problems" | "incompleteCondition"; field: string }
+  | { kind: "problems"; field: string }
+  // the fields whose condition stopped a save; the alert lasts while any of them is still incomplete
+  | { kind: "incompleteCondition"; keys: ReadonlySet<string> }
   | { kind: "error"; messages: ReadonlyArray<string> }
   | null;
 
@@ -177,8 +179,13 @@ export default function FormFieldEditor({
   const firstInvalid = fields.find((field, i) => Object.keys(problemsFor(field, checks[i])).length > 0) ?? null;
   const firstIncomplete = fields.find((field) => incompleteKeys.has(field.key)) ?? null;
   // the handle is called from legacy code at any time, so it reads the latest render
-  const latest = useRef({ fields, dirty, firstInvalid, firstIncomplete });
-  latest.current = { fields, dirty, firstInvalid, firstIncomplete };
+  const latest = useRef({ fields, dirty, firstInvalid, firstIncomplete, incompleteKeys });
+  latest.current = { fields, dirty, firstInvalid, firstIncomplete, incompleteKeys };
+  const stillIncomplete =
+    status?.kind === "incompleteCondition"
+      ? (fields.find((field) => status.keys.has(field.key) && incompleteKeys.has(field.key)) ?? null)
+      : null;
+  if (status?.kind === "incompleteCondition" && stillIncomplete === null) setStatus(null);
 
   const unnamed = t("common:fieldEditor.card.unnamed");
   const nameOf = (field: EditorField) => field.name || unnamed;
@@ -200,7 +207,13 @@ export default function FormFieldEditor({
     save: () => {
       if (conflict.current) return Promise.reject(conflict.current);
       if (saveInFlight.current) return saveInFlight.current;
-      const { fields: sent, dirty, firstInvalid: invalid, firstIncomplete: incomplete } = latest.current;
+      const {
+        fields: sent,
+        dirty,
+        firstInvalid: invalid,
+        firstIncomplete: incomplete,
+        incompleteKeys: incompleteNow,
+      } = latest.current;
       if (dirty && invalid) {
         setStatus({ kind: "problems", field: nameOf(invalid) });
         setFocusTarget({ kind: "problem", key: invalid.key });
@@ -208,7 +221,7 @@ export default function FormFieldEditor({
       }
       // even with nothing to save, the toolbar must not act while a condition the author is setting is not applied
       if (incomplete) {
-        setStatus({ kind: "incompleteCondition", field: nameOf(incomplete) });
+        setStatus({ kind: "incompleteCondition", keys: incompleteNow });
         setFocusTarget({ kind: "condition", key: incomplete.key });
         return Promise.reject(new FormFieldsSaveError([]));
       }
@@ -283,9 +296,10 @@ export default function FormFieldEditor({
         name?.getAttribute("aria-invalid") === "true"
           ? name
           : card?.querySelector<HTMLElement>('[data-field-settings] [aria-invalid="true"]');
-      // its first marked control, or the chosen "Only when…" radio when nothing is marked
+      // its first focusable marked control, such as a Select's combobox, or the chosen "Only when…"
+      // radio when nothing is marked
       const unfinished =
-        condition?.querySelector<HTMLElement>('input[aria-invalid="true"]:not([aria-hidden="true"])') ??
+        condition?.querySelector<HTMLElement>('[aria-invalid="true"]:not([aria-hidden="true"]):not([tabindex="-1"])') ??
         condition?.querySelector<HTMLElement>('input[type="radio"]:checked');
       (focusTarget.kind === "problem"
         ? (invalid ?? name)
@@ -466,8 +480,10 @@ export default function FormFieldEditor({
           {status.kind === "problems" && (
             <Typography variant="body2">{t("formFieldEditor.firstProblem", { field: status.field })}</Typography>
           )}
-          {status.kind === "incompleteCondition" && (
-            <Typography variant="body2">{t("formFieldEditor.conditionIncomplete", { field: status.field })}</Typography>
+          {stillIncomplete && (
+            <Typography variant="body2">
+              {t("formFieldEditor.conditionIncomplete", { field: nameOf(stillIncomplete) })}
+            </Typography>
           )}
           {status.kind === "error" && (
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
