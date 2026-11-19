@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isEqual, uniqWith } from "es-toolkit";
 import type { OpenApiRequestBodyObject, OpenApiResponseObject } from "orval";
 import {
   type Content,
@@ -59,19 +60,8 @@ export function generate(
       return !binary(entry.schema);
     });
   }
-  // Sort schema keys when comparing: order cannot change media equivalence.
-  function signature(schema: SchemaOrReference) {
-    function sorted(value: unknown): unknown {
-      if (Array.isArray(value)) return value.map(sorted);
-      if (!value || typeof value !== "object") return value;
-      return Object.fromEntries(
-        Object.entries(value)
-          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-          .map(([key, child]) => [key, sorted(child)]),
-      );
-    }
-    return json(sorted(schema));
-  }
+  // Deep equality ignores key order, which cannot change media equivalence.
+  const distinct = (schemas: SchemaOrReference[]) => uniqWith(schemas, isEqual).length;
   const ids = new Set<string>(),
     operations: string[] = [];
   for (const [path, item] of Object.entries(document.paths ?? {}))
@@ -93,27 +83,25 @@ export function generate(
       const requests = jsonContent(requestContent, `${id}.request`);
       if (
         requests.length &&
-        new Set(Object.values(requestContent ?? {}).flatMap((entry) => (entry.schema ? [signature(entry.schema)] : [])))
-          .size > 1
+        distinct(Object.values(requestContent ?? {}).flatMap((entry) => (entry.schema ? [entry.schema] : []))) > 1
       )
         throw new Error(`Distinct JSON request schemas require synthetic operations: ${id}`);
       if (requests.length) parts.push(`request: native.${name}Body`);
       const responses: string[] = [],
-        signatures = new Set<string>(),
-        allSuccessSchemas = new Set<string>();
+        jsonSchemas: SchemaOrReference[] = [],
+        successSchemas: SchemaOrReference[] = [];
       for (const [status, response] of responsesOf(op)) {
         if (!/^2(?:\d\d|XX)$/.test(status) || status === "204") continue;
         const responseContent = resolveObject<OpenApiResponseObject>(response, "responses")?.content;
-        for (const entry of Object.values(responseContent ?? {}))
-          if (entry.schema) allSuccessSchemas.add(signature(entry.schema));
+        for (const entry of Object.values(responseContent ?? {})) if (entry.schema) successSchemas.push(entry.schema);
         const entries = jsonContent(responseContent, `${id}.responses.${status}`);
-        for (const [, entry] of entries) if (entry.schema) signatures.add(signature(entry.schema));
+        for (const [, entry] of entries) if (entry.schema) jsonSchemas.push(entry.schema);
         if (entries.length)
           responses.push(
             `${json(status)}: {${entries.map(([media]) => `${json(media)}: native.${name}Response`).join(", ")}}`,
           );
       }
-      if (signatures.size && allSuccessSchemas.size > 1)
+      if (jsonSchemas.length && distinct(successSchemas) > 1)
         throw new Error(`Distinct JSON success schemas require synthetic operations: ${id}`);
       parts.push(`responses: {${responses.join(", ")}}`);
       operations.push(`${json(id)}: {${parts.join(", ")}}`);

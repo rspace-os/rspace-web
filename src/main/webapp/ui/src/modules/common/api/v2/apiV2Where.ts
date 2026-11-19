@@ -1,3 +1,4 @@
+import { isPlainObject } from "es-toolkit";
 import { and, cmp, eq, escapeValue, inList, ne, Operation, or, outList } from "rsql-builder";
 import type { ApiV2FilterFields } from "./generated/filters";
 
@@ -63,8 +64,6 @@ export type ApiV2WhereObject<R extends ApiV2FilterResource> = {
 export type ApiV2Where<R extends ApiV2FilterResource> = ApiV2WhereObject<R> | RsqlWhere<R>;
 
 type Scalar = string | number | boolean | Date;
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
 const scalar = (value: unknown, location: string): string | number | boolean => {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;

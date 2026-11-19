@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { sortBy, uniq } from "es-toolkit";
 import { camel } from "orval";
 import {
   type OpenApiDocument,
@@ -98,20 +99,20 @@ function valueType(schema: SchemaObject, location: string): string {
 
 /** Emits per-resource selector metadata types from `components.x-rspace-filters`. */
 export function generateFilterTypes(document: OpenApiDocument): string {
-  const resources = Object.entries(filtersOf(document)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const resources = sortBy(Object.entries(filtersOf(document)), [([resource]) => resource]);
   const entries = resources.map(([resource, filter]) => {
     if (!/^[A-Za-z_$][\w$]*$/.test(resource)) throw new Error(`Filter name ${resource} is not a TypeScript identifier`);
     // A selector with no operators is listed for documentation but cannot be filtered on.
-    const selectors = Object.entries(filter.selectors ?? {})
-      .filter(([, metadata]) => metadata.operators?.length)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([selector, metadata]) => {
-        const location = `x-rspace-filters.${resource}.${selector}`;
-        const operators = [...new Set(metadata.operators)];
-        if (operators.some((operator) => !tokens.has(operator)))
-          throw new Error(`${location}: Unsupported operators ${JSON.stringify(metadata.operators)}`);
-        return `    ${JSON.stringify(selector)}: { operators: ${operators.map((operator) => JSON.stringify(operator)).join(" | ")}; value: ${valueType(metadata.schema ?? {}, location)} };`;
-      });
+    const selectors = sortBy(
+      Object.entries(filter.selectors ?? {}).filter(([, metadata]) => metadata.operators?.length),
+      [([selector]) => selector],
+    ).map(([selector, metadata]) => {
+      const location = `x-rspace-filters.${resource}.${selector}`;
+      const operators = uniq(metadata.operators);
+      if (operators.some((operator) => !tokens.has(operator)))
+        throw new Error(`${location}: Unsupported operators ${JSON.stringify(metadata.operators)}`);
+      return `    ${JSON.stringify(selector)}: { operators: ${operators.map((operator) => JSON.stringify(operator)).join(" | ")}; value: ${valueType(metadata.schema ?? {}, location)} };`;
+    });
     return `  ${resource}: {\n${selectors.join("\n")}\n  };`;
   });
   return `${header}/** Filterable selectors per REST API v2 filter, with their allowed RSQL operators and value types. */\nexport interface ApiV2FilterFields {\n${entries.join("\n")}\n}\n`;
