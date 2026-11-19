@@ -125,7 +125,9 @@ public class FormsApiController extends BaseApiController implements FormsApi {
     throwBindExceptionIfErrors(errors);
     UserSessionTracker activeUsers = (UserSessionTracker) servletContext.getAttribute(USERS_KEY);
     AbstractForm updatedForm = formApiHandler.editForm(id, formPost, user, activeUsers);
-    return convertToApiForm(user, updatedForm);
+    // the edited form's field list may not hold the fields the edit created
+    RSForm form = formMgr.getWithPopulatedFieldForms(updatedForm.getId(), user);
+    return convertToApiForm(user, form);
   }
 
   @Override
