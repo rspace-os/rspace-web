@@ -75,6 +75,9 @@ const CONDITIONAL = "conditional";
  * dependents, and the candidates while the menu is open. A MobX host can wrap
  * the component in `observer` so that only those names re-render it.
  *
+ * Choosing "Always" clears the rule, but the condition is remembered: going
+ * back to "Only when…" restores it, and applies it again if it is still valid.
+ *
  * A draft lives as long as the component, so it survives a spell of
  * read-only, such as a save that fails. Hosts give the component a new key
  * (for example the record and its edit state) to start a new edit session.
@@ -88,6 +91,8 @@ export default function FieldDisplayCondition({
   const { t, i18n } = useTranslation("common");
   const id = useId();
   const [draft, setDraft] = useState<DraftCondition | null>(null);
+  /** The condition shown when "Always" was last chosen, restored by "Only when…". */
+  const [remembered, setRemembered] = useState<DraftCondition | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
 
   const graph = ruleGraphFor(fields);
@@ -119,6 +124,11 @@ export default function FieldDisplayCondition({
   }
 
   const sources = graph.sourcesFor(fieldKey);
+  if (draft !== null && rule === null && sources.length === 0) {
+    // with nothing left to read, a new condition can never be completed, so it is set aside like "Always" sets it aside
+    setRemembered(draft);
+    setDraft(null);
+  }
   const shown = draft ?? rule;
   const condition = shown ? sanitiseCondition(graph, fieldKey, shown) : null;
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
@@ -137,7 +147,6 @@ export default function FieldDisplayCondition({
     setDraft(next);
   };
 
-  const legendId = `${id}-legend`;
   const noSourcesId = `${id}-no-sources`;
   const complete = condition !== null && ruleFromDraft(condition) !== null;
   const draftMessage = rule
@@ -150,20 +159,24 @@ export default function FieldDisplayCondition({
 
   return (
     <FormControl component="fieldset" sx={{ minWidth: 0 }}>
-      <FormLabel component="legend" id={legendId}>
-        {t("fieldEditor.condition.title")}
-      </FormLabel>
+      {/* the legend names the group, so the radio group inside it is left unnamed rather than announced twice */}
+      <FormLabel component="legend">{t("fieldEditor.condition.title")}</FormLabel>
       <RadioGroup
         row
-        aria-labelledby={legendId}
         value={condition ? CONDITIONAL : ALWAYS}
         onChange={({ target: { value } }) => {
           if (value === ALWAYS) {
+            setRemembered(condition);
             setDraft(null);
             if (rule !== null) onChange(null);
-          } else {
-            update({ sourceFieldKey: sources[0]?.key ?? null, operator: "IS_ANY_OF", values: [] });
+            return;
           }
+          const restored = remembered ? sanitiseCondition(graph, fieldKey, remembered) : null;
+          update(
+            restored?.sourceFieldKey != null
+              ? restored
+              : { sourceFieldKey: sources[0]?.key ?? null, operator: "IS_ANY_OF", values: [] },
+          );
         }}
       >
         <FormControlLabel value={ALWAYS} control={<Radio />} label={t("fieldEditor.condition.always")} />
@@ -176,7 +189,7 @@ export default function FieldDisplayCondition({
           disabled={sources.length === 0 && condition === null}
         />
       </RadioGroup>
-      {sources.length === 0 && condition === null && (
+      {sources.length === 0 && (
         <FormHelperText id={noSourcesId} sx={{ mx: 0 }}>
           {t("fieldEditor.condition.noSources")}
         </FormHelperText>
