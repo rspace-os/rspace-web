@@ -154,6 +154,23 @@ describe("FieldDisplayCondition", () => {
     expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
   });
 
+  it("restores both the saved condition and an unfinished edit of it after a round trip through Always", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+
+    await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
+    await user.keyboard("{Backspace}{Escape}");
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+    await user.keyboard("{ArrowDown}");
+
+    expect(onChange.mock.calls).toEqual([
+      ["permit", null],
+      ["permit", yes],
+    ]);
+    expect(card("GMO permit").getByText(/Until then the saved condition stays as it was/)).toBeInTheDocument();
+  });
+
   it("does not offer the field itself, or a field that depends on it, as the field to read", async () => {
     const user = userEvent.setup();
     const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
