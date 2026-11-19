@@ -71,7 +71,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
-  const { listRef, fieldAdding } = useFocusAddedField(fields.length);
+  const { listRef, fieldAdded } = useFocusAddedField(fields.length);
   return (
     <>
       {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
@@ -97,8 +97,8 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
               startIcon={<AddOutlinedIcon />}
               variant="outlined"
               onClick={() => {
-                fieldAdding();
                 activeResult.addField(EMPTY_FIELD);
+                fieldAdded();
               }}
             >
               {t("fields.extraFields.addNewField")}

@@ -55,7 +55,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
-  const { listRef, fieldAdding } = useFocusAddedField(fields.length);
+  const { listRef, fieldAdded } = useFocusAddedField(fields.length);
 
   return (
     <>
@@ -74,7 +74,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
           <NoValue label={t("fields.templateFields.customField.noMoreFields")} />
         </Box>
       )}
-      {editable && <NewField record={activeResult} onAdd={fieldAdding} />}
+      {editable && <NewField record={activeResult} onAdd={fieldAdded} />}
     </>
   );
 }

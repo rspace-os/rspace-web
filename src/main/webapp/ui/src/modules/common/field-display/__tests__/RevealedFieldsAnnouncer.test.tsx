@@ -23,7 +23,7 @@ describe("RevealedFieldsAnnouncer", () => {
     change(["GMO permit", "Export licence"], ["Containment level"]);
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "2 more fields are shown: GMO permit and Export licence One field is hidden: Containment level",
+      "2 more fields are shown: GMO permit and Export licence. One field is hidden: Containment level.",
     );
   });
 
