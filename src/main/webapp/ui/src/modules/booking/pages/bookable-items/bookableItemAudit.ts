@@ -232,9 +232,6 @@ export function recordedValues(
         return [key, formatNumber(Number(value), locale)];
       const word = words && wordValue(key, value, words);
       if (word !== undefined) return [key, word];
-      return [
-        key,
-        isNil(value) ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value),
-      ];
+      return [key, isNil(value) ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)];
     });
 }
