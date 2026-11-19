@@ -69,7 +69,7 @@ export const bookingLocationSource: RelationshipSource = {
   search: async (term, signal) => (await fetchBookingCatalogueLocations({ q: term, pageSize: 20 }, signal)).items,
   batchSize: 100,
   resolveMany: async (values, signal) => {
-    const globalIds = [...new Set(values.map(canonicalLocation).filter((value): value is string => value !== null))];
+    const globalIds = uniq(values.map(canonicalLocation).filter((value): value is string => value !== null));
     if (globalIds.length === 0) return {};
     const page = await fetchBookingCatalogueLocations({ globalIds, pageSize: globalIds.length }, signal);
     const requested = new Set(globalIds);
