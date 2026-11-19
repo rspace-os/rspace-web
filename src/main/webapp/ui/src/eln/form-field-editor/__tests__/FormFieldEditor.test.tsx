@@ -1003,6 +1003,8 @@ describe("FormFieldEditor with one-line text and number sources", () => {
   const weight = saved(4, "Number", { name: "Weight" }, { fieldKey: WEIGHT });
   const target = (displayRule: FormFieldEditorItem["displayRule"] = null) =>
     saved(5, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" }, { displayRule });
+  const passwordSwitch = (name: string) =>
+    within(card(name)).getByRole("switch", { name: "Hide the value, like a password" });
 
   it("offers number and non-password one-line text fields, but not password or rich text fields", async () => {
     const user = userEvent.setup();
@@ -1063,6 +1065,29 @@ describe("FormFieldEditor with one-line text and number sources", () => {
 
     const targetCard = await screen.findByRole("region", { name: "Target" });
     expect(within(targetCard).getByRole("radio", { name: "Always" })).toBeChecked();
+  });
+
+  it("locks the password toggle of a field a rule reads, saying why, until no rule reads it", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([batch, target({ sourceFieldKey: BATCH, operator: "EQUALS", values: ["LOT"] })]);
+    const { handle } = await renderEditor();
+    const reason = "A display rule reads this field, so it cannot be a password field.";
+
+    // focusable, unlike a disabled control, so the reason can be reached and heard
+    expect(passwordSwitch("Batch code")).toBeEnabled();
+    expect(passwordSwitch("Batch code")).toHaveAttribute("aria-disabled", "true");
+    expect(passwordSwitch("Batch code")).toHaveAccessibleDescription(reason);
+    act(() => passwordSwitch("Batch code").focus());
+    await user.keyboard(" ");
+    expect(passwordSwitch("Batch code")).not.toBeChecked();
+    expect(passwordSwitch("Target")).not.toHaveAttribute("aria-disabled");
+
+    await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+    expect(passwordSwitch("Batch code")).not.toHaveAccessibleDescription(reason);
+    await user.click(passwordSwitch("Batch code"));
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({ ifPassword: "yes" });
   });
 
   it("refuses to save or publish while a number condition's value is not a number", async () => {
