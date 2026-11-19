@@ -161,7 +161,11 @@ public final class FieldDisplayRuleValidator {
     return rule.values().stream().mapToLong(String::length).sum() > MAX_JSON_LENGTH;
   }
 
-  /** A key is valid only in canonical form: what {@link UUID#toString()} writes (lower case). */
+  /**
+   * A key is valid only in canonical form: what {@link UUID#toString()} writes (lower case). Any
+   * UUID version is accepted: RSpace generates version 7 ({@link FieldKeys}), but older databases
+   * and API clients hold other versions.
+   */
   private static boolean isCanonicalUuid(String key) {
     try {
       return UUID.fromString(key).toString().equals(key);
