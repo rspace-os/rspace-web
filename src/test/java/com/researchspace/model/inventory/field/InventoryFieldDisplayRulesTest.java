@@ -356,6 +356,25 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
+  void updateToLatestSkippingVersionsLeavesTheRuleAndMandatoryOfARemovedField() {
+    Sample sample = template.copyFromTemplate(user);
+    InventoryEntityField samplePermit = sample.getActiveFields().get(1);
+    // a later version makes the permit optional and unconditional, a later one removes it
+    permit.setMandatory(false);
+    permit.setDisplayRule(null);
+    template.increaseVersion();
+    template.deleteSampleField(permit, true);
+    template.increaseVersion();
+
+    sample.updateToLatestTemplateVersion();
+
+    assertTrue(samplePermit.isDeleted());
+    assertEquals(PERMIT_KEY, samplePermit.getFieldKey());
+    assertEquals(showWhen(GMO_KEY, "Yes"), samplePermit.getDisplayRule());
+    assertTrue(samplePermit.isMandatory());
+  }
+
+  @Test
   void updateToLatestKeepsMandatoryOnAKeptFieldThatHadNoRule() {
     InventoryStringField notes = string(3L, "Notes", NOTES_KEY);
     notes.setMandatory(true);
