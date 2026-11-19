@@ -9,6 +9,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
@@ -336,6 +337,15 @@ public abstract class SampleEntity extends InventoryRecord
           getFields().stream().filter(sf -> !sf.isDeleted()).sorted().collect(Collectors.toList());
     }
     return activeFields;
+  }
+
+  /**
+   * Checks the field keys and display rules of this template's fields, deleted ones included.
+   *
+   * @see InventoryFieldDisplayRules#assertTemplateRulesValid
+   */
+  public void assertFieldDisplayRulesValid() {
+    InventoryFieldDisplayRules.assertTemplateRulesValid(getFields());
   }
 
   /**

@@ -20,6 +20,7 @@ import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -32,8 +33,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +59,7 @@ public class ApiFieldsHelper {
   private static final String MANDATORY_FIELD_EMPTY = "errors.inventory.field.mandatoryFieldEmpty";
   private static final String MANDATORY_FIELD_NO_SELECTION =
       "errors.inventory.field.mandatoryFieldNoSelection";
+  private static final String OPTIONS_NOT_ALLOWED = "validation.inventoryField.optionsNotAllowed";
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
@@ -332,16 +336,60 @@ public class ApiFieldsHelper {
    * Checks if the provided entity apiFields (of Samples or Instrument or InstrumentTemplate) are
    * matching templateFields and alsop if they are mandatory.
    *
+   * <p>A mandatory field hidden by its display rule is not required. Visibility is judged on the
+   * values the new record will hold: the incoming value where one is posted, the template's default
+   * otherwise.
+   *
    * <p>Otherwise add the errors if there are problems.
    */
   public void validateMandatoryFieldsForEntityPost(
       List<ApiInventoryEntityField> incomingApiFields,
       List<InventoryEntityField> templateFields,
       Errors errors) {
+    validateMandatoryFieldsForEntityPost(incomingApiFields, templateFields, field -> false, errors);
+  }
+
+  /**
+   * As {@link #validateMandatoryFieldsForEntityPost(List, List, Errors)}, but never requires a
+   * value for the template fields {@code mayStayEmpty} accepts.
+   *
+   * <p>A selected option that is null is rejected before anything else, as it cannot name an
+   * option.
+   */
+  public void validateMandatoryFieldsForEntityPost(
+      List<ApiInventoryEntityField> incomingApiFields,
+      List<InventoryEntityField> templateFields,
+      Predicate<InventoryEntityField> mayStayEmpty,
+      Errors errors) {
+
+    boolean nullOption =
+        incomingApiFields.stream()
+            .map(ApiInventoryEntityField::getSelectedOptions)
+            .filter(Objects::nonNull)
+            // not contains(null), which immutable lists reject
+            .anyMatch(options -> options.stream().anyMatch(Objects::isNull));
+    if (nullOption) {
+      errors.rejectValue("fields", OPTIONS_NOT_ALLOWED);
+      return;
+    }
+
+    List<List<String>> effectiveSelections = new ArrayList<>();
+    for (int i = 0; i < templateFields.size(); i++) {
+      InventoryEntityField templateField = templateFields.get(i);
+      boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
+      effectiveSelections.add(
+          !templateField.isOptionsStoringField()
+              ? List.of()
+              : hasApiFieldForTemplateField
+                  ? incomingApiFields.get(i).getSelectedOptions()
+                  : templateField.getSelectedOptions());
+    }
+    List<Boolean> visible =
+        InventoryFieldDisplayRules.visibility(templateFields, effectiveSelections);
 
     for (int i = 0; i < templateFields.size(); i++) {
       InventoryEntityField templateField = templateFields.get(i);
-      if (templateField.isMandatory()) {
+      if (templateField.isMandatory() && visible.get(i) && !mayStayEmpty.test(templateField)) {
         boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
         boolean isOptionsStoringField = templateField.isOptionsStoringField();
         if (isOptionsStoringField) {

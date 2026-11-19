@@ -16,12 +16,16 @@ import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryRadioField;
+import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import java.util.List;
@@ -322,6 +326,37 @@ class PidinstRecordMapperTest {
     assertThrows(
         ApiRuntimeException.class,
         () -> PidinstRecordMapper.toApiInstrument(record, defaultTemplate(), Map.of()));
+  }
+
+  @Test
+  void aMandatoryFieldHiddenUnderTheTemplateDefaultsNeedsNoValue() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
+    record.getManufacturers().clear();
+    String sourceKey = "6f1c2e0a-8d5b-4c51-9a3e-2b7f1d0c4e9a";
+    InventoryRadioFieldDef def = new InventoryRadioFieldDef();
+    def.setRadioOptionsList(List.of("Yes", "No"));
+    InventoryRadioField commercial = new InventoryRadioField(def, "Commercial instrument?");
+    commercial.setFieldKey(sourceKey);
+    commercial.setSelectedOptions(List.of("No"));
+    InstrumentTemplate template = defaultTemplate();
+    addField(template, commercial);
+    template
+        .getActiveFields()
+        .get(1) // Manufacturer, mandatory
+        .setDisplayRule(
+            new FieldDisplayRule(sourceKey, ConditionOperator.IS_ANY_OF, List.of("Yes")));
+
+    ApiInstrument instrument = PidinstRecordMapper.toApiInstrument(record, template, Map.of());
+    assertEquals("", content(instrument, 1));
+    assertEquals(
+        List.of("No"),
+        instrument.getFields().get(12).getSelectedOptions(),
+        "the new instrument keeps the defaults its visibility was judged on");
+
+    commercial.setSelectedOptions(List.of("Yes"));
+    assertThrows(
+        ApiRuntimeException.class,
+        () -> PidinstRecordMapper.toApiInstrument(record, template, Map.of()));
   }
 
   @Test

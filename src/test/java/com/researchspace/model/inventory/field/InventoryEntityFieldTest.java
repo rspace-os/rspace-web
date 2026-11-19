@@ -317,17 +317,10 @@ class InventoryEntityFieldTest {
     assertTrue(updateResult);
     assertEquals("num updated", field.getName());
 
-    // update template field mandatory, then try updating the sample field
+    // update template field mandatory, then update the sample field: an empty field becoming
+    // mandatory is rejected by the record once all its fields are synced, not by the field
     assertFalse(field.isMandatory());
     templateField.setMandatory(true);
-    ise = assertThrows(IllegalStateException.class, () -> field.updateToLatestTemplateDefinition());
-    assertEquals("validation.inventoryField.mandatoryInLatestTemplate", ise.getMessage());
-
-    // reset field to non-mandatory (throwing exception doesn't reset the state here in the test
-    // code)
-    field.setMandatory(false);
-    // put a non-blank value, try updating again to latest mandatory field definition
-    field.setFieldData("3.14");
     updateResult = field.updateToLatestTemplateDefinition();
     assertTrue(updateResult);
     assertTrue(field.isMandatory());

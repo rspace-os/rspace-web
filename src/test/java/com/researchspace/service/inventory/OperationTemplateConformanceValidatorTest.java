@@ -15,7 +15,12 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.inventory.field.InventoryRadioField;
+import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
+import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.OriginState;
@@ -122,6 +127,53 @@ class OperationTemplateConformanceValidatorTest {
     assertTrue(
         thrown.getFieldErrors().stream().anyMatch(e -> "newSample.name".equals(e.getField())),
         () -> "expected a newSample.name rejection, got: " + thrown.getFieldErrors());
+  }
+
+  @Test
+  void aMandatoryFieldHiddenByTheTemplateDefaultsIsNotRequired() {
+    validator = validatorCheckingTemplateFields();
+
+    assertDoesNotThrow(() -> validator.validate(aliquotOfGmoTemplate("No"), user));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class, () -> validator.validate(aliquotOfGmoTemplate("Yes"), user));
+    assertEquals(
+        "errors.inventory.field.mandatoryFieldEmpty",
+        rejection.getFieldErrors("newSample.fields").get(0).getCode());
+  }
+
+  private OperationTemplateConformanceValidator validatorCheckingTemplateFields() {
+    SampleApiPostValidator postValidator = new SampleApiPostValidator();
+    ApiExtraFieldsHelper extraFieldHelper = mock(ApiExtraFieldsHelper.class);
+    when(extraFieldHelper.supports(any())).thenReturn(true);
+    ReflectionTestUtils.setField(postValidator, "extraFieldHelper", extraFieldHelper);
+    SampleApiPostFullValidator fullValidator = new SampleApiPostFullValidator();
+    ReflectionTestUtils.setField(fullValidator, "fieldHelper", new ApiFieldsHelper());
+    return new OperationTemplateConformanceValidator(
+        sampleApiMgr, new DTOControllerValidatorImpl(), postValidator, fullValidator);
+  }
+
+  /** An aliquot into a template whose "GMO permit number" is mandatory, shown when GMO is Yes. */
+  private ApiInventoryOperationPost aliquotOfGmoTemplate(String gmoDefault) {
+    String gmoKey = "6f1c2e0a-8d5b-4c51-9a3e-2b7f1d0c4e9a";
+    SampleTemplate template = new SampleTemplate();
+    template.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    InventoryRadioFieldDef def = new InventoryRadioFieldDef();
+    def.setRadioOptionsList(List.of("Yes", "No"));
+    InventoryRadioField gmo = new InventoryRadioField(def, "Is this a GMO?");
+    gmo.setFieldKey(gmoKey);
+    gmo.setSelectedOptions(List.of(gmoDefault));
+    template.addSampleField(gmo);
+    InventoryStringField permit = new InventoryStringField("GMO permit number");
+    permit.setMandatory(true);
+    permit.setDisplayRule(
+        new FieldDisplayRule(gmoKey, ConditionOperator.IS_ANY_OF, List.of("Yes")));
+    template.addSampleField(permit);
+    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(8L, user)).thenReturn(template);
+    ApiInventoryOperationPost built = aliquotRequest();
+    built.getNewSample().setTemplateId(8L);
+    return built;
   }
 
   private ApiInventoryOperationPost templateBackedAliquot(RSUnitDef childUnit) {

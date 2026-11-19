@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
@@ -32,6 +34,9 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
@@ -39,8 +44,11 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -789,6 +797,149 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .getErrors()
             .get(0)
             .endsWith(" is currently being edited by " + otherUser.getUsername()));
+  }
+
+  @Test
+  public void fieldDeletedFromTemplateButKeptHasNoDisplayRuleInUpdatedSamples() throws Exception {
+    String gmoKey = UUID.randomUUID().toString();
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("GMO register");
+    ApiInventoryEntityField gmo = new ApiInventoryEntityField();
+    gmo.setName("Is this a GMO?");
+    gmo.setType(ApiFieldType.RADIO);
+    gmo.setDefinition(new ApiInventoryFieldDef(List.of("Yes", "No"), false));
+    gmo.setFieldKey(gmoKey);
+    templatePost.getFields().add(gmo);
+    ApiInventoryEntityField permit = new ApiInventoryEntityField();
+    permit.setName("GMO permit number");
+    permit.setType(ApiFieldType.STRING);
+    permit.setMandatory(true);
+    permit.setDisplayRule(
+        new FieldDisplayRule(gmoKey, ConditionOperator.IS_ANY_OF, List.of("Yes")));
+    templatePost.getFields().add(permit);
+    ApiSampleTemplate template = postValidSampleTemplate(templatePost);
+    Long permitTemplateFieldId = template.getFields().get(1).getId();
+
+    // "No" hides the mandatory permit, so the sample is saved without one
+    ApiSampleWithFullSubSamples sampleRequest = new ApiSampleWithFullSubSamples("hidden permit");
+    sampleRequest.setTemplateId(template.getId());
+    ApiInventoryEntityField gmoValue = new ApiInventoryEntityField();
+    gmoValue.setSelectedOptions(List.of("No"));
+    sampleRequest.setFields(List.of(gmoValue, new ApiInventoryEntityField()));
+    ApiSampleWithFullSubSamples sample = sampleApiMgr.createNewApiSample(sampleRequest, anyUser);
+
+    // delete the permit from the template, keeping it in existing samples
+    putValidSampleTemplate(
+        "{\"fields\":[{\"id\": "
+            + permitTemplateFieldId
+            + ", \"deleteFieldRequest\": true, \"deleteFieldOnSampleUpdate\": false}]}",
+        template.getId());
+
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                createBuilderForPost(
+                    API_VERSION.ONE,
+                    apiKey,
+                    String.format(
+                        "/samples/%d/actions/updateToLatestTemplateVersion", sample.getId()),
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    JsonNode keptPermit =
+        new ObjectMapper()
+            .readTree(updateResult.getResponse().getContentAsString())
+            .get("fields")
+            .get(1);
+    assertEquals("GMO permit number", keptPermit.get("name").asText());
+    assertTrue(keptPermit.has("displayRule"));
+    assertTrue(keptPermit.get("displayRule").isNull());
+    assertFalse(keptPermit.get("mandatory").asBoolean());
+
+    // the UI echoes every field, with "" for an empty one; under the old rule, choosing "Yes"
+    // would have revealed the empty mandatory permit and rejected the save
+    String echo =
+        "{\"fields\":[{\"id\": "
+            + sample.getFields().get(0).getId()
+            + ", \"selectedOptions\": [\"Yes\"]}, {\"id\": "
+            + sample.getFields().get(1).getId()
+            + ", \"content\": \"\"}]}";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(apiKey, "/samples/" + sample.getId(), anyUser, echo))
+        .andExpect(status().isOk());
+  }
+
+  /** A rule over the size limits is a 422 naming the field, and nothing is saved. */
+  @Test
+  public void oversizedDisplayRulesAreRejectedOnTemplatePostAndPut() throws Exception {
+    String gmoKey = UUID.randomUUID().toString();
+    List<String> tooMany = new ArrayList<>();
+    for (int i = 0; i <= FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooMany.add("option " + i);
+    }
+    List<String> tooLong = new ArrayList<>();
+    for (int i = 0; i < FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooLong.add(StringUtils.repeat('x', 40) + i);
+    }
+    Map<String, List<String>> valuesByCode =
+        Map.of(
+            FieldDisplayRuleValidator.VALUE_TOO_MANY, tooMany,
+            FieldDisplayRuleValidator.RULE_TOO_LONG, tooLong);
+
+    ApiSampleTemplatePost validPost = gmoTemplatePost(gmoKey, null);
+    ApiSampleTemplate template = postValidSampleTemplate(validPost);
+    Long permitId = template.getFields().get(1).getId();
+    long templateCount = listAllSampleTemplates().getTotalHits();
+
+    for (Map.Entry<String, List<String>> entry : valuesByCode.entrySet()) {
+      FieldDisplayRule rule =
+          new FieldDisplayRule(gmoKey, ConditionOperator.IS_ANY_OF, entry.getValue());
+      String expectedMessage = getMsgFromResourceBundler(entry.getKey(), "GMO permit number");
+
+      MvcResult postResult =
+          mockMvc
+              .perform(
+                  createBuilderForPostWithJSONBody(
+                      apiKey, "/sampleTemplates", anyUser, gmoTemplatePost(gmoKey, rule)))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertEquals(
+          expectedMessage, getErrorFromJsonResponseBody(postResult, ApiError.class).getMessage());
+      assertEquals(templateCount, listAllSampleTemplates().getTotalHits());
+
+      String putBody =
+          "{\"fields\":[{\"id\": " + permitId + ", \"displayRule\": " + rule.toJson() + "}]}";
+      MvcResult putResult =
+          mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKey, "/sampleTemplates/" + template.getId(), anyUser, putBody))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertEquals(
+          expectedMessage, getErrorFromJsonResponseBody(putResult, ApiError.class).getMessage());
+      ApiSampleTemplate unchanged = retrieveSampleTemplate(template.getId());
+      assertEquals(template.getVersion(), unchanged.getVersion());
+      assertNull(unchanged.getFields().get(1).getDisplayRule());
+    }
+  }
+
+  private ApiSampleTemplatePost gmoTemplatePost(String gmoKey, FieldDisplayRule permitRule) {
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("GMO register");
+    ApiInventoryEntityField gmo = new ApiInventoryEntityField();
+    gmo.setName("Is this a GMO?");
+    gmo.setType(ApiFieldType.RADIO);
+    gmo.setDefinition(new ApiInventoryFieldDef(List.of("Yes", "No"), false));
+    gmo.setFieldKey(gmoKey);
+    templatePost.getFields().add(gmo);
+    ApiInventoryEntityField permit = new ApiInventoryEntityField();
+    permit.setName("GMO permit number");
+    permit.setType(ApiFieldType.STRING);
+    permit.setDisplayRule(permitRule);
+    templatePost.getFields().add(permit);
+    return templatePost;
   }
 
   @Test
