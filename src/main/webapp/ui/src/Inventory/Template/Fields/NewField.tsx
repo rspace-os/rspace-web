@@ -21,9 +21,11 @@ const EMPTY_FIELD: FieldModelAttrs = {
 
 type NewFieldArgs = {
   record: TemplateModel;
+  /** Called just before the field is added, so the host can move focus to it. */
+  onAdd?: () => void;
 };
 
-function NewField({ record }: NewFieldArgs): React.ReactNode {
+function NewField({ record, onAdd }: NewFieldArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   return (
     <FormControl inline>
@@ -32,7 +34,10 @@ function NewField({ record }: NewFieldArgs): React.ReactNode {
           color="primary"
           startIcon={<AddOutlinedIcon />}
           variant="outlined"
-          onClick={() => record.addField(EMPTY_FIELD)}
+          onClick={() => {
+            onAdd?.();
+            record.addField(EMPTY_FIELD);
+          }}
         >
           {t("fields.extraFields.addNewField")}
         </Button>
