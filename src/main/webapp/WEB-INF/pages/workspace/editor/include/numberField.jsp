@@ -25,7 +25,7 @@
         <tr>
           <td class="field-value-inner">
             <input id="${field.id}" class="inputField ${field.id}" name="fieldData" type="text" 
-              value="${field.fieldData}" onchange="checkAndMarkNumber(this)"/>
+              value="${field.fieldData}" oninput="numberFieldInput(this)" onchange="checkAndMarkNumber(this)"/>
             <p class="plainTextField ${field.id} singleLineFieldInDocViewMode" id="plainText_${field.id}">
               ${field.fieldData}
             </p>
