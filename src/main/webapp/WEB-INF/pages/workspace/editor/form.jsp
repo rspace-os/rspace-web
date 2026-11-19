@@ -125,4 +125,6 @@
 	var editor = '${editor}';
 	var modificationDate = '${modificationDate}';
 	var recordId = "${template.id}";
+	// identifies this page's hold on the edit lock, so only this page can release it
+	var editLockToken = "${editLockToken}";
 </script>

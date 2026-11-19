@@ -56,6 +56,11 @@ export type FieldEditorHandle = {
   fieldCount: () => number;
   /** Called after the toolbar publishes a new form: its fields then change only through a new version. */
   markPublished: () => void;
+  /**
+   * Holds the fields read-only while the toolbar publishes: from the field save, through the
+   * access dialog, until the publish request completes. Released if publishing is cancelled or fails.
+   */
+  setReadOnly: (readOnly: boolean) => void;
 };
 
 /** Dispatched on `window` whenever the dirty state or the number of fields changes. */
@@ -118,7 +123,8 @@ export default function FormFieldEditor({
   const saveInFlight = useRef<Promise<void> | null>(null);
   // once published from this page, the form's fields can only change through a new version
   const [published, setPublished] = useState(false);
-  const editable = editableForm && !published;
+  const [heldReadOnly, setHeldReadOnly] = useState(false);
+  const editable = editableForm && !published && !heldReadOnly;
   const listRef = useRef<HTMLDivElement>(null);
 
   const dirty = saveSignature(fields) !== baseline;
@@ -139,6 +145,7 @@ export default function FormFieldEditor({
     isDirty: () => latest.current.dirty,
     fieldCount: () => latest.current.fields.length,
     markPublished: () => setPublished(true),
+    setReadOnly: (readOnly) => setHeldReadOnly(readOnly),
     save: () => {
       if (saveInFlight.current) return saveInFlight.current;
       if (!latest.current.dirty) return Promise.resolve();

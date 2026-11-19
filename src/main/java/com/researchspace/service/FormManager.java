@@ -124,14 +124,29 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   void unlockForm(Long formId, User user);
 
   /**
-   * Releases the user's edit lock on a form and, when the form is a draft (temporary copy) of a
-   * published form, on its original too. The form editor holds its lock on whichever id it opened:
-   * the original on a first edit, the draft when editing resumed; the page only knows the draft.
+   * Records that the form editor page now loading holds the edit lock it has just acquired on
+   * {@code lockedFormId} (the id in its edit URL: the original on a first edit of a published form,
+   * the draft when editing resumes), and returns a token for that page. The page hands the token
+   * back to release exactly that acquisition, at most once.
    *
-   * @param formId the form the editor page shows
-   * @param user the user leaving the editor
+   * @param lockedFormId the form whose lock the page acquired
+   * @param user the user editing, in the current session
+   * @return a token unique to this page load
    */
-  void unlockFormAndOriginal(Long formId, User user);
+  String registerEditLockHolder(long lockedFormId, User user);
+
+  /**
+   * Releases the edit lock that the page holding {@code token} acquired. Nothing happens for a
+   * blank, unknown or already used token, or when the caller is not the user and session the token
+   * was issued to, so a stale page (an old tab, or a page left before a reload or a back-forward
+   * restore) can never release another page's lock.
+   *
+   * @param token the token from {@link #registerEditLockHolder}
+   * @param user the user leaving the editor
+   * @param alreadyReleased forms whose lock the caller has just released by id (Save and Update
+   *     do); for those the token is only used up
+   */
+  void releaseEditLock(String token, User user, Set<Long> alreadyReleased);
 
   /**
    * Gets the IDs of fields on a temporary form that were copied from the original form.

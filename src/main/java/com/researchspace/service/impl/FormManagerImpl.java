@@ -1,5 +1,7 @@
 package com.researchspace.service.impl;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
@@ -44,6 +46,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -313,18 +318,42 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     }
   }
 
+  /** A form editor page's hold on an edit lock, see {@link #registerEditLockHolder}. */
+  private record EditLockHold(long formId, String username, String sessionId) {}
+
+  /**
+   * Holds by page token. Pages normally release their hold when they are left; entries a page never
+   * releases (a crashed browser) expire, and the lock itself goes when the session ends.
+   */
+  private final Cache<String, EditLockHold> editLockHolds =
+      CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.DAYS).maximumSize(100_000).build();
+
   @Override
-  public void unlockFormAndOriginal(Long formId, User user) {
-    if (!formDao.exists(formId)) {
+  public String registerEditLockHolder(long lockedFormId, User user) {
+    String token = UUID.randomUUID().toString();
+    editLockHolds.put(
+        token,
+        new EditLockHold(lockedFormId, user.getUsername(), SessionAttributeUtils.getSessionId()));
+    return token;
+  }
+
+  @Override
+  public void releaseEditLock(String token, User user, Set<Long> alreadyReleased) {
+    if (StringUtils.isBlank(token)) {
       return;
     }
-    RSForm form = formDao.get(formId);
-    unlockForm(form, user);
-    if (form.isTemporary()) {
-      RSForm original = formDao.getOriginalFromTemporaryForm(formId);
-      if (original != null) {
-        unlockForm(original, user);
-      }
+    EditLockHold hold = editLockHolds.getIfPresent(token);
+    if (hold == null
+        || !hold.username().equals(user.getUsername())
+        || !hold.sessionId().equals(SessionAttributeUtils.getSessionId())) {
+      return;
+    }
+    // atomic, so a token released twice at once still releases once
+    if (!editLockHolds.asMap().remove(token, hold)) {
+      return;
+    }
+    if (!alreadyReleased.contains(hold.formId()) && formDao.exists(hold.formId())) {
+      unlockForm(formDao.get(hold.formId()), user);
     }
   }
 

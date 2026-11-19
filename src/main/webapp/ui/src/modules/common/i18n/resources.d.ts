@@ -13589,6 +13589,7 @@ export default interface Resources {
       "saveFailed": "The fields could not be saved. Try again.",
       "settings": {
         "apiOnlyType": "Fields of this type are added through the API. Here you can rename, reorder, delete it, make it mandatory, or show it with a display rule.",
+        "clearStoredValue": "Clear stored {bound}",
         "dateFormat": "Date format",
         "decimalPlaces": "Decimal places",
         "defaultOption": "Default option",
@@ -13610,6 +13611,7 @@ export default interface Resources {
         "time12Hour": "12-hour (02:30 PM)",
         "time24Hour": "24-hour (14:30)",
         "timeFormat": "Time format",
+        "unlistedFormat": "Choose a listed format to change this value.",
         "unreadValue": "Stored as {value}, which cannot be shown here. It is kept unless you enter a new value."
       },
       "types": {

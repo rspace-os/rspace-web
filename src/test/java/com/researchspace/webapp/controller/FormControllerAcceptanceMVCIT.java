@@ -435,7 +435,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     // create 2 fields in forms, these are added into real form as it is new and unpublished
     formController.createTextField(new TextFieldDTO<>("f1", "f1"), tempform.getId());
     formController.createTextField(new TextFieldDTO<>("f2", "f2"), tempform.getId());
-    formController.saveForm(tempform.getId(), mockPrincipal);
+    formController.saveForm(tempform.getId(), null, mockPrincipal);
     FormSharingCommand publishCmd = new FormSharingCommand(newForm);
     formMgr.publish(newForm.getId(), true, publishCmd, u1);
     // now create doc from this form:
@@ -448,7 +448,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     int NUMFIELDS = tempform.getFieldForms().size();
     AjaxReturnObject<String> aro =
         formController.deleteFieldbyId(tempform.getFieldForms().iterator().next().getId());
-    formController.saveForm(tempform.getId(), mockPrincipal);
+    formController.saveForm(tempform.getId(), null, mockPrincipal);
     assertNotNull(aro.getData());
 
     formController.editForm(model, mockPrincipal, newForm.getId());
@@ -468,7 +468,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     // create 2 fields in forms
     formController.createTextField(new TextFieldDTO<>("f1", "f1"), tempform.getId());
     formController.createTextField(new TextFieldDTO<>("f2", "f2"), tempform.getId());
-    Long currVersionId = formController.updateForm(tempform.getId(), mockPrincipal).getData();
+    Long currVersionId = formController.updateForm(tempform.getId(), null, mockPrincipal).getData();
 
     // create a doc with the current form id, assert has 4 fields:
     created = recordMgr.createNewStructuredDocument(rootId, currVersionId, u1);
@@ -477,8 +477,8 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formController.editForm(model, mockPrincipal, currVersionId);
     tempform = getFormFromModel();
     aro = formController.deleteFieldbyId(tempform.getFieldForms().iterator().next().getId());
-    formController.saveForm(tempform.getId(), mockPrincipal);
-    currVersionId = formController.updateForm(tempform.getId(), mockPrincipal).getData();
+    formController.saveForm(tempform.getId(), null, mockPrincipal);
+    currVersionId = formController.updateForm(tempform.getId(), null, mockPrincipal).getData();
 
     // now reload doc -s hould have 4 fields OK
     created = recordMgr.getRecordWithFields(created.getId(), u1).asStrucDoc();
@@ -503,7 +503,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formController.editForm(model, mockPrincipal, docToShare.getForm().getId());
     RSForm form = getFormFromModel();
     // the Basic Document form is a system form, so Update makes no new version
-    assertNull(formController.updateForm(form.getId(), mockPrincipal).getData());
+    assertNull(formController.updateForm(form.getId(), null, mockPrincipal).getData());
 
     InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     byte[] rawBytes = IOUtils.toByteArray(is);

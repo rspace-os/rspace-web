@@ -1,3 +1,4 @@
+import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -193,34 +194,42 @@ function BoundedSettings({
         value,
         label: value === "HH:mm" ? t("formFieldEditor.settings.time24Hour") : t("formFieldEditor.settings.time12Hour"),
       }));
-  // a format from an archive import stays selectable, so the field keeps it
-  const formats = knownFormats.some(({ value }) => value === field.format)
-    ? knownFormats
-    : [...knownFormats, { value: field.format, label: field.format }];
+  // A format from an archive import stays selectable, so the field keeps it. The editor cannot
+  // write a value in such a format, so its values can only be changed once a listed format is chosen.
+  const formatListed = knownFormats.some(({ value }) => value === field.format);
+  const formats = formatListed ? knownFormats : [...knownFormats, { value: field.format, label: field.format }];
+  const withoutUnread = (name: BoundName) => {
+    const { [name]: _dropped, ...stillUnread } = field.unread;
+    return stillUnread;
+  };
   const input = (name: BoundName, label: string) => {
     const unread = field.unread[name];
+    const notes = [
+      field[name] === "" && unread !== undefined ? t("formFieldEditor.settings.unreadValue", { value: unread }) : null,
+      formatListed ? null : t("formFieldEditor.settings.unlistedFormat"),
+    ].filter((note) => note !== null);
+    const helperText = message(problems[name]) ?? (notes.length > 0 ? notes.join(" ") : undefined);
     return (
-      <TextField
-        size="small"
-        type={isDate ? "date" : "time"}
-        label={label}
-        value={field[name]}
-        disabled={!editable}
-        onChange={({ target }) => {
-          const { [name]: _replaced, ...stillUnread } = field.unread;
-          onChange({ [name]: target.value, unread: stillUnread });
-        }}
-        error={Boolean(problems[name])}
-        helperText={
-          message(problems[name]) ??
-          (field[name] === "" && unread !== undefined
-            ? t("formFieldEditor.settings.unreadValue", {
-                value: unread,
-              })
-            : undefined)
-        }
-        slotProps={{ inputLabel: { shrink: true } }}
-      />
+      <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
+        <TextField
+          size="small"
+          type={isDate ? "date" : "time"}
+          label={label}
+          value={field[name]}
+          disabled={!editable || !formatListed}
+          onChange={({ target }) => onChange({ [name]: target.value, unread: withoutUnread(name) })}
+          error={Boolean(problems[name])}
+          helperText={helperText}
+          slotProps={{ inputLabel: { shrink: true } }}
+        />
+        {editable && field[name] === "" && unread !== undefined && (
+          <Button size="small" onClick={() => onChange({ unread: withoutUnread(name) })}>
+            {t("formFieldEditor.settings.clearStoredValue", {
+              bound: label,
+            })}
+          </Button>
+        )}
+      </Stack>
     );
   };
   return (

@@ -95,6 +95,52 @@ test.describe("My RSpace forms", () => {
     expect(fieldSaves).toBe(1);
   });
 
+  test("As a user, I cannot edit fields while publishing, and can again if I cancel", async ({
+    page,
+    pageMyRSpace,
+  }) => {
+    await pageMyRSpace.open();
+    const form = await pageMyRSpace.openCreateForm();
+    await form.addField("String", "held field");
+    const nameInputs = form.fields.root.getByRole("textbox", { name: "Name", exact: true });
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    let releaseDialog: () => void = () => {};
+    let holdDialog = true;
+    let dialogHeld = false;
+    await page.route("**/workspace/editor/form/ajax/publishAndShare?**", async (route) => {
+      if (route.request().method() === "GET") {
+        if (holdDialog) {
+          await new Promise<void>((resolve) => {
+            releaseDialog = resolve;
+            dialogHeld = true;
+          });
+        }
+      } else {
+        await delay(1500);
+      }
+      return route.fallback();
+    });
+    const shareDialog = page.getByRole("dialog").filter({ has: page.locator("#publishShareDlg") });
+
+    // while the access dialog loads
+    await page.getByRole("button", { name: "Publish" }).click();
+    await expect(nameInputs).toHaveCount(0);
+    await expect.poll(() => dialogHeld).toBe(true);
+    releaseDialog();
+    await expect(shareDialog).toBeVisible();
+    await expect(nameInputs).toHaveCount(0);
+    await shareDialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(nameInputs).toHaveCount(1);
+
+    // while the publish request runs, and after it
+    holdDialog = false;
+    await page.getByRole("button", { name: "Publish" }).click();
+    await shareDialog.getByRole("button", { name: "OK" }).click();
+    await expect(nameInputs).toHaveCount(0);
+    await expect(page.getByText(/This form is published\./)).toBeVisible();
+    await expect(nameInputs).toHaveCount(0);
+  });
+
   test("As a user, a failed Save and Close still warns before I leave", async ({ page, pageMyRSpace }) => {
     await pageMyRSpace.open();
     const form = await pageMyRSpace.openCreateForm();

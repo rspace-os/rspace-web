@@ -60,6 +60,7 @@ import java.io.InputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,18 +130,27 @@ public class RSFormController extends BaseController {
   }
 
   /**
-   * Releases the edit lock when the form editor page is left, on the form the page shows and, for a
-   * draft, on its original, where a first edit of a published form holds the lock.
+   * Releases an edit lock. The form editor page sends the token it was given with its lock, and
+   * releases exactly the lock that page acquired, at most once (see {@link
+   * FormManager#releaseEditLock}). Without a token, the lock on {@code formId} is released as
+   * before.
    *
    * @param formId the form the editor page shows
+   * @param lockToken the page's token, or null
    */
   @ResponseBody
   @PostMapping("/unlockform")
   public AjaxReturnObject<Boolean> unlockForm(
-      @RequestParam("id") long formId, Principal principal) {
+      @RequestParam("id") long formId,
+      @RequestParam(value = "lockToken", required = false) String lockToken,
+      Principal principal) {
 
     User user = userManager.getUserByUsername(principal.getName());
-    formManager.unlockFormAndOriginal(formId, user);
+    if (StringUtils.isBlank(lockToken)) {
+      formManager.unlockForm(formId, user);
+    } else {
+      formManager.releaseEditLock(lockToken, user, Set.of());
+    }
     return new AjaxReturnObject<Boolean>(true, null);
   }
 
@@ -395,7 +405,9 @@ public class RSFormController extends BaseController {
   @ResponseBody
   @PostMapping("ajax/updateForm")
   public AjaxReturnObject<Long> updateForm(
-      @RequestParam("templateId") long formId, Principal user) {
+      @RequestParam("templateId") long formId,
+      @RequestParam(value = "lockToken", required = false) String lockToken,
+      Principal user) {
 
     User u = userManager.getUserByUsername(user.getName());
     RSForm updated = formManager.updateVersion(formId, u);
@@ -409,9 +421,13 @@ public class RSFormController extends BaseController {
     // The version is committed. Release the edit lock, which is held on whichever id the editor
     // opened: the original on a first edit, the draft when editing resumed.
     formManager.unlockForm(formId, u);
+    Set<Long> released = new HashSet<>(Set.of(formId));
     if (updated.getPreviousVersion() != null) {
       formManager.unlockForm(updated.getPreviousVersion().getId(), u);
+      released.add(updated.getPreviousVersion().getId());
     }
+    // used up, so the page's unlock on leaving does not release the lock a second time
+    formManager.releaseEditLock(lockToken, u, released);
     return new AjaxReturnObject<Long>(formId, null);
   }
 
@@ -493,6 +509,10 @@ public class RSFormController extends BaseController {
 
     // we have at least read permission
     populateModelForEditing(model, form);
+    if (EditStatus.EDIT_MODE.equals(form.getEditStatus())) {
+      // the lock this page holds is on formId, the id in its URL
+      model.addAttribute("editLockToken", formManager.registerEditLockHolder(formId, u));
+    }
     return new ModelAndView("workspace/editor/form");
   }
 
@@ -909,12 +929,16 @@ public class RSFormController extends BaseController {
   @ResponseBody
   @PostMapping("ajax/saveForm")
   public AjaxReturnObject<Long> saveForm(
-      @RequestParam("templateId") long formId, Principal subject) {
+      @RequestParam("templateId") long formId,
+      @RequestParam(value = "lockToken", required = false) String lockToken,
+      Principal subject) {
 
     log.info("Saving form with id {}", formId);
     User user = userManager.getUserByUsername(subject.getName());
     RSForm form = formManager.get(formId, user, true);
     formManager.save(form, user);
+    // save released the lock on formId; the page's own lock may be on the original instead
+    formManager.releaseEditLock(lockToken, user, Set.of(formId));
 
     return new AjaxReturnObject<Long>(formId, null);
   }

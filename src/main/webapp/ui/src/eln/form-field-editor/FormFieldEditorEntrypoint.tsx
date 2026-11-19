@@ -29,6 +29,7 @@ window.formFieldEditor = {
   fieldCount: () => handle.current?.fieldCount() ?? 0,
   confirmAbandon: () => handle.current?.confirmAbandon() ?? Promise.resolve(false),
   markPublished: () => handle.current?.markPublished(),
+  setReadOnly: (readOnly) => handle.current?.setReadOnly(readOnly),
 };
 
 const container = document.getElementById("formFieldEditor");
