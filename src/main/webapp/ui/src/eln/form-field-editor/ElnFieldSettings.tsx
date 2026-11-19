@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { usableOptions } from "@/modules/common/field-editor/ruleEditing";
 import {
+  type BoundName,
   DATE_FORMATS,
   type EditorField,
   type FieldOfType,
@@ -186,25 +187,42 @@ function BoundedSettings({
   const { t } = useTranslation("workspace");
   const message = useProblemMessage();
   const isDate = field.type === "Date";
-  const formats: ReadonlyArray<{ value: string; label: string }> = isDate
+  const knownFormats: ReadonlyArray<{ value: string; label: string }> = isDate
     ? DATE_FORMATS.map((value) => ({ value, label: value }))
     : TIME_FORMATS.map((value) => ({
         value,
         label: value === "HH:mm" ? t("formFieldEditor.settings.time24Hour") : t("formFieldEditor.settings.time12Hour"),
       }));
-  const input = (name: "min" | "max" | "defaultValue", label: string) => (
-    <TextField
-      size="small"
-      type={isDate ? "date" : "time"}
-      label={label}
-      value={field[name]}
-      disabled={!editable}
-      onChange={({ target }) => onChange({ [name]: target.value })}
-      error={Boolean(problems[name])}
-      helperText={message(problems[name])}
-      slotProps={{ inputLabel: { shrink: true } }}
-    />
-  );
+  // a format from an archive import stays selectable, so the field keeps it
+  const formats = knownFormats.some(({ value }) => value === field.format)
+    ? knownFormats
+    : [...knownFormats, { value: field.format, label: field.format }];
+  const input = (name: BoundName, label: string) => {
+    const unread = field.unread[name];
+    return (
+      <TextField
+        size="small"
+        type={isDate ? "date" : "time"}
+        label={label}
+        value={field[name]}
+        disabled={!editable}
+        onChange={({ target }) => {
+          const { [name]: _replaced, ...stillUnread } = field.unread;
+          onChange({ [name]: target.value, unread: stillUnread });
+        }}
+        error={Boolean(problems[name])}
+        helperText={
+          message(problems[name]) ??
+          (field[name] === "" && unread !== undefined
+            ? t("formFieldEditor.settings.unreadValue", {
+                value: unread,
+              })
+            : undefined)
+        }
+        slotProps={{ inputLabel: { shrink: true } }}
+      />
+    );
+  };
   return (
     <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} useFlexGap sx={{ flexWrap: "wrap" }}>
       <TextField

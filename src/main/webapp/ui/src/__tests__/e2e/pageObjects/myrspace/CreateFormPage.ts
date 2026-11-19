@@ -56,6 +56,19 @@ export class CreateFormPage extends BasePage {
     return dialog;
   }
 
+  /** Publishes from the editor, saving the fields first, and keeps the form private (the dialog's defaults). */
+  async publishWithoutSharing(): Promise<void> {
+    await this.page.getByRole("button", { name: "Publish" }).click();
+    const dialog = this.page.getByRole("dialog").filter({ has: this.page.locator("#publishShareDlg") });
+    await dialog.getByRole("button", { name: "OK" }).click();
+    await this.page.getByText("PUBLISHED", { exact: true }).waitFor({ state: "visible" });
+  }
+
+  /** The overlay that blocks the page while a toolbar action runs. */
+  get pageBlocker(): Locator {
+    return this.page.locator(".blockUI.blockOverlay");
+  }
+
   /** Abandons the draft of a published form, after confirming. */
   async revert(): Promise<ManageFormsPage> {
     await this.page.getByRole("button", { name: "Revert" }).click();

@@ -41,6 +41,8 @@ export default function TextDefaultEditor({ fieldName, value, onChange, editable
         <Box
           aria-labelledby={`${id}-label`}
           role="group"
+          // it scrolls, so keyboard users must be able to reach it
+          tabIndex={0}
           sx={{ border: 1, borderColor: "divider", borderRadius: 1, px: 1.5, maxHeight: 200, overflow: "auto" }}
           // sanitised above
           dangerouslySetInnerHTML={{ __html: clean }}

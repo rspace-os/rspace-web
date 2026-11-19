@@ -314,6 +314,21 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   }
 
   @Override
+  public void unlockFormAndOriginal(Long formId, User user) {
+    if (!formDao.exists(formId)) {
+      return;
+    }
+    RSForm form = formDao.get(formId);
+    unlockForm(form, user);
+    if (form.isTemporary()) {
+      RSForm original = formDao.getOriginalFromTemporaryForm(formId);
+      if (original != null) {
+        unlockForm(original, user);
+      }
+    }
+  }
+
+  @Override
   public Set<Long> getCopiedTemporaryFieldIds(RSForm form) {
     if (form == null || form.getId() == null || !form.isTemporary()) {
       return Collections.emptySet();

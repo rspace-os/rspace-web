@@ -19,6 +19,7 @@ import { type RuleChange, type RuleEditorField, usableOptions } from "@/modules/
 import { formatList } from "@/modules/common/i18n/listFormat";
 import ElnFieldSettings from "./ElnFieldSettings";
 import {
+  adoptSavedIds,
   CREATABLE_TYPES,
   type CreatableType,
   canBeSource,
@@ -30,25 +31,29 @@ import {
   fieldProblems,
   fieldsUsingOption,
   hasOptions,
+  isNewOrChanged,
   moveField,
   NAME_MAX_LENGTH,
   newField,
   removeOption,
   renameOption,
+  savedItems,
   saveSignature,
   updateField,
 } from "./editorModel";
 import { type ElnFieldType, FormFieldsSaveError } from "./formFieldsApi";
 import { useProblemMessage } from "./useProblemMessage";
 
-/** What the legacy toolbar uses; see `form.js`. */
-export type FormFieldEditorHandle = {
-  /** Saves the fields if they changed. Rejects, leaving the editor dirty and showing why, if the save fails. */
+/** The editor's part of the toolbar handle; see `FormFieldEditorRoot` and `form.js`. */
+export type FieldEditorHandle = {
+  /**
+   * Saves the fields if they changed. Rejects, leaving the editor dirty and
+   * showing why, if the save fails. A call while a save is in flight returns
+   * that save.
+   */
   save: () => Promise<void>;
   isDirty: () => boolean;
   fieldCount: () => number;
-  /** Asks before the toolbar's Abandon discards the draft. */
-  confirmAbandon: () => Promise<boolean>;
   /** Called after the toolbar publishes a new form: its fields then change only through a new version. */
   markPublished: () => void;
 };
@@ -57,14 +62,17 @@ export type FormFieldEditorHandle = {
 export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
 export type FormFieldEditorChangeDetail = { dirty: boolean; fieldCount: number };
 
-type Status = { kind: "problems" } | { kind: "error"; messages: ReadonlyArray<string> } | null;
+type Status = { kind: "problems"; field: string } | { kind: "error"; messages: ReadonlyArray<string> } | null;
+
+/** Where focus goes after the next render: a field's name, its first invalid control, or "Add field". */
+type FocusTarget = { kind: "name" | "problem"; key: string } | { kind: "add" } | null;
 
 type FormFieldEditorProps = {
   initialFields: ReadonlyArray<EditorField>;
   /** Sends the full field list and resolves with the saved fields. */
   onSave: (fields: ReadonlyArray<EditorField>) => Promise<ReadonlyArray<EditorField>>;
   editable: boolean;
-  ref?: Ref<FormFieldEditorHandle>;
+  ref?: Ref<FieldEditorHandle>;
 };
 
 function useTypeOptions(): ReadonlyArray<FieldTypeOption<ElnFieldType>> {
@@ -101,18 +109,26 @@ export default function FormFieldEditor({
   const statusId = useId();
   const [fields, setFields] = useState<ReadonlyArray<EditorField>>(initialFields);
   const [baseline, setBaseline] = useState(() => saveSignature(initialFields));
+  const [baselineItems, setBaselineItems] = useState(() => savedItems(initialFields));
   const [status, setStatus] = useState<Status>(null);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
-  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const [focusTarget, setFocusTarget] = useState<FocusTarget>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  // one save at a time: a second toolbar action waits for the first
+  const saveInFlight = useRef<Promise<void> | null>(null);
   // once published from this page, the form's fields can only change through a new version
   const [published, setPublished] = useState(false);
   const editable = editableForm && !published;
   const listRef = useRef<HTMLDivElement>(null);
 
   const dirty = saveSignature(fields) !== baseline;
+  // Stored data that is not touched is not checked, as on the server: options and names
+  // written through the forms API may break the editor's rules without blocking other edits.
+  const problemsOf = (field: EditorField) => (isNewOrChanged(field, baselineItems) ? fieldProblems(field) : {});
+  const firstInvalid = fields.find((field) => Object.keys(problemsOf(field)).length > 0) ?? null;
   // the handle is called from legacy code at any time, so it reads the latest render
-  const latest = useRef({ fields, dirty });
-  latest.current = { fields, dirty };
+  const latest = useRef({ fields, dirty, firstInvalid });
+  latest.current = { fields, dirty, firstInvalid };
 
   const unnamed = t("common:fieldEditor.card.unnamed");
   const nameOf = (field: EditorField) => field.name || unnamed;
@@ -123,37 +139,46 @@ export default function FormFieldEditor({
     isDirty: () => latest.current.dirty,
     fieldCount: () => latest.current.fields.length,
     markPublished: () => setPublished(true),
-    confirmAbandon: () =>
-      confirm(
-        t("formFieldEditor.confirm.abandon"),
-        t("formFieldEditor.confirm.abandonMessage"),
-        t("formFieldEditor.confirm.abandonAction"),
-        t("common:actions.cancel"),
-      ),
-    save: async () => {
-      if (!latest.current.dirty) return;
-      const current = latest.current.fields;
-      if (current.some((field) => Object.keys(fieldProblems(field)).length > 0)) {
-        setStatus({ kind: "problems" });
-        throw new FormFieldsSaveError([]);
+    save: () => {
+      if (saveInFlight.current) return saveInFlight.current;
+      if (!latest.current.dirty) return Promise.resolve();
+      const invalid = latest.current.firstInvalid;
+      if (invalid) {
+        setStatus({ kind: "problems", field: nameOf(invalid) });
+        setFocusTarget({ kind: "problem", key: invalid.key });
+        return Promise.reject(new FormFieldsSaveError([]));
       }
-      try {
-        const saved = await onSave(current);
-        // the toolbar may ask again before React renders
-        latest.current = { fields: saved, dirty: false };
-        setFields(saved);
-        setBaseline(saveSignature(saved));
-        setStatus(null);
-      } catch (error) {
-        setStatus({
-          kind: "error",
-          messages:
-            error instanceof FormFieldsSaveError && error.messages.length > 0
-              ? error.messages
-              : [t("formFieldEditor.saveFailed")],
-        });
-        throw error;
-      }
+      const sent = latest.current.fields;
+      const sentSignature = saveSignature(sent);
+      const saving = (async () => {
+        try {
+          const saved = await onSave(sent);
+          const savedSignature = saveSignature(saved);
+          // edits made while the save was in flight are kept; they only gain the new fields' ids
+          const keep = (current: ReadonlyArray<EditorField>) =>
+            saveSignature(current) === sentSignature ? saved : adoptSavedIds(current, saved);
+          const next = keep(latest.current.fields);
+          // the toolbar may ask again before React renders
+          latest.current = { ...latest.current, fields: next, dirty: saveSignature(next) !== savedSignature };
+          setFields(keep);
+          setBaseline(savedSignature);
+          setBaselineItems(savedItems(saved));
+          setStatus(null);
+        } catch (error) {
+          setStatus({
+            kind: "error",
+            messages:
+              error instanceof FormFieldsSaveError && error.messages.length > 0
+                ? error.messages
+                : [t("formFieldEditor.saveFailed")],
+          });
+          throw error;
+        } finally {
+          saveInFlight.current = null;
+        }
+      })();
+      saveInFlight.current = saving;
+      return saving;
     },
   }));
 
@@ -166,10 +191,17 @@ export default function FormFieldEditor({
   }, [dirty, fields.length]);
 
   useEffect(() => {
-    if (focusKey === null) return;
-    listRef.current?.querySelector<HTMLInputElement>(`[data-field-key="${focusKey}"] input[name="name"]`)?.focus();
-    setFocusKey(null);
-  }, [focusKey]);
+    if (focusTarget === null) return;
+    if (focusTarget.kind === "add") {
+      addButtonRef.current?.focus();
+    } else {
+      const card = listRef.current?.querySelector(`[data-field-key="${focusTarget.key}"]`);
+      const name = card?.querySelector<HTMLElement>('input[name="name"]');
+      const invalid = card?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      (focusTarget.kind === "problem" ? (invalid ?? name) : name)?.focus();
+    }
+    setFocusTarget(null);
+  }, [focusTarget]);
 
   const update = (key: string, change: (field: EditorField) => EditorField) =>
     setFields((current) => updateField(current, key, change));
@@ -197,8 +229,11 @@ export default function FormFieldEditor({
         t("formFieldEditor.confirm.deleteField", { field: nameOf(field) }),
         t("common:actions.delete"),
       )
-    )
+    ) {
+      const next = fields[fields.indexOf(field) + 1];
       setFields((current) => deleteField(current, field.key));
+      setFocusTarget(next ? { kind: "name", key: next.key } : { kind: "add" });
+    }
   };
 
   const retype = async (field: EditorField, type: ElnFieldType) => {
@@ -257,6 +292,9 @@ export default function FormFieldEditor({
           <AlertTitle id={statusId}>
             {status.kind === "problems" ? t("formFieldEditor.problemsTitle") : t("formFieldEditor.errorTitle")}
           </AlertTitle>
+          {status.kind === "problems" && (
+            <Typography variant="body2">{t("formFieldEditor.firstProblem", { field: status.field })}</Typography>
+          )}
           {status.kind === "error" && (
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
               {status.messages.map((message) => (
@@ -275,7 +313,7 @@ export default function FormFieldEditor({
       )}
       <Stack spacing={2} ref={listRef}>
         {fields.map((field, index) => {
-          const problems = fieldProblems(field);
+          const problems = problemsOf(field);
           const source = field.rule ? (fields.find((other) => other.key === field.rule?.sourceFieldKey) ?? null) : null;
           const typeOptions = creatableOptions.some(({ value }) => value === field.type)
             ? creatableOptions
@@ -348,6 +386,7 @@ export default function FormFieldEditor({
       {editable && (
         <Box>
           <Button
+            ref={addButtonRef}
             variant="outlined"
             startIcon={<AddIcon />}
             aria-haspopup="menu"
@@ -364,7 +403,7 @@ export default function FormFieldEditor({
                   setAddMenuAnchor(null);
                   const field = newField(value as CreatableType);
                   setFields((current) => [...current, field]);
-                  setFocusKey(field.key);
+                  setFocusTarget({ kind: "name", key: field.key });
                 }}
               >
                 {label}

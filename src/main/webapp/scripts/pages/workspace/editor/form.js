@@ -3,6 +3,27 @@ var LISTFORMS_BY_MODFICATIONDATE_DESC = "/workspace/editor/form/list?orderBy=mod
 /* Set before the page navigates on purpose, so leaving does not ask about unsaved fields. */
 var leavingFormEditor = false;
 
+/*
+ * Set while a Save or Update has saved the fields but not yet the form, and kept if the form step
+ * fails: the fields are no longer dirty, but leaving would still lose the save the user asked for.
+ */
+var formSaveIncomplete = false;
+
+/* One toolbar action (Save, Update, Publish, Revert) at a time; a second click while one runs is ignored. */
+var toolbarActionRunning = false;
+
+function startToolbarAction() {
+  if (toolbarActionRunning) {
+    return false;
+  }
+  toolbarActionRunning = true;
+  return true;
+}
+
+function endToolbarAction() {
+  toolbarActionRunning = false;
+}
+
 function initChangeFormIconDialog() {
   $('#changeFormIconDialog').dialog({
     title: RS.msg("legacyjs.workspace.form.changeIconDialogTitle"),
@@ -139,7 +160,8 @@ $(document).ready(function () {
     });
 
     $(window).on('beforeunload', function (e) {
-      if (!leavingFormEditor && window.formFieldEditor && window.formFieldEditor.isDirty()) {
+      var fieldsDirty = window.formFieldEditor && window.formFieldEditor.isDirty();
+      if (!leavingFormEditor && (formSaveIncomplete || fieldsDirty)) {
         var message = RS.msg("legacyjs.workspace.documentEdit.exitWithoutSavingConfirm");
         e.preventDefault();
         e.originalEvent.returnValue = message;
@@ -150,6 +172,14 @@ $(document).ready(function () {
     // release the edit lock whenever the page is left, however it is left
     $(window).on('pagehide', function () {
       unlockform();
+    });
+
+    // A page restored from the back-forward cache released its lock when it was left, so load it
+    // again: that takes the lock, or shows that someone else is editing.
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        window.location.reload();
+      }
     });
   }
 });
@@ -195,15 +225,23 @@ function setUpPublishButtons() {
       templateId: recordId
     };
     if (publishing) {
+      if (!startToolbarAction()) {
+        return;
+      }
+      // the page is blocked while the fields save, so no edit made meanwhile can be overwritten
+      RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
       saveFieldEditor(true).then(function (saved) {
+        RS.unblockPage();
         if (!saved) {
+          endToolbarAction();
           return;
         }
         //get the access control dialog
-        $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
+        var jqxhr = $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
           $('#publishShareDlgContent').html(data);
           $('#publishShareDlg').dialog('open');
         });
+        jqxhr.always(endToolbarAction);
       });
     } else {
       // unpublishing
@@ -243,10 +281,15 @@ function getValidationErrorString(errorList) {
  * Saves the fields, then the form, and goes to the list of forms
  */
 function saveForm() {
+  if (!startToolbarAction()) {
+    return;
+  }
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
+  formSaveIncomplete = true;
   saveFieldEditor(false).then(function (saved) {
     if (!saved) {
       RS.unblockPage();
+      endToolbarAction();
       return;
     }
     saveFormTag().always(function () {
@@ -254,19 +297,22 @@ function saveForm() {
         templateId: recordId
       }, function (success) {
         if (success.data !== null) {
+          formSaveIncomplete = false;
           leavingFormEditor = true;
           RS.unblockPage();
           window.location.assign(createURL(LISTFORMS_BY_MODFICATIONDATE_DESC));
-        } else if (success.errorMsg !== null) {
-          apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(success.errorMsg)));
-          RS.unblockPage();
-        } else {
-          RS.unblockPage();
+          return;
         }
+        if (success.errorMsg !== null) {
+          apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(success.errorMsg)));
+        }
+        RS.unblockPage();
+        endToolbarAction();
       }, "json");
 
       jqxhr.fail(function () {
         RS.unblockPage();
+        endToolbarAction();
         RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
       });
     });
@@ -277,10 +323,15 @@ function saveForm() {
  * Saves the fields if they changed, then makes the draft the new version of the form
  */
 function updateForm() {
+  if (!startToolbarAction()) {
+    return;
+  }
   RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
+  formSaveIncomplete = true;
   saveFieldEditor(true).then(function (saved) {
     if (!saved) {
       RS.unblockPage();
+      endToolbarAction();
       return;
     }
     var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
@@ -288,18 +339,23 @@ function updateForm() {
     }, function (data) {
       RS.unblockPage();
       if (data.data !== null) {
+        formSaveIncomplete = false;
         leavingFormEditor = true;
         $('#noMessages').html(RS.msg("legacyjs.workspace.form.formUpdatedMessage"));
         setTimeout(function () {
           window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
         }, 1000);
-      } else if (data.errorMsg !== null) {
+        return;
+      }
+      if (data.errorMsg !== null) {
         apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
+      endToolbarAction();
     }, "json");
 
     jqxhr.fail(function () {
       RS.unblockPage();
+      endToolbarAction();
       RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
     });
   });
@@ -309,9 +365,13 @@ function updateForm() {
  * Asks, then discards the draft and every change made since the form was last published
  */
 function abandonUpdateForm() {
-  var confirmed = window.formFieldEditor ? window.formFieldEditor.confirmAbandon() : Promise.resolve(true);
-  confirmed.then(function (abandon) {
+  // Without the editor's bundle there is no way to ask, and the draft is never discarded unasked.
+  if (!window.formFieldEditor || !startToolbarAction()) {
+    return;
+  }
+  window.formFieldEditor.confirmAbandon().then(function (abandon) {
     if (!abandon) {
+      endToolbarAction();
       return;
     }
     RS.blockPage(RS.msg("legacyjs.workspace.form.abandoningFormUpdatesBlock"));
@@ -322,13 +382,17 @@ function abandonUpdateForm() {
       if (data.data !== null) {
         leavingFormEditor = true;
         window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
-      } else if (data.errorMsg !== null) {
+        return;
+      }
+      if (data.errorMsg !== null) {
         apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
+      endToolbarAction();
     }, "json");
 
     jqxhr.fail(function () {
       RS.unblockPage();
+      endToolbarAction();
       RS.ajaxFailed(RS.msg("legacyjs.workspace.form.revertingFormAction"), true, jqxhr);
     });
   });

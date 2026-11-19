@@ -49,11 +49,19 @@ type FieldBase = {
   readonly canDelete: boolean;
 };
 
+export type BoundName = "min" | "max" | "defaultValue";
+
 type Bounded = {
   /** Empty when unset; dates as `yyyy-MM-dd` and times as `HH:mm`, whatever the display format. */
   readonly min: string;
   readonly max: string;
   readonly defaultValue: string;
+  /**
+   * Stored values the editor could not read (another locale's month names, or
+   * a format from an archive import). They are sent back unchanged until the
+   * author enters a new value, so a save never clears them silently.
+   */
+  readonly unread: Readonly<Partial<Record<BoundName, string>>>;
 };
 
 export type FieldSettings =
@@ -106,9 +114,9 @@ function defaultSettings(type: CreatableType, previous?: EditorField): FieldSett
     case "Choice":
       return { type, options, defaults: [], multiple: false };
     case "Date":
-      return { type, format: "yyyy-MM-dd", min: "", max: "", defaultValue: "" };
+      return { type, format: "yyyy-MM-dd", min: "", max: "", defaultValue: "", unread: {} };
     case "Time":
-      return { type, format: "HH:mm", min: "", max: "", defaultValue: "" };
+      return { type, format: "HH:mm", min: "", max: "", defaultValue: "", unread: {} };
   }
 }
 
@@ -127,10 +135,38 @@ export function newField(type: CreatableType): EditorField {
 
 /* Dates and times: the server writes and reads them in the field's display format. */
 
-function convert(value: string, from: string, to: string): string {
+/** The value in another format, or null if it cannot be read (date-fns throws on tokens it does not know). */
+function convert(value: string, from: string, to: string): string | null {
   if (value === "") return "";
-  const parsed = parseDate(value, from, new Date(2000, 0, 1));
-  return isValid(parsed) ? formatDate(parsed, to) : "";
+  try {
+    const parsed = parseDate(value, from, new Date(2000, 0, 1));
+    return isValid(parsed) ? formatDate(parsed, to) : null;
+  } catch {
+    return null;
+  }
+}
+
+const BOUNDS: ReadonlyArray<BoundName> = ["min", "max", "defaultValue"];
+
+/** Server bounds in the editor's ISO form, keeping any the editor cannot read. */
+function readBounds(stored: Record<BoundName, string>, format: string, iso: string): Bounded {
+  const bounded = { min: "", max: "", defaultValue: "", unread: {} as Partial<Record<BoundName, string>> };
+  for (const bound of BOUNDS) {
+    const converted = convert(stored[bound], format, iso);
+    if (converted === null) bounded.unread[bound] = stored[bound];
+    else bounded[bound] = converted;
+  }
+  return bounded;
+}
+
+/** Bounds in the field's format; an unread value goes back as it came while its input is empty. */
+function writeBounds(
+  field: Bounded & { format: string },
+  iso: string,
+): { minValue: string; maxValue: string; defaultValue: string } {
+  const write = (bound: BoundName) =>
+    (field[bound] === "" ? field.unread[bound] : convert(field[bound], iso, field.format)) ?? field.unread[bound] ?? "";
+  return { minValue: write("min"), maxValue: write("max"), defaultValue: write("defaultValue") };
 }
 
 function wireRule(rule: unknown): FieldDisplayRule | null {
@@ -211,9 +247,7 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
         mandatory: s.mandatory,
         type: "Date",
         format,
-        min: convert(s.minValue, format, ISO_DATE),
-        max: convert(s.maxValue, format, ISO_DATE),
-        defaultValue: convert(s.defaultValue, format, ISO_DATE),
+        ...readBounds({ min: s.minValue, max: s.maxValue, defaultValue: s.defaultValue }, format, ISO_DATE),
       };
     }
     case "Time": {
@@ -225,9 +259,7 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
         mandatory: s.mandatory,
         type: "Time",
         format,
-        min: convert(s.minValue, format, ISO_TIME),
-        max: convert(s.maxValue, format, ISO_TIME),
-        defaultValue: convert(s.defaultValue, format, ISO_TIME),
+        ...readBounds({ min: s.minValue, max: s.maxValue, defaultValue: s.defaultValue }, format, ISO_TIME),
       };
     }
     case "Uri":
@@ -279,17 +311,13 @@ function source(field: EditorField): Record<string, string | boolean> {
       return {
         ...common,
         dateFormat: field.format,
-        minValue: convert(field.min, ISO_DATE, field.format),
-        maxValue: convert(field.max, ISO_DATE, field.format),
-        defaultValue: convert(field.defaultValue, ISO_DATE, field.format),
+        ...writeBounds(field, ISO_DATE),
       };
     case "Time":
       return {
         ...common,
         timeFormat: field.format,
-        minValue: convert(field.min, ISO_TIME, field.format),
-        maxValue: convert(field.max, ISO_TIME, field.format),
-        defaultValue: convert(field.defaultValue, ISO_TIME, field.format),
+        ...writeBounds(field, ISO_TIME),
       };
     case "Uri":
     case "Reference":
@@ -313,6 +341,25 @@ export function toSaveItem(field: EditorField): FormFieldSaveItem {
       : null,
     source: source(field),
   };
+}
+
+/** Each field's save item by key, as last saved, to tell which fields the author has changed since. */
+export const savedItems = (fields: ReadonlyArray<EditorField>): ReadonlyMap<string, string> =>
+  new Map(fields.map((field) => [field.key, JSON.stringify(toSaveItem(field))]));
+
+/** Whether a field is new or differs from its saved version; only those are checked before a save. */
+export const isNewOrChanged = (field: EditorField, saved: ReadonlyMap<string, string>): boolean =>
+  field.id === null || saved.get(field.key) !== JSON.stringify(toSaveItem(field));
+
+/** The server's ids for fields saved while the author kept editing; the newer edits stay. */
+export function adoptSavedIds(
+  current: ReadonlyArray<EditorField>,
+  saved: ReadonlyArray<EditorField>,
+): Array<EditorField> {
+  return current.map((field) => {
+    const match = saved.find(({ key }) => key === field.key);
+    return match ? { ...field, id: match.id, canDelete: match.canDelete } : field;
+  });
 }
 
 /** What a save would send; two equal signatures mean nothing to save. */

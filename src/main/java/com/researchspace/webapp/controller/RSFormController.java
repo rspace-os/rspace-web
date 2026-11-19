@@ -129,8 +129,10 @@ public class RSFormController extends BaseController {
   }
 
   /**
-   * @param formId
-   * @return
+   * Releases the edit lock when the form editor page is left, on the form the page shows and, for a
+   * draft, on its original, where a first edit of a published form holds the lock.
+   *
+   * @param formId the form the editor page shows
    */
   @ResponseBody
   @PostMapping("/unlockform")
@@ -138,7 +140,7 @@ public class RSFormController extends BaseController {
       @RequestParam("id") long formId, Principal principal) {
 
     User user = userManager.getUserByUsername(principal.getName());
-    formManager.unlockForm(formId, user);
+    formManager.unlockFormAndOriginal(formId, user);
     return new AjaxReturnObject<Boolean>(true, null);
   }
 

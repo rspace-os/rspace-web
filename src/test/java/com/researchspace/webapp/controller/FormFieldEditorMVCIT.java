@@ -138,6 +138,25 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void leavingTheEditorOnAFirstEditReleasesTheLockOnTheOriginal() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+
+    // the page's unlock beacon sends the id it shows, the draft's
+    formController.unlockForm(draft.getId(), principal);
+
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+    User other = createAndSaveUser(getRandomAlphabeticString("other"));
+    UserSessionTracker active = new UserSessionTracker();
+    active.addUser(user.getUsername(), new MockHttpSession());
+    assertEquals(
+        EditStatus.EDIT_MODE,
+        recordTracker.attemptToEdit(form.getId(), other, active, () -> "other session"));
+    recordTracker.unlockRecord(form, other, () -> "other session");
+  }
+
+  @Test
   public void updateOfAResumedDraftReleasesTheLockOnTheDraft() throws Exception {
     RSForm form = publishedForm();
     RSForm draft = openInEditor(form);
