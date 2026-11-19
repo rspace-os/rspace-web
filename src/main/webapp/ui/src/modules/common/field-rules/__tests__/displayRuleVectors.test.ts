@@ -14,6 +14,7 @@ import {
 } from "../displayRule";
 import { parseElnChoiceValues } from "../elnChoiceValues";
 import { displayRuleVisibility } from "../evaluateDisplayRules";
+import { canonicalRuleNumber } from "../ruleValues";
 import {
   DisplayRuleErrorSchema,
   MAX_DISPLAY_RULE_JSON_LENGTH,
@@ -89,6 +90,10 @@ const VectorsSchema = v.object({
     ),
   }),
   elnChoice: v.array(v.object({ data: v.string(), expected: v.array(v.string()) })),
+  canonicalNumbers: v.object({
+    description: v.string(),
+    cases: v.array(v.object({ value: v.string(), canonical: v.nullable(v.string()) })),
+  }),
 });
 
 const vectors = v.parse(VectorsSchema, JSON.parse(fs.readFileSync(VECTORS_PATH, "utf8")));
@@ -144,6 +149,10 @@ describe("display rule vectors shared with Java", () => {
 
   test.each(vectors.elnChoice)("ELN choice data '$data'", ({ data, expected }) => {
     expect(parseElnChoiceValues(data)).toEqual(expected);
+  });
+
+  test.each(vectors.canonicalNumbers.cases)("canonical number of '$value'", ({ value, canonical }) => {
+    expect(canonicalRuleNumber(value)).toBe(canonical);
   });
 });
 

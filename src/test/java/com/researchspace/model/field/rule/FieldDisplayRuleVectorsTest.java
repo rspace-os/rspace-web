@@ -163,6 +163,21 @@ class FieldDisplayRuleVectorsTest {
   }
 
   @TestFactory
+  Stream<DynamicTest> canonicalNumbers() {
+    return cases("canonicalNumbers", "cases")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    "'" + vector.get("value").asText() + "'",
+                    () ->
+                        assertEquals(
+                            vector.get("canonical").isNull()
+                                ? null
+                                : vector.get("canonical").asText(),
+                            RuleValues.canonicalNumber(vector.get("value").asText()))));
+  }
+
+  @TestFactory
   Stream<DynamicTest> elnChoiceData() {
     return cases("elnChoice")
         .map(
