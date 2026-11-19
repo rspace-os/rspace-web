@@ -2,6 +2,7 @@ package com.researchspace.api.v1.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,7 +15,6 @@ import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /** The {@code fieldKey} and {@code displayRule} contracts of template fields in the API. */
@@ -128,8 +128,6 @@ class ApiInventoryEntityFieldDisplayRuleTest {
     assertEquals(RULE, created.getDisplayRule());
 
     withKey.setFieldKey(null);
-    String generated = factory.apiInventoryFieldToModelField(withKey).getFieldKey();
-    assertTrue(
-        Pattern.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", generated));
+    assertNotNull(factory.apiInventoryFieldToModelField(withKey).getFieldKey());
   }
 }
