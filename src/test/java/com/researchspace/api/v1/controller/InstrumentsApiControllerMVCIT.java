@@ -789,4 +789,101 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
         .as("expected the cleared value to stay cleared, got: " + landingPageOf(updated))
         .isBlank();
   }
+
+  /**
+   * The client sends {@code ""} for a blank field. Over a mandatory Landing page that is already
+   * blank, with no display rule, that is no change, so it must not block an edit to another field.
+   */
+  @Test
+  public void aBlankMandatoryLandingPageDoesNotBlockEditingAnotherField() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument created =
+        postInstrumentFromTemplate(
+            anyUser, apiKey, postMandatoryLandingPageTemplate(anyUser, apiKey));
+    assertThat(landingPageOf(created)).isBlank();
+
+    String updateJson =
+        "{ \"fields\": [ { \"id\": "
+            + fieldIdOf(created, "Landing page")
+            + ", \"content\": \"\" }, { \"id\": "
+            + fieldIdOf(created, "Notes")
+            + ", \"content\": \"edited\" } ] }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + created.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+
+    assertEquals("edited", contentOf(updated, "Notes"));
+    assertThat(landingPageOf(updated)).isBlank();
+  }
+
+  @Test
+  public void clearingAFilledMandatoryLandingPageIsRejected() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiInstrument created =
+        postInstrumentFromTemplate(
+            anyUser, apiKey, postMandatoryLandingPageTemplate(anyUser, apiKey));
+    Long landingPageId = fieldIdOf(created, "Landing page");
+    String fillJson =
+        "{ \"fields\": [ { \"id\": "
+            + landingPageId
+            + ", \"content\": \"https://lab.example.org/mine\" } ] }";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/instruments/" + created.getId(), anyUser, fillJson))
+        .andExpect(status().isOk());
+
+    String clearJson = "{ \"fields\": [ { \"id\": " + landingPageId + ", \"content\": \"\" } ] }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + created.getId(), anyUser, clearJson))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+
+    assertApiErrorContainsMessage(
+        getErrorFromJsonResponseBody(result, ApiError.class), "Field [Landing page] is mandatory");
+  }
+
+  private Long postMandatoryLandingPageTemplate(User anyUser, String apiKey) throws Exception {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName(getRandomName(10));
+    ApiInventoryEntityField landingPage =
+        createBasicApiSampleField("Landing page", ApiFieldType.URI, "");
+    landingPage.setMandatory(true);
+    templatePost.getFields().add(landingPage);
+    templatePost.getFields().add(createBasicApiSampleField("Notes", ApiFieldType.TEXT, "original"));
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/instrumentTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return mvcUtils.getFromJsonResponseBody(result, ApiInstrumentTemplate.class).getId();
+  }
+
+  private Long fieldIdOf(ApiInstrument instrument, String fieldName) {
+    return instrument.getFields().stream()
+        .filter(f -> fieldName.equals(f.getName()))
+        .map(ApiInventoryEntityField::getId)
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private String contentOf(ApiInstrument instrument, String fieldName) {
+    return instrument.getFields().stream()
+        .filter(f -> fieldName.equals(f.getName()))
+        .findFirst()
+        .map(ApiInventoryEntityField::getContent)
+        .orElse(null);
+  }
 }
