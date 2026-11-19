@@ -342,6 +342,37 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
+  void updateToLatestLeavesTheRuleAndMandatoryOfAFieldRemovedWithItsTemplateField() {
+    Sample sample = template.copyFromTemplate(user);
+    InventoryEntityField samplePermit = sample.getActiveFields().get(1);
+    template.deleteSampleField(permit, true);
+    template.increaseVersion();
+
+    sample.updateToLatestTemplateVersion();
+
+    assertTrue(samplePermit.isDeleted());
+    assertEquals(showWhen(GMO_KEY, "Yes"), samplePermit.getDisplayRule());
+    assertTrue(samplePermit.isMandatory());
+  }
+
+  @Test
+  void updateToLatestKeepsMandatoryOnAKeptFieldThatHadNoRule() {
+    InventoryStringField notes = string(3L, "Notes", NOTES_KEY);
+    notes.setMandatory(true);
+    template.addSampleField(notes);
+    Sample sample = template.copyFromTemplate(user);
+    template.deleteSampleField(notes, false);
+    template.increaseVersion();
+
+    sample.updateToLatestTemplateVersion();
+
+    InventoryEntityField keptNotes = sample.getActiveFields().get(2);
+    assertEquals("Notes", keptNotes.getName());
+    assertNull(keptNotes.getDisplayRule());
+    assertTrue(keptNotes.isMandatory());
+  }
+
+  @Test
   void safetyNetGivesTemplateFieldsAKeyButNotRecordFields() {
     InventoryStringField templateField = string(3L, "No key", null);
     template.addSampleField(templateField);
