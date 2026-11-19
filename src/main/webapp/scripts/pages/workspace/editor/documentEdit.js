@@ -370,6 +370,10 @@ function _updateFields(fields) {
           }
         );
       });
+      // choice data as display rules read it, options no longer offered included
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
+      }
       $("#choiceText_" + field.id).text(field.choiceOptionSelectedAsString);
       return;
     }
@@ -633,7 +637,8 @@ function _autosavePickList($field) {
   const pickListSelected = $field
       .find("option[class='radioLi " + fieldId + "' ]:selected")
       .val();
-  return _postAutosave(pickListSelected, $field);
+  // the empty placeholder is no answer: send empty data, as jQuery drops an undefined dataValue
+  return _postAutosave(pickListSelected === undefined ? "" : pickListSelected, $field);
 }
 
 function _autosaveChoice($field) {
