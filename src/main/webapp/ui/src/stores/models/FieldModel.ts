@@ -14,11 +14,13 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { UnparsableString } from "../../util/error";
+import { isBlankToServer } from "../../util/StringUtils";
 import type { URL as URLType } from "../../util/types";
 import type { Attachment } from "../definitions/Attachment";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { Field, FieldLink, FieldType, Option, OptionValue } from "../definitions/Field";
 import type { Sample } from "../definitions/Sample";
+import { truncateIsoTimestamp } from "../definitions/Units";
 import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
 import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
 import { sourceKindOfType } from "./fieldVisibility";
@@ -386,8 +388,11 @@ export default class FieldModel implements Field {
   validate(): ValidationResult {
     const condition = this.validateDisplayCondition();
     if (!condition.isOk) return condition;
-    // a hidden field keeps its value but is not checked (RPD-339)
-    if (this.owner.isFieldHidden?.(this)) return IsValid();
+    // a hidden field keeps its value, and the server still checks a changed value's format (RPD-339)
+    if (this.owner.isFieldHidden?.(this)) {
+      if (!this.error) return IsValid();
+      return IsInvalid(i18n.t("inventory:fields.hiddenFieldInvalid", { field: this.name }));
+    }
     if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");
     if (this.name.length > 50) return IsInvalid("Names for custom fields cannot exceed 50 characters.");
     if (this.type === "radio") {
@@ -410,10 +415,23 @@ export default class FieldModel implements Field {
     return IsValid();
   }
 
+  /**
+   * Whether the field holds a value a mandatory field accepts, as the server's
+   * `isValidValueForMandatoryField` reads it: text that is not blank
+   * (`InventoryEntityField`), and for a link a Filestore target or a Global ID
+   * that is not blank, with a relation type (`InventoryLinkField`).
+   */
   get hasContent(): boolean {
     if (hasOptions(this.type)) return Boolean(this.selectedOptions?.length);
-    if (this.type === "number") return this.content !== "";
-    if (this.type === "link") return Boolean(this.link?.targetGlobalId);
+    // a number stored blank parses to NaN, and blank is no value to the server
+    if (this.type === "number") return this.content !== "" && !Number.isNaN(this.content);
+    if (this.type === "link") {
+      const link = this.link;
+      if (!link) return false;
+      const hasTarget = Boolean(link.filestoreTarget) || !isBlankToServer(link.targetGlobalId ?? "");
+      return hasTarget && !isBlankToServer(link.relationType ?? "");
+    }
+    if (typeof this.content === "string") return !isBlankToServer(this.content);
     return Boolean(this.content);
   }
 
@@ -475,6 +493,8 @@ export default class FieldModel implements Field {
         ret.content = ret.content ?? "";
         break;
       case "date":
+        // a date the picker could not read is held as an invalid Date, which is never sent
+        if (this.content instanceof Date) ret.content = truncateIsoTimestamp(this.content, "date").orElse("");
         ret.content = ret.content ?? "";
         break;
     }

@@ -19,7 +19,11 @@ export type DateFieldArgs = {
   alert?: React.ReactNode;
   disabled?: boolean;
   noValueLabel?: string | null;
-  onChange?: (event: { target: { value: Date | null } }) => void;
+  /**
+   * `value` is null when the picker is empty. `valid` is false while it holds
+   * an incomplete or invalid date; limits such as `minDate` are not checked.
+   */
+  onChange?: (event: { target: { value: Date | null; valid: boolean } }) => void;
   minDate?: Date;
   maxDate?: Date;
   disableFuture?: boolean;
@@ -54,7 +58,7 @@ function DateField({
 }: DateFieldArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const parsedValue = parseDateFieldValue(value);
-  const error = Boolean(value && !parsedValue);
+  const error = Boolean(value) && !(parsedValue && isValid(parsedValue));
   const textFieldSlotProps = {
     variant,
     error,
@@ -80,7 +84,7 @@ function DateField({
           label={label}
           value={parsedValue}
           onChange={(newValue) => {
-            onChange?.({ target: { value: newValue } });
+            onChange?.({ target: { value: newValue, valid: newValue === null || isValid(newValue) } });
           }}
           format={DATE_FORMAT}
           slotProps={{
@@ -102,8 +106,9 @@ function parseDateFieldValue(value: string | Date | null): Date | null {
     return null;
   }
 
+  // an invalid date goes back to the picker as it published it, so that clearing it is still a change
   if (value instanceof Date) {
-    return isValid(value) ? value : null;
+    return value;
   }
 
   const parsedIsoDate = parseISO(value);
