@@ -27,6 +27,8 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.util.List;
 import java.util.UUID;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,7 +119,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     JsonNode reread = getFields(draft.getId());
     assertEquals(saved.get("data"), reread.get("data"));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
-    formController.unlockForm(form.getId(), null, principal);
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
   }
 
   @Test
@@ -126,7 +128,8 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm draft = openInEditor(form);
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
 
-    Long newVersionId = formController.updateForm(draft.getId(), null, principal).getData();
+    Long newVersionId =
+        formController.updateForm(draft.getId(), pageLockToken(), principal).getData();
 
     assertEquals(draft.getId(), newVersionId);
     assertTrue(recordTracker.isEditing(form).isEmpty());
@@ -192,13 +195,91 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm form = publishedForm();
     RSForm draft = openInEditor(form);
     String token = pageLockToken();
-    String editingSession = SessionAttributeUtils.getSessionId();
+    Subject anotherSession = new Subject.Builder().buildSubject();
+    anotherSession.login(new UsernamePasswordToken(user.getUsername(), TESTPASSWD));
 
-    logoutAndLoginAs(user);
-    formController.unlockForm(draft.getId(), token, principal);
+    anotherSession.execute(() -> formController.unlockForm(draft.getId(), token, principal));
+    anotherSession.logout();
 
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
-    recordTracker.unlockRecord(form, user, () -> editingSession);
+    // the token was not used up: it still releases the lock from the editing session
+    formController.unlockForm(draft.getId(), token, principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  @Test
+  public void savingInOnePageKeepsAnotherPagesLockInTheSameSession() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String firstEditPage = pageLockToken();
+    formController.editForm(model, principal, draft.getId());
+    String resumedDraftPage = pageLockToken();
+
+    formController.saveForm(draft.getId(), firstEditPage, principal);
+    formController.unlockForm(draft.getId(), firstEditPage, principal);
+
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(draft));
+    formController.unlockForm(draft.getId(), resumedDraftPage, principal);
+    assertTrue(recordTracker.isEditing(draft).isEmpty());
+  }
+
+  @Test
+  public void updatingInOnePageKeepsAnotherPagesLockInTheSameSession() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String firstEditPage = pageLockToken();
+    formController.editForm(model, principal, draft.getId());
+    String resumedDraftPage = pageLockToken();
+
+    formController.updateForm(draft.getId(), firstEditPage, principal);
+    formController.unlockForm(draft.getId(), firstEditPage, principal);
+
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(draft));
+    formController.unlockForm(draft.getId(), resumedDraftPage, principal);
+    assertTrue(recordTracker.isEditing(draft).isEmpty());
+  }
+
+  @Test
+  public void releasesWithoutATokenOnlyReleaseLocksTakenWithoutOne() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String page = pageLockToken();
+
+    formController.unlockForm(form.getId(), null, principal);
+    formController.unlockForm(form.getId(), null, principal);
+
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
+    // a lock taken without a token is still released by id, and the page's lock stays
+    formMgr.getForEditing(form.getId(), user, anySessionTracker());
+    formController.unlockForm(form.getId(), null, principal);
+    assertEquals(1, editCount(form));
+    formController.unlockForm(draft.getId(), page, principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  @Test
+  public void theEndOfASessionClearsItsPagesHolds() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String pageBeforeTheEnd = pageLockToken();
+
+    formMgr.removeFromEditorTracker(SessionAttributeUtils.getSessionId());
+
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+    // the old hold is gone, so its token cannot release a lock taken later in the session
+    formController.editForm(model, principal, form.getId());
+    String nextPage = pageLockToken();
+    formController.unlockForm(draft.getId(), pageBeforeTheEnd, principal);
+    assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, anotherUserAttemptsToEdit(form));
+    formController.unlockForm(draft.getId(), nextPage, principal);
+    assertTrue(recordTracker.isEditing(form).isEmpty());
+  }
+
+  private int editCount(RSForm form) {
+    return recordTracker.getEditCount(
+        form.getId(), user.getUsername(), SessionAttributeUtils.getSessionId());
   }
 
   /** What another user, in another session, gets on trying to edit the form. */
@@ -223,12 +304,12 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
   public void updateOfAResumedDraftReleasesTheLockOnTheDraft() throws Exception {
     RSForm form = publishedForm();
     RSForm draft = openInEditor(form);
-    formController.unlockForm(form.getId(), null, principal);
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
     // resuming opens the draft's own id
     formController.editForm(model, principal, draft.getId());
     assertEquals(user.getUsername(), recordTracker.isEditing(draft).orElse(null));
 
-    formController.updateForm(draft.getId(), null, principal);
+    formController.updateForm(draft.getId(), pageLockToken(), principal);
 
     assertTrue(recordTracker.isEditing(draft).isEmpty());
   }
@@ -248,7 +329,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     assertEquals(before.get("data"), getFields(draft.getId()).get("data"));
     assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
-    formController.unlockForm(form.getId(), null, principal);
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
   }
 
   @Test
@@ -278,7 +359,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
         .contains("Field #3 in the list is empty");
 
     assertEquals(read.get("data"), getFields(draft.getId()).get("data"));
-    formController.unlockForm(form.getId(), null, principal);
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
   }
 
   private RSForm openInEditor(RSForm form) throws Exception {

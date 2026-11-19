@@ -119,15 +119,32 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   // extension for change icon
   RSForm getForEditing(long id, User user, UserSessionTracker activeUsers, long iconId);
 
+  /**
+   * Releases one of the user's edit-lock acquisitions on the form, in the current session, by id.
+   * Acquisitions held by a form editor page's token (see {@link #registerEditLockHolder}) are left
+   * alone, so this can only release a lock taken without a token.
+   */
   void unlockForm(RSForm form, User user);
 
+  /** As {@link #unlockForm(RSForm, User)}, for a form id; nothing happens for an unknown id. */
   void unlockForm(Long formId, User user);
+
+  /**
+   * Saves the form for a form editor page and releases only that page's edit lock, given its token.
+   * With a blank token this is {@link #save}, which releases a lock by id.
+   *
+   * @param form the form to save
+   * @param lockToken the token from {@link #registerEditLockHolder}, or blank
+   * @param user the user saving, in the current session
+   * @return the saved form
+   */
+  RSForm saveAndReleaseEditLock(RSForm form, String lockToken, User user);
 
   /**
    * Records that the form editor page now loading holds the edit lock it has just acquired on
    * {@code lockedFormId} (the id in its edit URL: the original on a first edit of a published form,
-   * the draft when editing resumes), and returns a token for that page. The page hands the token
-   * back to release exactly that acquisition, at most once.
+   * the draft when editing resumes), and returns a token for that page. The hold lasts until the
+   * page releases it with {@link #releaseEditLock}, or until the session ends.
    *
    * @param lockedFormId the form whose lock the page acquired
    * @param user the user editing, in the current session
@@ -136,17 +153,16 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   String registerEditLockHolder(long lockedFormId, User user);
 
   /**
-   * Releases the edit lock that the page holding {@code token} acquired. Nothing happens for a
-   * blank, unknown or already used token, or when the caller is not the user and session the token
-   * was issued to, so a stale page (an old tab, or a page left before a reload or a back-forward
-   * restore) can never release another page's lock.
+   * Releases the edit lock that the page holding {@code token} acquired, at most once. Nothing
+   * happens for a blank, unknown or already used token, or when the caller is not the user and
+   * session the token was issued to, so a stale page (an old tab, or a page left before a reload or
+   * a back-forward restore) can never release another page's lock.
    *
    * @param token the token from {@link #registerEditLockHolder}
    * @param user the user leaving the editor
-   * @param alreadyReleased forms whose lock the caller has just released by id (Save and Update
-   *     do); for those the token is only used up
+   * @return whether a lock was released
    */
-  void releaseEditLock(String token, User user, Set<Long> alreadyReleased);
+  boolean releaseEditLock(String token, User user);
 
   /**
    * Gets the IDs of fields on a temporary form that were copied from the original form.
@@ -172,6 +188,10 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    */
   RSForm saveFormTag(Long recordId, String tagtext);
 
+  /**
+   * Releases every edit lock taken in a session, and its form editor pages' holds, when the session
+   * ends.
+   */
   void removeFromEditorTracker(String sessionId);
 
   /**

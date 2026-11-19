@@ -1,7 +1,5 @@
 package com.researchspace.service.impl;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
@@ -47,7 +45,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -108,7 +106,17 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @Override
   public RSForm save(RSForm form, User user) {
     form = super.save(form, user);
-    formTracker.unlockRecord(form, user, SessionAttributeUtils::getSessionId);
+    unlockUnlessHeldByToken(form, user);
+    return form;
+  }
+
+  @Override
+  public RSForm saveAndReleaseEditLock(RSForm form, String lockToken, User user) {
+    if (StringUtils.isBlank(lockToken)) {
+      return save(form, user);
+    }
+    form = super.save(form, user);
+    releaseEditLock(lockToken, user);
     return form;
   }
 
@@ -308,13 +316,13 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   @Override
   public void unlockForm(RSForm form, User user) {
-    formTracker.unlockRecord(form, user, SessionAttributeUtils::getSessionId);
+    unlockUnlessHeldByToken(form, user);
   }
 
   @Override
   public void unlockForm(Long formId, User user) {
     if (formDao.exists(formId)) {
-      formTracker.unlockRecord(formDao.get(formId), user, SessionAttributeUtils::getSessionId);
+      unlockUnlessHeldByToken(formDao.get(formId), user);
     }
   }
 
@@ -322,39 +330,63 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   private record EditLockHold(long formId, String username, String sessionId) {}
 
   /**
-   * Holds by page token. Pages normally release their hold when they are left; entries a page never
-   * releases (a crashed browser) expire, and the lock itself goes when the session ends.
+   * Holds by page token. A hold lasts as long as the acquisition it stands for: until its page
+   * releases it, or until the session ends ({@link #removeFromEditorTracker}). Changes to holds and
+   * to the acquisitions they stand for are made while synchronized on this map.
    */
-  private final Cache<String, EditLockHold> editLockHolds =
-      CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.DAYS).maximumSize(100_000).build();
+  private final Map<String, EditLockHold> editLockHolds = new ConcurrentHashMap<>();
+
+  /**
+   * Releases one of the user's acquisitions on the form in this session by id, only if one is not
+   * held by a form editor page's token, so a by-id release can never take a page's lock.
+   */
+  private void unlockUnlessHeldByToken(RSForm form, User user) {
+    if (form == null || form.getId() == null || user == null) {
+      return;
+    }
+    String sessionId = SessionAttributeUtils.getSessionId();
+    EditLockHold thisAcquisition = new EditLockHold(form.getId(), user.getUsername(), sessionId);
+    synchronized (editLockHolds) {
+      long heldByToken = editLockHolds.values().stream().filter(thisAcquisition::equals).count();
+      if (formTracker.getEditCount(form.getId(), user.getUsername(), sessionId) > heldByToken) {
+        formTracker.unlockRecord(form, user, () -> sessionId);
+      }
+    }
+  }
 
   @Override
   public String registerEditLockHolder(long lockedFormId, User user) {
     String token = UUID.randomUUID().toString();
-    editLockHolds.put(
-        token,
-        new EditLockHold(lockedFormId, user.getUsername(), SessionAttributeUtils.getSessionId()));
+    synchronized (editLockHolds) {
+      editLockHolds.put(
+          token,
+          new EditLockHold(lockedFormId, user.getUsername(), SessionAttributeUtils.getSessionId()));
+    }
     return token;
   }
 
   @Override
-  public void releaseEditLock(String token, User user, Set<Long> alreadyReleased) {
+  public boolean releaseEditLock(String token, User user) {
     if (StringUtils.isBlank(token)) {
-      return;
+      return false;
     }
-    EditLockHold hold = editLockHolds.getIfPresent(token);
+    String sessionId = SessionAttributeUtils.getSessionId();
+    EditLockHold hold = editLockHolds.get(token);
     if (hold == null
         || !hold.username().equals(user.getUsername())
-        || !hold.sessionId().equals(SessionAttributeUtils.getSessionId())) {
-      return;
+        || !hold.sessionId().equals(sessionId)
+        || !formDao.exists(hold.formId())) {
+      return false;
     }
-    // atomic, so a token released twice at once still releases once
-    if (!editLockHolds.asMap().remove(token, hold)) {
-      return;
+    RSForm form = formDao.get(hold.formId());
+    synchronized (editLockHolds) {
+      // a token released twice at once still releases once
+      if (!editLockHolds.remove(token, hold)) {
+        return false;
+      }
+      formTracker.unlockRecord(form, user, () -> sessionId);
     }
-    if (!alreadyReleased.contains(hold.formId()) && formDao.exists(hold.formId())) {
-      unlockForm(formDao.get(hold.formId()), user);
-    }
+    return true;
   }
 
   @Override
@@ -445,7 +477,10 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   @Override
   public void removeFromEditorTracker(String sessionId) {
-    formTracker.removeLockedRecordInSession(sessionId);
+    synchronized (editLockHolds) {
+      formTracker.removeLockedRecordInSession(sessionId);
+      editLockHolds.values().removeIf(hold -> hold.sessionId().equals(sessionId));
+    }
   }
 
   @Override

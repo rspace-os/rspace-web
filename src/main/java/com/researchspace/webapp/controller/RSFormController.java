@@ -60,7 +60,6 @@ import java.io.InputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,8 +131,8 @@ public class RSFormController extends BaseController {
   /**
    * Releases an edit lock. The form editor page sends the token it was given with its lock, and
    * releases exactly the lock that page acquired, at most once (see {@link
-   * FormManager#releaseEditLock}). Without a token, the lock on {@code formId} is released as
-   * before.
+   * FormManager#releaseEditLock}). Without a token, a lock on {@code formId} that no page holds by
+   * token is released (see {@link FormManager#unlockForm(Long, User)}).
    *
    * @param formId the form the editor page shows
    * @param lockToken the page's token, or null
@@ -149,7 +148,7 @@ public class RSFormController extends BaseController {
     if (StringUtils.isBlank(lockToken)) {
       formManager.unlockForm(formId, user);
     } else {
-      formManager.releaseEditLock(lockToken, user, Set.of());
+      formManager.releaseEditLock(lockToken, user);
     }
     return new AjaxReturnObject<Boolean>(true, null);
   }
@@ -418,16 +417,17 @@ public class RSFormController extends BaseController {
       errors.addErrorMsg(getText("form.errors.versionNotUpdated"));
       return new AjaxReturnObject<>(null, errors);
     }
-    // The version is committed. Release the edit lock, which is held on whichever id the editor
-    // opened: the original on a first edit, the draft when editing resumed.
-    formManager.unlockForm(formId, u);
-    Set<Long> released = new HashSet<>(Set.of(formId));
-    if (updated.getPreviousVersion() != null) {
-      formManager.unlockForm(updated.getPreviousVersion().getId(), u);
-      released.add(updated.getPreviousVersion().getId());
+    // The version is committed. Release the editor page's own lock, wherever it took it; another
+    // page of this session may hold the other id. Without a token, release by id the lock on
+    // whichever id the editor opened: the original on a first edit, the draft when editing resumed.
+    if (StringUtils.isNotBlank(lockToken)) {
+      formManager.releaseEditLock(lockToken, u);
+    } else {
+      formManager.unlockForm(formId, u);
+      if (updated.getPreviousVersion() != null) {
+        formManager.unlockForm(updated.getPreviousVersion().getId(), u);
+      }
     }
-    // used up, so the page's unlock on leaving does not release the lock a second time
-    formManager.releaseEditLock(lockToken, u, released);
     return new AjaxReturnObject<Long>(formId, null);
   }
 
@@ -936,9 +936,8 @@ public class RSFormController extends BaseController {
     log.info("Saving form with id {}", formId);
     User user = userManager.getUserByUsername(subject.getName());
     RSForm form = formManager.get(formId, user, true);
-    formManager.save(form, user);
-    // save released the lock on formId; the page's own lock may be on the original instead
-    formManager.releaseEditLock(lockToken, user, Set.of(formId));
+    // releases the page's own lock, which may be on the original rather than on formId
+    formManager.saveAndReleaseEditLock(form, lockToken, user);
 
     return new AjaxReturnObject<Long>(formId, null);
   }

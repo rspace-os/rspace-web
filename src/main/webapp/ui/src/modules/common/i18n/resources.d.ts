@@ -11458,8 +11458,8 @@ export default interface Resources {
         "time12Hour": "12-hour (02:30 PM)",
         "time24Hour": "24-hour (14:30)",
         "timeFormat": "Time format",
-        "unlistedFormat": "Choose a listed format to change this value.",
-        "unreadValue": "Stored as {value}, which cannot be shown here. It is kept unless you enter a new value."
+        "unlistedFormat": "Choose a listed format to enter a new value; that clears this one.",
+        "unreadValue": "Stored as {value}, which cannot be shown here. It is kept unless you enter a new value or choose another format."
       },
       "types": {
         "attachment": "Attachment",
