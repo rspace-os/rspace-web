@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { uniq } from "es-toolkit";
 import {
   availabilityEnvelope,
   bookingInterval,
@@ -74,7 +75,7 @@ export function useCalendarAvailability(
   return useQuery<Booking[], ErrorType<unknown>, ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>>({
     queryKey: [
       ...getListBookingsQueryKey({
-        where: dayBookingsWhere([...new Set(rows.map((row) => row.globalId))].sort(), envelope),
+        where: dayBookingsWhere(uniq(rows.map((row) => row.globalId)).sort(), envelope),
         sort: "start,id",
         page: 1,
         limit: 100,

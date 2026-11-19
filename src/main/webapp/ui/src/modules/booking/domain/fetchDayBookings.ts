@@ -1,4 +1,5 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
+import { uniq } from "es-toolkit";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { type ApiV2WhereObject, apiV2WhereToRsql } from "@/modules/common/api/v2/apiV2Where";
@@ -166,7 +167,7 @@ export async function fetchDayBookings(
   signal: AbortSignal,
 ): Promise<Booking[]> {
   if (globalIds.length === 0) return [];
-  const ids = [...new Set(globalIds)];
+  const ids = uniq(globalIds);
   const batches: string[][] = [];
   let currentBatch: string[] = [];
   for (const globalId of ids) {
