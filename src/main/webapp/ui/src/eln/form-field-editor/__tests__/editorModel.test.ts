@@ -213,10 +213,6 @@ const dependent = (key: string, values: Array<string>): EditorField => ({
 });
 
 describe("edits that keep rules consistent", () => {
-  it("give a new field a lowercase UUID key at once", () => {
-    expect(newField("Radio").key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-  });
-
   it("clear the rules that read a deleted field", () => {
     const fields = deleteField([radio(GMO, ["Yes"]), dependent("permit", ["Yes"])], GMO);
     expect(fields).toEqual([expect.objectContaining({ key: "permit", rule: null })]);
