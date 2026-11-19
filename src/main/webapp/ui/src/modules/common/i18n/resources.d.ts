@@ -6324,6 +6324,7 @@ export default interface Resources {
         "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
       },
       "fieldData": {
+        "choiceNotAnOption": "The choice content names values that are not options of the field: {0}. Separate options with commas, and write a comma that is part of an option as &#44;",
         "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
         "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
         "invalidChoice": "Invalid data for Choice Field [{0}]",
