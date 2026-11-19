@@ -20,4 +20,9 @@
         <comment>RSDEV-1708: give every existing ELN form field a key, so that any field can be picked as a rule source or target</comment>
         <sql>update FieldForm set fieldKey = lower(uuid()) where fieldKey is null;</sql>
     </changeSet>
+
+    <changeSet id="2026-11-19-rsdev1708-draft-field-key-from-original" context="run" author="tchoi-rs">
+        <comment>RSDEV-1708: the backfill gave the unsaved draft copy of a published form's field (FieldForm.tempFieldForm_id) a key of its own; give it its original's key, as a draft made after the upgrade has, so that an API edit echoing the form's keys is accepted. Updates nothing when every draft copy already has its original's key.</comment>
+        <sql>update FieldForm draft join FieldForm original on original.tempFieldForm_id = draft.id set draft.fieldKey = original.fieldKey where original.fieldKey is not null and not (draft.fieldKey &lt;=&gt; original.fieldKey);</sql>
+    </changeSet>
 </databaseChangeLog>
