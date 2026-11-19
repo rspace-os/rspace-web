@@ -184,6 +184,9 @@ compose() {
   [ "$(env_get RSPACE_MAILPIT)" = "true" ] && profile_args+=(--profile mailpit)
   if observability_enabled; then
     profile_args+=(--profile observability)
+    # The Collector runs as uid 10001; a checkout made under umask 077 leaves
+    # its bind-mounted config unreadable to that user.
+    chmod a+r "${SCRIPT_DIR}/otel/otel-collector-config.yaml"
   fi
   docker compose \
     --project-directory "${SCRIPT_DIR}" \
