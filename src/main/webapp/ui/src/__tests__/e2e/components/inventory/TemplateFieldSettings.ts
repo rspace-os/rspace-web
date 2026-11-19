@@ -11,7 +11,7 @@ export class TemplateFieldSettings {
   }
 
   async setMandatory(name: string): Promise<void> {
-    const toggle = this.field(name).getByRole("group", { name: "Mandatory" }).getByRole("switch");
+    const toggle = this.field(name).getByRole("switch", { name: "Mandatory", exact: true });
     if (!(await toggle.isChecked())) {
       await toggle.click();
     }
