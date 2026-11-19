@@ -12,6 +12,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
+import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import type { AppRouterContext } from "@/modules/common/app/router";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 import { cataloguePage, configuration } from "./creationTestFixtures";
@@ -31,7 +32,7 @@ function renderPicker() {
   });
   const router = createRouter({
     routeTree: root.addChildren([picker, allItems]),
-    context: { queryClient },
+    context: { queryClient, tokenProvider: getApiV2TokenProvider() },
     history: createMemoryHistory({ initialEntries: ["/"] }),
   });
   return render(

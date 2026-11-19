@@ -29,7 +29,6 @@ import { bookingsOpenApi } from "@/modules/booking/pages/my-bookings/mocks/booki
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
 import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
-import type { AppRouterContext } from "@/modules/common/app/router";
 import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger } from "@/modules/common/ui/sidebar";
 import { Route as bookingRouteDefinition } from "@/routes/booking/route";
 
