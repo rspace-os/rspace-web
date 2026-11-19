@@ -228,8 +228,7 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
         .createNativeQuery("update InventoryEntityField set fieldKey = null where sample_id = :id")
         .setParameter("id", created.getId())
         .executeUpdate();
-    FieldKeyBackfillRunner.run(
-        new BackfillInventoryTemplateFieldKeys_RSDEV1706(), applicationContext, sessionFactory);
+    FieldKeyBackfillRunner.run(new BackfillInventoryTemplateFieldKeys_RSDEV1706(), sessionFactory);
 
     ApiSampleTemplate backfilled = sampleApiMgr.getApiSampleTemplateById(created.getId(), user);
     String backfilledGmoKey = field(backfilled, GMO).getFieldKey();
