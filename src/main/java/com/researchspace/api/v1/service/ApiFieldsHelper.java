@@ -278,8 +278,10 @@ public class ApiFieldsHelper {
 
   /**
    * @param storedContent the content the field holds now, or null for a new document. ELN choice
-   *     content that matches it, as stored or as sent to clients, is accepted unchecked, so a
-   *     document holding values that are not options can still be edited by echoing its fields.
+   *     content exactly as a GET returns it is accepted unchecked, so a document holding values
+   *     that are not options can still be edited by echoing its fields. The incoming content is not
+   *     compared after conversion: {@code "Yes&fieldChoices=No"} converts to the stored form of
+   *     both options yet names a single option that does not exist.
    */
   private ErrorList validateIncomingApiFieldContent(
       String incomingContent, ValidatingField formField, String storedContent) {
@@ -289,9 +291,7 @@ public class ApiFieldsHelper {
     }
     boolean elnChoice =
         formField instanceof ChoiceFieldForm && StringUtils.isNotEmpty(incomingContent);
-    if (elnChoice
-        && (toValidate.equals(storedContent)
-            || incomingContent.equals(convertChoiceFieldContentSentToClient(storedContent)))) {
+    if (elnChoice && incomingContent.equals(convertChoiceFieldContentSentToClient(storedContent))) {
       return new ErrorList();
     }
     // only the whole content empty clears the selection; an empty piece is a mistake
