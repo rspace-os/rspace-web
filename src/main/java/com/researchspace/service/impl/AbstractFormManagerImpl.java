@@ -67,6 +67,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     form.setModificationDate(new Date());
 
     setColumnIndexAndPersist(form, field);
+    fieldsChanged(form);
     return field;
   }
 
@@ -104,6 +105,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
 
     fieldFormDao.save(fieldform);
     absFormdao.save(form);
+    fieldsChanged(form);
     return fieldform;
   }
 
@@ -137,6 +139,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
 
     absFormdao.save(form);
     fieldFormDao.save(fieldToRemove);
+    fieldsChanged(form);
   }
 
   @Override
@@ -156,8 +159,16 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
               + "]");
     }
     toEdit.reorderFields(orderedFieldIds);
-    return save(toEdit, user);
+    T saved = save(toEdit, user);
+    fieldsChanged(saved);
+    return saved;
   }
+
+  /**
+   * Called after one of the single-field edits above has changed the form's fields, in the same
+   * transaction; does nothing unless a subclass keeps a revision of the field list.
+   */
+  protected void fieldsChanged(T form) {}
 
   public Optional<FormType> getTypeById(Long id) {
     return absFormdao.getTypeById(id);

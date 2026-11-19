@@ -31,15 +31,15 @@ import {
   type CreatableType,
   canBeSource,
   changeType,
+  checksFor,
   deleteField,
   dependentsOf,
   type EditorField,
-  fieldProblems,
   fieldsUsingOption,
   hasOptions,
-  isNewOrChanged,
   moveField,
   newField,
+  problemsFor,
   removeOption,
   renameOption,
   savedItems,
@@ -52,9 +52,11 @@ import { type ElnFieldType, FormFieldsConflictError, FormFieldsSaveError } from 
 /** The editor's part of the toolbar handle; see `FormFieldEditorRoot` and `form.js`. */
 export type FieldEditorHandle = {
   /**
-   * Saves the fields if they changed. Rejects, leaving the editor dirty and
-   * showing why, if the save fails. A call while a save is in flight returns
-   * that save.
+   * Saves the fields if they changed; if they did not, checks that they are
+   * still the server's. Rejects, leaving the editor dirty and showing why, if
+   * the save fails. Once the fields have changed elsewhere, rejects every call
+   * until the page is reloaded. A call while a save is in flight returns that
+   * save.
    */
   save: () => Promise<void>;
   isDirty: () => boolean;
@@ -72,12 +74,7 @@ export type FieldEditorHandle = {
 export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
 export type FormFieldEditorChangeDetail = { dirty: boolean; fieldCount: number };
 
-type Status =
-  | { kind: "problems"; field: string }
-  | { kind: "error"; messages: ReadonlyArray<string> }
-  /** The fields changed elsewhere; saving again would overwrite them, so the author has to reload. */
-  | { kind: "conflict" }
-  | null;
+type Status = { kind: "problems"; field: string } | { kind: "error"; messages: ReadonlyArray<string> } | null;
 
 /** Where focus goes after the next render: a field's name, its first invalid control, or "Add field". */
 type FocusTarget = { kind: "name" | "problem"; key: string } | { kind: "add" } | null;
@@ -86,6 +83,8 @@ type FormFieldEditorProps = {
   initialFields: ReadonlyArray<EditorField>;
   /** Sends the full field list and resolves with the saved fields. */
   onSave: (fields: ReadonlyArray<EditorField>) => Promise<ReadonlyArray<EditorField>>;
+  /** Resolves if the server still has these fields, which are as last loaded or saved; rejects otherwise. */
+  onCheck: (fields: ReadonlyArray<EditorField>) => Promise<void>;
   editable: boolean;
   ref?: Ref<FieldEditorHandle>;
 };
@@ -118,6 +117,7 @@ function useTypeOptions(): ReadonlyArray<FieldTypeOption<ElnFieldType>> {
 export default function FormFieldEditor({
   initialFields,
   onSave,
+  onCheck,
   editable: editableForm,
   ref,
 }: FormFieldEditorProps): ReactNode {
@@ -125,6 +125,7 @@ export default function FormFieldEditor({
   const confirm = useConfirm();
   const allTypeOptions = useTypeOptions();
   const statusId = useId();
+  const conflictId = useId();
   const [fields, setFields] = useState<ReadonlyArray<EditorField>>(initialFields);
   const [baseline, setBaseline] = useState(() => saveSignature(initialFields));
   const [baselineItems, setBaselineItems] = useState(() => savedItems(initialFields));
@@ -137,14 +138,17 @@ export default function FormFieldEditor({
   // once published from this page, the form's fields can only change through a new version
   const [published, setPublished] = useState(false);
   const [heldReadOnly, setHeldReadOnly] = useState(false);
-  const editable = editableForm && !published && !heldReadOnly;
+  // The fields changed elsewhere. Any save would be made from the wrong fields, so none is
+  // made, the toolbar's actions stop, and the fields stay read-only until the page is reloaded.
+  const conflict = useRef<FormFieldsConflictError | null>(null);
+  const [conflicted, setConflicted] = useState(false);
+  const reloadRef = useRef<HTMLButtonElement>(null);
+  const editable = editableForm && !published && !heldReadOnly && !conflicted;
   const listRef = useRef<HTMLDivElement>(null);
 
   const dirty = saveSignature(fields) !== baseline;
-  // Stored data that is not touched is not checked, as on the server: options and names
-  // written through the forms API may break the editor's rules without blocking other edits.
-  const checked = fields.map((field) => isNewOrChanged(field, baselineItems));
-  const firstInvalid = fields.find((field, i) => checked[i] && Object.keys(fieldProblems(field)).length > 0) ?? null;
+  const checks = fields.map((field) => checksFor(field, baselineItems));
+  const firstInvalid = fields.find((field, i) => Object.keys(problemsFor(field, checks[i])).length > 0) ?? null;
   // the handle is called from legacy code at any time, so it reads the latest render
   const latest = useRef({ fields, dirty, firstInvalid });
   latest.current = { fields, dirty, firstInvalid };
@@ -160,21 +164,26 @@ export default function FormFieldEditor({
     markPublished: () => setPublished(true),
     setReadOnly: (readOnly) => setHeldReadOnly(readOnly),
     save: () => {
+      if (conflict.current) return Promise.reject(conflict.current);
       if (saveInFlight.current) return saveInFlight.current;
-      if (!latest.current.dirty) return Promise.resolve();
-      const invalid = latest.current.firstInvalid;
-      if (invalid) {
+      const { fields: sent, dirty, firstInvalid: invalid } = latest.current;
+      if (dirty && invalid) {
         setStatus({ kind: "problems", field: nameOf(invalid) });
         setFocusTarget({ kind: "problem", key: invalid.key });
         return Promise.reject(new FormFieldsSaveError([]));
       }
-      const sent = latest.current.fields;
       const sentSignature = saveSignature(sent);
       const saving = (async () => {
         try {
+          if (!dirty) {
+            // an untouched page must not update or publish fields its author never saw
+            await onCheck(sent);
+            setStatus(null);
+            return;
+          }
           const saved = await onSave(sent);
           const savedSignature = saveSignature(saved);
-          // edits made while the save was in flight are kept; they only gain the new fields' ids
+          // edits made while the save was in flight are kept; they only gain what the save gave the fields
           const keep = (current: ReadonlyArray<EditorField>) =>
             saveSignature(current) === sentSignature ? saved : adoptSavedIds(current, saved);
           const next = keep(latest.current.fields);
@@ -186,7 +195,9 @@ export default function FormFieldEditor({
           setStatus(null);
         } catch (error) {
           if (error instanceof FormFieldsConflictError) {
-            setStatus({ kind: "conflict" });
+            conflict.current = error;
+            setConflicted(true);
+            setStatus(null);
             throw error;
           }
           setStatus({
@@ -213,6 +224,11 @@ export default function FormFieldEditor({
       }),
     );
   }, [dirty, fields.length]);
+
+  useEffect(() => {
+    // the fields' inputs are gone, so focus would be lost; Reload is what is left to do
+    if (conflicted) reloadRef.current?.focus();
+  }, [conflicted]);
 
   useEffect(() => {
     // while held read-only the inputs are not there; the target waits until editing resumes
@@ -336,10 +352,14 @@ export default function FormFieldEditor({
   ruleFieldsRef.current = elnRuleFields(fields, nameByKey, ruleFieldsRef.current);
   const ruleFields = ruleFieldsRef.current;
   const graph = ruleGraphFor(ruleFields);
-  /** The names a field's card shows besides its own: the field its rule reads, and the fields that read it. */
+  // A card's condition can show the field its rule reads, any field a draft condition reads, and
+  // every field its field menu lists: any field that a condition can read.
+  const sourceNames = fields.filter((field) => canBeSource(field.type)).map((field) => field.name);
+  /** The names a field's card shows besides its own. */
   const shownNames = (field: EditorField) =>
     [field.rule?.sourceFieldKey, ...graph.dependentsOf(field.key).map(({ key }) => key)]
       .map((key) => (key === undefined ? "" : (namesRef.current.get(key) ?? "")))
+      .concat(sourceNames)
       .join("\u0000");
 
   const creatableOptions = useMemo(
@@ -352,23 +372,28 @@ export default function FormFieldEditor({
       <Typography variant="h5" component="h2">
         {t("formFieldEditor.heading")}
       </Typography>
-      {status !== null && (
+      {conflicted && (
+        <Alert severity="error" role="alert" aria-labelledby={conflictId}>
+          <AlertTitle id={conflictId}>{t("formFieldEditor.conflictTitle")}</AlertTitle>
+          <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
+            <Typography variant="body2">{t("formFieldEditor.conflict")}</Typography>
+            <Button
+              ref={reloadRef}
+              size="small"
+              variant="outlined"
+              color="inherit"
+              onClick={() => window.location.reload()}
+            >
+              {t("formFieldEditor.reload")}
+            </Button>
+          </Stack>
+        </Alert>
+      )}
+      {status !== null && !conflicted && (
         <Alert severity="error" role="alert" aria-labelledby={statusId} onClose={() => setStatus(null)}>
           <AlertTitle id={statusId}>
-            {status.kind === "problems"
-              ? t("formFieldEditor.problemsTitle")
-              : status.kind === "conflict"
-                ? t("formFieldEditor.conflictTitle")
-                : t("formFieldEditor.errorTitle")}
+            {status.kind === "problems" ? t("formFieldEditor.problemsTitle") : t("formFieldEditor.errorTitle")}
           </AlertTitle>
-          {status.kind === "conflict" && (
-            <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
-              <Typography variant="body2">{t("formFieldEditor.conflict")}</Typography>
-              <Button size="small" variant="outlined" color="inherit" onClick={() => window.location.reload()}>
-                {t("formFieldEditor.reload")}
-              </Button>
-            </Stack>
-          )}
           {status.kind === "problems" && (
             <Typography variant="body2">{t("formFieldEditor.firstProblem", { field: status.field })}</Typography>
           )}
@@ -397,7 +422,7 @@ export default function FormFieldEditor({
             count={fields.length}
             ruleFields={ruleFields}
             shownNames={shownNames(field)}
-            checked={checked[index]}
+            checks={checks[index]}
             editable={editable}
             allTypeOptions={allTypeOptions}
             creatableTypeOptions={creatableOptions}

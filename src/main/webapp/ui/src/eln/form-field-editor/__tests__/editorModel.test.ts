@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import {
+  adoptSavedIds,
   changeType,
   deleteField,
   type EditorField,
@@ -126,6 +127,27 @@ describe("fromServer and toSaveItem", () => {
   it.each(["Uri", "Reference", "Attachment"] as const)("keep %s fields with their name and mandatory flag", (type) => {
     const saved = toSaveItem(fromServer(item(type, {})));
     expect(saved).toMatchObject({ id: 7, type, source: { name: "Field", mandatory: true } });
+  });
+
+  it("send the options and default as saved, not as first stored, once the edits are taken back", () => {
+    const legacy = fromServer(
+      item("Choice", {
+        choiceValues: "fieldChoices=a&&fieldChoices=b",
+        multipleChoice: "no",
+        selectedValues: "fieldSelectedChoices=a&junk",
+      }),
+    );
+    if (legacy.type !== "Choice") throw new Error("not a choice");
+    const sent = { ...legacy, options: [...legacy.options, "c"] };
+    const saved = fromServer({ ...item("Choice", toSaveItem(sent).source), id: 7 });
+    // while the save was in flight the author added "d"; later both new options are removed
+    const [current] = adoptSavedIds([{ ...sent, options: [...sent.options, "d"] }], [saved]);
+    const takenBack = { ...current, options: legacy.options } as EditorField;
+
+    expect(toSaveItem(takenBack).source).toMatchObject({
+      choiceValues: "fieldChoices=a&fieldChoices=b",
+      selectedValues: "fieldSelectedChoices=a",
+    });
   });
 
   it("send a rule, and an explicit null for a field without one", () => {

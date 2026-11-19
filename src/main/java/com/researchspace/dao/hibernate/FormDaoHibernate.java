@@ -30,16 +30,17 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.Permission;
+import org.hibernate.JDBCException;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.Query;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
 @Repository("formDao")
@@ -609,16 +610,68 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return name;
   }
 
+  /** MariaDB's ER_CHECKREAD: a locking write to a row changed after the transaction's snapshot. */
+  private static final int RECORD_CHANGED_SINCE_LAST_READ = 1020;
+
+  /**
+   * The query space of the unmapped {@code RSForm.fieldsRevision} column. No entity uses it, so
+   * changing the column neither flushes pending entity changes nor evicts cached forms.
+   */
+  private static final String FIELDS_REVISION_SPACE = "RSForm.fieldsRevision";
+
   @Override
-  public boolean lockUnchangedSinceTransactionStart(Long formId) {
-    String select = "select modificationDateMillis from RSForm where id = :id";
-    // a plain read sees the transaction's snapshot; a locking read sees the latest commit
-    Object seen = getSession().createNativeQuery(select).setParameter("id", formId).uniqueResult();
-    Object latest =
+  public long getFieldsRevision(Long formId) {
+    Long revision =
         getSession()
-            .createNativeQuery(select + " for update")
+            .createNativeQuery("select fieldsRevision from RSForm where id = :id", Long.class)
             .setParameter("id", formId)
+            .addSynchronizedQuerySpace(FIELDS_REVISION_SPACE)
             .uniqueResult();
-    return Objects.equals(seen, latest);
+    if (revision == null) {
+      throw new ObjectRetrievalFailureException(RSForm.class, formId);
+    }
+    return revision;
+  }
+
+  @Override
+  public boolean advanceFieldsRevision(Long formId, long expectedRevision) {
+    try {
+      return updateFieldsRevision(
+              "update RSForm set fieldsRevision = fieldsRevision + 1"
+                  + " where id = :id and fieldsRevision = :expected",
+              formId,
+              expectedRevision)
+          == 1;
+    } catch (JDBCException e) {
+      if (e.getErrorCode() != RECORD_CHANGED_SINCE_LAST_READ) {
+        throw e;
+      }
+      log.warn("The fields of form {} changed after this save first read the database", formId);
+      return false;
+    }
+  }
+
+  @Override
+  public void advanceFieldsRevision(Long formId) {
+    getSession()
+        .createNativeQuery("update RSForm set fieldsRevision = fieldsRevision + 1 where id = :id")
+        .setParameter("id", formId)
+        .addSynchronizedQuerySpace(FIELDS_REVISION_SPACE)
+        .executeUpdate();
+  }
+
+  @Override
+  public void restoreFieldsRevision(Long formId, long revision) {
+    updateFieldsRevision(
+        "update RSForm set fieldsRevision = :expected where id = :id", formId, revision);
+  }
+
+  private int updateFieldsRevision(String update, Long formId, long revision) {
+    return getSession()
+        .createNativeQuery(update)
+        .setParameter("id", formId)
+        .setParameter("expected", revision)
+        .addSynchronizedQuerySpace(FIELDS_REVISION_SPACE)
+        .executeUpdate();
   }
 }
