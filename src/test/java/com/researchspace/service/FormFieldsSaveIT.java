@@ -20,20 +20,31 @@ import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import liquibase.changelog.ChangeLogParameters;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.parser.ChangeLogParserFactory;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Form field saves that need real commits: rollback of rejected saves, auditing, backfill. */
 public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
 
   private static final String YES_NO = "fieldChoices=Yes&fieldChoices=No";
+  private static final String CHANGELOG = "sqlUpdates/changeLog-rsdev-1708.xml";
+  private static final String BACKFILL_CHANGESET = "2026-11-18-rsdev1708-fieldform-key-backfill";
+  private static final String DRAFT_KEY_CHANGESET =
+      "2026-11-19-rsdev1708-draft-field-key-from-original";
 
   private @Autowired RecordEditorTracker recordTracker;
   private User user;
@@ -286,6 +297,74 @@ public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
     assertEquals(
         rule(backfilledKey, "Yes"),
         doInTransaction(() -> formMgr.getField(ids.get(1)).getDisplayRule()));
+  }
+
+  @Test
+  public void upgradeGivesUnsavedDraftCopiesTheKeysOfTheirOriginals() throws Exception {
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(null, "Radio", null, null, radio("GMO?")),
+            new FormFieldSaveItem(null, "String", null, null, string("Permit"))),
+        user);
+    formMgr.publish(form.getId(), true, null, user);
+    Long formId = form.getId();
+    RSForm draft = formMgr.getForEditing(formId, user, anySessionTracker());
+    Long draftId = draft.getId();
+    // as before the upgrade: no field has a key
+    new JdbcTemplate(dataSource)
+        .update("update FieldForm set fieldKey = null where form_id in (?, ?)", formId, draftId);
+
+    runChangeSet(BACKFILL_CHANGESET);
+    List<String> originalKeys = fieldKeys(formId);
+    assertThat(fieldKeys(draftId)).doesNotContainAnyElementsOf(originalKeys);
+
+    runChangeSet(DRAFT_KEY_CHANGESET);
+    assertEquals(originalKeys, fieldKeys(draftId));
+    // re-running changes nothing
+    runChangeSet(DRAFT_KEY_CHANGESET);
+    assertEquals(originalKeys, fieldKeys(formId));
+    assertEquals(originalKeys, fieldKeys(draftId));
+
+    // an API client echoes the keys it read from the form
+    sessionFactory.getCache().evictEntityData(FieldForm.class);
+    List<FieldForm> originals = doInTransaction(() -> activeFields(formMgr.get(formId, user)));
+    RadioFieldPost gmo = radioPost("GMO?");
+    gmo.setId(originals.get(0).getId());
+    gmo.setFieldKey(originalKeys.get(0));
+    StringFieldPost permit = stringPost("Permit");
+    permit.setId(originals.get(1).getId());
+    permit.setFieldKey(originalKeys.get(1));
+    permit.setDisplayRule(showWhen(originalKeys.get(0), "Yes"));
+    formMgr.editForm(formId, definition(gmo, permit), user, anySessionTracker());
+  }
+
+  private void runChangeSet(String id) throws Exception {
+    try (Connection connection = dataSource.getConnection();
+        var resources = new ClassLoaderResourceAccessor()) {
+      var changelog =
+          ChangeLogParserFactory.getInstance()
+              .getParser(CHANGELOG, resources)
+              .parse(CHANGELOG, new ChangeLogParameters(), resources);
+      var database =
+          DatabaseFactory.getInstance()
+              .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+      changelog.getChangeSets().stream()
+          .filter(changeSet -> changeSet.getId().equals(id))
+          .findFirst()
+          .orElseThrow()
+          .execute(changelog, database);
+    }
+  }
+
+  /** The keys of the form's active fields, in field order. */
+  private List<String> fieldKeys(Long formId) {
+    return new JdbcTemplate(dataSource)
+        .queryForList(
+            "select fieldKey from FieldForm where form_id = ? and deleted = 0 order by columnIndex",
+            String.class,
+            formId);
   }
 
   /** A published form: radio "GMO?" (Yes, No) and string "Permit" shown when GMO? is Yes. */
