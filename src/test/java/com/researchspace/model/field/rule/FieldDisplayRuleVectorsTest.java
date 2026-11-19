@@ -113,19 +113,52 @@ class FieldDisplayRuleVectorsTest {
             vector ->
                 DynamicTest.dynamicTest(
                     vector.get("name").asText(),
+                    () ->
+                        assertEquals(
+                            ruleErrors(vector.get("expectedErrors")),
+                            FieldDisplayRuleValidator.validate(fields(vector.get("fields"))))));
+  }
+
+  @Test
+  void limitsMatchTheSharedVectors() {
+    assertEquals(
+        VECTORS.get("limits").get("maxValues").asInt(), FieldDisplayRuleValidator.MAX_VALUES);
+    assertEquals(
+        VECTORS.get("limits").get("maxJsonLength").asInt(),
+        FieldDisplayRuleValidator.MAX_JSON_LENGTH);
+  }
+
+  @TestFactory
+  Stream<DynamicTest> limits() {
+    return cases("limits", "cases")
+        .map(
+            vector ->
+                DynamicTest.dynamicTest(
+                    vector.get("name").asText(),
                     () -> {
-                      List<FieldDisplayRuleValidator.RuleError> expected = new ArrayList<>();
-                      vector
-                          .get("expectedErrors")
-                          .forEach(
-                              node ->
-                                  expected.add(
-                                      new FieldDisplayRuleValidator.RuleError(
-                                          node.get("fieldIndex").asInt(),
-                                          node.get("code").asText())));
+                      String pad =
+                          vector.get("pad").asText().repeat(vector.get("padCount").asInt());
+                      List<String> values = new ArrayList<>();
+                      for (int i = 0; i < vector.get("valueCount").asInt(); i++) {
+                        values.add(pad + String.format(Locale.ROOT, "%05d", i));
+                      }
+                      int tailLength = vector.get("tailLength").asInt();
+                      if (tailLength > 0) {
+                        values.add("x".repeat(tailLength));
+                      }
+                      FieldDisplayRule rule =
+                          new FieldDisplayRule(chainKey(1), ConditionOperator.IS_ANY_OF, values);
+                      List<FieldSnapshot> fields =
+                          List.of(
+                              new FieldSnapshot(
+                                  chainKey(1), FieldType.RADIO, null, values, List.of()),
+                              new FieldSnapshot(
+                                  chainKey(2), FieldType.STRING, rule, List.of(), List.of()));
+
+                      assertEquals(vector.get("jsonLength").asInt(), rule.toJson().length());
                       assertEquals(
-                          expected,
-                          FieldDisplayRuleValidator.validate(fields(vector.get("fields"))));
+                          ruleErrors(vector.get("expectedErrors")),
+                          FieldDisplayRuleValidator.validate(fields));
                     }));
   }
 
@@ -164,6 +197,16 @@ class FieldDisplayRuleVectorsTest {
               strings(node.get("selectedOptions"))));
     }
     return fields;
+  }
+
+  private static List<FieldDisplayRuleValidator.RuleError> ruleErrors(JsonNode nodes) {
+    List<FieldDisplayRuleValidator.RuleError> errors = new ArrayList<>();
+    nodes.forEach(
+        node ->
+            errors.add(
+                new FieldDisplayRuleValidator.RuleError(
+                    node.get("fieldIndex").asInt(), node.get("code").asText())));
+    return errors;
   }
 
   private static List<String> strings(JsonNode array) {
