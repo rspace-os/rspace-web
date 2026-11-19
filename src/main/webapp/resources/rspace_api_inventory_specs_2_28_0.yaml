@@ -6053,6 +6053,7 @@ components:
             is selected. `HAS_NO_VALUE`: nothing is selected.
         values:
           type: array
+          nullable: true
           description: |
             Options of the source field. Required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`.
             For `HAS_VALUE` and `HAS_NO_VALUE`, omit it or send `[]` (`null` is also accepted).
