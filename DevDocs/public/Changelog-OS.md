@@ -8,7 +8,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 ### Server
 
-- RSDEV-1706, RSDEV-1708 two Liquibase changesets add `fieldKey` and `displayRule` columns to `InventoryEntityField`, `FieldForm` and their audit tables, and give every existing form field and Inventory template field a key. Sample and instrument fields are not backfilled.
+- RSDEV-1706, RSDEV-1708 two Liquibase changelogs (four changesets) add `fieldKey` and `displayRule` columns to `InventoryEntityField`, `FieldForm` and their audit tables, and give every existing form field and Inventory template field a key. Sample and instrument fields are not backfilled.
 
 ### ELN Features
 
@@ -28,10 +28,9 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 - Uploading radio options from a file is not yet available in the new ELN form field editor (RSDEV-1712)
 - Inventory CSV export and import do not carry display rules
-- Hidden fields keep their values, which remain in exports (ELN PDF, Word, HTML and XML; Inventory CSV) and in the API, and still match API filters
+- Hidden fields keep their values, which remain in exports (ELN PDF, Word, HTML and XML; Inventory CSV) and in API responses
 - Inventory extra fields cannot have display rules
 - ELN form versions created before the upgrade do not share field keys with each other. This is harmless today, because rules are only ever read within one form version
-- Old revisions and history views show every field and no rules
 - TODO (awaiting product decision): what happens to a rule on an Inventory template field that is deleted from the template but kept in existing records
 
 # 2.28.0 2026-11-06
