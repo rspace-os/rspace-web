@@ -78,6 +78,36 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
     assertThat(userMgr.getAvailableAdminUsers()).contains(admin);
   }
 
+  @Test
+  public void removeCommunityMovesLabGroupsToDefaultCommunity() throws IllegalAddChildOperation {
+    TestGroup testGroup = createTestGroup(0);
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
+    initUsers(admin);
+    Long groupId = testGroup.getGroup().getId();
+    Long piId = testGroup.getPi().getId();
+    Long communityId =
+        createTestCommunity(TransformerUtils.toSet(testGroup), admin).getCommunity().getId();
+    assertThat(communityMgr.listCommunitiesForUser(piId))
+        .extracting(Community::getId)
+        .containsExactly(communityId);
+
+    logoutAndLoginAsSysAdmin();
+    assertTrue(communityMgr.removeCommunity(communityId).isSucceeded());
+
+    Group grp = grpMgr.getGroupWithCommunities(groupId);
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, grp.getCommunity().getId());
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, grp.getCommunityId());
+    assertThat(
+            communityMgr
+                .getCommunityWithAdminsAndGroups(Community.DEFAULT_COMMUNITY_ID)
+                .getLabGroups())
+        .extracting(Group::getId)
+        .contains(groupId);
+    assertThat(communityMgr.listCommunitiesForUser(piId))
+        .extracting(Community::getId)
+        .containsExactly(Community.DEFAULT_COMMUNITY_ID);
+  }
+
   private void setASystemPropertyForCommunity(Community community, User subject) {
     sysPropMgr.listSystemPropertyDefinitions().stream()
         .filter(sp -> sp.getName().equals("slack.available"))

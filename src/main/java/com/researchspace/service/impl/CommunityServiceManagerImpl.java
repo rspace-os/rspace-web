@@ -17,6 +17,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -157,11 +159,20 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   }
 
   @Override
+  @CacheEvict(allEntries = true)
   public ServiceOperationResult<Community> removeCommunity(Long commId) {
     Community comm = get(commId);
     if (Community.DEFAULT_COMMUNITY_ID.equals(commId)) {
       return new ServiceOperationResult<Community>(comm, false);
     }
+    Community defaultCommunity = communityDao.get(Community.DEFAULT_COMMUNITY_ID);
+    for (Group grp : new ArrayList<>(comm.getLabGroups())) {
+      comm.removeLabGroup(grp);
+      defaultCommunity.addLabGroup(grp);
+      grp.setCommunityId(Community.DEFAULT_COMMUNITY_ID);
+      groupDao.save(grp);
+    }
+    communityDao.save(defaultCommunity);
     sysPropertDao.deleteSystemPropertyValueByCommunityId(commId);
     communityDao.remove(commId);
     return new ServiceOperationResult<Community>(comm, true);
