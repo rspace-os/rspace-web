@@ -76,7 +76,7 @@ describe("Template fields with display rules", () => {
     expect(screen.getByRole("status")).toHaveTextContent("common:fieldDisplay.fieldsShown");
   });
 
-  it("announces a field each time it is revealed, keeping focus on the answer", async () => {
+  it("announces a field each time it is shown or hidden, keeping focus on the answer", async () => {
     const user = userEvent.setup();
     renderSampleFields(gmoFields([]));
     const status = screen.getByRole("status");
@@ -84,7 +84,7 @@ describe("Template fields with display rules", () => {
     await user.click(screen.getByRole("radio", { name: "Yes" }));
     expect(status).toHaveTextContent("common:fieldDisplay.fieldsShown");
     await user.click(screen.getByRole("radio", { name: "No" }));
-    expect(status).toBeEmptyDOMElement();
+    expect(status).toHaveTextContent("common:fieldDisplay.fieldsHidden");
     const yes = screen.getByRole("radio", { name: "Yes" });
     await user.click(yes);
 
