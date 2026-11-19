@@ -1,8 +1,12 @@
 package com.researchspace.model.field;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.Level;
@@ -14,6 +18,24 @@ import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.Test;
 
 public class ElnFieldRulesTest {
+
+  @Test
+  public void signingReadsTheValueOfANumberSource() {
+    NumberFieldForm weight = new NumberFieldForm("Weight");
+    weight.setFieldKey("6f1c2e0a-0000-4000-8000-000000000001");
+    StringFieldForm reason = new StringFieldForm("Reason");
+    reason.setMandatory(true);
+    reason.setDisplayRule(
+        new FieldDisplayRule(weight.getFieldKey(), ConditionOperator.GREATER_THAN, List.of("2"))
+            .toJson());
+    NumberField weightField = new NumberField(weight);
+    List<Field> fields = List.of(weightField, new StringField(reason));
+
+    weightField.setFieldData("1.5");
+    assertTrue(ElnFieldRules.everyShownMandatoryFieldHasData(fields));
+    weightField.setFieldData("4");
+    assertFalse(ElnFieldRules.everyShownMandatoryFieldHasData(fields));
+  }
 
   @Test
   public void unreadableStoredRuleIsLoggedOnceWithoutItsContent() {

@@ -2,18 +2,28 @@ package com.researchspace.service.archive;
 
 import static com.researchspace.testutils.RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalFieldForm;
 import com.researchspace.archive.ArchivalForm;
+import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.IconImgDao;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.NumberFieldForm;
+import com.researchspace.model.field.StringFieldForm;
+import com.researchspace.model.field.rule.ConditionOperator;
+import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.SourceKind;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.FormManager;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -52,6 +62,32 @@ public class FormImporterTest {
     assertThat(form.getFieldForms())
         .extracting(FieldForm::getDisplayRule)
         .containsExactly(null, rule);
+  }
+
+  @Test
+  public void numberSourceRuleSurvivesAnXmlArchiveRoundTrip() throws Exception {
+    RSForm exported = TestFactory.createAnyForm();
+    exported.setId(OLD_FORM_ID);
+    NumberFieldForm weight = new NumberFieldForm("Weight");
+    weight.setFieldKey(GMO_KEY);
+    weight.setColumnIndex(1);
+    StringFieldForm reason = new StringFieldForm("Reason");
+    reason.setFieldKey(PERMIT_KEY);
+    reason.setColumnIndex(2);
+    String rule =
+        new FieldDisplayRule(GMO_KEY, ConditionOperator.GREATER_THAN, List.of("2.5")).toJson();
+    reason.setDisplayRule(rule);
+    exported.addFieldForm(weight);
+    exported.addFieldForm(reason);
+    File xml = new File(tempFolder, "form.xml");
+    XMLReadWriteUtils.toXML(
+        xml, new ArchiveModelFactory().createArchivalForm(exported, "form"), ArchivalForm.class);
+
+    RSForm imported = importArchive(XMLReadWriteUtils.fromXML(xml, ArchivalForm.class, null, null));
+
+    List<FieldForm> fields = imported.getFieldForms();
+    assertEquals(SourceKind.NUMBER, ElnFieldRules.sourceKind(fields.get(1)));
+    assertThat(fields).extracting(FieldForm::getDisplayRule).containsExactly(null, null, rule);
   }
 
   @Test
@@ -102,6 +138,10 @@ public class FormImporterTest {
     archived.setPublishingState("PUBLISHED");
     archived.setFormVersion("1");
     archived.getFieldFormList().addAll(List.of(fields));
+    return importArchive(archived);
+  }
+
+  private RSForm importArchive(ArchivalForm archived) {
     ArchivalDocumentParserRef ref = new ArchivalDocumentParserRef();
     ref.setArchivalForm(archived);
     RSForm created = new RSForm();

@@ -92,13 +92,20 @@ public final class FieldDisplayRuleEvaluator {
   }
 
   private static boolean textHolds(FieldDisplayRule rule, String value) {
+    switch (rule.operator()) {
+      case HAS_VALUE:
+        return !RuleValues.isBlank(value);
+      case HAS_NO_VALUE:
+        return RuleValues.isBlank(value);
+      default:
+        break;
+    }
     String text = RuleValues.normaliseText(value);
+    String operand = RuleValues.normaliseText(rule.values().get(0));
     return switch (rule.operator()) {
-      case HAS_VALUE -> !RuleValues.isBlank(value);
-      case HAS_NO_VALUE -> RuleValues.isBlank(value);
-      case EQUALS -> text.equals(RuleValues.normaliseText(rule.values().get(0)));
-      case NOT_EQUALS -> !text.equals(RuleValues.normaliseText(rule.values().get(0)));
-      case CONTAINS -> text.contains(RuleValues.normaliseText(rule.values().get(0)));
+      case EQUALS -> text.equals(operand);
+      case NOT_EQUALS -> !text.equals(operand);
+      case CONTAINS -> text.contains(operand);
       default -> throw new IllegalStateException(rule.operator() + " cannot read text");
     };
   }
