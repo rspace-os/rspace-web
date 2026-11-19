@@ -1,4 +1,4 @@
-import type { ReadableSpan } from "@opentelemetry/sdk-trace-web";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace";
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 
 const { exported } = vi.hoisted(() => ({ exported: [] as ReadableSpan[] }));
@@ -13,8 +13,8 @@ vi.mock("@opentelemetry/exporter-trace-otlp-http", () => ({
     }
   },
 }));
-vi.mock("@opentelemetry/sdk-trace-web", async (original) => {
-  const sdk = await original<typeof import("@opentelemetry/sdk-trace-web")>();
+vi.mock("@opentelemetry/sdk-trace", async (original) => {
+  const sdk = await original<typeof import("@opentelemetry/sdk-trace")>();
   return { ...sdk, BatchSpanProcessor: sdk.SimpleSpanProcessor };
 });
 // These cases exercise fetch; jsdom does not implement browser navigation/resource timings.
@@ -44,29 +44,27 @@ vi.mock("web-vitals", () => ({ onLCP() {}, onINP() {}, onCLS() {} }));
 
 const { startOtel, setUiPage, runWithUiTraceContext } = await import("../otelImpl");
 let mode = "success";
+const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+  if (mode === "reject") throw new TypeError("Network failure");
+  return {
+    status: 200,
+    url,
+    clone() {
+      if (mode === "clone-failure") throw new TypeError("body already used");
+      if (mode === "reader-failure")
+        return {
+          body: {
+            getReader() {
+              throw new TypeError("locked stream");
+            },
+          },
+        };
+      return { body: null };
+    },
+  };
+});
 beforeAll(() => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      if (mode === "reject") throw new TypeError("Network failure");
-      return {
-        status: 200,
-        url,
-        clone() {
-          if (mode === "clone-failure") throw new TypeError("body already used");
-          if (mode === "reader-failure")
-            return {
-              body: {
-                getReader() {
-                  throw new TypeError("locked stream");
-                },
-              },
-            };
-          return { body: null };
-        },
-      };
-    }),
-  );
+  vi.stubGlobal("fetch", fetchMock);
   startOtel({
     tracesUrl: "http://localhost/otlp/v1/traces",
     metricsUrl: "http://localhost/otlp/v1/metrics",
@@ -98,4 +96,10 @@ test("export requests do not recursively produce spans", async () => {
   await fetch("http://localhost/otlp/v1/traces");
   await new Promise((resolve) => setTimeout(resolve, 400));
   expect(exported).toHaveLength(0);
+});
+test("same-origin requests carry a W3C traceparent header", async () => {
+  mode = "success";
+  await fetch("/api/v1/whoami");
+  const init = fetchMock.mock.calls.at(-1)?.[1];
+  expect(new Headers(init?.headers).get("traceparent")).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
 });

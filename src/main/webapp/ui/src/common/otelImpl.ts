@@ -1,7 +1,8 @@
 // Keep this behind the dynamic import in ./otel so disabled telemetry loads no SDK code.
 
-import { type Attributes, context, createContextKey, metrics, type Span } from "@opentelemetry/api";
+import { type Attributes, context, createContextKey, metrics, propagation, type Span, trace } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
+import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import { AggregationTemporalityPreference, OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
@@ -14,8 +15,8 @@ import {
   BatchSpanProcessor,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
-  WebTracerProvider,
-} from "@opentelemetry/sdk-trace-web";
+  TracerProvider,
+} from "@opentelemetry/sdk-trace";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { type Metric, onCLS, onINP, onLCP } from "web-vitals";
 import type { OtelWebConfig, UiTraceContext } from "./otel";
@@ -82,14 +83,17 @@ export function startOtel(config: OtelWebConfig): void {
     [ATTR_SERVICE_NAME]: "rspace-frontend",
   });
 
-  const tracerProvider = new WebTracerProvider({
+  const tracerProvider = new TracerProvider({
     resource,
     sampler: new ParentBasedSampler({
       root: new TraceIdRatioBasedSampler(config.traceSamplingRatio),
     }),
-    spanProcessors: [new BatchSpanProcessor(new OTLPTraceExporter({ url: config.tracesUrl }))],
+    spanProcessors: [new BatchSpanProcessor({ exporter: new OTLPTraceExporter({ url: config.tracesUrl }) })],
   });
-  tracerProvider.register({ contextManager: new ZoneContextManager() });
+  // SDK 3.x providers have no register(); install the globals it used to set.
+  context.setGlobalContextManager(new ZoneContextManager().enable());
+  propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+  trace.setGlobalTracerProvider(tracerProvider);
 
   const meterProvider = new MeterProvider({
     resource,
