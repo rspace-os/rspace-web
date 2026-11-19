@@ -332,11 +332,20 @@ renders `DisplayConditionsNote` once above the fields while editing.
 - `FieldDisplayCondition` is the "Display this field when…" section of one
   field. In edit mode it offers "Always" or a condition on another radio or
   choice field; read-only, it shows the "Shown when…" summary. It also lists
-  the fields that depend on this one.
+  the fields that depend on this one. The "Only when…" radio is always
+  enabled: with no field the condition could read, the Field list shows a
+  disabled "No other fields" item and the same text as its helper.
 - It reports a rule through `onChange` only once the condition is complete and
-  the shared validator accepts it. An unfinished condition stays a draft inside
-  the component, and the field keeps its stored rule meanwhile. Give the
-  component a new React key to start a new edit session.
+  the shared validator accepts it. An unfinished or rejected condition stays a
+  draft inside the component, with inline errors on the missing part, and the
+  field keeps its stored rule meanwhile. Give the component a new React key to
+  start a new edit session.
+- While a draft exists, it calls `onIncompleteChange(true)`. [CustomField]
+  stores that with `FieldModel.setDisplayConditionIncomplete`, and
+  `FieldModel.validateDisplayCondition()` then fails with
+  `template.displayRules.conditionIncomplete`, so the template's `validate()`
+  refuses Save, and `assertDisplayConditionsComplete` stops the template being
+  sent. Any new host of the component must refuse to save in the same way.
 - [templateRuleFields] gives every condition of a template the same
   `RuleEditorField` list, a MobX computed that does not read names, so
   `ruleGraphFor` works out candidate sources once per change rather than once

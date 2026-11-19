@@ -14,13 +14,14 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 - RSDEV-1708, RSDEV-1709 conditional field display in Forms: a field can be shown only when a radio or choice field has (or lacks) certain answers. Mandatory applies only while a field is shown, and hidden fields keep their values. Applied in document edit and view, notebooks, document templates, and public documents and notebooks. See [ConditionalFieldDisplay.md](ConditionalFieldDisplay.md)
 - RSDEV-1709 new form field editor: fields, options, order and display rules are edited on the form page and saved together with Save and Close, Update or Publish. Each field has its own "Display this field when…" setting. The Add Field and Reorder Fields dialogs are replaced
-- RSDEV-1709 a field save from a page that loaded an older field list, for example a second tab, is refused instead of overwriting the newer fields; the editor says "This form was changed elsewhere" and offers Reload
+- RSDEV-1709 while a field's display condition is unfinished, Save and Close, Update and Publish are refused; the condition marks what is missing, and the editor says "Complete the display condition of {field}, or choose Always, before saving."
+- RSDEV-1709 a field save from a page that loaded an older field list, for example a second tab, is refused instead of overwriting the newer fields; Update and Publish check the same, so they never make a version from fields the author has not seen. The editor says "This form was changed elsewhere", tells the author to reload, and offers Reload. A save refused by a database deadlock (MariaDB error 1213) is reported as a temporary error to try again, not as a change made elsewhere
 - RSDEV-1709 a radio field shown as a drop-down list in a document starts on an empty "Select an option" choice when it has no value, instead of showing its first option
 - RSDEV-1708 the Sign button and the workspace warning ignore mandatory fields hidden by a display rule
 
 ### Inventory Features
 
-- RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, per-field "Display this field when…" editor and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard
+- RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, per-field "Display this field when…" editor and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard. A template whose display condition is unfinished cannot be saved until it is completed or set to Always
 
 ### API
 
