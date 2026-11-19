@@ -197,8 +197,8 @@ docker build -t rspace-bond-strength:0.0.1 bond-strength
 ```
 
 Then turn on the `bondStrengthsEnabled` [feature flag](../../DevDocs/DeveloperNotes/FeatureFlags.md).
-`up --no-bond-strength` turns the model service off again. Override the images
-with `CHEMISTRY_IMAGE` and `BOND_STRENGTH_IMAGE` in `.env`.
+`up --no-bond-strength` turns the model service off again; `up --no-chemistry` turns
+off both. Override the images with `CHEMISTRY_IMAGE` and `BOND_STRENGTH_IMAGE` in `.env`.
 
 Note: toggling the flag changes the app container's environment, so the next
 `up` recreates the backend (expect the usual startup wait).

@@ -245,9 +245,11 @@ cmd_up() {
       --chemistry)    env_set RSPACE_CHEMISTRY true
                       echo "rspace-dev: chemistry service enabled (persisted in .env)" >&2 ;;
       --no-chemistry) env_set RSPACE_CHEMISTRY false
+                      env_set RSPACE_BOND_STRENGTH false
                       # A profile-disabled service is invisible to later compose
                       # commands, so stop a leftover container explicitly.
                       docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-chemistry" >/dev/null 2>&1 || true
+                      docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-bond-strength" >/dev/null 2>&1 || true
                       echo "rspace-dev: chemistry service disabled (persisted in .env)" >&2 ;;
       --bond-strength)    env_set RSPACE_CHEMISTRY true
                           env_set RSPACE_BOND_STRENGTH true
