@@ -7,7 +7,7 @@ import {
   bookingConfigurationConfig,
   mapBookingConfiguration,
 } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { ApiV2CollectionMetadata } from "@/modules/common/table-list/api-v2/metadata";
