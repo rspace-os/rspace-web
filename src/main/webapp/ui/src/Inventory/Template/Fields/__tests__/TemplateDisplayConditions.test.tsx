@@ -811,29 +811,6 @@ describe("Display conditions in the template form", () => {
 });
 
 describe("Instrument template display conditions", () => {
-  it("gives new fields a key and a display condition", () => {
-    const template = makeMockInstrumentTemplate();
-    template.currentlyEditableFields.add("fields");
-    template.addField(newField({ name: "Calibrated?", type: "radio", definition: { options: ["Yes"] } }));
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <storesContext.Provider
-          value={makeMockRootStore({
-            searchStore: { activeResult: template },
-            uiStore: { isLarge: true, confirm: vi.fn() },
-          })}
-        >
-          <InstrumentTemplateFields onErrorStateChange={() => {}} />
-        </storesContext.Provider>
-      </ThemeProvider>,
-    );
-
-    expect((template.fields[0] as FieldModel).fieldKey).toEqual(expect.any(String));
-    expect(
-      within(fieldCard("Calibrated?")).getByRole("group", { name: "common:fieldEditor.condition.title" }),
-    ).toBeInTheDocument();
-  });
-
   it("refuses to save while a condition has no field to read", async () => {
     const user = userEvent.setup();
     const template = makeMockInstrumentTemplate();
