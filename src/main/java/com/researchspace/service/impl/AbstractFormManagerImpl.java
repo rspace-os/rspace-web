@@ -4,13 +4,19 @@ import com.researchspace.dao.AbstractFormDao;
 import com.researchspace.dao.FieldFormDao;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.FormFieldSource;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
+import com.researchspace.model.field.rule.SourceKind;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.model.record.FormType;
 import com.researchspace.service.AbstractFormManager;
+import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -98,6 +104,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
       throw new AuthorizationException(
           messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized"));
     }
+    rejectUnreadableRuleSource(fieldform, dto.createFieldForm(), form);
     dto.copyValuesIntoFieldForm(fieldform);
     Date currTime = new Date();
     fieldform.setModificationDate(currTime.getTime());
@@ -107,6 +114,34 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     absFormdao.save(form);
     fieldsChanged(form);
     return fieldform;
+  }
+
+  /**
+   * Rejects an update that stops a display rule source being readable, such as making a String
+   * field that other fields' rules read a password field. The field editor's full save validates
+   * this through {@link FieldDisplayRuleValidator}; this guards the per-field legacy endpoints.
+   */
+  private void rejectUnreadableRuleSource(FieldForm stored, FieldForm updated, T form) {
+    if (stored.getFieldKey() == null
+        || ElnFieldRules.sourceKind(stored) == SourceKind.NONE
+        || ElnFieldRules.sourceKind(updated) != SourceKind.NONE) {
+      return;
+    }
+    List<String> errors = new ArrayList<>();
+    for (FieldForm other : form.getFieldForms()) {
+      if (other.isDeleted() || other == stored) {
+        continue;
+      }
+      FieldDisplayRule rule = ElnFieldRules.storedRule(other);
+      if (rule != null && stored.getFieldKey().equals(rule.sourceFieldKey())) {
+        errors.add(
+            messageSourceUtils.getMessage(
+                FieldDisplayRuleValidator.SOURCE_TYPE, new Object[] {other.getName()}));
+      }
+    }
+    if (!errors.isEmpty()) {
+      throw new FormFieldsValidationException(errors);
+    }
   }
 
   @SuppressWarnings("unchecked") // The DTO-created form's concrete class is checked first.
