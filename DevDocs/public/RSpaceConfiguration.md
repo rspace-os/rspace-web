@@ -694,7 +694,7 @@ batch-upload new users via the 'System' tab.
 
 ### Browser requirements:
 
-A modern browser that supports HTML5 is essential; we support recent (< 1 year old) versions of Chrome, Firefox and Safari, and the latest two versions of Microsoft Edge.
+A modern browser that supports HTML5 is essential. We support recent (< 1 year old) versions of Chrome, Firefox, Safari and Microsoft Edge.
 
 We do not support Internet Explorer or legacy versions of Microsoft Edge.
 

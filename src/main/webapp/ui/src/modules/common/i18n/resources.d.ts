@@ -6560,7 +6560,7 @@ export default interface Resources {
         },
         "defaultWelcome": {
           "access": "You can access the application at <a href=\"{0}/workspace\">RSpace</a>.",
-          "browserAdvice": "We support recent versions of Chrome, Firefox and Safari, and the latest two versions of Microsoft Edge.<br>We do not support Internet Explorer or legacy versions of Microsoft Edge.",
+          "browserAdvice": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge.<br>We do not support Internet Explorer or legacy versions of Microsoft Edge.",
           "contact": "For any help, comments, or questions, contact <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
           "groupMember": "You are part of the Lab Group ''{0}'', and can share documents, send messages, and collaborate with other members of the group.",
           "guidanceHeading": "Guidance",
@@ -9019,7 +9019,7 @@ export default interface Resources {
         "heading": "Browser upgrade recommended to use RSpace",
         "iconAlt": "Icon by Martin Leblanc",
         "notice1": "It looks like you are using Internet Explorer or a legacy version of Microsoft Edge, which RSpace does not support. Some RSpace features will not work properly in these browsers.",
-        "notice2": "We fully support Chrome, Firefox, Safari and the latest two versions of Microsoft Edge. You can use the links below to install Chrome, Firefox or Safari if you do not already have one of them.",
+        "notice2": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge. You can use the links below to install Chrome, Firefox or Safari if you do not already have one of them.",
         "safari": "Safari"
       },
       "community": {

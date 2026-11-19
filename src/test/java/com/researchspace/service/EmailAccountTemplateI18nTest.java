@@ -79,7 +79,9 @@ class EmailAccountTemplateI18nTest {
             "defaultWelcomePostBatchSignupemail.vm",
             Map.of("userFirstName", "Alice", "htmlDomainPrefix", BASE_URL));
 
-    assertThat(output).as(output).contains("the latest two versions of Microsoft Edge");
+    assertThat(output)
+        .as(output)
+        .contains("We support recent versions of Chrome, Firefox, Safari and Microsoft Edge.");
     assertThat(output).as(output).doesNotContain("do not support Edge");
   }
 
