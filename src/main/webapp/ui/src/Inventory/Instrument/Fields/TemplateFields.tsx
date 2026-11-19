@@ -13,9 +13,9 @@ import TimeField from "../../../components/Inputs/TimeField";
 import UriField from "../../../components/Inputs/UriField";
 import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
 import type { Field } from "../../../stores/definitions/Field";
-import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import type InstrumentModel from "../../../stores/models/InstrumentModel";
 import AttachmentField from "../../components/Fields/Attachments/AttachmentField";
+import { dateContent, isInvalidUri } from "../../components/Fields/templateFieldValues";
 import useShownTemplateFields from "../../components/Fields/useShownTemplateFields";
 import FormField from "../../components/Inputs/FormField";
 import LinkFieldValue from "../../Sample/Fields/TemplateFields/LinkFieldValue";
@@ -46,7 +46,8 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
         : checked && field.error
           ? t("instrument.templateFields.invalid")
           : "",
-      required: mandatory,
+      // a mandatory field may stay empty as it was loaded, but is still marked mandatory
+      required: checked && field.mandatory,
     };
 
     if (field.type === "attachment") {
@@ -117,9 +118,8 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
             <DateField
               {...props}
               onChange={({ target }) => {
-                field.setAttributesDirty({
-                  content: target.value ? truncateIsoTimestamp(target.value, "date").orElse("NaN-NaN-NaN") : null,
-                });
+                field.setAttributesDirty({ content: dateContent(target) });
+                field.setError(!target.valid);
                 onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
@@ -259,7 +259,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
               {...props}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                field.setError(false);
+                field.setError(isInvalidUri(target.value));
                 onErrorStateChange(`template_${field.name}`, hasError(field));
               }}
             />
