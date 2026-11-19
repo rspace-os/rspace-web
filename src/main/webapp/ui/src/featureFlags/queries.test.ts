@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import {
   ApiV2NetworkError,
@@ -25,7 +26,7 @@ const validFlagResponse = {
 };
 
 describe("feature flag queries", () => {
-  test("fetches public flags without bearer authentication", async () => {
+  test("fetches flags with the signed-in caller's token so overrides apply", async () => {
     let request: Request | undefined;
     server.use(
       http.get("/api/v2/feature-flags", ({ request: receivedRequest }) => {
@@ -44,7 +45,7 @@ describe("feature flag queries", () => {
         },
       },
     });
-    expect(request?.headers.get("Authorization")).toBeNull();
+    expect(request?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
     expect(new URL(request?.url ?? "http://localhost").searchParams.get("limit")).toBe("100");
   });
