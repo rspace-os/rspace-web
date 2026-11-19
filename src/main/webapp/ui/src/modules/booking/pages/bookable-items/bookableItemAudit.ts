@@ -1,3 +1,4 @@
+import { isNil } from "es-toolkit";
 import * as v from "valibot";
 import { formatIsoWeekday, formatOpeningRange, mapOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
@@ -215,9 +216,6 @@ export function recordedValues(
     if (opening !== undefined) return [key, opening];
     const word = words && wordValue(key, value, words);
     if (word !== undefined) return [key, word];
-    return [
-      key,
-      value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value),
-    ];
+    return [key, isNil(value) ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)];
   });
 }

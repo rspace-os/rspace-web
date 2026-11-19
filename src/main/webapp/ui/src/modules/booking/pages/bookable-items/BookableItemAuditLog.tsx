@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { isNil } from "es-toolkit";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -75,7 +76,7 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
         renderCell: ({ row }) => (
           <span>
             <AuditActionBadge row={row} />
-            {row.description === null || row.description === undefined ? null : (
+            {isNil(row.description) ? null : (
               <span className="mt-2 block whitespace-normal text-muted-foreground">{row.description}</span>
             )}
           </span>
