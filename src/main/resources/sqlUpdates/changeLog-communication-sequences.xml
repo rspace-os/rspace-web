@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+  <changeSet id="communication-native-sequences" author="rspace" context="run" dbms="mariadb" runInTransaction="false">
+    <comment>Stop all application nodes first: the old hibernate_sequences allocator must never run
+      alongside the new sequences. The old hibernate_sequences rows are kept for a manual rollback.</comment>
+    <customChange class="com.researchspace.dao.customliquibaseupdates.CreateCommunicationSequences"/>
+  </changeSet>
+</databaseChangeLog>
