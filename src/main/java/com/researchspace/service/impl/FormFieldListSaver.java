@@ -17,6 +17,7 @@ import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
+import com.researchspace.model.field.rule.FieldKeys;
 import com.researchspace.model.field.rule.FieldSnapshot;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.service.FormFieldsValidationException;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -216,7 +216,7 @@ public class FormFieldListSaver {
       Set<String> keysInForm,
       Set<String> newKeys,
       List<String> errors) {
-    String key = item.getFieldKey() == null ? UUID.randomUUID().toString() : item.getFieldKey();
+    String key = item.getFieldKey() == null ? FieldKeys.newFieldKey() : item.getFieldKey();
     if (keysInForm.contains(key) || !newKeys.add(key)) {
       errors.add(messages.getMessage("form.errors.fieldKeyInUse", args(label)));
       return null;

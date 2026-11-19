@@ -268,23 +268,12 @@ public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
     Long formId = form.getId();
     List<Long> ids = activeFields(form).stream().map(FieldForm::getId).toList();
     // as before the upgrade, then the changelog's backfill
-    doInTransaction(
-        () -> {
-          sessionFactory
-              .getCurrentSession()
-              .createNativeMutationQuery("update FieldForm set fieldKey = null where form_id = :id")
-              .setParameter("id", formId)
-              .executeUpdate();
-          sessionFactory
-              .getCurrentSession()
-              .createNativeMutationQuery(
-                  "update FieldForm set fieldKey = lower(uuid()) where fieldKey is null")
-              .executeUpdate();
-        });
+    new JdbcTemplate(dataSource)
+        .update("update FieldForm set fieldKey = null where form_id = ?", formId);
+    runChangeSet(BACKFILL_CHANGESET);
     sessionFactory.getCache().evictEntityData(FieldForm.class);
     String backfilledKey = doInTransaction(() -> formMgr.getField(ids.get(0)).getFieldKey());
-    assertThat(backfilledKey)
-        .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    assertNotNull(backfilledKey);
 
     formMgr.saveFields(
         formId,
@@ -318,7 +307,11 @@ public class FormFieldsSaveIT extends RealTransactionSpringTestBase {
 
     runChangeSet(BACKFILL_CHANGESET);
     List<String> originalKeys = fieldKeys(formId);
+    assertThat(originalKeys).hasSize(2).doesNotContainNull();
     assertThat(fieldKeys(draftId)).doesNotContainAnyElementsOf(originalKeys);
+    // re-running keeps the keys already given
+    runChangeSet(BACKFILL_CHANGESET);
+    assertEquals(originalKeys, fieldKeys(formId));
 
     runChangeSet(DRAFT_KEY_CHANGESET);
     assertEquals(originalKeys, fieldKeys(draftId));
