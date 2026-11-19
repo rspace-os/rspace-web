@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class BackfillInventoryTemplateFieldKeys_RSDEV1706Test extends SpringTransactionalTest {
 
   @Test
-  void keysTemplateFieldsAndLeavesRecordFieldsAndExistingKeys() {
+  void keysTemplateFieldsPageByPageAndLeavesRecordFieldsAndExistingKeys() {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleTemplateAndSample(user);
     Long sampleTemplateId = sample.getTemplateId();
@@ -26,8 +26,9 @@ class BackfillInventoryTemplateFieldKeys_RSDEV1706Test extends SpringTransaction
     clearKeys("sample_id", sample.getId());
     clearKeys("instrumentEntity_id", instrumentTemplate.getId());
 
-    FieldKeyBackfillRunner.run(
-        new BackfillInventoryTemplateFieldKeys_RSDEV1706(), applicationContext, sessionFactory);
+    var backfill = new BackfillInventoryTemplateFieldKeys_RSDEV1706();
+    backfill.pageSize = 1;
+    FieldKeyBackfillRunner.run(backfill, sessionFactory);
 
     assertThat(keys("sample_id", sampleTemplateId)).hasSize(1).doesNotContainNull();
     assertThat(keys("instrumentEntity_id", instrumentTemplate.getId()))
