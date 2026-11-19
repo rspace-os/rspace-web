@@ -14,6 +14,7 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import axios from "@/common/axios";
@@ -43,11 +44,16 @@ class GroupEditBar extends React.Component<any, any> {
     };
 
     this.savedProfileText = this.state.profile_text;
+    this.savedPiCanEditValue = this.state.pi_can_edit_value;
+    this.savedProfileIsHidden = this.state.profile_is_hidden;
     this.handleChange = this.handleChange.bind(this);
   }
 
   /** The profile text as last saved; the data-profile-text attribute is not updated after a save. */
   savedProfileText: string | null;
+  /** Last saved "PI can edit all" and "Hide the group" values; their data attributes are not updated either. */
+  savedPiCanEditValue: boolean;
+  savedProfileIsHidden: boolean;
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange(event: any) {
@@ -90,16 +96,17 @@ class GroupEditBar extends React.Component<any, any> {
       );
     }
 
-    if (
-      this.state.pi_can_edit_permission &&
-      this.state.pi_can_edit_value !== (this.props.domContainer.getAttribute("data-pieditallchoicevalue") === "true")
-    ) {
+    if (this.state.pi_can_edit_permission && this.state.pi_can_edit_value !== this.savedPiCanEditValue) {
+      const piCanEditValue = this.state.pi_can_edit_value;
       const data = new FormData();
-      data.set("canPIEditAll", this.state.pi_can_edit_value);
+      data.set("canPIEditAll", piCanEditValue);
       requests.push(
         axios
           .post(`/groups/ajax/admin/changePiCanEditAll/${this.state.group_id}`, data)
-          .then(() => true)
+          .then(() => {
+            this.savedPiCanEditValue = piCanEditValue;
+            return true;
+          })
           .catch(onRequestError),
       );
     }
@@ -107,14 +114,18 @@ class GroupEditBar extends React.Component<any, any> {
     if (
       this.state.can_hide_profile &&
       this.state.profile_hiding_enabled &&
-      this.state.profile_is_hidden !== (this.props.domContainer.getAttribute("data-group-private-profile") === "true")
+      this.state.profile_is_hidden !== this.savedProfileIsHidden
     ) {
+      const profileIsHidden = this.state.profile_is_hidden;
       const data = new FormData();
-      data.set("hideProfile", this.state.profile_is_hidden);
+      data.set("hideProfile", profileIsHidden);
       requests.push(
         axios
           .post(`/groups/ajax/admin/changeHideProfileSetting/${this.state.group_id}`, data)
-          .then(() => true)
+          .then(() => {
+            this.savedProfileIsHidden = profileIsHidden;
+            return true;
+          })
           .catch(onRequestError),
       );
     }
@@ -138,7 +149,12 @@ class GroupEditBar extends React.Component<any, any> {
   };
 
   handleClickClose = () => {
-    this.setState({ editing: false });
+    this.setState({
+      editing: false,
+      profile_text: this.savedProfileText,
+      pi_can_edit_value: this.savedPiCanEditValue,
+      profile_is_hidden: this.savedProfileIsHidden,
+    });
   };
 
   closeToast = () => {
@@ -169,24 +185,36 @@ class GroupEditBar extends React.Component<any, any> {
                 }
               />
               <CardContent>
-                <TextField
-                  variant="standard"
-                  value={
-                    this.state.editing ? this.state.profile_text : this.state.profile_text || this.state.default_text
-                  }
-                  onChange={this.handleChange}
-                  placeholder={i18n.t("profile.groups.editBar.placeholder")}
-                  multiline={true}
-                  maxRows={4}
-                  fullWidth
-                  label={i18n.t("profile.groups.editBar.profileDescription")}
-                  margin="dense"
-                  data-test-id="profile-description"
-                  slotProps={{
-                    input: { readOnly: !this.state.editing, disableUnderline: !this.state.editing },
-                    htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
-                  }}
-                />
+                {this.state.editing ? (
+                  <TextField
+                    variant="standard"
+                    value={this.state.profile_text}
+                    onChange={this.handleChange}
+                    placeholder={i18n.t("profile.groups.editBar.placeholder")}
+                    multiline={true}
+                    maxRows={4}
+                    fullWidth
+                    label={i18n.t("profile.groups.editBar.profileDescription")}
+                    margin="dense"
+                    data-test-id="profile-description"
+                    slotProps={{
+                      htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
+                    }}
+                  />
+                ) : (
+                  <Box data-test-id="profile-description" sx={{ marginTop: "8px", marginBottom: "4px" }}>
+                    <Typography variant="caption" component="div">
+                      {i18n.t("profile.groups.editBar.profileDescription")}
+                    </Typography>
+                    {this.state.profile_text ? (
+                      <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                        {this.state.profile_text}
+                      </Typography>
+                    ) : (
+                      <Typography color="text.secondary">{this.state.default_text}</Typography>
+                    )}
+                  </Box>
+                )}
                 {(this.state.pi_can_edit_permission || this.state.pi_can_edit_value) && (
                   <Box sx={{ marginTop: "10px" }}>
                     <FormControlLabel
