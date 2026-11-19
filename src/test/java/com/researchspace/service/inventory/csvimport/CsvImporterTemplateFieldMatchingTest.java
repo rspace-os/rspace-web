@@ -93,6 +93,17 @@ public class CsvImporterTemplateFieldMatchingTest {
   }
 
   @Test
+  void typeSuffixWithAnIdTheExporterNeverWritesIsPartOfTheHeader() throws IOException {
+    ApiInventoryImportSampleImportResult result =
+        importSamples("Name,\"Permit (STRING, XX123)\",A,B\ns1,Yes,No,p-1\n");
+
+    List<ApiInventoryEntityField> fields = sampleFields(result, 0);
+    assertEquals(List.of("Yes"), fields.get(0).getSelectedOptions());
+    assertEquals(List.of("No"), fields.get(1).getSelectedOptions());
+    assertEquals("p-1", fields.get(2).getContent());
+  }
+
+  @Test
   void headersNamingNoTemplateFieldFillTheRemainingFieldsInOrder() throws IOException {
     ApiInventoryImportSampleImportResult result =
         importSamples("Name,Toxic,Licence,GMO\ns1,No,p-1,Yes\n");
@@ -146,13 +157,13 @@ public class CsvImporterTemplateFieldMatchingTest {
   @Test
   void cellThatIsExactlyAnAllowedOptionSelectsIt() {
     ApiSampleTemplate template = new ApiSampleTemplate();
-    template.getFields().add(optionsField("Level", ApiFieldType.RADIO, "[1]", "[2]"));
+    template.getFields().add(optionsField("Level", ApiFieldType.RADIO, "[\"1\"]", "[\"2\"]"));
     ApiInventoryImportSampleImportResult result = sampleResult(template);
-    List<String[]> lines = List.<String[]>of(new String[] {"s1", "[1]"});
+    List<String[]> lines = List.<String[]>of(new String[] {"s1", "[\"1\"]"});
 
     sampleImporter.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, user);
 
-    assertEquals(List.of("[1]"), sampleFields(result, 0).get(0).getSelectedOptions());
+    assertEquals(List.of("[\"1\"]"), sampleFields(result, 0).get(0).getSelectedOptions());
   }
 
   @Test

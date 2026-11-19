@@ -74,7 +74,7 @@ public abstract class InventoryItemCsvImporter {
       Pattern.compile(
           "^(.*?)\\s*\\(("
               + Arrays.stream(FieldType.values()).map(Enum::name).collect(Collectors.joining("|"))
-              + ")(,\\s*[A-Z]{2}\\d+(v\\d+)?)?\\)$",
+              + ")(,\\s*(IT|NT)\\d+(v\\d+)?)?\\)$",
           Pattern.CASE_INSENSITIVE);
 
   protected InventoryItemCsvImporter(ApiInventoryRecordType recordType) {
