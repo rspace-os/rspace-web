@@ -36,10 +36,11 @@ For tests that startup a Spring container, RSDevConfig (dev profile) sets up
 GlobalInitManager.setApplicationInitialisors() AND IT DOES NOT populate with the same list of beans that the real config
 classes do. (It does not add GroupSharedSnippetsFolderAppInitialiser)
 
-There are two automated tests for APP startup (note - these must run in a unique Integration test phase, else we get
-multiple Spring Containers running with bean clashes. See the pom file for how this is done, we exclude tests that use
-the run and prod profiles from the standard test and Integration test runs as these all use the dev profile. Then we
-have a special execution for the run and prod profile tests):
+There are two automated tests for app startup. RunConfigWiringTestIT must run in its own integration test phase,
+otherwise several Spring containers run at once and their beans clash. The pom excludes the run profile tests from the
+standard integration run, because the other tests there use the dev profile, and gives them a separate execution.
+ProdConfigWiringTest has no separate execution. It is a plain *Test class and runs with the Spring tests. The
+executions look like this:
 
 ```
 <execution> <!-- for 'dev' profile IT tests -->
@@ -79,10 +80,14 @@ have a special execution for the run and prod profile tests):
 					</execution>
 ```
 
-RunConfigWiringTestIT and ProdConfigWiringTest. ProdConfigWiringTest does not run as part of the standard test
-executions - see the pom file. These two tests use the 'run' and 'prod' profiles and therefore can be used to test the
-real set of initialiser beans
-(such as GroupSharedSnippetsFolderAppInitialiser) that actually run on a real app startup.
+RunConfigWiringTestIT and ProdConfigWiringTest use the 'run' and 'prod' profiles, so they can test the real set of
+initialiser beans that run on a real app start, such as GroupSharedSnippetsFolderAppInitialiser. `-Dfast=true` skips
+ProdConfigWiringTest.
+
+Keep data-changing checks out of ProdConfigWiringTest. It runs with the normal Spring tests, has no database cleaner,
+and uses the database named by -Djdbc.url when one is given. RunConfigWiringTestIT can change data because it only runs
+in the separate integration-tests-run execution, on a throwaway database. GroupManagerTest tests the shared snippet
+folder migration and rolls back.
 
 GroupSharedSnippetsFolderAppInitialiser is not present in the test context on App startup for the non Integration unit
 tests that use the 'dev' profile - this is compensated by the MockFolderStructure class which actually explicitly

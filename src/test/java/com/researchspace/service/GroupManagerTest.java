@@ -7,6 +7,7 @@ import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -449,6 +450,37 @@ public class GroupManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void testExistingGroupWithoutSharedSnippetFolderGetsOneWithACL()
+      throws IllegalAddChildOperation {
+    User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
+    Group g1 = new Group(CoreTestUtils.getRandomName(10), admin);
+    g1 = grpMgr.saveGroup(g1, admin);
+    initialiseContentWithEmptyContent(user, admin);
+    g1 = grpMgr.addMembersToGroup(g1.getId(), Arrays.asList(user, admin), "", "admin2", admin);
+    grpMgr.createSharedCommunalGroupFolders(g1.getId(), admin.getUsername());
+    // simulate a group created before shared snippet folders existed
+    g1 = grpMgr.getGroup(g1.getId());
+    Long oldFolderId = g1.getSharedSnippetGroupFolderId();
+    g1.setSharedSnippetGroupFolderId(null);
+    grpMgr.saveGroup(g1, admin);
+
+    grpMgr.createSharedCommunalGroupFolders(g1.getId(), admin.getUsername());
+
+    g1 = grpMgr.getGroup(g1.getId());
+    Long newFolderId = g1.getSharedSnippetGroupFolderId();
+    assertNotNull(newFolderId);
+    assertNotEquals(oldFolderId, newFolderId);
+    Folder newFolder = folderDao.get(newFolderId);
+    assertThat(newFolder.getSharingACL().getAclElements()).isNotEmpty();
+    for (User member : g1.getMembers()) {
+      assertThat(getSharedLabGroupSnippetsFolder(member).getChildrens())
+          .extracting(BaseRecord::getId)
+          .contains(newFolderId);
+    }
+  }
+
+  @Test
   public void testAMemberAddedToGroupHasSharedSnippetFolderAdded() throws IllegalAddChildOperation {
     User admin = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
     User user = createAndSaveUserIfNotExists(CoreTestUtils.getRandomName(10));
@@ -496,19 +528,22 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   private void makeSharedSnippetFolderAssertionsForUser(
       User aUser, String expectedName, boolean shouldFolderExist) {
-    Folder snippetFolder = recordMgr.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
-    Folder snippetSharedFolder =
-        snippetFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
-    Folder snippetLabGroups =
-        snippetSharedFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
-    Folder sharedSnippetsForGroup = snippetLabGroups.getSystemSubFolderByName(expectedName);
+    Folder sharedSnippetsForGroup =
+        getSharedLabGroupSnippetsFolder(aUser).getSystemSubFolderByName(expectedName);
     if (shouldFolderExist) {
       assertNotNull(sharedSnippetsForGroup);
     } else {
       assertNull(sharedSnippetsForGroup);
     }
+  }
+
+  private Folder getSharedLabGroupSnippetsFolder(User aUser) {
+    Folder snippetFolder = recordMgr.getGalleryMediaFolderForUser(Folder.SNIPPETS_FOLDER, aUser);
+    Folder snippetSharedFolder =
+        snippetFolder.getSystemSubFolderByName(
+            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME);
+    return snippetSharedFolder.getSystemSubFolderByName(
+        SHARED_SNIPPETS_FOLDER_PREFIX + Folder.LAB_GROUPS_FOLDER_NAME);
   }
 
   @Test
