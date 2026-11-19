@@ -13455,6 +13455,7 @@ export default interface Resources {
           "caption": "Predicted bond strengths (bond dissociation enthalpy) from {name} {version}. Typical error {error} kcal/mol against DFT, not checked against experiment. Calculated on {date}.",
           "imageAlt": "Structure with predicted bond strengths",
           "legend": "Values in kcal/mol. Atom numbers match the table. Red marks the weakest bond.",
+          "methodItem": "{label}: {value}",
           "skippedBonds": "{count, plural, one {Ring, double and triple bonds have no value (# bond).} other {Ring, double and triple bonds have no value (# bonds).}}",
           "weakestBond": "{label}, weakest bond"
         },

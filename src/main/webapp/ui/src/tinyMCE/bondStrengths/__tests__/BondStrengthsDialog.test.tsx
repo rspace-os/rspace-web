@@ -217,7 +217,15 @@ describe("BondStrengthsDialog", () => {
     const user = userEvent.setup();
     const onInsert = vi.fn<OnInsert>(() => Promise.resolve("inserted"));
     const onClose = vi.fn();
-    respondWith(toluene);
+    respondWith({
+      ...toluene,
+      method: {
+        ...method,
+        quantity: "Homolytic bond dissociation enthalpy at 298 K",
+        referenceMethod: "DFT, M06-2X/def2-TZVP",
+        trainingData: "BDE-db2 (CC BY 4.0), https://doi.org/10.6084/m9.figshare.19367051",
+      },
+    });
     await renderDialog({ onInsert, onClose });
 
     await user.click(await screen.findByRole("button", { name: "Insert into document" }));
@@ -240,6 +248,14 @@ describe("BondStrengthsDialog", () => {
         "Ring, double and triple bonds have no value (1 bond).",
         "No value for C4-H. Low confidence: two models disagreed by more than 5 kcal/mol, so the value is not shown.",
       ],
+      methodDetails:
+        "What is predicted: Homolytic bond dissociation enthalpy at 298 K · Reference method: DFT, M06-2X/def2-TZVP · Model weights: af085c02bbbc · Training data: BDE-db2 (CC BY 4.0), https://doi.org/10.6084/m9.figshare.19367051",
+      provenance: {
+        model: "RSpace bond strength model",
+        version: "0.1.0",
+        weightsSha256: "af085c02bbbc372c177ff0b256b25aa7f0f6a8d9988276ca02e5c85ba0a9e890",
+        calculatedAt: new Date(2026, 10, 18, 12).toISOString(),
+      },
     });
     expect(onClose).toHaveBeenCalledOnce();
   });

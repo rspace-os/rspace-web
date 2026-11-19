@@ -192,6 +192,15 @@ function documentContent(
   imageSrc: string | null,
   chemId: number,
 ): BondStrengthsDocumentContent {
+  const { method } = result;
+  const now = new Date();
+  // The training data ends with a link, so it goes last, where no punctuation follows it.
+  const methodItems: ReadonlyArray<[label: string, value: string | null | undefined]> = [
+    [t("workspace:tinymce.bondStrengths.about.quantity"), method.quantity],
+    [t("workspace:tinymce.bondStrengths.about.referenceMethod"), method.referenceMethod],
+    [t("workspace:tinymce.bondStrengths.about.weights"), method.weightsSha256.slice(0, 12)],
+    [t("workspace:tinymce.bondStrengths.about.trainingData"), method.trainingData],
+  ];
   return {
     columns: pictureAndColumnText(t).columns,
     imageAlt: t("workspace:tinymce.bondStrengths.document.imageAlt"),
@@ -199,11 +208,21 @@ function documentContent(
     imageSrc,
     forChemicalId: String(chemId),
     caption: t("workspace:tinymce.bondStrengths.document.caption", {
-      name: result.method.name,
-      version: result.method.version,
-      error: formatNumber(result.method.meanAbsoluteErrorKcalMol, language),
-      date: new Intl.DateTimeFormat(language, { dateStyle: "long" }).format(new Date()),
+      name: method.name,
+      version: method.version,
+      error: formatNumber(method.meanAbsoluteErrorKcalMol, language),
+      date: new Intl.DateTimeFormat(language, { dateStyle: "long" }).format(now),
     }),
+    methodDetails: methodItems
+      .filter((item): item is [string, string] => Boolean(item[1]))
+      .map(([label, value]) => t("workspace:tinymce.bondStrengths.document.methodItem", { label, value }))
+      .join(" · "),
+    provenance: {
+      model: method.name,
+      version: method.version,
+      weightsSha256: method.weightsSha256,
+      calculatedAt: now.toISOString(),
+    },
     rows: rows.map((row) => ({
       bond: row.weakest ? t("workspace:tinymce.bondStrengths.document.weakestBond", { label: row.label }) : row.label,
       kcalMol: row.kcalMol,

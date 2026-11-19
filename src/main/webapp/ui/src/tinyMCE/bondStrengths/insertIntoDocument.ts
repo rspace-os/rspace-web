@@ -16,6 +16,13 @@ export type BondStrengthsDocumentContent = {
   rows: ReadonlyArray<BondStrengthsDocumentRow>;
   /** Sentences on why other bonds have no value, shown as one paragraph. */
   notes: ReadonlyArray<string>;
+  /** How the values were calculated, as one paragraph; empty when the service gave no details. */
+  methodDetails: string;
+  /**
+   * Stored on the result as data attributes, so later code can tell which model made it and when,
+   * for example to mark results from an older model.
+   */
+  provenance: { model: string; version: string; weightsSha256: string; calculatedAt: string };
 };
 
 export type BondStrengthsInsertOutcome = "inserted" | "insertedWithoutPicture";
@@ -87,9 +94,16 @@ export function insertBondStrengthsAfter(
   if (content.notes.length > 0) {
     nodes.push(element(doc, "p", content.notes.join(" ")));
   }
+  if (content.methodDetails) {
+    nodes.push(element(doc, "p", content.methodDetails));
+  }
 
   const result = element(doc, "div");
   result.setAttribute(RESULT_ATTRIBUTE, content.forChemicalId);
+  result.setAttribute("data-bond-strengths-model", content.provenance.model);
+  result.setAttribute("data-bond-strengths-version", content.provenance.version);
+  result.setAttribute("data-bond-strengths-weights", content.provenance.weightsSha256);
+  result.setAttribute("data-bond-strengths-calculated", content.provenance.calculatedAt);
   result.className = "mceNonEditable";
   result.setAttribute("contenteditable", "false");
   result.append(...nodes);

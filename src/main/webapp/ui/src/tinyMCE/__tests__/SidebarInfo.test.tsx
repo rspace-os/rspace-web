@@ -18,6 +18,13 @@ const bondStrengthsContent: BondStrengthsDocumentContent = {
     { bond: "C1-C2", kcalMol: "101.0", kjMol: "422.6" },
   ],
   notes: ["Ring, double and triple bonds have no value (1 bond).", "No value for C3-H. Low confidence."],
+  methodDetails: "Model weights: af085c02bbbc · Training data: BDE-db2 (CC BY 4.0)",
+  provenance: {
+    model: "RSpace bond strength model",
+    version: "0.2.0",
+    weightsSha256: "af085c02bbbc372c",
+    calculatedAt: "2026-11-19T12:00:00.000Z",
+  },
 };
 
 const galleryPicture =
@@ -186,18 +193,24 @@ describe("SidebarInfo accessibility", () => {
     // A later insert replaces the block whole, so it must not take typed text.
     expect(result.className).toBe("mceNonEditable");
     expect(result.getAttribute("contenteditable")).toBe("false");
+    expect(result.getAttribute("data-bond-strengths-model")).toBe("RSpace bond strength model");
+    expect(result.getAttribute("data-bond-strengths-version")).toBe("0.2.0");
+    expect(result.getAttribute("data-bond-strengths-weights")).toBe("af085c02bbbc372c");
+    expect(result.getAttribute("data-bond-strengths-calculated")).toBe("2026-11-19T12:00:00.000Z");
     expect(insertOutcome).toHaveBeenCalledExactlyOnceWith("inserted");
-    const [pictureParagraph, legend, table, notes] = Array.from(result.children) as [
+    const [pictureParagraph, legend, table, notes, methodDetails] = Array.from(result.children) as [
       HTMLParagraphElement,
       HTMLParagraphElement,
       HTMLTableElement,
       HTMLParagraphElement,
+      HTMLParagraphElement,
     ];
-    expect(result.children).toHaveLength(4);
+    expect(result.children).toHaveLength(5);
     expect(legend.textContent).toBe("Numbers on bonds are in kcal/mol.");
     expect(notes.textContent).toBe(
       "Ring, double and triple bonds have no value (1 bond). No value for C3-H. Low confidence.",
     );
+    expect(methodDetails.textContent).toBe("Model weights: af085c02bbbc · Training data: BDE-db2 (CC BY 4.0)");
     expect(chemicalImage.parentElement).toBe(chemicalParagraph);
     expect(pictureParagraph.firstElementChild?.tagName).toBe("IMG");
     // The picture is the Gallery image, never the data URI, which would bloat the field.
