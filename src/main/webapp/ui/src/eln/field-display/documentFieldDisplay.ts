@@ -9,9 +9,8 @@
  *  - `data-field-key`: the form field's key;
  *  - `data-display-rule`: its stored rule JSON, absent when it has none;
  *  - `data-field-id` and `data-field-name`: for callers and announcements;
- *  - `data-field-value`: stored radio data on the document page, and stored
- *    radio or choice data in the notebook view, which has no inputs. Legacy
- *    code that reloads a field's data updates it through `syncStoredValue`.
+ *  - `data-field-value`: stored radio or choice data. Legacy code that
+ *    reloads a field's data updates it through `syncStoredValue`.
  */
 import * as v from "valibot";
 import { type FieldDisplayRule, parseDisplayRule } from "@/modules/common/field-rules/displayRule";
@@ -21,7 +20,10 @@ import { displayRuleVisibility } from "@/modules/common/field-rules/evaluateDisp
 /** Document field rows and notebook field wrappers. */
 export const FIELD_SELECTOR = "tr.field[data-field-type], div.journalField[data-field-type]";
 
-/** Set on a picklist once the user picks an option; cleared when its data is reloaded. */
+/**
+ * Set on a picklist, or a choice field's element, once the user changes it;
+ * cleared when its data is reloaded.
+ */
 const ANSWERED_ATTRIBUTE = "data-field-answered";
 
 export type FieldDisplayResult = {
@@ -51,7 +53,8 @@ const asSelection = (value: string): Array<string> => (value === "" ? [] : [valu
  * Radio data as the server reads it: any non-empty stored value is selected,
  * even one that is no longer an option. The page's controls take over once
  * they say more: a checked radio, or a picklist the user has picked from (a
- * select always shows an option, even when the field has no data).
+ * picklist rendered with data has no empty option, so it shows an option even
+ * after its data is cleared).
  */
 function radioSelection(element: HTMLElement, storedValue: string): Array<string> {
   const checked = element.querySelector<HTMLInputElement>('input[type="radio"]:checked');
@@ -61,16 +64,26 @@ function radioSelection(element: HTMLElement, storedValue: string): Array<string
   return asSelection(storedValue);
 }
 
+/**
+ * Choice data as the server reads it, stored values that are not options
+ * included, until the user changes a checkbox: from then on the checked boxes
+ * are what autosave will store.
+ */
+function choiceSelection(element: HTMLElement, storedValue: string | undefined): Array<string> {
+  const boxes = Array.from(element.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+  if (boxes.length > 0 && (storedValue === undefined || element.hasAttribute(ANSWERED_ATTRIBUTE))) {
+    return boxes.filter((box) => box.checked).map((box) => box.value);
+  }
+  return parseElnChoiceValues(storedValue ?? "");
+}
+
 function selectedOptions(element: HTMLElement): Array<string> {
-  const storedValue = element.dataset.fieldValue ?? "";
+  const storedValue = element.dataset.fieldValue;
   switch (element.dataset.fieldType) {
     case "RADIO":
-      return radioSelection(element, storedValue);
-    case "CHOICE": {
-      const boxes = Array.from(element.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
-      if (boxes.length > 0) return boxes.filter((box) => box.checked).map((box) => box.value);
-      return parseElnChoiceValues(storedValue);
-    }
+      return radioSelection(element, storedValue ?? "");
+    case "CHOICE":
+      return choiceSelection(element, storedValue);
     default:
       return [];
   }
@@ -115,18 +128,22 @@ export function applyFieldDisplayRules(root: ParentNode): FieldDisplayResult {
   return { shownById, revealedNames, concealedNames };
 }
 
-/** Records that the user changed a field's control, so a picklist's value counts from now on. */
+/** Records that the user changed a field's control, so a picklist's value or a choice field's boxes count from now on. */
 export function markAnswered(control: Element): void {
   if (control instanceof HTMLSelectElement) control.setAttribute(ANSWERED_ATTRIBUTE, "");
+  else if (control instanceof HTMLInputElement && control.type === "checkbox") {
+    control.closest(FIELD_SELECTOR)?.setAttribute(ANSWERED_ATTRIBUTE, "");
+  }
 }
 
 /**
- * Records radio data the page has just reloaded (from the server or an
- * autosave), which legacy code writes into the inputs without change events.
- * A picklist shows the value, or no option when it has none.
+ * Records radio or choice data the page has just reloaded (from the server or
+ * an autosave), which legacy code writes into the inputs without change
+ * events. A picklist shows the value, or no option when it has none.
  */
 export function syncStoredValue(element: HTMLElement, value: string): void {
   element.dataset.fieldValue = value;
+  element.removeAttribute(ANSWERED_ATTRIBUTE);
   const select = element.querySelector("select");
   if (select) {
     select.removeAttribute(ANSWERED_ATTRIBUTE);
