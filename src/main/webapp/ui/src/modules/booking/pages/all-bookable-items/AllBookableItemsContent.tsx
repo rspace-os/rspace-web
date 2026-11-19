@@ -4,9 +4,8 @@ import { PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
-import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
+import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
   getSearchBookingCatalogueLocationsQueryKey,
   getSearchBookingCatalogueQueryKey,
