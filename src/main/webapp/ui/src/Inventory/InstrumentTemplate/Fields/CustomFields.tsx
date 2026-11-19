@@ -13,6 +13,7 @@ import InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateMo
 import useStores from "../../../stores/use-stores";
 import CustomField from "../../Template/Fields/CustomField";
 import TemplateDisplayRules from "../../Template/Fields/TemplateDisplayRules";
+import useFocusAddedField from "../../Template/Fields/useFocusAddedField";
 
 const EMPTY_FIELD: FieldModelAttrs = {
   name: "",
@@ -70,6 +71,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
+  const { listRef, fieldAdding } = useFocusAddedField(fields.length);
   return (
     <>
       {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
@@ -79,7 +81,9 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
         editable={editable}
       />
       {fields.length > 0 ? (
-        <TemplateFields editable={editable} />
+        <Box ref={listRef}>
+          <TemplateFields editable={editable} />
+        </Box>
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label={t("instrumentTemplate.customFields.noCustomFields")} />
@@ -92,7 +96,10 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
               color="primary"
               startIcon={<AddOutlinedIcon />}
               variant="outlined"
-              onClick={() => activeResult.addField(EMPTY_FIELD)}
+              onClick={() => {
+                fieldAdding();
+                activeResult.addField(EMPTY_FIELD);
+              }}
             >
               {t("fields.extraFields.addNewField")}
             </Button>

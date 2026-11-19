@@ -545,4 +545,30 @@ describe("Instrument template display rules", () => {
     expect(v.is(UUID, (template.fields[0] as FieldModel).fieldKey)).toBe(true);
     expect(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).toBeInTheDocument();
   });
+
+  it("moves focus to the name of a field when it is added", async () => {
+    const user = userEvent.setup();
+    const template = makeMockInstrumentTemplate();
+    template.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({
+            searchStore: { activeResult: template },
+            uiStore: { isLarge: true, confirm: vi.fn() },
+          })}
+        >
+          <InstrumentTemplateFields onErrorStateChange={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
+
+    expect(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("textbox", {
+        name: "common:fieldEditor.card.name",
+      }),
+    ).toHaveFocus();
+  });
 });
