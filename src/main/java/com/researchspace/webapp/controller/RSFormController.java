@@ -201,14 +201,13 @@ public class RSFormController extends BaseController {
   // permissions handled in manager
   public AjaxReturnObject<StringFieldForm> createStringField(
       @RequestParam("defaultValue") String defaultValue,
-      @RequestParam("ifPassword") String isPassword,
       @RequestParam("name") String fieldName,
       @RequestParam("recordId") long formId,
       @RequestParam("mandatory") boolean isMandatory) {
 
     User subject = userManager.getAuthenticatedUserInSession();
     StringFieldDTO<StringFieldForm> dto =
-        new StringFieldDTO<StringFieldForm>(fieldName, isMandatory, isPassword, defaultValue);
+        new StringFieldDTO<>(fieldName, isMandatory, defaultValue);
     ErrorList eo = inputValidator.validateAndGetErrorList(dto, new StringFieldDTOValidator());
     if (eo != null) {
       return new AjaxReturnObject<StringFieldForm>(null, eo);
@@ -271,14 +270,13 @@ public class RSFormController extends BaseController {
   @PostMapping("ajax/saveEditedStringField")
   public AjaxReturnObject<StringFieldForm> saveEditedStringField(
       @RequestParam("defaultValue") String defaultValue,
-      @RequestParam("ifPassword") String isPassword,
       @RequestParam("name") String fieldName,
       @RequestParam("fieldId") long fieldId,
       @RequestParam("mandatory") boolean isMandatory) {
 
     User subject = userManager.getAuthenticatedUserInSession();
     StringFieldDTO<StringFieldForm> dto =
-        new StringFieldDTO<StringFieldForm>(fieldName, isMandatory, isPassword, defaultValue);
+        new StringFieldDTO<>(fieldName, isMandatory, defaultValue);
     ErrorList eo = inputValidator.validateAndGetErrorList(dto, new StringFieldDTOValidator());
     if (eo != null) {
       return new AjaxReturnObject<StringFieldForm>(null, eo);

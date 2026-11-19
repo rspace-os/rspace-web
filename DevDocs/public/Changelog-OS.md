@@ -4,6 +4,10 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+- RSPAC-624 removes the ELN String field password option. Existing fields and older archive imports retain their values and defaults and display them as ordinary text.
+
 # 2.28.0 2026-11-06
 
 ### Server

@@ -164,7 +164,6 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertNotNull(sft.getId());
     assertNotNull(sft.getForm());
     assertEquals(FieldType.STRING, sft.getType());
-    assertTrue(sft.isIfPassword());
 
     RSForm form2 = formMgr.get(form.getId(), null);
     assertEquals(1, form2.getNumActiveFields());
@@ -649,7 +648,6 @@ public class FormManagerTest extends SpringTransactionalTest {
   private StringFieldDTO<StringFieldForm> createAnyStringDTO() {
     StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<StringFieldForm>();
     dto.setDefaultStringValue("Default");
-    dto.setIfPassword("yes");
     dto.setName("name");
     return dto;
   }

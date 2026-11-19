@@ -9,29 +9,22 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class StringFieldDTO<T> extends AbstractFormFieldDTO<StringFieldForm> {
 
-  private String ifPassword, defaultStringValue;
+  private String defaultStringValue;
 
   public StringFieldDTO() {}
 
-  public StringFieldDTO(String name, String ifPassword, String defaultStringValue) {
-    this(name, false, ifPassword, defaultStringValue);
+  public StringFieldDTO(String name, String defaultStringValue) {
+    this(name, false, defaultStringValue);
   }
 
-  public StringFieldDTO(
-      String name, boolean isMandatory, String ifPassword, String defaultStringValue) {
+  public StringFieldDTO(String name, boolean isMandatory, String defaultStringValue) {
     super(name, isMandatory);
-    this.ifPassword = ifPassword;
     this.defaultStringValue = defaultStringValue;
   }
 
   public void copyValuesIntoFieldForm(StringFieldForm stringField) {
     copyCommonValuesIntoFieldForm(stringField);
     stringField.setDefaultStringValue(getDefaultStringValue());
-    if (getIfPassword().equals("yes")) {
-      stringField.setIfPassword(true);
-    } else {
-      stringField.setIfPassword(false);
-    }
     stringField.setModificationDate(new Date().getTime());
   }
 

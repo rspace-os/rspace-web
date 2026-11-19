@@ -166,7 +166,6 @@ public class RecordFactory implements IRecordFactory {
     StringFieldForm sft = new StringFieldForm("MyString");
     sft.setColumnIndex(4);
     sft.setDefaultStringValue("string");
-    sft.setIfPassword(false);
     seleniumForm.addFieldForm(sft);
 
     TextFieldForm tft = new TextFieldForm("MyText");
