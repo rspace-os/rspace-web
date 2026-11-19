@@ -6,7 +6,6 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,25 +68,27 @@ public final class InheritedFieldMerge {
 
   /**
    * {@code templateFields} as a sample created from them will hold them once the generated values
-   * are merged in. A merged field is replaced by a copy, so the template itself is not changed;
-   * when nothing merges, the given list is returned.
+   * are merged in. The merge is planned and written on copies, so the template itself is not
+   * changed; when nothing merges, the given list is returned.
+   *
+   * <p>Planning on copies matches the save path, which plans on the sample's own copies: {@link
+   * InventoryEntityField#validate} skips the mandatory check for a field a template owns, so the
+   * template's fields would accept a blank value that the sample's copies reject.
    */
   public static List<InventoryEntityField> withMergedValues(
       List<ApiExtraField> extraFields, List<InventoryEntityField> templateFields) {
-    List<Merge> merges = plan(extraFields, templateFields);
+    if (extraFields == null || extraFields.isEmpty() || templateFields == null) {
+      return templateFields;
+    }
+    List<InventoryEntityField> copies =
+        templateFields.stream().map(InventoryEntityField::shallowCopy).toList();
+    List<Merge> merges = plan(extraFields, copies);
     if (merges.isEmpty()) {
       return templateFields;
     }
-    Map<InventoryEntityField, InventoryEntityField> copies = new IdentityHashMap<>();
     for (Merge merge : merges) {
-      copies
-          .computeIfAbsent(merge.target(), InventoryEntityField::shallowCopy)
-          .setFieldData(merge.generated().getContent());
+      merge.target().setFieldData(merge.generated().getContent());
     }
-    List<InventoryEntityField> merged = new ArrayList<>(templateFields.size());
-    for (InventoryEntityField field : templateFields) {
-      merged.add(copies.getOrDefault(field, field));
-    }
-    return merged;
+    return copies;
   }
 }

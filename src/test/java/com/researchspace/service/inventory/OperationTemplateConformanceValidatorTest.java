@@ -151,23 +151,38 @@ class OperationTemplateConformanceValidatorTest {
   @Test
   void aPassageNumberHidingTheMandatoryFieldIsTheGeneratedOneNotTheTemplateDefault() {
     validator = validatorCheckingTemplateFields();
+    SampleTemplate template = splitRatioTemplate(ConditionOperator.GREATER_THAN, "2");
 
-    assertDoesNotThrow(() -> validator.validate(passageOfSplitRatioTemplate(), user));
+    assertDoesNotThrow(() -> validator.validate(firstPassageInto(template), user));
+    assertEquals("4", template.getActiveFields().get(0).getFieldData());
   }
 
   @Test
-  void anExplicitlyPostedPassageNumberTakesPrecedenceOverTheGeneratedOne() {
+  void anExplicitlyPostedPassageNumberThatShowsTheFieldOverridesOneGeneratedToHideIt() {
     validator = validatorCheckingTemplateFields();
-    ApiInventoryOperationPost built = passageOfSplitRatioTemplate();
-    ApiInventoryEntityField passageNumber = new ApiInventoryEntityField();
-    passageNumber.setContent("5");
-    built.getNewSample().setFields(List.of(passageNumber, new ApiInventoryEntityField()));
+    // the template default 4 and the generated 1 both hide "Split ratio"; only the posted 5 shows
+    // it
+    ApiInventoryOperationPost built =
+        firstPassageInto(splitRatioTemplate(ConditionOperator.GREATER_THAN, "4"));
+    postPassageNumber(built, "5");
 
     BindException rejection =
         assertThrows(BindException.class, () -> validator.validate(built, user));
     assertEquals(
         "errors.inventory.field.mandatoryFieldEmpty",
         rejection.getFieldErrors("newSample.fields").get(0).getCode());
+  }
+
+  @Test
+  void anExplicitlyPostedPassageNumberThatHidesTheFieldOverridesOneGeneratedToShowIt() {
+    validator = validatorCheckingTemplateFields();
+    // the template default 4 and the generated 1 both show "Split ratio"; only the posted 7 hides
+    // it
+    ApiInventoryOperationPost built =
+        firstPassageInto(splitRatioTemplate(ConditionOperator.LESS_THAN, "5"));
+    postPassageNumber(built, "7");
+
+    assertDoesNotThrow(() -> validator.validate(built, user));
   }
 
   private OperationTemplateConformanceValidator validatorCheckingTemplateFields() {
@@ -207,10 +222,10 @@ class OperationTemplateConformanceValidatorTest {
   }
 
   /**
-   * A first passage (the origin has no number, so the operation generates 1) into a template whose
-   * "Passage number" defaults to 4 and whose mandatory, empty "Split ratio" is shown above 2.
+   * A template, served as id 9, whose "Passage number" defaults to 4 and whose mandatory, empty
+   * "Split ratio" is shown while the passage number meets {@code operator} {@code threshold}.
    */
-  private ApiInventoryOperationPost passageOfSplitRatioTemplate() {
+  private SampleTemplate splitRatioTemplate(ConditionOperator operator, String threshold) {
     String numberKey = "3c9e1f7a-2b4d-4e8f-a6c1-5d0b9e7f2a13";
     SampleTemplate template = new SampleTemplate();
     template.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
@@ -220,11 +235,16 @@ class OperationTemplateConformanceValidatorTest {
     template.addSampleField(passageNumber);
     InventoryStringField splitRatio = new InventoryStringField("Split ratio");
     splitRatio.setMandatory(true);
-    splitRatio.setDisplayRule(
-        new FieldDisplayRule(numberKey, ConditionOperator.GREATER_THAN, List.of("2")));
+    splitRatio.setDisplayRule(new FieldDisplayRule(numberKey, operator, List.of(threshold)));
     template.addSampleField(splitRatio);
     when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(9L, user)).thenReturn(template);
+    return template;
+  }
 
+  /**
+   * A first passage into {@code template}: the origin has no number, so the operation generates 1.
+   */
+  private ApiInventoryOperationPost firstPassageInto(SampleTemplate template) {
     ApiInventoryOperationRequests.Passage request = new ApiInventoryOperationRequests.Passage();
     ApiInventoryOperationRequests.Origin origin = new ApiInventoryOperationRequests.Origin();
     origin.setGlobalId("SS100");
@@ -248,6 +268,12 @@ class OperationTemplateConformanceValidatorTest {
                 LocalDate.parse("2026-08-20"));
     built.getNewSample().setTemplateId(9L);
     return built;
+  }
+
+  private static void postPassageNumber(ApiInventoryOperationPost built, String value) {
+    ApiInventoryEntityField passageNumber = new ApiInventoryEntityField();
+    passageNumber.setContent(value);
+    built.getNewSample().setFields(List.of(passageNumber, new ApiInventoryEntityField()));
   }
 
   private ApiInventoryOperationPost templateBackedAliquot(RSUnitDef childUnit) {
