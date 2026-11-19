@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../../components/NoValue";
 import FieldModel from "../../../stores/models/FieldModel";
@@ -10,6 +10,7 @@ import useStores from "../../../stores/use-stores";
 import CustomField from "./CustomField";
 import NewField from "./NewField";
 import TemplateDisplayRules from "./TemplateDisplayRules";
+import useFocusAddedField from "./useFocusAddedField";
 
 type FieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
@@ -54,16 +55,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
-
-  // a ref, not state: another render of this component remounts TemplateFields and would drop the focus
-  const listRef = useRef<HTMLDivElement>(null);
-  const focusNewField = useRef(false);
-  useEffect(() => {
-    if (!focusNewField.current) return;
-    focusNewField.current = false;
-    const cards = listRef.current?.querySelectorAll('[data-testid="TemplateField"]');
-    cards?.[cards.length - 1]?.querySelector<HTMLElement>('input[name="name"]')?.focus();
-  }, [fields.length]);
+  const { listRef, fieldAdding } = useFocusAddedField(fields.length);
 
   return (
     <>
@@ -82,14 +74,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
           <NoValue label={t("fields.templateFields.customField.noMoreFields")} />
         </Box>
       )}
-      {editable && (
-        <NewField
-          record={activeResult}
-          onAdd={() => {
-            focusNewField.current = true;
-          }}
-        />
-      )}
+      {editable && <NewField record={activeResult} onAdd={fieldAdding} />}
     </>
   );
 }
