@@ -13,18 +13,21 @@ const clipboardHtml = (fragment: string) =>
 // The HTML Windows Photos puts on the clipboard next to the image file: a local URL the browser can't load.
 const PHOTOS_HTML = clipboardHtml(LOCAL_IMAGE);
 
-type ClipboardPayload = { html: string; text?: string; plainTextShortcut?: boolean };
+type ClipboardPayload = { html: string; text?: string; plainTextShortcut?: boolean; htmlInPasteBin?: boolean };
 
 /**
  * Replays a keyboard paste of an image file plus the given formats. The keydown lets TinyMCE's paste
  * plugin prepare its paste bin as it does for a real Ctrl+V.
  */
-async function pasteImageWith(field: TinyMceEditor, { html, text, plainTextShortcut = false }: ClipboardPayload) {
+async function pasteImageWith(
+  field: TinyMceEditor,
+  { html, text, plainTextShortcut = false, htmlInPasteBin = false }: ClipboardPayload,
+) {
   const png = (await readFile(IMAGE_PATH)).toString("base64");
   await field.body.evaluate(
     (body, payload) => {
       const data = new DataTransfer();
-      data.setData("text/html", payload.html);
+      if (!payload.htmlInPasteBin) data.setData("text/html", payload.html);
       if (payload.text) data.setData("text/plain", payload.text);
       const bytes = Uint8Array.from(atob(payload.png), (c) => c.charCodeAt(0));
       data.items.add(new File([bytes], "Photos-copy.png", { type: "image/png" }));
@@ -39,9 +42,15 @@ async function pasteImageWith(field: TinyMceEditor, { html, text, plainTextShort
           shiftKey: payload.plainTextShortcut,
         }),
       );
-      body.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }));
+      const target = payload.htmlInPasteBin ? body.querySelector("#mcepastebin") : body;
+      if (!target) throw new Error("TinyMCE did not create a paste bin on keydown");
+      const allowDefault = target.dispatchEvent(
+        new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }),
+      );
+      // The browser's default paste runs after dispatch, before TinyMCE's zero-delay paste-bin read.
+      if (allowDefault && payload.htmlInPasteBin) target.innerHTML = payload.html;
     },
-    { html, text, plainTextShortcut, png },
+    { html, text, plainTextShortcut, htmlInPasteBin, png },
   );
 }
 
@@ -83,7 +92,11 @@ test.describe("Workspace editor uploads", () => {
       "Firefox hides the data of script-created paste events, so the clipboard can't be replayed",
     );
 
-    for (const pasteMode of ["normal paste", "paste as text"]) {
+    for (const { pasteMode, plainTextMode, htmlInPasteBin } of [
+      { pasteMode: "normal paste" },
+      { pasteMode: "paste as text", plainTextMode: true },
+      { pasteMode: "HTML delivered through the paste bin", htmlInPasteBin: true },
+    ]) {
       test(`As a user, I can paste an image copied from Windows Photos with ${pasteMode}`, async ({
         page,
         pageWorkspace,
@@ -92,7 +105,7 @@ test.describe("Workspace editor uploads", () => {
         const editor = await pageWorkspace.createBasicDocument();
         const field = await editor.getField("New List of Materials");
         await field.typeLines(["Before image", "After image"]);
-        if (pasteMode === "paste as text") await togglePlainTextPaste(page, field);
+        if (plainTextMode) await togglePlainTextPaste(page, field);
         await field.body.getByText("Before image").click();
         await field.body.press("End");
         const uploads = countGalleryUploads(page);
@@ -101,7 +114,7 @@ test.describe("Workspace editor uploads", () => {
           page.waitForResponse(
             (res) => res.request().method() === "POST" && new URL(res.url()).pathname === "/gallery/ajax/uploadFile/",
           ),
-          pasteImageWith(field, { html: PHOTOS_HTML }),
+          pasteImageWith(field, { html: PHOTOS_HTML, htmlInPasteBin }),
         ]);
 
         expect(response.ok()).toBe(true);
@@ -153,6 +166,13 @@ test.describe("Workspace editor uploads", () => {
       await togglePlainTextPaste(page, field);
       await pasteImageWith(field, { html: clipboardHtml(`<p><strong>Rich caption</strong></p>${LOCAL_IMAGE}`) });
       await expect(field.body.locator("strong")).toHaveText("Rich caption");
+
+      await pasteImageWith(field, {
+        html: clipboardHtml(`<p><strong>Paste bin caption</strong></p>${LOCAL_IMAGE}`),
+        htmlInPasteBin: true,
+      });
+      await expect(field.body.locator("strong").filter({ hasText: "Paste bin caption" })).toBeVisible();
+      await expect(field.body.locator("#mcepastebin")).toHaveCount(0);
 
       await expect(field.imageElement).toHaveCount(0);
       expect(uploads()).toBe(0);

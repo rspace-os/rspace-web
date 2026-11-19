@@ -121,21 +121,51 @@ var tinymcesetup = {
 			}
 		}, true);
 
+		var pendingImagePaste = null;
 		// Run before the paste plugin so it can clean up a paste that we cancel.
 		ed.on('paste', function (e) {
+			pendingImagePaste = null;
 			var shortcutUsesPlainText = plainTextKeyboardPaste;
 			plainTextKeyboardPaste = false;
 			var pastePlugin = ed.plugins.paste;
 			if (!pastePlugin || e.isDefaultPrevented()) {
 				return;
 			}
-			var imageFile = getLocalImagePasteFile(e.clipboardData);
+			var clipboardData = e.clipboardData;
+			var imageFile = getSingleImagePasteFile(clipboardData);
 			if (!imageFile) {
 				return;
 			}
 
 			var plainTextMode = shortcutUsesPlainText || pastePlugin.clipboard.pasteFormat.get() === 'text';
-			var plainText = plainTextMode ? e.clipboardData.getData('text/plain') : '';
+			var html = clipboardData.getData('text/html');
+			if (!html) {
+				if (plainTextMode || Array.from(clipboardData.types || []).includes('text/html')) {
+					return;
+				}
+				var pasteBin = ed.dom.get('mcepastebin');
+				if (pasteBin) {
+					var pending = { file: imageFile, pasteBin: pasteBin };
+					pendingImagePaste = pending;
+					// Let TinyMCE queue its zero-delay paste-bin read before scheduling expiry.
+					queueMicrotask(function () {
+						setTimeout(function () {
+							if (pendingImagePaste === pending) {
+								pendingImagePaste = null;
+							}
+						}, 0);
+					});
+				}
+				return;
+			}
+
+			// Parse in an inert template so checking the HTML does not load the local image.
+			var template = document.createElement('template');
+			template.innerHTML = html;
+			if (!isSingleLocalImage(template.content)) {
+				return;
+			}
+			var plainText = plainTextMode ? clipboardData.getData('text/plain') : '';
 			if (plainText.trim()) {
 				e.preventDefault();
 				// The paste plugin removes its paste bin and restores the caret before this runs.
@@ -148,6 +178,18 @@ var tinymcesetup = {
 			}
 			if (uploadGalleryFile([imageFile], ed)) {
 				e.preventDefault();
+			}
+		}, true);
+
+		ed.on('PastePostProcess', function (args) {
+			var pending = pendingImagePaste;
+			pendingImagePaste = null;
+			// TinyMCE removes the paste bin and restores the caret before post-processing.
+			// Check both fragments so filtering cannot make a rich paste eligible.
+			if (pending && !pending.pasteBin.isConnected && isSingleLocalImage(pending.pasteBin)
+					&& isSingleLocalImage(args.node) && uploadGalleryFile([pending.file], ed)) {
+				args.node.textContent = '';
+				args.preventDefault();
 			}
 		}, true);
 
@@ -1074,12 +1116,7 @@ function _hasRSpaceMarkup(element) {
 	});
 }
 
-/*
- * RSDEV-1451: Windows Photos copies the image file together with HTML whose only content is an
- * <img> pointing at a local file: URL, which the browser can't load. Returns that image file when the
- * clipboard holds exactly this, so it can go to the Gallery; returns null for anything else.
- */
-function getLocalImagePasteFile(clipboardData) {
+function getSingleImagePasteFile(clipboardData) {
 	if (!clipboardData) {
 		return null;
 	}
@@ -1090,24 +1127,20 @@ function getLocalImagePasteFile(clipboardData) {
 			.map(function (item) { return item.getAsFile(); })
 			.filter(Boolean);
 	}
-	if (files.length !== 1 || !/^image\//.test(files[0].type)) {
-		return null;
-	}
+	return files.length === 1 && /^image\//.test(files[0].type) ? files[0] : null;
+}
 
-	// a template's content is inert, so parsing doesn't load the local image
-	var template = document.createElement('template');
-	template.innerHTML = clipboardData.getData('text/html');
-	var fragment = template.content;
+// Windows Photos can supply HTML containing only an image pointed at a local file.
+function isSingleLocalImage(fragment) {
 	var images = fragment.querySelectorAll('img');
 	if (images.length !== 1 || !/^file:/i.test((images[0].getAttribute('src') || '').trim())
 			|| fragment.textContent.trim()) {
-		return null;
+		return false;
 	}
-	var onlyWrapsImage = Array.from(fragment.querySelectorAll('*')).every(function (element) {
+	return Array.from(fragment.querySelectorAll('*')).every(function (element) {
 		return !_hasRSpaceMarkup(element)
 			&& (element === images[0] || LOCAL_IMAGE_PASTE_WRAPPERS.indexOf(element.nodeName) !== -1);
 	});
-	return onlyWrapsImage ? files[0] : null;
 }
 
 //Handles Dnd into text editor using jqueryFileUpload plugin for chem
