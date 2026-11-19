@@ -31,7 +31,11 @@ class FieldDisplayRuleMessageKeysTest {
         FieldDisplayRuleValidator.VALUE_DUPLICATE,
         FieldDisplayRuleValidator.VALUE_TOO_MANY,
         FieldDisplayRuleValidator.RULE_TOO_LONG,
-        FieldDisplayRuleValidator.CYCLE
+        FieldDisplayRuleValidator.CYCLE,
+        FieldDisplayRuleValidator.OPERATOR_NOT_FOR_SOURCE,
+        FieldDisplayRuleValidator.VALUE_COUNT,
+        FieldDisplayRuleValidator.VALUE_BLANK,
+        FieldDisplayRuleValidator.VALUE_NOT_A_NUMBER
       })
   void everyCodeResolvesToTextNamingTheField(String code) {
     // an unknown code throws NoSuchMessageException here
