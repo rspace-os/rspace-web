@@ -29,6 +29,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormDefinitionCommand;
+import com.researchspace.service.FormFieldsConflictException;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.FormVersionUpdateException;
 import com.researchspace.service.MessageSourceUtils;
@@ -601,6 +602,33 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @Override
   public RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user) {
     return doSaveFields(formDao.get(formId), fields, user, true);
+  }
+
+  @RequiresPermissions("FORM:WRITE")
+  @Override
+  public RSForm saveFields(
+      Long formId, List<FormFieldSaveItem> fields, String expectedVersion, User user) {
+    RSForm form = formDao.get(formId);
+    if (!hasWritePermission(user, form)) {
+      throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
+    }
+    // another tab's save, committed while this one waited for the lock, would not be seen otherwise
+    if (!formDao.lockUnchangedSinceTransactionStart(formId)
+        || !fieldListSaver.version(form).equals(expectedVersion)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
+    return doSaveFields(form, fields, user, true);
+  }
+
+  @Override
+  public String getFieldsVersion(RSForm form) {
+    return fieldListSaver.version(form);
+  }
+
+  @Override
+  public boolean canWrite(RSForm form, User user) {
+    return hasWritePermission(user, form);
   }
 
   /**

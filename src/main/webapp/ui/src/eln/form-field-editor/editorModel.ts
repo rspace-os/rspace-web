@@ -9,6 +9,7 @@ import { uniq } from "es-toolkit";
 import * as v from "valibot";
 import { type FieldDisplayRule, FieldDisplayRuleSchema } from "@/modules/common/field-rules/displayRule";
 import { parseElnChoiceValues } from "@/modules/common/field-rules/elnChoiceValues";
+import { newFieldKey } from "@/modules/common/field-rules/newFieldKey";
 import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import { type ElnFieldType, type FormFieldEditorItem, type FormFieldSaveItem, SourceSchemas } from "./formFieldsApi";
 
@@ -64,6 +65,14 @@ type Bounded = {
   readonly unread: Readonly<Partial<Record<BoundName, string>>>;
 };
 
+/**
+ * A list of options exactly as the server stored it, with what the editor read
+ * from it. Stored data may be in a form the editor would not write (an empty
+ * option, or an "=" inside one), so the stored text goes back unchanged until
+ * the author changes that list.
+ */
+type StoredList = { readonly text: string; readonly values: ReadonlyArray<string> };
+
 export type FieldSettings =
   | {
       readonly type: "Number";
@@ -80,12 +89,14 @@ export type FieldSettings =
       readonly defaultValue: string;
       readonly showAsPickList: boolean;
       readonly sortAlphabetic: boolean;
+      readonly stored?: { readonly options: StoredList };
     }
   | {
       readonly type: "Choice";
       readonly options: ReadonlyArray<string>;
       readonly defaults: ReadonlyArray<string>;
       readonly multiple: boolean;
+      readonly stored?: { readonly options: StoredList; readonly defaults: StoredList };
     }
   | ({ readonly type: "Date"; readonly format: string } & Bounded)
   | ({ readonly type: "Time"; readonly format: string } & Bounded)
@@ -123,7 +134,7 @@ function defaultSettings(type: CreatableType, previous?: EditorField): FieldSett
 /** A new, unsaved field. Its key is made now, so rules can use it before the first save. */
 export function newField(type: CreatableType): EditorField {
   return {
-    key: crypto.randomUUID(),
+    key: newFieldKey(),
     id: null,
     name: "",
     mandatory: false,
@@ -215,27 +226,35 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
     }
     case "Radio": {
       const s = v.parse(SourceSchemas.Radio, item.source);
+      const options = parseElnChoiceValues(s.radioValues);
       return {
         ...base,
         name: s.name,
         mandatory: s.mandatory,
         type: "Radio",
-        options: parseElnChoiceValues(s.radioValues),
+        options,
         defaultValue: s.radioSelected,
         showAsPickList: s.showAsPickList,
         sortAlphabetic: s.sortAlphabetic,
+        stored: { options: { text: s.radioValues, values: options } },
       };
     }
     case "Choice": {
       const s = v.parse(SourceSchemas.Choice, item.source);
+      const options = parseElnChoiceValues(s.choiceValues);
+      const defaults = parseElnChoiceValues(s.selectedValues);
       return {
         ...base,
         name: s.name,
         mandatory: s.mandatory,
         type: "Choice",
-        options: parseElnChoiceValues(s.choiceValues),
-        defaults: parseElnChoiceValues(s.selectedValues),
+        options,
+        defaults,
         multiple: s.multipleChoice === "yes",
+        stored: {
+          options: { text: s.choiceValues, values: options },
+          defaults: { text: s.selectedValues, values: defaults },
+        },
       };
     }
     case "Date": {
@@ -275,6 +294,12 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
 const joinOptions = (name: string, options: ReadonlyArray<string>) =>
   options.map((option) => `${name}=${option}`).join("&");
 
+/** The stored text while the list is as it was read, so untouched legacy data is not rewritten. */
+const writeOptions = (name: string, options: ReadonlyArray<string>, stored: StoredList | undefined) =>
+  stored && stored.values.length === options.length && stored.values.every((value, i) => value === options[i])
+    ? stored.text
+    : joinOptions(name, options);
+
 function source(field: EditorField): Record<string, string | boolean> {
   const common = { name: field.name, mandatory: field.mandatory };
   switch (field.type) {
@@ -294,7 +319,7 @@ function source(field: EditorField): Record<string, string | boolean> {
       return {
         ...common,
         fieldName: field.name,
-        radioValues: joinOptions("fieldRadios", field.options),
+        radioValues: writeOptions("fieldRadios", field.options, field.stored?.options),
         radioSelected: field.defaultValue,
         showAsPickList: field.showAsPickList,
         sortAlphabetic: field.sortAlphabetic,
@@ -303,9 +328,9 @@ function source(field: EditorField): Record<string, string | boolean> {
       return {
         ...common,
         fieldName: field.name,
-        choiceValues: joinOptions("fieldChoices", field.options),
+        choiceValues: writeOptions("fieldChoices", field.options, field.stored?.options),
         multipleChoice: field.multiple ? "yes" : "no",
-        selectedValues: joinOptions("fieldSelectedChoices", field.defaults),
+        selectedValues: writeOptions("fieldSelectedChoices", field.defaults, field.stored?.defaults),
       };
     case "Date":
       return {

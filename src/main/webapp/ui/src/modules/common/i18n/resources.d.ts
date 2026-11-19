@@ -10295,6 +10295,7 @@ export default interface Resources {
         "fieldTypeImmutable": "Field [{0}] is a {1} field, and a saved field cannot change its type to {2}",
         "fieldTypeUnknown": "Field [{0}] has an unknown type [{1}]",
         "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
+        "fieldsChangedElsewhere": "This form's fields were changed elsewhere, for example in another tab. Reload to see the latest fields; this save was not applied.",
         "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
         "infoUnauthorized": "Unauthorized attempt to get form info",
         "notBeingEdited": "Form [{0}] is not open for editing; save fields to its draft instead",
@@ -11407,6 +11408,8 @@ export default interface Resources {
         "dependents": "{count, plural, one {The display rule of {fields} reads it and will be removed.} other {The display rules of {fields} read it and will be removed.}}",
         "removeOption": "Remove the option {option}?"
       },
+      "conflict": "Its fields were saved in another tab or window after this page loaded them, so these changes were not saved. Reload to see the latest fields, then make your changes again.",
+      "conflictTitle": "This form was changed elsewhere.",
       "errorTitle": "The fields were not saved.",
       "firstProblem": "The first is in {field}.",
       "heading": "Fields",
@@ -11428,6 +11431,7 @@ export default interface Resources {
       },
       "problemsTitle": "Fix the problems marked below, then save again.",
       "publishedNotice": "This form is published. To change its fields, edit it again from the list of forms; your changes then make a new version.",
+      "reload": "Reload",
       "saveFailed": "The fields could not be saved. Try again.",
       "settings": {
         "apiOnlyType": "Fields of this type are added through the API. Here you can rename, reorder, delete it, make it mandatory, or show it with a display rule.",

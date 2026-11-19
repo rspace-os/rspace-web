@@ -260,6 +260,29 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user);
 
   /**
+   * Saves the full field list of the form being edited, as {@link #saveFields(Long, List, User)}
+   * does, but only if the field list is still the one the caller read: the form field editor sends
+   * the version it was given, so a save from an out-of-date page cannot overwrite a newer save.
+   * Saves of one form run one at a time.
+   *
+   * @param expectedVersion the {@link #getFieldsVersion(RSForm)} of the field list the caller read
+   * @throws FormFieldsConflictException if the field list has changed since
+   * @throws FormFieldsValidationException if the field list is invalid
+   * @throws org.apache.shiro.authz.AuthorizationException if the user cannot write the form
+   * @throws IllegalStateException if the form is not being edited, or another user is editing it
+   */
+  RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, String expectedVersion, User user);
+
+  /**
+   * The version of the form's field list, which changes whenever a field is added, deleted, moved
+   * or changed.
+   */
+  String getFieldsVersion(RSForm form);
+
+  /** Whether the user may change the form, and so its fields. */
+  boolean canWrite(RSForm form, User user);
+
+  /**
    * Creates a form and all its fields in one transaction, for the forms API. A rejected request
    * leaves no form behind.
    *
