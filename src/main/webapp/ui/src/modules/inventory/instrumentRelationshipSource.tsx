@@ -1,10 +1,7 @@
 import { uniq } from "es-toolkit";
 import * as v from "valibot";
-import {
-  type ApiV2ReadOperation,
-  type ApiV2ResourceEntry,
-  apiV2Resources,
-} from "@/modules/common/api/v2/apiV2Resources";
+import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import type {
   getListInstrumentsQueryKey,
   listInstruments,
