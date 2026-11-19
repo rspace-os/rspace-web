@@ -54,6 +54,9 @@ public @interface ApiV2ResourceRelationship {
 
   ApiV2ResourceField.AccessPreset readAccess() default ApiV2ResourceField.AccessPreset.INHERITED;
 
+  /** Publishes {@code x-rspace-read-guaranteed}, as {@link ApiV2ResourceField#readGuaranteed()}. */
+  boolean readGuaranteed() default false;
+
   ApiV2ResourceField.AccessPreset writeAccess() default ApiV2ResourceField.AccessPreset.INHERITED;
 
   String title() default "";

@@ -555,11 +555,15 @@ those without a read restriction of their own that are nullable or required on c
 ### Field read guarantees
 
 The backend silently omits a requested field that the caller may not read, according to that field's own
-`readAccess`. A `*Read` property is marked `x-rspace-read-guaranteed: true` only when that cannot happen: the id
-field, or a field or relationship whose `readAccess` is `AccessFunction.INHERITED`. The published `x-rspace-access`
-names documentation, not the evaluated function, so generated clients rely on the guarantee alone.
-`ResourceFieldSchema.readInherited()` carries the fact from the collection description to the emitter, and
-`ApiV2ReadGuaranteeTest` checks that guaranteed properties are never unreadable and always rendered.
+`readAccess`. A `*Read` property is marked `x-rspace-read-guaranteed: true` only when its author promises it: the id
+field always, and otherwise only members declared with `Field.readGuaranteed()`, `Relationship.readGuaranteed()`,
+`@ApiV2ResourceField(readGuaranteed = true)`, `@ApiV2ResourceRelationship(readGuaranteed = true)` or, for the standard
+audit members, `@ApiV2ResourceDefinition(readGuaranteedAuditFields = ...)`. Guarantees are opt-in because adding one
+later is compatible and removing one is breaking: mark only fields that clients rely on. Startup rejects a guarantee
+on a member whose `readAccess` is not `AccessFunction.INHERITED`. The published `x-rspace-access` names
+documentation, not the evaluated function, so generated clients rely on the guarantee alone.
+`ResourceFieldSchema.readGuaranteed()` carries the declaration to the emitter, and `ApiV2ReadGuaranteeTest` checks
+that guaranteed properties are never unreadable and always rendered.
 
 ### Compatibility rules for external clients
 
@@ -583,8 +587,8 @@ Field-level read permissions follow these rules:
 
 - **Resource collections:** declare a field's read restriction through its `readAccess`, which drives both the
   omission (`CollectionAccessEvaluator.unreadableFields`) and the published `x-rspace-access`. Never remove a field
-  ad hoc. `*Read` fields are optional in the contract, so a new restriction does not break the schema, and the read
-  guarantee follows automatically.
+  ad hoc. `*Read` fields are optional in the contract, so a new restriction does not break the schema unless the
+  field is read-guaranteed; startup refuses that combination.
 - **Other response types** use one of three patterns: separate types per audience, an explicitly optional property
   (`@Schema(requiredMode = NOT_REQUIRED)`), or `null` in a property declared nullable. Every pull request that adds
   required response properties lists them, and its author confirms none can become permission-restricted.

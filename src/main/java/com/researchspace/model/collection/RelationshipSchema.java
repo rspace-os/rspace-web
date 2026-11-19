@@ -18,7 +18,8 @@ public record RelationshipSchema(
     AccessDocumentation readAccess,
     AccessDocumentation createAccess,
     AccessDocumentation updateAccess,
-    boolean readInherited)
+    boolean readInherited,
+    boolean readGuaranteed)
     implements ResourceFieldSchema {
 
   @Override

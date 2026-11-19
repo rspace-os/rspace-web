@@ -34,6 +34,13 @@ public sealed interface ResourceFieldSchema permits FieldSchema, RelationshipSch
    */
   boolean readInherited();
 
+  /**
+   * True when the member is declared read-guaranteed ({@code Field.readGuaranteed()}, {@code
+   * Relationship.readGuaranteed()} or the matching annotation attribute). Implies {@link
+   * #readInherited()}.
+   */
+  boolean readGuaranteed();
+
   default Object defaultValue() {
     return null;
   }

@@ -107,7 +107,7 @@ class ApiV2ReadGuaranteeTest {
       CollectionDescription<?> description, Predicate<ResourceFieldSchema> kind) {
     return description.schema().documentFields().stream()
         .filter(kind)
-        .filter(member -> member.name().equals(description.idField()) || member.readInherited())
+        .filter(member -> member.name().equals(description.idField()) || member.readGuaranteed())
         .map(ResourceFieldSchema::name)
         .collect(Collectors.toSet());
   }

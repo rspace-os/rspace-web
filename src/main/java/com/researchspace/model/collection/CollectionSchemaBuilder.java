@@ -64,7 +64,8 @@ final class CollectionSchemaBuilder {
         documented(relationship.readAccess, accessPolicy.readAccess()),
         documented(relationship.writeAccess, accessPolicy.createAccess()),
         documented(relationship.writeAccess, accessPolicy.updateAccess()),
-        relationship.readAccess == AccessFunction.INHERITED);
+        relationship.readAccess == AccessFunction.INHERITED,
+        relationship.readGuaranteed);
   }
 
   private static Map<String, String> globalIdPrefixesByTarget(List<RelationshipTarget<?>> targets) {

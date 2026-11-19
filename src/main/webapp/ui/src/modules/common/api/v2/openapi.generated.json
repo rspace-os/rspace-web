@@ -890,24 +890,21 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "format" : "int64",
@@ -924,8 +921,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
@@ -963,8 +959,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -978,8 +973,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -1002,8 +996,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -1029,7 +1022,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -1263,8 +1255,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "email" : {
             "description" : "User's email address.",
@@ -1274,8 +1265,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -1283,8 +1273,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -1303,8 +1292,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -1313,8 +1301,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],

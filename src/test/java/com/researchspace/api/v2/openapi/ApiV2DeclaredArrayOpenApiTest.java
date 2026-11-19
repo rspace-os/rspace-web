@@ -247,13 +247,15 @@ class ApiV2DeclaredArrayOpenApiTest {
   }
 
   @Test
-  void marksReadPropertiesWithoutTheirOwnReadRestrictionAsGuaranteed() {
+  void marksOnlyTheIdAndDeclaredReadPropertiesAsGuaranteed() {
     Map<String, Object> schemas = schemas(document(description("rows"), false));
     Map<String, Object> read = map(map(schemas.get("ItemsRead")).get("properties"));
-    for (String field : List.of("id", "detail", "summary", "rows")) {
+    for (String field : List.of("id", "rows")) {
       assertEquals(true, map(read.get(field)).get("x-rspace-read-guaranteed"), field);
     }
-    assertFalse(map(read.get("secret")).containsKey("x-rspace-read-guaranteed"));
+    for (String field : List.of("detail", "summary", "secret")) {
+      assertFalse(map(read.get(field)).containsKey("x-rspace-read-guaranteed"), field);
+    }
     Map<String, Object> created = map(map(schemas.get("ItemsCreate")).get("properties"));
     assertFalse(map(created.get("rows")).containsKey("x-rspace-read-guaranteed"));
   }
@@ -351,6 +353,7 @@ class ApiV2DeclaredArrayOpenApiTest {
                 .readableBy(AccessFunction.never()),
             Field.writable(name, "rows", rows, Item::rows, (item, value) -> {})
                 .allowNull()
+                .readGuaranteed()
                 .defaultValue(
                     List.of(
                         new Row(

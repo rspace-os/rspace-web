@@ -33,6 +33,7 @@ public final class Field<T, V> implements ResourceMember<T> {
   private final AccessFunction updateAccess;
   private final OpenApiSchemaDocumentation openApi;
   private final boolean embedded;
+  private final boolean readGuaranteed;
 
   private Field(
       String name,
@@ -50,7 +51,8 @@ public final class Field<T, V> implements ResourceMember<T> {
       AccessFunction createAccess,
       AccessFunction updateAccess,
       OpenApiSchemaDocumentation openApi,
-      boolean embedded) {
+      boolean embedded,
+      boolean readGuaranteed) {
     this.name = requireName(name, "Field name");
     this.property = requireName(property, "Field property");
     this.type = Objects.requireNonNull(type, "Field type");
@@ -67,6 +69,7 @@ public final class Field<T, V> implements ResourceMember<T> {
     this.updateAccess = AccessFunction.requireDocumentedOrInherited(updateAccess);
     this.openApi = Objects.requireNonNull(openApi, "OpenAPI field documentation");
     this.embedded = embedded;
+    this.readGuaranteed = readGuaranteed;
     validateConfiguration();
   }
 
@@ -88,6 +91,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
+        false,
         false);
   }
 
@@ -113,6 +117,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
+        false,
         false);
   }
 
@@ -138,7 +143,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
-        true);
+        true,
+        false);
   }
 
   /** Whether this definition belongs to an embedded row rather than a collection entity. */
@@ -157,6 +163,36 @@ public final class Field<T, V> implements ResourceMember<T> {
 
   public AccessFunction readAccess() {
     return readAccess;
+  }
+
+  /**
+   * Publishes {@code x-rspace-read-guaranteed} for this field: a readable document always contains
+   * it when requested. Removing the mark later is a breaking change for generated clients, so mark
+   * only fields that clients rely on. Requires inherited read access; startup fails otherwise.
+   */
+  public Field<T, V> readGuaranteed() {
+    return new Field<>(
+        name,
+        property,
+        type,
+        filterable,
+        sortable,
+        reader,
+        writer,
+        writeOperations,
+        requiredOnCreate,
+        nullable,
+        defaultValue,
+        readAccess,
+        createAccess,
+        updateAccess,
+        openApi,
+        embedded,
+        true);
+  }
+
+  public boolean isReadGuaranteed() {
+    return readGuaranteed;
   }
 
   /**
@@ -279,6 +315,7 @@ public final class Field<T, V> implements ResourceMember<T> {
         CollectionSchemaBuilder.documented(childAccess.createAccess()),
         CollectionSchemaBuilder.documented(childAccess.updateAccess()),
         readAccess == AccessFunction.INHERITED,
+        readGuaranteed,
         type.fields().stream().map(child -> child.schema(childAccess)).toList());
   }
 
@@ -422,7 +459,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         createAccess,
         updateAccess,
         openApi,
-        embedded);
+        embedded,
+        readGuaranteed);
   }
 
   private Field<T, V> copyAccess(
@@ -446,10 +484,17 @@ public final class Field<T, V> implements ResourceMember<T> {
         creates,
         updates,
         documentation,
-        embedded);
+        embedded,
+        readGuaranteed);
   }
 
   void validateConfiguration() {
+    if (readGuaranteed && (embedded || readAccess != AccessFunction.INHERITED)) {
+      throw new IllegalArgumentException(
+          "Field "
+              + name
+              + " can be read-guaranteed only as a resource member with inherited read access");
+    }
     Objects.requireNonNull(type.javaType(), "Field Java type");
     Objects.requireNonNull(type.inputKind(), "Field input kind");
     Set.copyOf(Objects.requireNonNull(type.operators(), "Field operators"));

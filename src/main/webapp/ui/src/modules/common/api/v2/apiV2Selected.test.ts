@@ -2,24 +2,16 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import { ApiV2UnexpectedResponseError } from "./ApiV2ProblemError";
 import { type ApiV2ReadDocument, type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "./apiV2Selected";
 import type { InstrumentsRead } from "./generated/models/instrumentsRead";
-import type { InstrumentsReadParentContainer } from "./generated/models/instrumentsReadParentContainer";
 
 const FIELDS = ["id", "name", "parentContainer", "customFields"] as const;
 
 describe("ApiV2Selected", () => {
-  it("makes requested guaranteed fields present and keeps the rest optional", () => {
+  it("keeps requested fields optional unless the resource declares them read-guaranteed", () => {
     type Selected = ApiV2Selected<"instruments", typeof FIELDS>;
-    expectTypeOf<Selected["name"]>().toEqualTypeOf<string>();
-    expectTypeOf<Selected["parentContainer"]>().toEqualTypeOf<InstrumentsReadParentContainer>();
-    expectTypeOf<Selected>().toHaveProperty("customFields");
-    expectTypeOf<Pick<Selected, "customFields" | "globalId">>().toEqualTypeOf<
-      Pick<InstrumentsRead, "customFields" | "globalId">
+    expectTypeOf<Selected["id"]>().toEqualTypeOf<number>();
+    expectTypeOf<Pick<Selected, "name" | "parentContainer" | "customFields">>().toEqualTypeOf<
+      Pick<InstrumentsRead, "name" | "parentContainer" | "customFields">
     >();
-  });
-
-  it("keeps null where the schema allows it", () => {
-    type Selected = ApiV2Selected<"users", readonly ["createdAt"]>;
-    expectTypeOf<Selected["createdAt"]>().toEqualTypeOf<string | null>();
   });
 
   it("leaves the plain read document for a selection that is not a literal tuple", () => {
@@ -30,15 +22,13 @@ describe("ApiV2Selected", () => {
 });
 
 describe("assertApiV2Selected", () => {
-  it("narrows a document with every requested guaranteed field", () => {
-    const document: InstrumentsRead = { id: 1, name: "Microscope", parentContainer: null };
-    assertApiV2Selected("instruments", document, FIELDS);
-    expectTypeOf(document.name).toEqualTypeOf<string>();
-    expect(document.name).toBe("Microscope");
+  it("accepts a document without a requested field that is not guaranteed", () => {
+    const document: InstrumentsRead = { id: 1 };
+    expect(() => assertApiV2Selected("instruments", document, FIELDS)).not.toThrow();
   });
 
   it("rejects a missing guaranteed field as an invalid body", () => {
-    const document: InstrumentsRead = { id: 1, parentContainer: null };
+    const document = JSON.parse('{"name":"Microscope"}') as InstrumentsRead;
     const error = (() => {
       try {
         assertApiV2Selected("instruments", document, FIELDS);
@@ -47,7 +37,7 @@ describe("assertApiV2Selected", () => {
       }
     })();
     expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
-    expect(error).toMatchObject({ reason: "invalidBody", message: expect.stringContaining("name") });
+    expect(error).toMatchObject({ reason: "invalidBody", message: expect.stringContaining("id") });
   });
 
   it("builds the fields query value from the tuple", () => {

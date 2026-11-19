@@ -23,4 +23,11 @@ public @interface ApiV2ResourceDefinition {
 
   /** Whether the framework adds its standard read-only audit fields and user relationships. */
   boolean auditFields() default true;
+
+  /**
+   * Standard audit members to publish as read-guaranteed, as {@link
+   * ApiV2ResourceField#readGuaranteed()} does for declared fields. Each name must be an audit
+   * member this resource has.
+   */
+  String[] readGuaranteedAuditFields() default {};
 }
