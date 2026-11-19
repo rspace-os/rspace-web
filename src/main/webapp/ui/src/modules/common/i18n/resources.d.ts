@@ -6851,7 +6851,7 @@ export default interface Resources {
         },
         "confirmTypeChange": {
           "confirm": "Change type",
-          "message": "{count, plural, one {The display rule of {fields} reads this field. A rule cannot read the new type in the same way, so changing the type also removes that rule.} other {The display rules of {fields} read this field. A rule cannot read the new type in the same way, so changing the type also removes those rules.}}",
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Rules read the new type differently, or not at all, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules read the new type differently, or not at all, so changing the type also removes those rules.}}",
           "title": "Change the type of {field}?"
         },
         "optionInUse": "A display rule uses this option, so it cannot be renamed."

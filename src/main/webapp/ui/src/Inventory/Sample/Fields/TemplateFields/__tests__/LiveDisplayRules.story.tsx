@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import ValidatingSubmitButton, { allAreValid } from "@/components/ValidatingSubmitButton";
+import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
+import { SettleDelayContext } from "@/Inventory/components/Fields/useShownTemplateFields";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockSample } from "@/stores/models/__tests__/SampleModel/mocking";
 import type SampleModel from "@/stores/models/SampleModel";
@@ -63,26 +64,45 @@ function makeSample(): SampleModel {
   return sample;
 }
 
-/** Save is gated on the fields' validation, as the Inventory form's Save is on the record's. */
+/** Save is gated on the record's own `submittable`, as the Inventory form's Save is. */
 const SaveButton = observer(function SaveButton({ sample, onSave }: { sample: SampleModel; onSave: () => void }) {
   const { t } = useTranslation("common");
-  const validation = allAreValid(sample.fields.map((field) => field.validate()));
   return (
-    <ValidatingSubmitButton loading={false} validationResult={validation} disabled={!validation.isOk} onClick={onSave}>
+    <ValidatingSubmitButton
+      loading={false}
+      validationResult={sample.submittable}
+      disabled={!sample.submittable.isOk}
+      onClick={(event) => {
+        event.preventDefault();
+        onSave();
+      }}
+    >
       {t("actions.save")}
     </ValidatingSubmitButton>
   );
 });
 
-export function LiveDisplayRulesStory({ onSave }: { onSave: () => void }): React.ReactNode {
+/**
+ * @param settleDelayMs how long typing must pause before fields move; longer
+ * than in production, so a test acts reliably within the pause in every engine.
+ */
+export function LiveDisplayRulesStory({
+  onSave,
+  settleDelayMs = 1000,
+}: {
+  onSave: () => void;
+  settleDelayMs?: number;
+}): React.ReactNode {
   const [sample] = useState(makeSample);
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        <form>
-          <Fields onErrorStateChange={() => {}} sample={sample} />
-          <SaveButton sample={sample} onSave={onSave} />
-        </form>
+        <SettleDelayContext.Provider value={settleDelayMs}>
+          <form>
+            <Fields onErrorStateChange={() => {}} sample={sample} />
+            <SaveButton sample={sample} onSave={onSave} />
+          </form>
+        </SettleDelayContext.Provider>
       </ThemeProvider>
     </StyledEngineProvider>
   );
