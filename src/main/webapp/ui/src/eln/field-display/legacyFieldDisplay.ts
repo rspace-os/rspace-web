@@ -12,8 +12,9 @@ import {
 export type LegacyFieldDisplay = {
   /**
    * Applies the rules to the fields under `root` (the whole page by default).
-   * With `announce`, fields that are newly shown are announced politely; pass
-   * it only after a user's change, never on load or after a server refresh.
+   * With `announce`, fields that are newly shown or hidden are announced
+   * politely; pass it only after a user's change, never on load or after a
+   * server refresh.
    */
   refresh(root?: ParentNode, options?: { announce?: boolean }): FieldDisplayResult;
   /** Call from a field control's change handler. Focus stays on the control. */
@@ -23,7 +24,8 @@ export type LegacyFieldDisplay = {
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
 };
 
-const ANNOUNCEMENT = "fieldDisplay.fieldsShown";
+const SHOWN = "fieldDisplay.fieldsShown";
+const HIDDEN = "fieldDisplay.fieldsHidden";
 
 const VISUALLY_HIDDEN =
   "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0";
@@ -31,8 +33,7 @@ const VISUALLY_HIDDEN =
 /**
  * The API the legacy ELN document pages use, with a polite live region like
  * the Inventory record forms' `RevealedFieldsAnnouncer`: it names the fields
- * a change revealed, and is cleared when a field is hidden so a field shown
- * again is announced again.
+ * a change showed or hid.
  */
 export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = document): LegacyFieldDisplay {
   // Mounted empty before any change, so screen readers already watch it when the first reveal is announced.
@@ -44,18 +45,20 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
   // A later change wins over an announcement still waiting for the catalog.
   let latestChange = 0;
 
-  function announce(names: ReadonlyArray<string>): void {
+  function announce(shown: ReadonlyArray<string>, hidden: ReadonlyArray<string>): void {
     const change = ++latestChange;
+    const message = (key: typeof SHOWN | typeof HIDDEN, names: ReadonlyArray<string>) =>
+      names.length === 0
+        ? []
+        : [i18n.t(key, { count: names.length, fields: formatList(names, i18n.resolvedLanguage ?? i18n.language) })];
     const show = () => {
       if (change !== latestChange) return;
-      region.textContent = i18n.t(ANNOUNCEMENT, {
-        count: names.length,
-        fields: formatList(names, i18n.resolvedLanguage ?? i18n.language),
-      });
+      region.textContent = [...message(SHOWN, shown), ...message(HIDDEN, hidden)].join(" ");
     };
-    // Never show the raw key: wait for the message, and say nothing if its catalog failed to load
+    // Never show a raw key: wait for the messages, and say nothing if their catalog failed to load
     // (a failed load can still count as loaded).
-    const ready = () => i18n.isInitialized && i18n.exists(ANNOUNCEMENT, { ns: "common" });
+    const ready = () =>
+      i18n.isInitialized && i18n.exists(SHOWN, { ns: "common" }) && i18n.exists(HIDDEN, { ns: "common" });
     if (ready()) show();
     else
       void i18n.loadNamespaces("common").then(() => {
@@ -65,12 +68,14 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
 
   function refresh(
     root: ParentNode = doc,
-    { announce: announceReveals = false }: { announce?: boolean } = {},
+    { announce: announceChanges = false }: { announce?: boolean } = {},
   ): FieldDisplayResult {
     const result = applyFieldDisplayRules(root);
-    if (announceReveals && result.revealedNames.length > 0) {
-      announce(result.revealedNames);
-    } else if (result.anyNewlyHidden) {
+    if (result.revealedNames.length === 0 && result.concealedNames.length === 0) return result;
+    if (announceChanges) {
+      announce(result.revealedNames, result.concealedNames);
+    } else {
+      // a change the user did not make is not announced, and an older message no longer applies
       latestChange++;
       region.textContent = "";
     }

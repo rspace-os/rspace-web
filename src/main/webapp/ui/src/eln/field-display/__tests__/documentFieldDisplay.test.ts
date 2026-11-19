@@ -98,7 +98,7 @@ describe("applyFieldDisplayRules", () => {
     expect(level).not.toHaveAttribute("hidden");
     expect(approval).not.toHaveAttribute("hidden");
     expect(result.revealedNames).toEqual(["Containment level", "CL3 approval"]);
-    expect(result.anyNewlyHidden).toBe(false);
+    expect(result.concealedNames).toEqual([]);
   });
 
   test("reports newly hidden fields", () => {
@@ -106,7 +106,7 @@ describe("applyFieldDisplayRules", () => {
     applyFieldDisplayRules(root);
 
     find<HTMLInputElement>(gmo, 'input[value="No"]').checked = true;
-    expect(applyFieldDisplayRules(root).anyNewlyHidden).toBe(true);
+    expect(applyFieldDisplayRules(root).concealedNames).toEqual(["Containment level", "CL3 approval"]);
   });
 
   test("reads every checked box of a choice field", () => {
