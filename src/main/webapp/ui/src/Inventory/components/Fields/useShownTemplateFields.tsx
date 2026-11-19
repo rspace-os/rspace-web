@@ -1,10 +1,13 @@
-import { type FocusEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { createContext, type FocusEvent, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import RevealedFieldsAnnouncer from "@/modules/common/field-display/RevealedFieldsAnnouncer";
 import type { Field } from "../../../stores/definitions/Field";
-import { ruleSourceValue } from "../../../stores/models/fieldVisibility";
+import { hiddenFieldsReading, scalarSourceValues } from "../../../stores/models/fieldVisibility";
 
 /** How long typing in a text or number source must pause before the fields it shows or hides move. */
 export const SETTLE_DELAY_MS = 300;
+
+/** Overrides `SETTLE_DELAY_MS`, so a browser test can act reliably within the pause. */
+export const SettleDelayContext = createContext(SETTLE_DELAY_MS);
 
 const identities = new WeakMap<Field, number>();
 let nextIdentity = 0;
@@ -19,11 +22,8 @@ function identityOf(field: Field): number {
   return identity;
 }
 
-function sameMembers(a: ReadonlyArray<Field>, b: ReadonlyArray<Field>): boolean {
-  return a.length === b.length && a.every((field) => b.includes(field));
-}
-
-type Settled = { session: string; typed: string; hidden: ReadonlyArray<Field> };
+/** The text and number source values that what is rendered reads, by position, for one session. */
+type Settled = { session: string; typed: string };
 
 /**
  * The template fields of a sample or instrument that display rules leave
@@ -33,16 +33,20 @@ type Settled = { session: string; typed: string; hidden: ReadonlyArray<Field> };
  *
  * Only what is rendered and announced waits: the record's own `isFieldHidden`,
  * which saving and mandatory checks read, always follows the current values.
- *  - Typing in a text or number source moves the fields it governs only once
- *    typing pauses for `SETTLE_DELAY_MS`, so fields do not jump on each key,
- *    and one announcement covers the net change. Choosing an option applies at
- *    once.
+ *  - What is rendered reads each text or number source that a rule reads as it
+ *    was when typing last paused for the settle delay, so fields do not jump on
+ *    each key and one announcement covers the net change. Options are read as
+ *    they are now, so choosing one applies at once.
  *  - A field that contains focus is not hidden until focus leaves it, so focus
- *    never moves on its own.
+ *    never moves on its own. Focus moving into a frame inside the field, such
+ *    as a rich text editor's, or out of the window, does not leave it.
  *  - Another record, a reload, or leaving edit mode applies the current
  *    visibility at once; the pending update is dropped, as it is on unmount.
  *
- * Hosts wrap each rendered field with `wrapField`, which tracks focus.
+ * Hosts wrap each rendered field with `wrapField`, which tracks focus, and
+ * report errors through the returned `onErrorStateChange`. A field that the
+ * values hide but focus keeps on screen is not mandatory and reports no error;
+ * `hiddenByValues` tells hosts which fields those are.
  */
 export default function useShownTemplateFields(
   record: {
@@ -52,37 +56,42 @@ export default function useShownTemplateFields(
     isFieldEditable?: (field: "fields") => boolean;
   },
   onErrorStateChange: (fieldName: string, hasError: boolean) => void,
-): { shownFields: Array<Field>; announcer: ReactNode; wrapField: (field: Field, node: ReactNode) => ReactNode } {
+): {
+  shownFields: Array<Field>;
+  announcer: ReactNode;
+  wrapField: (field: Field, node: ReactNode) => ReactNode;
+  hiddenByValues: (field: Field) => boolean;
+  onErrorStateChange: (fieldName: string, hasError: boolean) => void;
+} {
+  const settleDelay = useContext(SettleDelayContext);
   const fields = record.fields ?? [];
   const hidden = fields.filter((field) => record.isFieldHidden?.(field) ?? false);
-  const typed = JSON.stringify(fields.map(ruleSourceValue));
+  const typed = JSON.stringify(scalarSourceValues(fields));
   const session = JSON.stringify([
     record.globalId,
     record.isFieldEditable?.("fields") ?? false,
     fields.map(identityOf),
   ]);
 
-  const [settled, setSettled] = useState<Settled>({ session, typed, hidden });
-  const [focused, setFocused] = useState<Field | null>(null);
-  let settledHidden: ReadonlyArray<Field>;
-  if (settled.session !== session || settled.typed === typed) {
-    // nothing typed is pending, so what is rendered follows the values; recorded for when typing starts
-    settledHidden = hidden;
-    if (settled.session !== session || !sameMembers(settled.hidden, hidden)) setSettled({ session, typed, hidden });
-  } else {
-    settledHidden = settled.hidden;
-  }
-
-  const latest = useRef<Settled>({ session, typed, hidden });
-  useEffect(() => {
-    latest.current = { session, typed, hidden };
-  });
+  const [settled, setSettled] = useState<Settled>({ session, typed });
+  // another session reads the current values at once
+  if (settled.session !== session) setSettled({ session, typed });
+  const settledTyped = settled.session === session ? settled.typed : typed;
   // restarted by each key typed; cleared by another session and on unmount
   useEffect(() => {
-    if (settled.session !== session || settled.typed === typed) return;
-    const timer = setTimeout(() => setSettled(latest.current), SETTLE_DELAY_MS);
+    if (settledTyped === typed) return;
+    const timer = setTimeout(() => setSettled({ session, typed }), settleDelay);
     return () => clearTimeout(timer);
-  }, [session, typed, settled.session, settled.typed]);
+  }, [session, typed, settledTyped, settleDelay]);
+
+  const settledHidden = record.isFieldHidden
+    ? [...hiddenFieldsReading(fields, JSON.parse(settledTyped) as Array<string | null>)]
+    : [];
+
+  const [focus, setFocus] = useState<{ session: string; field: Field } | null>(null);
+  const focused = focus?.session === session ? focus.field : null;
+  const blurCheck = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(blurCheck.current), []);
 
   const renderedHidden = settledHidden.filter((field) => field !== focused);
   const shownFields = fields.filter((field) => !renderedHidden.includes(field));
@@ -100,10 +109,18 @@ export default function useShownTemplateFields(
     // biome-ignore lint/a11y/noStaticElementInteractions: it only observes focus moving among the field's own controls
     <div
       key={identityOf(field)}
-      onFocus={() => setFocused(field)}
+      onFocus={() => {
+        clearTimeout(blurCheck.current);
+        setFocus({ session, field });
+      }}
       onBlur={({ currentTarget, relatedTarget }: FocusEvent<HTMLDivElement>) => {
         if (relatedTarget instanceof Node && currentTarget.contains(relatedTarget)) return;
-        setFocused((current) => (current === field ? null : current));
+        // where focus went is known only once it lands, as when it enters a frame inside the field
+        clearTimeout(blurCheck.current);
+        blurCheck.current = setTimeout(() => {
+          if (!document.hasFocus() || currentTarget.contains(document.activeElement)) return;
+          setFocus((current) => (current?.field === field ? null : current));
+        });
       }}
     >
       {node}
@@ -113,10 +130,15 @@ export default function useShownTemplateFields(
   return {
     shownFields,
     wrapField,
+    hiddenByValues: (field) => record.isFieldHidden?.(field) ?? false,
+    onErrorStateChange: (fieldName, hasError) => {
+      const field = fields.find(({ name }) => `template_${name}` === fieldName);
+      onErrorStateChange(fieldName, hasError && !(field && record.isFieldHidden?.(field)));
+    },
     announcer: (
-      // another record starts a new announcer, so its fields are not announced as revealed
+      // another session, such as another record or a reload, starts a new announcer, so nothing is announced as changed
       <RevealedFieldsAnnouncer
-        key={record.globalId ?? "unsaved"}
+        key={session}
         shownFieldNames={shownFields.filter((field) => field.displayRule !== null).map((field) => field.name)}
         hiddenFieldNames={hiddenNames}
       />
