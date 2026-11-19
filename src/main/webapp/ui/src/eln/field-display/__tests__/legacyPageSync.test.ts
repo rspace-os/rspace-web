@@ -152,6 +152,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  window.elnFieldDisplay?.dispose();
   document.body.innerHTML = "";
 });
 
@@ -357,6 +358,36 @@ describe("a number source", () => {
     );
   }
 
+  /**
+   * Serves a document whose Dose is stored as `stored` and becomes whatever
+   * is autosaved, so a reload after a save returns what the server received.
+   * Returns the values autosaved.
+   */
+  function serveDoseDocument(stored: string) {
+    const autosaved: Array<string | null> = [];
+    let doseData = stored;
+    server.use(
+      http.post("*/workspace/editor/structuredDocument/ajax/autosaveField", async ({ request }) => {
+        const value = new URLSearchParams(await request.text()).get("dataValue");
+        autosaved.push(value);
+        doseData = value ?? doseData;
+        return HttpResponse.json({ data: true });
+      }),
+      http.post("*/workspace/editor/structuredDocument/ajax/saveStructuredDocument", () =>
+        HttpResponse.json({ data: "/workspace/editor/structuredDocument/552" }),
+      ),
+      http.get("*/workspace/editor/structuredDocument/ajax/getUpdatedFields", () =>
+        HttpResponse.json({
+          data: [
+            { id: 21, type: "NUMBER", fieldData: doseData, mandatoryStateSatisfied: true },
+            { id: 22, type: "STRING", fieldData: "", mandatoryStateSatisfied: false },
+          ],
+        }),
+      ),
+    );
+    return autosaved;
+  }
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -447,28 +478,35 @@ describe("a number source", () => {
     expect(region()).toBeEmptyDOMElement();
   });
 
-  test("saving at once while the number still has focus submits it, and Sign reads the visibility it gives", async () => {
-    const autosaved: Array<string | null> = [];
-    server.use(
-      http.post("*/workspace/editor/structuredDocument/ajax/autosaveField", async ({ request }) => {
-        autosaved.push(new URLSearchParams(await request.text()).get("dataValue"));
-        return HttpResponse.json({ data: true });
-      }),
-      http.post("*/workspace/editor/structuredDocument/ajax/saveStructuredDocument", () =>
-        HttpResponse.json({ data: "/workspace/editor/structuredDocument/552" }),
-      ),
-    );
+  test("saving while the number still has focus, before its change event, submits it, and Sign reads the visibility it gives", async () => {
     await renderDosePage("7");
-    serveDose("3");
+    const autosaved = serveDoseDocument("7");
     typeDose("3");
-    // the change event, as Enter fires it, without the typing pause
+
+    // as a keyboard shortcut invokes it, so the input fires no change event
+    legacy.saveStructuredDocument(false, false);
+
+    await waitFor(() => expect(renderToolbar).toHaveBeenCalled());
+    expect(renderToolbar).toHaveBeenLastCalledWith({ canSign: true });
+    expect(autosaved).toEqual(["3"]);
+    expect(dose()).toHaveValue("3");
+    expect(reasonRow()).not.toBeVisible();
+    expect(dose()).toHaveFocus();
+  });
+
+  test("saving in the same tick as an invalid number is reverted autosaves nothing for it, and Sign follows the reverted value", async () => {
+    await renderDosePage("7");
+    const autosaved = serveDoseDocument("7");
+    vi.useFakeTimers();
+    typeDose("abc");
     legacy.checkAndMarkNumber(dose());
 
     legacy.saveStructuredDocument(false, false);
 
-    await waitFor(() => expect(renderToolbar).toHaveBeenCalledWith({ canSign: true }));
-    expect(autosaved).toEqual(["3"]);
-    expect(reasonRow()).not.toBeVisible();
-    expect(dose()).toHaveFocus();
+    await vi.waitUntil(() => renderToolbar.mock.calls.length > 0);
+    expect(renderToolbar).toHaveBeenLastCalledWith({ canSign: false });
+    expect(autosaved).toEqual([]);
+    expect(dose()).toHaveValue("7");
+    expect(reasonRow()).toBeVisible();
   });
 });

@@ -16,6 +16,14 @@ function dependentRow(id: string, name: string): string {
 }
 
 let display: LegacyFieldDisplay;
+const created: Array<LegacyFieldDisplay> = [];
+
+/** Creates the display, to be disposed of after the test so it cannot touch a later test's page. */
+function createDisplay(i18n: Parameters<typeof createLegacyFieldDisplay>[0]): LegacyFieldDisplay {
+  const instance = createLegacyFieldDisplay(i18n);
+  created.push(instance);
+  return instance;
+}
 
 beforeEach(async () => {
   document.body.innerHTML = `
@@ -26,11 +34,12 @@ beforeEach(async () => {
       ${dependentRow("2", "Containment level")}
       ${dependentRow("3", "GMO permit")}
     </tbody></table>`;
-  display = createLegacyFieldDisplay(await createTestI18n({ common: commonEn }, "common"));
+  display = createDisplay(await createTestI18n({ common: commonEn }, "common"));
   display.refresh();
 });
 
 afterEach(() => {
+  for (const instance of created.splice(0)) instance.dispose();
   document.body.innerHTML = "";
 });
 
@@ -90,18 +99,18 @@ describe("createLegacyFieldDisplay", () => {
 
   function changeWith(i18n: Awaited<ReturnType<typeof i18nWithCatalog>>) {
     document.querySelector('[role="status"]')?.remove();
-    const early = createLegacyFieldDisplay(i18n);
+    const early = createDisplay(i18n);
     early.refresh();
     const control = answer("Yes");
     control.checked = true;
     early.fieldChanged(control);
-    return document.querySelector('[role="status"]');
+    return { region: document.querySelector('[role="status"]'), early };
   }
 
   test("announces nothing, not even the message key, when the catalog fails to load", async () => {
     const restoreConsole = silenceConsole(["warn", "error"], [/failed loading/i, /catalog down/]);
     let fail: (error: Error) => void = () => {};
-    const region = changeWith(await i18nWithCatalog(() => new Promise((_, reject) => (fail = reject))));
+    const { region } = changeWith(await i18nWithCatalog(() => new Promise((_, reject) => (fail = reject))));
 
     fail(new Error("catalog down"));
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -121,7 +130,7 @@ describe("createLegacyFieldDisplay", () => {
         `<tr class="field" data-field-id="4" data-field-type="STRING" data-field-name="Export licence" data-display-rule='${showWhenNo}'><td><input type="text"></td></tr>`,
       );
     document.querySelector('[role="status"]')?.remove();
-    const early = createLegacyFieldDisplay(await i18nWithCatalog(() => Promise.resolve(olderCatalog)));
+    const early = createDisplay(await i18nWithCatalog(() => Promise.resolve(olderCatalog)));
     early.refresh();
     const region = document.querySelector('[role="status"]');
     for (const value of ["No", "Yes"]) {
@@ -135,12 +144,23 @@ describe("createLegacyFieldDisplay", () => {
 
   test("announces in words once a delayed catalog arrives", async () => {
     let arrive: (catalog: typeof commonEn) => void = () => {};
-    const region = changeWith(await i18nWithCatalog(() => new Promise((resolve) => (arrive = resolve))));
+    const { region } = changeWith(await i18nWithCatalog(() => new Promise((resolve) => (arrive = resolve))));
     expect(region).toBeEmptyDOMElement();
 
     arrive(commonEn);
 
     await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit."));
+  });
+
+  test("announces nothing once the edits are cancelled while the catalog is still loading", async () => {
+    let arrive: (catalog: typeof commonEn) => void = () => {};
+    const { region, early } = changeWith(await i18nWithCatalog(() => new Promise((resolve) => (arrive = resolve))));
+
+    early.cancelPending();
+    arrive(commonEn);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(region).toBeEmptyDOMElement();
   });
 
   test("announces the fields a change hides, and announces them again when shown again", () => {
@@ -182,7 +202,7 @@ describe("typing in a number source", () => {
           <td><input name="fieldData" type="text" value=""></td>
         </tr>
       </tbody></table>`;
-    display = createLegacyFieldDisplay(await createTestI18n({ common: commonEn }, "common"));
+    display = createDisplay(await createTestI18n({ common: commonEn }, "common"));
     display.refresh();
     vi.useFakeTimers();
   });
@@ -241,14 +261,38 @@ describe("typing in a number source", () => {
     expect(region()).toBeEmptyDOMElement();
   });
 
-  test("applies nothing still pending once the page is hidden", () => {
+  test("applies nothing still pending once the page is unloaded", () => {
     type("3");
 
-    window.dispatchEvent(new Event("pagehide"));
+    window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false }));
     vi.advanceTimersByTime(TYPING_PAUSE_MS);
 
     expect(note()).toBeVisible();
     expect(region()).toBeEmptyDOMElement();
+  });
+
+  test("still applies an update pending when the page entered the back-forward cache, once it is restored", () => {
+    type("3");
+
+    window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).not.toBeVisible();
+    expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
+  });
+
+  test("stops reacting to focus once disposed, and removes its live region", () => {
+    type("3");
+    const reason = note()?.querySelector("input") as HTMLInputElement;
+    reason.focus();
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    display.dispose();
+    dose().focus();
+    vi.advanceTimersByTime(0);
+
+    expect(note()).toBeVisible();
+    expect(region()).not.toBeInTheDocument();
   });
 
   test("keeps a field the user tabbed into shown until focus leaves it", () => {
