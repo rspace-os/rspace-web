@@ -21,6 +21,7 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.util.Optional;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -49,20 +50,12 @@ class ExportTaskletTest {
   @ParameterizedTest
   @ValueSource(strings = {"user", "group", "selection"})
   void exportFailureFailsTheBatchStep(String scope) throws Exception {
-    User user = TestFactory.createAnyUser("exporter");
-    user.setId(1L);
+    User user = exporter();
     ExportApiConfig apiConfig = new ExportApiConfig("xml", scope);
     if ("group".equals(scope)) {
       apiConfig.setId(GROUP_ID);
     }
-    ChunkContext chunkContext =
-        new ChunkContext(
-            new StepContext(
-                MetaDataInstanceFactory.createStepExecution(
-                    ExportJobParamFactory.createJobParams(apiConfig, user, EXPORT_ID))));
-    when(userManager.getUserByUsernameNoSession(user.getUsername())).thenReturn(user);
-    when(exportApiState.getById(EXPORT_ID)).thenReturn(Optional.of(new ExportRecordList()));
-    when(properties.getServerUrl()).thenReturn("http://localhost:8080");
+    ChunkContext chunkContext = startedJob(apiConfig, user);
     URI serverUrl = URI.create("http://localhost:8080");
     ExportFailureException writeFailure = new ExportFailureException("Error writing form XML");
     when(messages.getExceptionChainMessage(writeFailure)).thenReturn("SD1 could not be exported");
@@ -101,5 +94,36 @@ class ExportTaskletTest {
     assertSame(writeFailure, jobFailure.getCause());
     // the jobs API reports the first line of the stack trace, which starts with toString()
     assertEquals("SD1 could not be exported", jobFailure.toString());
+  }
+
+  @Test
+  void failureWithoutAMessageReportsAGenericOne() throws Exception {
+    User user = exporter();
+    ChunkContext chunkContext = startedJob(new ExportApiConfig("xml", "selection"), user);
+    NullPointerException failure = new NullPointerException();
+    when(exportService.syncExportSelectionToArchive(any(), any(), any(), any(), any()))
+        .thenThrow(failure);
+    when(messages.getExceptionChainMessage(failure)).thenReturn(null);
+    when(messages.getMessage("export.errors.jobFailed")).thenReturn("The export failed.");
+
+    ExportFailureException jobFailure =
+        assertThrows(ExportFailureException.class, () -> tasklet.execute(null, chunkContext));
+    assertEquals("The export failed.", jobFailure.toString());
+  }
+
+  private User exporter() {
+    User user = TestFactory.createAnyUser("exporter");
+    user.setId(1L);
+    return user;
+  }
+
+  private ChunkContext startedJob(ExportApiConfig apiConfig, User user) {
+    when(userManager.getUserByUsernameNoSession(user.getUsername())).thenReturn(user);
+    when(exportApiState.getById(EXPORT_ID)).thenReturn(Optional.of(new ExportRecordList()));
+    when(properties.getServerUrl()).thenReturn("http://localhost:8080");
+    return new ChunkContext(
+        new StepContext(
+            MetaDataInstanceFactory.createStepExecution(
+                ExportJobParamFactory.createJobParams(apiConfig, user, EXPORT_ID))));
   }
 }

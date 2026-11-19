@@ -159,9 +159,10 @@ public class ExportTasklet implements Tasklet {
 
   /**
    * The jobs API reports a failed job by the first line of its exit description, which Spring Batch
-   * takes from the thrown exception's {@code toString()}. Rethrow with the same user-facing text
-   * the export notification shows, so the API doesn't expose exception class names or internal
-   * detail.
+   * takes from the thrown exception's {@code toString()}. Rethrow with the same text the export
+   * notification shows, so the API reports no exception class name. The text is a localized message
+   * when the cause chain has one (for example a record that could not be written); otherwise it is
+   * the original exception's message, as in the notification.
    */
   private ExportJobFailureException jobFailure(Exception e) {
     String message = messages.getExceptionChainMessage(e);
