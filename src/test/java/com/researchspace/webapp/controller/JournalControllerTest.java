@@ -16,6 +16,7 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.ChoiceFieldForm;
+import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
@@ -260,25 +261,44 @@ public class JournalControllerTest extends SpringTransactionalTest {
     String rule =
         "{\"sourceFieldKey\":\"" + sourceKey + "\",\"operator\":\"IS_ANY_OF\",\"values\":[\"b\"]}";
     dependent.setDisplayRule(rule);
+    dependent.setDefaultStringValue("P-\"1\"");
     dependent.setColumnIndex(1);
     dependent.setId(2L);
     form.addFieldForm(dependent);
+    StringFieldForm password = new StringFieldForm("Secret");
+    password.setIfPassword(true);
+    password.setDefaultStringValue("hunter2");
+    password.setColumnIndex(2);
+    password.setId(3L);
+    form.addFieldForm(password);
+    NumberFieldForm dose = new NumberFieldForm("Dose");
+    dose.setColumnIndex(3);
+    dose.setId(4L);
+    form.addFieldForm(dose);
     StructuredDocument doc = recordFactory.createStructuredDocument("rules", user, form);
+    doc.getFields().get(3).setFieldData("2.5");
 
     String html = journalController.prepareStructuredDocumentContent(doc);
 
     Elements fields = Jsoup.parseBodyFragment(html).select("body > div.journalField");
-    assertEquals(2, fields.size());
+    assertEquals(4, fields.size());
     Element source = fields.get(0);
     assertEquals("CHOICE", source.attr("data-field-type"));
+    assertEquals("OPTIONS", source.attr("data-field-source-kind"));
     assertEquals(sourceKey, source.attr("data-field-key"));
     assertEquals("Is it \"<GMO>\"?", source.attr("data-field-name"));
     assertEquals("fieldChoices=b", source.attr("data-field-value"));
     assertThat(source.select("h2.formTitles")).hasSize(1);
     Element target = fields.get(1);
     assertEquals("STRING", target.attr("data-field-type"));
+    assertEquals("TEXT", target.attr("data-field-source-kind"));
+    assertEquals("P-\"1\"", target.attr("data-field-value"));
     assertEquals(rule, target.attr("data-display-rule"));
-    assertThat(target.hasAttr("data-field-value")).isFalse();
+    Element secret = fields.get(2);
+    assertEquals("NONE", secret.attr("data-field-source-kind"));
+    assertThat(secret.hasAttr("data-field-value")).isFalse();
+    assertEquals("NUMBER", fields.get(3).attr("data-field-source-kind"));
+    assertEquals("2.5", fields.get(3).attr("data-field-value"));
     assertThat(html).contains("data-display-rule=\"{&quot;sourceFieldKey&quot;:");
   }
 

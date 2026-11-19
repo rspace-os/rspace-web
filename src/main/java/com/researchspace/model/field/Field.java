@@ -7,6 +7,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.elninventory.ListOfMaterials;
+import com.researchspace.model.field.rule.SourceKind;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.StructuredDocument;
 import jakarta.persistence.CascadeType;
@@ -322,6 +323,16 @@ public abstract class Field extends AbstractField implements Serializable, Uniqu
   @Transient
   public boolean isMandatory() {
     return _getFieldForm().isMandatory();
+  }
+
+  /**
+   * What display rules read from this field, as {@link ElnFieldRules#sourceKind(IFieldForm)}
+   * decides it; the document JSPs write it as {@code data-field-source-kind}.
+   */
+  @Transient
+  @JsonIgnore
+  public SourceKind getDisplaySourceKind() {
+    return ElnFieldRules.sourceKind(getFieldForm());
   }
 
   @Transient

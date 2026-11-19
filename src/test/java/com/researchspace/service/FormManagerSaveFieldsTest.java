@@ -250,9 +250,6 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
     RSForm form = formMgr.create(user);
     String a = newKey();
     String b = newKey();
-    String password = newKey();
-    FormFieldSaveItem passwordField =
-        item(null, password, null, new StringFieldDTO<>("password", false, "yes", ""));
 
     // a cycle
     assertRejected(
@@ -266,12 +263,6 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
         "does not offer",
         item(null, a, null, radio("a", YES_NO)),
         item(null, null, showWhen(a, "Maybe"), string("dependent")));
-    // a password field, whose value would appear in rule summaries
-    assertRejected(
-        form,
-        "not a password field",
-        passwordField,
-        item(null, null, hasValue(password), string("dependent")));
     // a missing source
     assertRejected(
         form, "does not exist", item(null, null, showWhen(newKey(), "Yes"), string("dependent")));
@@ -281,6 +272,24 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
         "unknown operator",
         item(null, null, new FieldDisplayRuleDTO(a, "SOMETIMES", List.of()), string("x")));
     assertThat(activeFields(formMgr.get(form.getId(), user))).isEmpty();
+  }
+
+  @Test
+  public void aTextSourceCannotBecomeAPasswordField() {
+    RSForm form = formMgr.create(user);
+    String code = newKey();
+    RSForm saved =
+        formMgr.saveFields(
+            form.getId(),
+            List.of(
+                item(null, code, null, string("code")),
+                item(null, null, hasValue(code), string("dependent"))),
+            user);
+
+    // a password field's value would appear in rule summaries
+    List<FormFieldSaveItem> current = current(saved);
+    ((StringFieldDTO<?>) current.get(0).getSource()).setIfPassword("yes");
+    assertRejected(form, "not a password field", current.toArray(FormFieldSaveItem[]::new));
   }
 
   @Test

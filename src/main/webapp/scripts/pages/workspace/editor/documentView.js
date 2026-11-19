@@ -591,6 +591,9 @@ function _updateAutosavedFields(data) {
     if (attr == "string" || attr == "number") {
       $field.find("input[name='fieldData']").val(value.fieldData);
       $("#plainText_" + value.id).html(value.fieldData);
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.syncStoredValue(value.id, value.fieldData);
+      }
       return;
     }
     console.log('unknown attr: ' + attr);

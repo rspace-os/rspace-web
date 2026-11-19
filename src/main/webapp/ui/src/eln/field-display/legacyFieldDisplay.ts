@@ -11,18 +11,26 @@ import {
 
 export type LegacyFieldDisplay = {
   /**
-   * Applies the rules to the fields under `root` (the whole page by default).
-   * With `announce`, fields that are newly shown or hidden are announced
-   * politely; pass it only after a user's change, never on load or after a
-   * server refresh.
+   * Applies the rules to the fields under `root` (the whole page by default)
+   * now, from the current values, and cancels an update still waiting for
+   * typing to pause. With `announce`, fields that are newly shown or hidden
+   * are announced politely; pass it only after a user's change, never on load
+   * or after a server refresh. Its `shownById` is what Sign and saves read.
    */
   refresh(root?: ParentNode, options?: { announce?: boolean }): FieldDisplayResult;
-  /** Call from a field control's change handler. Focus stays on the control. */
-  fieldChanged(control: Element): FieldDisplayResult;
-  /** Call when legacy code reloads a radio, picklist or choice field's data; then `refresh`. */
+  /**
+   * Call from a field control's change handler, or a text or number field's
+   * input handler. A picked option applies at once; typing applies once it
+   * pauses for `TYPING_PAUSE_MS`. Focus stays on the control.
+   */
+  fieldChanged(control: Element): void;
+  /** Call when legacy code reloads a field's data; then `refresh`. */
   syncStoredValue(fieldId: string | number, value: string | null | undefined): void;
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
 };
+
+/** How long typing must pause before the fields it shows or hides change. */
+export const TYPING_PAUSE_MS = 300;
 
 const SHOWN = "fieldDisplay.fieldsShown";
 const HIDDEN = "fieldDisplay.fieldsHidden";
@@ -33,7 +41,8 @@ const VISUALLY_HIDDEN =
 /**
  * The API the legacy ELN document pages use, with a polite live region like
  * the Inventory record forms' `RevealedFieldsAnnouncer`: it names the fields
- * a change showed or hid.
+ * a change showed or hid, once per net change. A field that contains focus is
+ * hidden only once focus leaves it.
  */
 export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = document): LegacyFieldDisplay {
   // Mounted empty before any change, so screen readers already watch it when the first change is announced.
@@ -69,11 +78,37 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
     else void i18n.loadNamespaces("common").then(() => show(available()));
   }
 
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  // fields kept shown while they contain focus, and whether hiding them is the user's change
+  let held: ReadonlyArray<HTMLElement> = [];
+  let announceRelease = false;
+
+  function schedule(delay: number): void {
+    clearTimeout(pending);
+    pending = setTimeout(() => refresh(doc, { announce: true }), delay);
+  }
+
+  doc.addEventListener("focusout", (event) => {
+    const next = event.relatedTarget;
+    const leaves = (element: HTMLElement) =>
+      event.target instanceof Node &&
+      element.contains(event.target) &&
+      !(next instanceof Node && element.contains(next));
+    // once focus has landed, so a field it lands in is held in turn
+    if (held.some(leaves) && pending === undefined) {
+      pending = setTimeout(() => refresh(doc, { announce: announceRelease }), 0);
+    }
+  });
+
   function refresh(
     root: ParentNode = doc,
     { announce: announceChanges = false }: { announce?: boolean } = {},
   ): FieldDisplayResult {
-    const result = applyFieldDisplayRules(root);
+    clearTimeout(pending);
+    pending = undefined;
+    const result = applyFieldDisplayRules(root, { focused: doc.activeElement });
+    held = result.held;
+    announceRelease = announceChanges;
     if (result.revealedNames.length === 0 && result.concealedNames.length === 0) return result;
     if (announceChanges) {
       announce(result.revealedNames, result.concealedNames);
@@ -88,8 +123,9 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
   return {
     refresh,
     fieldChanged(control) {
-      markAnswered(control);
-      return refresh(doc, { announce: true });
+      const change = markAnswered(control);
+      if (change === "typed") schedule(TYPING_PAUSE_MS);
+      else if (change === "picked") refresh(doc, { announce: true });
     },
     syncStoredValue(fieldId, value) {
       const element = Array.from(doc.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).find(

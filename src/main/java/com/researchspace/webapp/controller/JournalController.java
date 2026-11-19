@@ -11,10 +11,11 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.ChoiceField;
+import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.IFieldForm;
 import com.researchspace.model.field.TextField;
+import com.researchspace.model.field.rule.SourceKind;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Notebook;
@@ -252,19 +253,20 @@ public class JournalController extends BaseController {
   /**
    * Opens the element that wraps one field of a notebook entry, carrying the attributes the
    * elnFieldDisplay bundle reads to apply the form's display rules (see {@code
-   * fieldDisplayAttributes.jspf}). Radio and choice fields also carry the data shown, since the
-   * entry has no inputs to read it from.
+   * fieldDisplayAttributes.jspf}). Fields that rules can read also carry the data shown, since the
+   * entry has no inputs to read it from; password fields never do.
    */
   static String fieldDisplayWrapperStart(Field field, Field shownField) {
     IFieldForm definition = field.getFieldForm();
-    FieldType type = definition.getType();
+    SourceKind kind = ElnFieldRules.sourceKind(definition);
     StringBuilder html = new StringBuilder("<div class=\"journalField\"");
     appendAttribute(html, "data-field-id", String.valueOf(field.getId()));
     appendAttribute(html, "data-field-key", definition.getFieldKey());
-    appendAttribute(html, "data-field-type", type.name());
+    appendAttribute(html, "data-field-type", definition.getType().name());
+    appendAttribute(html, "data-field-source-kind", kind.name());
     appendAttribute(html, "data-field-name", field.getName());
     appendAttribute(html, "data-display-rule", definition.getDisplayRule());
-    if (type == FieldType.RADIO || type == FieldType.CHOICE) {
+    if (kind != SourceKind.NONE) {
       appendAttribute(html, "data-field-value", shownField.getFieldData());
     }
     return html.append(">").toString();
