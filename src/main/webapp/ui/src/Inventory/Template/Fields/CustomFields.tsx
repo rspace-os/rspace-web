@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../../components/NoValue";
 import FieldModel from "../../../stores/models/FieldModel";
@@ -54,6 +54,17 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
+
+  // a ref, not state: another render of this component remounts TemplateFields and would drop the focus
+  const listRef = useRef<HTMLDivElement>(null);
+  const focusNewField = useRef(false);
+  useEffect(() => {
+    if (!focusNewField.current) return;
+    focusNewField.current = false;
+    const cards = listRef.current?.querySelectorAll('[data-testid="TemplateField"]');
+    cards?.[cards.length - 1]?.querySelector<HTMLElement>('input[name="name"]')?.focus();
+  }, [fields.length]);
+
   return (
     <>
       {/* keyed by edit session, not loading, so a failed save keeps drafts but another template or edit starts afresh */}
@@ -63,13 +74,22 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
         editable={editable}
       />
       {fields.length > 0 ? (
-        <TemplateFields editable={editable} />
+        <Box ref={listRef}>
+          <TemplateFields editable={editable} />
+        </Box>
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label={t("fields.templateFields.customField.noMoreFields")} />
         </Box>
       )}
-      {editable && <NewField record={activeResult} />}
+      {editable && (
+        <NewField
+          record={activeResult}
+          onAdd={() => {
+            focusNewField.current = true;
+          }}
+        />
+      )}
     </>
   );
 }

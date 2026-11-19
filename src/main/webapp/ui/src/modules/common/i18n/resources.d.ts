@@ -943,6 +943,7 @@ export default interface Resources {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
     },
     "fieldDisplay": {
+      "fieldsHidden": "{count, plural, one {One field is hidden: {fields}} other {# fields are hidden: {fields}}}",
       "fieldsShown": "{count, plural, one {One more field is shown: {fields}} other {# more fields are shown: {fields}}}"
     },
     "fieldEditor": {
@@ -5163,7 +5164,7 @@ export default interface Resources {
           "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
           "title": "Change the type of {field}?"
         },
-        "optionInUse": "A display rule uses this option, so it can only be removed."
+        "optionInUse": "A display rule uses this option, so it cannot be renamed."
       },
       "fields": {
         "customField": {
