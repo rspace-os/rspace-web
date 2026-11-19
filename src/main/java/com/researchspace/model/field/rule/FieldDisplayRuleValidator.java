@@ -88,7 +88,7 @@ public final class FieldDisplayRuleValidator {
       }
       if (rule.values().size() > MAX_VALUES) {
         errors.add(new RuleError(i, VALUE_TOO_MANY));
-      } else if (hasValueLongerThanBudget(rule) || rule.toJson().length() > MAX_JSON_LENGTH) {
+      } else if (valuesLongerThanBudget(rule) || rule.toJson().length() > MAX_JSON_LENGTH) {
         errors.add(new RuleError(i, RULE_TOO_LONG));
       } else if (new HashSet<>(rule.values()).size() < rule.values().size()) {
         errors.add(new RuleError(i, VALUE_DUPLICATE));
@@ -153,11 +153,12 @@ public final class FieldDisplayRuleValidator {
   }
 
   /**
-   * Whether one value alone is longer than {@link #MAX_JSON_LENGTH}, so the rule is too long
-   * without serialising it (which escapes each non-ASCII unit to six characters).
+   * Whether the values together are longer than {@link #MAX_JSON_LENGTH}, so the rule is too long
+   * without serialising it (which escapes each non-ASCII unit to six characters). Each UTF-16 unit
+   * is written as at least one character, so their total is a lower bound on the stored length.
    */
-  private static boolean hasValueLongerThanBudget(FieldDisplayRule rule) {
-    return rule.values().stream().anyMatch(value -> value.length() > MAX_JSON_LENGTH);
+  private static boolean valuesLongerThanBudget(FieldDisplayRule rule) {
+    return rule.values().stream().mapToLong(String::length).sum() > MAX_JSON_LENGTH;
   }
 
   /** A key is valid only in canonical form: what {@link UUID#toString()} writes (lower case). */
