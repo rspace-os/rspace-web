@@ -33,6 +33,10 @@ export type FieldCardActions = {
   addOption: (key: string) => void;
   changeSettings: (key: string, settings: Partial<FieldSettings>) => void;
   changeRule: (key: string, rule: FieldDisplayRule | null) => void;
+  /** Whether the card's condition lists the fields it can read: while it has a draft or its field menu is open. */
+  showSources: (key: string, shown: boolean) => void;
+  /** Whether the card's condition is unfinished or cannot be applied as shown, which blocks saving. */
+  markIncomplete: (key: string, incomplete: boolean) => void;
 };
 
 type ElnFieldCardProps = {
@@ -42,9 +46,10 @@ type ElnFieldCardProps = {
   /** Every field, for the display condition; the same array while only names change. */
   ruleFields: ReadonlyArray<RuleEditorField>;
   /**
-   * The other fields' names this card can show: every field a condition can
-   * read, which the condition's field menu lists, and the fields that read this
-   * one. Not read here; when one changes, the card renders again.
+   * The other fields' names this card shows: the field its rule reads, the
+   * fields that read this one, and, while its condition has a draft or its
+   * field menu open, every field a condition can read. Not read here; when one
+   * changes, the card renders again.
    */
   shownNames: string;
   /** Which client checks apply, depending on what changed since the field was saved. */
@@ -103,12 +108,17 @@ function ElnFieldCard({
         onDelete={() => actions.remove(key)}
         editable={editable}
         displayCondition={
-          <FieldDisplayCondition
-            fieldKey={key}
-            fields={ruleFields}
-            onChange={(rule) => actions.changeRule(key, rule)}
-            editable={editable}
-          />
+          // the host looks here for an incomplete condition to focus
+          <Box data-field-condition>
+            <FieldDisplayCondition
+              fieldKey={key}
+              fields={ruleFields}
+              onChange={(rule) => actions.changeRule(key, rule)}
+              onShowsSourcesChange={actions.showSources}
+              onIncompleteChange={(incomplete) => actions.markIncomplete(key, incomplete)}
+              editable={editable}
+            />
+          </Box>
         }
       >
         {/* the host looks here, after the name, for the first problem to focus */}

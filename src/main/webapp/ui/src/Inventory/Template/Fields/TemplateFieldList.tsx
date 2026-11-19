@@ -42,9 +42,11 @@ function FieldCards({
           <CustomField
             field={field}
             i={i}
-            key={field.fieldKey ?? i}
+            // another model with the same key (the record reloaded, say) remounts, so its editor reports to it
+            key={`${field.fieldKey ?? i}:${identityOf(field)}`}
             editable={editable}
-            onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
+            onErrorStateChange={(value) => onErrorStateChange(`name:${field.fieldKey ?? field.globalId}`, value)}
+            onConditionErrorStateChange={(value) => onErrorStateChange(`displayCondition:${field.fieldKey}`, value)}
             onRemove={(deleteFromRecords = false) =>
               record.removeCustomField(field.id, record.fields.indexOf(field), deleteFromRecords)
             }
@@ -59,23 +61,30 @@ function FieldCards({
 
 const ObservedFieldCards = observer(FieldCards);
 
-const recordIds = new WeakMap<object, number>();
-let nextRecordId = 0;
+const identities = new WeakMap<object, number>();
+let nextIdentity = 0;
+
+/** A number that tells this object apart from any other, for use in React keys. */
+function identityOf(object: object): number {
+  let id = identities.get(object);
+  if (id === undefined) {
+    nextIdentity += 1;
+    id = nextIdentity;
+    identities.set(object, id);
+  }
+  return id;
+}
 
 /**
  * Each edit session gets fresh cards: another record, even one whose fields
  * have the same keys (a copy, say), the same record once it is created, or
- * once editing ends or starts. A save that fails keeps the session, and so
- * the drafts.
+ * once editing ends or starts. A save that is refused or fails leaves the
+ * record editing, so the cards and their drafts stay.
  */
 function TemplateFieldList(props: TemplateFieldListArgs): ReactNode {
-  let id = recordIds.get(props.record);
-  if (id === undefined) {
-    nextRecordId += 1;
-    id = nextRecordId;
-    recordIds.set(props.record, id);
-  }
-  return <ObservedFieldCards key={`${id}:${props.record.globalId}:${props.record.state}`} {...props} />;
+  return (
+    <ObservedFieldCards key={`${identityOf(props.record)}:${props.record.globalId}:${props.record.state}`} {...props} />
+  );
 }
 
 export default observer(TemplateFieldList);

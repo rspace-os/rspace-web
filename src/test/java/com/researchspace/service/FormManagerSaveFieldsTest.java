@@ -40,6 +40,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.record.CopyIndependentFormAndFieldFormPolicy;
@@ -52,10 +53,12 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
@@ -411,6 +414,49 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void aRevisionCheckedActionOnAFormThatIsMissingOrNotTheUsersIsNotAConflict()
+      throws Exception {
+    long missing = Long.MAX_VALUE;
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> formMgr.publish(missing, null, 0, user));
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> formMgr.updateVersion(missing, 0, user));
+
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    logoutAndLoginAs(other);
+    RSForm othersForm = formMgr.create(other);
+    logoutAndLoginAs(user);
+    assertThrows(
+        AuthorizationException.class, () -> formMgr.publish(othersForm.getId(), null, 99, user));
+  }
+
+  @Test
+  public void anotherUsersDraftCannotBeMadeTheCurrentVersion() {
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    logoutAndLoginAs(other);
+    RSForm othersForm = formMgr.create(other);
+    formMgr.saveFields(othersForm.getId(), List.of(item(null, null, null, string("one"))), other);
+    formMgr.publish(othersForm.getId(), true, null, other);
+    RSForm draft = formMgr.getForEditing(othersForm.getId(), other, anySessionTracker());
+    formMgr.unlockForm(othersForm.getId(), other);
+    long revision = revisionOf(draft, other);
+    logoutAndLoginAs(user);
+
+    long stale = revision + 1;
+    for (long expected : List.of(stale, revision)) {
+      assertThrows(
+          AuthorizationException.class, () -> formMgr.updateVersion(draft.getId(), expected, user));
+    }
+    assertThrows(AuthorizationException.class, () -> formMgr.updateVersion(draft.getId(), user));
+
+    flushDatabaseState();
+    assertTrue(formMgr.get(draft.getId(), user).isTemporary());
+    assertEquals(draft.getId(), formMgr.get(othersForm.getId(), user).getTempForm().getId());
+    logoutAndLoginAs(other);
+    assertEquals(revision, revisionOf(draft, other));
+  }
+
+  @Test
   public void formVersionsAndCopiesKeepKeysAndRules() {
     String gmoKey = newKey();
     RSForm form = formMgr.create(user);
@@ -522,6 +568,40 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> formMgr.editForm(form.getId(), definition(first, second), user, anySessionTracker()));
+  }
+
+  @Test
+  public void singleFieldEditsAdvanceTheFieldsRevision() {
+    RSForm form = formMgr.create(user);
+    long start = revisionOf(form);
+
+    StringFieldForm a =
+        formMgr.createFieldForm(
+            new StringFieldDTO<StringFieldForm>("A", false, "no", ""), form.getId(), user);
+    assertEquals(start + 1, revisionOf(form));
+    formMgr.updateFieldForm(
+        new StringFieldDTO<StringFieldForm>("A2", false, "no", ""), a.getId(), user);
+    assertEquals(start + 2, revisionOf(form));
+    StringFieldForm b =
+        formMgr.createFieldForm(
+            new StringFieldDTO<StringFieldForm>("B", false, "no", ""), form.getId(), user);
+    formMgr.reorderFields(form.getId(), List.of(b.getId(), a.getId()), user);
+    assertEquals(start + 4, revisionOf(form));
+    formMgr.deleteFieldFromForm(a.getId(), user);
+    assertEquals(start + 5, revisionOf(form));
+  }
+
+  @Test
+  public void apiCreateAndEditAdvanceTheFieldsRevision() {
+    RSForm form = formMgr.createForm(definition(apiField(new NumberFieldPost(), "n1")), user);
+    long created = revisionOf(form);
+    assertTrue(created > 0, "the API's save of the new form's fields advances its revision");
+
+    NumberFieldPost renamed = apiField(new NumberFieldPost(), "n2");
+    renamed.setId(activeFields(form).get(0).getId());
+    formMgr.editForm(form.getId(), definition(renamed), user, anySessionTracker());
+
+    assertEquals(created + 1, revisionOf(form));
   }
 
   @Test
@@ -709,6 +789,16 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
   private static FieldDisplayRuleDTO hasValue(String key) {
     return new FieldDisplayRuleDTO(key, "HAS_VALUE", List.of());
+  }
+
+  /** The column is not mapped, so flush what the test's transaction wrote before reading it. */
+  private long revisionOf(RSForm form) {
+    return revisionOf(form, user);
+  }
+
+  private long revisionOf(RSForm form, User reader) {
+    flushDatabaseState();
+    return formMgr.getForFieldEditor(form.getId(), reader).fieldsRevision();
   }
 
   private static String newKey() {

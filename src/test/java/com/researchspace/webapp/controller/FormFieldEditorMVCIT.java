@@ -41,6 +41,7 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import org.apache.shiro.SecurityUtils;
@@ -51,12 +52,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.UncategorizedSQLException;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.web.servlet.ModelAndView;
 
 /** The form field editor's read and save endpoints, and the edit lock around Update. */
 public class FormFieldEditorMVCIT extends MVCTestBase {
@@ -198,6 +203,101 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void publishFromAPageThatCheckedOlderFieldsIsRefusedAndPublishesNothing()
+      throws Exception {
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(
+                null, "String", null, null, new StringFieldDTO<>("Notes", false, "no", ""))),
+        user);
+    // tab A checks its fields and opens the access dialog; tab B then saves
+    JsonNode checkedByA = getFields(form.getId());
+    ArrayNode fromB = (ArrayNode) fieldsOf(checkedByA).deepCopy();
+    ((ObjectNode) fromB.get(0).get("source")).put("name", "Saved by B");
+    JsonNode savedByB = postFields(form.getId(), fromB, versionOf(checkedByA));
+    assertTrue(savedByB.get("errorMsg").isNull(), savedByB.toString());
+    assertNotEquals(versionOf(checkedByA), versionOf(savedByB));
+
+    MvcResult refused =
+        publishExpecting(form.getId(), versionOf(checkedByA), status().isConflict());
+
+    assertThat(refused.getResponse().getContentAsString()).contains("changed elsewhere");
+    assertFalse(doInTransaction(() -> formMgr.get(form.getId(), user).isPublishedAndVisible()));
+    assertEquals(versionOf(savedByB), versionOf(getFields(form.getId())));
+    publishExpecting(form.getId(), versionOf(savedByB), status().isOk());
+    assertTrue(doInTransaction(() -> formMgr.get(form.getId(), user).isPublishedAndVisible()));
+  }
+
+  @Test
+  public void updateFromAPageThatCheckedOlderFieldsIsRefusedAndChangesNothing() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    String lockToken = pageLockToken();
+    JsonNode checkedByA = getFields(draft.getId());
+    ArrayNode fromB = (ArrayNode) fieldsOf(checkedByA).deepCopy();
+    ((ObjectNode) fromB.get(0).get("source")).put("name", "Saved by B");
+    JsonNode savedByB = postFields(draft.getId(), fromB, versionOf(checkedByA));
+
+    MvcResult refused =
+        updateExpecting(draft.getId(), lockToken, versionOf(checkedByA), status().isConflict());
+
+    assertThat(refused.getResponse().getContentAsString()).contains("changed elsewhere");
+    assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
+    assertTrue(doInTransaction(() -> formMgr.get(form.getId(), user).isCurrent()));
+    assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
+    assertEquals(fieldsOf(savedByB), fieldsOf(getFields(draft.getId())));
+
+    updateExpecting(draft.getId(), lockToken, versionOf(savedByB), status().isOk());
+    assertFalse(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
+  }
+
+  @Test
+  public void aChangeTheDatabaseRefusesAsConcurrentIsAConflictNotAServerError() {
+    SQLException changedSinceRead =
+        new SQLException("Record has changed since last read", "HY000", 1020);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    ModelAndView conflict =
+        formController.handleExceptions(
+            new MockHttpServletRequest(),
+            response,
+            new UncategorizedSQLException("save field", "update FieldForm", changedSinceRead));
+
+    assertEquals(409, response.getStatus());
+    assertEquals(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME, conflict.getViewName());
+    assertThat(
+            (String)
+                conflict.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME))
+        .contains("changed by someone else");
+
+    // a deadlock only rolled this save back, so the page may try again rather than reload
+    MockHttpServletResponse deadlocked = new MockHttpServletResponse();
+    ModelAndView retry =
+        formController.handleExceptions(
+            new MockHttpServletRequest(),
+            deadlocked,
+            new UncategorizedSQLException(
+                "save field",
+                "update FieldForm",
+                new SQLException("Deadlock found when trying to get lock", "40001", 1213)));
+    assertEquals(503, deadlocked.getStatus());
+    assertEquals(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME, retry.getViewName());
+    assertThat(
+            (String) retry.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME))
+        .contains("Try again");
+
+    MockHttpServletResponse other = new MockHttpServletResponse();
+    formController.handleExceptions(
+        new MockHttpServletRequest(),
+        other,
+        new UncategorizedSQLException(
+            "save field", "update FieldForm", new SQLException("x", "HY000", 1146)));
+    assertNotEquals(409, other.getStatus());
+  }
+
+  @Test
   public void optionsStoredInAnOldFormatAreKeptAsTheyAreWhenSentBackUnchanged() throws Exception {
     RSForm form = formMgr.create(user);
     formMgr.saveFields(
@@ -286,7 +386,10 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
 
     Long newVersionId =
-        formController.updateForm(draft.getId(), pageLockToken(), principal).getData();
+        formController
+            .updateForm(draft.getId(), pageLockToken(), null, principal)
+            .getBody()
+            .getData();
 
     assertEquals(draft.getId(), newVersionId);
     assertTrue(recordTracker.isEditing(form).isEmpty());
@@ -389,7 +492,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     formController.editForm(model, principal, draft.getId());
     String resumedDraftPage = pageLockToken();
 
-    formController.updateForm(draft.getId(), firstEditPage, principal);
+    formController.updateForm(draft.getId(), firstEditPage, null, principal);
     formController.unlockForm(draft.getId(), firstEditPage, principal);
 
     assertTrue(recordTracker.isEditing(form).isEmpty());
@@ -574,7 +677,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     formController.editForm(model, principal, draft.getId());
     assertEquals(user.getUsername(), recordTracker.isEditing(draft).orElse(null));
 
-    formController.updateForm(draft.getId(), pageLockToken(), principal);
+    formController.updateForm(draft.getId(), pageLockToken(), null, principal);
 
     assertTrue(recordTracker.isEditing(draft).isEmpty());
   }
@@ -586,7 +689,8 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     JsonNode before = getFields(draft.getId());
 
     // the published form is not a draft, so there is no version to commit
-    AjaxReturnObject<Long> response = formController.updateForm(form.getId(), null, principal);
+    AjaxReturnObject<Long> response =
+        formController.updateForm(form.getId(), null, null, principal).getBody();
 
     assertNull(response.getData());
     assertThat(response.getErrorMsg().getErrorMessages())
@@ -678,6 +782,44 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
             .andExpect(expected)
             .andReturn();
     return result;
+  }
+
+  /** Opens the access dialog, which keeps its command in the session, then confirms it. */
+  private MvcResult publishExpecting(Long formId, String fieldsRevision, ResultMatcher expected)
+      throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    mockMvc
+        .perform(
+            get("/workspace/editor/form/ajax/publishAndShare")
+                .param("templateId", formId.toString())
+                .session(session)
+                .principal(principal))
+        .andExpect(status().isOk());
+    return mockMvc
+        .perform(
+            post("/workspace/editor/form/ajax/publishAndShare")
+                .session(session)
+                .param("formId", formId.toString())
+                .param("groupOptions", "READ")
+                .param("worldOptions", "NONE")
+                .param("fieldsRevision", fieldsRevision)
+                .principal(principal))
+        .andExpect(expected)
+        .andReturn();
+  }
+
+  private MvcResult updateExpecting(
+      Long formId, String lockToken, String fieldsRevision, ResultMatcher expected)
+      throws Exception {
+    return mockMvc
+        .perform(
+            post("/workspace/editor/form/ajax/updateForm")
+                .param("templateId", formId.toString())
+                .param("lockToken", lockToken)
+                .param("fieldsRevision", fieldsRevision)
+                .principal(principal))
+        .andExpect(expected)
+        .andReturn();
   }
 
   /** A published form: radio "GMO?" (Yes, No) and string "Permit" shown when GMO? is Yes. */

@@ -243,6 +243,7 @@
   },
   "formFieldEditor": {
     "addField": "Add field",
+    "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
     "confirm": {
       "abandon": "Abandon the changes to this form?",
       "abandonAction": "Abandon changes",
@@ -255,6 +256,7 @@
     },
     "conflict": "Its fields were saved in another tab or window after this page loaded them, so nothing was saved from this page. Reload to see the latest fields, then make your changes again.",
     "conflictTitle": "This form was changed elsewhere.",
+    "conflictUnsaved": "The changes you made on this page that were not saved will be lost when you reload.",
     "errorTitle": "The fields were not saved.",
     "firstProblem": "The first is in {field}.",
     "heading": "Fields",

@@ -59,9 +59,12 @@ import com.researchspace.service.FormManager.FormEditorPage;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,6 +79,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -102,6 +106,52 @@ public class RSFormController extends BaseController {
   private @Autowired FormManager formManager;
   private @Autowired RSFormApiHandler formHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
+
+  /** MariaDB's "record has changed since last read" (innodb_snapshot_isolation). */
+  private static final int RECORD_CHANGED_SINCE_LAST_READ = 1020;
+
+  /** MariaDB's "deadlock found when trying to get lock". */
+  private static final int DEADLOCK = 1213;
+
+  /**
+   * A change the database refused because another transaction changed the same form at the same
+   * time is not a server fault, and nothing was saved; the response has the usual Ajax error body.
+   * A row changed since this transaction read it, as a single-field save can be while the field
+   * list is saved elsewhere, is a 409: the page must reload before it saves again. A deadlock only
+   * rolled this transaction back, whatever the other one did, so it is a 503 the page can retry.
+   */
+  @Override
+  @ExceptionHandler()
+  public ModelAndView handleExceptions(
+      HttpServletRequest request, HttpServletResponse response, Exception e) {
+    Integer errorCode = concurrentChangeError(e);
+    if (errorCode == null) {
+      return super.handleExceptions(request, response, e);
+    }
+    log.warn("A change to a form was refused as concurrent: {}", e.getMessage());
+    boolean changedSinceRead = errorCode == RECORD_CHANGED_SINCE_LAST_READ;
+    response.setStatus(
+        changedSinceRead
+            ? HttpServletResponse.SC_CONFLICT
+            : HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    ModelAndView refused = new ModelAndView(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME);
+    refused.addObject(
+        ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME,
+        getText(changedSinceRead ? "errors.concurrentChange" : "errors.concurrentChangeRetry"));
+    return refused;
+  }
+
+  /** The MariaDB error code of a concurrent change in the cause chain, or null if there is none. */
+  private static Integer concurrentChangeError(Throwable e) {
+    for (Throwable t = e; t != null; t = t.getCause()) {
+      if (t instanceof SQLException sql
+          && (sql.getErrorCode() == RECORD_CHANGED_SINCE_LAST_READ
+              || sql.getErrorCode() == DEADLOCK)) {
+        return sql.getErrorCode();
+      }
+    }
+    return null;
+  }
 
   @PostMapping
   // permissions checking handled in service methos
@@ -270,14 +320,31 @@ public class RSFormController extends BaseController {
     return "workspace/editor/formSharingConfig";
   }
 
+  /**
+   * Publishes the form with the access the dialog chose.
+   *
+   * @param fieldsRevision the revision of the field list that the form editor page checked before
+   *     opening the dialog; if given and the fields have changed since, nothing is published and
+   *     the response has status 409
+   */
   @ResponseBody
   @PostMapping("/ajax/publishAndShare")
   // auth handled in publish() method
-  public AjaxReturnObject<FormState> publishAndSharePost(
-      @ModelAttribute FormSharingCommand tsc, Principal user) {
+  public ResponseEntity<AjaxReturnObject<FormState>> publishAndSharePost(
+      @ModelAttribute FormSharingCommand tsc,
+      @RequestParam(value = "fieldsRevision", required = false) Long fieldsRevision,
+      Principal user) {
     User u = userManager.getUserByUsername(user.getName());
-    RSForm form = formManager.publish(tsc.getFormId(), true, tsc, u);
-    return new AjaxReturnObject<FormState>(form.getPublishingState(), null);
+    RSForm form;
+    try {
+      form =
+          fieldsRevision == null
+              ? formManager.publish(tsc.getFormId(), true, tsc, u)
+              : formManager.publish(tsc.getFormId(), tsc, fieldsRevision, u);
+    } catch (FormFieldsConflictException e) {
+      return rejected(HttpStatus.CONFLICT, List.of(e.getMessage()));
+    }
+    return ResponseEntity.ok(new AjaxReturnObject<>(form.getPublishingState(), null));
   }
 
   @ResponseBody
@@ -405,23 +472,32 @@ public class RSFormController extends BaseController {
    * Saves a form and updates its modification details.
    *
    * @param formId
+   * @param fieldsRevision the revision of the field list that the form editor page checked; if
+   *     given and the fields have changed since, nothing is updated and the response has status 409
    * @return An {@link AjaxReturnObject} with the template's ID
    */
   @ResponseBody
   @PostMapping("ajax/updateForm")
-  public AjaxReturnObject<Long> updateForm(
+  public ResponseEntity<AjaxReturnObject<Long>> updateForm(
       @RequestParam("templateId") long formId,
       @RequestParam(value = "lockToken", required = false) String lockToken,
+      @RequestParam(value = "fieldsRevision", required = false) Long fieldsRevision,
       Principal user) {
 
     User u = userManager.getUserByUsername(user.getName());
-    RSForm updated = formManager.updateVersion(formId, u);
+    RSForm updated;
+    try {
+      updated =
+          fieldsRevision == null
+              ? formManager.updateVersion(formId, u)
+              : formManager.updateVersion(formId, fieldsRevision, u);
+    } catch (FormFieldsConflictException e) {
+      return rejected(HttpStatus.CONFLICT, List.of(e.getMessage()));
+    }
     if (updated == null) {
       // nothing was written (for example, a system form, or an id that is not a draft); the
       // editor keeps its lock and reports the failure
-      ErrorList errors = new ErrorList();
-      errors.addErrorMsg(getText("form.errors.versionNotUpdated"));
-      return new AjaxReturnObject<>(null, errors);
+      return rejected(HttpStatus.OK, List.of(getText("form.errors.versionNotUpdated")));
     }
     // The version is committed. Release the editor page's own lock, wherever it took it; another
     // page of this session may hold the other id. Without a token, release by id the lock on
@@ -434,7 +510,7 @@ public class RSFormController extends BaseController {
         formManager.unlockForm(updated.getPreviousVersion().getId(), u);
       }
     }
-    return new AjaxReturnObject<Long>(formId, null);
+    return ResponseEntity.ok(new AjaxReturnObject<>(formId, null));
   }
 
   /**
@@ -481,7 +557,7 @@ public class RSFormController extends BaseController {
     return ResponseEntity.ok(new AjaxReturnObject<>(editorFields(saved, subject), null));
   }
 
-  private static ResponseEntity<AjaxReturnObject<FormFieldEditorFields>> rejected(
+  private static <T> ResponseEntity<AjaxReturnObject<T>> rejected(
       HttpStatus status, List<String> messages) {
     ErrorList errors = new ErrorList();
     messages.forEach(errors::addErrorMsg);

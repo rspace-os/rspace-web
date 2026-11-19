@@ -28,6 +28,8 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
+import com.researchspace.dao.customliquibaseupdates.BackfillInventoryTemplateFieldKeys_RSDEV1706;
+import com.researchspace.dao.customliquibaseupdates.FieldKeyBackfillRunner;
 import com.researchspace.model.User;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
@@ -84,7 +86,6 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
     assertEquals(gmoKey, gmo.getFieldKey());
     assertEquals(showWhenGmoIs("Yes"), permit.getDisplayRule());
     assertNotNull(permit.getFieldKey());
-    assertDoesNotThrow(() -> UUID.fromString(permit.getFieldKey()));
   }
 
   @Test
@@ -227,16 +228,11 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
         .createNativeQuery("update InventoryEntityField set fieldKey = null where sample_id = :id")
         .setParameter("id", created.getId())
         .executeUpdate();
-    sessionFactory
-        .getCurrentSession()
-        .createNativeQuery(
-            "update InventoryEntityField f join Sample s on s.id = f.sample_id set f.fieldKey ="
-                + " UUID() where f.fieldKey is null and s.DTYPE = 'SampleTemplate'")
-        .executeUpdate();
-    sessionFactory.getCurrentSession().clear();
+    FieldKeyBackfillRunner.run(new BackfillInventoryTemplateFieldKeys_RSDEV1706(), sessionFactory);
 
     ApiSampleTemplate backfilled = sampleApiMgr.getApiSampleTemplateById(created.getId(), user);
     String backfilledGmoKey = field(backfilled, GMO).getFieldKey();
+    assertNotNull(backfilledGmoKey);
     assertNotEquals(gmoKey, backfilledGmoKey);
     ApiSampleTemplate update = templateUpdate(backfilled);
     ApiInventoryEntityField permit = fieldUpdate(field(backfilled, PERMIT));

@@ -150,17 +150,35 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @RequiresPermissions("FORM:SHARE")
   @Override
   public RSForm publish(Long id, boolean toPublish, FormSharingCommand config, User authUser) {
+    return applyPublishing(publishable(id, toPublish, authUser), toPublish, config);
+  }
+
+  @RequiresPermissions("FORM:SHARE")
+  @Override
+  public RSForm publish(
+      Long id, FormSharingCommand config, long expectedFieldsRevision, User authUser) {
+    RSForm form = publishable(id, true, authUser);
+    assertFieldsRevision(id, expectedFieldsRevision);
+    return applyPublishing(form, true, config);
+  }
+
+  /** The form, if it exists and the user may publish or unpublish it. */
+  private RSForm publishable(Long id, boolean toPublish, User authUser) {
     RSForm form = formDao.get(id);
     if (form.isSystemForm() && !toPublish) {
       log.error("Attempted to unpublish a system form by user {}", authUser.getUsername());
       throw new UnsupportedOperationException(
           messages.getMessage("form.errors.systemFormUnpublish"));
     }
-    boolean altered = false;
     if (!permissionUtils.isPermitted(form, PermissionType.SHARE, authUser)) {
       throw new AuthorizationException(
           messages.getMessage("form.errors.publishUnauthorized", new Object[] {form.getId()}));
     }
+    return form;
+  }
+
+  private RSForm applyPublishing(RSForm form, boolean toPublish, FormSharingCommand config) {
+    boolean altered = false;
     // only update on status change
     if (toPublish && !form.isPublishedAndVisible()) {
       form.publish();
@@ -179,6 +197,17 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       formDao.save(form);
     }
     return form;
+  }
+
+  /**
+   * After the form is looked up and the user's permission checked, so that an unknown or forbidden
+   * form is reported as such, but before its fields are read; see FormDao#lockFieldsRevision.
+   */
+  private void assertFieldsRevision(Long formId, long expectedRevision) {
+    if (!formDao.lockFieldsRevision(formId, expectedRevision)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
   }
 
   @Override
@@ -468,8 +497,25 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   }
 
   @Override
+  public RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user) {
+    RSForm temp = writableDraft(tempFormId, user);
+    assertFieldsRevision(tempFormId, expectedFieldsRevision);
+    return makeCurrentVersion(temp);
+  }
+
+  @Override
   public RSForm updateVersion(Long tempFormId, User user) {
+    return makeCurrentVersion(writableDraft(tempFormId, user));
+  }
+
+  private RSForm writableDraft(Long tempFormId, User user) {
     RSForm temp = get(tempFormId, user);
+    permissionUtils.assertIsPermitted(temp, PermissionType.WRITE, user, "update form");
+    return temp;
+  }
+
+  private RSForm makeCurrentVersion(RSForm temp) {
+    Long tempFormId = temp.getId();
     RSForm orig = formDao.getOriginalFromTemporaryForm(tempFormId);
     if (orig == null || orig.isSystemForm()) {
       log.error("Cannot update version of a system form!");

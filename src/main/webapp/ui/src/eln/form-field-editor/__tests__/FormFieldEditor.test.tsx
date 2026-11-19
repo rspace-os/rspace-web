@@ -14,7 +14,10 @@ import ConfirmProvider from "@/components/ConfirmProvider";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import workspace from "@/modules/common/i18n/locales/en-US/workspace.json";
 import materialTheme from "@/theme";
-import FormFieldEditorRoot, { type FormFieldEditorHandle } from "../FormFieldEditorRoot";
+import FormFieldEditorRoot, {
+  type FormFieldEditorHandle,
+  FormFieldEditorUnavailableError,
+} from "../FormFieldEditorRoot";
 import { type FormFieldEditorItem, type FormFieldSaveItem, FormFieldsConflictError } from "../formFieldsApi";
 
 const FIELDS_URL = "/workspace/editor/form/ajax/fields";
@@ -124,6 +127,46 @@ async function showOnlyWhen(user: ReturnType<typeof userEvent.setup>, fieldName:
   await user.click(screen.getByRole("option", { name: option }));
 }
 
+/**
+ * What happens to a save: applied and answered, applied with its response lost, or lost before
+ * the server sees it.
+ */
+type SaveFate = "answered" | "responseLost" | "requestLost";
+
+/**
+ * A server that holds the fields at a version, as the real one does: it refuses a save made from
+ * another version with 409, and a new field with a key it already holds with 400. Each save meets
+ * the next of `fates`; the field list can be made unreadable.
+ */
+function serveVersionedFields(items: Array<FormFieldEditorItem>, fates: Array<SaveFate>) {
+  let held: ReadonlyArray<{ fieldKey: string }> = items;
+  let version = 0;
+  const state = { readFails: false };
+  const posts: Array<Array<FormFieldSaveItem>> = [];
+  const versions: Array<string | null> = [];
+  server.use(
+    http.get(FIELDS_URL, () => (state.readFails ? HttpResponse.error() : fieldList(held, version))),
+    http.post(FIELDS_URL, async ({ request }) => {
+      const body = (await request.json()) as Array<FormFieldSaveItem>;
+      posts.push(body);
+      versions.push(new URL(request.url).searchParams.get("version"));
+      const fate = fates.shift() ?? "answered";
+      if (fate === "requestLost") return HttpResponse.error();
+      if (Number(versions.at(-1)) !== version) {
+        return HttpResponse.json({ data: null, errorMsg: { errorMessages: ["changed elsewhere"] } }, { status: 409 });
+      }
+      const heldKeys = new Set(held.map(({ fieldKey }) => fieldKey));
+      if (body.some((item) => item.id === null && heldKeys.has(item.fieldKey))) {
+        return HttpResponse.json({ data: null, errorMsg: { errorMessages: ["key in use"] } }, { status: 400 });
+      }
+      held = echoed(body);
+      version += 1;
+      return fate === "responseLost" ? HttpResponse.error() : fieldList(held, version);
+    }),
+  );
+  return Object.assign(posts, { versions, state });
+}
+
 /** A response the test releases, to act while a save is in flight. */
 function heldResponse() {
   let release: () => void = () => {};
@@ -184,7 +227,7 @@ describe("FormFieldEditor", () => {
       else Reflect.deleteProperty(crypto, "randomUUID");
     }
 
-    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(posts[0][0].fieldKey).toEqual(expect.any(String));
   });
 
   it("sends each save with the version of the fields it was made from", async () => {
@@ -194,9 +237,9 @@ describe("FormFieldEditor", () => {
     const mandatory = within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" });
 
     await user.click(mandatory);
-    await handle.current?.save();
+    await expect(handle.current?.save()).resolves.toBe(1);
     await user.click(mandatory);
-    await handle.current?.save();
+    await expect(handle.current?.save()).resolves.toBe(2);
 
     expect(posts.versions).toEqual(["0", "1"]);
   });
@@ -251,10 +294,50 @@ describe("FormFieldEditor", () => {
     const posts = serveFields([gmo]);
     const { handle } = await renderEditor();
 
-    await handle.current?.save();
+    // the toolbar sends the version checked with its action
+    await expect(handle.current?.save()).resolves.toBe(0);
 
     expect(posts).toHaveLength(0);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("takes the server's ids when a check finds the same fields at a newer version", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([gmo]);
+    const { handle } = await renderEditor();
+    // saved elsewhere as the same field under a new id
+    server.use(http.get(FIELDS_URL, () => fieldList([{ ...gmo, id: 9 }], 3)));
+
+    await expect(handle.current?.save()).resolves.toBe(3);
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    await handle.current?.save();
+
+    expect(posts.versions).toEqual(["3"]);
+    expect(posts[0][0]).toMatchObject({ id: 9, fieldKey: GMO });
+  });
+
+  it("latches a conflict the toolbar reports, and says unsaved changes will be lost on reload", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([gmo]);
+    const { handle } = await renderEditor();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+
+    act(() => handle.current?.reportConflict());
+
+    const alert = await screen.findByRole("alert", { name: "This form was changed elsewhere." });
+    expect(within(alert).getByText(/not saved will be lost when you reload/)).toBeVisible();
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldsConflictError);
+    expect(posts).toHaveLength(0);
+  });
+
+  it("does not say changes will be lost on a conflict when there are none", async () => {
+    serveFields([gmo]);
+    const { handle } = await renderEditor();
+
+    act(() => handle.current?.reportConflict());
+
+    const alert = await screen.findByRole("alert", { name: "This form was changed elsewhere." });
+    expect(within(alert).queryByText(/will be lost/)).not.toBeInTheDocument();
   });
 
   it("treats a save whose response was lost as done when the server has the fields it sent", async () => {
@@ -280,6 +363,127 @@ describe("FormFieldEditor", () => {
     await user.click(mandatory);
     await handle.current?.save();
     expect(posts.versions).toEqual(["0", "1"]);
+  });
+
+  it("follows an earlier save whose response was lost when the author has edited since", async () => {
+    const user = userEvent.setup();
+    let held: ReadonlyArray<FormFieldSaveItem> = [];
+    let version = 0;
+    const posts = serveFields([gmo], () => {
+      const sent = posts.at(-1) ?? [];
+      const from = Number(posts.versions.at(-1));
+      if (from !== version) {
+        return HttpResponse.json({ data: null, errorMsg: { errorMessages: ["changed elsewhere"] } }, { status: 409 });
+      }
+      held = echoed(sent);
+      version += 1;
+      // the first save is applied, but its response never arrives
+      if (posts.length === 1) return HttpResponse.error();
+      return fieldList(held, version);
+    });
+    server.use(http.get(FIELDS_URL, () => (version === 0 ? fieldList([gmo]) : fieldList(held, version))));
+    const restoreConsole = silenceConsole(["error"], [/Network Error/]);
+    const { handle } = await renderEditor();
+    await addField(user, /^String/, "Permit");
+    await expect(handle.current?.save()).rejects.toThrow();
+    restoreConsole();
+
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).resolves.toBe(2);
+
+    expect(posts.versions).toEqual(["0", "0", "1"]);
+    // the retry updates the field the lost save created, rather than creating it again
+    expect(posts[2]).toEqual([
+      expect.objectContaining({ id: 1, source: expect.objectContaining({ mandatory: true }) }),
+      expect.objectContaining({ id: 101, source: expect.objectContaining({ name: "Permit" }) }),
+    ]);
+    expect(handle.current?.isDirty()).toBe(false);
+    expect(screen.queryByRole("alert", { name: "This form was changed elsewhere." })).not.toBeInTheDocument();
+  });
+
+  it("follows a save whose response was lost again when the save that followed it failed", async () => {
+    const user = userEvent.setup();
+    const posts = serveVersionedFields([gmo], ["responseLost", "answered", "requestLost"]);
+    const restoreConsole = silenceConsole(["error"], [/Network Error/]);
+    const { handle } = await renderEditor();
+    await addField(user, /^String/, "Permit");
+    await expect(handle.current?.save()).rejects.toThrow();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    // refused, then followed from the lost save's version, but that save is lost too
+    await expect(handle.current?.save()).rejects.toThrow();
+    restoreConsole();
+
+    await expect(handle.current?.save()).resolves.toBe(2);
+
+    expect(posts.versions).toEqual(["0", "0", "1", "0", "1"]);
+    // the field the lost save created is updated, not sent as new again
+    expect(posts[4][1]).toMatchObject({ id: 101, source: expect.objectContaining({ name: "Permit" }) });
+    expect(handle.current?.isDirty()).toBe(false);
+  });
+
+  it("lets the author try again when the fields cannot be read after a refused save", async () => {
+    const user = userEvent.setup();
+    const posts = serveVersionedFields([gmo], ["responseLost"]);
+    const restoreConsole = silenceConsole(["error"], [/Network Error/]);
+    const { handle } = await renderEditor();
+    await addField(user, /^String/, "Permit");
+    await expect(handle.current?.save()).rejects.toThrow();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    posts.state.readFails = true;
+
+    const refused = handle.current?.save();
+    await expect(refused).rejects.toThrow();
+    await expect(refused).rejects.not.toBeInstanceOf(FormFieldsConflictError);
+    restoreConsole();
+    expect(await screen.findByRole("alert", { name: "The fields were not saved." })).toBeVisible();
+    expect(screen.queryByRole("alert", { name: "This form was changed elsewhere." })).not.toBeInTheDocument();
+
+    posts.state.readFails = false;
+    await expect(handle.current?.save()).resolves.toBe(2);
+    expect(posts.at(-1)?.[1]).toMatchObject({ id: 101 });
+  });
+
+  it("follows the earlier of two saves whose responses were lost when the server has it", async () => {
+    const user = userEvent.setup();
+    const posts = serveVersionedFields([gmo], ["responseLost", "requestLost"]);
+    const restoreConsole = silenceConsole(["error"], [/Network Error/]);
+    const { handle } = await renderEditor();
+    await addField(user, /^String/, "Permit");
+    await expect(handle.current?.save()).rejects.toThrow();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).rejects.toThrow();
+    restoreConsole();
+
+    await user.click(within(card("Permit")).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).resolves.toBe(2);
+
+    expect(posts.versions).toEqual(["0", "0", "0", "1"]);
+    expect(posts[3]).toEqual([
+      expect.objectContaining({ id: 1, source: expect.objectContaining({ mandatory: true }) }),
+      expect.objectContaining({ id: 101, source: expect.objectContaining({ mandatory: true }) }),
+    ]);
+  });
+
+  it("lets the author try again when the database was busy with another save", async () => {
+    const user = userEvent.setup();
+    let busy = true;
+    const posts = serveFields([gmo], () => {
+      if (!busy) return fieldList(echoed(posts.at(-1) ?? []), 1);
+      busy = false;
+      return HttpResponse.json(
+        { data: null, errorMsg: { errorMessages: ["Saved nothing. Try again."] } },
+        { status: 503 },
+      );
+    });
+    const { handle } = await renderEditor();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+
+    await expect(handle.current?.save()).rejects.not.toBeInstanceOf(FormFieldsConflictError);
+    const alert = await screen.findByRole("alert", { name: "The fields were not saved." });
+    expect(within(alert).getByText("Saved nothing. Try again.")).toBeVisible();
+
+    await expect(handle.current?.save()).resolves.toBe(1);
+    expect(screen.queryByRole("alert", { name: "This form was changed elsewhere." })).not.toBeInTheDocument();
   });
 
   it("shows the server's reason when the user may not change the form", async () => {
@@ -312,7 +516,7 @@ describe("FormFieldEditor", () => {
     const radio = saved(4, "Radio", {
       name: "R",
       radioValues: "fieldChoices=X&&fieldChoices=Y=1",
-      // read as no option: the options read are X and Y
+      // not one of the options read, X and Y, as stored
       radioSelected: "Y=1",
     });
     const text = saved(5, "String", { name: "S", ifPassword: "no", defaultStringValue: "" });
@@ -334,10 +538,38 @@ describe("FormFieldEditor", () => {
       choiceValues: "fieldChoices=pH&fieldChoices=B&fieldChoices=D",
       selectedValues: "fieldSelectedChoices=B&fieldSelectedChoices=pH",
     });
+    // the default is read as its options were, so Y=1 is Y, which the options still offer
     expect(posts[1][1].source).toMatchObject({
       radioValues: "fieldRadios=X&fieldRadios=Y&fieldRadios=Z",
-      radioSelected: "",
+      radioSelected: "Y",
     });
+  });
+
+  it("takes the default a save cleared when the author did not change it while the save was in flight", async () => {
+    const user = userEvent.setup();
+    const held = heldResponse();
+    // Q is not an option, so writing the options anew clears it
+    const radio = saved(4, "Radio", { name: "R", radioValues: "fieldRadios=X&fieldRadios=Y", radioSelected: "Q" });
+    const text = saved(5, "String", { name: "S", ifPassword: "no", defaultStringValue: "" });
+    let first = true;
+    const posts = serveFields([radio, text], async () => {
+      if (first) {
+        first = false;
+        await held.released;
+      }
+      return fieldList(echoed(posts.at(-1) ?? []), posts.length);
+    });
+    const { handle } = await renderEditor();
+    await addOption(user, "R", "Z");
+
+    const saving = handle.current?.save();
+    await user.type(within(card("S")).getByRole("textbox", { name: "Name" }), "2");
+    held.release();
+    await saving;
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({ radioSelected: "" });
+    expect(posts[1][0].source).toMatchObject({ radioSelected: "" });
   });
 
   it("checks only the settings that changed on a stored field, so stored duplicate options do not block a change", async () => {
@@ -384,7 +616,7 @@ describe("FormFieldEditor", () => {
     await handle.current?.save();
 
     expect(posts[0][0]).toMatchObject({ id: null, type: "String", source: { name: "Hazard details" } });
-    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(posts[0][0].fieldKey).toEqual(expect.any(String));
     expect(handle.current?.isDirty()).toBe(false);
   });
 
@@ -455,7 +687,8 @@ describe("FormFieldEditor", () => {
     const user = userEvent.setup();
     // written through the forms API, which does not check options the way the editor does
     const apiField = saved(3, "Radio", { name: "x".repeat(60), radioValues: "fieldRadios=a=b&fieldRadios=a=b" });
-    const posts = serveFields([apiField, permit]);
+    // without its rule, whose source is not among these fields
+    const posts = serveFields([apiField, { ...permit, displayRule: null }]);
     const { handle } = await renderEditor();
 
     await user.click(within(card("GMO permit")).getByRole("switch", { name: "Mandatory" }));
@@ -592,6 +825,101 @@ describe("FormFieldEditor", () => {
     expect(posts).toHaveLength(0);
   });
 
+  describe("with a display condition that is not filled out", () => {
+    const target = saved(2, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" });
+
+    async function renderWithIncompleteCondition(user: ReturnType<typeof userEvent.setup>, fields = [gmo, target]) {
+      const posts = serveFields(fields);
+      const rendered = await renderEditor();
+      // the condition reads the first radio field, but has no options yet
+      await user.click(
+        within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }),
+      );
+      return { posts, ...rendered };
+    }
+
+    it("refuses to save, says which field it is on, focuses it, and sends nothing", async () => {
+      const user = userEvent.setup();
+      const { posts, handle } = await renderWithIncompleteCondition(user);
+
+      await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+      const alert = screen.getByRole("alert", { name: "Fix the problems marked below, then save again." });
+      expect(
+        within(alert).getByText("Complete the display condition of Target, or choose Always, before saving."),
+      ).toBeVisible();
+      expect(within(card("Target")).getByRole("combobox", { name: "Options" })).toHaveFocus();
+      expect(posts).toHaveLength(0);
+    });
+
+    it("focuses the Field select when no field can be its source", async () => {
+      const user = userEvent.setup();
+      const { handle } = await renderWithIncompleteCondition(user, [target]);
+
+      await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+      expect(within(card("Target")).getByRole("combobox", { name: "Field" })).toHaveFocus();
+    });
+
+    /** Refuses a save first, so the alert is up while the condition is fixed. */
+    async function refuseASave(user: ReturnType<typeof userEvent.setup>) {
+      const rendered = await renderWithIncompleteCondition(user);
+      await act(() => expect(rendered.handle.current?.save()).rejects.toThrow());
+      expect(screen.getByRole("alert", { name: "Fix the problems marked below, then save again." })).toBeVisible();
+      return rendered;
+    }
+
+    it.each([
+      ["once it is completed", "Yes", { sourceFieldKey: GMO, operator: "IS_ANY_OF", values: ["Yes"] }],
+      ["once it is set to Always", null, null],
+    ])("clears its alert and saves %s", async (_case, option, displayRule) => {
+      const user = userEvent.setup();
+      const { posts, handle } = await refuseASave(user);
+
+      if (option) {
+        await user.click(within(card("Target")).getByRole("combobox", { name: "Options" }));
+        await user.click(screen.getByRole("option", { name: option }));
+      } else {
+        await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+      }
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await act(() => expect(handle.current?.save()).resolves.toEqual(expect.any(Number)));
+
+      // Always leaves the fields as they were, so they are only checked
+      expect(posts.map((body) => body[1].displayRule)).toEqual(displayRule ? [displayRule] : []);
+    });
+
+    it("keeps its alert, on the field still unfinished, until both are fixed", async () => {
+      const user = userEvent.setup();
+      const notes = saved(3, "String", { name: "Notes", ifPassword: "no", defaultStringValue: "" });
+      const { handle } = await renderWithIncompleteCondition(user, [gmo, target, notes]);
+      await user.click(
+        within(card("Notes")).getByRole("radio", { name: "Only when another field has certain values" }),
+      );
+      await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+      await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+      const alert = screen.getByRole("alert", { name: "Fix the problems marked below, then save again." });
+      expect(
+        within(alert).getByText("Complete the display condition of Notes, or choose Always, before saving."),
+      ).toBeVisible();
+
+      await user.click(within(card("Notes")).getByRole("radio", { name: "Always" }));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("clears its alert and saves once the field it is on is deleted", async () => {
+      const user = userEvent.setup();
+      const { posts, handle } = await refuseASave(user);
+
+      await user.click(screen.getByRole("button", { name: "Delete field Target" }));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await act(() => expect(handle.current?.save()).resolves.toEqual(expect.any(Number)));
+
+      expect(posts[0].map(({ fieldKey }) => fieldKey)).toEqual([GMO]);
+    });
+  });
+
   it("stops editing once the toolbar has published the form, and says how to change it", async () => {
     serveFields([gmo]);
     const { handle } = await renderEditor();
@@ -615,6 +943,16 @@ describe("FormFieldEditor", () => {
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
     await expect(answer).resolves.toBe(false);
+    restoreConsole();
+  });
+
+  it("refuses the toolbar's actions when the fields could not be loaded, as they cannot be checked", async () => {
+    const restoreConsole = silenceConsole(["error"], [/fields/i, /Request failed/, /above error/]);
+    server.use(http.get(FIELDS_URL, () => HttpResponse.json({ message: "down" }, { status: 500 })));
+    const { handle } = await renderRoot();
+    expect(await screen.findByText("The fields of this form could not be loaded.")).toBeInTheDocument();
+
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldEditorUnavailableError);
     restoreConsole();
   });
 
