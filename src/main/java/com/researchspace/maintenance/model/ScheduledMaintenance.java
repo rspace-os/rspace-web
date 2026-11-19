@@ -16,7 +16,6 @@ import jakarta.validation.constraints.Size;
 import java.util.Calendar;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.Cache;
@@ -38,9 +37,13 @@ public class ScheduledMaintenance {
   public static final ScheduledMaintenance NULL =
       new ScheduledMaintenance(new Date(0), new Date(1));
 
-  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
-  @Setter
-  private Long id;
+  @Setter private Long id;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
 
   private long version;
 
@@ -58,14 +61,15 @@ public class ScheduledMaintenance {
   private Long endDate;
   private Long stopUserLoginDate;
 
-  @Getter(
-      onMethod_ =
-          @Size(
-              min = 0,
-              max = User.DEFAULT_MAXFIELD_LEN,
-              message = "{validation.errors.maintenanceMessageStringMax}"))
-  @Setter
-  private String message;
+  @Setter private String message;
+
+  @Size(
+      min = 0,
+      max = User.DEFAULT_MAXFIELD_LEN,
+      message = "{validation.errors.maintenanceMessageStringMax}")
+  public String getMessage() {
+    return message;
+  }
 
   protected ScheduledMaintenance() {}
 
