@@ -42,6 +42,13 @@ type FieldDisplayConditionProps = {
   /** Stores a new rule for this field; null means the field is always shown. */
   onChange: (rule: FieldDisplayRule | null) => void;
   /**
+   * Told when the condition starts or stops showing names of fields it could
+   * read besides its rule's source: while it has a draft, or its field menu is
+   * open. A host that re-renders a condition only when names it shows change
+   * then knows when to include those names.
+   */
+  onShowsSourcesChange?: (fieldKey: string, shows: boolean) => void;
+  /**
    * Called with true when this field's condition can no longer be applied as
    * shown, and with false once it can again, the author chooses "Always", or
    * the component unmounts. Hosts block saving while any field reports true.
@@ -101,6 +108,7 @@ export default function FieldDisplayCondition({
   fieldKey,
   fields,
   onChange,
+  onShowsSourcesChange,
   onIncompleteChange,
   editable,
 }: FieldDisplayConditionProps): ReactNode {
@@ -117,6 +125,12 @@ export default function FieldDisplayCondition({
     draft: DraftCondition | null;
   } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
+  const showsSources = editable && (draft !== null || sourceMenuOpen);
+  useEffect(() => {
+    if (!showsSources || !onShowsSourcesChange) return;
+    onShowsSourcesChange(fieldKey, true);
+    return () => onShowsSourcesChange(fieldKey, false);
+  }, [showsSources, onShowsSourcesChange, fieldKey]);
 
   const graph = ruleGraphFor(fields);
   const rule = graph.byKey.get(fieldKey)?.rule ?? null;

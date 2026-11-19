@@ -119,6 +119,12 @@ public interface AbstractFormManager<T extends AbstractForm> extends GenericMana
    */
   T reorderFields(Long formId, List<Long> orderedFieldIds, User user);
 
+  /**
+   * Makes a draft the current version of its form.
+   *
+   * @return the new version, or null if the form is not a draft or is a system form
+   * @throws AuthorizationException if the user cannot write to the draft
+   */
   T updateVersion(Long tempFormId, User user);
 
   /**

@@ -79,11 +79,10 @@ public class FormFieldListSaver {
    * @param items every field the form should have, in order
    * @param copiedFieldIds ids of draft fields copied from the published version; omitting one is an
    *     error, not a deletion
-   * @return the form's active fields, in their new order
+   * @return whether the field list changed: a field was added, deleted, moved or changed
    * @throws FormFieldsValidationException if anything in the save is invalid
    */
-  public List<FieldForm> apply(
-      AbstractForm form, List<FormFieldSaveItem> items, Set<Long> copiedFieldIds) {
+  public boolean apply(AbstractForm form, List<FormFieldSaveItem> items, Set<Long> copiedFieldIds) {
     List<String> errors = new ArrayList<>();
     Map<Long, FieldForm> activeById = new LinkedHashMap<>();
     for (FieldForm field : form.getFieldForms()) {
@@ -320,40 +319,41 @@ public class FormFieldListSaver {
     }
   }
 
-  private List<FieldForm> persist(
-      AbstractForm form, List<PlannedField> planned, List<FieldForm> toDelete) {
+  private boolean persist(AbstractForm form, List<PlannedField> planned, List<FieldForm> toDelete) {
     long now = new Date().getTime();
+    boolean changed = !toDelete.isEmpty();
     for (FieldForm field : toDelete) {
       field.setDeleted(true);
       field.setModificationDate(now);
       fieldFormDao.save(field);
     }
-    List<FieldForm> ordered = new ArrayList<>(planned.size());
     for (int index = 0; index < planned.size(); index++) {
       PlannedField plan = planned.get(index);
       FieldForm field = plan.field();
-      field.setColumnIndex(index);
       if (plan.isNew()) {
+        changed = true;
+        field.setColumnIndex(index);
         field.setModificationDate(now);
         field.setForm(form);
         field = fieldFormDao.save(field);
         form.addFieldForm(field);
       } else {
-        field.setModificationDate(
-            plan.settingsBefore().equals(settingsFingerprint(field)) ? plan.modifiedBefore() : now);
+        boolean settingsChanged = !plan.settingsBefore().equals(settingsFingerprint(field));
+        changed |= settingsChanged || field.getColumnIndex() != index;
+        field.setColumnIndex(index);
+        field.setModificationDate(settingsChanged ? now : plan.modifiedBefore());
         fieldFormDao.save(field);
       }
-      ordered.add(field);
     }
     form.setModificationDate(new Date(now));
-    return ordered;
+    return changed;
   }
 
   /**
    * Everything the save can change on a field except its position, with the modification time kept
    * aside, so an untouched field keeps its modification time and gains no audit revision.
    */
-  private JsonNode settingsFingerprint(FieldForm field) {
+  private ObjectNode settingsFingerprint(FieldForm field) {
     ObjectNode node = fingerprintMapper.createObjectNode();
     node.set("settings", fingerprintMapper.valueToTree(LegacyFormFieldDTOs.fromFieldForm(field)));
     node.put("fieldKey", field.getFieldKey());

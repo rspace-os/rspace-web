@@ -13,6 +13,7 @@
   "exportModal": "src/Export/ExportModalEntrypoint.tsx",
   "externalWorkFlows": "src/eln/eln-external-workflows/ExternalWorkflowsEntrypoint.tsx",
   "fileTreeToolbar": "src/Toolbar/FileTreeToolbarEntrypoint.tsx",
+  "formFieldEditor": "src/eln/form-field-editor/FormFieldEditorEntrypoint.tsx",
   "gallery": "src/eln/gallery/GalleryEntrypoint.tsx",
   "groupActivity": "src/my-rspace/profile/GroupActivityEntrypoint.tsx",
   "groupEditBar": "src/my-rspace/directory/groups/GroupEditBarEntrypoint.tsx",

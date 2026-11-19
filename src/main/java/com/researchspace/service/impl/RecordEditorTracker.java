@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,14 +106,24 @@ public class RecordEditorTracker {
    */
   public String unlockRecord(
       UniquelyIdentifiable edited, User user, Supplier<String> sessionIDProvider) {
+    return edited == null ? "" : unlockRecordById(edited.getId(), user, sessionIDProvider);
+  }
+
+  /**
+   * Releases the edit lock on a record by its id, which works whether or not the record still
+   * exists.
+   *
+   * @return The user's username or empty string if this user wasn't actually editing the record.
+   */
+  public String unlockRecordById(Long recordId, User user, Supplier<String> sessionIDProvider) {
 
     Map<UserSessionKey, Integer> usersEditing = null;
 
     synchronized (editlock) {
-      if (user != null && edited != null) {
-        if (recordEditing.containsKey(edited.getId())) {
+      if (user != null && recordId != null) {
+        if (recordEditing.containsKey(recordId)) {
 
-          usersEditing = recordEditing.get(edited.getId());
+          usersEditing = recordEditing.get(recordId);
           UserSessionKey key = new UserSessionKey(user.getUsername(), sessionIDProvider.get());
 
           if (usersEditing.containsKey(key)) {
@@ -123,11 +132,11 @@ public class RecordEditorTracker {
             if (count == 0) {
               usersEditing.remove(key);
               if (usersEditing.isEmpty()) {
-                recordEditing.remove(edited.getId());
+                recordEditing.remove(recordId);
               }
             } else {
               usersEditing.put(key, count);
-              recordEditing.put(edited.getId(), usersEditing);
+              recordEditing.put(recordId, usersEditing);
             }
             return user.getUsername();
           }
@@ -138,21 +147,28 @@ public class RecordEditorTracker {
     return "";
   }
 
+  /**
+   * How many edit-lock acquisitions on a record a user holds in one session.
+   *
+   * @return the count, 0 when there are none
+   */
+  public int getEditCount(Long recordId, String username, String sessionId) {
+    synchronized (editlock) {
+      Map<UserSessionKey, Integer> usersEditing = recordEditing.get(recordId);
+      if (usersEditing == null) {
+        return 0;
+      }
+      return usersEditing.getOrDefault(new UserSessionKey(username, sessionId), 0);
+    }
+  }
+
+  /** Releases every edit lock taken in a session, when the session ends. */
   public void removeLockedRecordInSession(String sessionId) {
     synchronized (editlock) {
-      for (Entry<Long, Map<UserSessionKey, Integer>> entry : recordEditing.entrySet()) {
-        Map<UserSessionKey, Integer> usersEditing = entry.getValue();
-        for (UserSessionKey key : usersEditing.keySet()) {
-          if (key.getSession().equals(sessionId)) {
-            String username = key.getUsername();
-            UserSessionKey usersessionkey = new UserSessionKey(username, sessionId);
-            usersEditing.remove(usersessionkey);
-            if (usersEditing.isEmpty()) {
-              recordEditing.remove(entry.getKey());
-            }
-          }
-        }
+      for (Map<UserSessionKey, Integer> usersEditing : recordEditing.values()) {
+        usersEditing.keySet().removeIf(key -> sessionId.equals(key.getSession()));
       }
+      recordEditing.values().removeIf(Map::isEmpty);
     } // end synchronized block
   }
 

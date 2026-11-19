@@ -349,6 +349,7 @@
       "fieldTypeImmutable": "Field [{0}] is a {1} field, and a saved field cannot change its type to {2}",
       "fieldTypeUnknown": "Field [{0}] has an unknown type [{1}]",
       "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
+      "fieldsChangedElsewhere": "This form's fields were changed elsewhere, for example in another tab. Reload to see the latest fields; this save was not applied.",
       "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
       "infoUnauthorized": "Unauthorized attempt to get form info",
       "notBeingEdited": "Form [{0}] is not open for editing; save fields to its draft instead",

@@ -1,13 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
-<!-- Loading TinyMCE -->
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<%-- The form field editor (formFieldEditor bundle) loads its own TinyMCE; the legacy TinyMCE 5 must not be on this page. --%>
 <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/form.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
 
 <title><spring:message code="menu.templates.formEditor"/></title>
 <head>
@@ -38,12 +32,6 @@
 					<button id='save' title='<spring:message code="template.save.description"/>'>
 						<spring:message code="form.editor.saveAndCloseButton"/>
 					</button>
-				</li>
-				<li>
-					<button id='add' title="<spring:message code='form.editor.addFieldTitle'/>"><spring:message code="form.editor.addFieldButton"/></button>
-				</li>
-				<li>
-					<button id='changeOrder' title='<spring:message code="form.editor.reorderFieldsTitle"/>'><spring:message code="form.editor.reorderFieldsButton"/></button>
 				</li>
 			</ul>
 
@@ -119,56 +107,24 @@
 	</span>
 </div>
 
-<table id="structuredDocument" name="mainTable" style="width:100%"> 
-	<tr class="table_cell">
-		<td class="field-name" style="font-weight:normal;font-size:1em;width:15%;text-align:left;padding-left:10px;"><spring:message code="form.editor.fieldNamesHeader"/></td>
-		<td class="field-value" style="font-weight:normal;font-size:1em;text-align:left;padding-left:10px;"><spring:message code="form.editor.fieldsHeader"/></td>
-	</tr>
-	<input type="hidden" name="timestamp" value="${template.modificationDate}"/>
-	 <c:forEach var="field" items="${template.fieldForms}">
-		<%@ include file="include/fieldFormRow.jsp"%>
-       </c:forEach>
-</table>
+<%-- Fields, their order and their display rules are edited here; the toolbar above saves them. --%>
+<div id="formFieldEditor" style="max-width: 1100px; margin: 0 auto; padding: 0 16px;"
+	data-form-id="${template.id}" data-editable="${editStatus eq 'EDIT_MODE'}"></div>
+<rst:bundle bundle="formFieldEditor" />
 
-<c:if test="${editStatus eq 'EDIT_MODE'}">
-	<!-- a jquery-ui dialog, initially closed -->
-	<div id="field-editor" title="<spring:message code='form.editor.fieldEditorDialogTitle'/>">
-		<form id="field-editor-form">
-			<input type="hidden" name="fieldForm" value="fieldForm">
-			<div id="errorSummary" class="error errorDialog"></div>
-			<fieldset id="field_selector">
-				<table>
-					<tr>
-						<td><label for="fieldEditorSelect"><spring:message code="form.editor.fieldTypeLabel"/></label></td>
-						<td><select name="fieldType" id="fieldEditorSelect">
-								<option value=""><spring:message code="form.create.fieldTypeSelect" /></option>
-								<c:forEach var="fieldKey" items="${fieldKeys}">
-									<option>${fieldKey}</option>
-								</c:forEach>
-						</select></td>
-					</tr>
-				</table>
-			</fieldset>
-			<div id="field-loading">
-				<img src="<c:url value ='/images/field-editor-load.gif'/>" />
-			</div>
-		</form>
-	</div>
-</c:if>
 <%@ include file="include/templatePublishShareDlg.jsp"%>
-
-<div id="reorderFieldsDialog" title="<spring:message code='form.editor.orderFormFieldsDialogTitle'/>" style="display: none">
-	<p> <spring:message code="form.editor.orderFormFieldsInstruction"/><p>
-	<fieldset>
-		<legend><spring:message code="form.editor.fieldsHeader"/></legend>
-		<table id="reorderFieldTable"></table>
-	</fieldset>
-</div>
+<%-- A new form is rendered straight from a POST, where the decorator's include of this template
+     comes back empty, and the toolbar's page blocker (RS.blockPage) needs it. A static include works
+     for any method. --%>
+<c:if test="${pageContext.request.method eq 'POST'}">
+	<%@ include file="/scripts/templates/blockUI.html"%>
+</c:if>
 
 <script>
 	var editable = '${editStatus}';
 	var editor = '${editor}';
-	var wasAutosaved = false;
 	var modificationDate = '${modificationDate}';
 	var recordId = "${template.id}";
+	// identifies this page's hold on the edit lock, so only this page can release it
+	var editLockToken = "${editLockToken}";
 </script>
