@@ -164,7 +164,9 @@ class LibreOfficeSandbox {
     private CompletableFuture<Void> termination;
 
     RequestProcesses(Path request) {
-      this(request, () -> ProcessHandle.current().descendants().toList());
+      // Not just this JVM's descendants: JODConverter 5 kills the outer bwrap it started, which
+      // re-parents the sandbox to the container's init, out of this JVM's process tree.
+      this(request, () -> ProcessHandle.allProcesses().toList());
     }
 
     RequestProcesses(Path request, Supplier<List<ProcessHandle>> descendants) {

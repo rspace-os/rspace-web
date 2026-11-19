@@ -188,6 +188,36 @@ class LibreOfficeSandboxTest {
   }
 
   @Test
+  @EnabledOnOs(OS.LINUX)
+  void terminationKillsRequestProcessesOutsideThisJvmsTree() throws Exception {
+    // The outer shell exits at once, so the inner one is re-parented out of this JVM's tree, as a
+    // sandbox is when JODConverter kills the outer bwrap.
+    new ProcessBuilder("sh", "-c", "sh -c 'sleep 30; :' \"$0\" &", directory.toString())
+        .start()
+        .waitFor(2, TimeUnit.SECONDS);
+    ProcessHandle orphan =
+        ProcessHandle.allProcesses()
+            .filter(
+                process ->
+                    List.of(process.info().arguments().orElse(new String[0]))
+                        .contains(directory.toString()))
+            .findFirst()
+            .orElseThrow();
+    try {
+      assertTrue(ProcessHandle.current().descendants().noneMatch(orphan::equals));
+      var scope = new LibreOfficeSandbox.RequestProcesses(directory);
+      scope.noMoreStarts();
+
+      scope.terminate().get(2, TimeUnit.SECONDS);
+
+      assertFalse(orphan.isAlive());
+    } finally {
+      orphan.descendants().forEach(ProcessHandle::destroyForcibly);
+      orphan.destroyForcibly();
+    }
+  }
+
+  @Test
   void isolatesNetworkAndBindsOnlyRequestState() throws Exception {
     Path executable = directory.resolve("bwrap");
     Files.createFile(executable).toFile().setExecutable(true);

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -68,9 +69,24 @@ class OfficeConversionRunner {
           LOG.warn("Timed out waiting for the request's LibreOffice processes to exit", e);
         }
         deadline.check();
-      } else if (!completed) {
-        deleteQuietly(requestDirectory);
+      } else {
+        // A stop that had to kill the outer bwrap can leave its sandbox behind.
+        awaitTermination(processes.terminate());
+        if (!completed) {
+          deleteQuietly(requestDirectory);
+        }
       }
+    }
+  }
+
+  private static void awaitTermination(CompletableFuture<Void> terminated) {
+    try {
+      terminated.get(1, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      LOG.warn("Interrupted while ending the request's LibreOffice processes", e);
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException | TimeoutException e) {
+      LOG.warn("Could not confirm that the request's LibreOffice processes exited", e);
     }
   }
 
