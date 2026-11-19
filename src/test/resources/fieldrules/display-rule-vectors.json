@@ -93,7 +93,7 @@
         "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"LESS_THAN\",\"values\":[\"1\",\"2\"]}"
       },
       {
-        "name": "a number value outside the strict grammar parses (the validator rejects it)",
+        "name": "a number value is kept as written: '+5' is not rewritten to '5'",
         "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"GREATER_THAN\",\"values\":[\"+5\"]}",
         "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"GREATER_THAN\",\"values\":[\"+5\"]}"
       },
@@ -1503,7 +1503,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads '.5' as a number",
+      "name": "the number grammar reads '.5' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1529,7 +1529,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads '5.' as a number",
+      "name": "the number grammar reads '5.' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1555,7 +1555,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads '+5' as a number",
+      "name": "the number grammar reads '+5' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1581,7 +1581,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads '1e-3' as a number",
+      "name": "the number grammar reads '1e-3' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1607,7 +1607,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads '2E2' as a number",
+      "name": "the number grammar reads '2E2' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1633,7 +1633,7 @@
       ]
     },
     {
-      "name": "the lenient data grammar reads ' 7 ' as a number",
+      "name": "the number grammar reads ' 7 ' as a number field value",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1659,7 +1659,7 @@
       ]
     },
     {
-      "name": "data the lenient grammar does not read is not a number",
+      "name": "a field value the number grammar does not read is not a number",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1973,7 +1973,7 @@
       ]
     },
     {
-      "name": "the strict rule grammar rejects '+5', so the rule does not apply and the field is shown",
+      "name": "a rule's number value '+5' is read with the field values' grammar: 5 equals it, so not equals hides the field",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1995,11 +1995,11 @@
       ],
       "expected": [
         true,
-        true
+        false
       ]
     },
     {
-      "name": "the strict rule grammar rejects '.5', so the rule does not apply and the field is shown",
+      "name": "a rule's number value '.5' is read with the field values' grammar: 5 is not equal to it, so the field is shown",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2025,7 +2025,7 @@
       ]
     },
     {
-      "name": "the strict rule grammar rejects '5.', so the rule does not apply and the field is shown",
+      "name": "a rule's number value '5.' is read with the field values' grammar: 5 equals it, so not equals hides the field",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2047,11 +2047,11 @@
       ],
       "expected": [
         true,
-        true
+        false
       ]
     },
     {
-      "name": "the strict rule grammar rejects '1e0', so the rule does not apply and the field is shown",
+      "name": "a rule's number value '1e0' is read with the field values' grammar: 5 is not equal to it, so the field is shown",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2077,7 +2077,7 @@
       ]
     },
     {
-      "name": "the strict rule grammar rejects ' 5', so the rule does not apply and the field is shown",
+      "name": "a rule's number value ' 5' is not trimmed, so the rule does not apply and the field is shown",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2103,7 +2103,7 @@
       ]
     },
     {
-      "name": "the strict rule grammar rejects '05', so the rule does not apply and the field is shown",
+      "name": "a rule's number value '05' is read with the field values' grammar: 5 equals it, so not equals hides the field",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2125,11 +2125,11 @@
       ],
       "expected": [
         true,
-        true
+        false
       ]
     },
     {
-      "name": "the strict rule grammar rejects 'abc', so the rule does not apply and the field is shown",
+      "name": "a rule's number value 'abc' is not a number, so the rule does not apply and the field is shown",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -2305,6 +2305,56 @@
         true,
         true,
         true
+      ]
+    },
+    {
+      "name": "text is lower-cased with the server's pinned Unicode tables: Vithkuqi capital U+10570 lowers to U+10597 (Unicode 14), whatever the JDK",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "𐕰"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false
       ]
     },
     {
@@ -3402,7 +3452,7 @@
       ]
     },
     {
-      "name": "a number rule value must match the strict grammar",
+      "name": "a number rule value must match the field values' number grammar, untrimmed",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -3508,31 +3558,44 @@
               "5"
             ]
           }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000011",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000012",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000013",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e1000"
+            ]
+          }
         }
       ],
       "expectedErrors": [
         {
-          "fieldIndex": 1,
-          "code": "validation.fieldDisplayRule.valueNotANumber"
-        },
-        {
-          "fieldIndex": 2,
-          "code": "validation.fieldDisplayRule.valueNotANumber"
-        },
-        {
-          "fieldIndex": 3,
-          "code": "validation.fieldDisplayRule.valueNotANumber"
-        },
-        {
-          "fieldIndex": 4,
-          "code": "validation.fieldDisplayRule.valueNotANumber"
-        },
-        {
           "fieldIndex": 5,
-          "code": "validation.fieldDisplayRule.valueNotANumber"
-        },
-        {
-          "fieldIndex": 6,
           "code": "validation.fieldDisplayRule.valueNotANumber"
         },
         {
@@ -3541,6 +3604,14 @@
         },
         {
           "fieldIndex": 8,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 11,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 12,
           "code": "validation.fieldDisplayRule.valueNotANumber"
         }
       ]

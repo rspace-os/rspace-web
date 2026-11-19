@@ -8,29 +8,31 @@ import Decimal from "decimal.js";
 
 /**
  * The characters trimmed from values: JavaScript's `\s` set, written out so
- * that Java and TypeScript trim identically. `\v` is U+000B, which Java
- * writes as `\u000B` (its `\v` is a class of vertical whitespace).
+ * that Java and TypeScript trim identically.
  */
-const WHITESPACE = /^[\t\n\v\f\r \u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]$/;
-
-/** A rule's number value: plain decimal notation only, as the editor writes it. */
-const RULE_NUMBER = /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/;
+const WHITESPACE = new Set(
+  "\t\n\v\f\r \u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF",
+);
 
 /**
- * A field's number value, after trimming: everything ELN and Inventory already
- * store, such as `.5`, `5.`, `+5` and `1e-3`. The fraction's digits follow
- * only a point, so no run of digits can be split two ways and rejection stays
- * linear.
+ * A number, as a field value after trimming or as a rule's value: everything
+ * ELN and Inventory already store, such as `5`, `.5`, `5.`, `+5` and `1e-3`.
+ * The fraction's digits follow only a point, so no run of digits can be split
+ * two ways and rejection stays linear. The exponent has at most three digits
+ * because `decimal.js` and Java's `BigDecimal` treat larger exponents
+ * differently.
  */
-const DATA_NUMBER = /^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]{1,3})?$/;
+const NUMBER = /^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]{1,3})?$/;
+
+/** The longest number read; the same as Java's `RuleValues.MAX_NUMBER_LENGTH`, so both sides agree. */
+const MAX_NUMBER_LENGTH = 1000;
 
 /** The value without leading or trailing whitespace from the shared set. */
 export function trimRuleValue(value: string): string {
-  // A loop rather than an anchored regex, which would rescan a long inner run of whitespace.
   let start = 0;
   let end = value.length;
-  while (start < end && WHITESPACE.test(value[start])) start++;
-  while (end > start && WHITESPACE.test(value[end - 1])) end--;
+  while (start < end && WHITESPACE.has(value[start])) start++;
+  while (end > start && WHITESPACE.has(value[end - 1])) end--;
   return value.slice(start, end);
 }
 
@@ -41,27 +43,25 @@ export function isBlankRuleValue(value: string): boolean {
 
 /**
  * Text as compared: trimmed, Unicode NFC so that composed and decomposed
- * accents match, then lower case, with final sigma read as sigma. Lower-casing is not case folding, so
- * `STRASSE` does not match `straße`.
+ * accents match, then lower case, with final sigma read as sigma. Lower-casing
+ * is not case folding, so `STRASSE` does not match `straße`.
+ *
+ * The browser uses its own Unicode tables, so for characters newer than its
+ * Unicode version it can differ from the server, which pins Unicode with ICU4J.
+ * The server decides on save.
  */
 export function normaliseRuleText(value: string): string {
-  // Lower-casing picks final sigma by context, which Java judges differently, so both read it as sigma.
+  // Lower-casing picks final sigma by context, which engines judge differently, so both sides read it as sigma.
   return trimRuleValue(value).normalize("NFC").toLowerCase().replaceAll("\u03C2", "\u03C3");
 }
 
-/** Whether a rule's value is a valid number operand. */
+/** Whether a rule's value, as given (untrimmed), is a number operand. */
 export function isRuleNumber(value: string): boolean {
-  return RULE_NUMBER.test(value);
+  return value.length <= MAX_NUMBER_LENGTH && NUMBER.test(value);
 }
 
-/** The longest trimmed field value read as a number; the same as Java's `RuleValues.MAX_NUMBER_LENGTH`. */
-const MAX_NUMBER_LENGTH = 1000;
-
-/**
- * A field's value as a number, or null when it is blank, not a number, or
- * longer than `MAX_NUMBER_LENGTH` characters after trimming.
- */
+/** A field's value as a number, or null when it is not a number after trimming. */
 export function readRuleNumber(value: string): Decimal | null {
   const trimmed = trimRuleValue(value);
-  return trimmed.length <= MAX_NUMBER_LENGTH && DATA_NUMBER.test(trimmed) ? new Decimal(trimmed) : null;
+  return isRuleNumber(trimmed) ? new Decimal(trimmed) : null;
 }
