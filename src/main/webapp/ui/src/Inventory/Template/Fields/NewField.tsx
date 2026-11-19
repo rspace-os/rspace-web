@@ -21,7 +21,7 @@ const EMPTY_FIELD: FieldModelAttrs = {
 
 type NewFieldArgs = {
   record: TemplateModel;
-  /** Called just before the field is added, so the host can move focus to it. */
+  /** Called once the field is added, so the host can move focus to it. */
   onAdd?: () => void;
 };
 
@@ -35,8 +35,8 @@ function NewField({ record, onAdd }: NewFieldArgs): React.ReactNode {
           startIcon={<AddOutlinedIcon />}
           variant="outlined"
           onClick={() => {
-            onAdd?.();
             record.addField(EMPTY_FIELD);
+            onAdd?.();
           }}
         >
           {t("fields.extraFields.addNewField")}
