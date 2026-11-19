@@ -9,16 +9,51 @@
  */
 import * as v from "valibot";
 
-export const CONDITION_OPERATORS = ["IS_ANY_OF", "IS_NONE_OF", "HAS_VALUE", "HAS_NO_VALUE"] as const;
 const OPERATORS_WITH_VALUES = ["IS_ANY_OF", "IS_NONE_OF"] as const;
 const OPERATORS_WITHOUT_VALUES = ["HAS_VALUE", "HAS_NO_VALUE"] as const;
+const COMPARISON_OPERATORS = [
+  "EQUALS",
+  "NOT_EQUALS",
+  "CONTAINS",
+  "LESS_THAN",
+  "AT_MOST",
+  "GREATER_THAN",
+  "AT_LEAST",
+] as const;
+
+export const CONDITION_OPERATORS = [
+  ...OPERATORS_WITH_VALUES,
+  ...OPERATORS_WITHOUT_VALUES,
+  ...COMPARISON_OPERATORS,
+] as const;
 
 export const ConditionOperatorSchema = v.picklist(CONDITION_OPERATORS);
 
 export type ConditionOperator = v.InferOutput<typeof ConditionOperatorSchema>;
 
+/** What a field offers to the rules that read it; the same as Java's `SourceKind`. */
+export const SOURCE_KINDS = ["OPTIONS", "TEXT", "NUMBER", "NONE"] as const;
+
+export const SourceKindSchema = v.picklist(SOURCE_KINDS);
+
+export type SourceKind = v.InferOutput<typeof SourceKindSchema>;
+
+/** The operators a rule may use against a source of each kind, in the order an editor offers them. */
+export const OPERATORS_BY_SOURCE_KIND: Readonly<Record<SourceKind, ReadonlyArray<ConditionOperator>>> = {
+  OPTIONS: ["IS_ANY_OF", "IS_NONE_OF", "HAS_VALUE", "HAS_NO_VALUE"],
+  TEXT: ["EQUALS", "NOT_EQUALS", "CONTAINS", "HAS_VALUE", "HAS_NO_VALUE"],
+  NUMBER: ["EQUALS", "NOT_EQUALS", "LESS_THAN", "AT_MOST", "GREATER_THAN", "AT_LEAST", "HAS_VALUE", "HAS_NO_VALUE"],
+  NONE: [],
+};
+
+/** Whether a rule with this operator must list option values. */
 export function operatorRequiresValues(operator: ConditionOperator): boolean {
   return (OPERATORS_WITH_VALUES as ReadonlyArray<ConditionOperator>).includes(operator);
+}
+
+/** Whether this operator compares the source with exactly one text or number value. */
+export function operatorComparesValue(operator: ConditionOperator): boolean {
+  return (COMPARISON_OPERATORS as ReadonlyArray<ConditionOperator>).includes(operator);
 }
 
 const RuleShapeSchema = v.variant(
@@ -33,6 +68,12 @@ const RuleShapeSchema = v.variant(
       sourceFieldKey: v.string(),
       operator: v.picklist(OPERATORS_WITHOUT_VALUES),
       values: v.nullish(v.pipe(v.array(v.string()), v.maxLength(0, "does not take values"))),
+    }),
+    // Any count parses; the validator reports a count other than one, and evaluation ignores such a rule.
+    v.strictObject({
+      sourceFieldKey: v.string(),
+      operator: v.picklist(COMPARISON_OPERATORS),
+      values: v.nullish(v.array(v.string())),
     }),
   ],
   "A display rule needs a known operator",
@@ -53,10 +94,14 @@ export const FieldDisplayRuleSchema = v.pipe(
       operator,
       values,
     }): {
-      /** Key of the radio or choice field the condition reads; never a database id. */
+      /** Key of the field the condition reads; never a database id. */
       readonly sourceFieldKey: string;
       readonly operator: ConditionOperator;
-      /** Option values; non-empty for IS_ANY_OF and IS_NONE_OF, empty otherwise. */
+      /**
+       * Option values, non-empty, for IS_ANY_OF and IS_NONE_OF; empty for
+       * HAS_VALUE and HAS_NO_VALUE; for the comparison operators the one text
+       * or number compared.
+       */
       readonly values: ReadonlyArray<string>;
     } => ({ sourceFieldKey, operator, values: values ?? [] }),
   ),
@@ -79,8 +124,15 @@ export const FieldSnapshotSchema = v.pipe(
   v.object({
     /** Null for a legacy field that has no key. */
     key: v.nullable(v.string()),
-    /** Whether the field is a radio or choice field, the only types a rule can read. */
+    /**
+     * Whether a rule can read the field. When `sourceKind` is absent, true
+     * means a radio or choice field (`OPTIONS`) and false means `NONE`.
+     */
     canBeSource: v.boolean(),
+    /** What the field offers to rules that read it; read through `sourceKindOf`. */
+    sourceKind: v.optional(SourceKindSchema),
+    /** The raw text of a `TEXT` or `NUMBER` field; absent or empty when it has none. */
+    value: v.optional(v.string()),
     /** Null when the field is always shown. */
     rule: v.nullable(FieldDisplayRuleSchema),
     /** The options a radio or choice field offers. */
@@ -92,6 +144,15 @@ export const FieldSnapshotSchema = v.pipe(
 );
 
 export type FieldSnapshot = v.InferOutput<typeof FieldSnapshotSchema>;
+
+/**
+ * The field's effective source kind: `sourceKind` when given, otherwise
+ * `OPTIONS` or `NONE` from `canBeSource`. Eligibility, operator choice,
+ * validation and evaluation all decide from this.
+ */
+export function sourceKindOf(field: Pick<FieldSnapshot, "canBeSource" | "sourceKind">): SourceKind {
+  return field.sourceKind ?? (field.canBeSource ? "OPTIONS" : "NONE");
+}
 
 /**
  * Parses a stored rule. Unknown properties, unknown operators, non-string keys
