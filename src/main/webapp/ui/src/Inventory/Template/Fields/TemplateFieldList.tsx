@@ -45,6 +45,7 @@ function FieldCards({
             key={field.fieldKey ?? i}
             editable={editable}
             onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
+            onConditionErrorStateChange={(value) => onErrorStateChange(`displayCondition:${field.fieldKey}`, value)}
             onRemove={(deleteFromRecords = false) =>
               record.removeCustomField(field.id, record.fields.indexOf(field), deleteFromRecords)
             }

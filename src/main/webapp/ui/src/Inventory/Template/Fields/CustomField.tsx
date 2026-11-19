@@ -44,22 +44,29 @@ const ObservedFieldDisplayCondition = observer(SharedFieldDisplayCondition);
 /**
  * Reads the template's rule fields here rather than in the card, so an edit to
  * any field's options, type or rule re-renders the display conditions, not
- * every card.
+ * every card. An unfinished condition blocks the save through the field's
+ * validation and marks the section as in error.
  */
 const FieldDisplayCondition = observer(function FieldDisplayCondition({
   field,
   fieldKey,
   editable,
+  onErrorStateChange,
 }: {
   field: FieldModel;
   fieldKey: string;
   editable: boolean;
+  onErrorStateChange: (value: boolean) => void;
 }): React.ReactNode {
   return (
     <ObservedFieldDisplayCondition
       fieldKey={fieldKey}
       fields={templateRuleFields(field.owner)}
       onChange={(rule) => field.setDisplayRule(rule)}
+      onIncompleteChange={(incomplete) => {
+        field.setDisplayConditionIncomplete(incomplete);
+        onErrorStateChange(incomplete);
+      }}
       editable={editable}
     />
   );
@@ -70,6 +77,8 @@ type CustomFieldArgs = {
   i: number;
   editable: boolean;
   onErrorStateChange: (value: boolean) => void;
+  /** Kept apart from `onErrorStateChange`, so a fixed name does not clear an unfinished condition. */
+  onConditionErrorStateChange: (value: boolean) => void;
   onRemove: (b?: boolean) => void;
   forceColumnLayout: boolean;
   onMove: (index: number) => void;
@@ -85,6 +94,7 @@ function CustomField({
   i,
   editable,
   onErrorStateChange,
+  onConditionErrorStateChange,
   onRemove,
   forceColumnLayout,
   onMove,
@@ -224,7 +234,12 @@ function CustomField({
         columnLayout={forceColumnLayout}
         displayCondition={
           field.fieldKey !== null && (
-            <FieldDisplayCondition field={field} fieldKey={field.fieldKey} editable={editable} />
+            <FieldDisplayCondition
+              field={field}
+              fieldKey={field.fieldKey}
+              editable={editable}
+              onErrorStateChange={onConditionErrorStateChange}
+            />
           )
         }
       >
