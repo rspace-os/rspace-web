@@ -52,52 +52,49 @@ function LoadedEditor({ formId, editable, ref }: LoadedEditorProps): ReactNode {
   // each save is made from the version the last one returned, so a save from elsewhere in between is refused
   const currentVersion = () => queryClient.getQueryData<LoadedFields>(queryKey)?.version ?? data.version;
   const fetchLoaded = async () => toLoaded(await fetchFormFields(formId));
-  // The last save sent whose outcome is unknown: it failed without the server saying why, so it may
-  // have been saved with its response lost.
-  const unknownOutcome = useRef<ReadonlyArray<EditorField> | null>(null);
-  const send = async (fields: ReadonlyArray<EditorField>) => {
+  // Every save sent since the current version whose outcome is unknown: it failed without the
+  // server saying why, so it may have been saved with its response lost.
+  const unknownOutcomes = useRef<Array<ReadonlyArray<EditorField>>>([]);
+  /** The server's fields, at their version, are now the editor's: whatever was sent before is settled. */
+  const commit = (server: LoadedFields) => {
+    unknownOutcomes.current = [];
+    queryClient.setQueryData(queryKey, server);
+  };
+  const send = async (fields: ReadonlyArray<EditorField>, version: number) => {
     try {
-      const saved = toLoaded(await saveFormFields(formId, fields.map(toSaveItem), currentVersion()));
-      unknownOutcome.current = null;
-      return saved;
+      return toLoaded(await saveFormFields(formId, fields.map(toSaveItem), version));
     } catch (error) {
-      // the server answered, so nothing was saved
-      if (error instanceof FormFieldsSaveError) {
-        if (!(error instanceof FormFieldsConflictError)) unknownOutcome.current = null;
-      } else {
-        unknownOutcome.current = fields;
-      }
+      // unless the server answered, which means nothing was saved
+      if (!(error instanceof FormFieldsSaveError)) unknownOutcomes.current.push(fields);
       throw error;
     }
   };
   const save = useMutation({
     mutationFn: async (current: ReadonlyArray<EditorField>) => {
       try {
-        return await send(current);
+        return await send(current, currentVersion());
       } catch (error) {
         if (!(error instanceof FormFieldsConflictError)) throw error;
-        const server = await fetchLoaded().catch(() => null);
-        if (!server) throw error;
+        // Not knowing what the server holds is not a conflict: the author can try again. The
+        // unknown outcomes are kept, so the next save, refused in turn, looks again.
+        const server = await fetchLoaded();
         // a save whose response was lost may be what moved the version on
-        if (sameFields(server.fields, current)) {
-          unknownOutcome.current = null;
-          return server;
-        }
-        const lost = unknownOutcome.current;
-        if (lost === null || !sameFields(server.fields, lost)) throw error;
-        // this save follows that one, from its version and with the ids it gave new fields
-        unknownOutcome.current = null;
-        queryClient.setQueryData(queryKey, server);
-        return send(adoptSavedIds(current, server.fields, lost));
+        if (sameFields(server.fields, current)) return server;
+        const lost = unknownOutcomes.current.find((sent) => sameFields(server.fields, sent));
+        if (lost === undefined) throw error;
+        // This save follows that one, from its version and with the ids it gave new fields. The
+        // editor only has those ids once this save succeeds, so until then the version stays as it
+        // was: the next save is refused again, and follows that one again.
+        return send(adoptSavedIds(current, server.fields, lost), server.version);
       }
     },
-    onSuccess: (saved) => queryClient.setQueryData(queryKey, saved),
+    onSuccess: commit,
   });
   const check = async (current: ReadonlyArray<EditorField>) => {
     const server = await fetchLoaded();
     if (server.version === currentVersion()) return { version: server.version, fields: null };
     if (!sameFields(server.fields, current)) throw new FormFieldsConflictError([]);
-    queryClient.setQueryData(queryKey, server);
+    commit(server);
     return server;
   };
   return (

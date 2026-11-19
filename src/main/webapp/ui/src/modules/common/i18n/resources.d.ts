@@ -6076,6 +6076,7 @@ export default interface Resources {
         "missing": "No id to retrieve"
       },
       "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
+      "concurrentChangeRetry": "Another change was being saved at the same time, so nothing was saved. Try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",

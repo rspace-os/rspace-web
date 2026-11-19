@@ -643,7 +643,9 @@ export function renameOption(
     const options = field.options.map((option, i) => (i === index ? value : option));
     // a blank option is never a default, so an unset default must not follow one being typed into
     const follows = !isBlankOption(old) && !options.includes(old);
-    return withOptionsChange(field, options, (selected) => (follows && selected === old ? value : selected));
+    // read as the options before the rename read it, so a stored `Y=1` that is option `Y` follows it
+    const isOld = (selected: string) => offeredDefault(field.options, selected) === old;
+    return withOptionsChange(field, options, (selected) => (follows && isOld(selected) ? value : selected));
   });
 }
 

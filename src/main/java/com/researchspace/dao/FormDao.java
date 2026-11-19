@@ -123,8 +123,9 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    * this transaction does. Lets an action on the whole form (publishing it, or making a draft the
    * new version) act only on the fields the caller checked.
    *
-   * <p>Call it before the transaction reads anything, as {@link #advanceFieldsRevision(Long,
-   * long)}; a row changed after the transaction's first read is reported as a changed revision.
+   * <p>Call it before the transaction reads the form's fields. A row changed after the
+   * transaction's first read is reported as a changed revision, so the fields read afterwards are
+   * those of the revision checked.
    *
    * @return false if the revision is not {@code expectedRevision} (or the form does not exist)
    */

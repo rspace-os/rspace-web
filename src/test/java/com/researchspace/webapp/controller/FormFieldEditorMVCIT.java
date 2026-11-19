@@ -272,6 +272,22 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
                 conflict.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME))
         .contains("changed by someone else");
 
+    // a deadlock only rolled this save back, so the page may try again rather than reload
+    MockHttpServletResponse deadlocked = new MockHttpServletResponse();
+    ModelAndView retry =
+        formController.handleExceptions(
+            new MockHttpServletRequest(),
+            deadlocked,
+            new UncategorizedSQLException(
+                "save field",
+                "update FieldForm",
+                new SQLException("Deadlock found when trying to get lock", "40001", 1213)));
+    assertEquals(503, deadlocked.getStatus());
+    assertEquals(ControllerExceptionHandler.AJAX_ERROR_VIEW_NAME, retry.getViewName());
+    assertThat(
+            (String) retry.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME))
+        .contains("Try again");
+
     MockHttpServletResponse other = new MockHttpServletResponse();
     formController.handleExceptions(
         new MockHttpServletRequest(),
