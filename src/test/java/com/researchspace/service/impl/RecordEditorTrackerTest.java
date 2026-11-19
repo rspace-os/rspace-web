@@ -101,6 +101,33 @@ public class RecordEditorTrackerTest {
   }
 
   @Test
+  public void endingOneOfAUsersTwoSessionsOnARecordReleasesOnlyThatSessionsLocks() {
+    // either session may come first when the record's editors are iterated, so end each in turn
+    for (String ending : List.of("first", "second")) {
+      RecordEditorTracker sessions = new RecordEditorTracker();
+      String staying = ending.equals("first") ? "second" : "first";
+      sessions.attemptToEdit(r1.getId(), u1, activeusers, () -> "first");
+      sessions.attemptToEdit(r1.getId(), u1, activeusers, () -> "second");
+      sessions.attemptToEdit(r2.getId(), u1, activeusers, () -> ending);
+
+      sessions.removeLockedRecordInSession(ending);
+
+      assertEquals(0, sessions.getEditCount(r1.getId(), u1.getUsername(), ending));
+      assertEquals(1, sessions.getEditCount(r1.getId(), u1.getUsername(), staying));
+      assertTrue(sessions.isEditing(r2).isEmpty());
+    }
+  }
+
+  @Test
+  public void unlocksARecordByIdAlone() {
+    attemptEdit(r1.getId(), u1, activeusers);
+
+    assertEquals(u1.getUsername(), tracker.unlockRecordById(r1.getId(), u1, sessionIDPRovider));
+
+    assertTrue(tracker.isEditing(r1).isEmpty());
+  }
+
+  @Test
   public void testLoggedOutUserGivesUpAccessToRecord() {
     // u1 can edit; no-one is editing anything yet
     assertEquals(EditStatus.EDIT_MODE, attemptEdit(r1.getId(), u1, activeusers));

@@ -52,6 +52,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.FormManager.FormEditorPage;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
@@ -500,7 +501,9 @@ public class RSFormController extends BaseController {
 
     UserSessionTracker activeUsers = (UserSessionTracker) servletContext.getAttribute(USERS_KEY);
     User u = userManager.getUserByUsername(user.getName());
-    RSForm form = formManager.getForEditing(formId, u, activeUsers);
+    // the lock this page holds, if it gets it, is on formId, the id in its URL
+    FormEditorPage page = formManager.getForEditorPage(formId, u, activeUsers);
+    RSForm form = page.form();
 
     // rspac-2427.
     if (EditStatus.ACCESS_DENIED.equals(form.getEditStatus())) {
@@ -509,9 +512,8 @@ public class RSFormController extends BaseController {
 
     // we have at least read permission
     populateModelForEditing(model, form);
-    if (EditStatus.EDIT_MODE.equals(form.getEditStatus())) {
-      // the lock this page holds is on formId, the id in its URL
-      model.addAttribute("editLockToken", formManager.registerEditLockHolder(formId, u));
+    if (page.editLockToken() != null) {
+      model.addAttribute("editLockToken", page.editLockToken());
     }
     return new ModelAndView("workspace/editor/form");
   }

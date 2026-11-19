@@ -121,8 +121,8 @@ public interface FormManager extends AbstractFormManager<RSForm> {
 
   /**
    * Releases one of the user's edit-lock acquisitions on the form, in the current session, by id.
-   * Acquisitions held by a form editor page's token (see {@link #registerEditLockHolder}) are left
-   * alone, so this can only release a lock taken without a token.
+   * Acquisitions held by a form editor page's token (see {@link #getForEditorPage}) are left alone,
+   * so this can only release a lock taken without a token.
    */
   void unlockForm(RSForm form, User user);
 
@@ -134,31 +134,41 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    * With a blank token this is {@link #save}, which releases a lock by id.
    *
    * @param form the form to save
-   * @param lockToken the token from {@link #registerEditLockHolder}, or blank
+   * @param lockToken the token from {@link #getForEditorPage}, or blank
    * @param user the user saving, in the current session
    * @return the saved form
    */
   RSForm saveAndReleaseEditLock(RSForm form, String lockToken, User user);
 
   /**
-   * Records that the form editor page now loading holds the edit lock it has just acquired on
-   * {@code lockedFormId} (the id in its edit URL: the original on a first edit of a published form,
-   * the draft when editing resumes), and returns a token for that page. The hold lasts until the
-   * page releases it with {@link #releaseEditLock}, or until the session ends.
+   * A form opened in the form editor page, and the token for the page's hold on its edit lock.
    *
-   * @param lockedFormId the form whose lock the page acquired
-   * @param user the user editing, in the current session
-   * @return a token unique to this page load
+   * @param form the form to show, with its edit status
+   * @param editLockToken the page's token, or null when the page did not get the lock
    */
-  String registerEditLockHolder(long lockedFormId, User user);
+  record FormEditorPage(RSForm form, String editLockToken) {}
 
   /**
-   * Releases the edit lock that the page holding {@code token} acquired, at most once. Nothing
-   * happens for a blank, unknown or already used token, or when the caller is not the user and
-   * session the token was issued to, so a stale page (an old tab, or a page left before a reload or
-   * a back-forward restore) can never release another page's lock.
+   * Opens a form for the form editor page, as {@link #getForEditing(Long, User,
+   * UserSessionTracker)}. When the page gets the edit lock, on {@code id} (the original on a first
+   * edit of a published form, the draft when editing resumes), it also gets a token for its hold on
+   * that lock, recorded in the same step, so a release by id can never take the lock first. The
+   * hold lasts until the page releases it with {@link #releaseEditLock}, or until the session ends.
    *
-   * @param token the token from {@link #registerEditLockHolder}
+   * @param id the form in the editor page's URL
+   * @param user the user editing, in the current session
+   * @param activeUsers the active users, for the edit lock
+   * @return the form, and the page's token when it holds the lock
+   */
+  FormEditorPage getForEditorPage(Long id, User user, UserSessionTracker activeUsers);
+
+  /**
+   * Releases the edit lock that the page holding {@code token} acquired, at most once, whether or
+   * not the form still exists. Nothing happens for a blank, unknown or already used token, or when
+   * the caller is not the user and session the token was issued to, so a stale page (an old tab, or
+   * a page left before a reload or a back-forward restore) can never release another page's lock.
+   *
+   * @param token the token from {@link #getForEditorPage}
    * @param user the user leaving the editor
    * @return whether a lock was released
    */
