@@ -156,6 +156,10 @@ As before, fields newly added to the template may stay empty after the update ev
 mandatory. Only an existing field that becomes mandatory can stop the update, and now only if
 that field is shown after the update.
 
+If a field is deleted from the template but kept in existing samples and instruments, the update
+drops its rule there, so the kept field is always shown with its value. If it had a rule, it is
+also no longer mandatory, so a value it never needed while hidden does not block a later save.
+
 ### Revisions and earlier versions
 
 Earlier revisions of an ELN document, and earlier versions of an Inventory sample or instrument,
