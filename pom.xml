@@ -1409,6 +1409,18 @@
       <version>1.14.0</version>
     </dependency>
     <dependency>
+      <!-- UUID version 7 for field keys; JDK 17 has no v7 generator -->
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
+      <version>5.2.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.hibernate.search</groupId>
       <artifactId>hibernate-search-mapper-orm</artifactId>
       <version>${hibernate-search.version}</version>

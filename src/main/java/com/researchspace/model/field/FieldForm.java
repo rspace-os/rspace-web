@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.UniquelyIdentifiable;
+import com.researchspace.model.field.rule.FieldKeys;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.RSForm;
@@ -29,7 +30,6 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -361,7 +361,7 @@ public abstract class FieldForm
   @PrePersist
   void assignFieldKeyIfMissing() {
     if (fieldKey == null) {
-      fieldKey = UUID.randomUUID().toString();
+      fieldKey = FieldKeys.newFieldKey();
     }
   }
 
