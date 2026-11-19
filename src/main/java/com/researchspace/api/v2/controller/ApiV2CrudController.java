@@ -215,6 +215,16 @@ public class ApiV2CrudController {
     return okWithDocumentEtag(registration, document);
   }
 
+  @PostMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, Object>> create(
+      @PathVariable String resource,
+      @RequestBody ApiV2JsonBody body,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller));
+  }
+
   @PostMapping(value = "/{resource}/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
       @PathVariable String resource,
