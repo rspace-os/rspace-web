@@ -113,7 +113,9 @@ that case before reading details.
 Promise<string>` and `recover(rejected: string): Promise<string>`, plus
 `getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. There is no default provider: each entry point
 that makes token-bearing calls installs one before rendering, and `getApiV2TokenProvider()` throws until it has.
-Public and session operations never ask for one. The setter returns a restore function, which tests use to swap
+Session operations never send a token. Public operations send one when the page has a provider and it can supply a
+token, so a signed-in caller keeps their view; otherwise, including after a refused mint or recovery, they read
+anonymously. The setter returns a restore function, which tests use to swap
 providers; `setup.ts`, `browserSetup.ts` and the Storybook preview install one for tests and stories.
 
 `SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:

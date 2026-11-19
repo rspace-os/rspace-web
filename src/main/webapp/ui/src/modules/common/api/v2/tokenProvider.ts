@@ -129,6 +129,11 @@ export class SessionTokenProvider implements ApiV2TokenProvider {
 
 let provider: ApiV2TokenProvider | undefined;
 
+/** The provider the page's entry point installed, if any; public operations read anonymously without one. */
+export function findApiV2TokenProvider(): ApiV2TokenProvider | undefined {
+  return provider;
+}
+
 /** The provider the page's entry point installed. A token-bearing call fails fast when none was installed. */
 export function getApiV2TokenProvider(): ApiV2TokenProvider {
   if (!provider) {

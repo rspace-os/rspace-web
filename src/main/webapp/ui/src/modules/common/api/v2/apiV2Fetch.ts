@@ -12,7 +12,12 @@ import {
 } from "./ApiV2ProblemError";
 import { apiV2Operations } from "./generated/valibot/operations";
 import { ApiV2ProblemSchema } from "./generated/valibot/schemas";
-import { ApiV2IdentityChangedError, getApiV2TokenProvider } from "./tokenProvider";
+import {
+  ApiV2IdentityChangedError,
+  type ApiV2TokenProvider,
+  findApiV2TokenProvider,
+  getApiV2TokenProvider,
+} from "./tokenProvider";
 
 /**
  * What a generated call rejects with: an `ApiV2Error` (an HTTP failure, an unusable response, a network failure or an
@@ -57,6 +62,20 @@ async function httpError(response: Response, signal?: AbortSignal | null): Promi
   return new ApiV2ProblemError(response.status, undefined, httpStatusMessage(response.status));
 }
 
+/**
+ * A public operation's token: the signed-in caller keeps their view, while a page without a provider, or one that
+ * cannot get a token, reads anonymously. Only an abort or an identity change stops the request.
+ */
+async function optionalToken(provider: ApiV2TokenProvider | undefined, signal?: AbortSignal | null) {
+  if (!provider) return undefined;
+  try {
+    return await provider.getToken(signal ?? undefined);
+  } catch (error) {
+    if (signal?.aborted || error instanceof ApiV2IdentityChangedError) throw error;
+    return undefined;
+  }
+}
+
 /** Shared transport for the JSON, response-header and binary generated clients. */
 async function apiV2Response(
   url: string,
@@ -91,8 +110,15 @@ async function apiV2Response(
   headers.set("X-Requested-With", "XMLHttpRequest");
   const publicOperation = "public" in operation && operation.public === true;
   const sessionOperation = "session" in operation && operation.session === true;
-  const provider = publicOperation || sessionOperation ? undefined : getApiV2TokenProvider();
-  const token = await provider?.getToken(init.signal ?? undefined);
+  let provider: ApiV2TokenProvider | undefined;
+  let token: string | undefined;
+  if (publicOperation) {
+    provider = findApiV2TokenProvider();
+    token = await optionalToken(provider, init.signal);
+  } else if (!sessionOperation) {
+    provider = getApiV2TokenProvider();
+    token = await provider.getToken(init.signal ?? undefined);
+  }
   init.signal?.throwIfAborted();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   else headers.delete("Authorization");
@@ -111,12 +137,19 @@ async function apiV2Response(
     try {
       recovered = await provider.recover(token);
     } catch (error) {
-      // An ended session or a changed identity outranks the rejected request; other failures keep its HTTP error.
-      if (error instanceof ApiV2SessionEndedError || error instanceof ApiV2IdentityChangedError) throw error;
+      // A changed identity outranks the rejected request, and so does an ended session unless the read is public;
+      // other failures keep its HTTP error.
+      if (error instanceof ApiV2IdentityChangedError) throw error;
+      if (error instanceof ApiV2SessionEndedError && !publicOperation) throw error;
     }
     init.signal?.throwIfAborted();
-    if (recovered && recovered !== token && (init.method ?? "GET").toUpperCase() === "GET") {
+    const replayable = (init.method ?? "GET").toUpperCase() === "GET";
+    if (recovered && recovered !== token && replayable) {
       headers.set("Authorization", `Bearer ${recovered}`);
+      response = await send();
+    } else if (publicOperation && replayable) {
+      // Without a replacement token a public read still has an anonymous answer.
+      headers.delete("Authorization");
       response = await send();
     }
   }

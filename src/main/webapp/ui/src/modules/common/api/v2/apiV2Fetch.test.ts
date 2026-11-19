@@ -261,25 +261,61 @@ it("keeps the original 401 when recovery fails otherwise", async () => {
   await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 401 });
 });
 
-const unauthenticatedOperations = ["publicRead", "sessionRead"];
-
-it.each(unauthenticatedOperations)("%s ignores mint failures and removes Authorization", async (operationId) => {
-  getToken.mockRejectedValue(new Error("Logged out: token mint failed"));
-  respondAt("/public", () => HttpResponse.json({ id: 1 }));
-  await apiV2Fetch("/public", options(operationId, { headers: { Authorization: "Bearer stale" } }));
+it("a session operation ignores the provider and removes Authorization", async () => {
+  respondAt("/session", () => HttpResponse.json({ id: 1 }));
+  await apiV2Fetch("/session", options("sessionRead", { headers: { Authorization: "Bearer stale" } }));
   expect(getToken).not.toHaveBeenCalled();
-  expect(recover).not.toHaveBeenCalled();
   expect(requests).toHaveLength(1);
   expect(requests[0].headers.has("Authorization")).toBe(false);
   expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
 });
 
-it.each(unauthenticatedOperations)("%s 401 remains an HTTP error without recovery", async (operationId) => {
-  respondAt("/public", unauthorized);
-  await expect(apiV2Fetch("/public", options(operationId))).rejects.toBeInstanceOf(ApiV2ProblemError);
-  expect(getToken).not.toHaveBeenCalled();
+it("a session operation's 401 remains an HTTP error without recovery", async () => {
+  respondAt("/session", unauthorized);
+  await expect(apiV2Fetch("/session", options("sessionRead"))).rejects.toBeInstanceOf(ApiV2ProblemError);
   expect(recover).not.toHaveBeenCalled();
   expect(requests).toHaveLength(1);
+});
+
+describe("public operations", () => {
+  it("keep the signed-in caller's view by sending their token", async () => {
+    respondAt("/public", () => HttpResponse.json({ id: 1 }));
+    await apiV2Fetch("/public", options("publicRead"));
+    expect(requests[0].headers.get("Authorization")).toBe("Bearer old");
+  });
+
+  it.each([
+    ["the provider cannot get a token", () => getToken.mockRejectedValue(new ApiV2SessionEndedError(401, undefined))],
+    ["the page installed no provider", () => restore()],
+  ])("read anonymously when %s", async (_, arrange) => {
+    arrange();
+    respondAt("/public", () => HttpResponse.json({ id: 1 }));
+    expect(await apiV2Fetch("/public", options("publicRead", { headers: { Authorization: "Bearer stale" } }))).toEqual({
+      id: 1,
+    });
+    expect(requests).toHaveLength(1);
+    expect(requests[0].headers.has("Authorization")).toBe(false);
+  });
+
+  it("stop on an identity change while getting the token", async () => {
+    const changed = new ApiV2IdentityChangedError();
+    getToken.mockRejectedValue(changed);
+    await expect(apiV2Fetch("/public", options("publicRead"))).rejects.toBe(changed);
+    expect(requests).toHaveLength(0);
+  });
+
+  it("replay a rejected token's read with its replacement", async () => {
+    respondAt("/public", unauthorized, () => HttpResponse.json({ id: 1 }));
+    await apiV2Fetch("/public", options("publicRead"));
+    expect(requests.map((request) => request.headers.get("Authorization"))).toEqual(["Bearer old", "Bearer new"]);
+  });
+
+  it("replay anonymously when recovery ends the session", async () => {
+    recover.mockRejectedValue(new ApiV2SessionEndedError(401, undefined));
+    respondAt("/public", unauthorized, () => HttpResponse.json({ id: 1 }));
+    expect(await apiV2Fetch("/public", options("publicRead"))).toEqual({ id: 1 });
+    expect(requests.map((request) => request.headers.get("Authorization"))).toEqual(["Bearer old", null]);
+  });
 });
 
 it("protected operations still require a token", async () => {
