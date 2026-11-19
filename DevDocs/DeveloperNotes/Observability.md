@@ -160,11 +160,13 @@ APM Server converts OTLP into the data streams used by Kibana's APM UI. The
 configuration is in `docker/dev/otel/otel-collector-config.yaml`; setup and
 usage are in `docker/dev/README.md`.
 
-The checked-in development versions are Collector `0.153.0`, Java agent
-`2.29.0`, Java contrib `1.58.0-alpha`, Elasticsearch/Kibana/APM Server `9.4.2`,
-APM integration `9.3.5-preview-1779430085`, OpenTelemetry JS SDK `2.10.0`, and
-JS instrumentation/exporters `0.221.0`. Keep this set pinned and review
-compatibility before changing any member.
+The checked-in development versions are Collector `0.165.0`, Java agent
+`2.33.1`, Java contrib `1.62.1-alpha`, Elasticsearch/Kibana/APM Server `9.4.6`,
+APM integration `9.3.5-preview-1779430085`, OpenTelemetry JS SDK `3.1.1`, and
+JS instrumentation/exporters `0.301.2`. Keep this set pinned and review
+compatibility before changing any member. The Java contrib release must match
+the agent's bundled SDK (agent `2.33.x` bundles SDK `1.67`, as does contrib
+`1.62.x`).
 
 Telemetry stores require authentication and authorization in production,
 bounded retention, and a documented incident-response path.
