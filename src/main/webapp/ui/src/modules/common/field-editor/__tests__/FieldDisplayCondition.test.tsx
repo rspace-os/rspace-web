@@ -44,6 +44,11 @@ function Harness({
     <ThemeProvider theme={materialTheme}>
       {fields.map((field) => (
         <section key={field.key} aria-label={field.name}>
+          <button
+            type="button"
+            aria-label={`Delete ${field.name}`}
+            onClick={() => setFields((current) => current.filter((other) => other.key !== field.key))}
+          />
           <FieldDisplayCondition
             fieldKey={field.key}
             fields={fields}
@@ -133,6 +138,22 @@ describe("FieldDisplayCondition", () => {
     expect(card("GMO permit").queryByText(/not applied/)).not.toBeInTheDocument();
   });
 
+  it("restores a saved condition that the arrow keys moved away from", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, { ...permit, rule: yes }]);
+
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+    expect(card("GMO permit").getByRole("radio", { name: "Always" })).toBeChecked();
+    await user.keyboard("{ArrowDown}");
+
+    expect(onChange.mock.calls).toEqual([
+      ["permit", null],
+      ["permit", yes],
+    ]);
+    expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
+  });
+
   it("does not offer the field itself, or a field that depends on it, as the field to read", async () => {
     const user = userEvent.setup();
     const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
@@ -161,6 +182,40 @@ describe("FieldDisplayCondition", () => {
     expect(onlyWhen).toHaveAccessibleDescription(
       "Add a radio or choice field first. Rules can only read those fields.",
     );
+  });
+
+  it("sets an unfinished condition aside, and explains why, once the only field it could read is deleted", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, permit]);
+    await user.click(conditional("GMO permit"));
+
+    await user.click(screen.getByRole("button", { name: "Delete Is this a GMO?" }));
+
+    expect(card("GMO permit").getByRole("radio", { name: "Always" })).toBeChecked();
+    expect(conditional("GMO permit")).toBeDisabled();
+    expect(conditional("GMO permit")).toHaveAccessibleDescription(
+      "Add a radio or choice field first. Rules can only read those fields.",
+    );
+    expect(card("GMO permit").queryByRole("combobox", { name: "Field" })).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("says when the field a saved condition read is gone, and how to add one to read", async () => {
+    await renderConditions([{ ...permit, rule: yes }]);
+
+    expect(conditional("GMO permit")).toBeChecked();
+    expect(card("GMO permit").getByRole("combobox", { name: "Field" })).toHaveAccessibleDescription(
+      "The field this condition read no longer exists. Choose another field.",
+    );
+    expect(conditional("GMO permit")).toHaveAccessibleDescription(
+      "Add a radio or choice field first. Rules can only read those fields.",
+    );
+  });
+
+  it("names the choice once, by its legend", async () => {
+    await renderConditions([gmo, permit]);
+    expect(card("GMO permit").getByRole("group", { name: "Display this field when…" })).toBeInTheDocument();
+    expect(card("GMO permit").getByRole("radiogroup")).not.toHaveAccessibleName();
   });
 
   it("hints when the field it reads comes after it", async () => {
