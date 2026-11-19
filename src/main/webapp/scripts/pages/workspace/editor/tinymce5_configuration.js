@@ -113,6 +113,44 @@ var tinymcesetup = {
 			ed.setDirty(true);
 		});
 
+		// The paste plugin keeps its Ctrl+Shift+V state private, so track it here.
+		var plainTextKeyboardPaste = false;
+		ed.on('keydown', function (e) {
+			if ((e.ctrlKey || e.metaKey) && e.keyCode === 86) {
+				plainTextKeyboardPaste = e.shiftKey;
+			}
+		}, true);
+
+		// Run before the paste plugin so it can clean up a paste that we cancel.
+		ed.on('paste', function (e) {
+			var shortcutUsesPlainText = plainTextKeyboardPaste;
+			plainTextKeyboardPaste = false;
+			var pastePlugin = ed.plugins.paste;
+			if (!pastePlugin || e.isDefaultPrevented()) {
+				return;
+			}
+			var imageFile = getLocalImagePasteFile(e.clipboardData);
+			if (!imageFile) {
+				return;
+			}
+
+			var plainTextMode = shortcutUsesPlainText || pastePlugin.clipboard.pasteFormat.get() === 'text';
+			var plainText = plainTextMode ? e.clipboardData.getData('text/plain') : '';
+			if (plainText.trim()) {
+				e.preventDefault();
+				// The paste plugin removes its paste bin and restores the caret before this runs.
+				queueMicrotask(function () {
+					if (!ed.removed) {
+						ed.execCommand('mceInsertClipboardContent', false, { text: plainText });
+					}
+				});
+				return;
+			}
+			if (uploadGalleryFile([imageFile], ed)) {
+				e.preventDefault();
+			}
+		}, true);
+
 		ed.on("dblclick", function (e) {
 			var $target = $(e.target ? e.target : e.explicitOriginalTarget);
 			if ($target.is('img')) {
@@ -1016,13 +1054,60 @@ function loadVideo(videoId, videoData) {
 	openMedia(id, filename, extension);
 }
 
-//Handles Dnd into text editor using jqueryFileUpload plugin.
-function uploadGalleryFile(event, ed) {
-	if (event.dataTransfer) {
-		var files = event.dataTransfer.files;
-		var fieldEditing = getFieldIdFromTextFieldId(ed.id);
-		$('#fromLocalComputerToGallery_' + fieldEditing).fileupload('add', { files: files });
+// Uploads files dropped or pasted into a text field to the Gallery; the upload inserts them into the field.
+// Returns false if the field's Gallery upload widget isn't initialised.
+function uploadGalleryFile(files, ed) {
+	var fieldEditing = getFieldIdFromTextFieldId(ed.id);
+	var $galleryUpload = $('#fromLocalComputerToGallery_' + fieldEditing);
+	if (!$galleryUpload.data('blueimp-fileupload')) {
+		return false;
 	}
+	$galleryUpload.fileupload('add', { files: files });
+	return true;
+}
+
+var LOCAL_IMAGE_PASTE_WRAPPERS = ['HTML', 'HEAD', 'BODY', 'META', 'DIV', 'SPAN', 'P', 'BR'];
+
+function _hasRSpaceMarkup(element) {
+	return Array.from(element.attributes).some(function (attr) {
+		return attr.name === 'class' || attr.name === 'id' || attr.name.indexOf('data-') === 0;
+	});
+}
+
+/*
+ * RSDEV-1451: Windows Photos copies the image file together with HTML whose only content is an
+ * <img> pointing at a local file: URL, which the browser can't load. Returns that image file when the
+ * clipboard holds exactly this, so it can go to the Gallery; returns null for anything else.
+ */
+function getLocalImagePasteFile(clipboardData) {
+	if (!clipboardData) {
+		return null;
+	}
+	var files = Array.from(clipboardData.files || []);
+	if (!files.length && clipboardData.items) {
+		files = Array.from(clipboardData.items)
+			.filter(function (item) { return item.kind === 'file'; })
+			.map(function (item) { return item.getAsFile(); })
+			.filter(Boolean);
+	}
+	if (files.length !== 1 || !/^image\//.test(files[0].type)) {
+		return null;
+	}
+
+	// a template's content is inert, so parsing doesn't load the local image
+	var template = document.createElement('template');
+	template.innerHTML = clipboardData.getData('text/html');
+	var fragment = template.content;
+	var images = fragment.querySelectorAll('img');
+	if (images.length !== 1 || !/^file:/i.test((images[0].getAttribute('src') || '').trim())
+			|| fragment.textContent.trim()) {
+		return null;
+	}
+	var onlyWrapsImage = Array.from(fragment.querySelectorAll('*')).every(function (element) {
+		return !_hasRSpaceMarkup(element)
+			&& (element === images[0] || LOCAL_IMAGE_PASTE_WRAPPERS.indexOf(element.nodeName) !== -1);
+	});
+	return onlyWrapsImage ? files[0] : null;
 }
 
 //Handles Dnd into text editor using jqueryFileUpload plugin for chem

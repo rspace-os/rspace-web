@@ -810,7 +810,10 @@ $(document).ready(function () {
 
   initDragDropAreaHandling('.tox-edit-area',
     function (e) {
-      uploadGalleryFile(e.originalEvent, tinyMCE.activeEditor);
+      var dataTransfer = e.originalEvent.dataTransfer;
+      if (dataTransfer) {
+        uploadGalleryFile(dataTransfer.files, tinyMCE.activeEditor);
+      }
     }
   );
 });
