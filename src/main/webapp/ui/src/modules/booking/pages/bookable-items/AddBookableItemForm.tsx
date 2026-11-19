@@ -1,6 +1,7 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { isNil } from "es-toolkit";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -90,8 +91,7 @@ function targetSelection(input: unknown): TargetSelection {
     input === null ||
     input === "" ||
     (typeof input === "object" &&
-      (Object.keys(input).length === 0 ||
-        ("value" in input && (input.value === undefined || input.value === null || input.value === ""))))
+      (Object.keys(input).length === 0 || ("value" in input && (isNil(input.value) || input.value === ""))))
   ) {
     return { type: "empty" };
   }

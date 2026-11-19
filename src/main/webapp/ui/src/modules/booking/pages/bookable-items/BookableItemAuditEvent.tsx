@@ -1,3 +1,4 @@
+import { isNil } from "es-toolkit";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -66,7 +67,7 @@ function readableDescription(
   description: string | null | undefined,
   format: (parts: string[], subject: string | undefined) => string,
 ): string | null {
-  if (description === null || description === undefined) return null;
+  if (isNil(description)) return null;
   const parts = description.split(";").map((part) => part.trim());
   const subject = parts.find((part) => part.startsWith("subject="))?.slice("subject=".length);
   const rest = parts.filter((part) => part !== "permanent=true" && !part.startsWith("subject="));
