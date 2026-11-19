@@ -1,37 +1,30 @@
-import { getTagKey, Verbs } from "orval";
+import type { OpenApiDocument, OpenApiOperationObject } from "orval";
+import { getTagKey } from "orval";
 import type { crossResourceInvalidation } from "../../src/modules/common/api/v2/crossResourceInvalidation";
+import { operationsOf } from "../api-v2-valibot/openapi.ts";
 
-export interface Operation {
-  operationId: string;
-  tags?: readonly string[];
-}
-export interface Document {
-  paths: Record<string, Record<string, unknown>>;
-}
 export interface InvalidationTarget {
   query: string;
   params?: string[];
   file?: string;
 }
-const methods: ReadonlySet<string> = new Set(Object.values(Verbs));
-export function getOperations(document: Document) {
-  return Object.entries(document.paths).flatMap(([path, item]) =>
-    Object.entries(item).flatMap(([method, value]) => {
-      if (!methods.has(method)) return [];
-      const operation = value as Operation;
-      if (!operation.operationId) throw new Error(`Missing operationId: ${method} ${path}`);
-      return [{ ...operation, path, method, resource: path.replace(/^\/api\/v2\//, "").split("/")[0] }];
+export function getOperations(document: OpenApiDocument) {
+  return Object.entries(document.paths ?? {}).flatMap(([path, item]) =>
+    operationsOf(item).map(([method, operation]) => {
+      const { operationId } = operation;
+      if (!operationId) throw new Error(`Missing operationId: ${method} ${path}`);
+      return { ...operation, operationId, path, method, resource: path.replace(/^\/api\/v2\//, "").split("/")[0] };
     }),
   );
 }
-export function queryFile(operation: Operation) {
+export function queryFile(operation: OpenApiOperationObject) {
   const tag = getTagKey(operation.tags?.[0]);
   return `./${tag}/${tag}.ts`;
 }
 
 // Pass this to a function-valued `mutationInvalidates` once Orval supports it:
 // https://github.com/orval-labs/orval/issues/4552
-export function buildInvalidationRules(document: Document, cross: typeof crossResourceInvalidation = []) {
+export function buildInvalidationRules(document: OpenApiDocument, cross: typeof crossResourceInvalidation = []) {
   const operations = getOperations(document);
   const queries = operations.filter((operation) => operation.method === "get");
   const mutations = operations.filter((operation) => !["get", "head", "options"].includes(operation.method));

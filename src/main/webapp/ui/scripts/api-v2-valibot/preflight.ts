@@ -1,4 +1,5 @@
-import { isReference, type OpenApiDocument, type SchemaOrReference, schemaType } from "./openapi.ts";
+import type { OpenApiDocument } from "orval";
+import { isReference, type SchemaOrReference, schemaType } from "./openapi.ts";
 
 const annotations: ReadonlySet<string> = new Set([
   "description",

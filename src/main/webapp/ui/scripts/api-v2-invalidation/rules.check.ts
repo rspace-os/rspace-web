@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildInvalidationRules, type Document, getOperations, queryFile } from "./index";
+import { parseOpenApiDocument } from "../api-v2-valibot/openapi.ts";
+import { fixture } from "../api-v2-valibot/test-helper.ts";
+import { buildInvalidationRules, getOperations, queryFile } from "./index";
 
-const document: Document = {
+const document = fixture({
   paths: {
     "/api/v2/bookings": {
       get: { operationId: "listBookings", tags: ["Bookings"] },
@@ -21,7 +23,7 @@ const document: Document = {
     "/api/v2/booking-configurations": { get: { operationId: "listBookingConfigurations", tags: ["Bookings"] } },
     "/api/v2/catalogue": { get: { operationId: "searchCatalogue", tags: ["AB Widget"] } },
   },
-};
+});
 
 describe("resource invalidation", () => {
   it("invalidates list/count and the affected record, access and audit without crossing resource names", () => {
@@ -56,7 +58,7 @@ describe("resource invalidation", () => {
 // Run after generation, against either the committed client or a scratch client.
 it("covers every mutation and resolves every target to a generated GET and file", async () => {
   const root = resolve(process.env.API_V2_CONFIG_TEST_ROOT ?? ".");
-  const spec: Document = JSON.parse(
+  const spec = parseOpenApiDocument(
     readFileSync(resolve(root, "src/modules/common/api/v2/openapi.generated.json"), "utf8"),
   );
   const { crossResourceInvalidation } = await import("../../src/modules/common/api/v2/crossResourceInvalidation");

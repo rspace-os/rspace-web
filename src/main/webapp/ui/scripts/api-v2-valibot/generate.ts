@@ -3,16 +3,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isEqual, uniqWith } from "es-toolkit";
-import type { OpenApiRequestBodyObject, OpenApiResponseObject } from "orval";
+import type { OpenApiDocument, OpenApiReferenceObject, OpenApiRequestBodyObject, OpenApiResponseObject } from "orval";
 import {
   type Content,
   isReference,
-  type OpenApiDocument,
   operationsOf,
   orvalOperationName,
   orvalTypeName,
   parseOpenApiDocument,
-  type ReferenceObject,
   responsesOf,
   type SchemaObject,
   type SchemaOrReference,
@@ -38,7 +36,7 @@ export function generate(
   if (typeof nativeSource !== "string") throw new Error("Orval native Valibot output is required");
   const components = document.components?.schemas ?? {};
   function resolveObject<T extends object>(
-    value: T | ReferenceObject | undefined,
+    value: T | OpenApiReferenceObject | undefined,
     section: "schemas" | "requestBodies" | "responses",
     seen = new Set<string>(),
   ): T | undefined {
@@ -46,7 +44,7 @@ export function generate(
     const prefix = `#/components/${section}/`;
     const ref = value.$ref;
     if (!ref.startsWith(prefix) || seen.has(ref)) throw new Error(`Unsupported reference ${ref}`);
-    const target = document.components?.[section]?.[ref.slice(prefix.length)] as T | ReferenceObject | undefined;
+    const target = document.components?.[section]?.[ref.slice(prefix.length)] as T | OpenApiReferenceObject | undefined;
     if (!target) throw new Error(`Missing reference ${ref}`);
     return resolveObject(target, section, new Set([...seen, ref]));
   }

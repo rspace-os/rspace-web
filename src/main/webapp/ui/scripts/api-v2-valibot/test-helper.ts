@@ -2,8 +2,9 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { OpenApiDocument } from "orval";
 import { generate as adapt, type GeneratedSources } from "./generate.ts";
-import { isReference, type OpenApiDocument, operationsOf, responsesOf } from "./openapi.ts";
+import { isReference, operationsOf, responsesOf } from "./openapi.ts";
 import { assertSupportedSpec } from "./preflight.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");

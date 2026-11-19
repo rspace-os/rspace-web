@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { expect, it } from "vitest";
+import { parseOpenApiDocument } from "../api-v2-valibot/openapi.ts";
 import { getOperations } from "./index";
 
 const require = createRequire(import.meta.url);
@@ -64,7 +65,7 @@ it("retains operation IDs over a complete scratch generation", () => {
 
       operationCount += [...source.matchAll(/operationId:\s*["']/g)].length;
     }
-    expect(operationCount).toBe(getOperations(JSON.parse(readFileSync(spec, "utf8"))).length);
+    expect(operationCount).toBe(getOperations(parseOpenApiDocument(readFileSync(spec, "utf8"))).length);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

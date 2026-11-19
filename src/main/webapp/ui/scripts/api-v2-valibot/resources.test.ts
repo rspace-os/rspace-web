@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import type { OpenApiOperationObject } from "orval";
 import { describe, expect, it } from "vitest";
-import type { OperationObject } from "./openapi.ts";
 
 type Operations = Record<string, Record<string, string>>;
 interface Case {
@@ -16,12 +16,12 @@ interface Result<T> {
 }
 
 const generated = pathToFileURL(`${resolve("src/modules/common/api/v2/generated")}/`);
-const op = (kind: string | null, id = "example"): OperationObject => ({
+const op = (kind: string | null, id = "example"): OpenApiOperationObject => ({
   operationId: id,
   tags: ["examples"],
   ...(kind == null ? {} : { "x-rspace-operation": kind }),
 });
-const spec = (operation: OperationObject, path = "/api/v2/examples") => ({
+const spec = (operation: OpenApiOperationObject, path = "/api/v2/examples") => ({
   paths: { [path]: { get: operation } },
 });
 

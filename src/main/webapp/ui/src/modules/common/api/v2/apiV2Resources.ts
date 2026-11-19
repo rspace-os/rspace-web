@@ -22,5 +22,3 @@ export interface ApiV2OperationSet {
 export type ApiV2ResourceEntry<TName extends string, TOperations extends ApiV2OperationSet> = {
   readonly name: TName;
 } & TOperations;
-
-export { apiV2Resources } from "./generated/apiV2Resources";

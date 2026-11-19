@@ -2,10 +2,11 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { OpenApiDocument } from "orval";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { apiV2SerializeQuery } from "../../src/modules/common/api/v2/apiV2SerializeQuery";
 import { filteredWhereOperations } from "./filters.ts";
-import { type OpenApiDocument, orvalUrlName } from "./openapi.ts";
+import { orvalUrlName } from "./openapi.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
 const ui = resolve(root, "src/main/webapp/ui");

@@ -1,7 +1,8 @@
 import { stripTypeScriptTypes } from "node:module";
+import type { OpenApiDocument } from "orval";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { type OpenApiDocument, parseOpenApiDocument } from "./openapi.ts";
+import { parseOpenApiDocument } from "./openapi.ts";
 import { fixture, generate } from "./test-helper.ts";
 
 type SecurityRequirement = NonNullable<OpenApiDocument["security"]>[number];

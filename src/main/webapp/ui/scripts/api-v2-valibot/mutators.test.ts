@@ -1,6 +1,6 @@
+import type { OpenApiDocument } from "orval";
 import { describe, expect, it } from "vitest";
 import { mutatorOverrides } from "./mutators.ts";
-import type { OpenApiDocument } from "./openapi.ts";
 import { fixture } from "./test-helper.ts";
 
 const json = { content: { "application/json": { schema: { type: "object" } } } };

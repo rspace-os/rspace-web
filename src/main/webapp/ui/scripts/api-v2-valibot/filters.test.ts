@@ -1,6 +1,6 @@
+import type { OpenApiDocument } from "orval";
 import { describe, expect, it } from "vitest";
 import { filteredWhereOperations, filteredWhereParameters, generateFilterTypes, rewriteWhereModel } from "./filters.ts";
-import type { OpenApiDocument } from "./openapi.ts";
 import { fixture } from "./test-helper.ts";
 
 const filter = (selectors: Record<string, unknown>) => ({ selectors });

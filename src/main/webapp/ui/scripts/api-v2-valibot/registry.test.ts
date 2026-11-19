@@ -1,6 +1,7 @@
+import type { OpenApiDocument } from "orval";
 import { expect, it } from "vitest";
 import { generate } from "./generate.ts";
-import type { Content, OpenApiDocument, SchemaObject } from "./openapi.ts";
+import type { Content, SchemaObject } from "./openapi.ts";
 import { fixture } from "./test-helper.ts";
 
 const native =

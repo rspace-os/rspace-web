@@ -3,10 +3,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { sortBy, uniq } from "es-toolkit";
+import type { OpenApiDocument } from "orval";
 import { getTagKey } from "orval";
 import {
   isReference,
-  type OpenApiDocument,
   operationsOf,
   orvalOperationName,
   orvalQueryKeyName,

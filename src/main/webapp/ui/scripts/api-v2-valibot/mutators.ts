@@ -1,5 +1,4 @@
-import type { OpenApiResponseObject } from "orval";
-import type { OpenApiDocument, ReferenceObject } from "./openapi.ts";
+import type { OpenApiDocument, OpenApiReferenceObject, OpenApiResponseObject } from "orval";
 import { isReference, operationsOf, responsesOf } from "./openapi.ts";
 
 /** The `apiV2Fetch.ts` mutators an operation can need instead of the default `apiV2Fetch`. */
@@ -19,7 +18,7 @@ const isJson = (media: string) => {
 
 function resolveResponse(
   document: OpenApiDocument,
-  response: OpenApiResponseObject | ReferenceObject,
+  response: OpenApiResponseObject | OpenApiReferenceObject,
 ): OpenApiResponseObject {
   if (!isReference(response)) return response;
   const ref = response.$ref;
