@@ -80,6 +80,8 @@ describe("creating a template from a saved record", () => {
 
     expect(vi.mocked(InvApiService.post)).toHaveBeenCalledWith("sampleTemplates", expect.anything());
     expect(postedFields().find((field) => field.fieldKey === TARGET_KEY)).toHaveProperty("displayRule", RULE_JSON);
+    // the rule can only resolve if its source is posted with the same key
+    expect(postedFields().map((field) => field.fieldKey)).toContain(SOURCE_KEY);
   });
 
   test("an instrument template made from an instrument keeps the instrument's rules", async () => {
@@ -98,5 +100,6 @@ describe("creating a template from a saved record", () => {
 
     expect(vi.mocked(InvApiService.post)).toHaveBeenCalledWith("instrumentTemplates", expect.anything());
     expect(postedFields().find((field) => field.fieldKey === TARGET_KEY)).toHaveProperty("displayRule", RULE_JSON);
+    expect(postedFields().map((field) => field.fieldKey)).toContain(SOURCE_KEY);
   });
 });
