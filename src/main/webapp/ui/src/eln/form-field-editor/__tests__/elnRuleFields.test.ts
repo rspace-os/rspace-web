@@ -70,8 +70,8 @@ describe("elnRuleFields", () => {
     for (const field of list) graph.sourcesFor(field.key);
     // a generous bound for slow CI machines; locally it takes a few milliseconds
     expect(performance.now() - start).toBeLessThan(100);
-    // a text field may read any of the 75 radios, and a radio any radio but itself
-    expect(graph.sourcesFor(keyOf(1))).toHaveLength(75);
-    expect(graph.sourcesFor(keyOf(0))).toHaveLength(74);
+    // every field may be read; a radio not by itself or the text field that reads it
+    expect(graph.sourcesFor(keyOf(1))).toHaveLength(149);
+    expect(graph.sourcesFor(keyOf(0))).toHaveLength(148);
   });
 });

@@ -991,6 +991,99 @@ describe("FormFieldEditor", () => {
   });
 });
 
+describe("FormFieldEditor with one-line text and number sources", () => {
+  const BATCH = "6f1c2e0a-0000-4000-8000-000000000003";
+  const WEIGHT = "6f1c2e0a-0000-4000-8000-000000000004";
+  const batch = saved(
+    3,
+    "String",
+    { name: "Batch code", ifPassword: "no", defaultStringValue: "" },
+    { fieldKey: BATCH },
+  );
+  const weight = saved(4, "Number", { name: "Weight" }, { fieldKey: WEIGHT });
+  const target = (displayRule: FormFieldEditorItem["displayRule"] = null) =>
+    saved(5, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" }, { displayRule });
+
+  it("offers number and non-password one-line text fields, but not password or rich text fields", async () => {
+    const user = userEvent.setup();
+    serveFields([
+      gmo,
+      batch,
+      weight,
+      saved(6, "String", { name: "PIN", ifPassword: "yes", defaultStringValue: "" }),
+      saved(7, "Text", { name: "Notes", defaultValue: "" }),
+      target(),
+    ]);
+    await renderEditor();
+
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.click(within(card("Target")).getByRole("combobox", { name: "Field" }));
+
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Is this a GMO?",
+      "Batch code",
+      "Weight",
+    ]);
+  });
+
+  it("summarises rules on text and number fields, quoting only text", async () => {
+    serveFields([
+      batch,
+      weight,
+      target({ sourceFieldKey: WEIGHT, operator: "EQUALS", values: ["5"] }),
+      saved(
+        6,
+        "String",
+        { name: "Lot note", ifPassword: "no", defaultStringValue: "" },
+        {
+          displayRule: { sourceFieldKey: BATCH, operator: "CONTAINS", values: ["LOT"] },
+        },
+      ),
+    ]);
+    await renderEditor({ editable: false });
+
+    expect(within(card("Target")).getByText("Shown when Weight is 5")).toBeVisible();
+    expect(within(card("Lot note")).getByText("Shown when Batch code contains “LOT”")).toBeVisible();
+  });
+
+  it("asks before an unsaved source becomes a type of another kind, then clears the rules that read it", async () => {
+    const user = userEvent.setup();
+    serveFields([]);
+    await renderEditor();
+    await addField(user, /^Number/, "Source");
+    await addField(user, /^String/, "Target");
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.type(within(card("Target")).getByRole("textbox", { name: "Value" }), "5");
+
+    await user.click(within(card("Source")).getByRole("menuitem", { name: /Change type/ }));
+    await user.click(screen.getByRole("menuitem", { name: /^Radio/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Target/)).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "Change type" }));
+
+    const targetCard = await screen.findByRole("region", { name: "Target" });
+    expect(within(targetCard).getByRole("radio", { name: "Always" })).toBeChecked();
+  });
+
+  it("refuses to save or publish while a number condition's value is not a number", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([weight, target()]);
+    const { handle } = await renderEditor();
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.type(within(card("Target")).getByRole("textbox", { name: "Value" }), "five");
+
+    await act(() => expect(handle.current?.save()).rejects.toThrow());
+    // Publish and Update hold the fields read-only, then save them
+    act(() => handle.current?.setReadOnly(true));
+    await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+    expect(
+      screen.getByText("Complete the display condition of Target, or choose Always, before saving."),
+    ).toBeInTheDocument();
+    expect(posts).toHaveLength(0);
+  });
+});
+
 describe("ELN field settings", () => {
   async function editAndSave(
     item: FormFieldEditorItem,
