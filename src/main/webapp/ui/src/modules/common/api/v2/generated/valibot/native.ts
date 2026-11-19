@@ -616,7 +616,7 @@ export const ListContainerAuditEventsQueryParams = v.object({
         "Invalid length: Expected <=255",
       ),
       v.description(
-        "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+        "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
       ),
     ),
   ),
@@ -844,7 +844,7 @@ export const ListInstrumentAuditEventsQueryParams = v.object({
         "Invalid length: Expected <=255",
       ),
       v.description(
-        "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+        "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
       ),
     ),
   ),
@@ -1334,7 +1334,7 @@ export const ListUserAuditEventsQueryParams = v.object({
         "Invalid length: Expected <=255",
       ),
       v.description(
-        "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+        "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
       ),
     ),
   ),

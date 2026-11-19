@@ -5614,7 +5614,7 @@ export default interface Resources {
             "description": "Returns events from the existing RSpace audit trail. The caller must be authenticated and must be able to read the resource. Audit routes require an explicit policy and validated audit metadata. The search range is limited to 183 elapsed days to bound scan cost. Returns the newest events up to the configured response cap, with truncated=true when more authorized filtered events exist. start and endExclusive describe the effective half-open completed-UTC-day window. A 503 means no partial audit data was returned. eventId is deterministic response identity, not a source-log signature.",
             "end": "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
             "invalid": "The search range or filters are invalid.",
-            "search": "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+            "search": "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
             "start": "Inclusive earliest event time. The server limits the range to 183 days.",
             "success": "Capped newest-first audit events.",
             "summary": "List audit events for one {0} resource",

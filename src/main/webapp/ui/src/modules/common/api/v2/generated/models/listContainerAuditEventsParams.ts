@@ -16,7 +16,7 @@ export type ListContainerAuditEventsParams = {
   /** Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day. */
   end?: AuditEndParameter;
   /**
-   * Case-insensitive text contained in the actor, action, safe description, target, or recorded values.
+   * Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.
    * @maxLength 255
    */
   q?: AuditSearchParameter;

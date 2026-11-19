@@ -150,7 +150,7 @@
           "access": "Authenticated callers who can read the resource.",
           "start": "Inclusive earliest event time. The server limits the range to 183 days.",
           "end": "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
-          "search": "Case-insensitive text contained in the actor, action, safe description, target, or recorded values.",
+          "search": "Case-insensitive text contained in the actor's username or full name, the action, or a recorded value the caller can read. Descriptions are never searched.",
           "actions": "Audit actions to include.",
           "success": "Capped newest-first audit events.",
           "invalid": "The search range or filters are invalid.",
