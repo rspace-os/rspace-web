@@ -25,20 +25,26 @@ type TemplateFieldsArgs = {
   instrument: InstrumentModel;
 };
 
-function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs): React.ReactNode {
+function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: TemplateFieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer, wrapField } = useShownTemplateFields(instrument, onErrorStateChange);
+  const { shownFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
+    instrument,
+    reportErrorState,
+  );
   const renderField = (field: Field) => {
+    // a field the values hide is on screen only while it holds focus, and is not checked
+    const checked = !hiddenByValues(field);
+    const mandatory = checked && field.mandatory;
     const commonProps = {
       disabled: !instrument.isFieldEditable("fields"),
       label: field.name,
-      error: (field.mandatory && !field.hasContent) || field.error,
-      helperText: field.mandatory
+      error: checked && ((field.mandatory && !field.hasContent) || field.error),
+      helperText: mandatory
         ? t("instrument.templateFields.mandatory")
-        : field.error
+        : checked && field.error
           ? t("instrument.templateFields.invalid")
           : "",
-      required: field.mandatory,
+      required: mandatory,
     };
 
     if (field.type === "attachment") {
