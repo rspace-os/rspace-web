@@ -16,6 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.inventory.InventoryStructureSearchManager;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -31,6 +32,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
 
   @Autowired private SearchManager searchManager;
   @Autowired private InventoryStructureSearchManager structureSearchManager;
+  @Autowired private ChemistryProvider chemistryProvider;
 
   @Override
   public ApiInventorySearchResult searchInventoryRecords(
@@ -120,10 +122,15 @@ public class InventorySearchApiController extends BaseApiInventoryController
       throw new ApiRuntimeException("errors.inventory.search.chemistry.unavailable");
     }
 
+    // queried before the transactional manager, so a slow chemistry service holds no transaction
+    List<Long> chemIds =
+        chemistryProvider
+            .search(srchConfig.getChemQuery(), srchConfig.getChemSearchTypeOrDefault())
+            .getChemicalHits();
+    log.info("Inventory structure search: chemistry service reported {} hits", chemIds.size());
     ApiInventorySearchResult apiSearchResult =
         structureSearchManager.searchByStructure(
-            srchConfig.getChemQuery(),
-            srchConfig.getChemSearchTypeOrDefault(),
+            chemIds,
             searchQuery,
             searchType,
             srchConfig.getOwnedBy(),

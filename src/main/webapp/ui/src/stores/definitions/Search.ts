@@ -219,6 +219,7 @@ export type CoreFetcherArgs = {
   chemQuery?: string | null;
   chemSearchType?: ChemSearchType | null;
   textSearchLimitReached?: boolean;
+  structureSearchLimitReached?: boolean;
 };
 
 /**
@@ -347,6 +348,12 @@ export interface CoreFetcher {
    * the server's top text matches, so some structure matches may be missing.
    */
   textSearchLimitReached: boolean;
+
+  /*
+   * True when the last structure search matched more items than the server
+   * loads, so some structure matches are missing.
+   */
+  structureSearchLimitReached: boolean;
 
   /*
    * Searches can be saved, enabling the user to replay a particular search.

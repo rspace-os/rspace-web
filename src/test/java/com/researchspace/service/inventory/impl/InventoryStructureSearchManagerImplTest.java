@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,14 +26,12 @@ import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IntegrationsHandler;
-import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryStructureHit;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -51,9 +50,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class InventoryStructureSearchManagerImplTest {
 
-  private static final String BENZENE = "c1ccccc1";
-
-  @Mock private ChemistryProvider chemistryProvider;
   @Mock private RSChemElementDao rsChemElementDao;
   @Mock private InventoryFileDao inventoryFileDao;
   @Mock private InventoryPermissionUtils invPermissions;
@@ -76,13 +72,10 @@ class InventoryStructureSearchManagerImplTest {
     user = new User("searcher");
   }
 
+  private List<Long> chemHits = List.of();
+
   private void stubChemistryHits(Long... chemIds) {
-    when(chemistryProvider.search(BENZENE, "SUBSTRUCTURE"))
-        .thenReturn(
-            ChemicalSearchResultsDTO.builder()
-                .chemicalHits(List.of(chemIds))
-                .totalHits(chemIds.length)
-                .build());
+    chemHits = List.of(chemIds);
   }
 
   /** Chem hits 1 and 2 resolve to Gallery file 10, attached to the given records and fields. */
@@ -126,7 +119,7 @@ class InventoryStructureSearchManagerImplTest {
       InventorySearchDeletedOption deleted,
       Boolean bookable) {
     return manager.searchByStructure(
-        BENZENE, "SUBSTRUCTURE", text, type, ownedBy, deleted, bookable, pgCrit, user);
+        chemHits, text, type, ownedBy, deleted, bookable, pgCrit, user);
   }
 
   private List<InventoryRecord> searchAndCapturePage(
@@ -262,6 +255,72 @@ class InventoryStructureSearchManagerImplTest {
   }
 
   @Test
+  void stopsResolvingAttachmentsOnceTheLimitIsPassed() {
+    manager.setIdsBatchSize(1);
+    manager.setMaxStructureHits(1);
+    stubChemistryHits(1L, 2L, 3L);
+    when(rsChemElementDao.getGalleryChemFileIds(List.of(1L))).thenReturn(List.of(10L));
+    when(rsChemElementDao.getGalleryChemFileIds(List.of(2L))).thenReturn(List.of(11L));
+    when(rsChemElementDao.getGalleryChemFileIds(List.of(3L))).thenReturn(List.of(12L));
+    InventoryFile firstFile = fileOn(readable("SA1"));
+    InventoryFile secondFile = fileOn(readable("SA2"));
+    when(inventoryFileDao.findByMediaFileIds(List.of(10L))).thenReturn(List.of(firstFile));
+    when(inventoryFileDao.findByMediaFileIds(List.of(11L))).thenReturn(List.of(secondFile));
+    when(inventoryFileDao.findAttachmentFieldsByMediaFileIds(anyList())).thenReturn(List.of());
+
+    assertThat(searchAndCapturePage(null, null, null, null))
+        .containsExactly(firstFile.getInventoryRecord());
+
+    assertTrue(page.getStructureSearchLimitReached());
+    verify(inventoryFileDao, never()).findByMediaFileIds(List.of(12L));
+  }
+
+  @Test
+  void recordsFilteredOutDoNotCountTowardsTheLimit() {
+    manager.setMaxStructureHits(1);
+    InventoryRecord unreadable = record("SA1");
+    when(invPermissions.canUserReadInventoryRecord(unreadable, user)).thenReturn(false);
+    InventoryRecord readable = readable("SA2");
+    stubAttachments(List.of(unreadable, readable), List.of());
+
+    assertThat(searchAndCapturePage(null, null, null, null)).containsExactly(readable);
+
+    assertNull(page.getStructureSearchLimitReached());
+  }
+
+  @Test
+  void textQueryReportsTheStructureLimit() {
+    manager.setMaxStructureHits(1);
+    InventoryRecord first = readable("SA1");
+    InventoryRecord second = readable("SA2");
+    stubAttachments(List.of(first, second), List.of());
+    when(searchManager.searchInventoryWithSimpleQuery(
+            "buffer", null, null, null, null, null, List.of("SA1"), pgCrit, user))
+        .thenReturn(page);
+
+    assertSame(page, search("buffer", null, null, null, null));
+
+    assertTrue(page.getStructureSearchLimitReached());
+  }
+
+  @Test
+  void workspaceListingStopsAtTheLimit() {
+    manager.setMaxStructureHits(1);
+    when(rsChemElementDao.getGalleryChemFileIds(List.of(1L))).thenReturn(List.of(10L));
+    InventoryRecord first = readable("SA1");
+    when(first.getOwner()).thenReturn(new User("owner"));
+    InventoryFile firstFile = fileOn(first);
+    InventoryFile pastTheLimit = mock(InventoryFile.class);
+    when(inventoryFileDao.findByMediaFileIds(List.of(10L)))
+        .thenReturn(List.of(firstFile, pastTheLimit));
+    when(inventoryFileDao.findAttachmentFieldsByMediaFileIds(List.of(10L))).thenReturn(List.of());
+
+    assertThat(manager.findReadableStructureHits(List.of(1L), user))
+        .extracting(InventoryStructureHit::globalId)
+        .containsExactly("SA1");
+  }
+
+  @Test
   void textQueryLimitsTextSearchToStructureHits() {
     InventoryRecord sample = readable("SA1");
     InventoryRecord subSample = readable("SS2");
@@ -342,7 +401,7 @@ class InventoryStructureSearchManagerImplTest {
   }
 
   @Test
-  void workspaceListingGetsReadableLiveHitsWithoutQueryingTheChemistryService() {
+  void workspaceListingGetsReadableLiveHits() {
     when(rsChemElementDao.getGalleryChemFileIds(List.of(1L, 2L))).thenReturn(List.of(10L));
     InventoryRecord sample = readable("SA1");
     when(sample.getName()).thenReturn("aspirin batch");
@@ -367,6 +426,5 @@ class InventoryStructureSearchManagerImplTest {
             new InventoryStructureHit(
                 "SA1", "aspirin batch", InventoryRecordType.SAMPLE, owner.getFullName(), modified)),
         hits);
-    verifyNoInteractions(chemistryProvider);
   }
 }

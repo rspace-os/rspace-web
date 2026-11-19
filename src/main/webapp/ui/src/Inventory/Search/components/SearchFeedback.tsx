@@ -22,7 +22,9 @@ function SearchFeedback(): React.ReactNode {
   const searchParams = useSearchParams();
   const currentBasket = searchStore.savedBaskets.find((b) => b.globalId === searchParams.get("parentGlobalId"));
 
-  const showTextSearchLimitWarning = !search.loading && !search.fetcher.error && search.fetcher.textSearchLimitReached;
+  const showsResults = !search.loading && !search.fetcher.error;
+  const showTextSearchLimitWarning = showsResults && search.fetcher.textSearchLimitReached;
+  const showStructureSearchLimitWarning = showsResults && search.fetcher.structureSearchLimitReached;
 
   const statusText = match<void, string>([
     [() => search.loading, t("search.feedback.loading")],
@@ -90,13 +92,16 @@ function SearchFeedback(): React.ReactNode {
         },
       })}
       icon={false}
-      severity={search.fetcher.error || showTextSearchLimitWarning ? "warning" : "info"}
+      severity={
+        search.fetcher.error || showTextSearchLimitWarning || showStructureSearchLimitWarning ? "warning" : "info"
+      }
       action={<SaveSearch sx={{ p: 0 }} />}
       aria-label={t("search.feedback.label")}
       role="status"
     >
       {statusText()}
       {showTextSearchLimitWarning && ` ${t("search.feedback.textSearchLimitReached")}`}
+      {showStructureSearchLimitWarning && ` ${t("search.feedback.structureSearchLimitReached")}`}
       {search.loading && (
         <LinearProgress
           sx={(theme) => ({

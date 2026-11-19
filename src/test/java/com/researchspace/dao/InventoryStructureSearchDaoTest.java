@@ -11,10 +11,17 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryFile;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.persistence.metamodel.EntityType;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.Session;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,5 +121,89 @@ class InventoryStructureSearchDaoTest extends SpringTransactionalTest {
     assertThat(files)
         .extracting(file -> file.getInventoryRecord().getGlobalIdentifier())
         .containsExactlyInAnyOrder(first.getGlobalId(), second.getGlobalId());
+  }
+
+  private void replaceInGallery(EcatChemistryFile galleryFile) throws IOException {
+    try (InputStream newVersion =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Amfetamine.mol")) {
+      mediaMgr.updateMediaFile(galleryFile.getId(), newVersion, "Amfetamine.mol", user, null);
+    }
+    sessionFactory.getCurrentSession().flush();
+  }
+
+  @Test
+  void excludesAttachmentsHoldingAReplacedGalleryVersion() throws IOException {
+    ApiSampleWithFullSubSamples sample = createComplexSampleForUser(user);
+    EcatChemistryFile galleryFile = chemistryFileInGallery();
+    attach(galleryFile, sample.getGlobalId());
+    attach(galleryFile, sample.getFields().get(6).getGlobalId());
+
+    replaceInGallery(galleryFile);
+
+    List<Long> galleryFileIds = List.of(galleryFile.getId());
+    assertThat(inventoryFileDao.findByMediaFileIds(galleryFileIds)).isEmpty();
+    assertThat(inventoryFileDao.findAttachmentFieldsByMediaFileIds(galleryFileIds)).isEmpty();
+  }
+
+  @Test
+  void findsAttachmentsOfADuplicatedSample() throws IOException {
+    ApiSampleWithFullSubSamples sample = createComplexSampleForUser(user);
+    EcatChemistryFile galleryFile = chemistryFileInGallery();
+    attach(galleryFile, sample.getGlobalId());
+    attach(galleryFile, sample.getFields().get(6).getGlobalId());
+
+    ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(sample.getId(), user);
+
+    List<Long> galleryFileIds = List.of(galleryFile.getId());
+    // attachment-field files are also returned here, without a record of their own
+    assertThat(inventoryFileDao.findByMediaFileIds(galleryFileIds))
+        .filteredOn(file -> file.getInventoryRecord() != null)
+        .extracting(file -> file.getInventoryRecord().getGlobalIdentifier())
+        .containsExactlyInAnyOrder(sample.getGlobalId(), copy.getGlobalId());
+    assertThat(inventoryFileDao.findAttachmentFieldsByMediaFileIds(galleryFileIds))
+        .extracting(field -> field.getInventoryRecord().getGlobalIdentifier())
+        .containsExactlyInAnyOrder(sample.getGlobalId(), copy.getGlobalId());
+  }
+
+  @Test
+  void loadsOwningRecordsWithoutAQueryPerAttachment() throws IOException {
+    List<Long> galleryFileIds = attachToNewSamples(3);
+
+    assertEquals(0, separateRecordFetchesToResolveRecords(galleryFileIds));
+  }
+
+  private List<Long> attachToNewSamples(int count) throws IOException {
+    List<Long> galleryFileIds = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user, "sample" + i);
+      EcatChemistryFile galleryFile = chemistryFileInGallery();
+      attach(galleryFile, sample.getGlobalId());
+      galleryFileIds.add(galleryFile.getId());
+    }
+    return galleryFileIds;
+  }
+
+  /**
+   * Counts owning records loaded by a query of their own rather than with the attachments. Total
+   * statements are not compared, as each record's own eager collections still load per record.
+   */
+  private long separateRecordFetchesToResolveRecords(List<Long> galleryFileIds) {
+    Session session = sessionFactory.getCurrentSession();
+    session.flush();
+    session.clear();
+    Statistics statistics = sessionFactory.getStatistics();
+    statistics.setStatisticsEnabled(true);
+    statistics.clear();
+    List<InventoryFile> files = inventoryFileDao.findByMediaFileIds(galleryFileIds);
+    files.forEach(file -> file.getInventoryRecord().getName());
+    long recordFetches =
+        sessionFactory.getMetamodel().getEntities().stream()
+            .map(EntityType::getJavaType)
+            .filter(InventoryRecord.class::isAssignableFrom)
+            .mapToLong(type -> statistics.getEntityStatistics(type.getName()).getFetchCount())
+            .sum();
+    statistics.setStatisticsEnabled(false);
+    assertThat(files).hasSize(galleryFileIds.size());
+    return recordFetches;
   }
 }

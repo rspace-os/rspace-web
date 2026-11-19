@@ -28,6 +28,14 @@ public class ApiInventorySearchResult extends ApiPaginatedResultList<ApiInventor
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private Boolean textSearchLimitReached;
 
+  /**
+   * Only present, as {@code true}, on a structure search that matched more readable records than
+   * the structure search limit. Records past the limit are missing from the results; a narrower
+   * structure or more filters find them.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Boolean structureSearchLimitReached;
+
   @Override
   protected String getSearchEndpoint() {
     return BaseApiInventoryController.SEARCH_ENDPOINT;

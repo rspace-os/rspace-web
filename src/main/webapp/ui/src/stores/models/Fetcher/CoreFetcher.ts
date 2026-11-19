@@ -53,6 +53,7 @@ export const DEFAULT_FETCHER = {
   count: 0,
   error: "",
   textSearchLimitReached: false,
+  structureSearchLimitReached: false,
 };
 
 const omitDefault = <T extends object>(obj: T): object => {
@@ -182,6 +183,8 @@ export default class CoreFetcher {
   chemSearchType: ChemSearchType | null;
   // @ts-expect-error set by passing DEFAULT_FETCHER to setAttributes
   textSearchLimitReached: boolean;
+  // @ts-expect-error set by passing DEFAULT_FETCHER to setAttributes
+  structureSearchLimitReached: boolean;
   /**
    * Set when a permalink fetch fails, so that the UI can show a specific
    * not-found state (e.g. "version 2 of this subsample was not found")
@@ -220,6 +223,7 @@ export default class CoreFetcher {
       chemQuery: observable,
       chemSearchType: observable,
       textSearchLimitReached: observable,
+      structureSearchLimitReached: observable,
       permalinkNotFound: observable,
       setAttributes: action,
       setPage: action,
@@ -408,6 +412,7 @@ export default class CoreFetcher {
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           textSearchLimitReached?: boolean;
+          structureSearchLimitReached?: boolean;
         }>(
           endpoint,
           new URLSearchParams(
@@ -435,6 +440,7 @@ export default class CoreFetcher {
         runInAction(() => {
           this.count = data.totalHits || records.length;
           this.textSearchLimitReached = data.textSearchLimitReached === true;
+          this.structureSearchLimitReached = data.structureSearchLimitReached === true;
           this.error = "";
         });
         const factory = this.factory.newFactory();

@@ -60,6 +60,18 @@ describe("SearchFeedback for structure search", () => {
     );
   });
 
+  test("warns when the structure search hit the server's limit", () => {
+    const search = structureSearch();
+    runInAction(() => {
+      search.fetcher.structureSearchLimitReached = true;
+    });
+    renderFeedback(search);
+
+    expect(screen.getByRole("status", { name: "inventory:search.feedback.label" })).toMatchTextContent(
+      "inventory:search.feedback.structureSearchLimitReached",
+    );
+  });
+
   test("shows a failed structure search instead of the result count", () => {
     const search = structureSearch();
     runInAction(() => {

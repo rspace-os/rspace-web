@@ -57,6 +57,15 @@ describe("Structure search filter in the fetcher", () => {
     expect(fetcher.textSearchLimitReached).toBe(limitReached);
   });
 
+  test.each([true, false])("records structureSearchLimitReached=%s from the response", async (limitReached) => {
+    captureSearchRequests(limitReached ? { structureSearchLimitReached: true } : {});
+    const fetcher = new CoreFetcher(mockFactory(), BENZENE);
+
+    await fetcher.search(null, () => {});
+
+    expect(fetcher.structureSearchLimitReached).toBe(limitReached);
+  });
+
   test.each([
     [
       { chemQuery: "c1ccccc1", chemSearchType: "EXACT" },

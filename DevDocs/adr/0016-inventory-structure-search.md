@@ -30,6 +30,16 @@ that load no file content. Stale ids with no matching row simply drop out.
 A separate Inventory structure index was rejected: it would need its own schema, backfill and sync,
 and would drift from the Workspace's matching rules. Reusing the provider keeps one source of truth.
 
+An attachment only counts while it holds the Gallery file's **current** version
+(`InventoryFile.fileProperty` equals `EcatMediaFile.fileProperty`). Replacing a Gallery file updates
+its `RSChemElement` to the new structure, but existing attachments keep the old file. Resolving them
+through the Gallery link alone would return them for the new structure and miss them for the old one,
+so after a replacement they are found by neither. Copies (duplicated records, records created from a
+template, copied attachment fields) keep the Gallery link in `InventoryFile#shallowCopy`, so they are
+found like the original. The batch queries fetch the owning-record links, so each record arrives with
+its attachment instead of in a follow-up query. The records' own eager collections still load per
+record.
+
 **Trap:** only files attached **from the Gallery** are searchable. A file uploaded straight into an
 Inventory record is stored as a `GENERAL` `InventoryFile` with no media file and no `RSChemElement`,
 so the chemistry service never sees it. Making those searchable needs chem-element generation on
@@ -47,7 +57,8 @@ reach locations by opening the sample, or from the subsample row's Location colu
 
 Without a text query, hits are filtered in Java (read permission, deleted option, type, owner,
 bookable, and the existing template and workbench exclusions) and repaginated with
-`sortRepaginateConvertToApiInventorySearchResult`. This avoids Lucene's 1000-hit cap entirely.
+`sortRepaginateConvertToApiInventorySearchResult`. This avoids Lucene, though D3a applies its own
+1000-hit limit.
 
 With a text query, the hit global ids are passed to `searchInventoryWithSimpleQuery` through a new
 `limitResultsToGlobalIds` parameter on `SearchManager` (intersected with a basket limit when both are
@@ -56,6 +67,21 @@ its raw hits at `SearchConfig.maxResults` (1000) **before** the id limit is appl
 be missed. This is a documented limitation: `InventorySearchConfig.luceneResultLimitReached` is set
 by `FullTextSearcherImpl`, surfaced as `textSearchLimitReached` on the response, and shown as a
 warning in the results feedback.
+
+### D3a Hit resolution stops at 1000 items
+
+Every hit is loaded and permission-checked before sorting and paging, so the work grows with the
+number of matches, and the Workspace repeats it on every page. Resolution is therefore a lazy stream,
+one batch of Gallery files at a time, that stops after 1000 hits passing every filter (permission,
+template subsample, workbench, deleted option, type, owner, bookable). 1000 matches the text search's
+Lucene limit. When more matched, the response carries `structureSearchLimitReached` and the results
+feedback shows a warning. Sorting applies only within those 1000. The Workspace listing uses the same
+limit silently, because `ChemicalSearchResults` has no notice field. Loading only the requested page
+would remove the limit; that is a follow-up, not yet ticketed.
+
+The chemistry service is called by `InventorySearchApiController` before the transactional
+`InventoryStructureSearchManager`, which takes the chem ids, as the Workspace path does. A slow
+chemistry service then holds no database transaction.
 
 ### D4 Inventory read permission decides, not Gallery permission
 

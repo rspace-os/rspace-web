@@ -6524,6 +6524,7 @@ export default interface Resources {
         "results": "{count} search results found.",
         "samples": "{count} samples found.",
         "samplesOfTemplate": "{count} samples of the template found.",
+        "structureSearchLimitReached": "Results may be incomplete: the chemical search matched more than 1,000 items. Refine the structure or add filters.",
         "subsamples": "{count} subsamples found.",
         "templates": "{count} templates found.",
         "textSearchLimitReached": "Results may be incomplete: your text search matched too many items. Narrow your text search to see all chemical structure matches.",

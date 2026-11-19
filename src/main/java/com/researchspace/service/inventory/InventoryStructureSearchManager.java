@@ -25,16 +25,20 @@ public interface InventoryStructureSearchManager {
   boolean isStructureSearchAvailable(User user);
 
   /**
-   * Runs a structure search through the chemistry service, the same search the Workspace uses, and
-   * returns the matching Inventory records the user can read.
+   * Returns the Inventory records the user can read that match a structure search the caller has
+   * already run through the chemistry service. The chemistry service is called outside this
+   * transactional manager, as the Workspace search does, so a slow service holds no database
+   * transaction.
    *
    * <p>Each record that carries a matching Gallery chemistry file, as a record attachment or in an
    * attachment field, is returned once. Matches are not rolled up to a parent or down to children.
    * With a text query, the structure hits further limit a normal Inventory text search, which only
    * considers Lucene's top hits.
    *
-   * @param smiles the structure to search for, as SMILES
-   * @param chemSearchType {@code EXACT} or {@code SUBSTRUCTURE}
+   * <p>At most 1000 hits that pass every filter are loaded, then sorted and paged. When more match,
+   * the result's {@code structureSearchLimitReached} is set.
+   *
+   * @param chemIds chem element ids reported by the chemistry service, in its order
    * @param textQuery (optional) text query to combine with the structure
    * @param resultType (optional) keep only records of this type; {@code null} means all
    * @param ownedBy (optional) keep only records owned by this username
@@ -46,8 +50,7 @@ public interface InventoryStructureSearchManager {
    * @return a page of matching records
    */
   ApiInventorySearchResult searchByStructure(
-      String smiles,
-      String chemSearchType,
+      List<Long> chemIds,
       String textQuery,
       InventorySearchType resultType,
       String ownedBy,
@@ -60,7 +63,7 @@ public interface InventoryStructureSearchManager {
    * The structure hits for chem element ids the chemistry service has already returned, for listing
    * Inventory items in the Workspace chemical search. Applies the same rules as {@link
    * #searchByStructure} with no optional filters: records the user can read, of every type, not
-   * deleted.
+   * deleted. Stops silently at the same 1000-hit limit.
    *
    * @param chemIds chem element ids reported by the chemistry service, in its order
    * @param user the searching user

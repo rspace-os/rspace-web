@@ -125,9 +125,15 @@ describe("Chemical filter button", () => {
     renderWithSearch(search, <ChemicalFilterButton />);
 
     const button = await screen.findByRole("button", { name: "inventory:search.controls.chemical.label" });
-    expect(button).toBeDisabled();
-    await user.hover(button.parentElement as HTMLElement);
-    expect(await screen.findByText("inventory:search.controls.chemical.blockedByScope")).toBeVisible();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("inventory:search.controls.chemical.blockedByScope");
+    button.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.hover(button);
+    expect(
+      await screen.findByRole("tooltip", { name: "inventory:search.controls.chemical.blockedByScope" }),
+    ).toBeVisible();
   });
 });
 

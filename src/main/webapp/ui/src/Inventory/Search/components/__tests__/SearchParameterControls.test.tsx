@@ -79,7 +79,7 @@ describe("SearchParameterControls", () => {
     });
   });
   describe("With a chemical structure filter", () => {
-    test("Bench and Baskets are disabled, with the reason as a tooltip", async () => {
+    test("Bench and Baskets are disabled, with the reason as a tooltip and description", async () => {
       const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         searchStore: { savedSearches: [], savedBaskets: [] },
@@ -97,10 +97,18 @@ describe("SearchParameterControls", () => {
       );
 
       const bench = screen.getByRole("button", { name: "Bench" });
-      expect(bench).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Baskets" })).toBeDisabled();
-      await user.hover(bench.parentElement as HTMLElement);
-      expect(await screen.findByText("inventory:search.controls.chemical.blocksScope")).toBeVisible();
+      const baskets = screen.getByRole("button", { name: "Baskets" });
+      for (const button of [bench, baskets]) {
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        expect(button).toHaveAccessibleDescription("inventory:search.controls.chemical.blocksScope");
+      }
+      bench.focus();
+      await user.keyboard("{Enter}");
+      expect(screen.queryByRole("presentation")).not.toBeInTheDocument();
+      await user.hover(bench);
+      expect(
+        await screen.findByRole("tooltip", { name: "inventory:search.controls.chemical.blocksScope" }),
+      ).toBeVisible();
     });
   });
 });
