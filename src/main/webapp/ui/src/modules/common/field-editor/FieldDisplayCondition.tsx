@@ -135,7 +135,7 @@ function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKi
  *
  * Choosing "Always" clears the rule, but the condition is remembered: going
  * back to "Only when…" restores it, and applies it again if it is still valid,
- * unless the field it read has since changed kind.
+ * unless the field it read has changed kind in the meantime, even if it has changed back.
  *
  * A draft lives as long as the component, or until the field it reads changes
  * kind, and hosts refuse to save while one exists. Hosts give the component a
@@ -157,7 +157,7 @@ export default function FieldDisplayCondition({
    * What "Always" set aside, restored by "Only when…": the rule that was applied, with the kind
    * of field it read, and any unfinished edit on top of it, so arrowing through the radios never
    * loses a stored rule. Used once, and forgotten when a rule is applied, so an abandoned edit
-   * never resurfaces; either is left out if its field has since changed kind.
+   * never resurfaces; either is forgotten once its field changes kind, even if it changes back.
    */
   const [remembered, setRemembered] = useState<{
     applied: FieldDisplayRule | null;
@@ -178,7 +178,11 @@ export default function FieldDisplayCondition({
     const field = key === null ? undefined : graph.byKey.get(key);
     return field ? sourceKindOf(field) : null;
   };
-  // the field it reads has since changed kind, as the author confirmed, so the edit goes rather than blocking the save
+  /*
+   * the field it reads has since changed kind, as the author confirmed, so the edit goes rather than blocking the
+   * save. The confirmation counts only stored rules, so a draft that reads a different field from this field's rule
+   * goes unannounced; accepted, since a draft is never saved and the author has just retyped the field it reads.
+   */
   const draftRetyped =
     keptDraft !== null && sourceRetyped(graph, keptDraft.condition.sourceFieldKey, keptDraft.sourceKind);
   if (draftRetyped) setDraft(null);
@@ -189,6 +193,18 @@ export default function FieldDisplayCondition({
     onShowsSourcesChange(fieldKey, true);
     return () => onShowsSourcesChange(fieldKey, false);
   }, [showsSources, onShowsSourcesChange, fieldKey]);
+  // likewise, what "Always" set aside is forgotten as soon as its field changes kind, so changing it back does not restore it
+  const rememberedAppliedRetyped =
+    remembered?.applied != null && sourceRetyped(graph, remembered.applied.sourceFieldKey, remembered.appliedKind);
+  const rememberedDraftRetyped =
+    remembered?.draft != null &&
+    sourceRetyped(graph, remembered.draft.condition.sourceFieldKey, remembered.draft.sourceKind);
+  if (remembered && (rememberedAppliedRetyped || rememberedDraftRetyped))
+    setRemembered({
+      applied: rememberedAppliedRetyped ? null : remembered.applied,
+      appliedKind: rememberedAppliedRetyped ? null : remembered.appliedKind,
+      draft: rememberedDraftRetyped ? null : remembered.draft,
+    });
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
@@ -276,15 +292,8 @@ export default function FieldDisplayCondition({
             if (rule !== null) onChange(null);
             return;
           }
-          const applied =
-            remembered?.applied && !sourceRetyped(graph, remembered.applied.sourceFieldKey, remembered.appliedKind)
-              ? remembered.applied
-              : null;
-          const unfinished =
-            remembered?.draft &&
-            !sourceRetyped(graph, remembered.draft.condition.sourceFieldKey, remembered.draft.sourceKind)
-              ? remembered.draft.condition
-              : null;
+          const applied = remembered?.applied ?? null;
+          const unfinished = remembered?.draft?.condition ?? null;
           setRemembered(null);
           if (applied !== null && !ruleIsInvalid(fields, fieldKey, applied)) {
             onChange(applied);

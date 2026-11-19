@@ -263,7 +263,7 @@ function Fields({ onErrorStateChange: reportErrorState, sample }: FieldsArgs): R
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(target.value ? Number.isNaN(Number(target.value)) : false);
+                field.setError(!target.valid);
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />

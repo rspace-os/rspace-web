@@ -44,6 +44,32 @@ const weightFields = (weight: string): Array<FieldModelAttrs> => [
   },
 ];
 
+/** A mandatory Landing page holding `landingPage`, and a mandatory serial number. */
+const landingPageFields = (landingPage: string): Array<FieldModelAttrs> => [
+  {
+    id: 1,
+    globalId: "IF1",
+    name: LANDING_PAGE_FIELD_NAME,
+    type: "uri",
+    content: landingPage,
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: true,
+  },
+  {
+    id: 2,
+    globalId: "IF2",
+    name: "Serial number",
+    type: "string",
+    content: "SN-1",
+    selectedOptions: null,
+    columnIndex: 2,
+    attachment: null,
+    mandatory: true,
+  },
+];
+
 describe("InstrumentModel.submittable", () => {
   test("refuses an empty mandatory field once a typed number shows it", () => {
     const instrument = makeMockInstrument({ fields: weightFields("1") });
@@ -95,5 +121,31 @@ describe("InstrumentModel.submittable", () => {
 
     instrument.fields[1].setAttributesDirty({ content: "" });
     expect(instrument.submittable.isOk).toBe(false);
+  });
+
+  test("refuses clearing a Landing page that was filled in when loaded", () => {
+    const instrument = makeMockInstrument({ fields: landingPageFields("https://lab.example.org/lsm980") });
+    expect(instrument.requiresValue(instrument.fields[0])).toBe(true);
+
+    instrument.fields[0].setAttributesDirty({ content: "" });
+    expect(instrument.submittable.isOk).toBe(false);
+  });
+
+  test("allows editing other fields while the Landing page stays blank as it was loaded", () => {
+    const instrument = makeMockInstrument({ fields: landingPageFields("") });
+
+    instrument.fields[1].setAttributesDirty({ content: "SN-2" });
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  test("exempts only the first field named Landing page", () => {
+    const [landingPage, serial] = landingPageFields("");
+    const instrument = makeMockInstrument({
+      fields: [landingPage, serial, { ...landingPage, id: 3, globalId: "IF3", name: " landing PAGE ", columnIndex: 3 }],
+    });
+    expect(instrument.submittable.isOk).toBe(false);
+
+    instrument.fields[2].setAttributesDirty({ content: "https://lab.example.org/lsm980" });
+    expect(instrument.submittable.isOk).toBe(true);
   });
 });
