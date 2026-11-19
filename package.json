@@ -88,6 +88,7 @@
     "playwright-core": "1.63.0",
     "rollup-plugin-visualizer": "7.1.1",
     "storybook": "10.6.2",
+    "type-fest": "6.0.3",
     "typescript": "7.0.2",
     "url": "0.11.4",
     "vite": "8.2.4",

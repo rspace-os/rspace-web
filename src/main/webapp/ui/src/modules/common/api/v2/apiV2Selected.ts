@@ -1,3 +1,4 @@
+import type { IsStringLiteral, IsTuple, IsUnion, SetRequired } from "type-fest";
 import { ApiV2UnexpectedResponseError } from "./ApiV2ProblemError";
 import type { apiV2Resources } from "./generated/apiV2Resources";
 import { type ApiV2GuaranteedReadFields, apiV2GuaranteedReadFields } from "./generated/guaranteedReadFields";
@@ -12,20 +13,15 @@ export type ApiV2ReadDocument<R extends ApiV2ReadResource> = (typeof apiV2Resour
   ? D
   : never;
 
-type IsUnion<T, U = T> = T extends unknown ? ([U] extends [T] ? false : true) : never;
-/** True for a fixed-length tuple whose every element is one literal key. */
-type IsLiteralTuple<F extends readonly unknown[]> = F extends readonly []
-  ? true
-  : F extends readonly [infer Head, ...infer Rest]
-    ? string extends Head
+/** True for a fixed-length tuple whose every element is one string literal key. */
+type IsLiteralTuple<F extends readonly unknown[]> =
+  IsTuple<F> extends true
+    ? false extends {
+        [I in keyof F]: IsStringLiteral<F[I]> extends true ? (IsUnion<F[I]> extends true ? false : true) : false;
+      }[number]
       ? false
-      : true extends IsUnion<Head>
-        ? false
-        : IsLiteralTuple<Rest>
+      : true
     : false;
-
-type Simplify<T> = { [K in keyof T]: T[K] } & {};
-type Present<T, K extends PropertyKey> = Simplify<Omit<T, K> & Required<Pick<T, Extract<keyof T, K>>>>;
 
 /**
  * A resource's `*Read` document after a sparse `fields` read: each requested field that the resource guarantees is
@@ -34,7 +30,7 @@ type Present<T, K extends PropertyKey> = Simplify<Omit<T, K> & Required<Pick<T, 
  */
 export type ApiV2Selected<R extends ApiV2ReadResource, F extends readonly string[]> =
   IsLiteralTuple<F> extends true
-    ? Present<ApiV2ReadDocument<R>, Extract<F[number], ApiV2GuaranteedReadFields[R]>>
+    ? SetRequired<ApiV2ReadDocument<R>, Extract<keyof ApiV2ReadDocument<R>, F[number] & ApiV2GuaranteedReadFields[R]>>
     : ApiV2ReadDocument<R>;
 
 /** The `fields[...]` query value for an `as const` tuple, so the request and `ApiV2Selected` cannot drift apart. */
