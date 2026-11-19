@@ -197,14 +197,32 @@ function insertAVFromGallery(mediaType: string, data: WorkspaceRecordInformation
  * @param data - the record information for an item(returned by getRecordInformation)
  */
 function insertGenericDoc(mediaType: string, data: WorkspaceRecordInformation) {
+  const { templateId, model } = genericDocTemplate(mediaType, data);
+  getRS().insertTemplateIntoTinyMCE(templateId, model);
+}
+
+function genericDocTemplate(mediaType: string, data: WorkspaceRecordInformation) {
   const templateId = mediaType === MEDIA_TYPE_DOCS ? "#insertedDocumentTemplate" : "#insertedMiscdocTemplate";
   const extension = data.extension ?? "";
-  const json = {
+  const model = {
     id: data.id,
     name: data.name,
     iconPath: generateIconSrc(mediaType, extension, data.thumbnailId, data.id),
   };
-  getRS().insertTemplateIntoTinyMCE(templateId, json);
+  return { templateId, model };
+}
+
+/*
+ * The attachment link template and model for a Gallery file shown as a generic attachment, or null if
+ * the file's type is never shown that way. Used to restore attachments pasted from view mode.
+ * @param data - the record information for an item (returned by getRecordInformation)
+ */
+export function getGenericDocTemplate(data: WorkspaceRecordInformation) {
+  const mediaType = typeMapping[data.type];
+  if (!GENERIC_DOCUMENT_MEDIA_TYPES.has(mediaType) && mediaType !== MEDIA_TYPE_CHEMISTRY) {
+    return null;
+  }
+  return genericDocTemplate(mediaType, data);
 }
 
 async function insertChemistryFileFromGallery(data: WorkspaceRecordInformation) {
