@@ -8,6 +8,7 @@ import {
   type FieldSnapshot,
   FieldSnapshotSchema,
   parseDisplayRule,
+  SourceKindSchema,
   serializeDisplayRule,
   storedDisplayRuleLength,
 } from "../displayRule";
@@ -37,15 +38,20 @@ const VectorFieldSchema = v.pipe(
     rule: v.nullish(v.unknown()),
     allowedOptions: v.optional(v.array(v.string()), []),
     selectedOptions: v.optional(v.array(v.string()), []),
+    sourceKind: v.optional(SourceKindSchema),
+    value: v.optional(v.string()),
   }),
   v.transform(
-    ({ key, type, rule, allowedOptions, selectedOptions }): FieldSnapshot =>
+    ({ key, type, rule, allowedOptions, selectedOptions, sourceKind, value }): FieldSnapshot =>
       v.parse(FieldSnapshotSchema, {
         key,
         canBeSource: type === "RADIO" || type === "CHOICE",
         rule: rule ?? null,
         allowedOptions,
         selectedOptions,
+        // Absent in older vectors, so the defaults from canBeSource are exercised too.
+        ...(sourceKind === undefined ? {} : { sourceKind }),
+        ...(value === undefined ? {} : { value }),
       }),
   ),
 );

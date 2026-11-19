@@ -1,5 +1,15 @@
 import * as v from "valibot";
-import { type FieldSnapshot, storedDisplayRuleLength } from "./displayRule";
+import {
+  type FieldDisplayRule,
+  type FieldSnapshot,
+  OPERATORS_BY_SOURCE_KIND,
+  operatorComparesValue,
+  operatorRequiresValues,
+  type SourceKind,
+  sourceKindOf,
+  storedDisplayRuleLength,
+} from "./displayRule";
+import { isBlankRuleValue, isRuleNumber } from "./ruleValues";
 
 /** Message codes shared with the Java `FieldDisplayRuleValidator`. */
 export const DISPLAY_RULE_ERROR_CODES = {
@@ -13,6 +23,10 @@ export const DISPLAY_RULE_ERROR_CODES = {
   valueTooMany: "validation.fieldDisplayRule.valueTooMany",
   ruleTooLong: "validation.fieldDisplayRule.ruleTooLong",
   cycle: "validation.fieldDisplayRule.cycle",
+  operatorNotForSource: "validation.fieldDisplayRule.operatorNotForSource",
+  valueCount: "validation.fieldDisplayRule.valueCount",
+  valueBlank: "validation.fieldDisplayRule.valueBlank",
+  valueNotANumber: "validation.fieldDisplayRule.valueNotANumber",
 } as const;
 
 /** The most values one rule may list; the same as Java's `FieldDisplayRuleValidator.MAX_VALUES`. */
@@ -86,14 +100,33 @@ function fieldsOnCycle(fields: ReadonlyArray<FieldSnapshot>, indexByKey: Readonl
 }
 
 /**
+ * Why a rule cannot be applied to a source of this kind, as an error code, or
+ * null when it can. The validator reports the code; the evaluator ignores such
+ * a rule, so the field is shown.
+ */
+export function ruleProblem(rule: FieldDisplayRule, kind: SourceKind): DisplayRuleErrorCode | null {
+  if (kind === "NONE") return DISPLAY_RULE_ERROR_CODES.sourceType;
+  if (!OPERATORS_BY_SOURCE_KIND[kind].includes(rule.operator)) return DISPLAY_RULE_ERROR_CODES.operatorNotForSource;
+  if (!operatorComparesValue(rule.operator)) return null;
+  if (rule.values.length !== 1) return DISPLAY_RULE_ERROR_CODES.valueCount;
+  const [value] = rule.values;
+  if (isBlankRuleValue(value)) return DISPLAY_RULE_ERROR_CODES.valueBlank;
+  if (kind === "NUMBER" && !isRuleNumber(value)) return DISPLAY_RULE_ERROR_CODES.valueNotANumber;
+  return null;
+}
+
+/**
  * Validates every key and rule in a whole form or template at once, with the
  * same checks and error order as the Java `FieldDisplayRuleValidator`. Keys
  * may be null (legacy fields), but non-null keys must be lowercase UUIDs and
- * unique. Each rule must list each value once, at most
- * `MAX_DISPLAY_RULE_VALUES` values, and fit in `MAX_DISPLAY_RULE_JSON_LENGTH`
- * characters as stored. Each rule's source must exist, differ from the field
- * itself, be a radio or choice field and offer every value the rule names, and
- * rules must not form a cycle.
+ * unique. Each rule must list at most `MAX_DISPLAY_RULE_VALUES` values and fit
+ * in `MAX_DISPLAY_RULE_JSON_LENGTH` characters as stored. Each rule's source
+ * must exist, differ from the field itself and be able to be a source (`NONE`
+ * cannot), and the operator must suit the source's kind. An option rule must
+ * list each value once and only options the source offers. A text or number
+ * comparison must have exactly one value that is not blank, and against a
+ * number source that value must be a plain decimal number. Rules must not form
+ * a cycle.
  */
 export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Array<DisplayRuleError> {
   const indexByKey = new Map<string, number>();
@@ -122,7 +155,7 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
       storedDisplayRuleLength(rule) > MAX_DISPLAY_RULE_JSON_LENGTH
     ) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.ruleTooLong });
-    } else if (new Set(rule.values).size < rule.values.length) {
+    } else if (operatorRequiresValues(rule.operator) && new Set(rule.values).size < rule.values.length) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueDuplicate });
     }
     const sourceIndex = indexByKey.get(rule.sourceFieldKey);
@@ -133,9 +166,10 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
     } else {
       const source = fields[sourceIndex];
       const allowed = new Set(source.allowedOptions);
-      if (!source.canBeSource) {
-        errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.sourceType });
-      } else if (!rule.values.every((value) => allowed.has(value))) {
+      const problem = ruleProblem(rule, sourceKindOf(source));
+      if (problem !== null) {
+        errors.push({ fieldIndex: index, code: problem });
+      } else if (operatorRequiresValues(rule.operator) && !rule.values.every((value) => allowed.has(value))) {
         errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueUnknown });
       }
       if (onCycle[index]) {
