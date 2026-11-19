@@ -242,6 +242,129 @@ fields).
 Examples of this approach include [Tags], [Expiry], and [Subsample's Quantity].
 
 
+## Template fields: field keys and display rules
+
+The "varying" fields above include the custom fields that a sample or instrument
+template defines and that every sample or instrument made from it copies. These
+fields can carry a display rule (RPD-339): show this field only when a radio or
+choice field of the same template has, or lacks, certain options. A hidden field
+keeps its value and is skipped by mandatory checks. The user-facing behaviour is
+described in [ConditionalFieldDisplay.md]. Extra fields have no template
+definition and cannot have rules.
+
+### Data model
+
+Each template field ([FieldModel]) has two properties for this:
+
+<dl>
+
+  <dt>`fieldKey`</dt>
+  <dd>
+    A lower-case UUID that identifies the field within its template. RSpace
+    generates version 7 but accepts any version, so check keys only as
+    lower-case UUIDs. Rules name their source field by key, never by id, because
+    ids change whenever a field is copied. The key is copied unchanged when a
+    template is duplicated, when a record is created from a template, and when a
+    record is updated to the latest template version. A key is immutable once
+    saved. Record fields created before the feature have a `null` key until they
+    are updated.
+  </dd>
+
+  <dt>`displayRule`</dt>
+  <dd>
+    The parsed rule, or `null` when the field is always shown. Build rules only
+    with `createDisplayRule` or `parseDisplayRule` from [displayRule.ts], never as
+    object literals: the type is branded so that a rule always comes from the
+    schema.
+  </dd>
+
+</dl>
+
+### Adding a template field
+
+- Generate a key when the author adds the field, with `newFieldKey()` from
+  `modules/common/field-rules/newFieldKey.ts` (a UUID version 7 that, unlike
+  `crypto.randomUUID()`, also works on plain HTTP), in `TemplateModel.addField`
+  and `InstrumentTemplateModel.addField` only. Do not generate one in the
+  `FieldModel` constructor: it also builds legacy keyless record fields, which
+  must stay keyless. A field with a key can be used in a rule straight away,
+  before the template is first saved.
+- Keep `fieldKey` and `displayRule` in `FieldModel.paramsForBackend`. Send
+  `displayRule: null` explicitly when a saved field's rule is removed: on a
+  template PUT an absent `displayRule` means "unchanged" and `null` means
+  "remove".
+- When copying fields between models (for example
+  `InstrumentModel.overrideFields`), copy the key and the rule.
+- A new field type can be a rule's source only if the shared rule core treats it
+  as one (radio and choice today, `canBeSource` in [fieldVisibility.ts]). Any
+  type can be a rule's target.
+
+### Showing and hiding fields
+
+- Visibility is computed by the shared evaluator in
+  [modules/common/field-rules][field-rules], which has the same semantics as the
+  Java evaluator on the server (parity vectors in
+  `src/test/resources/fieldrules/display-rule-vectors.json`).
+- [SampleModel] and [InstrumentModel] expose a computed `hiddenFields` set and
+  `isFieldHidden(field)`, built with `hiddenFieldsOf` in [fieldVisibility.ts].
+  [TemplateModel] overrides `hiddenFields` to show every field, because the
+  template editor always shows all fields.
+- The record forms render template fields through [useShownTemplateFields], which
+  filters out hidden fields and returns an `announcer`, a polite live region
+  ([RevealedFieldsAnnouncer]) that names the fields an answer shows or hides. Render
+  it next to the fields. Do not move focus when fields appear or disappear.
+- `FieldModel.validate()` returns valid for a hidden field, so a hidden mandatory
+  field never blocks Save. The server makes the same decision for create,
+  update, CSV import and the operations wizard.
+- The operations wizard ignores mandatory fields hidden by the template's
+  defaults ([templateResolution.ts]).
+
+### Editing rules in the template editor
+
+The template editor is built on shared, plain-props components in
+[modules/common/field-editor][field-editor], which the ELN form field editor
+also uses: `FieldCard`, `FieldTypeSelect`, `OptionsEditor`, `MoveButtons`,
+`FieldDisplayCondition`, `DisplayConditionsNote` and `DisplayRuleSummary`.
+[CustomField] adapts a MobX `FieldModel` onto `FieldCard` and passes each field's
+`FieldDisplayCondition` in its `displayCondition` slot. [TemplateFieldList]
+renders `DisplayConditionsNote` once above the fields while editing.
+
+- `FieldDisplayCondition` is the "Display this field when…" section of one
+  field. In edit mode it offers "Always" or a condition on another radio or
+  choice field; read-only, it shows the "Shown when…" summary. It also lists
+  the fields that depend on this one. The "Only when…" radio is always
+  enabled: with no field the condition could read, the Field list shows a
+  disabled "No other fields" item and the same text as its helper.
+- It reports a rule through `onChange` only once the condition is complete and
+  the shared validator accepts it. An unfinished or rejected condition stays a
+  draft inside the component, with inline errors on the missing part, and the
+  field keeps its stored rule meanwhile. Give the component a new React key to
+  start a new edit session.
+- While a draft exists, it calls `onIncompleteChange(true)`. [CustomField]
+  stores that with `FieldModel.setDisplayConditionIncomplete`, and
+  `FieldModel.validateDisplayCondition()` then fails with
+  `template.displayRules.conditionIncomplete`, so the template's `validate()`
+  refuses Save, and `assertDisplayConditionsComplete` stops the template being
+  sent. Any new host of the component must refuse to save in the same way.
+- [templateRuleFields] gives every condition of a template the same
+  `RuleEditorField` list, a MobX computed that does not read names, so
+  `ruleGraphFor` works out candidate sources once per change rather than once
+  per field, and renaming a field re-renders only the cards that show its name.
+- Pure helpers for candidate sources, drafts and pruning rules live in
+  `ruleEditing.ts`.
+
+Any new action that can break a rule must confirm first, naming the dependent
+fields, and then prune the dependent rules in the same model change. Today
+these are: deleting a field that rules read (`FieldModel.dependentFields`),
+removing an option that a rule uses, and changing an unsaved source field to a
+type that cannot be a source. An option that a rule uses cannot be renamed: the
+`OptionsEditor` row is locked with the `template.displayRules.optionInUse`
+reason, which only new options show, because saved options cannot be renamed
+anyway. The server validates every rule of the template
+together after a save, so a save that leaves a dangling rule is rejected.
+
+
+
 
 
 [CanStore]: /src/main/webapp/ui/src/Inventory/Container/Fields/CanStore.tsx
@@ -262,3 +385,18 @@ Examples of this approach include [Tags], [Expiry], and [Subsample's Quantity].
 [Tags.test.tsx]: /src/main/webapp/ui/src/Inventory/components/Fields/__tests__/Tags.test.tsx
 [Tags]: /src/main/webapp/ui/src/Inventory/components/Fields/Tags.tsx
 [interface segregation principle]: https://en.wikipedia.org/wiki/Interface_segregation_principle
+[ConditionalFieldDisplay.md]: /DevDocs/public/ConditionalFieldDisplay.md
+[CustomField]: /src/main/webapp/ui/src/Inventory/Template/Fields/CustomField.tsx
+[displayRule.ts]: /src/main/webapp/ui/src/modules/common/field-rules/displayRule.ts
+[field-editor]: /src/main/webapp/ui/src/modules/common/field-editor
+[field-rules]: /src/main/webapp/ui/src/modules/common/field-rules
+[FieldModel]: /src/main/webapp/ui/src/stores/models/FieldModel.ts
+[fieldVisibility.ts]: /src/main/webapp/ui/src/stores/models/fieldVisibility.ts
+[InstrumentModel]: /src/main/webapp/ui/src/stores/models/InstrumentModel.tsx
+[RevealedFieldsAnnouncer]: /src/main/webapp/ui/src/modules/common/field-display/RevealedFieldsAnnouncer.tsx
+[SampleModel]: /src/main/webapp/ui/src/stores/models/SampleModel.tsx
+[TemplateFieldList]: /src/main/webapp/ui/src/Inventory/Template/Fields/TemplateFieldList.tsx
+[TemplateModel]: /src/main/webapp/ui/src/stores/models/TemplateModel.tsx
+[templateRuleFields]: /src/main/webapp/ui/src/Inventory/Template/Fields/templateRuleFields.ts
+[templateResolution.ts]: /src/main/webapp/ui/src/Inventory/components/Operations/templateResolution.ts
+[useShownTemplateFields]: /src/main/webapp/ui/src/Inventory/components/Fields/useShownTemplateFields.tsx

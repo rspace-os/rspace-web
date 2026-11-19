@@ -5956,15 +5956,17 @@ components:
           description: |
             Identifies the field within its template, and in the samples and instruments made from
             it, for display rules. A lower-case UUID, copied with the field when a template is
-            duplicated or a record is created.
+            duplicated or a record is created. Newly generated keys are UUID version 7, but a
+            response can contain a lower-case UUID of any version, as existing keys may be other
+            versions.
 
-            On template fields it is optional when the field is created (a key is generated if
-            omitted) and cannot be changed afterwards: an update that sends a different key is
-            rejected. A key sent for a new field must be unique among all fields of the template,
-            including deleted ones and the other fields created in the same request. Fields of
-            samples and instruments created before display rules existed have no key until they
-            are updated to the latest template version. Ignored when writing sample or instrument
-            fields.
+            On template fields it is optional when the field is created (a UUID version 7 is
+            generated if omitted; a key sent by the client may be any lower-case UUID) and cannot be
+            changed afterwards: an update that sends a different key is rejected. A key sent for a
+            new field must be unique among all fields of the template, including deleted ones and
+            the other fields created in the same request. Fields of samples and instruments created
+            before display rules existed have no key until they are updated to the latest template
+            version. Ignored when writing sample or instrument fields.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
     InventoryEntityFieldList:
@@ -6009,9 +6011,13 @@ components:
             is selected. `HAS_NO_VALUE`: nothing is selected.
         values:
           type: array
+          nullable: true
           description: |
-            Options of the source field. Required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`;
-            must be absent for `HAS_VALUE` and `HAS_NO_VALUE`.
+            Options of the source field, each listed once and as the raw option text. Required and
+            non-empty for `IS_ANY_OF` and `IS_NONE_OF`. For `HAS_VALUE` and `HAS_NO_VALUE`, omit it
+            or send `[]` (`null` is also accepted). Responses omit it when it is empty. At most 1000
+            values, and the stored rule at most 32768 characters; a template request with a rule over
+            either limit, or with a value listed twice, is rejected with a `422`.
           items:
             type: string
       example:

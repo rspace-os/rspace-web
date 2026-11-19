@@ -3894,12 +3894,15 @@ components:
             option as it is, commas included. A document request whose Choice or Radio
             content names a value that is not an option of the field is rejected with
             422, as is Choice content with an empty value, such as `Yes,`; empty content
-            clears the selection. On a document update, Choice content equal to the
+            clears the selection. Values are not trimmed, so `Yes, No` names the value
+            ` No`. On a document update, Choice content equal to the
             field's current content is accepted unchecked.
         fieldKey:
           type: string
           description: The key of this field's form field, in the form version the document
-            was created from. Display rules name their source field by this key.
+            was created from. Display rules name their source field by this key. Newly
+            generated keys are UUID version 7, but this can be any lower-case UUID, as
+            existing keys may be other versions.
         displayRule:
           description: Read-only, from the field's form field. A document request that
             sends a malformed rule here is rejected with 400; echoing a rule read from
@@ -3941,10 +3944,14 @@ components:
             - HAS_NO_VALUE
         values:
           type: array
+          nullable: true
           description: Options of the source field, each listed once and as the raw
             option text, so a comma in an option is written as a comma, not as the
             `&#44;` escape of Choice field content. Required and non-empty for IS_ANY_OF
-            and IS_NONE_OF; empty for HAS_VALUE and HAS_NO_VALUE.
+            and IS_NONE_OF. For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send
+            an empty array or null; responses return an empty array. At most 1000 values,
+            and the stored rule at most 32768 characters; a form request with a rule over
+            either limit, or with a value listed twice, is rejected with 422.
           items:
             type: string
       example:
@@ -4390,7 +4397,9 @@ components:
           type: string
           description: Optional, and only for a new field. A lower-case UUID, unique among
             the form's fields, that display rules can use to name this field as their
-            source in the same request; generated when omitted. A saved field's key
+            source in the same request; generated when omitted. Newly generated keys are
+            UUID version 7, but any lower-case UUID is accepted, and responses can contain
+            keys of any version, as existing keys may be other versions. A saved field's key
             cannot change, so on PUT a saved field's fieldKey must be omitted or equal
             its current key.
         displayRule:
@@ -4495,9 +4504,10 @@ components:
             - Radio
         fieldKey:
           type: string
-          description: Identifies the field within its form. Display rules name their
-            source field by this key. Copied unchanged into new form versions and form
-            copies.
+          description: Identifies the field within its form. A lower-case UUID of any
+            version. Newly generated keys are UUID version 7, but existing keys may be
+            other versions. Display rules name their source field by this key. Copied
+            unchanged into new form versions and form copies.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
     FolderPost:
