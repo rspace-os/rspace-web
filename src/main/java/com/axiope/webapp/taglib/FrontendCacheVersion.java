@@ -50,6 +50,12 @@ public final class FrontendCacheVersion {
   public static final String LEGACY_ASSET_CACHE_BUSTING_IN_DEV_MODE_PROPERTY =
       "legacyAssetCacheBustingInDevMode";
 
+  /**
+   * Spring environment / system property that turns on frontend dev mode (per-request cache busting
+   * and manifest reloads) without Vite HMR, so it does not depend on the Spring profile.
+   */
+  public static final String FRONTEND_DEV_MODE_PROPERTY = "frontendDevMode";
+
   private static final String REQUEST_TOKEN_ATTR = CACHE_VERSION_ATTR + ".REQUEST";
 
   private FrontendCacheVersion() {}
@@ -83,8 +89,8 @@ public final class FrontendCacheVersion {
   }
 
   /**
-   * Returns {@code true} when the application is running in dev mode (Spring {@code run} profile or
-   * HMR enabled). The result is cached in the servlet context after the first lookup.
+   * Returns {@code true} when the application is running in dev mode (see {@link
+   * #isDevMode(Environment)}). The result is cached in the servlet context after the first lookup.
    */
   public static boolean isDevMode(ServletContext servletContext) {
     Object cachedValue = servletContext.getAttribute(DEV_MODE_CACHE_ATTR);
@@ -100,16 +106,34 @@ public final class FrontendCacheVersion {
     WebApplicationContext applicationContext =
         WebApplicationContextUtils.getWebApplicationContext(servletContext);
     if (applicationContext == null) {
-      return false;
+      return Boolean.getBoolean(FRONTEND_DEV_MODE_PROPERTY);
     }
 
-    Environment environment = applicationContext.getEnvironment();
-    boolean devMode = environment.acceptsProfiles(Profiles.of("run"));
+    boolean devMode = isDevMode(applicationContext.getEnvironment());
     servletContext.setAttribute(DEV_MODE_CACHE_ATTR, devMode);
     return devMode;
   }
 
-  /** Returns {@code true} when Vite HMR is enabled via the {@code reactDevMode} property. */
+  /**
+   * Returns {@code true} when {@code frontendDevMode} or {@code reactDevMode} is set, or the legacy
+   * {@code run} profile is active.
+   */
+  public static boolean isDevMode(Environment environment) {
+    return isTrue(environment, FRONTEND_DEV_MODE_PROPERTY)
+        || isReactDevMode(environment)
+        || environment.acceptsProfiles(Profiles.of("run"));
+  }
+
+  /** Reads {@code reactDevMode} (Vite HMR) straight from the Spring environment, uncached. */
+  public static boolean isReactDevMode(Environment environment) {
+    return isTrue(environment, REACT_DEV_MODE_PROPERTY);
+  }
+
+  private static boolean isTrue(Environment environment, String property) {
+    return Boolean.parseBoolean(StringUtils.trimToEmpty(environment.getProperty(property)));
+  }
+
+  /** Returns {@code reactDevMode} (Vite HMR), cached in the servlet context after first lookup. */
   public static boolean isReactDevMode(ServletContext servletContext) {
     Object cachedValue = servletContext.getAttribute(REACT_DEV_MODE_CACHE_ATTR);
     if (cachedValue instanceof Boolean) {
@@ -120,10 +144,7 @@ public final class FrontendCacheVersion {
         WebApplicationContextUtils.getWebApplicationContext(servletContext);
     boolean reactDevMode;
     if (applicationContext != null) {
-      reactDevMode =
-          Boolean.parseBoolean(
-              StringUtils.trimToEmpty(
-                  applicationContext.getEnvironment().getProperty(REACT_DEV_MODE_PROPERTY)));
+      reactDevMode = isReactDevMode(applicationContext.getEnvironment());
     } else {
       reactDevMode = Boolean.getBoolean(REACT_DEV_MODE_PROPERTY);
     }
@@ -140,18 +161,13 @@ public final class FrontendCacheVersion {
     WebApplicationContext applicationContext =
         WebApplicationContextUtils.getWebApplicationContext(servletContext);
     if (applicationContext != null) {
-      return Boolean.parseBoolean(
-          StringUtils.trimToEmpty(
-              applicationContext
-                  .getEnvironment()
-                  .getProperty(LEGACY_ASSET_CACHE_BUSTING_IN_DEV_MODE_PROPERTY)));
+      return isTrue(
+          applicationContext.getEnvironment(), LEGACY_ASSET_CACHE_BUSTING_IN_DEV_MODE_PROPERTY);
     }
     return Boolean.getBoolean(LEGACY_ASSET_CACHE_BUSTING_IN_DEV_MODE_PROPERTY);
   }
 
-  /**
-   * Stores the dev-mode flag computed at startup so later lookups skip the Spring profile check.
-   */
+  /** Stores the dev-mode flag computed at startup so later lookups skip the environment check. */
   public static void rememberDevMode(ServletContext servletContext, boolean devMode) {
     servletContext.setAttribute(DEV_MODE_CACHE_ATTR, devMode);
   }

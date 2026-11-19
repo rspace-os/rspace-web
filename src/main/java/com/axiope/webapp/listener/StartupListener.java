@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
@@ -85,7 +84,7 @@ public class StartupListener implements ServletContextListener {
   }
 
   void preWarmBundleManifestCache(ApplicationContext applicationContext, ServletContext context) {
-    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    boolean isDevMode = FrontendCacheVersion.isDevMode(applicationContext.getEnvironment());
     BundleTag.preWarmManifestCache(context, isDevMode);
   }
 
@@ -94,8 +93,9 @@ public class StartupListener implements ServletContextListener {
    * FrontendCacheVersion#CACHE_VERSION_ATTR}.
    *
    * <ul>
-   *   <li><b>Dev ({@code run} profile):</b> nothing is stored here; {@link FrontendCacheVersion}
-   *       generates a fresh UUID per request so every page hit forces browsers to re-fetch assets.
+   *   <li><b>Dev ({@link FrontendCacheVersion#isDevMode(Environment)}):</b> nothing is stored here;
+   *       {@link FrontendCacheVersion} generates a fresh UUID per request so every page hit forces
+   *       browsers to re-fetch assets.
    *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
    *       browsers cache assets across requests within the same deployment and bust the cache on
    *       upgrade.
@@ -103,7 +103,7 @@ public class StartupListener implements ServletContextListener {
    */
   void initCacheVersion(
       ApplicationContext applicationContext, IPropertyHolder propHolder, ServletContext context) {
-    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    boolean isDevMode = FrontendCacheVersion.isDevMode(applicationContext.getEnvironment());
     if (!isDevMode) {
       String cacheVersion = propHolder.getVersionMessage();
       log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
@@ -120,9 +120,7 @@ public class StartupListener implements ServletContextListener {
   void registerViteDevServerProxyIfEnabled(
       ApplicationContext applicationContext, ServletContext context) {
     Environment environment = applicationContext.getEnvironment();
-    if (!Boolean.parseBoolean(
-        StringUtils.trimToEmpty(
-            environment.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY)))) {
+    if (!FrontendCacheVersion.isReactDevMode(environment)) {
       return;
     }
     String configured =

@@ -340,6 +340,11 @@ pnpm install --frozen-lockfile
 pnpm run serve
 ```
 
+Frontend dev mode (a fresh cache-busting token per request and, without HMR, the Vite manifest
+reread on every page load) is on when `-DreactDevMode=true` or `-DfrontendDevMode=true` is set, or
+the legacy `run` profile is active. Use `-DfrontendDevMode=true` to get it with a built frontend and
+no Vite dev server.
+
 Legacy `rst:assetUrl` references under `/scripts/**` and `/styles/**` do not add the `?v=`
 cache-busting token in dev mode by default. To opt back in while debugging legacy frontend asset
 changes, add `-DlegacyAssetCacheBustingInDevMode=true` to the Maven command. Production always
