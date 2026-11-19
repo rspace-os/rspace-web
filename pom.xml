@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.2.1</version>
+    <version>314e7a9f6f729d219c4157c73dffd8314233de82</version>
   </parent>
 
   <repositories>
@@ -59,7 +59,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.42</version>
+        <version>${lombok.version}</version>
       </dependency>
       <dependency>
         <groupId>jakarta.servlet</groupId>
@@ -70,6 +70,16 @@
         <groupId>jakarta.servlet.jsp.jstl</groupId>
         <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
         <version>3.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.mail</groupId>
+        <artifactId>jakarta.mail-api</artifactId>
+        <version>${jakarta.mail-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hibernate.validator</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>${hibernate.validator.version}</version>
       </dependency>
       <dependency>
         <groupId>org.hibernate.common</groupId>
@@ -262,7 +272,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-compiler-plugin</artifactId>
-      <version>3.11.0</version>
       <configuration>
         <release>17</release>
         <parameters>true</parameters>
@@ -674,9 +683,8 @@
     <dependency>
       <groupId>jakarta.mail</groupId>
       <artifactId>jakarta.mail-api</artifactId>
-      <!-- Keep in step with rspace-parent 3.0.0's jakarta.mail-api.version and the angus-mail
-           implementation below; inherit the parent property once the parent pin moves to 3.x. -->
-      <version>2.1.3</version>
+      <!-- Application-owned API version, aligned with the Angus mail implementation below. -->
+      <version>${jakarta.mail-api.version}</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.angus</groupId>
@@ -1326,7 +1334,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.14.0</version>
     </dependency>
     <dependency>
       <groupId>org.hibernate.search</groupId>
@@ -2699,12 +2706,19 @@
   </profiles>
 
   <properties>
+    <jakarta.mail-api.version>2.1.5</jakarta.mail-api.version>
+    <hibernate.version>6.4.10.Final</hibernate.version>
+    <hibernate-search.version>7.0.1.Final</hibernate-search.version>
+    <ical4j.version>3.0.29</ical4j.version>
+    <imagej.version>1.47</imagej.version>
+    <shiro.version>3.0.2</shiro.version>
+    <thumbnailator.version>0.4.21</thumbnailator.version>
     <exec.maven.plugin.version>3.6.4</exec.maven.plugin.version>
     <includedTestGroups></includedTestGroups>
     <excludedTestGroups>chemistry</excludedTestGroups>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
-    <slf4j.version>2.0.2</slf4j.version>
+    <slf4j.version>2.0.20</slf4j.version>
 
     <!-- Application settings -->
     <artifactName>${project.artifactId}-${project.version}</artifactName>
@@ -2720,14 +2734,10 @@
 
     <javax.cache.version>1.1.1</javax.cache.version>
 
-    <assertj.version>3.27.7</assertj.version>
+    <!-- The web test suite uses Mockito 5; shared libraries retain Mockito 3. -->
+    <mockito.version>5.24.0</mockito.version>
 
-    <!-- TEMPORARY: rspace-parent 3.2.1 still manages Mockito 3.7.7. Parent 3.3.0 carries
-         5.23.0, so delete this override once the pinned parent version is bumped. -->
-    <mockito.version>5.23.0</mockito.version>
-
-    <!-- TEMPORARY: rspace-parent 3.2.1 still says 1.3, which only ever shipped as
-         hamcrest-core/hamcrest-all. Parent 3.3.0 carries 3.0; delete this override then. -->
+    <!-- Modern Hamcrest for Spring matcher signatures; legacy clients use hamcrest-all 1.3. -->
     <hamcrest.version>3.0</hamcrest.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
