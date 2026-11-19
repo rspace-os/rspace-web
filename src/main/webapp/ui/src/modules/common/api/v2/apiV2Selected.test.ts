@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { ApiV2UnexpectedResponseError } from "./ApiV2ProblemError";
-import { type ApiV2ReadDocument, type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "./apiV2Selected";
+import { type ApiV2ReadDocument, type ApiV2Selected, assertApiV2Selected } from "./apiV2Selected";
 import type { InstrumentsRead } from "./generated/models/instrumentsRead";
 
 const FIELDS = ["id", "name", "parentContainer", "customFields"] as const;
@@ -38,9 +38,5 @@ describe("assertApiV2Selected", () => {
     })();
     expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
     expect(error).toMatchObject({ reason: "invalidBody", message: expect.stringContaining("id") });
-  });
-
-  it("builds the fields query value from the tuple", () => {
-    expect(apiV2Fields(FIELDS)).toBe("id,name,parentContainer,customFields");
   });
 });

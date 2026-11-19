@@ -562,8 +562,7 @@ audit members, `@ApiV2ResourceDefinition(readGuaranteedAuditFields = ...)`. Guar
 later is compatible and removing one is breaking: mark only fields that clients rely on. Startup rejects a guarantee
 on a member whose `readAccess` is not `AccessFunction.INHERITED`. The published `x-rspace-access` names
 documentation, not the evaluated function, so generated clients rely on the guarantee alone.
-`ResourceFieldSchema.readGuaranteed()` carries the declaration to the emitter, and `ApiV2ReadGuaranteeTest` checks
-that guaranteed properties are never unreadable and always rendered.
+`ResourceFieldSchema.readGuaranteed()` carries the declaration to the emitter.
 
 ### Compatibility rules for external clients
 

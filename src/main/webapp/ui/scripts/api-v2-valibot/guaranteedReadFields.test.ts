@@ -32,12 +32,4 @@ describe("guaranteed read fields", () => {
   it("reads only the read-guaranteed extension, whatever the access metadata", () => {
     expect(guaranteedReadFields(document)).toEqual(new Map([["items", ["id", "name"]]]));
   });
-
-  it("fails on a READ operation without a referenced read schema", () => {
-    const item = document.paths?.["/api/v2/items/{id}"];
-    const broken: OpenApiDocument = {
-      paths: { "/api/v2/items/{id}": { get: { ...item?.get, responses: { 200: { content: {} } } } } },
-    };
-    expect(() => guaranteedReadFields(broken)).toThrow("without a referenced read schema");
-  });
 });

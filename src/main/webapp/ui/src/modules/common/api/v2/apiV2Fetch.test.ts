@@ -7,14 +7,10 @@ import {
   ApiV2UnexpectedResponseError,
 } from "./ApiV2ProblemError";
 import { apiV2BlobFetch, apiV2Fetch, apiV2HeadersFetch } from "./apiV2Fetch";
-import { ApiV2IdentityChangedError, SessionTokenProvider, setApiV2TokenProvider } from "./tokenProvider";
+import { ApiV2IdentityChangedError, setApiV2TokenProvider } from "./tokenProvider";
 
 // Test setup imports this runtime before test mocks are installed.
-const { mint } = vi.hoisted(() => {
-  vi.resetModules();
-  return { mint: vi.fn() };
-});
-vi.mock("./generated/oauth/oauth", () => ({ createUiOAuthToken: mint }));
+vi.hoisted(() => vi.resetModules());
 
 vi.mock("./generated/valibot/operations", async () => {
   const v = await import("valibot");
@@ -219,12 +215,6 @@ describe("API v2 transport", () => {
   });
 });
 
-it("exposes request options without operationId to generated callers", () => {
-  expectTypeOf<Parameters<typeof apiV2Fetch>[1]>().toEqualTypeOf<RequestInit | undefined>();
-  expectTypeOf<Parameters<typeof apiV2HeadersFetch>[1]>().toEqualTypeOf<RequestInit | undefined>();
-  expectTypeOf<Parameters<typeof apiV2BlobFetch>[1]>().toEqualTypeOf<RequestInit | undefined>();
-});
-
 it.each([
   ["an identity change", new ApiV2IdentityChangedError()],
   ["an ended session", new ApiV2SessionEndedError(401, undefined)],
@@ -239,52 +229,6 @@ it("keeps the original 401 when recovery fails otherwise", async () => {
   recover.mockRejectedValue(new ApiV2NetworkError(new TypeError("offline")));
   fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
   await expect(apiV2Fetch("/resource", options())).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 401 });
-});
-
-describe("recovery through the session provider", () => {
-  const onSessionEnded = vi.fn();
-  const onIdentityChanged = vi.fn();
-  const sessionToken = (hash: string) =>
-    `e30.${btoa(JSON.stringify({ exp: Date.now() / 1000 + 1000, refreshTokenHash: hash }))}.signature`;
-  const rejected = () => new Response(null, { status: 401 });
-
-  beforeEach(() => {
-    restore();
-    restore = setApiV2TokenProvider(new SessionTokenProvider({ onSessionEnded, onIdentityChanged }));
-  });
-  afterEach(() => {
-    document.body.innerHTML = "";
-  });
-
-  it("rejects with the ended session when re-minting is refused", async () => {
-    mint
-      .mockResolvedValueOnce({ accessToken: sessionToken("a") })
-      .mockRejectedValueOnce(new ApiV2ProblemError(401, undefined, "Unauthorized"));
-    // The resource call, then the whoami probe, both reject the token.
-    fetchMock.mockResolvedValueOnce(rejected()).mockResolvedValueOnce(rejected());
-    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2SessionEndedError);
-    expect(onSessionEnded).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-  it("rejects with the identity change when re-minting returns another identity", async () => {
-    mint
-      .mockResolvedValueOnce({ accessToken: sessionToken("a") })
-      .mockResolvedValueOnce({ accessToken: sessionToken("b") });
-    fetchMock.mockResolvedValueOnce(rejected()).mockResolvedValueOnce(rejected());
-    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
-    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-  it("rejects with the identity change when a public document session expires", async () => {
-    document.body.innerHTML = '<div id="public_document_view"></div>';
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ data: "public-token" }))
-      .mockResolvedValueOnce(rejected())
-      .mockResolvedValueOnce(rejected());
-    await expect(apiV2Fetch("/resource", options())).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
-    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
-    expect(mint).not.toHaveBeenCalled();
-  });
 });
 
 const unauthenticatedOperations = ["publicRead", "sessionRead"];

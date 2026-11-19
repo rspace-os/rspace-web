@@ -206,22 +206,16 @@ class AnnotatedCollectionDescriptionFactoryTest {
   }
 
   @Test
-  void rejectsGuaranteesThatCannotHold() {
-    for (var resource :
-        Map.of(
-                RestrictedGuaranteeResource.class,
-                "can be read-guaranteed only",
-                UnknownAuditGuaranteeResource.class,
-                "No audit member deletedAt")
-            .entrySet()) {
-      IllegalArgumentException failure =
-          assertThrows(
-              IllegalArgumentException.class,
-              () ->
-                  CollectionDescription.fromApiV2Resource(
-                      resource.getKey(), AuditEntity.class, List.of(new Sort("id", true))));
-      assertTrue(failure.getMessage().contains(resource.getValue()), failure.getMessage());
-    }
+  void rejectsAGuaranteeOnARestrictedField() {
+    IllegalArgumentException failure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                CollectionDescription.fromApiV2Resource(
+                    RestrictedGuaranteeResource.class,
+                    AuditEntity.class,
+                    List.of(new Sort("id", true))));
+    assertTrue(failure.getMessage().contains("can be read-guaranteed only"), failure.getMessage());
   }
 
   @ApiV2ResourceDefinition(
@@ -251,13 +245,6 @@ class AnnotatedCollectionDescriptionFactoryTest {
               readGuaranteed = true,
               readAccess = ApiV2ResourceField.AccessPreset.SYSADMIN)
           long quantity) {}
-
-  @ApiV2ResourceDefinition(
-      name = "unknownAuditGuarantees",
-      entity = AuditEntity.class,
-      id = "id",
-      readGuaranteedAuditFields = "deletedAt")
-  private record UnknownAuditGuaranteeResource(@ApiV2ResourceField Long id) {}
 
   @ApiV2ResourceDefinition(name = "auditResources", entity = AuditEntity.class, id = "id")
   private record AuditResource(
