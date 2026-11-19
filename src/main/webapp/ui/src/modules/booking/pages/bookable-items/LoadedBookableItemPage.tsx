@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import {
   getLeaveBookingConfigurationAccessMutationOptions,
   getReplaceBookingConfigurationAccessMutationOptions,
