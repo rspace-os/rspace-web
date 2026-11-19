@@ -625,7 +625,7 @@ export default class SampleModel
       storageTempMax: this.storageTempMax,
       newBase64Image,
       fields: [
-        ...this.fields.map((f) => f.paramsForBackend),
+        ...this.fields.map((f) => f.paramsForNewRecord),
         ...this.extraFields.map(({ name, type, content, id }) => ({
           name,
           type,
