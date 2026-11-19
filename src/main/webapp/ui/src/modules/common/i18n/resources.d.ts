@@ -11410,7 +11410,7 @@ export default interface Resources {
         "dependents": "{count, plural, one {The display rule of {fields} reads it and will be removed.} other {The display rules of {fields} read it and will be removed.}}",
         "removeOption": "Remove the option {option}?"
       },
-      "conflict": "Its fields were saved in another tab or window after this page loaded them, so these changes were not saved. Reload to see the latest fields, then make your changes again.",
+      "conflict": "Its fields were saved in another tab or window after this page loaded them, so nothing was saved from this page. Reload to see the latest fields, then make your changes again.",
       "conflictTitle": "This form was changed elsewhere.",
       "errorTitle": "The fields were not saved.",
       "firstProblem": "The first is in {field}.",

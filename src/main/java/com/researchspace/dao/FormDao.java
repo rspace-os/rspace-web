@@ -99,10 +99,30 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
   List<RSForm> getFormsUsedByOtherUsers(User formOwner);
 
   /**
-   * Locks the form's row until the transaction ends, so saves of its fields run one at a time.
-   *
-   * @return false if another transaction changed the form after this transaction first read the
-   *     database, so what this transaction reads of the form may already be out of date
+   * The revision of the form's field list, which every save of its fields advances. Not mapped on
+   * the entity, so read it in the same transaction as the fields it describes, and before them.
    */
-  boolean lockUnchangedSinceTransactionStart(Long formId);
+  long getFieldsRevision(Long formId);
+
+  /**
+   * Advances the revision of the form's field list if it is still {@code expectedRevision}, in one
+   * conditional update that also locks the form's row until the transaction ends, so saves of one
+   * form's fields run one at a time and only one of two saves from the same revision can succeed.
+   *
+   * <p>Call it before the transaction reads anything: with MariaDB's {@code
+   * innodb_snapshot_isolation} a locking write to a row changed after the transaction's first read
+   * fails, and such a failure is reported here as a changed revision.
+   *
+   * @return false if the revision was not {@code expectedRevision} (or the form does not exist)
+   */
+  boolean advanceFieldsRevision(Long formId, long expectedRevision);
+
+  /** Advances the revision of the form's field list, whatever it is; for saves that read none. */
+  void advanceFieldsRevision(Long formId);
+
+  /**
+   * Puts back a revision this transaction advanced, when the save changed nothing; the row is still
+   * locked by the advance, so no other save can have read the advanced revision.
+   */
+  void restoreFieldsRevision(Long formId, long revision);
 }

@@ -601,29 +601,40 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @RequiresPermissions("FORM:WRITE")
   @Override
   public RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user) {
-    return doSaveFields(formDao.get(formId), fields, user, true);
+    return saveFieldsAndAdvanceRevision(formDao.get(formId), fields, user, true);
   }
 
   @RequiresPermissions("FORM:WRITE")
   @Override
-  public RSForm saveFields(
-      Long formId, List<FormFieldSaveItem> fields, String expectedVersion, User user) {
+  public FieldEditorForm saveFields(
+      Long formId, List<FormFieldSaveItem> fields, long expectedRevision, User user) {
+    // First, before the transaction reads anything; see FormDao#advanceFieldsRevision
+    if (!formDao.advanceFieldsRevision(formId, expectedRevision)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
     RSForm form = formDao.get(formId);
     if (!hasWritePermission(user, form)) {
       throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
     }
-    // another tab's save, committed while this one waited for the lock, would not be seen otherwise
-    if (!formDao.lockUnchangedSinceTransactionStart(formId)
-        || !fieldListSaver.version(form).equals(expectedVersion)) {
-      throw new FormFieldsConflictException(
-          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    SavedFieldList saved = doSaveFields(form, fields, user, true);
+    if (saved.changed()) {
+      return new FieldEditorForm(saved.form(), expectedRevision + 1);
     }
-    return doSaveFields(form, fields, user, true);
+    // the same fields still have the revision the caller, and any other page, read
+    formDao.restoreFieldsRevision(formId, expectedRevision);
+    return new FieldEditorForm(saved.form(), expectedRevision);
   }
 
   @Override
-  public String getFieldsVersion(RSForm form) {
-    return fieldListSaver.version(form);
+  public FieldEditorForm getForFieldEditor(Long formId, User user) {
+    long revision = formDao.getFieldsRevision(formId);
+    return new FieldEditorForm(getWithPopulatedFieldForms(formId, user), revision);
+  }
+
+  @Override
+  protected void fieldsChanged(RSForm form) {
+    formDao.advanceFieldsRevision(form.getId());
   }
 
   @Override
@@ -633,13 +644,15 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   /**
    * The body of {@link #saveFields(Long, List, User)}, also used by the API entry points, which
-   * call it directly and so carry their own permission annotations.
+   * call it directly and so carry their own permission annotations. Leaves the revision of the
+   * field list to the caller.
    *
    * @param protectCopiedFields whether omitting a field copied into a draft from the published
    *     version is an error (the form field editor) rather than a deletion (the forms API, which
    *     has always replaced the whole field list)
+   * @return the saved form, and whether its field list changed
    */
-  private RSForm doSaveFields(
+  private SavedFieldList doSaveFields(
       RSForm form, List<FormFieldSaveItem> fields, User user, boolean protectCopiedFields) {
     if (!hasWritePermission(user, form)) {
       throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
@@ -658,10 +671,23 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     if (original != null) {
       assertNotEditedByOthers(original, user);
     }
-    fieldListSaver.apply(
-        form, fields, protectCopiedFields ? getCopiedTemporaryFieldIds(form) : Set.of());
+    boolean changed =
+        fieldListSaver.apply(
+            form, fields, protectCopiedFields ? getCopiedTemporaryFieldIds(form) : Set.of());
     form.setModifiedBy(user.getUsername());
-    return formDao.save(form);
+    return new SavedFieldList(formDao.save(form), changed);
+  }
+
+  private record SavedFieldList(RSForm form, boolean changed) {}
+
+  /** {@link #doSaveFields} for a save made without a revision; advances it if anything changed. */
+  private RSForm saveFieldsAndAdvanceRevision(
+      RSForm form, List<FormFieldSaveItem> fields, User user, boolean protectCopiedFields) {
+    SavedFieldList saved = doSaveFields(form, fields, user, protectCopiedFields);
+    if (saved.changed()) {
+      formDao.advanceFieldsRevision(saved.form().getId());
+    }
+    return saved.form();
   }
 
   private void assertNotEditedByOthers(RSForm form, User user) {
@@ -691,7 +717,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       }
       fields.add(field.withId(null));
     }
-    return doSaveFields(form, fields, user, false);
+    return saveFieldsAndAdvanceRevision(form, fields, user, false);
   }
 
   @RequiresPermissions("FORM:READ") // the minimal permission, as for getForEditing
@@ -707,7 +733,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     }
     List<FormFieldSaveItem> fields =
         toEditingFormIds(original, editing, definition.fields(), formId);
-    editing = doSaveFields(editing, fields, user, false);
+    editing = saveFieldsAndAdvanceRevision(editing, fields, user, false);
     editing.setName(definition.name());
     editing.setTags(definition.tags());
     editing = formDao.save(editing);
