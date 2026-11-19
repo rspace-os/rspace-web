@@ -557,6 +557,9 @@ function _updateAutosavedFields(data) {
       if (selectedValues == undefined) {
         selectedValues = "";
       }
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.syncStoredValue(value.id, value.fieldData);
+      }
       $("#choiceText_" + value.id).text(value.choiceOptionSelectedAsList.join(','));
       return;
     }
