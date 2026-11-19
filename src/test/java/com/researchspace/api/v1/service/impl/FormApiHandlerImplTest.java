@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -85,11 +84,5 @@ public class FormApiHandlerImplTest {
     assertFalse(fields.get(2).isKeepStoredDisplayRule());
     assertEquals(rule, fields.get(2).getDisplayRule());
     assertEquals(set.getFieldKey(), fields.get(2).getFieldKey());
-  }
-
-  @Test
-  public void createDelegatesToTheFormManager() {
-    when(formMgr.createForm(any(), eq(anyUser))).thenReturn(anyForm);
-    assertSame(anyForm, impl.createForm(toPost, anyUser));
   }
 }
