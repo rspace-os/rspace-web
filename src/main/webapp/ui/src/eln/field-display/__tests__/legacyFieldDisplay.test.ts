@@ -1,12 +1,12 @@
 import { waitFor } from "@testing-library/react";
 import { createInstance } from "i18next";
 import ICU from "i18next-icu";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { createDisplayRule, serializeDisplayRule } from "@/modules/common/field-rules/displayRule";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
-import { createLegacyFieldDisplay, type LegacyFieldDisplay } from "../legacyFieldDisplay";
+import { createLegacyFieldDisplay, type LegacyFieldDisplay, TYPING_PAUSE_MS } from "../legacyFieldDisplay";
 
 const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const showWhenYes = serializeDisplayRule(createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]));
@@ -160,5 +160,85 @@ describe("createLegacyFieldDisplay", () => {
     expect(document.querySelector('[data-field-id="2"]')).not.toBeVisible();
     choose("Yes");
     expect(document.querySelector('[data-field-id="2"]')).toBeVisible();
+  });
+});
+
+describe("typing in a number source", () => {
+  const DOSE_KEY = "6f1c2e0a-0000-4000-8000-000000000021";
+  const showWhenOver5 = serializeDisplayRule(createDisplayRule(DOSE_KEY, "GREATER_THAN", ["5"]));
+  const region = () => document.querySelector('[role="status"]');
+  const dose = () => document.querySelector<HTMLInputElement>('[data-field-id="11"] input') as HTMLInputElement;
+  const note = () => document.querySelector('[data-field-id="12"]');
+
+  beforeEach(async () => {
+    document.body.innerHTML = `
+      <table><tbody>
+        <tr class="field" data-field-id="11" data-field-type="NUMBER" data-field-source-kind="NUMBER"
+            data-field-key="${DOSE_KEY}" data-field-name="Dose" data-field-value="7">
+          <td><input name="fieldData" type="text" value="7"></td>
+        </tr>
+        <tr class="field" data-field-id="12" data-field-type="STRING" data-field-source-kind="TEXT"
+            data-field-name="High dose reason" data-display-rule='${showWhenOver5}' data-field-value="">
+          <td><input name="fieldData" type="text" value=""></td>
+        </tr>
+      </tbody></table>`;
+    display = createLegacyFieldDisplay(await createTestI18n({ common: commonEn }, "common"));
+    display.refresh();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function type(value: string) {
+    dose().focus();
+    dose().value = value;
+    display.fieldChanged(dose());
+  }
+
+  test("applies once typing pauses, and announces the net change once", () => {
+    type("3");
+    vi.advanceTimersByTime(TYPING_PAUSE_MS - 1);
+    expect(note()).toBeVisible();
+
+    type("2");
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).not.toBeVisible();
+    expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
+    expect(dose()).toHaveFocus();
+  });
+
+  test("announces nothing when the value is back where it started by the pause", () => {
+    type("3");
+    type("8");
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).toBeVisible();
+    expect(region()).toBeEmptyDOMElement();
+  });
+
+  test("reports current visibility at once to a refresh, which cancels the pending update", () => {
+    type("3");
+
+    expect(display.refresh().shownById.get("12")).toBe(false);
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+    expect(region()).toBeEmptyDOMElement();
+  });
+
+  test("keeps a field the user tabbed into shown until focus leaves it", () => {
+    type("3");
+    const reason = note()?.querySelector("input") as HTMLInputElement;
+    reason.focus();
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+    expect(note()).toBeVisible();
+    expect(reason).toHaveFocus();
+
+    dose().focus();
+    vi.advanceTimersByTime(0);
+
+    expect(note()).not.toBeVisible();
+    expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
   });
 });

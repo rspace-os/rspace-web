@@ -394,6 +394,10 @@ function _updateFields(fields) {
     //string, number, date, time
     $("#" + field.id).val(field.fieldData);
     setInputFieldViewModeValue(field.id, field.fieldData);
+    // text and number data as display rules read it; other fields are ignored
+    if (window.elnFieldDisplay) {
+      window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
+    }
 
     if (field.modificationDate > lastModificationDate) {
       lastModificationDate = field.modificationDate;
@@ -810,7 +814,14 @@ function checkAndMarkField(element) {
   var currentId = $(element).attr("id");
   var $field = $("#field_" + currentId);
   _setWasChangedFlagOnField($field, true);
-  if (window.elnFieldDisplay && $(element).is(":radio, :checkbox, select")) {
+  if (window.elnFieldDisplay && $(element).is(":radio, :checkbox, select, input[name='fieldData']")) {
+    window.elnFieldDisplay.fieldChanged(element);
+  }
+}
+
+// display rules read a number as it is typed; autosave waits for checkAndMarkNumber on change
+function numberFieldInput(element) {
+  if (window.elnFieldDisplay) {
     window.elnFieldDisplay.fieldChanged(element);
   }
 }
@@ -830,6 +841,10 @@ function checkAndMarkNumber(element) {
     $field
       .find("input[name='fieldData']")
       .val($field.find("input[name='lastValue']").val());
+    // the restored value fires no input event
+    if (window.elnFieldDisplay) {
+      window.elnFieldDisplay.refresh(undefined, { announce: true });
+    }
   }
 }
 
