@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import type { FieldSnapshot } from "./displayRule";
+import { type FieldSnapshot, storedDisplayRuleLength } from "./displayRule";
 
 /** Message codes shared with the Java `FieldDisplayRuleValidator`. */
 export const DISPLAY_RULE_ERROR_CODES = {
@@ -9,8 +9,21 @@ export const DISPLAY_RULE_ERROR_CODES = {
   sourceSelf: "validation.fieldDisplayRule.sourceSelf",
   sourceType: "validation.fieldDisplayRule.sourceType",
   valueUnknown: "validation.fieldDisplayRule.valueUnknown",
+  valueDuplicate: "validation.fieldDisplayRule.valueDuplicate",
+  valueTooMany: "validation.fieldDisplayRule.valueTooMany",
+  ruleTooLong: "validation.fieldDisplayRule.ruleTooLong",
   cycle: "validation.fieldDisplayRule.cycle",
 } as const;
+
+/** The most values one rule may list; the same as Java's `FieldDisplayRuleValidator.MAX_VALUES`. */
+export const MAX_DISPLAY_RULE_VALUES = 1000;
+
+/**
+ * The longest a rule may be as stored (see `storedDisplayRuleLength`); the
+ * same as Java's `FieldDisplayRuleValidator.MAX_JSON_LENGTH`, half of the
+ * 65,535-byte TEXT column that holds it.
+ */
+export const MAX_DISPLAY_RULE_JSON_LENGTH = 32_768;
 
 export const DisplayRuleErrorCodeSchema = v.picklist(Object.values(DISPLAY_RULE_ERROR_CODES));
 
@@ -73,9 +86,11 @@ function fieldsOnCycle(fields: ReadonlyArray<FieldSnapshot>, indexByKey: Readonl
  * Validates every key and rule in a whole form or template at once, with the
  * same checks and error order as the Java `FieldDisplayRuleValidator`. Keys
  * may be null (legacy fields), but non-null keys must be lowercase UUIDs and
- * unique. Each rule's source must exist, differ from the field itself, be a
- * radio or choice field and offer every value the rule names, and rules must
- * not form a cycle.
+ * unique. Each rule must list each value once, at most
+ * `MAX_DISPLAY_RULE_VALUES` values, and fit in `MAX_DISPLAY_RULE_JSON_LENGTH`
+ * characters as stored. Each rule's source must exist, differ from the field
+ * itself, be a radio or choice field and offer every value the rule names, and
+ * rules must not form a cycle.
  */
 export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Array<DisplayRuleError> {
   const indexByKey = new Map<string, number>();
@@ -95,6 +110,13 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.keyDuplicate });
     }
     if (rule === null) return;
+    if (rule.values.length > MAX_DISPLAY_RULE_VALUES) {
+      errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueTooMany });
+    } else if (storedDisplayRuleLength(rule) > MAX_DISPLAY_RULE_JSON_LENGTH) {
+      errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.ruleTooLong });
+    } else if (new Set(rule.values).size < rule.values.length) {
+      errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueDuplicate });
+    }
     const sourceIndex = indexByKey.get(rule.sourceFieldKey);
     if (sourceIndex === undefined) {
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.sourceMissing });
@@ -102,9 +124,10 @@ export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Arra
       errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.sourceSelf });
     } else {
       const source = fields[sourceIndex];
+      const allowed = new Set(source.allowedOptions);
       if (!source.canBeSource) {
         errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.sourceType });
-      } else if (!rule.values.every((value) => source.allowedOptions.includes(value))) {
+      } else if (!rule.values.every((value) => allowed.has(value))) {
         errors.push({ fieldIndex: index, code: DISPLAY_RULE_ERROR_CODES.valueUnknown });
       }
       if (onCycle[index]) {
