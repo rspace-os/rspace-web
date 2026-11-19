@@ -9,8 +9,12 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.service.LabGroupStorageAlertManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.security.Principal;
 import java.util.List;
@@ -18,7 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /** Controller for 'Groups' part of Sysadmin tab */
 @Controller("sysAdminGroupsController")
@@ -31,6 +38,7 @@ public class SysadminGroupsController extends BaseController {
 
   @Autowired private SysadminGroupManager sysMgr;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
+  @Autowired private LabGroupStorageAlertManager storageAlertManager;
 
   /**
    * Loads a new page of group results
@@ -46,10 +54,32 @@ public class SysadminGroupsController extends BaseController {
     configureGrpPagination(pgCrit);
     User subject = userManager.getAuthenticatedUserInSession();
     doGroupList(subject, model, pgCrit, 0);
+    if (subject.hasRole(Role.SYSTEM_ROLE)) {
+      model.addAttribute(
+          "storageAlertThresholdMb",
+          storageAlertManager.getThresholdMb().map(String::valueOf).orElse(""));
+    }
     model.addAttribute(
         "publish_allowed",
         systemPropertyPermissionManager.isPropertyAllowed(subject, "public_sharing"));
     return GROUP_LIST;
+  }
+
+  @PostMapping("/ajax/storageAlertThreshold")
+  @ResponseBody
+  public AjaxReturnObject<String> setStorageAlertThreshold(
+      @RequestParam(value = "thresholdMb", required = false, defaultValue = "")
+          String thresholdMb) {
+    User subject = userManager.getAuthenticatedUserInSession();
+    assertUserIsSysAdmin(subject);
+    try {
+      String saved =
+          storageAlertManager.setThresholdMb(thresholdMb, subject).map(String::valueOf).orElse("");
+      return new AjaxReturnObject<>(saved, null);
+    } catch (LocalizedIllegalArgumentException e) {
+      log.warn("Storage alert threshold refused: {}", e.getMessage());
+      return new AjaxReturnObject<>(null, ErrorList.of(messages.getMessage(e)));
+    }
   }
 
   private void doGroupList(

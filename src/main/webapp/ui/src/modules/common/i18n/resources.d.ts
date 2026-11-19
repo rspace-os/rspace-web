@@ -8617,6 +8617,7 @@ export default interface Resources {
       "documentEdited": "Document Edited",
       "documentShared": "Document Shared",
       "documentUnshared": "Document Unshared",
+      "labGroupStorageAlert": "Lab Group Storage Alert",
       "processCompleted": "Process Completed",
       "processFailed": "Process Failed",
       "requestStatusChange": "Request Status Change"
@@ -10392,7 +10393,10 @@ export default interface Resources {
           "confirmDeletionConsequences": "Are you sure you want to delete the following group: <strong>{0}</strong>?",
           "groupRemoved": "Group removed",
           "removingGroupAction": "Removing group",
-          "searchingGroupsAction": "Searching groups list"
+          "savingStorageAlertAction": "Saving the storage alert threshold",
+          "searchingGroupsAction": "Searching groups list",
+          "storageAlertRemoved": "Storage alert switched off",
+          "storageAlertSaved": "Storage alert threshold set to {0} MB"
         },
         "ldap": {
           "allUsersHaveSid": "all users have non-empty SID assigned.",
@@ -11622,7 +11626,15 @@ export default interface Resources {
         },
         "deleteLink": "Delete group",
         "pageTitle": "Lab Groups",
-        "showAllLink": "Show All"
+        "showAllLink": "Show All",
+        "storageAlert": {
+          "errors": {
+            "invalidThreshold": "Enter a whole number of MB from 1 to 999,999,999,999, or leave the field empty to switch the alert off."
+          },
+          "help": "Every sysadmin is notified once when the file usage of a Lab Group reaches this size. Leave the field empty to switch the alert off.",
+          "label": "Storage alert threshold (MB)",
+          "notification": "The members of Lab Group {0} (PI: {1}) are using {2} MB of file storage, which has reached the storage alert threshold of {3} MB. Checked on {4}."
+        }
       },
       "ldap": {
         "authenticationEnabledMessage": "LDAP authentication is enabled.",

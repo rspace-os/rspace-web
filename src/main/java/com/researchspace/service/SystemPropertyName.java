@@ -32,6 +32,7 @@ public enum SystemPropertyName {
   GROUP_AUTOSHARING_AVAILABLE("group_autosharing.available"),
   SELF_SERVICE_LABGROUPS("self_service_labgroups"),
   ALLOW_PROJECT_GROUPS("allow_project_groups"),
+  LABGROUP_STORAGE_ALERT_THRESHOLD_MB("labgroup.storage.alert.threshold.mb"),
   INVENTORY_AVAILABLE("inventory.available"),
   INVENTORY_OPERATIONS_AVAILABLE("inventory.operations.available"),
   SAMPLE_REQUESTS_AVAILABLE("inventory.sampleRequests.available"),

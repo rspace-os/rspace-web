@@ -160,6 +160,7 @@
     "documentEdited": "Document Edited",
     "documentShared": "Document Shared",
     "documentUnshared": "Document Unshared",
+    "labGroupStorageAlert": "Lab Group Storage Alert",
     "processCompleted": "Process Completed",
     "processFailed": "Process Failed",
     "requestStatusChange": "Request Status Change",

@@ -79,6 +79,7 @@ public class Group extends AbstractUserOrGroupImpl
   private Long communityId = Community.DEFAULT_COMMUNITY_ID;
   private Set<Community> communities = new HashSet<>();
   private boolean selfService = false;
+  private boolean storageAlertSent;
   private int memberCount = 0;
   private UserRaid raid;
 
@@ -157,6 +158,19 @@ public class Group extends AbstractUserOrGroupImpl
 
   public void setPublicationAllowed(boolean publicationAllowed) {
     this.publicationAllowed = publicationAllowed;
+  }
+
+  /**
+   * True while sysadmins have been alerted about this Lab Group's storage usage and it has not
+   * dropped below the threshold since.
+   */
+  public boolean isStorageAlertSent() {
+    return storageAlertSent;
+  }
+
+  // private so request binding cannot set it; GroupDao.setStorageAlertSent changes it
+  private void setStorageAlertSent(boolean storageAlertSent) {
+    this.storageAlertSent = storageAlertSent;
   }
 
   public void setAutoshareEnabled(boolean autoshareEnabled) {

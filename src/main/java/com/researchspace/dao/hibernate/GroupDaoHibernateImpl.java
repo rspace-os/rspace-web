@@ -60,6 +60,22 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
         .executeUpdate();
   }
 
+  @Override
+  public List<Long> getStorageAlertSentGroupIds() {
+    return getSession()
+        .createQuery("select id from Group where storageAlertSent = true", Long.class)
+        .list();
+  }
+
+  @Override
+  public void setStorageAlertSent(Collection<Long> groupIds, boolean sent) {
+    getSession()
+        .createMutationQuery("update Group set storageAlertSent = :sent where id in (:ids)")
+        .setParameter("sent", sent)
+        .setParameterList("ids", groupIds)
+        .executeUpdate();
+  }
+
   public GroupDaoHibernateImpl() {
     super(Group.class);
   }

@@ -24,6 +24,7 @@ public final class NotificationTypeMessages {
       case NOTIFICATION_BOOKING_RESTORED -> "notificationType.bookingRestored";
       case NOTIFICATION_BOOKING_CREATED -> "notificationType.bookingCreated";
       case NOTIFICATION_BOOKING_CANCELLED -> "notificationType.bookingCancelled";
+      case LAB_GROUP_STORAGE_ALERT -> "notificationType.labGroupStorageAlert";
       default ->
           throw new IllegalArgumentException("No message key mapped for NotificationType " + type);
     };

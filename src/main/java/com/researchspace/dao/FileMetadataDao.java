@@ -103,6 +103,14 @@ public interface FileMetadataDao extends GenericDao<FileProperty, Long> {
   List<DatabaseUsageByGroupGroupByResult> getTotalFileUsageForGroups(Collection<Group> grps);
 
   /**
+   * Gets file usage for every Lab Group that has at least one member, unpaged. Each figure is the
+   * same as {@link #getTotalFileUsageForGroups(Collection)} gives for that group.
+   *
+   * @return one row per Lab Group with members, usage in bytes; possibly empty
+   */
+  List<DatabaseUsageByGroupGroupByResult> getTotalFileUsageForAllLabGroups();
+
+  /**
    * Given an absolute path, retrieves the {@link FileStoreRoot} for that path, or <code>null</code>
    * if not found.
    *

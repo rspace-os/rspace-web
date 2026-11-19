@@ -30,5 +30,11 @@ public enum NotificationType {
   NOTIFICATION_BOOKING_RESTORED,
 
   /** A booking interval changed. Appended to preserve persisted ordinals. */
-  NOTIFICATION_BOOKING_CHANGED
+  NOTIFICATION_BOOKING_CHANGED,
+
+  /**
+   * A Lab Group's storage usage reached the storage alert threshold; sent to sysadmins, with no
+   * user preference. Appended to preserve persisted ordinals.
+   */
+  LAB_GROUP_STORAGE_ALERT
 }

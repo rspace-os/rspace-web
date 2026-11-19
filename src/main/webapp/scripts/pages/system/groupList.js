@@ -62,6 +62,36 @@ $(document).ready(function () {
     RS.exportModal.openWithExportSelection(RS.getExportSelectionForExportDlg());
     return false;
   });
+
+  $('#storageAlertForm').on('submit', function (e) {
+    e.preventDefault();
+    var focused = document.activeElement;
+    $('#storageAlertSave').prop('disabled', true);
+    RS.blockPage(RS.msg("legacyjs.system.common.saving"));
+    var jqxhr = $.post(createURL('/system/groups/ajax/storageAlertThreshold'), {
+      thresholdMb: $('#storageAlertThresholdMb').val()
+    });
+    jqxhr.done(function (result) {
+      if (result.errorMsg) {
+        apprise(getValidationErrorString(result.errorMsg));
+      } else if (result.data) {
+        RS.confirm(RS.msg("legacyjs.system.groupList.storageAlertSaved", result.data), 'success', 5000);
+      } else {
+        RS.confirm(RS.msg("legacyjs.system.groupList.storageAlertRemoved"), 'success', 5000);
+      }
+    });
+    jqxhr.fail(function () {
+      RS.ajaxFailed(RS.msg("legacyjs.system.groupList.savingStorageAlertAction"), true, jqxhr);
+    });
+    jqxhr.always(function () {
+      RS.unblockPage();
+      $('#storageAlertSave').prop('disabled', false);
+      // Chromium drops focus to <body> when the focused button is disabled
+      if (document.activeElement === document.body) {
+        $(focused).focus();
+      }
+    });
+  });
 });
 
 function _getSelectedGroupIds() {

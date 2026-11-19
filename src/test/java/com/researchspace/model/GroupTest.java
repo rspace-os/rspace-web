@@ -14,6 +14,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.validation.DataBinder;
 
 class GroupTest {
 
@@ -287,5 +289,18 @@ class GroupTest {
 
     assertThat(collabGroup.getMemberGroupsForCollabGroup()).hasSize(2);
     assertThat(collabGroup.getMemberGroupsForCollabGroup()).doesNotContain(pi1Group2);
+  }
+
+  @Test
+  void requestBindingCannotSetTheStorageAlertFlag() {
+    Group bound = new Group();
+    MutablePropertyValues posted = new MutablePropertyValues();
+    posted.add("displayName", "bound from a request");
+    posted.add("storageAlertSent", "true");
+
+    new DataBinder(bound).bind(posted);
+
+    assertEquals("bound from a request", bound.getDisplayName());
+    assertFalse(bound.isStorageAlertSent());
   }
 }

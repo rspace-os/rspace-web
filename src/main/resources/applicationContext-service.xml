@@ -113,6 +113,10 @@
         <property name="targetObject" ref="licenseService" />
         <property name="targetMethod" value="forceRefreshLicense" />
     </bean>
+    <bean id="labGroupStorageAlertCheck" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="labGroupStorageAlertManager" />
+        <property name="targetMethod" value="checkLabGroups" />
+    </bean>
 
     <bean id="cronTrigger2" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
         <property name="jobDetail" ref="dumpOldNotifications" />
@@ -134,6 +138,10 @@
         <!-- should be at 4am  -->
         <property name="cronExpression" value="${licenseserver.poll.cron}" />
     </bean>
+    <bean id="labGroupStorageAlertTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="labGroupStorageAlertCheck" />
+        <property name="cronExpression" value="${labgroup.storage.alert.cron}" />
+    </bean>
     <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
         <property name="triggers">
             <list>
@@ -142,6 +150,7 @@
                 <ref bean="cronTrigger3" />
                 <ref bean="nightlyFileUsageAnalyticsTrigger" />
                 <ref bean="licensePollTrigger" />
+                <ref bean="labGroupStorageAlertTrigger" />
             </list>
         </property>
         <property name="quartzProperties">

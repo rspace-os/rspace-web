@@ -12,6 +12,12 @@ public interface GroupDao extends GenericDao<Group, Long> {
   /** Updates only the publication flag; the service must authorize the PI first. */
   void setPublicationAllowed(Long groupId, boolean allowed);
 
+  /** Ids of the groups whose storage alert has been sent and not yet cleared. */
+  List<Long> getStorageAlertSentGroupIds();
+
+  /** Updates only the storage-alert flag of the given groups; groupIds must not be empty. */
+  void setStorageAlertSent(Collection<Long> groupIds, boolean sent);
+
   ISearchResults<Group> list(PaginationCriteria<Group> pagCrit);
 
   /**
