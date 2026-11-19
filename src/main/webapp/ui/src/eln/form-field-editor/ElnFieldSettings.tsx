@@ -240,7 +240,8 @@ function BoundedSettings({
         label={isDate ? t("formFieldEditor.settings.dateFormat") : t("formFieldEditor.settings.timeFormat")}
         value={field.format}
         disabled={!editable}
-        onChange={({ target }) => onChange({ format: target.value })}
+        // a stored value the editor cannot read cannot be written in another format either
+        onChange={({ target }) => onChange({ format: target.value, unread: {} })}
         sx={{ minWidth: 180 }}
       >
         {formats.map(({ value, label }) => (

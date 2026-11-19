@@ -138,6 +138,21 @@ public class RecordEditorTracker {
     return "";
   }
 
+  /**
+   * How many edit-lock acquisitions on a record a user holds in one session.
+   *
+   * @return the count, 0 when there are none
+   */
+  public int getEditCount(Long recordId, String username, String sessionId) {
+    synchronized (editlock) {
+      Map<UserSessionKey, Integer> usersEditing = recordEditing.get(recordId);
+      if (usersEditing == null) {
+        return 0;
+      }
+      return usersEditing.getOrDefault(new UserSessionKey(username, sessionId), 0);
+    }
+  }
+
   public void removeLockedRecordInSession(String sessionId) {
     synchronized (editlock) {
       for (Entry<Long, Map<UserSessionKey, Integer>> entry : recordEditing.entrySet()) {

@@ -141,6 +141,45 @@ test.describe("My RSpace forms", () => {
     await expect(nameInputs).toHaveCount(0);
   });
 
+  test("As a user, I can edit fields again and retry when publishing fails", async ({ page, pageMyRSpace }) => {
+    await pageMyRSpace.open();
+    const form = await pageMyRSpace.openCreateForm();
+    await form.addField("String", "retried field");
+    const nameInputs = form.fields.root.getByRole("textbox", { name: "Name", exact: true });
+    const failNext = { GET: true, POST: true };
+    await page.route("**/workspace/editor/form/ajax/publishAndShare?**", (route) => {
+      const method = route.request().method() as keyof typeof failNext;
+      if (failNext[method]) {
+        failNext[method] = false;
+        return route.fulfill({ status: 500, body: "failed" });
+      }
+      return route.fallback();
+    });
+    const alerts: Array<string> = [];
+    page.on("dialog", (dialog) => {
+      alerts.push(dialog.type());
+      void dialog.accept();
+    });
+    const shareDialog = page.getByRole("dialog").filter({ has: page.locator("#publishShareDlg") });
+
+    // the access dialog fails to load
+    await page.getByRole("button", { name: "Publish" }).click();
+    await expect.poll(() => alerts).toEqual(["alert"]);
+    await expect(nameInputs).toHaveCount(1);
+    await expect(shareDialog).toBeHidden();
+
+    // the publish request fails
+    await page.getByRole("button", { name: "Publish" }).click();
+    await shareDialog.getByRole("button", { name: "OK" }).click();
+    await expect.poll(() => alerts).toEqual(["alert", "alert"]);
+    await expect(nameInputs).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Publish" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Publish" }).click();
+    await shareDialog.getByRole("button", { name: "OK" }).click();
+    await expect(page.getByText(/This form is published\./)).toBeVisible();
+  });
+
   test("As a user, a failed Save and Close still warns before I leave", async ({ page, pageMyRSpace }) => {
     await pageMyRSpace.open();
     const form = await pageMyRSpace.openCreateForm();

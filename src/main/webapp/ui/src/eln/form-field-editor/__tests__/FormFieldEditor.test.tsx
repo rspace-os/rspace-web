@@ -396,6 +396,20 @@ describe("FormFieldEditor", () => {
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Is this a GMO?");
   });
 
+  it("focuses the first problem once a Publish refused by the client checks gives the fields back", async () => {
+    const user = userEvent.setup();
+    serveFields([]);
+    const { handle } = await renderEditor();
+    await user.click(screen.getByRole("button", { name: "Add field" }));
+    await user.click(screen.getByRole("menuitem", { name: /^Number/ }));
+
+    act(() => handle.current?.setReadOnly(true));
+    await act(() => expect(handle.current?.save()).rejects.toThrow());
+    act(() => handle.current?.setReadOnly(false));
+
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
+  });
+
   it("is read-only when the form cannot be edited", async () => {
     serveFields([gmo, permit]);
     await renderEditor({ editable: false });
@@ -542,7 +556,7 @@ describe("ELN field settings", () => {
     defaultValue: "",
   });
 
-  it("time: keeps a value stored in a format the editor cannot write until a listed format is chosen", async () => {
+  it("time: keeps a value stored in a format the editor cannot write until another format is chosen", async () => {
     const user = userEvent.setup();
     const posts = serveFields([unlistedTime]);
     const { handle } = await renderEditor();
@@ -550,7 +564,7 @@ describe("ELN field settings", () => {
     const earliest = within(card("Start")).getByLabelText("Earliest");
     expect(earliest).toBeDisabled();
     expect(earliest).toHaveAccessibleDescription(
-      "Stored as 09:00 2, which cannot be shown here. It is kept unless you enter a new value. Choose a listed format to change this value.",
+      "Stored as 09:00 2, which cannot be shown here. It is kept unless you enter a new value or choose another format. Choose a listed format to enter a new value; that clears this one.",
     );
     await user.click(within(card("Start")).getByRole("switch", { name: "Mandatory" }));
     await handle.current?.save();
@@ -559,6 +573,10 @@ describe("ELN field settings", () => {
     await user.click(within(card("Start")).getByRole("combobox", { name: "Time format" }));
     await user.click(screen.getByRole("option", { name: "24-hour (14:30)" }));
     expect(within(card("Start")).getByLabelText("Earliest")).toBeEnabled();
+    expect(within(card("Start")).getByLabelText("Earliest")).not.toHaveAccessibleDescription();
+    await handle.current?.save();
+    // the stored value cannot be written in the new format, so it is not sent with it
+    expect(posts[1][0].source).toMatchObject({ timeFormat: "HH:mm", minValue: "" });
   });
 
   it("time: clears a stored value it cannot read on request", async () => {

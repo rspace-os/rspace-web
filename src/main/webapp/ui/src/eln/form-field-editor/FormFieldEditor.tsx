@@ -198,7 +198,8 @@ export default function FormFieldEditor({
   }, [dirty, fields.length]);
 
   useEffect(() => {
-    if (focusTarget === null) return;
+    // while held read-only the inputs are not there; the target waits until editing resumes
+    if (focusTarget === null || !editable) return;
     if (focusTarget.kind === "add") {
       addButtonRef.current?.focus();
     } else {
@@ -208,7 +209,7 @@ export default function FormFieldEditor({
       (focusTarget.kind === "problem" ? (invalid ?? name) : name)?.focus();
     }
     setFocusTarget(null);
-  }, [focusTarget]);
+  }, [focusTarget, editable]);
 
   const update = (key: string, change: (field: EditorField) => EditorField) =>
     setFields((current) => updateField(current, key, change));
