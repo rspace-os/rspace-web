@@ -135,7 +135,8 @@ function RuleCard({
             <DeleteOutlinedIcon fontSize="small" />
           </IconButton>
         </Stack>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} useFlexGap sx={{ alignItems: "flex-start" }}>
+        {/* wraps by the card's own width, which in a side panel is much narrower than the window */}
+        <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "flex-start", flexWrap: "wrap" }}>
           <TextField
             select
             size="small"
@@ -152,7 +153,7 @@ function RuleCard({
                 values: condition.values.filter((option) => newSource?.options.includes(option)),
               });
             }}
-            sx={{ minWidth: 200, width: { xs: "100%", md: "auto" } }}
+            sx={{ flex: "1 1 200px" }}
           >
             {sources.map((candidate) => (
               <MenuItem key={candidate.key} value={candidate.key}>
@@ -169,7 +170,7 @@ function RuleCard({
             onChange={({ target: { value } }) =>
               onConditionChange({ ...condition, operator: v.parse(ConditionOperatorSchema, value) })
             }
-            sx={{ minWidth: 160, width: { xs: "100%", md: "auto" } }}
+            sx={{ flex: "1 1 160px" }}
           >
             {CONDITION_OPERATORS.map((operator) => (
               <MenuItem key={operator} value={operator}>
@@ -193,7 +194,7 @@ function RuleCard({
                   helperText={condition.values.length === 0 ? t("fieldEditor.rules.valuesRequired") : undefined}
                 />
               )}
-              sx={{ minWidth: 200, flexGrow: 1, width: { xs: "100%", md: "auto" } }}
+              sx={{ flex: "2 1 200px" }}
             />
           )}
         </Stack>
