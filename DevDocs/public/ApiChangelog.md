@@ -34,8 +34,10 @@ behaviour in the product.
   ```
 
   `operator` is `IS_ANY_OF`, `IS_NONE_OF`, `HAS_VALUE` or `HAS_NO_VALUE`. `values` is required
-  and non-empty for the first two, and must be empty or omitted for the last two. A rule with
-  any other property is rejected with 400.
+  and non-empty for the first two. For `HAS_VALUE` and `HAS_NO_VALUE`, omit `values` or send
+  `[]`; the server also accepts `null`. A rule with any other property is rejected with 400.
+- The two APIs write an empty `values` differently. The Inventory API omits it; the ELN forms
+  and documents API always returns `"values": []`. Treat a missing `values` as an empty list.
 - The API does not compute visibility. Every field and value is returned whether or not the field
   is currently shown. A client can evaluate visibility from the keys, rules and values:
   - a field whose source field is hidden is hidden too, whatever the operator;
@@ -86,6 +88,3 @@ behaviour in the product.
   not require mandatory fields that the template's defaults hide.
 - **Inventory `selectedOptions`.** A `null` element in a radio or choice field's
   `selectedOptions` is now a field validation error rather than a server error.
-- **Booking filters.** The `/api/v2` booking filters are unchanged. A filter on a template field
-  value still matches records whose matching field is currently hidden, because hiding never
-  removes the value.

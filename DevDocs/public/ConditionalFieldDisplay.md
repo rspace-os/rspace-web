@@ -95,9 +95,8 @@ Use this part for the ELN Forms article.
 - Uri, Reference and Attachment fields can only be created through the API. In the editor you
   can rename, reorder, delete them, make them mandatory and use them as the fields a rule
   shows.
-- Uploading radio options from a file is not available in this editor yet
-  ([RSDEV-1712](https://researchspace.atlassian.net/browse/RSDEV-1712)). Type or paste the
-  options instead.
+- Uploading radio options from a file is not available in this editor yet (RSDEV-1712). Type
+  or paste the options instead.
 
 ### Inventory: sample and instrument templates
 
@@ -120,7 +119,8 @@ Use this part for the Inventory templates article.
 - **Mandatory applies only while shown.**
   - Inventory: a hidden mandatory field never blocks saving. A shown, empty mandatory field does,
     as before. For samples the Save button is disabled; for instruments the check is made when
-    you save.
+    you save. One exception, also as before: an instrument's Landing page may be left blank when
+    you create the instrument, even if the template makes it mandatory.
   - ELN: a hidden mandatory field does not stop the document from being signed and does not
     raise the workspace warning. A shown, empty mandatory field still disables **Sign**, as
     before. Saving a document is never blocked by mandatory fields.
@@ -144,7 +144,7 @@ when a form travels in an XML archive export and import.
 A document template is a document, so it shows and hides fields in the same way. A document
 created from a template starts with the template's answers, and therefore with the same fields
 shown. If you leave the source field unanswered when saving a template, its dependent fields
-start hidden in new documents, even when the template stores values for them.
+are shown or hidden as for any unanswered source, even when the template stores values for them.
 
 ### Inventory: updating to the latest template version
 
@@ -155,6 +155,14 @@ updates them to the latest template version. The update copies the template's cu
 As before, fields newly added to the template may stay empty after the update even if they are
 mandatory. Only an existing field that becomes mandatory can stop the update, and now only if
 that field is shown after the update.
+
+### Revisions and earlier versions
+
+Earlier revisions of an ELN document, and earlier versions of an Inventory sample, instrument or
+template, show and hide fields by the rules they had and the answers saved in that revision or
+version. An ELN document takes its rules from the form version it was created from. Revisions
+and versions saved before any rule existed, including everything from before the upgrade, have
+no rules, so they show every field.
 
 ### Accessibility
 
@@ -167,9 +175,14 @@ that field is shown after the update.
 
 ## Known limitations
 
-See the release notes in [Changelog-OS.md](Changelog-OS.md) for the current list. In short:
+This list matches "Known limitations of conditional field display" in the release notes
+([Changelog-OS.md](Changelog-OS.md)).
 
-- Old revisions and history views show every field, without rules.
-- ELN PDF, Word and HTML exports include hidden fields.
-- Inventory CSV export and import do not include rules.
-- Inventory extra fields cannot have rules.
+- Uploading radio options from a file is not yet available in the new ELN form field editor
+  (RSDEV-1712).
+- Inventory CSV export and import do not carry display rules.
+- Hidden fields keep their values, which remain in exports (ELN PDF, Word, HTML and XML;
+  Inventory CSV) and in API responses.
+- Inventory extra fields cannot have display rules.
+- ELN form versions created before the upgrade do not share field keys with each other. This is
+  harmless today, because rules are only ever read within one form version.
