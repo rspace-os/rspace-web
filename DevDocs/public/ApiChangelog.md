@@ -23,10 +23,11 @@ behaviour in the product.
 | Inventory `/api/inventory/v1/sampleTemplates`, `/instrumentTemplates` | template fields, read and written | `fieldKey`, `displayRule` |
 | Inventory `/api/inventory/v1/samples`, `/instruments` | record fields (`InventoryEntityField`), read only | `fieldKey`, `displayRule` |
 
-- `fieldKey` is a lower-case UUID that identifies a field within its form or template. It is
-  copied unchanged into ELN form versions and form copies, into duplicated Inventory templates,
-  and into the samples and instruments made from a template. Rules name their source field by
-  this key, never by id.
+- `fieldKey` is a lower-case UUID that identifies a field within its form or template. RSpace
+  generates UUID version 7 keys, but accepts and returns keys of any version. It is copied
+  unchanged into ELN form versions and form copies, into duplicated Inventory templates, and
+  into the samples and instruments made from a template. Rules name their source field by this
+  key, never by id.
 - `displayRule` is `null` when the field is always shown, or an object:
 
   ```json
@@ -52,10 +53,10 @@ behaviour in the product.
 
 #### Writing rules
 
-- **Keys.** `fieldKey` may be sent only for a new field. It must be a lower-case UUID unused by
-  any field of the form or template, including deleted fields and the other fields created in
-  the same request. When omitted, the server generates one. A saved field's key cannot change:
-  on PUT, omit it or send the current value.
+- **Keys.** `fieldKey` may be sent only for a new field. It must be a lower-case UUID, of any
+  version, unused by any field of the form or template, including deleted fields and the other
+  fields created in the same request. When omitted, the server generates one, a UUID version 7.
+  A saved field's key cannot change: on PUT, omit it or send the current value.
 - **PUT semantics.** Omitting `displayRule` on a saved field keeps its current rule. Sending
   `"displayRule": null` removes it.
 - **Whole-form validation.** The rules of the whole form or template are validated together,

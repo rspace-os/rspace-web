@@ -4395,7 +4395,8 @@ components:
           type: string
           description: Optional, and only for a new field. A lower-case UUID, unique among
             the form's fields, that display rules can use to name this field as their
-            source in the same request; generated when omitted. A saved field's key
+            source in the same request; generated when omitted. RSpace generates UUID
+            version 7 keys, but any lower-case UUID is accepted. A saved field's key
             cannot change, so on PUT a saved field's fieldKey must be omitted or equal
             its current key.
         displayRule:
@@ -4500,9 +4501,10 @@ components:
             - Radio
         fieldKey:
           type: string
-          description: Identifies the field within its form. Display rules name their
-            source field by this key. Copied unchanged into new form versions and form
-            copies.
+          description: Identifies the field within its form. A lower-case UUID, version 7
+            when RSpace generated it, of any version when an API client supplied it.
+            Display rules name their source field by this key. Copied unchanged into new
+            form versions and form copies.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
     FolderPost:
