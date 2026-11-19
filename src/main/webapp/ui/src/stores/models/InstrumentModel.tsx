@@ -105,6 +105,12 @@ export default class InstrumentModel
 
   templateVersion: number | null = null;
 
+  /**
+   * Whether the Landing page was blank when the instrument was loaded, or was
+   * blanked for it rather than by the user, so that it may stay blank on update.
+   */
+  private landingPageBlankNotByUser = false;
+
   // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
   createOptionsParametersState: {
     name: { key: "name"; value: string };
@@ -124,7 +130,7 @@ export default class InstrumentModel
     super(factory, params);
     // the explicit key list is what lets a private member be annotated (MobX types the plain
     // overload against the public shape only)
-    makeObservable<this, "blankLandingPageField">(this, {
+    makeObservable<this, "blankLandingPageField" | "landingPageBlankNotByUser">(this, {
       parentContainers: observable,
       immediateParentContainer: observable,
       createOptionsParametersState: observable,
@@ -132,6 +138,7 @@ export default class InstrumentModel
       template: observable,
       templateId: observable,
       templateVersion: observable,
+      landingPageBlankNotByUser: observable,
       setTemplate: action,
       overrideFields: action,
       blankLandingPageField: action,
@@ -148,6 +155,7 @@ export default class InstrumentModel
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
       hiddenFields: computed,
+      landingPageField: computed,
     });
 
     if (this.recordType === "instrument") {
@@ -211,6 +219,8 @@ export default class InstrumentModel
       : null;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
+    // blank as the backend's isBlank reads it
+    this.landingPageBlankNotByUser = !String(this.landingPageField?.content ?? "").trim();
     if (typeof params.templateId !== "undefined") {
       this.templateId = params.templateId ?? null;
     }
@@ -311,15 +321,28 @@ export default class InstrumentModel
     return true;
   }
 
+  /** The field holding the instrument's public landing page: the first that matches, as the backend resolves it. */
+  get landingPageField(): Field | undefined {
+    return this.fields.find(isLandingPageField);
+  }
+
   /**
-   * Also checks the template fields against the current values, so Save reads
-   * what was just typed. A blank Landing page is exempt: a new instrument starts
-   * with it blank (see `blankLandingPageField`) and registering a PIDINST fills
-   * it, as the backend's mandatory check allows.
+   * A mandatory field needs a value, except the Landing page while the backend
+   * lets it stay blank: on create, where a new instrument starts with it blank
+   * (see `blankLandingPageField`) and registering a PIDINST fills it, and on
+   * update only if it was blank when loaded. Clearing a Landing page that was
+   * filled in is refused, as the backend's `isBlankLandingPageNotBlankedByUser`
+   * does.
    */
+  requiresValue(field: Field): boolean {
+    if (!field.mandatory) return false;
+    if (field !== this.landingPageField) return true;
+    return Boolean(this.id) && !this.landingPageBlankNotByUser;
+  }
+
+  /** Also checks the template fields against the current values, so Save reads what was just typed. */
   validate(): ValidationResult {
-    const checked = this.fields.filter((field) => !(isLandingPageField(field) && !field.hasContent));
-    return allAreValid([super.validate(), ...checked.map((field) => field.validate())]);
+    return allAreValid([super.validate(), ...this.fields.map((field) => field.validate())]);
   }
 
   overrideFields(fields: Array<Field>): void {
@@ -369,14 +392,15 @@ export default class InstrumentModel
    * Only the first matching field is blanked, mirroring the backend, which resolves a single
    * Landing page.
    *
-   * Note that this deliberately blanks a field the template may mark mandatory. `validate` exempts
-   * a blank Landing page from the mandatory check for that reason, as the backend does by routing
-   * the same case around `setFieldData`.
+   * Note that this deliberately blanks a field the template may mark mandatory. `requiresValue`
+   * exempts it from the mandatory check for that reason, as the backend does by routing the same
+   * case around `setFieldData`.
    */
   private blankLandingPageField(): void {
-    const landingPage = this.fields.find(isLandingPageField);
+    const landingPage = this.landingPageField;
     if (landingPage) {
       (landingPage as FieldModel).setAttributes({ content: "" });
+      this.landingPageBlankNotByUser = true;
     }
   }
 

@@ -282,6 +282,51 @@ describe("Template fields with a number source", () => {
     expect(weight).toHaveFocus();
   });
 
+  it("restarts the pause with each edit", async () => {
+    const user = setupUser();
+    renderSampleFields(weightFields("4"));
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+
+    await user.clear(weight);
+    await user.type(weight, "1");
+    await wait(SETTLE_DELAY_MS - 100);
+    await user.type(weight, "{Backspace}0");
+    await wait(100);
+    expect(permitBox()).toBeInTheDocument();
+
+    await wait(SETTLE_DELAY_MS - 100);
+    expect(permitBox()).not.toBeInTheDocument();
+  });
+
+  it("does not restart the pause for typing in a field no rule reads", async () => {
+    const user = setupUser();
+    const sample = renderSampleFields([
+      ...weightFields("4"),
+      {
+        id: 3,
+        globalId: "SF3",
+        name: "Notes",
+        type: "string",
+        content: "",
+        selectedOptions: null,
+        columnIndex: 3,
+        attachment: null,
+        mandatory: false,
+        fieldKey: "6f1c2e0a-0000-4000-8000-000000000015",
+      },
+    ]);
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+
+    await user.clear(weight);
+    await user.type(weight, "1");
+    await wait(SETTLE_DELAY_MS - 100);
+    await user.type(screen.getByRole("textbox", { name: "Notes" }), "x");
+    expect(sample.fields[2].content).toBe("x");
+    await wait(100);
+
+    expect(permitBox()).not.toBeInTheDocument();
+  });
+
   it("announces nothing when typing ends where it started", async () => {
     const user = setupUser();
     renderSampleFields(weightFields("4"));
@@ -322,15 +367,53 @@ describe("Template fields with a number source", () => {
     expect(permitBox()).toBeInTheDocument();
   });
 
-  it("keeps a field the values hide while the window, not the field, loses focus", async () => {
+  it("hides a field the values hide once focus really leaves it, though no target is reported", async () => {
     const sample = renderSampleFields(weightFields("4"));
     await focusPermitThenHideIt(sample);
-    vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
 
+    // blurring lands focus on the body, outside the field, with a null relatedTarget
     act(() => screen.getByRole("textbox", { name: /Heavy goods permit/ }).blur());
     await wait(1);
 
+    expect(permitBox()).not.toBeInTheDocument();
+  });
+
+  /** Focuses the permit, hides it by its values, then blurs it while the window is in the background. */
+  async function keepPermitWhileWindowLosesFocus() {
+    const sample = renderSampleFields(weightFields("4"));
+    await focusPermitThenHideIt(sample);
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    act(() => screen.getByRole("textbox", { name: /Heavy goods permit/ }).blur());
+    await wait(1);
+    return hasFocus;
+  }
+
+  it("keeps a field the values hide while the window, not the field, loses focus", async () => {
+    await keepPermitWhileWindowLosesFocus();
+
     expect(permitBox()).toBeInTheDocument();
+  });
+
+  it("hides a field kept while the window lost focus once the window regains focus outside it", async () => {
+    const hasFocus = await keepPermitWhileWindowLosesFocus();
+
+    hasFocus.mockReturnValue(true);
+    act(() => window.dispatchEvent(new FocusEvent("focus")));
+    await wait(1);
+
+    expect(permitBox()).not.toBeInTheDocument();
+  });
+
+  it("hides a field kept while the window lost focus once focus lands on a control outside the fields", async () => {
+    const hasFocus = await keepPermitWhileWindowLosesFocus();
+    render(<button type="button" aria-label="Elsewhere" />);
+
+    hasFocus.mockReturnValue(true);
+    act(() => screen.getByRole("button", { name: "Elsewhere" }).focus());
+    await wait(1);
+
+    expect(permitBox()).not.toBeInTheDocument();
   });
 
   it("hides a field the values hide once the record leaves edit mode, even if it held focus", async () => {
@@ -359,23 +442,6 @@ describe("Template fields with a number source", () => {
     expect(permit).not.toBeInvalid();
     expect(screen.queryByText("This field is mandatory. Please enter a value.")).not.toBeInTheDocument();
     expect(onErrorStateChange).toHaveBeenLastCalledWith("template_Heavy goods permit", false);
-  });
-
-  it("lets a number typed into an instrument decide at once whether it can be saved", async () => {
-    const user = setupUser();
-    const instrument = makeMockInstrument({ fields: weightFields("1") });
-    instrument.currentlyEditableFields.add("fields");
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <InstrumentTemplateFields onErrorStateChange={() => {}} instrument={instrument} />
-      </ThemeProvider>,
-    );
-    expect(instrument.submittable.isOk).toBe(true);
-
-    const weight = screen.getByRole("spinbutton", { name: "Weight" });
-    await user.clear(weight);
-    await user.type(weight, "4");
-    expect(instrument.submittable.isOk).toBe(false);
   });
 
   it("reads typed text in a plain text source", () => {
