@@ -9,9 +9,14 @@ import {
   createDisplayRule,
   type FieldDisplayRule,
   type FieldSnapshot,
+  OPERATORS_BY_SOURCE_KIND,
+  operatorComparesValue,
   operatorRequiresValues,
+  type SourceKind,
+  sourceKindOf,
 } from "@/modules/common/field-rules/displayRule";
 import { isBlankOption } from "@/modules/common/field-rules/ruleOptions";
+import { isBlankRuleValue, isRuleNumber, trimRuleValue } from "@/modules/common/field-rules/ruleValues";
 import { DISPLAY_RULE_ERROR_CODES, validateDisplayRules } from "@/modules/common/field-rules/validateDisplayRules";
 
 /** One field as the rule editor sees it. */
@@ -20,8 +25,13 @@ export type RuleEditorField = {
   readonly key: string;
   /** Only read for the fields on screen, so a host may supply it through a getter. */
   readonly name: string;
-  /** Whether the field is a radio or choice field, the only types a rule can read. */
+  /**
+   * Whether a rule can read the field. Without `sourceKind`, true means a
+   * radio or choice field and false a field no rule can read.
+   */
   readonly canBeSource: boolean;
+  /** What a rule reading the field compares; read through `sourceKindOf`. */
+  readonly sourceKind?: SourceKind;
   /** The options a rule may name, already passed through {@link usableOptions}. */
   readonly options: ReadonlyArray<string>;
   readonly rule: FieldDisplayRule | null;
@@ -41,7 +51,7 @@ export type RuleGraph = {
   /** The field's position in the list. */
   indexOf(key: string): number;
   /**
-   * The fields a rule on `key` may read: radio and choice fields other than
+   * The fields a rule on `key` may read: fields of any kind but `NONE`, other than
    * itself that do not already depend on it, directly or through other rules.
    */
   sourcesFor(key: string): ReadonlyArray<RuleEditorField>;
@@ -81,7 +91,7 @@ export function buildRuleGraph(fields: ReadonlyArray<RuleEditorField>): RuleGrap
       ancestor = byKey.get(ancestor)?.rule?.sourceFieldKey;
     }
   }
-  const readable = fields.filter((field) => field.canBeSource);
+  const readable = fields.filter((field) => sourceKindOf(field) !== "NONE");
   const sources = new Map<string, ReadonlyArray<RuleEditorField>>();
   return {
     byKey,
@@ -116,7 +126,14 @@ export function ruleGraphFor(fields: ReadonlyArray<RuleEditorField>): RuleGraph 
 }
 
 function snapshot(field: RuleEditorField, rule: FieldDisplayRule | null): FieldSnapshot {
-  return { key: field.key, canBeSource: field.canBeSource, rule, allowedOptions: field.options, selectedOptions: [] };
+  return {
+    key: field.key,
+    canBeSource: field.canBeSource,
+    sourceKind: sourceKindOf(field),
+    rule,
+    allowedOptions: field.options,
+    selectedOptions: [],
+  };
 }
 
 /** Key format and uniqueness are the host's concern, not the rule editor's. */
@@ -139,34 +156,63 @@ export function ruleIsInvalid(fields: ReadonlyArray<RuleEditorField>, key: strin
   );
 }
 
-/** A condition being edited, which may not yet be a valid rule. */
+/**
+ * A condition being edited, which may not yet be a valid rule. A text or
+ * number comparison holds the value as typed, untrimmed.
+ */
 export type DraftCondition = {
   readonly sourceFieldKey: string | null;
   readonly operator: ConditionOperator;
   readonly values: ReadonlyArray<string>;
 };
 
-/** The rule a draft describes, or null while it is incomplete. */
+/**
+ * The rule a draft describes, or null while it is incomplete. A comparison
+ * value is trimmed with the shared whitespace set, so `"5 "` is stored as `5`.
+ */
 export function ruleFromDraft(draft: DraftCondition): FieldDisplayRule | null {
   if (draft.sourceFieldKey === null) return null;
-  if (operatorRequiresValues(draft.operator) && draft.values.length === 0) return null;
-  return createDisplayRule(
-    draft.sourceFieldKey,
-    draft.operator,
-    operatorRequiresValues(draft.operator) ? draft.values : [],
-  );
+  if (operatorRequiresValues(draft.operator)) {
+    return draft.values.length === 0 ? null : createDisplayRule(draft.sourceFieldKey, draft.operator, draft.values);
+  }
+  if (operatorComparesValue(draft.operator)) {
+    const value = draft.values[0] ?? "";
+    return isBlankRuleValue(value)
+      ? null
+      : createDisplayRule(draft.sourceFieldKey, draft.operator, [trimRuleValue(value)]);
+  }
+  return createDisplayRule(draft.sourceFieldKey, draft.operator, []);
+}
+
+/**
+ * What is wrong with a comparison's value as typed: `blank`, or `notANumber`
+ * against a number source; null when it is usable or the operator takes no
+ * typed value.
+ */
+export function comparisonValueProblem(kind: SourceKind, condition: DraftCondition): "blank" | "notANumber" | null {
+  if (!operatorComparesValue(condition.operator)) return null;
+  const value = trimRuleValue(condition.values[0] ?? "");
+  if (value === "") return "blank";
+  if (kind === "NUMBER" && !isRuleNumber(value)) return "notANumber";
+  return null;
 }
 
 /**
  * The condition as it can still apply to `key`: a source that can no longer
- * be read (deleted, retyped, or now a cycle) is dropped, and options the
- * source no longer offers are removed.
+ * be read (deleted, retyped, or now a cycle) is dropped. Against an option
+ * source, options it no longer offers are removed; an operator that does not
+ * suit the source's kind becomes the first that does, and loses its values.
  */
 export function sanitiseCondition(graph: RuleGraph, key: string, condition: DraftCondition): DraftCondition {
   const source = graph.sourcesFor(key).find((field) => field.key === condition.sourceFieldKey);
+  if (!source) return { operator: condition.operator, sourceFieldKey: null, values: [] };
+  const kind = sourceKindOf(source);
+  const operators = OPERATORS_BY_SOURCE_KIND[kind];
+  if (!operators.includes(condition.operator))
+    return { operator: operators[0], sourceFieldKey: source.key, values: [] };
   return {
     operator: condition.operator,
-    sourceFieldKey: source?.key ?? null,
-    values: source ? condition.values.filter((value) => source.options.includes(value)) : [],
+    sourceFieldKey: source.key,
+    values: kind === "OPTIONS" ? condition.values.filter((value) => source.options.includes(value)) : condition.values,
   };
 }
