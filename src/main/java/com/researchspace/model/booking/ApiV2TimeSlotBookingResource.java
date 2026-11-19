@@ -154,6 +154,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.text(500),
                     TimeSlotBooking::getVisibleCancellationReason,
                     TimeSlotBooking::setCancellationReason)
+                .readGuaranteed()
                 .allowNull()
                 .writeOnlyOn(WriteOperation.UPDATE)
                 .withQueryCapabilities(false, false),
