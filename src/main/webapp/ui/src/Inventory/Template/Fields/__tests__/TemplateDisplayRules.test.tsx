@@ -188,6 +188,43 @@ describe("Template display rules", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
+  it("explains why a new option a rule uses cannot be renamed, but not a saved one, which never can be", async () => {
+    const user = userEvent.setup();
+    renderEditor(newGmoTemplate());
+    await user.click(
+      within(fieldCard("Is this a GMO?")).getByRole("button", { name: "common:fieldEditor.options.add" }),
+    );
+    const [newOption] = within(fieldCard("Is this a GMO?"))
+      .getAllByRole("textbox", {
+        name: "common:fieldEditor.options.optionLabel",
+      })
+      .slice(-1);
+    await user.type(newOption, "Maybe");
+    await user.click(screen.getByRole("button", { name: "common:fieldEditor.rules.addRule" }));
+    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
+    await user.click(screen.getByRole("option", { name: "Maybe" }));
+    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.targetsLabel" }));
+    await user.click(screen.getByRole("option", { name: "GMO permit" }));
+    expect(within(fieldCard("Is this a GMO?")).getByText("inventory:template.displayRules.optionInUse")).toBeVisible();
+
+    renderEditor(savedGmoTemplate());
+    const [, savedCard] = screen.getAllByRole("region", { name: "Is this a GMO?" });
+    expect(within(savedCard).queryByText("inventory:template.displayRules.optionInUse")).not.toBeInTheDocument();
+  });
+
+  it("moves focus to the name of a field when it is added", async () => {
+    const user = userEvent.setup();
+    renderEditor(newGmoTemplate());
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
+
+    expect(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("textbox", {
+        name: "common:fieldEditor.card.name",
+      }),
+    ).toHaveFocus();
+  });
+
   it("asks before giving an unsaved source a type rules cannot read, then clears the rules that read it", async () => {
     const user = userEvent.setup();
     const template = makeMockTemplate({ id: null, globalId: null });

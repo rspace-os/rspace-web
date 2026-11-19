@@ -2855,7 +2855,7 @@
         "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
         "title": "Change the type of {field}?"
       },
-      "optionInUse": "A display rule uses this option, so it can only be removed."
+      "optionInUse": "A display rule uses this option, so it cannot be renamed."
     },
     "fields": {
       "customField": {
