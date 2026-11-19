@@ -14,6 +14,7 @@ import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryStringField;
@@ -138,5 +139,29 @@ public class ApiFieldsHelperTest {
     helper.validateMandatoryFieldsForEntityPost(
         List.of(), gmoTemplateFields("No"), hiddenByDefault);
     assertFalse(hiddenByDefault.hasErrors());
+  }
+
+  @Test
+  public void visibilityOfAScalarSourceFollowsTheSubmittedContentOverTheTemplateDefault() {
+    String weightKey = "0b7d4c1e-3f2a-4e6b-8c9d-1a2b3c4d5e6f";
+    InventoryNumberField weight = new InventoryNumberField("Weight");
+    weight.setFieldKey(weightKey);
+    weight.setFieldData("4");
+    InventoryStringField permit = new InventoryStringField("Heavy goods permit");
+    permit.setMandatory(true);
+    permit.setDisplayRule(
+        new FieldDisplayRule(weightKey, ConditionOperator.GREATER_THAN, List.of("2")));
+    List<InventoryEntityField> templateFields = List.of(weight, permit);
+
+    Errors shownByDefault = new MapBindingResult(new HashMap<>(), "sample");
+    helper.validateMandatoryFieldsForEntityPost(List.of(), templateFields, shownByDefault);
+    assertTrue(shownByDefault.hasErrors());
+
+    ApiInventoryEntityField light = new ApiInventoryEntityField();
+    light.setContent("1");
+    Errors hiddenBySubmittedValue = new MapBindingResult(new HashMap<>(), "sample");
+    helper.validateMandatoryFieldsForEntityPost(
+        List.of(light, new ApiInventoryEntityField()), templateFields, hiddenBySubmittedValue);
+    assertFalse(hiddenBySubmittedValue.hasErrors());
   }
 }

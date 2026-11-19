@@ -7,6 +7,7 @@ import com.researchspace.model.field.rule.FieldDisplayRuleEvaluator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
 import com.researchspace.model.field.rule.FieldSnapshot;
+import com.researchspace.model.field.rule.SourceKind;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -39,25 +40,55 @@ public final class InventoryFieldDisplayRules {
   public static List<Boolean> visibility(List<InventoryEntityField> fields) {
     List<FieldSnapshot> snapshots = new ArrayList<>(fields.size());
     for (InventoryEntityField field : fields) {
-      snapshots.add(toSnapshot(field, selectedOptions(field)));
+      snapshots.add(toSnapshot(field, FieldContent.of(field)));
     }
     return FieldDisplayRuleEvaluator.visibility(snapshots);
   }
 
   /**
-   * Visibility of each field, in input order, when the fields hold the given selected options
-   * rather than their current values. Used to judge a create request against template fields.
+   * Visibility of each field, in input order, when the fields hold the given contents rather than
+   * their current values. Used to judge a request against template fields.
    *
-   * @param selectedOptions for each field, the options it would hold; ignored for fields that
-   *     cannot be a rule source
+   * @param contents for each field, what it would hold
    */
   public static List<Boolean> visibility(
-      List<InventoryEntityField> fields, List<List<String>> selectedOptions) {
+      List<InventoryEntityField> fields, List<FieldContent> contents) {
     List<FieldSnapshot> snapshots = new ArrayList<>(fields.size());
     for (int i = 0; i < fields.size(); i++) {
-      snapshots.add(toSnapshot(fields.get(i), selectedOptions.get(i)));
+      snapshots.add(toSnapshot(fields.get(i), contents.get(i)));
     }
     return FieldDisplayRuleEvaluator.visibility(snapshots);
+  }
+
+  /**
+   * What a field holds, as display rules read it: the selected options of a radio or choice field,
+   * or the stored text of any other field. Each kind of field reads only its own part.
+   *
+   * @param selectedOptions the selected options, null read as none
+   * @param content the stored text, null read as blank
+   */
+  public record FieldContent(List<String> selectedOptions, String content) {
+
+    /** The field's current value. */
+    public static FieldContent of(InventoryEntityField field) {
+      return new FieldContent(
+          field.isOptionsStoringField() ? field.getSelectedOptions() : List.of(),
+          field.getFieldData());
+    }
+  }
+
+  /**
+   * What a field offers to the rules that read it: a Plain text ({@code string}) field its text, a
+   * number field its number, a radio or choice field its options. Formatted text and every other
+   * type cannot be a source.
+   */
+  public static SourceKind sourceKind(InventoryEntityField field) {
+    return switch (field.getType()) {
+      case STRING -> SourceKind.TEXT;
+      case NUMBER -> SourceKind.NUMBER;
+      case RADIO, CHOICE -> SourceKind.OPTIONS;
+      default -> SourceKind.NONE;
+    };
   }
 
   /**
@@ -84,7 +115,7 @@ public final class InventoryFieldDisplayRules {
         allFields.stream().filter(field -> !field.isDeleted()).toList();
     List<FieldSnapshot> snapshots = new ArrayList<>(active.size());
     for (InventoryEntityField field : active) {
-      snapshots.add(toSnapshot(field, List.of()));
+      snapshots.add(toSnapshot(field, FieldContent.of(field)));
     }
     List<RuleError> errors = FieldDisplayRuleValidator.validate(snapshots);
     if (!errors.isEmpty()) {
@@ -225,17 +256,17 @@ public final class InventoryFieldDisplayRules {
         field.getType().getType());
   }
 
-  private static FieldSnapshot toSnapshot(InventoryEntityField field, List<String> selected) {
-    boolean options = field.isOptionsStoringField();
+  private static FieldSnapshot toSnapshot(InventoryEntityField field, FieldContent content) {
+    SourceKind kind = sourceKind(field);
+    boolean options = kind == SourceKind.OPTIONS;
+    boolean scalar = kind == SourceKind.TEXT || kind == SourceKind.NUMBER;
     return new FieldSnapshot(
         field.getFieldKey(),
         field.getType(),
         field.getDisplayRule(),
         options ? field.getAllOptions() : List.of(),
-        options && selected != null ? selected : List.of());
-  }
-
-  private static List<String> selectedOptions(InventoryEntityField field) {
-    return field.isOptionsStoringField() ? field.getSelectedOptions() : List.of();
+        options ? content.selectedOptions() : List.of(),
+        kind,
+        scalar ? content.content() : "");
   }
 }

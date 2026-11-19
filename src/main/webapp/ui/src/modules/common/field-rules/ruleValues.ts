@@ -18,9 +18,11 @@ const RULE_NUMBER = /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/;
 
 /**
  * A field's number value, after trimming: everything ELN and Inventory already
- * store, such as `.5`, `5.`, `+5` and `1e-3`.
+ * store, such as `.5`, `5.`, `+5` and `1e-3`. The fraction's digits follow
+ * only a point, so no run of digits can be split two ways and rejection stays
+ * linear.
  */
-const DATA_NUMBER = /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]{1,3})?$/;
+const DATA_NUMBER = /^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]{1,3})?$/;
 
 /** The value without leading or trailing whitespace from the shared set. */
 export function trimRuleValue(value: string): string {
@@ -39,11 +41,12 @@ export function isBlankRuleValue(value: string): boolean {
 
 /**
  * Text as compared: trimmed, Unicode NFC so that composed and decomposed
- * accents match, then lower case. Lower-casing is not case folding, so
+ * accents match, then lower case, with final sigma read as sigma. Lower-casing is not case folding, so
  * `STRASSE` does not match `straße`.
  */
 export function normaliseRuleText(value: string): string {
-  return trimRuleValue(value).normalize("NFC").toLowerCase();
+  // Lower-casing picks final sigma by context, which Java judges differently, so both read it as sigma.
+  return trimRuleValue(value).normalize("NFC").toLowerCase().replaceAll("\u03C2", "\u03C3");
 }
 
 /** Whether a rule's value is a valid number operand. */
@@ -51,8 +54,14 @@ export function isRuleNumber(value: string): boolean {
   return RULE_NUMBER.test(value);
 }
 
-/** A field's value as a number, or null when it is blank or not a number. */
+/** The longest trimmed field value read as a number; the same as Java's `RuleValues.MAX_NUMBER_LENGTH`. */
+const MAX_NUMBER_LENGTH = 1000;
+
+/**
+ * A field's value as a number, or null when it is blank, not a number, or
+ * longer than `MAX_NUMBER_LENGTH` characters after trimming.
+ */
 export function readRuleNumber(value: string): Decimal | null {
   const trimmed = trimRuleValue(value);
-  return DATA_NUMBER.test(trimmed) ? new Decimal(trimmed) : null;
+  return trimmed.length <= MAX_NUMBER_LENGTH && DATA_NUMBER.test(trimmed) ? new Decimal(trimmed) : null;
 }
