@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
+import { createDisplayRule, sameDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { withoutOptions } from "@/modules/common/field-rules/ruleOptions";
 import {
-  changesAreInvalid,
-  groupDisplayRules,
+  buildRuleGraph,
   type RuleEditorField,
   ruleFromDraft,
-  sanitiseDraft,
-  sourceCandidates,
-  targetCandidates,
+  ruleGraphFor,
+  ruleIsInvalid,
+  sanitiseCondition,
   usableOptions,
 } from "../ruleEditing";
 
@@ -30,41 +29,76 @@ describe("usableOptions", () => {
   });
 });
 
-describe("groupDisplayRules", () => {
-  it("shows identical rules once, with every field they show, whatever the order of their options", () => {
-    const fields = [
-      radio("gmo"),
-      field("permit", { rule: createDisplayRule("gmo", "IS_ANY_OF", ["Yes", "No"]) }),
-      field("genes", { rule: createDisplayRule("gmo", "IS_ANY_OF", ["No", "Yes"]) }),
-      field("notes", { rule: createDisplayRule("gmo", "HAS_VALUE", []) }),
-    ];
-    expect(groupDisplayRules(fields).map((group) => group.targetKeys)).toEqual([["permit", "genes"], ["notes"]]);
-  });
-});
-
 describe("cycle prevention", () => {
   // level reads gmo, approval reads level
   const fields = [
     radio("gmo"),
     radio("level", createDisplayRule("gmo", "IS_ANY_OF", ["Yes"])),
     radio("approval", createDisplayRule("level", "IS_ANY_OF", ["Yes"])),
+    field("notes"),
   ];
+  const sourcesFor = (key: string) =>
+    buildRuleGraph(fields)
+      .sourcesFor(key)
+      .map((candidate) => candidate.key);
 
-  it("does not offer a field that depends on the target as its source", () => {
-    expect(sourceCandidates(fields, ["gmo"]).map((candidate) => candidate.key)).toEqual([]);
-    expect(sourceCandidates(fields, ["level"]).map((candidate) => candidate.key)).toEqual(["gmo"]);
+  it("does not offer the field itself, or a field that depends on it directly or through others", () => {
+    expect(sourcesFor("gmo")).toEqual([]);
+    expect(sourcesFor("level")).toEqual(["gmo"]);
+    expect(sourcesFor("approval")).toEqual(["gmo", "level"]);
   });
 
-  it("does not offer the source, or a field the source depends on, as a target", () => {
-    expect(targetCandidates([...fields, field("notes")], "approval", []).map((candidate) => candidate.key)).toEqual([
-      "notes",
-    ]);
+  it("offers fields below as well as above, but only radio and choice fields", () => {
+    expect(sourcesFor("notes")).toEqual(["gmo", "level", "approval"]);
   });
 
-  it("does not offer a field that has a rule or that another draft claimed", () => {
+  it("still finds the candidates when stored rules already form a cycle", () => {
+    const looped = [
+      radio("a", createDisplayRule("b", "HAS_VALUE", [])),
+      radio("b", createDisplayRule("a", "HAS_VALUE", [])),
+      radio("c"),
+    ];
+    const graph = buildRuleGraph(looped);
+    expect(graph.sourcesFor("a").map(({ key }) => key)).toEqual(["c"]);
+    expect(graph.sourcesFor("c").map(({ key }) => key)).toEqual(["a", "b"]);
+  });
+
+  it("lists the fields that read a field directly", () => {
     expect(
-      targetCandidates([radio("gmo"), field("a"), field("b")], "gmo", [], new Set(["b"])).map((c) => c.key),
-    ).toEqual(["a"]);
+      buildRuleGraph(fields)
+        .dependentsOf("gmo")
+        .map(({ key }) => key),
+    ).toEqual(["level"]);
+  });
+});
+
+describe("ruleGraphFor", () => {
+  it("builds the graph once per array, so every field's editor shares it", () => {
+    const fields = [radio("gmo"), field("permit")];
+    expect(ruleGraphFor(fields)).toBe(ruleGraphFor(fields));
+    expect(ruleGraphFor([...fields])).not.toBe(ruleGraphFor(fields));
+  });
+
+  it("never reads a field's name", () => {
+    const named = (key: string) =>
+      Object.defineProperty(radio(key), "name", {
+        get: () => {
+          throw new Error("read a name");
+        },
+      });
+    const graph = buildRuleGraph([named("a"), named("b")]);
+    expect(graph.sourcesFor("a")).toHaveLength(1);
+  });
+
+  it("stays cheap on a large template: 150 fields in a chain build in linear time per field", () => {
+    const fields = Array.from({ length: 150 }, (_, i) =>
+      radio(`f${i}`, i === 0 ? null : createDisplayRule(`f${i - 1}`, "HAS_VALUE", [])),
+    );
+    const graph = buildRuleGraph(fields);
+    // every field may read only the fields above it, since every field below already depends on it
+    expect(graph.sourcesFor("f0")).toHaveLength(0);
+    expect(graph.sourcesFor("f149")).toHaveLength(149);
+    expect(graph.sourcesFor("f75")).toHaveLength(75);
   });
 });
 
@@ -96,32 +130,46 @@ describe("ruleFromDraft", () => {
   });
 });
 
-describe("sanitiseDraft", () => {
+describe("sanitiseCondition", () => {
   it("drops a source that is gone and options the source no longer offers", () => {
-    const draft = { sourceFieldKey: "gmo", operator: "IS_ANY_OF" as const, values: ["Yes", "Unsure"] };
-    expect(sanitiseDraft([radio("gmo"), field("permit")], draft, ["permit", "deleted"])).toEqual({
-      condition: { sourceFieldKey: "gmo", operator: "IS_ANY_OF", values: ["Yes"] },
-      targetKeys: ["permit"],
+    const condition = { sourceFieldKey: "gmo", operator: "IS_ANY_OF" as const, values: ["Yes", "Unsure"] };
+    expect(sanitiseCondition(buildRuleGraph([radio("gmo"), field("permit")]), "permit", condition)).toEqual({
+      sourceFieldKey: "gmo",
+      operator: "IS_ANY_OF",
+      values: ["Yes"],
     });
-    expect(sanitiseDraft([field("gmo"), field("permit")], draft, ["permit"]).condition.sourceFieldKey).toBeNull();
+    expect(
+      sanitiseCondition(buildRuleGraph([field("gmo"), field("permit")]), "permit", condition).sourceFieldKey,
+    ).toBeNull();
   });
 
-  it("drops a source that another rule has since made depend on the draft's target", () => {
-    // a second draft wanted level to read gmo; gmo now reads level
+  it("drops a source that has since come to depend on the field", () => {
     const fields = [radio("gmo", createDisplayRule("level", "IS_ANY_OF", ["Yes"])), radio("level")];
-    const draft = { sourceFieldKey: "gmo", operator: "HAS_VALUE" as const, values: [] };
-    expect(sanitiseDraft(fields, draft, ["level"]).condition.sourceFieldKey).toBeNull();
+    const condition = { sourceFieldKey: "gmo", operator: "HAS_VALUE" as const, values: [] };
+    expect(sanitiseCondition(buildRuleGraph(fields), "level", condition).sourceFieldKey).toBeNull();
   });
 });
 
-describe("changesAreInvalid", () => {
-  it("rejects a rule naming an option its source does not offer, but not unrelated errors", () => {
+describe("ruleIsInvalid", () => {
+  it("rejects a rule naming an option its source does not offer, but not errors on other fields", () => {
     const fields = [radio("gmo"), field("permit"), field("old", { rule: createDisplayRule("gone", "HAS_VALUE", []) })];
-    expect(changesAreInvalid(fields, [{ key: "permit", rule: createDisplayRule("gmo", "IS_ANY_OF", ["Maybe"]) }])).toBe(
-      true,
-    );
-    expect(changesAreInvalid(fields, [{ key: "permit", rule: createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]) }])).toBe(
-      false,
-    );
+    expect(ruleIsInvalid(fields, "permit", createDisplayRule("gmo", "IS_ANY_OF", ["Maybe"]))).toBe(true);
+    expect(ruleIsInvalid(fields, "permit", createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]))).toBe(false);
+  });
+});
+
+describe("sameDisplayRule", () => {
+  it("compares conditions whatever the order of their options", () => {
+    expect(
+      sameDisplayRule(
+        createDisplayRule("gmo", "IS_ANY_OF", ["Yes", "No"]),
+        createDisplayRule("gmo", "IS_ANY_OF", ["No", "Yes"]),
+      ),
+    ).toBe(true);
+    expect(
+      sameDisplayRule(createDisplayRule("gmo", "IS_ANY_OF", ["Yes"]), createDisplayRule("gmo", "IS_NONE_OF", ["Yes"])),
+    ).toBe(false);
+    expect(sameDisplayRule(null, null)).toBe(true);
+    expect(sameDisplayRule(createDisplayRule("gmo", "HAS_VALUE", []), null)).toBe(false);
   });
 });

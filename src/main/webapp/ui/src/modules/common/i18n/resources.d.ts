@@ -967,6 +967,29 @@ export default interface Resources {
         "type": "Type",
         "unnamed": "Unnamed field"
       },
+      "condition": {
+        "always": "Always",
+        "conditional": "Only when another field has certain values",
+        "dependents": "Other fields depend on this field: {fields}",
+        "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "incomplete": "This condition is not applied until it has a field and any options it needs. Until then this field is always shown.",
+        "incompleteEdit": "This change is not applied until the condition has a field and any options it needs. Until then the saved condition stays as it was.",
+        "invalid": "This condition cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself.",
+        "invalidEdit": "This change cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself. Until it is fixed the saved condition stays as it was.",
+        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
+        "operator": {
+          "hasNoValue": "has no value",
+          "hasValue": "has a value",
+          "isAnyOf": "is any of",
+          "isNoneOf": "is none of"
+        },
+        "operatorLabel": "Condition",
+        "sourceLabel": "Field",
+        "sourceMissing": "The field this condition read no longer exists. Choose another field.",
+        "title": "Display this field when…",
+        "valuesLabel": "Options",
+        "valuesRequired": "Choose at least one option."
+      },
       "options": {
         "add": "Add option",
         "blank": "Options cannot be blank.",
@@ -975,40 +998,6 @@ export default interface Resources {
         "remove": "Remove option {option}",
         "required": "Add at least one option.",
         "title": "Options"
-      },
-      "rules": {
-        "addRule": "Add rule",
-        "deleteRule": "Delete rule: {rule}",
-        "explanation": "Show fields only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
-        "heading": {
-          "hasNoValue": "When {source} has no value",
-          "hasValue": "When {source} has a value",
-          "isAnyOf": "When {source} is {options}",
-          "isNoneOf": "When {source} is not {options}",
-          "sourceMissing": "When a deleted field has a value"
-        },
-        "incomplete": "This rule is not applied until it has a field, a condition, any options it needs, and at least one field to show.",
-        "incompleteEdit": "This change is not applied until the rule has a field, a condition, any options it needs, and at least one field to show. Until then the saved rule stays as it was.",
-        "invalid": "This rule cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself.",
-        "invalidEdit": "This change cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself. Until it is fixed the saved rule stays as it was.",
-        "newRuleHeading": "New rule {position}",
-        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
-        "none": "No display rules. Every field is always shown.",
-        "operator": {
-          "hasNoValue": "has no value",
-          "hasValue": "has a value",
-          "isAnyOf": "is any of",
-          "isNoneOf": "is none of"
-        },
-        "operatorLabel": "Condition",
-        "shows": "Shows {fields}",
-        "sourceLabel": "Field",
-        "sourceMissing": "The field this rule read no longer exists. Choose another field.",
-        "targetsLabel": "Show these fields",
-        "targetsRequired": "Choose at least one field to show.",
-        "title": "Display rules",
-        "valuesLabel": "Options",
-        "valuesRequired": "Choose at least one option."
       },
       "summary": {
         "hasNoValue": "Shown when {source} has no value",

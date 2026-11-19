@@ -2,21 +2,25 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import type { TFunction } from "i18next";
+import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import DisplayRuleSummary from "@/modules/common/field-editor/DisplayRuleSummary";
 import FieldCard from "@/modules/common/field-editor/FieldCard";
+import SharedFieldDisplayCondition from "@/modules/common/field-editor/FieldDisplayCondition";
 import type { FieldTypeOption } from "@/modules/common/field-editor/FieldTypeSelect";
 import OptionsEditor from "@/modules/common/field-editor/OptionsEditor";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import RemoveButton from "../../../components/RemoveButton";
 import type { FieldType as ApiFieldType } from "../../../stores/definitions/Field";
-import FieldModel, { hasOptions } from "../../../stores/models/FieldModel";
+import type FieldModel from "../../../stores/models/FieldModel";
+import { hasOptions } from "../../../stores/models/FieldModel";
 import { FIELD_DATA, FIELD_LABEL, fieldTypeToApiString, SUPPORTED_TYPES } from "../../../stores/models/FieldTypes";
 import useStores from "../../../stores/use-stores";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
 import DefaultValueField from "./DefaultValueField";
+import { templateRuleFields } from "./templateRuleFields";
 
 function makeDeleteOptions(t: TFunction<"inventory">, recordType: string): Array<DeleteOption> {
   return [
@@ -33,6 +37,9 @@ const TYPE_OPTIONS: ReadonlyArray<FieldTypeOption<ApiFieldType>> = [...SUPPORTED
 }));
 
 const NAME_MAX_LENGTH = 50;
+
+// observed on its own, so a rename re-renders only the conditions that show that name
+const FieldDisplayCondition = observer(SharedFieldDisplayCondition);
 
 type CustomFieldArgs = {
   field: FieldModel;
@@ -65,6 +72,11 @@ function CustomField({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const nameOf = (other: FieldModel) => other.name || t("common:fieldEditor.card.unnamed");
   const namesOf = (fields: ReadonlyArray<FieldModel>) => formatList(fields.map(nameOf), language);
+  // a computed, so the card re-renders when its own name becomes or stops being a duplicate, not on every rename
+  const duplicateName = useMemo(
+    () => computed(() => field.owner.fieldNamesInUse.filter((name) => name === field.name).length > 1),
+    [field],
+  ).get();
 
   if (field.deleteFieldRequest) {
     return (
@@ -87,13 +99,6 @@ function CustomField({
     );
   }
 
-  const siblings = (field.owner.fields ?? []).filter(
-    (other): other is FieldModel => other instanceof FieldModel && !other.deleteFieldRequest,
-  );
-  const rule = field.displayRule;
-  const source = rule ? (siblings.find((other) => other.fieldKey === rule.sourceFieldKey) ?? null) : null;
-
-  const duplicateName = field.owner.fieldNamesInUse.filter((name) => name === field.name).length > 1;
   const nameError =
     field.name === ""
       ? t("fields.templateFields.customField.validation.emptyName")
@@ -193,12 +198,15 @@ function CustomField({
         }
         editable={editable}
         columnLayout={forceColumnLayout}
-        summary={
-          <DisplayRuleSummary
-            rule={rule}
-            sourceName={source ? nameOf(source) : null}
-            sourceIsBelow={source !== null && siblings.indexOf(source) > siblings.indexOf(field)}
-          />
+        displayCondition={
+          field.fieldKey !== null && (
+            <FieldDisplayCondition
+              fieldKey={field.fieldKey}
+              fields={templateRuleFields(field.owner)}
+              onChange={(rule) => field.setDisplayRule(rule)}
+              editable={editable}
+            />
+          )
         }
       >
         {hasOptions(field.type) && (
