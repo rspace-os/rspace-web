@@ -361,7 +361,11 @@ public class ApiInventoryEntityField extends ApiField {
     // for choice/radio the content comes/goes through selectedOptions
     boolean isOptionsField = dbField.isOptionsStoringField();
 
-    if (!isOptionsField && getContent() != null) {
+    // clients send "" for an empty field; over a blank stored value that is no change, and
+    // writing it would fail the mandatory check of a field that was already allowed to be blank
+    boolean blankOverBlank =
+        StringUtils.isBlank(getContent()) && StringUtils.isBlank(dbField.getData());
+    if (!isOptionsField && getContent() != null && !blankOverBlank) {
       if (!getContent().equals(dbField.getData())) {
         dbField.setFieldData(getContent());
         contentChanged = true;

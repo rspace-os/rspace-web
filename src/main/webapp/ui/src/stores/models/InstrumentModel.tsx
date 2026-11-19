@@ -106,10 +106,12 @@ export default class InstrumentModel
   templateVersion: number | null = null;
 
   /**
-   * Whether the Landing page was blank when the instrument was loaded, or was
-   * blanked for it rather than by the user, so that it may stay blank on update.
+   * Whether each field held a value and was shown when the instrument was
+   * loaded, as the server's `InventoryFieldDisplayRules.beforeUpdate` records
+   * them before an update. Taken again on every load, so a save that
+   * refetches the instrument moves the baseline.
    */
-  private landingPageBlankNotByUser = false;
+  private loadedFields: ReadonlyMap<Field, { filled: boolean; shown: boolean }> = new Map();
 
   // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
   createOptionsParametersState: {
@@ -130,7 +132,7 @@ export default class InstrumentModel
     super(factory, params);
     // the explicit key list is what lets a private member be annotated (MobX types the plain
     // overload against the public shape only)
-    makeObservable<this, "blankLandingPageField" | "landingPageBlankNotByUser">(this, {
+    makeObservable<this, "blankLandingPageField" | "loadedFields">(this, {
       parentContainers: observable,
       immediateParentContainer: observable,
       createOptionsParametersState: observable,
@@ -138,7 +140,7 @@ export default class InstrumentModel
       template: observable,
       templateId: observable,
       templateVersion: observable,
-      landingPageBlankNotByUser: observable,
+      loadedFields: observable.ref,
       setTemplate: action,
       overrideFields: action,
       blankLandingPageField: action,
@@ -219,8 +221,8 @@ export default class InstrumentModel
       : null;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
-    // blank as the backend's isBlank reads it
-    this.landingPageBlankNotByUser = !String(this.landingPageField?.content ?? "").trim();
+    const hidden = hiddenFieldsOf(this.fields);
+    this.loadedFields = new Map(this.fields.map((f) => [f, { filled: f.hasContent, shown: !hidden.has(f) }]));
     if (typeof params.templateId !== "undefined") {
       this.templateId = params.templateId ?? null;
     }
@@ -327,17 +329,33 @@ export default class InstrumentModel
   }
 
   /**
-   * A mandatory field needs a value, except the Landing page while the backend
-   * lets it stay blank: on create, where a new instrument starts with it blank
-   * (see `blankLandingPageField`) and registering a PIDINST fills it, and on
-   * update only if it was blank when loaded. Clearing a Landing page that was
-   * filled in is refused, as the backend's `isBlankLandingPageNotBlankedByUser`
-   * does.
+   * Whether a shown, mandatory field needs a value, as the server decides.
+   *
+   * On create, every one except the Landing page, which a new instrument starts
+   * with blank (see `blankLandingPageField`; server: `isLandingPageOf`).
+   *
+   * On update, a field that was empty when loaded may stay empty, so a field a
+   * template update added does not block an unrelated edit. Refused are a field
+   * this edit empties, and a field with a display rule that this edit reveals
+   * (`InventoryFieldDisplayRules.RecordBeforeUpdate`); a Landing page blank when
+   * loaded is exempt either way (`isBlankLandingPageNotBlankedByUser`). A field
+   * without a rule is checked only if its value changed
+   * (`ApiInventoryEntityField.applyContentChangesToDbField`). The client sends
+   * `""` for empty, which differs from a stored `null`, so a Landing page or
+   * other field stored as `null` may stay empty only because the server treats
+   * blank over blank as no change (#1486).
+   *
+   * Known gap: the server also exempts a Landing page that this update clears
+   * with the identifier that wrote it (`clearedWithIdentifier`). The client has
+   * no counterpart, so it is stricter there, never looser.
    */
   requiresValue(field: Field): boolean {
     if (!field.mandatory) return false;
-    if (field !== this.landingPageField) return true;
-    return Boolean(this.id) && !this.landingPageBlankNotByUser;
+    if (!this.id) return field !== this.landingPageField;
+    const loaded = this.loadedFields.get(field);
+    if (!loaded || loaded.filled) return true;
+    if (field === this.landingPageField || !field.displayRule) return false;
+    return !loaded.shown;
   }
 
   /** Also checks the template fields against the current values, so Save reads what was just typed. */
@@ -398,10 +416,7 @@ export default class InstrumentModel
    */
   private blankLandingPageField(): void {
     const landingPage = this.landingPageField;
-    if (landingPage) {
-      (landingPage as FieldModel).setAttributes({ content: "" });
-      this.landingPageBlankNotByUser = true;
-    }
+    if (landingPage) (landingPage as FieldModel).setAttributes({ content: "" });
   }
 
   async setTemplate(template: InstrumentTemplateModel | null): Promise<void> {

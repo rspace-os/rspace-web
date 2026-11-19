@@ -4692,6 +4692,7 @@ export default interface Resources {
           "textContentMustBeString": "The content of textual extra fields must be a string."
         }
       },
+      "hiddenFieldInvalid": "{field} is hidden but holds a value that cannot be saved. Show it again by changing the answer it depends on, then correct or clear it.",
       "identifiers": {
         "assignDialog": {
           "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",
