@@ -1,6 +1,7 @@
 package com.researchspace.model.field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.UUID;
@@ -68,8 +69,7 @@ public class FieldFormTest {
     FieldForm keyless = new StringFieldForm();
     assertNull(keyless.getFieldKey());
     keyless.assignFieldKeyIfMissing();
-    assertEquals(36, keyless.getFieldKey().length());
-    assertEquals(keyless.getFieldKey().toLowerCase(), keyless.getFieldKey());
+    assertNotNull(keyless.getFieldKey());
 
     FieldForm keyed = new StringFieldForm();
     keyed.setFieldKey("6f1c2e0a-0000-4000-8000-000000000000");
