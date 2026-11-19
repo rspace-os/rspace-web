@@ -63,7 +63,9 @@ export function buildRuleGraph(fields: ReadonlyArray<RuleEditorField>): RuleGrap
   for (const field of fields) {
     const direct = field.rule?.sourceFieldKey;
     if (direct !== undefined && byKey.has(direct)) {
-      dependents.set(direct, [...(dependents.get(direct) ?? []), field]);
+      const list = dependents.get(direct);
+      if (list) list.push(field);
+      else dependents.set(direct, [field]);
     }
     const seen = new Set([field.key]);
     let ancestor = direct;
