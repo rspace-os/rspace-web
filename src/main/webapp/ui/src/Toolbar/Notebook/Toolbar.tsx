@@ -33,7 +33,7 @@ type NotebookToolbarState = {
   settingsKey: string | null;
   canCreateRecord: boolean;
   pioEnabled: boolean;
-  asposeEnabled: boolean;
+  conversionEnabled: boolean;
   canDelete: boolean;
   canShare: boolean;
 };

@@ -200,11 +200,6 @@ public class FileDownloadControllerTest {
 
   @Test
   public void testUnsupportedConversionRejectedBeforeTouchingFiles() throws Exception {
-    mockGetUserFromSession();
-    EcatMediaFile mediaFile = getAnyMediaFile();
-    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("doc")));
-    mockMediaFileLookup(mediaFile);
-
     AjaxReturnObject<String> rc = ctrller.convertFile(1L, "pdf -l /tmp/x", null, resp);
     assertNull(rc.getData());
     assertNotNull(rc.getErrorMsg());
@@ -217,15 +212,17 @@ public class FileDownloadControllerTest {
   public void testUnsupportedSourceFormatRejectedBeforeTouchingFiles() throws Exception {
     mockGetUserFromSession();
     EcatMediaFile mediaFile = getAnyMediaFile();
-    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("csv")));
+    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("zip")));
     mockMediaFileLookup(mediaFile);
+    when(properties.isConversionEnabled()).thenReturn(true);
 
     AjaxReturnObject<String> rc = ctrller.convertFile(1L, "pdf", null, resp);
     assertNull(rc.getData());
     assertNotNull(rc.getErrorMsg());
     assertEquals(422, resp.getStatus());
     verify(converter)
-        .supportsConversion(Mockito.argThat(c -> "file.csv".equals(c.getName())), Mockito.eq("pdf"));
+        .supportsConversion(
+            Mockito.argThat(c -> "file.zip".equals(c.getName())), Mockito.eq("pdf"));
     verify(converter, never()).convert(Mockito.any(), Mockito.anyString(), Mockito.any(File.class));
     verifyNoInteractions(fileStore);
   }
