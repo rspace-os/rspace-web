@@ -42,7 +42,7 @@ function initialiseRequestDlg(options) {
       create: function() {
         $('body').on("change", 'select.msgTypes', function() {
           var msgType = $(this).find(":selected").val();
-          $('.date').toggle(msgType !== "SIMPLE_MESSAGE");
+          $(this).closest('form.requestForm').find('.date').toggle(msgType !== "SIMPLE_MESSAGE");
 
           _targetPolicy = messageTypeToTargetPolicy[msgType];
           if (msgType == "REQUEST_EXTERNAL_SHARE") {
@@ -70,11 +70,11 @@ function initialiseRequestDlg(options) {
         // get new object
         $.get(createURL('/messaging/ajax/create'), data, function(xhr) {
           $(_dialogDivSelector$Content).html(xhr);
-          $('input.date').datetimepicker({
+          $(_dialogDivSelector$).find('input.date').datetimepicker({
             dateFormat: "yy-mm-dd",
             minDate: "+0d", // must be a future date
           });
-          $('.date').hide();
+          $(_dialogDivSelector$).find('.date').hide();
           // init first
           var firstOption = $('#messageType').first().val();
           _targetPolicy = messageTypeToTargetPolicy[firstOption];
@@ -132,8 +132,8 @@ function initialiseRequestDlg(options) {
               if (xhr.indexOf("error") != -1) {
                 // might be validation error messages
                 $(_dialogDivSelector$Content).html(xhr);
-                var msgType = $('select.msgTypes').find(":selected").val();
-                $('.date').toggle(msgType !== "SIMPLE_MESSAGE");
+                var msgType = $(_dialogDivSelector$).find('select.msgTypes').find(":selected").val();
+                $(_dialogDivSelector$).find('.date').toggle(msgType !== "SIMPLE_MESSAGE");
                 _populateMessageCharCounter();
                 getPotentialRecipients(_targetPolicy);
                 return;
