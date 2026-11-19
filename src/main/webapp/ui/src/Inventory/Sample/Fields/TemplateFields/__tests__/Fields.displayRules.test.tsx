@@ -208,6 +208,23 @@ describe("Template fields with a number source", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
+  it("lets a number typed into an instrument decide at once whether it can be saved", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: weightFields("1") });
+    instrument.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InstrumentTemplateFields onErrorStateChange={() => {}} instrument={instrument} />
+      </ThemeProvider>,
+    );
+    expect(instrument.submittable.isOk).toBe(true);
+
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+    await user.clear(weight);
+    await user.type(weight, "4");
+    expect(instrument.submittable.isOk).toBe(false);
+  });
+
   it("reads loaded numbers and typed text from the record's current content", () => {
     const sample = makeMockSample({ fields: weightFields("2.5") });
     expect(sample.isFieldHidden(sample.fields[1])).toBe(false);
