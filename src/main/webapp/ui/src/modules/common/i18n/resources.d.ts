@@ -2278,10 +2278,17 @@ export default interface Resources {
         "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
         "noOtherFields": "No other fields",
         "operator": {
+          "atLeast": "is at least",
+          "atMost": "is at most",
+          "contains": "contains",
+          "equals": "is",
+          "greaterThan": "is greater than",
           "hasNoValue": "has no value",
           "hasValue": "has a value",
           "isAnyOf": "is any of",
-          "isNoneOf": "is none of"
+          "isNoneOf": "is none of",
+          "lessThan": "is less than",
+          "notEquals": "is not"
         },
         "operatorLabel": "Condition",
         "sourceLabel": "Field",
@@ -2302,10 +2309,17 @@ export default interface Resources {
         "title": "Options"
       },
       "summary": {
+        "atLeast": "Shown when {source} is at least {value}",
+        "atMost": "Shown when {source} is at most {value}",
+        "contains": "Shown when {source} contains “{value}”",
+        "equals": "Shown when {source} is “{value}”",
+        "greaterThan": "Shown when {source} is greater than {value}",
         "hasNoValue": "Shown when {source} has no value",
         "hasValue": "Shown when {source} has a value",
         "isAnyOf": "Shown when {source} is {options}",
         "isNoneOf": "Shown when {source} is not {options}",
+        "lessThan": "Shown when {source} is less than {value}",
+        "notEquals": "Shown when {source} is not “{value}”",
         "sourceBelowHint": "Placing it below {source} reads better.",
         "sourceMissing": "Always shown: the field its rule read no longer exists."
       }
@@ -8461,11 +8475,15 @@ export default interface Resources {
         "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
         "keyDuplicate": "Field [{0}] has the same field key as another field",
         "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
-        "ruleTooLong": "The display rule on field [{0}] is too long to save; choose fewer or shorter options",
+        "operatorNotForSource": "The display rule on field [{0}] uses a condition that its source field does not support",
+        "ruleTooLong": "The display rule on field [{0}] is too long to save; use fewer or shorter values",
         "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
         "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
-        "sourceType": "The display rule on field [{0}] must depend on a radio or choice field",
+        "sourceType": "The display rule on field [{0}] must depend on a radio, choice, number or one-line text field that is not a password field",
+        "valueBlank": "The display rule on field [{0}] needs a value to compare with",
+        "valueCount": "The display rule on field [{0}] must compare with exactly one value",
         "valueDuplicate": "The display rule on field [{0}] lists the same option more than once",
+        "valueNotANumber": "The display rule on field [{0}] must compare with a number, such as 5, -2 or 2.5",
         "valueTooMany": "The display rule on field [{0}] lists more than 1000 options",
         "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
       },
