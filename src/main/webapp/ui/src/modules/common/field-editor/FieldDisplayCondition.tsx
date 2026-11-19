@@ -193,7 +193,6 @@ export default function FieldDisplayCondition({
     const nextRejected = isRejected(next);
     if (nextRule !== null && !nextRejected) {
       setDraft(null);
-      setRemembered(null);
       if (!sameDisplayRule(rule, nextRule)) onChange(nextRule);
       return;
     }
@@ -231,9 +230,19 @@ export default function FieldDisplayCondition({
             setDraft({ condition: pending, rejected: isRejected(pending) });
             return;
           }
-          // a saved rule that no longer validates as it was still comes back with whatever of it still applies
-          const fallback = remembered?.draft ?? remembered?.applied ?? null;
-          const restored = fallback ? sanitiseCondition(graph, fieldKey, fallback) : null;
+          /*
+           * with no valid stored rule, an unfinished edit comes back only while it still cannot be
+           * applied, as above; otherwise a saved rule that no longer validates as it was comes back
+           * with whatever of it still applies
+           */
+          const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+          const stillRefused =
+            pending?.sourceFieldKey != null && (ruleFromDraft(pending) === null || isRejected(pending));
+          const restored = stillRefused
+            ? pending
+            : remembered?.applied
+              ? sanitiseCondition(graph, fieldKey, remembered.applied)
+              : null;
           update(
             restored?.sourceFieldKey != null
               ? restored
