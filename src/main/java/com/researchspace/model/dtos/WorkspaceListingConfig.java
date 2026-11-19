@@ -192,6 +192,17 @@ public class WorkspaceListingConfig implements Serializable {
     this.operator = operator;
   }
 
+  /**
+   * Replaces this config's search with the search of {@code previous}, keeping this config's
+   * folder, view and paging. Used when this config's own search was rejected.
+   */
+  public void keepSearchFrom(WorkspaceListingConfig previous) {
+    setSrchOptions(previous.getSrchOptions());
+    setSrchTerms(previous.getSrchTerms());
+    setAdvancedSearch(previous.isAdvancedSearch());
+    setOperator(previous.getOperator());
+  }
+
   public boolean isSimpleNameSearch() {
     return isSimpleSearch(NAME_SEARCH_OPTION, srchOptions);
   }

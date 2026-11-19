@@ -30,6 +30,11 @@ import SocialActions from "../ToolbarSocial";
 import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
+import { installAddressBarSync } from "./DefaultSearch/addressBarSync";
+import DefaultSearch from "./DefaultSearch/DefaultSearch";
+import { searchLinkFailureReason } from "./DefaultSearch/searchLinkFailure";
+import { RECORD_LIST_SHOWN, VIEW_MODE_BUTTON_ID } from "./DefaultSearch/workspaceGlobals";
+import { parseSearchQuery } from "./DefaultSearch/workspaceSearchUrl";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
@@ -57,6 +62,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       ontologiesFilter: workspaceSettings.ontologiesFilter,
       asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
+      defaultSearchSlot: null,
     };
 
     this.simpleSearch = React.createRef();
@@ -64,6 +70,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   }
 
   componentDidMount() {
+    installAddressBarSync();
     this.checkSavedSettings();
 
     $(document).on("click", "#resetSearch", () => {
@@ -92,6 +99,12 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       });
     };
 
+    if (workspaceSettings.options.length > 0) {
+      this.resumeRestoredSearch();
+    } else {
+      this.restoreSearchFromLocation();
+    }
+
     /*
      * This event tells the jQuery parts of the code that they can assume that
      * the dom nodes managed by react have now been added to the dom.
@@ -100,6 +113,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
       window.dispatchEvent(new CustomEvent("ReactToolbarMounted"));
     }, 0);
   }
+
+  // The search box has a place for the Default search button; tree view has no search box
+  setDefaultSearchSlot = (slot) => {
+    if (slot !== this.state.defaultSearchSlot) this.setState({ defaultSearchSlot: slot });
+  };
 
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
@@ -137,6 +155,117 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         this.handleHideIcons(true);
       }
     }
+  };
+
+  // The server rendered the results of a search kept in the session, after the user closed a document
+  resumeRestoredSearch = () => {
+    endSearchLinkWait();
+    workspaceSettings.searchMode = true;
+    workspaceSettings.url = "/workspace/ajax/search";
+    updateSearchModePanel($("#noOfRows").val() > 0);
+    window.dispatchEvent(new CustomEvent(RECORD_LIST_SHOWN));
+  };
+
+  // Runs the search held in the address bar, for a bookmarked or shared search link
+  restoreSearchFromLocation = () => {
+    const parsed = parseSearchQuery(window.location.search);
+    if (parsed.kind === "none") {
+      endSearchLinkWait();
+      return;
+    }
+    if (parsed.kind === "invalid") {
+      this.showFolderInsteadOfSearch();
+      return;
+    }
+
+    const { state } = parsed;
+    const runSearch = () => {
+      Object.assign(workspaceSettings, {
+        options: [...state.options],
+        terms: [...state.terms],
+        advancedSearch: state.advancedSearch,
+        operator: state.operator,
+        sharedFilter: state.sharedFilter,
+        favoritesFilter: state.favoritesFilter,
+        viewableItemsFilter: state.viewableItemsFilter,
+        templatesFilter: state.templatesFilter,
+        ontologiesFilter: state.ontologiesFilter,
+        orderBy: state.orderBy,
+        sortOrder: state.sortOrder,
+        searchMode: true,
+        pageNumber: 0,
+        url: "/workspace/ajax/search",
+      });
+      this.setState(
+        {
+          sharedFilter: state.sharedFilter,
+          favoritesFilter: state.favoritesFilter,
+          viewableItemsFilter: state.viewableItemsFilter,
+          templatesFilter: state.templatesFilter,
+          ontologiesFilter: state.ontologiesFilter,
+        },
+        () => {
+          this.checkSavedSettings();
+          searchLinkSearchStarted();
+          doWorkspaceSearch(workspaceSettings.url, workspaceSettings, this.showFolderInsteadOfSearch, () => {
+            // The results are drawn after a short fade, which then sends this event
+            window.addEventListener(RECORD_LIST_SHOWN, endSearchLinkWait, { once: true });
+            if (this.searchLinkLeftTreeView) {
+              this.searchLinkLeftTreeView = false;
+              saveWorkplaceSettings();
+            }
+          });
+        },
+      );
+    };
+
+    // The search box only exists in list view. The list is saved as the
+    // user's view only once the search has worked.
+    if (this.state.treeView) {
+      this.searchLinkLeftTreeView = true;
+      // The server keeps the search with this view, for returning from a result
+      workspaceSettings.currentViewMode = "LIST_VIEW";
+      showListView();
+      this.setState({ treeView: false }, runSearch);
+    } else {
+      runSearch();
+    }
+  };
+
+  showFolderInsteadOfSearch = (jqxhr) => {
+    endSearchLinkWait();
+    if (this.searchLinkLeftTreeView) {
+      this.searchLinkLeftTreeView = false;
+      workspaceSettings.currentViewMode = "TREE_VIEW";
+      showTreeView();
+      this.setState({ treeView: true });
+    }
+    // resetToolbar() leaves these two filters as they are
+    workspaceSettings.viewableItemsFilter = false;
+    workspaceSettings.ontologiesFilter = false;
+    this.setState({ viewableItemsFilter: false, ontologiesFilter: false });
+    resetToolbar();
+    this.simpleSearch.current?.resetState();
+    if (jqxhr?.status === 0) {
+      // List the folder again on paging and sorting, as abandonSearch() does, without
+      // reloading it now. Keep the link in the address bar, so that reloading tries it again
+      workspaceSettings.parentFolderId = $("#currFolderId").val();
+      workspaceSettings.url = `/workspace/ajax/view/${workspaceSettings.parentFolderId}`;
+      workspaceSettings.pageNumber = 0;
+      RS.confirm(i18n.t("workspace:toolbar.defaultSearch.linkNetworkError"), "warning", 5000);
+      return;
+    }
+    abandonSearch();
+    const reason = jqxhr ? searchLinkFailureReason(jqxhr.responseText) : "";
+    RS.confirm(
+      reason
+        ? i18n.t("workspace:toolbar.defaultSearch.linkFailedReason", {
+            reason: RS.escapeHtml(reason),
+          })
+        : i18n.t("workspace:toolbar.defaultSearch.invalidSearch"),
+      "warning",
+      5000,
+    );
   };
 
   handleOpen = (idx, event) => {
@@ -186,6 +315,8 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
   };
 
   openTreeView = () => {
+    // The tree has no search bar, so leave the search the way Clear search does
+    if (workspaceSettings.searchMode) $("#resetSearch").trigger("click");
     tree_view();
     this.setState({ treeView: true });
     this.handleClose(0);
@@ -291,7 +422,10 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
           containerType: "inline-size",
         }}
       >
-        <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
+        {/* A long search, such as a date range, shrinks the search box rather than this button */}
+        <Box component="span" sx={{ display: "flex", flexShrink: 0 }}>
+          <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
+        </Box>
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
@@ -316,6 +450,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         ></Box>
         <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
           <IconButton
+            id={VIEW_MODE_BUTTON_ID}
             data-test-id="toolbar-views"
             aria-controls="simple-menu2"
             aria-haspopup="true"
@@ -357,7 +492,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
         </Menu>
         {this.state.treeView && <TreeSort />}
         {!this.state.treeView && (
-          <Box component="span" sx={{ display: "flex", flexGrow: "1" }}>
+          <Box component="span" sx={{ display: "flex", flexGrow: "1", minWidth: 0 }}>
             <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
               <IconButton
                 data-test-id="toolbar-views-2"
@@ -509,9 +644,11 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
               toggleAdvanced={this.toggleAdvanced}
               advancedOpen={this.state.advancedOpen}
               hideIcons={this.handleHideIcons}
+              defaultSearchSlotRef={this.setDefaultSearchSlot}
             />
           </Box>
         )}
+        <DefaultSearch runButtonSlot={this.state.defaultSearchSlot} />
       </Box>
     );
   };

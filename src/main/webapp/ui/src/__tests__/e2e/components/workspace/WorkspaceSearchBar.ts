@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { awaitTableRefresh } from "./WorkspaceTable";
+import { awaitTableRefresh, waitForWorkspaceAnimations } from "./WorkspaceTable";
 
 export type SearchField =
   | "All"
@@ -32,6 +32,10 @@ export class WorkspaceSearchBar {
   readonly filterButton: Locator;
   readonly advancedToggle: Locator;
   readonly clearSearchButton: Locator;
+  readonly saveDefaultButton: Locator;
+  readonly isDefaultMessage: Locator;
+  readonly defaultSearchButton: Locator;
+  readonly clearDefaultSearchButton: Locator;
 
   constructor(private readonly page: Page) {
     this.searchInput = page.getByRole("textbox", { name: "Search" });
@@ -39,6 +43,33 @@ export class WorkspaceSearchBar {
     this.filterButton = page.getByRole("button", { name: "Filters", exact: true });
     this.advancedToggle = page.getByRole("button", { name: "Advanced search", exact: true });
     this.clearSearchButton = page.getByRole("button", { name: "Clear search" });
+    this.saveDefaultButton = page.getByRole("button", { name: "Save as default search", exact: true });
+    this.isDefaultMessage = page.getByText("This is your default search", { exact: true });
+    this.defaultSearchButton = page.getByRole("button", { name: "Default search", exact: true });
+    this.clearDefaultSearchButton = page.getByRole("button", { name: "Clear default search", exact: true });
+  }
+
+  /** Opens a Workspace URL that holds a search, and waits for its results. */
+  async openSearchUrl(url: string): Promise<void> {
+    await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+      this.page.goto(url),
+    ]);
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForWorkspaceAnimations(this.page);
+  }
+
+  async runDefaultSearch(): Promise<void> {
+    await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+      this.defaultSearchButton.click(),
+    ]);
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForWorkspaceAnimations(this.page);
+  }
+
+  async removeDefaultSearch(): Promise<void> {
+    await this.clearDefaultSearchButton.click();
   }
 
   async isSearchActive(): Promise<boolean> {

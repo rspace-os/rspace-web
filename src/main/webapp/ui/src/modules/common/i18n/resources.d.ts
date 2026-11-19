@@ -10866,14 +10866,12 @@ export default interface Resources {
           "folderEmpty": "This folder is empty.",
           "importWordFileType": "Word or Open Office",
           "importWordTitle": "Import from Word/Open Office",
-          "listView": "List View",
           "loadingRecords": "Loading records...",
           "openFolderAction": "Opening folder",
           "orderByTitle": "Order by {0}",
           "saveSettingsFailedAction": "Failed to save workspace settings",
           "searchNoResults": "Your search returned no results. Please modify your search or clear it below.",
-          "searchResultsShown": "Showing results of your search.",
-          "treeView": "Tree View"
+          "searchResultsShown": "Showing results of your search."
         },
         "notebookEditor": {
           "ajaxDeleteEntry": "Delete entry",
@@ -13819,6 +13817,29 @@ export default interface Resources {
         "readError": "Could not read all of the documents",
         "title": "Export Documents to CSV",
         "unknownError": "Unknown reason"
+      },
+      "defaultSearch": {
+        "dateRange": "{from} to {to}",
+        "invalidSearch": "This search link is not valid, so the folder is shown instead.",
+        "isDefault": "This is your default search",
+        "linkFailedReason": "This search link could not be run: {reason}",
+        "linkNetworkError": "Could not run the search. Check your connection and reload.",
+        "operatorAnd": "AND",
+        "operatorOr": "OR",
+        "remove": "Clear default search",
+        "removeConfirm": "Remove",
+        "removeFailed": "Could not remove default search",
+        "removeMessage": "Another tab has changed your default search. This removes it:",
+        "removeTitle": "Remove default search?",
+        "removed": "Default search removed",
+        "replaceConfirm": "Replace",
+        "replaceMessage": "This replaces your current default search:",
+        "replaceTitle": "Replace default search?",
+        "run": "Default search",
+        "save": "Save as default search",
+        "saveFailed": "Could not save default search",
+        "saved": "Default search saved",
+        "withinRecords": "Within records"
       },
       "filePicker": {
         "clickToSelect": "Click on the folder icon to select records.",
