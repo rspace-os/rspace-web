@@ -237,6 +237,7 @@ public final class ApiV2TimeSlotBookingResource {
                 booking.getPrivacy() == BookingPrivacy.FULL ? booking.getRequester() : null,
             User::getId,
             "requester.id")
+        .readGuaranteed()
         .documented(
             OpenApiSchemaDocumentation.of(
                 "Requester",
