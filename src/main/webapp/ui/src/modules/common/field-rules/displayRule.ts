@@ -147,3 +147,19 @@ export function serializeDisplayRule(rule: FieldDisplayRule): string {
     ...(rule.values.length > 0 ? { values: rule.values } : {}),
   });
 }
+
+/**
+ * The length of the rule as the server stores it, which is Java's
+ * `FieldDisplayRule.toJson()`. That output escapes every non-ASCII UTF-16 code
+ * unit as `\uXXXX` (six characters), whereas `JSON.stringify` leaves them raw;
+ * all other escaping is the same. The stored JSON is ASCII, so this is also its
+ * size in bytes.
+ */
+export function storedDisplayRuleLength(rule: FieldDisplayRule): number {
+  const json = serializeDisplayRule(rule);
+  let length = json.length;
+  for (let i = 0; i < json.length; i++) {
+    if (json.charCodeAt(i) > 0x7f) length += 5;
+  }
+  return length;
+}
