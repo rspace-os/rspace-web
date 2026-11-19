@@ -71,7 +71,8 @@ const CONDITIONAL = "conditional";
  * A condition not applied, and whether the shared validator refused it when it
  * was kept. That is decided once, not on every render, so a refused draft keeps
  * saying so until the author touches it, even if later edits elsewhere would
- * now let it apply.
+ * now let it apply. It is never applied without the author editing it: one that
+ * has become storable is dropped on the way back from "Always" instead.
  */
 type Draft = { readonly condition: DraftCondition; readonly rejected: boolean };
 
@@ -109,6 +110,7 @@ export default function FieldDisplayCondition({
   /**
    * What "Always" set aside, restored by "Only when…": the rule that was applied, and any
    * unfinished edit on top of it, so arrowing through the radios never loses a stored rule.
+   * Used once, and forgotten when a rule is applied, so an abandoned edit never resurfaces.
    */
   const [remembered, setRemembered] = useState<{
     applied: FieldDisplayRule | null;
@@ -177,6 +179,7 @@ export default function FieldDisplayCondition({
     const nextRejected = isRejected(next);
     if (nextRule !== null && !nextRejected) {
       setDraft(null);
+      setRemembered(null);
       if (!sameDisplayRule(rule, nextRule)) onChange(nextRule);
       return;
     }
@@ -198,24 +201,20 @@ export default function FieldDisplayCondition({
             return;
           }
           const applied = remembered?.applied ?? null;
+          setRemembered(null);
           if (applied !== null && !ruleIsInvalid(fields, fieldKey, applied)) {
-            // the stored rule comes back as it was, with any unfinished edit still pending on top
-            const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
-            if (pending?.sourceFieldKey == null) {
-              onChange(applied);
-              setDraft(null);
-              return;
-            }
-            // an edit that later changes elsewhere made storable is applied, not left blocking the save with no error shown
-            const pendingRule = ruleFromDraft(pending);
-            const pendingRejected = isRejected(pending);
-            if (pendingRule !== null && !pendingRejected) {
-              onChange(pendingRule);
-              setDraft(null);
-              return;
-            }
             onChange(applied);
-            setDraft({ condition: pending, rejected: pendingRejected });
+            /*
+             * the stored rule comes back as it was. An unfinished edit stays pending on top only while
+             * it still cannot be applied: the author only ever saw it refused, so one that changes
+             * elsewhere made storable is dropped rather than applied, and does not block saving
+             */
+            const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+            if (pending?.sourceFieldKey == null || (ruleFromDraft(pending) !== null && !isRejected(pending))) {
+              setDraft(null);
+              return;
+            }
+            setDraft({ condition: pending, rejected: isRejected(pending) });
             return;
           }
           // a saved rule that no longer validates as it was still comes back with whatever of it still applies

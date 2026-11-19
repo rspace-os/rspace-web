@@ -687,6 +687,29 @@ describe("Display condition drafts across saves and edit sessions", () => {
     expect(template.globalId).toBe("IT9");
   });
 
+  it("sends the create once when Retry is used again while the retried create is in flight", async () => {
+    const template = newGmoTemplate();
+    renderEditor(template);
+    post.mockRejectedValueOnce({
+      response: { status: 400, data: { data: { validationErrors: [{ field: "name", message: "Taken" }] } } },
+    });
+    await act(async () => {
+      await template.create().catch(() => {});
+    });
+    const [[{ retryFunction }]] = addAlert.mock.calls as Array<[{ retryFunction: () => Promise<void> }]>;
+    const { promise, resolve } = Promise.withResolvers<{ data: object }>();
+    post.mockReturnValueOnce(promise);
+
+    // the button is disabled while its retry runs, so the second call stands for another alert's Retry
+    const first = retryFunction();
+    await act(() => retryFunction());
+    resolve({ data: { ...templateAttrs({ id: 9, globalId: "IT9" }), attachments: [] } });
+    await act(() => first);
+
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(template.globalId).toBe("IT9");
+  });
+
   it("drops a draft when the template's fields are replaced by new models with the same keys", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
