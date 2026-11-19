@@ -49,7 +49,14 @@ function Harness({
           <button
             type="button"
             aria-label={`Delete ${field.name}`}
-            onClick={() => setFields((current) => current.filter((other) => other.key !== field.key))}
+            // as hosts do, rules that read the deleted field are cleared with it
+            onClick={() =>
+              setFields((current) =>
+                current
+                  .filter((other) => other.key !== field.key)
+                  .map((other) => (other.rule?.sourceFieldKey === field.key ? { ...other, rule: null } : other)),
+              )
+            }
           />
           <button
             type="button"
@@ -283,29 +290,60 @@ describe("FieldDisplayCondition", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("applies a refused edit that has become storable on its way back from Always", async () => {
+  it("drops a refused edit that has become storable, restoring the stored rule, on its way back from Always", async () => {
     const user = userEvent.setup();
-    const [long, longer] = ["a".repeat(20_000), "b".repeat(20_000)];
-    const stored = createDisplayRule("gmo", "IS_ANY_OF", [longer]);
+    // too long to be stored as part of a rule
+    const huge = "a".repeat(40_000);
     const { onChange, onIncompleteChange } = await renderConditions([
-      { ...gmo, options: [long, longer] },
-      { ...permit, rule: stored },
+      { ...gmo, options: [huge, "No", "Yes"] },
+      { ...permit, rule: yes },
     ]);
-    await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
-    await user.click(screen.getByRole("option", { name: long }));
-    await user.keyboard("{Escape}");
+    const options = () => card("GMO permit").getByRole("combobox", { name: "Options" });
+    for (const option of [huge, "No"]) {
+      await user.click(options());
+      await user.click(screen.getByRole("option", { name: option }));
+    }
     conditional("GMO permit").focus();
     await user.keyboard("{ArrowUp}");
 
-    // the refused edit now holds only the stored option, which can be applied
+    // the refused edit could now be stored as "Yes" or "No", which the author never saw accepted
     await user.click(screen.getByRole("button", { name: "Remove the first option of Is this a GMO?" }));
     await user.click(conditional("GMO permit"));
 
-    expect(onChange).toHaveBeenLastCalledWith("permit", stored);
+    expect(onChange.mock.calls).toEqual([
+      ["permit", null],
+      ["permit", yes],
+    ]);
     expect(onIncompleteChange.mock.calls).toEqual([
       ["permit", true],
       ["permit", false],
     ]);
+    expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
+    expect(card("GMO permit").queryByRole("button", { name: "No" })).not.toBeInTheDocument();
+    expect(options()).not.toHaveAccessibleDescription();
+  });
+
+  it("forgets what Always set aside once a rule is applied, so it does not come back later", async () => {
+    const user = userEvent.setup();
+    const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
+    const { onChange } = await renderConditions([gmo, colour, { ...permit, rule: yes }]);
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+    await user.keyboard("{ArrowDown}");
+    await user.click(card("GMO permit").getByRole("combobox", { name: "Field" }));
+    await user.click(screen.getByRole("option", { name: "Colour" }));
+    await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: "Red" }));
+    // deleting the source clears the rule, so the radio falls back to Always without being chosen
+    await user.click(screen.getByRole("button", { name: "Delete Colour" }));
+    expect(card("GMO permit").getByRole("radio", { name: "Always" })).toBeChecked();
+
+    await user.click(conditional("GMO permit"));
+
+    expect(onChange).toHaveBeenLastCalledWith("permit", createDisplayRule("colour", "IS_ANY_OF", ["Red"]));
+    expect(card("GMO permit").getByRole("combobox", { name: "Options" })).toHaveAccessibleDescription(
+      "Choose at least one option.",
+    );
   });
 
   it("clears the field it was showing, and reports the new one, when given another field", async () => {
