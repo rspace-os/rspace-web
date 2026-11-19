@@ -36,7 +36,7 @@ const VISUALLY_HIDDEN =
  * a change showed or hid.
  */
 export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = document): LegacyFieldDisplay {
-  // Mounted empty before any change, so screen readers already watch it when the first reveal is announced.
+  // Mounted empty before any change, so screen readers already watch it when the first change is announced.
   const region = doc.createElement("div");
   region.setAttribute("role", "status");
   region.setAttribute("aria-live", "polite");
@@ -55,10 +55,10 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
       if (change !== latestChange) return;
       region.textContent = [...message(SHOWN, shown), ...message(HIDDEN, hidden)].join(" ");
     };
-    // Never show a raw key: wait for the messages, and say nothing if their catalog failed to load
-    // (a failed load can still count as loaded).
-    const ready = () =>
-      i18n.isInitialized && i18n.exists(SHOWN, { ns: "common" }) && i18n.exists(HIDDEN, { ns: "common" });
+    // Never show a raw key: wait for the messages this change needs, and say nothing if their catalog
+    // failed to load (a failed load can still count as loaded).
+    const keys = [...(shown.length > 0 ? [SHOWN] : []), ...(hidden.length > 0 ? [HIDDEN] : [])];
+    const ready = () => i18n.isInitialized && keys.every((key) => i18n.exists(key, { ns: "common" }));
     if (ready()) show();
     else
       void i18n.loadNamespaces("common").then(() => {
