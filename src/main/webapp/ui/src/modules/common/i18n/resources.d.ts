@@ -2275,8 +2275,9 @@ export default interface Resources {
         "always": "Always",
         "conditional": "Only when another field has certain values",
         "dependents": "Other fields depend on this field: {fields}",
-        "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "explanation": "A field can be set to show only when another field meets a condition: a radio or choice field has certain options, or a one-line text or number field has a certain value. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
         "noOtherFields": "No other fields",
+        "numberRequired": "Enter a number, such as 5, -2 or 2.5.",
         "operator": {
           "atLeast": "is at least",
           "atMost": "is at most",
@@ -2295,6 +2296,9 @@ export default interface Resources {
         "sourceMissing": "The field this condition read no longer exists. Choose another field.",
         "sourceRequired": "Choose a field.",
         "title": "Display this field when…",
+        "valueLabel": "Value",
+        "valueRequired": "Enter a value.",
+        "valueTooLong": "This value is too long to store. Shorten it.",
         "valuesLabel": "Options",
         "valuesRejected": "This condition cannot be applied. Choose fewer or shorter options.",
         "valuesRequired": "Choose at least one option."
@@ -2313,6 +2317,7 @@ export default interface Resources {
         "atMost": "Shown when {source} is at most {value}",
         "contains": "Shown when {source} contains “{value}”",
         "equals": "Shown when {source} is “{value}”",
+        "equalsNumber": "Shown when {source} is {value}",
         "greaterThan": "Shown when {source} is greater than {value}",
         "hasNoValue": "Shown when {source} has no value",
         "hasValue": "Shown when {source} has a value",
@@ -2320,6 +2325,7 @@ export default interface Resources {
         "isNoneOf": "Shown when {source} is not {options}",
         "lessThan": "Shown when {source} is less than {value}",
         "notEquals": "Shown when {source} is not “{value}”",
+        "notEqualsNumber": "Shown when {source} is not {value}",
         "sourceBelowHint": "Placing it below {source} reads better.",
         "sourceMissing": "Always shown: the field its rule read no longer exists."
       }
@@ -6845,7 +6851,7 @@ export default interface Resources {
         },
         "confirmTypeChange": {
           "confirm": "Change type",
-          "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
+          "message": "{count, plural, one {The display rule of {fields} reads this field. A rule cannot read the new type in the same way, so changing the type also removes that rule.} other {The display rules of {fields} read this field. A rule cannot read the new type in the same way, so changing the type also removes those rules.}}",
           "title": "Change the type of {field}?"
         },
         "optionInUse": "A display rule uses this option, so it cannot be renamed."

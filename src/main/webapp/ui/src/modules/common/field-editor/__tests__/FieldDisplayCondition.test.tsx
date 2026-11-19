@@ -464,3 +464,124 @@ describe("FieldDisplayCondition", () => {
     await expectAccessible(baseElement);
   });
 });
+
+describe("FieldDisplayCondition with text and number sources", () => {
+  const batch: RuleEditorField = {
+    key: "batch",
+    name: "Batch code",
+    canBeSource: true,
+    sourceKind: "TEXT",
+    options: [],
+    rule: null,
+  };
+  const weight: RuleEditorField = {
+    key: "weight",
+    name: "Weight",
+    canBeSource: true,
+    sourceKind: "NUMBER",
+    options: [],
+    rule: null,
+  };
+  const notes: RuleEditorField = { key: "notes", name: "Notes", canBeSource: false, options: [], rule: null };
+
+  async function chooseSource(user: ReturnType<typeof userEvent.setup>, name: string) {
+    await user.click(card("Notes").getByRole("combobox", { name: "Field" }));
+    await user.click(screen.getByRole("option", { name }));
+  }
+
+  it("offers text and number fields, but not fields no rule can read", async () => {
+    const user = userEvent.setup();
+    await renderConditions([gmo, batch, weight, permit, notes]);
+
+    await user.click(conditional("Notes"));
+    await user.click(card("Notes").getByRole("combobox", { name: "Field" }));
+
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Is this a GMO?",
+      "Batch code",
+      "Weight",
+    ]);
+  });
+
+  it("lists the conditions of a number field and applies a trimmed number, explaining one that is not a number", async () => {
+    const user = userEvent.setup();
+    const { onChange, onIncompleteChange } = await renderConditions([gmo, weight, notes]);
+    await user.click(conditional("Notes"));
+    await chooseSource(user, "Weight");
+
+    await user.click(card("Notes").getByRole("combobox", { name: "Condition" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "is",
+      "is not",
+      "is less than",
+      "is at most",
+      "is greater than",
+      "is at least",
+      "has a value",
+      "has no value",
+    ]);
+    await user.click(screen.getByRole("option", { name: "is greater than" }));
+    const value = card("Notes").getByRole("textbox", { name: "Value" });
+    expect(value).toHaveAttribute("type", "text");
+    expect(value).not.toHaveAttribute("inputmode");
+    expect(value).toHaveAccessibleDescription("Enter a value.");
+
+    await user.type(value, "five");
+    expect(value).toHaveAccessibleDescription("Enter a number, such as 5, -2 or 2.5.");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("notes", true);
+
+    await user.clear(value);
+    await user.type(value, "5 ");
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("notes", createDisplayRule("weight", "GREATER_THAN", ["5"]));
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("notes", false);
+    expect(value).toHaveValue("5 ");
+  });
+
+  it("applies a text condition as typed, keeping spaces between words in the box", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([batch, notes]);
+    await user.click(conditional("Notes"));
+
+    await user.click(card("Notes").getByRole("combobox", { name: "Condition" }));
+    await user.click(screen.getByRole("option", { name: "contains" }));
+    const value = card("Notes").getByRole("textbox", { name: "Value" });
+    await user.type(value, "LOT A");
+
+    expect(value).toHaveValue("LOT A");
+    expect(onChange).toHaveBeenLastCalledWith("notes", createDisplayRule("batch", "CONTAINS", ["LOT A"]));
+  });
+
+  it("starts the condition again when a field of another kind is chosen", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([
+      gmo,
+      batch,
+      { ...notes, rule: createDisplayRule("batch", "EQUALS", ["LOT"]) },
+    ]);
+
+    await chooseSource(user, "Is this a GMO?");
+
+    expect(card("Notes").getByRole("combobox", { name: "Condition" })).toHaveTextContent("is any of");
+    expect(card("Notes").queryByRole("textbox", { name: "Value" })).not.toBeInTheDocument();
+    expect(card("Notes").getByRole("combobox", { name: "Options" })).toHaveAccessibleDescription(
+      "Choose at least one option.",
+    );
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("quotes text values in the summary, but not numbers", async () => {
+    await renderConditions(
+      [
+        batch,
+        weight,
+        { ...notes, rule: createDisplayRule("batch", "CONTAINS", ["LOT"]) },
+        { ...permit, rule: createDisplayRule("weight", "EQUALS", ["5"]) },
+      ],
+      { editable: false },
+    );
+
+    expect(card("Notes").getByText("Shown when Batch code contains “LOT”")).toBeInTheDocument();
+    expect(card("GMO permit").getByText("Shown when Weight is 5")).toBeInTheDocument();
+  });
+});
