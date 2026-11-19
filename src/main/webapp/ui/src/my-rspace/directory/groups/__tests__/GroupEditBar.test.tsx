@@ -230,7 +230,7 @@ describe("GroupEditBar", () => {
       releaseHide = resolve;
     });
     const { hidePosts } = mockEndpoints({ hideResponseGate });
-    renderEditBar("Original");
+    renderEditBar("Original", { piCanEditAll: true });
 
     await user.click(editButton());
     await user.click(screen.getByRole("checkbox", { name: /hideGroup/ }));
@@ -239,6 +239,9 @@ describe("GroupEditBar", () => {
     await waitFor(() => expect(hidePosts).toEqual(["true"]));
     expect(screen.getByRole("button", { name: /actions\.cancel/ })).toBeDisabled();
     expect(saveButton()).toBeDisabled();
+    expect(description()).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /hideGroup/ })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /piCanEdit/ })).toBeDisabled();
 
     releaseHide();
     await waitFor(() => expect(screen.queryByRole("button", { name: /actions\.save/ })).not.toBeInTheDocument());
