@@ -953,7 +953,7 @@ export const getGetCurrentUserProfileImageUrl = () => {
 };
 
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export const getCurrentUserProfileImage = (options?: Parameters<typeof apiV2BlobFetch>[1]) => {
@@ -995,7 +995,7 @@ export type GetCurrentUserProfileImageQueryError = ErrorType<
 >;
 
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImage<
@@ -1017,7 +1017,7 @@ export function useGetCurrentUserProfileImage<
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImage<
@@ -1039,7 +1039,7 @@ export function useGetCurrentUserProfileImage<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImage<
@@ -1053,7 +1053,7 @@ export function useGetCurrentUserProfileImage<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImage<
@@ -1118,7 +1118,7 @@ export type GetCurrentUserProfileImageSuspenseQueryError = ErrorType<
 >;
 
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImageSuspense<
@@ -1132,7 +1132,7 @@ export function useGetCurrentUserProfileImageSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImageSuspense<
@@ -1146,7 +1146,7 @@ export function useGetCurrentUserProfileImageSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImageSuspense<
@@ -1160,7 +1160,7 @@ export function useGetCurrentUserProfileImageSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns a PNG image with Cache-Control: no-store.
+ * Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.
  * @summary Get the current user's profile image
  */
 export function useGetCurrentUserProfileImageSuspense<

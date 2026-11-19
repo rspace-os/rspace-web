@@ -4,9 +4,26 @@ REST API v2 resource definitions list the public fields, access rules, relations
 sort. A resource operations class connects the definition to a domain manager. An
 `ApiV2ResourceSpec` bean registers its HTTP operations and schemas in OpenAPI.
 
-Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`. For
-query compilation, authentication and request limits, see [REST API v2 queries and
-access](RestApiV2QueriesAndAccess.md).
+Use a concrete controller for an operation outside collection CRUD, such as a route about the caller
+rather than a collection. For query compilation, authentication and request limits, see [REST API v2
+queries and access](RestApiV2QueriesAndAccess.md).
+
+## Where a collection is documented
+
+This guide describes the framework. It does not list the application's collections or routes: the
+published contract does, through `/api/v2/openapi.json` and the API docs page. Each collection
+documents itself where it is defined:
+
+| Fact | Where it lives |
+| --- | --- |
+| What the collection is for | `.tagDocumentation(description, group)` on the resource spec |
+| What a field means, including computed fields, defaults and validation rules | `@ApiV2ResourceField(description = ...)`, or the programmatic field's description |
+| Who may read or write | The access policy's `AccessDocumentation` |
+| Operation-specific rules and responses | The resource spec's per-operation documentation |
+| Routes outside collection CRUD | Swagger `@Operation`, `@ApiResponse` and `@Tag` on the controller |
+| Implementation notes clients do not need | Javadoc on the resource definition, operations class, access policy or DAO |
+
+Add a collection's details there, not to this guide.
 
 ## Add a field type
 
@@ -50,33 +67,6 @@ and compilation checks dynamically resolved fields. A non-queryable type uses
 `FieldComparisonStrategy.NONE` and no filter operators. Add tests for literal and document parsing,
 invalid values, schema output, serialization and compiled parameter bindings when introducing a
 type. Storage conversions also need a database comparison test.
-
-## Current concrete routes
-
-These routes use concrete controllers:
-
-| Route | Access | Result |
-| --- | --- | --- |
-| `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
-| `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
-| `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
-| `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
-| `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
-
-Use concrete controllers for these and similar non-CRUD routes. Do not add resource specs for them.
-
-### Existing resources
-
-The `users` collection exposes `LIST`, `COUNT`, and `READ`. A system administrator can read all
-users; another authenticated user can read only their own row. An unexposed write returns `405` with
-an `Allow` header before its access policy runs. Its operations class has no persistent writes.
-
-`/api/v2/users/me/profile-image` returns a PNG only after the user has uploaded an image. Otherwise
-it returns `404`. Fetch the image and supply a client placeholder on `404`; pointing an image
-element directly at the route gives a new account a broken image.
-
-`/api/v2/config` returns only allowlisted public deployment properties. It never exposes all
-properties, credentials, or secret paths. It is a concrete route, not a registered collection.
 
 ## Add a resource
 
@@ -166,10 +156,10 @@ converts one URL segment to the ID type and must reject invalid IDs. At startup,
 registry entry is needed. Add operation-specific error mappings when an operation needs them.
 
 Read-heavy resources can opt into `.scalarReader(reader)` on the spec. Its `ScalarReader.read`
-returns complete public scalar documents; `slice` optionally supplies a count-free window. Instruments
-use this strategy. Slice requests without totals issue no count query; entity resources retain counted
-pages. Entity and scalar runtime-field decorators share one interface while preserving their distinct
-projection and authorization rules.
+returns complete public scalar documents; `slice` optionally supplies a count-free window. Slice
+requests without totals issue no count query; entity resources retain counted pages. Entity and
+scalar runtime-field decorators share one interface while preserving their distinct projection and
+authorization rules.
 
 ### 3. Keep domain work in the manager
 
@@ -214,20 +204,11 @@ relative declaration order when exposed through `fields()` and `relationships()`
 
 Express a read rule as a row constraint when the rule fits the described fields. A read access
 function returns `AccessResult.allowedWhere(...)`, and the registration folds that constraint into
-the list, the count, the single read, and relationship resolution. `ApiV2InstrumentResource` hides
-soft-deleted rows this way, so its operations class does not repeat the rule on each route.
+the list, the count, the single read, and relationship resolution. A resource that hides
+soft-deleted rows this way does not repeat the rule on each route of its operations class.
 
 Use an `InternalFilter` when a server access rule needs a property that clients must not query. The
 query compiler resolves this selector. Request parsing keeps it private.
-
-Inventory sharing uses internal selectors for the owner, sharing mode, and sharing ACL.
-`InventoryReadFilters.ALL` defines these selectors. Each applicable inventory description must
-include that list.
-
-`InstrumentReadAccess` returns one `AccessResult.allowedWhere(...)` constraint that uses those
-selectors. The manager evaluates the policy. `InventoryDaoHibernate` compiles the trusted constraint
-and combines it with the client filter. The database then applies access, filtering, sorting,
-pagination, and totals together.
 
 Do not filter rows again in the operations class. Java text rules differ from database collation.
 Filtering again can remove matched rows from the page and total.
@@ -500,20 +481,11 @@ constraint `Pattern` must have no flags, because the published pattern cannot ca
 
 These per-field wire rules do not replace manager enforcement of domain rules.
 
-The read-only `containers` shape exposes `id`, `globalId`, `name`, `containerType` and `deleted`.
-These fields are safe when the caller has only contents-based visibility. Global IDs use `IC` for
-containers and `BE` for workbenches and cannot be queried. Supply `ContainerReadAccess` to
-`ApiV2ContainerResource.description` when registering the resource. Its static description denies
-reads until a deployment supplies the policy.
-
 `CollectionQueryExecutor.count` uses the unpaginated count query without loading an entity. For
 scalar readers that do not need totals, `projectedSlice` returns a `ResourceSlice`. It requests one
 extra row at the original page offset with counting disabled, trims that row, and reports `hasNext`.
 Offsets beyond Blaze's integer limit return an empty slice without querying. `page` and
 `projectedPage` retain their counted-page behavior.
-
-The instrument default sort uses `(DTYPE, deleted, name, id)`. A full name key is needed to preserve
-sort order.
 
 ## Request and response payloads
 
@@ -572,9 +544,9 @@ validation annotations, so partial settings updates and validation messages are 
 
 Collection lists contain `docs`, `page`, `limit` and `hasNextPage`. They omit `totalDocs` and
 `totalIsLowerBound` unless the request supplies `totals=true`. When `hasNextPage` is true, request
-`page + 1`; a previous page exists when `page > 1`, including pages past the end. Derive page
-counts as `ceil(totalDocs / limit)` only when the total is exact. Instruments fetch a scalar window plus one row to
-determine whether another page exists; resources without a scalar slice retain their counted query
+`page + 1`; a previous page exists when `page > 1`, including pages past the end. Derive page counts
+as `ceil(totalDocs / limit)` only when the total is exact. Resources with a scalar slice fetch one
+extra row to determine whether another page exists; resources without one retain their counted query
 internally.
 
 `/count` and lists with `totals=true` accept `max` from 1 to 10,000. When more rows match,

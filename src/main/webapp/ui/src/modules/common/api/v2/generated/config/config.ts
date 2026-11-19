@@ -48,7 +48,7 @@ export const getGetApiV2ConfigUrl = () => {
 };
 
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export const getApiV2Config = async (options?: Parameters<typeof apiV2Fetch>[1]): Promise<ApiV2Config> => {
@@ -88,7 +88,7 @@ export type GetApiV2ConfigQueryResult = NonNullable<Awaited<ReturnType<typeof ge
 export type GetApiV2ConfigQueryError = ErrorType<TooManyRequestsResponse>;
 
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2Config<
@@ -110,7 +110,7 @@ export function useGetApiV2Config<
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2Config<
@@ -132,7 +132,7 @@ export function useGetApiV2Config<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2Config<
@@ -146,7 +146,7 @@ export function useGetApiV2Config<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2Config<
@@ -207,7 +207,7 @@ export type GetApiV2ConfigSuspenseQueryResult = NonNullable<Awaited<ReturnType<t
 export type GetApiV2ConfigSuspenseQueryError = ErrorType<TooManyRequestsResponse>;
 
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2ConfigSuspense<
@@ -221,7 +221,7 @@ export function useGetApiV2ConfigSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2ConfigSuspense<
@@ -235,7 +235,7 @@ export function useGetApiV2ConfigSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2ConfigSuspense<
@@ -249,7 +249,7 @@ export function useGetApiV2ConfigSuspense<
   queryClient?: QueryClient,
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export function useGetApiV2ConfigSuspense<

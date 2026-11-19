@@ -258,7 +258,7 @@ export const UsersReference = v.object({
 });
 
 /**
- * Returns branding, help links, and deployment information.
+ * Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.
  * @summary Get public REST API v2 configuration
  */
 export const GetApiV2ConfigResponse = ApiV2Config;

@@ -1542,7 +1542,7 @@
   "paths" : {
     "/api/v2/config" : {
       "get" : {
-        "description" : "Returns branding, help links, and deployment information.",
+        "description" : "Returns branding, help links, and deployment information from an allowlist of public deployment properties. It never exposes other properties, credentials, or secret paths.",
         "operationId" : "getApiV2Config",
         "responses" : {
           "200" : {
@@ -2398,7 +2398,7 @@
     },
     "/api/v2/users/me/profile-image" : {
       "get" : {
-        "description" : "Returns a PNG image with Cache-Control: no-store.",
+        "description" : "Returns the uploaded PNG image with Cache-Control: no-store. Returns 404 until the user uploads an image, so fetch it and show a placeholder on 404 instead of pointing an image element at this route.",
         "operationId" : "getCurrentUserProfileImage",
         "responses" : {
           "200" : {
