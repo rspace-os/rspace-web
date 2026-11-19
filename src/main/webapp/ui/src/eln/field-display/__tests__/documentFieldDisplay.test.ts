@@ -166,6 +166,68 @@ describe("applyFieldDisplayRules", () => {
     expect(dependent).toHaveAttribute("hidden");
   });
 
+  test("hides a picklist's dependent until the user picks the first option over the empty placeholder", () => {
+    // as pickListField.jsp renders a picklist without data
+    const pickList = row(
+      { "data-field-id": "1", "data-field-type": "RADIO", "data-field-key": GMO_KEY, "data-field-value": "" },
+      `<select><option value="" selected></option><option value="Yes">Yes</option><option value="No">No</option></select>`,
+    );
+    const dependent = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": showWhenYes });
+    const root = page(pickList, dependent);
+    const select = find<HTMLSelectElement>(pickList, "select");
+
+    applyFieldDisplayRules(root);
+    expect(select).toHaveValue("");
+    expect(dependent).toHaveAttribute("hidden");
+
+    select.value = "Yes";
+    markAnswered(select);
+    applyFieldDisplayRules(root);
+    expect(dependent).not.toHaveAttribute("hidden");
+  });
+
+  describe("stored choice data that is not an option", () => {
+    function choicePage(operator: "HAS_VALUE" | "HAS_NO_VALUE") {
+      const choice = row(
+        {
+          "data-field-id": "1",
+          "data-field-type": "CHOICE",
+          "data-field-key": GMO_KEY,
+          "data-field-value": "fieldSelectedChoicesFinal_1=Removed",
+        },
+        `<input type="checkbox" value="Yes"><input type="checkbox" value="No">`,
+      );
+      const rule = serializeDisplayRule(createDisplayRule(GMO_KEY, operator, []));
+      const dependent = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": rule });
+      return { root: page(choice, dependent), choice, dependent };
+    }
+
+    test("counts as a value, as the server does", () => {
+      const hasValue = choicePage("HAS_VALUE");
+      const hasNoValue = choicePage("HAS_NO_VALUE");
+
+      applyFieldDisplayRules(hasValue.root);
+      applyFieldDisplayRules(hasNoValue.root);
+
+      expect(hasValue.dependent).not.toHaveAttribute("hidden");
+      expect(hasNoValue.dependent).toHaveAttribute("hidden");
+    });
+
+    test("gives way to the checked boxes once the user changes one, until the data is reloaded", () => {
+      const { root, choice, dependent } = choicePage("HAS_VALUE");
+      const yes = find<HTMLInputElement>(choice, 'input[value="Yes"]');
+
+      // checked and unchecked again: autosave would store no options
+      markAnswered(yes);
+      applyFieldDisplayRules(root);
+      expect(dependent).toHaveAttribute("hidden");
+
+      syncStoredValue(choice, "fieldSelectedChoicesFinal_1=Removed");
+      applyFieldDisplayRules(root);
+      expect(dependent).not.toHaveAttribute("hidden");
+    });
+  });
+
   test("reads stored radio data where a field has no inputs", () => {
     const source = row({
       "data-field-id": "1",

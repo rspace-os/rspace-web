@@ -20,12 +20,16 @@ import { createLegacyFieldDisplay } from "../legacyFieldDisplay";
 const WEBAPP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const HAZARD_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
 const showWhenYes = serializeDisplayRule(createDisplayRule(HAZARD_KEY, "IS_ANY_OF", ["Yes"]));
+const CONTROLS_KEY = "6f1c2e0a-0000-4000-8000-000000000013";
+const showWhenControls = serializeDisplayRule(createDisplayRule(CONTROLS_KEY, "HAS_VALUE", []));
+const REMOVED_CHOICE = "fieldSelectedChoicesFinal_13=Removed";
 
 type LegacyPage = Window & {
   $: JQueryStatic;
   updateFieldsContentFromServer: (force: boolean) => PromiseLike<unknown>;
   _updateAutosavedFields: (fields: Array<{ id: number; fieldData: string }>) => void;
   checkAndMarkField: (control: Element) => void;
+  _autosavePickList: ($field: JQuery) => PromiseLike<unknown>;
 };
 const legacy = window as unknown as LegacyPage;
 const renderToolbar = vi.fn();
@@ -57,7 +61,11 @@ beforeAll(() => {
   runScript("scripts/pages/workspace/editor/documentEdit.js");
 });
 
-/** A picklist "Hazard?" whose "Yes" shows the mandatory, empty "Hazard permit". */
+/**
+ * A picklist "Hazard?" whose "Yes" shows the mandatory, empty "Hazard permit",
+ * and a choice field "Controls" whose stored value "Removed" is no longer an
+ * option, with "Controls note" shown while it has a value.
+ */
 async function renderPage(storedAnswer: string) {
   document.body.innerHTML = `
     <input type="hidden" id="lastModificationRecord" value="0">
@@ -65,9 +73,19 @@ async function renderPage(storedAnswer: string) {
       <tr id="field_11" name="picklist" class="field" data-field-id="11" data-field-key="${HAZARD_KEY}"
           data-field-type="RADIO" data-field-name="Hazard?" data-field-value="${storedAnswer}">
         <td><select id="11" class="formPickList 11">
-          <option value="Yes"${storedAnswer === "Yes" ? " selected" : ""}>Yes</option>
-          <option value="No"${storedAnswer === "No" ? " selected" : ""}>No</option>
-        </select><p id="radioText_11">${storedAnswer}</p></td>
+          ${storedAnswer === "" ? '<option value="" selected></option>' : ""}
+          <option class="radioLi 11" value="Yes"${storedAnswer === "Yes" ? " selected" : ""}>Yes</option>
+          <option class="radioLi 11" value="No"${storedAnswer === "No" ? " selected" : ""}>No</option>
+        </select><input type="hidden" name="fieldId" value="11"><p id="radioText_11">${storedAnswer}</p></td>
+      </tr>
+      <tr id="field_13" name="choice" class="field" data-field-id="13" data-field-key="${CONTROLS_KEY}"
+          data-field-type="CHOICE" data-field-name="Controls" data-field-value="${REMOVED_CHOICE}">
+        <td><input type="checkbox" class="13" id="13" name="fieldSelectedChoicesFinal_13" value="Gloves">
+          <p id="choiceText_13">Removed</p></td>
+      </tr>
+      <tr id="field_14" name="string" class="field" data-field-id="14" data-field-type="STRING"
+          data-field-name="Controls note" data-display-rule='${showWhenControls}'>
+        <td><input class="inputField 14" id="14" name="fieldData" value=""><p id="plainText_14"></p></td>
       </tr>
       <tr id="field_12" name="string" class="field" data-field-id="12" data-field-type="STRING"
           data-field-name="Hazard permit" data-display-rule='${showWhenYes}'>
@@ -81,6 +99,7 @@ async function renderPage(storedAnswer: string) {
 
 const pickList = () => document.getElementById("11") as HTMLSelectElement;
 const permitRow = () => document.getElementById("field_12");
+const controlsNoteRow = () => document.getElementById("field_14");
 
 function serveUpdatedFields(answer: string) {
   server.use(
@@ -89,6 +108,14 @@ function serveUpdatedFields(answer: string) {
         data: [
           { id: 11, type: "RADIO", fieldData: answer, mandatoryStateSatisfied: true },
           { id: 12, type: "STRING", fieldData: "", mandatoryStateSatisfied: false },
+          {
+            id: 13,
+            type: "CHOICE",
+            fieldData: REMOVED_CHOICE,
+            choiceOptionSelectedAsList: ["Removed"],
+            choiceOptionSelectedAsString: "Removed",
+            mandatoryStateSatisfied: true,
+          },
         ],
       }),
     ),
@@ -130,6 +157,41 @@ describe("reloading field data from the server (_updateFields)", () => {
     expect(pickList()).toHaveValue("No");
     expect(permitRow()).not.toBeVisible();
     expect(renderToolbar).toHaveBeenLastCalledWith({ canSign: true });
+  });
+
+  test("a choice field the user had changed, reloaded with a value no longer offered, counts that value again", async () => {
+    await renderPage("");
+    expect(controlsNoteRow()).toBeVisible();
+    // the user checks and unchecks Gloves: autosave would store no options
+    legacy.checkAndMarkField(document.getElementById("13") as HTMLInputElement);
+    expect(controlsNoteRow()).not.toBeVisible();
+    serveUpdatedFields("");
+
+    await legacy.updateFieldsContentFromServer(true);
+
+    expect(controlsNoteRow()).toBeVisible();
+  });
+});
+
+describe("autosaving a picklist (_autosavePickList)", () => {
+  test("stores no data while an empty picklist shows its placeholder, and the first option once picked", async () => {
+    const saved: Array<string | null> = [];
+    server.use(
+      http.post("*/workspace/editor/structuredDocument/ajax/autosaveField", async ({ request }) => {
+        saved.push(new URLSearchParams(await request.text()).get("dataValue"));
+        return HttpResponse.json({ data: true });
+      }),
+    );
+    await renderPage("");
+    expect(pickList()).toHaveValue("");
+    await legacy._autosavePickList(legacy.$("#field_11"));
+
+    legacy.$("#11").val("Yes");
+    legacy.checkAndMarkField(pickList());
+    expect(permitRow()).toBeVisible();
+    await legacy._autosavePickList(legacy.$("#field_11"));
+
+    expect(saved).toEqual(["", "Yes"]);
   });
 });
 
