@@ -39,7 +39,8 @@ type Settled = { session: string; typed: string };
  *    they are now, so choosing one applies at once.
  *  - A field that contains focus is not hidden until focus leaves it, so focus
  *    never moves on its own. Focus moving into a frame inside the field, such
- *    as a rich text editor's, or out of the window, does not leave it.
+ *    as a rich text editor's, or out of the window, does not leave it; it is
+ *    checked again when the window regains focus or focus lands anywhere else.
  *  - Another record, a reload, or leaving edit mode applies the current
  *    visibility at once; the pending update is dropped, as it is on unmount.
  *
@@ -91,7 +92,32 @@ export default function useShownTemplateFields(
   const [focus, setFocus] = useState<{ session: string; field: Field } | null>(null);
   const focused = focus?.session === session ? focus.field : null;
   const blurCheck = useRef<ReturnType<typeof setTimeout>>(undefined);
+  /** The element wrapping the focused field. */
+  const focusedWrapper = useRef<HTMLElement | null>(null);
   useEffect(() => () => clearTimeout(blurCheck.current), []);
+
+  /** Releases `field` once focus has settled outside it; where focus went is known only once it lands. */
+  const checkFocusLeft = (field: Field, wrapper: HTMLElement) => {
+    clearTimeout(blurCheck.current);
+    blurCheck.current = setTimeout(() => {
+      if (!document.hasFocus() || wrapper.contains(document.activeElement)) return;
+      setFocus((current) => (current?.field === field ? null : current));
+    });
+  };
+
+  // a field kept while the window lost focus gets no blur when focus then lands outside it, so look again
+  useEffect(() => {
+    if (focused === null) return;
+    const recheck = () => {
+      if (focusedWrapper.current) checkFocusLeft(focused, focusedWrapper.current);
+    };
+    window.addEventListener("focus", recheck);
+    document.addEventListener("focusin", recheck);
+    return () => {
+      window.removeEventListener("focus", recheck);
+      document.removeEventListener("focusin", recheck);
+    };
+  }, [focused]);
 
   const renderedHidden = settledHidden.filter((field) => field !== focused);
   const shownFields = fields.filter((field) => !renderedHidden.includes(field));
@@ -109,18 +135,15 @@ export default function useShownTemplateFields(
     // biome-ignore lint/a11y/noStaticElementInteractions: it only observes focus moving among the field's own controls
     <div
       key={identityOf(field)}
-      onFocus={() => {
+      onFocus={({ currentTarget }: FocusEvent<HTMLDivElement>) => {
         clearTimeout(blurCheck.current);
+        focusedWrapper.current = currentTarget;
         setFocus({ session, field });
       }}
       onBlur={({ currentTarget, relatedTarget }: FocusEvent<HTMLDivElement>) => {
         if (relatedTarget instanceof Node && currentTarget.contains(relatedTarget)) return;
-        // where focus went is known only once it lands, as when it enters a frame inside the field
-        clearTimeout(blurCheck.current);
-        blurCheck.current = setTimeout(() => {
-          if (!document.hasFocus() || currentTarget.contains(document.activeElement)) return;
-          setFocus((current) => (current?.field === field ? null : current));
-        });
+        // focus entering a frame inside the field reports no relatedTarget, so look once it lands
+        checkFocusLeft(field, currentTarget);
       }}
     >
       {node}
