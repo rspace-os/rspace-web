@@ -2184,7 +2184,8 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "bufferAfterMinutes" : {
             "description" : "Unavailable minutes after a booking.",
@@ -2193,7 +2194,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "bufferBeforeMinutes" : {
             "description" : "Unavailable minutes before a booking.",
@@ -2202,7 +2204,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "capabilities" : {
             "allOf" : [ {
@@ -2211,7 +2214,8 @@
             "readOnly" : true,
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "configurationVersion" : {
             "description" : "Optimistic configuration revision.",
@@ -2220,7 +2224,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "createdAt" : {
             "description" : "Time at which the resource was created.",
@@ -2229,7 +2234,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "createdBy" : {
             "anyOf" : [ {
@@ -2255,7 +2261,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "effectiveRole" : {
             "maxLength" : 64,
@@ -2263,14 +2270,16 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "enabled" : {
             "description" : "Whether bookings are enabled for the target.",
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "id" : {
             "description" : "Stable booking-configuration identifier.",
@@ -2291,7 +2300,8 @@
             "example" : "MINUTES",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "maxBookingDurationMinutes" : {
             "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
@@ -2300,7 +2310,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "openingHours" : {
             "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
@@ -2422,7 +2433,8 @@
                 "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
               },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ]
+            } ],
+            "x-rspace-read-guaranteed" : true
           },
           "ownerHealth" : {
             "anyOf" : [ {
@@ -2671,7 +2683,8 @@
               },
               "writeConstraints" : { },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ]
+            } ],
+            "x-rspace-read-guaranteed" : true
           },
           "slotGranularityMinutes" : {
             "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
@@ -2680,7 +2693,8 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "state" : {
             "allOf" : [ {
@@ -2689,7 +2703,8 @@
             "description" : "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "target" : {
             "anyOf" : [ {
@@ -2702,6 +2717,7 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
+            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "instruments" : {
@@ -2722,7 +2738,8 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "updatedAt" : {
             "description" : "Time at which the resource was last updated.",
@@ -2731,7 +2748,8 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            }
+            },
+            "x-rspace-read-guaranteed" : true
           },
           "updatedBy" : {
             "anyOf" : [ {
