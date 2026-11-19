@@ -1,13 +1,13 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.rule.FieldKeys;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -78,8 +78,7 @@ public class ApiFieldToModelFieldFactory {
     }
     // set before the field is persisted, so the template's rules can be validated against the
     // keys of fields created in the same request; a client key is checked with the whole template
-    toAdd.setFieldKey(
-        field.getFieldKey() != null ? field.getFieldKey() : UUID.randomUUID().toString());
+    toAdd.setFieldKey(field.getFieldKey() != null ? field.getFieldKey() : FieldKeys.newFieldKey());
     toAdd.setDisplayRule(field.getDisplayRule());
     return toAdd;
   }
