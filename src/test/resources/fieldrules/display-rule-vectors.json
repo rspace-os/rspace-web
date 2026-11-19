@@ -1659,7 +1659,7 @@
       ]
     },
     {
-      "name": "a field value the number grammar does not read is not a number",
+      "name": "a field value the decimal libraries do not read alike is not a number",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -1716,7 +1716,7 @@
           "key": "00000000-0000-4000-8000-000000000007",
           "type": "NUMBER",
           "sourceKind": "NUMBER",
-          "value": "1e1234"
+          "value": "1e2001"
         },
         {
           "key": "00000000-0000-4000-8000-000000000008",
@@ -1734,6 +1734,317 @@
         false,
         true,
         false,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "numbers are read by BigDecimal and decimal.js, kept in agreement: only ASCII digits, signs, points and e; at most nine exponent digits; zero or a leading digit within 10^±2000",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "Infinity"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "NaN"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0b1"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000005",
+            "operator": "EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0o7"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000007",
+            "operator": "EQUALS",
+            "values": [
+              "7"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1_000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000010",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "EQUALS",
+            "values": [
+              "1000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000011",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "١٢"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000012",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000011",
+            "operator": "EQUALS",
+            "values": [
+              "12"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000013",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "５"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000014",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000013",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000015",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e2001"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000016",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000015",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000017",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "-1e-2001"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000018",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000017",
+            "operator": "LESS_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000019",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e0000000005"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000020",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000019",
+            "operator": "EQUALS",
+            "values": [
+              "100000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000021",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0e9999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000022",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000021",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000023",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e-99999999999999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000024",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000023",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000025",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e1000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000026",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000025",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000027",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e-2000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000028",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000027",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000029",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e000000005"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000030",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000029",
+            "operator": "EQUALS",
+            "values": [
+              "100000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000031",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0e-999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000032",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000031",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
         true,
         true
       ]
@@ -3452,7 +3763,7 @@
       ]
     },
     {
-      "name": "a number rule value must match the field values' number grammar, untrimmed",
+      "name": "a number rule value must be a number as written, untrimmed, read the same way as field values",
       "fields": [
         {
           "key": "00000000-0000-4000-8000-000000000001",
@@ -3588,7 +3899,161 @@
             "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
             "operator": "EQUALS",
             "values": [
+              "1e2001"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000014",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
               "1e1000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000015",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e-2000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000016",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e000000005"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000017",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "Infinity"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000018",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "NaN"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000019",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0x1F"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000020",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0b1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000021",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0o7"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000022",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1_000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000023",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "١٢"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000024",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "５"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000025",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e0000000005"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000026",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0e9999999999"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000027",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "-1e-2001"
             ]
           }
         }
@@ -3612,6 +4077,50 @@
         },
         {
           "fieldIndex": 12,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 16,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 17,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 18,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 19,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 20,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 21,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 22,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 23,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 24,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 25,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 26,
           "code": "validation.fieldDisplayRule.valueNotANumber"
         }
       ]
@@ -3848,6 +4357,103 @@
             "code": "validation.fieldDisplayRule.ruleTooLong"
           }
         ]
+      }
+    ]
+  },
+  "canonicalNumbers": {
+    "description": "A number in canonical form, from RuleValues.canonicalNumber (Java) and canonicalRuleNumber (TypeScript): trimmed, plain decimal notation, no trailing zeros, no sign on zero; null when the value is not a number. A canonical value can exceed the 1000-character limit on values read as numbers.",
+    "cases": [
+      {
+        "value": "1.50",
+        "canonical": "1.5"
+      },
+      {
+        "value": "+5",
+        "canonical": "5"
+      },
+      {
+        "value": ".5",
+        "canonical": "0.5"
+      },
+      {
+        "value": "5.",
+        "canonical": "5"
+      },
+      {
+        "value": "05",
+        "canonical": "5"
+      },
+      {
+        "value": "1e3",
+        "canonical": "1000"
+      },
+      {
+        "value": "1E+3",
+        "canonical": "1000"
+      },
+      {
+        "value": "1e-3",
+        "canonical": "0.001"
+      },
+      {
+        "value": "-0",
+        "canonical": "0"
+      },
+      {
+        "value": "-0.0",
+        "canonical": "0"
+      },
+      {
+        "value": "0e-5",
+        "canonical": "0"
+      },
+      {
+        "value": "100",
+        "canonical": "100"
+      },
+      {
+        "value": "-12.3400e2",
+        "canonical": "-1234"
+      },
+      {
+        "value": "1e-7",
+        "canonical": "0.0000001"
+      },
+      {
+        "value": "123456789012345678901234567890.10",
+        "canonical": "123456789012345678901234567890.1"
+      },
+      {
+        "value": " 7 ",
+        "canonical": "7"
+      },
+      {
+        "value": "1e2000",
+        "canonical": "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "value": "1e2001",
+        "canonical": null
+      },
+      {
+        "value": "abc",
+        "canonical": null
+      },
+      {
+        "value": " ",
+        "canonical": null
+      },
+      {
+        "value": "Infinity",
+        "canonical": null
+      },
+      {
+        "value": "0x1F",
+        "canonical": null
+      },
+      {
+        "value": "５",
+        "canonical": null
       }
     ]
   }
