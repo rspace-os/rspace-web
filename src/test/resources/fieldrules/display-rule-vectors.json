@@ -1484,6 +1484,20 @@
             "code": "validation.fieldDisplayRule.ruleTooLong"
           }
         ]
+      },
+      {
+        "name": "values each within the budget that together are longer than a whole rule may be",
+        "valueCount": 2,
+        "pad": "x",
+        "padCount": 19995,
+        "tailLength": 0,
+        "jsonLength": 40097,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
       }
     ]
   }
