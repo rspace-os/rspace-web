@@ -303,6 +303,35 @@ describe("Template display conditions", () => {
     expect(fieldAt(template, permit).paramsForBackend).toHaveProperty("displayRule", null);
   });
 
+  it("puts only the changed rules in the request that updates the template", async () => {
+    const user = userEvent.setup();
+    const attrs = savedGmoTemplateAttrs();
+    const template = makeMockTemplate({
+      ...attrs,
+      fields: [
+        ...(attrs?.fields ?? []),
+        savedField({ id: 3, globalId: "SF3", name: "Notes", type: "string", fieldKey: NOTES_KEY }),
+      ],
+    });
+    renderEditor(template);
+    await showWhen(user, "Notes", "No");
+    update.mockRejectedValueOnce(new Error("Only the request is under test"));
+
+    await act(async () => {
+      await template.update().catch(() => {});
+    });
+
+    expect(update).toHaveBeenCalledOnce();
+    const [, , body] = update.mock.calls[0] as [string, number, { fields: Array<Record<string, unknown>> }];
+    const sent = (key: string) => body.fields.find((field) => field.fieldKey === key);
+    expect(sent(PERMIT_KEY)).not.toHaveProperty("displayRule");
+    expect(sent(NOTES_KEY)).toHaveProperty("displayRule", {
+      sourceFieldKey: GMO_KEY,
+      operator: "IS_ANY_OF",
+      values: ["No"],
+    });
+  });
+
   it("carries a selected default when its new option is renamed", async () => {
     const user = userEvent.setup();
     const template = makeMockTemplate({ id: null, globalId: null });
@@ -619,6 +648,36 @@ describe("Display conditions outside a secure context", () => {
     await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
 
     expect(v.is(UUID, fieldAt(template, 2).fieldKey)).toBe(true);
+    expect(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("group", {
+        name: "common:fieldEditor.condition.title",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("adds a field to an instrument template without crypto.randomUUID", async () => {
+    const { getRandomValues } = globalThis.crypto;
+    vi.stubGlobal("crypto", { getRandomValues: getRandomValues.bind(globalThis.crypto) });
+    expect(globalThis.crypto.randomUUID).toBeUndefined();
+    const user = userEvent.setup();
+    const template = makeMockInstrumentTemplate();
+    template.currentlyEditableFields.add("fields");
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider
+          value={makeMockRootStore({
+            searchStore: { activeResult: template },
+            uiStore: { isLarge: true, confirm: vi.fn() },
+          })}
+        >
+          <InstrumentTemplateFields onErrorStateChange={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
+
+    expect(v.is(UUID, (template.fields[0] as FieldModel).fieldKey)).toBe(true);
     expect(
       within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("group", {
         name: "common:fieldEditor.condition.title",
