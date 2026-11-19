@@ -1,9 +1,9 @@
-import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isEqual, uniqWith } from "es-toolkit";
 import type { OpenApiDocument, OpenApiReferenceObject, OpenApiRequestBodyObject, OpenApiResponseObject } from "orval";
+import { biomeWrite } from "./biome.ts";
 import {
   type Content,
   isReference,
@@ -136,7 +136,7 @@ export async function generateFiles(input: string, output: string): Promise<void
     source,
   }));
   for (const { path, source } of files) await writeFile(path, source);
-  execFileSync("pnpm", ["exec", "biome", "check", "--write", ...files.map(({ path }) => path)], { stdio: "inherit" });
+  biomeWrite(files.map(({ path }) => path));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
