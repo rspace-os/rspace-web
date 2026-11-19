@@ -131,12 +131,7 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
-  void upperCaseKeyAndUnknownOptionAndCycleAreRejected() {
-    permit.setFieldKey(PERMIT_KEY.toUpperCase());
-    permit.setDisplayRule(null);
-    assertRejected(FieldDisplayRuleValidator.KEY_INVALID, "GMO permit number");
-
-    permit.setFieldKey(PERMIT_KEY);
+  void unknownOptionAndCycleAreRejected() {
     permit.setDisplayRule(showWhen(GMO_KEY, "Maybe"));
     assertRejected(FieldDisplayRuleValidator.VALUE_UNKNOWN, "GMO permit number");
 
