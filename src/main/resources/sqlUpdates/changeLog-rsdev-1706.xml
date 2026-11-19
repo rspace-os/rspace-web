@@ -18,18 +18,14 @@
     </changeSet>
 
     <changeSet id="2026-11-18-rsdev1706-backfill-template-field-keys" context="run" author="tchoi-rs">
-        <comment>RSDEV-1706: Give every existing sample and instrument template field a key, so any field
-            an author can pick in a display rule has one. Fields of samples and instruments are copies
-            and keep a null key until they are updated to the latest template version.</comment>
-        <sql>
-            update InventoryEntityField f
-              join Sample s on s.id = f.sample_id
-               set f.fieldKey = UUID()
-             where f.fieldKey is null and s.DTYPE = 'SampleTemplate';
-            update InventoryEntityField f
-              join InstrumentEntity i on i.id = f.instrumentEntity_id
-               set f.fieldKey = UUID()
-             where f.fieldKey is null and i.DTYPE = 'InstrumentTemplate';
-        </sql>
+        <!-- The checksum of the first version, which set the keys with SQL UUID() (version 1).
+             Databases that ran it keep those keys: any UUID is a valid key. -->
+        <validCheckSum>9:c95cd29415a39165f106c8fac46a57b5</validCheckSum>
+        <comment>RSDEV-1706: Give every existing sample and instrument template field a key, a UUID
+            version 7 generated in Java, so any field an author can pick in a display rule has one.
+            Fields of samples and instruments are copies and keep a null key until they are updated
+            to the latest template version.</comment>
+        <customChange
+            class="com.researchspace.dao.customliquibaseupdates.BackfillInventoryTemplateFieldKeys_RSDEV1706"/>
     </changeSet>
 </databaseChangeLog>
