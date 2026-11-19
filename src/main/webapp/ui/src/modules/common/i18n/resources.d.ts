@@ -7530,6 +7530,7 @@ export default interface Resources {
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
+          "csvColumnsMatchingSameTemplateField": "CSV columns {0} all match the template field \"{1}\". Each template field can be filled from only one column.",
           "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
