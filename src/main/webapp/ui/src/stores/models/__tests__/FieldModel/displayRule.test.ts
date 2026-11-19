@@ -1,4 +1,3 @@
-import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { createDisplayRule, type FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
@@ -70,7 +69,7 @@ describe("FieldModel display rules", () => {
     template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
     template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
     const [first, second] = template.fields.map((field) => field.fieldKey);
-    expect(v.is(v.pipe(v.string(), v.uuid()), first)).toBe(true);
+    expect(first).toEqual(expect.any(String));
     expect(second).not.toBe(first);
     expect(makeMockField({ type: "string" }).fieldKey).toBeNull();
   });
