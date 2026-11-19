@@ -1,6 +1,7 @@
 import { delay } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
+import { newFieldKey } from "@/modules/common/field-rules/newFieldKey";
 import i18n from "@/modules/common/i18n";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
@@ -234,7 +235,7 @@ export default class TemplateModel extends SampleModel implements Template {
   /** Adds a field with a new key, so display rules can use it before the template is saved. */
   addField(fieldParams: FieldModelAttrs) {
     this.setAttributesDirty({
-      fields: [...this.fields, new FieldModel({ ...fieldParams, fieldKey: crypto.randomUUID() }, this)],
+      fields: [...this.fields, new FieldModel({ ...fieldParams, fieldKey: newFieldKey() }, this)],
     });
   }
 
