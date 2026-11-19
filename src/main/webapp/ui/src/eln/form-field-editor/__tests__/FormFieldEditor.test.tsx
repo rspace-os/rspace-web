@@ -1148,6 +1148,9 @@ describe("FormFieldEditor with one-line text and number sources", () => {
     await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
 
     await user.click(passwordSwitch("Batch code"));
+    // the unfinished condition read Batch code, which is no longer a source of that kind, so it was dropped
+    expect(within(card("Target")).getByRole("radio", { name: "Always" })).toBeChecked();
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
     expect(await offeredSources()).toEqual(["Weight"]);
 
     await user.click(passwordSwitch("Batch code"));
