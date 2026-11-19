@@ -852,6 +852,16 @@ function checkAndMarkNumber(element) {
   }
 }
 
+/* A number is checked and marked for autosave only on change, which has not fired
+ * while it keeps focus, so a Save invoked from the keyboard commits it first. */
+function _commitFocusedNumber() {
+  var $input = $(document.activeElement).filter("input[name='fieldData']");
+  var $field = $input.closest(".field[name='number']");
+  if ($field.length && $input.val() !== $field.find("input[name='lastValue']").val()) {
+    checkAndMarkNumber($input[0]);
+  }
+}
+
 function cancelAutosavedEdits() {
   if (editable !== "EDIT_MODE") {
     apprise(RS.msg("legacyjs.workspace.documentEdit.cannotCancelDocument"));
@@ -908,6 +918,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
     return;
   }
 
+  _commitFocusedNumber();
   var renamePromise = renameDocumentBeforeSaving();
 
   $.when(renamePromise).done(function () {

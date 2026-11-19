@@ -30,11 +30,17 @@ export type LegacyFieldDisplay = {
    * field focus moves into stays shown. Sign and saves still call `refresh`.
    */
   valueRestored(): void;
-  /** Cancels display work still waiting to run, such as the update after typing pauses. */
+  /**
+   * Cancels display work still waiting to run: the update after typing
+   * pauses, and an announcement still waiting for its catalog. Call when the
+   * user discards their edits.
+   */
   cancelPending(): void;
   /** Call when legacy code reloads a field's data; then `refresh`. */
   syncStoredValue(fieldId: string | number, value: string | null | undefined): void;
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
+  /** Removes the live region and the listeners on the page, and cancels pending work. */
+  dispose(): void;
 };
 
 /** How long typing must pause before the fields it shows or hides change. */
@@ -59,6 +65,8 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
   region.setAttribute("aria-live", "polite");
   region.style.cssText = VISUALLY_HIDDEN;
   doc.body.append(region);
+  const listeners = new AbortController();
+  const { signal } = listeners;
   // A later change wins over an announcement still waiting for the catalog.
   let latestChange = 0;
 
@@ -96,9 +104,14 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
     pending = setTimeout(() => refresh(doc, { announce: true }), delay);
   }
 
-  function cancelPending(): void {
+  function clearScheduled(): void {
     clearTimeout(pending);
     pending = undefined;
+  }
+
+  function cancelPending(): void {
+    clearScheduled();
+    latestChange++;
   }
 
   function release(): void {
@@ -108,26 +121,41 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
     }
   }
 
-  doc.addEventListener("focusout", (event) => {
-    const next = event.relatedTarget;
-    const leaves = (element: HTMLElement) =>
-      event.target instanceof Node &&
-      element.contains(event.target) &&
-      !(next instanceof Node && element.contains(next));
-    if (held.some(leaves)) release();
-  });
+  doc.addEventListener(
+    "focusout",
+    (event) => {
+      const next = event.relatedTarget;
+      const leaves = (element: HTMLElement) =>
+        event.target instanceof Node &&
+        element.contains(event.target) &&
+        !(next instanceof Node && element.contains(next));
+      if (held.some(leaves)) release();
+    },
+    { signal },
+  );
   // focus leaving a rich text field's iframe fires no focusout in this document
-  doc.addEventListener("focusin", (event) => {
-    const target = event.target;
-    if (held.length > 0 && target instanceof Node && !held.some((element) => element.contains(target))) release();
-  });
-  doc.defaultView?.addEventListener("pagehide", cancelPending);
+  doc.addEventListener(
+    "focusin",
+    (event) => {
+      const target = event.target;
+      if (held.length > 0 && target instanceof Node && !held.some((element) => element.contains(target))) release();
+    },
+    { signal },
+  );
+  // A page kept in the back-forward cache keeps its timers, so a typed update applies if it is restored.
+  doc.defaultView?.addEventListener(
+    "pagehide",
+    (event) => {
+      if (!event.persisted) cancelPending();
+    },
+    { signal },
+  );
 
   function refresh(
     root: ParentNode = doc,
     { announce: announceChanges = false }: { announce?: boolean } = {},
   ): FieldDisplayResult {
-    cancelPending();
+    clearScheduled();
     const result = applyFieldDisplayRules(root, { focused: doc.activeElement });
     held = result.held;
     // a refresh after a save or reload does not undo that the user's change is what hides a held field
@@ -161,5 +189,10 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
       if (element) syncStoredValue(element, value ?? "");
     },
     shownMandatoryFieldsSatisfied,
+    dispose() {
+      cancelPending();
+      listeners.abort();
+      region.remove();
+    },
   };
 }

@@ -460,6 +460,8 @@ describe("text and number sources", () => {
     const root = page(batch, note);
 
     expect(markAnswered(find(batch, "input"))).toBeNull();
+    // even marked as edited, as only a text input would be
+    batch.setAttribute("data-field-edited", "");
     applyFieldDisplayRules(root);
 
     expect(note).toHaveAttribute("hidden");
