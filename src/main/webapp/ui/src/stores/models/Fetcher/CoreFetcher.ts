@@ -748,7 +748,7 @@ export default class CoreFetcher {
   }
 
   get allTypesAllowed(): boolean {
-    return Boolean(this.query) || Boolean(this.parentGlobalId);
+    return Boolean(this.query) || Boolean(this.parentGlobalId) || Boolean(this.chemQuery);
   }
 
   get deletedItemsLabel(): string {

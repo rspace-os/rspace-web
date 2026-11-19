@@ -38,6 +38,15 @@ describe("Structure search filter in the fetcher", () => {
     expect(fetcher.resultType).toBe("ALL");
   });
 
+  test("allows the All type filter while a structure is set", () => {
+    const fetcher = new CoreFetcher(mockFactory(), { resultType: "SAMPLE" });
+    expect(fetcher.allTypesAllowed).toBe(false);
+
+    fetcher.setChemicalFilter(BENZENE);
+
+    expect(fetcher.allTypesAllowed).toBe(true);
+  });
+
   test("uses /search even when a type alone would pick a listing endpoint", () => {
     const fetcher = new CoreFetcher(mockFactory(), { resultType: "SAMPLE", ...BENZENE });
     fetcher.setEndpoint();
