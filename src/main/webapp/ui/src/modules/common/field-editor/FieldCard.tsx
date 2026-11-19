@@ -35,8 +35,12 @@ type FieldCardProps<T extends string> = {
   /** Replaces the plain delete button, for hosts that ask how to delete. */
   deleteControl?: ReactNode;
   editable: boolean;
-  /** The "Shown when..." summary, when the field has a display rule. */
-  summary?: ReactNode;
+  /**
+   * When the field is shown, usually a `FieldDisplayCondition`, under the name.
+   * It stays in one place in both modes, so it keeps its state while the card
+   * is briefly read-only, for example during a save.
+   */
+  displayCondition?: ReactNode;
   /** Settings that only some field types or products have. */
   children?: ReactNode;
   /** Stack the settings in a column, for narrow layouts. */
@@ -65,7 +69,7 @@ export default function FieldCard<T extends string>({
   onDelete,
   deleteControl,
   editable,
-  summary,
+  displayCondition,
   children,
   columnLayout = false,
 }: FieldCardProps<T>): ReactNode {
@@ -125,7 +129,7 @@ export default function FieldCard<T extends string>({
             )}
           </Stack>
         </Stack>
-        {summary}
+        {displayCondition}
         <Stack
           direction={columnLayout ? "column" : { xs: "column", lg: "row" }}
           spacing={2}
