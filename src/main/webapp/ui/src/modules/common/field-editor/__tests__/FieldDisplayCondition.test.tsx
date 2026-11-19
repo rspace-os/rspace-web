@@ -323,7 +323,28 @@ describe("FieldDisplayCondition", () => {
     expect(options()).not.toHaveAccessibleDescription();
   });
 
-  it("forgets what Always set aside once a rule is applied, so it does not come back later", async () => {
+  it("drops a refused edit that has become storable on its way back from Always when no rule was stored", async () => {
+    const user = userEvent.setup();
+    const huge = "a".repeat(40_000);
+    const { onChange } = await renderConditions([{ ...gmo, options: [huge, "No", "Yes"] }, permit]);
+    await user.click(conditional("GMO permit"));
+    const options = () => card("GMO permit").getByRole("combobox", { name: "Options" });
+    for (const option of [huge, "No"]) {
+      await user.click(options());
+      await user.click(screen.getByRole("option", { name: option }));
+    }
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+
+    await user.click(screen.getByRole("button", { name: "Remove the first option of Is this a GMO?" }));
+    await user.click(conditional("GMO permit"));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(card("GMO permit").queryByRole("button", { name: "No" })).not.toBeInTheDocument();
+    expect(options()).toHaveAccessibleDescription("Choose at least one option.");
+  });
+
+  it("forgets what Always set aside once it is brought back, so it does not come back later", async () => {
     const user = userEvent.setup();
     const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
     const { onChange } = await renderConditions([gmo, colour, { ...permit, rule: yes }]);
