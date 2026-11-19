@@ -14,11 +14,13 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { UnparsableString } from "../../util/error";
+import { isBlankToServer } from "../../util/StringUtils";
 import type { URL as URLType } from "../../util/types";
 import type { Attachment } from "../definitions/Attachment";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { Field, FieldLink, FieldType, Option, OptionValue } from "../definitions/Field";
 import type { Sample } from "../definitions/Sample";
+import { truncateIsoTimestamp } from "../definitions/Units";
 import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
 import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
 import { sourceKindOfType } from "./fieldVisibility";
@@ -410,10 +412,22 @@ export default class FieldModel implements Field {
     return IsValid();
   }
 
+  /**
+   * Whether the field holds a value a mandatory field accepts, as the server's
+   * `isValidValueForMandatoryField` reads it: text that is not blank
+   * (`InventoryEntityField`), and for a link a Filestore target or a Global ID
+   * that is not blank, with a relation type (`InventoryLinkField`).
+   */
   get hasContent(): boolean {
     if (hasOptions(this.type)) return Boolean(this.selectedOptions?.length);
     if (this.type === "number") return this.content !== "";
-    if (this.type === "link") return Boolean(this.link?.targetGlobalId);
+    if (this.type === "link") {
+      const link = this.link;
+      if (!link) return false;
+      const hasTarget = Boolean(link.filestoreTarget) || !isBlankToServer(link.targetGlobalId ?? "");
+      return hasTarget && !isBlankToServer(link.relationType ?? "");
+    }
+    if (typeof this.content === "string") return !isBlankToServer(this.content);
     return Boolean(this.content);
   }
 
@@ -475,6 +489,8 @@ export default class FieldModel implements Field {
         ret.content = ret.content ?? "";
         break;
       case "date":
+        // a date the picker could not read is held as an invalid Date, which is never sent
+        if (this.content instanceof Date) ret.content = truncateIsoTimestamp(this.content, "date").orElse("");
         ret.content = ret.content ?? "";
         break;
     }
