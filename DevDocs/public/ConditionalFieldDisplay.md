@@ -167,9 +167,10 @@ no rules, so they show every field.
 ### Accessibility
 
 - Hidden fields are removed from the tab order and from what screen readers read out.
-- When an answer reveals fields, keyboard focus stays on the control you changed, and screen
-  readers announce the newly shown fields, for example "2 more fields are shown: Containment
-  level and CL3 approval". The announcement is polite, so it does not interrupt.
+- When an answer shows or hides fields, keyboard focus stays on the control you changed, and
+  screen readers name the fields, for example "2 more fields are shown: Containment level and
+  CL3 approval." or "One field is hidden: GMO permit." The announcement is polite, so it does
+  not interrupt.
 - Everything in the Display rules panel, including choosing options and fields, works with the
   keyboard. Each field's move and delete buttons name the field they act on.
 

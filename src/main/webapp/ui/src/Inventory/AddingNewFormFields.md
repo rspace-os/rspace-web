@@ -307,8 +307,8 @@ Each template field ([FieldModel]) has two properties for this:
   template editor always shows all fields.
 - The record forms render template fields through [useShownTemplateFields], which
   filters out hidden fields and returns an `announcer`, a polite live region
-  ([RevealedFieldsAnnouncer]) that names newly shown fields. Render it next to the
-  fields. Do not move focus when fields appear.
+  ([RevealedFieldsAnnouncer]) that names the fields an answer shows or hides. Render
+  it next to the fields. Do not move focus when fields appear or disappear.
 - `FieldModel.validate()` returns valid for a hidden field, so a hidden mandatory
   field never blocks Save. The server makes the same decision for create,
   update, CSV import and the operations wizard.
