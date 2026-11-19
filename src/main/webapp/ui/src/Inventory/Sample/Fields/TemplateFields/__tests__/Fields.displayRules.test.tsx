@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { SETTLE_DELAY_MS } from "@/Inventory/components/Fields/useShownTemplateFields";
@@ -52,12 +52,15 @@ const gmoFields = (answer: Array<string>, permit = ""): Array<FieldModelAttrs> =
   },
 ];
 
-function renderSampleFields(fields: Array<FieldModelAttrs>) {
+function renderSampleFields(
+  fields: Array<FieldModelAttrs>,
+  onErrorStateChange: (fieldName: string, hasError: boolean) => void = () => {},
+) {
   const sample = makeMockSample({ fields });
   sample.currentlyEditableFields.add("fields");
   render(
     <ThemeProvider theme={materialTheme}>
-      <Fields onErrorStateChange={() => {}} sample={sample} />
+      <Fields onErrorStateChange={onErrorStateChange} sample={sample} />
     </ThemeProvider>,
   );
   return sample;
@@ -104,6 +107,22 @@ describe("Template fields with display rules", () => {
     );
     const { rerender } = render(fields(first));
     rerender(fields(second));
+
+    expect(screen.getByRole("textbox", { name: /GMO permit/ })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("does not announce a reload of the same record as a change", () => {
+    const loaded = makeMockSample({ globalId: "SA1", fields: gmoFields([]) });
+    const reloaded = makeMockSample({ globalId: "SA1", fields: gmoFields(["Yes"]) });
+    for (const sample of [loaded, reloaded]) sample.currentlyEditableFields.add("fields");
+    const fields = (sample: typeof loaded) => (
+      <ThemeProvider theme={materialTheme}>
+        <Fields onErrorStateChange={() => {}} sample={sample} />
+      </ThemeProvider>
+    );
+    const { rerender } = render(fields(loaded));
+    rerender(fields(reloaded));
 
     expect(screen.getByRole("textbox", { name: /GMO permit/ })).toBeInTheDocument();
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
@@ -177,9 +196,75 @@ const weightFields = (weight: string): Array<FieldModelAttrs> => [
   },
 ];
 
+/** The weight fields after the GMO fields, so an option and a number both decide what is shown. */
+const mixedFields = (): Array<FieldModelAttrs> => [
+  ...gmoFields([]),
+  ...weightFields("4").map((field, index) => ({
+    ...field,
+    id: 3 + index,
+    globalId: `SF${3 + index}`,
+    columnIndex: 3 + index,
+  })),
+];
+
+const BATCH_KEY = "6f1c2e0a-0000-4000-8000-000000000013";
+
+/** A plain text source, and a note shown while it contains "LOT". */
+const batchFields = (code: string): Array<FieldModelAttrs> => [
+  {
+    id: 1,
+    globalId: "SF1",
+    name: "Batch code",
+    type: "string",
+    content: code,
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: false,
+    fieldKey: BATCH_KEY,
+  },
+  {
+    id: 2,
+    globalId: "SF2",
+    name: "Lot note",
+    type: "string",
+    content: "",
+    selectedOptions: null,
+    columnIndex: 2,
+    attachment: null,
+    mandatory: false,
+    fieldKey: "6f1c2e0a-0000-4000-8000-000000000014",
+    displayRule: createDisplayRule(BATCH_KEY, "CONTAINS", ["LOT"]),
+  },
+];
+
 describe("Template fields with a number source", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Testing Library flushes each user action with a timer it advances only through Jest's API
+    vi.stubGlobal("jest", { advanceTimersByTime: (ms: number) => vi.advanceTimersByTime(ms) });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+  const setupUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+  const permitBox = () => screen.queryByRole("textbox", { name: /Heavy goods permit/ });
+
+  /** Focuses the permit, then changes the weight to one that hides it, past the pause. */
+  async function focusPermitThenHideIt(sample: ReturnType<typeof renderSampleFields>) {
+    const user = setupUser();
+    await user.click(screen.getByRole("textbox", { name: /Heavy goods permit/ }));
+    act(() => sample.fields[0].setAttributesDirty({ content: "1" }));
+    await wait(SETTLE_DELAY_MS);
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(true);
+    return user;
+  }
+
   it("moves fields once typing pauses, while the record already follows each key", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const sample = renderSampleFields(weightFields("4"));
     const permitField = sample.fields[1];
     const weight = screen.getByRole("spinbutton", { name: "Weight" });
@@ -188,28 +273,96 @@ describe("Template fields with a number source", () => {
     await user.type(weight, "1");
     expect(sample.isFieldHidden(permitField)).toBe(true);
     expect(permitField.validate().isOk).toBe(true);
-    expect(screen.getByRole("textbox", { name: /Heavy goods permit/ })).toBeInTheDocument();
+    await wait(SETTLE_DELAY_MS - 1);
+    expect(permitBox()).toBeInTheDocument();
 
-    await waitForElementToBeRemoved(() => screen.queryByRole("textbox", { name: /Heavy goods permit/ }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("common:fieldDisplay.fieldsHidden"));
+    await wait(1);
+    expect(permitBox()).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("common:fieldDisplay.fieldsHidden");
     expect(weight).toHaveFocus();
   });
 
   it("announces nothing when typing ends where it started", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderSampleFields(weightFields("4"));
     const weight = screen.getByRole("spinbutton", { name: "Weight" });
 
     await user.clear(weight);
     await user.type(weight, "5");
-    await new Promise((resolve) => setTimeout(resolve, SETTLE_DELAY_MS + 100));
+    await wait(SETTLE_DELAY_MS);
 
-    expect(screen.getByRole("textbox", { name: /Heavy goods permit/ })).toBeInTheDocument();
+    expect(permitBox()).toBeInTheDocument();
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
+  it("shows the field an option reveals at once while typed numbers are still pausing", async () => {
+    const user = setupUser();
+    renderSampleFields(mixedFields());
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+
+    await user.clear(weight);
+    await user.type(weight, "1");
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+
+    expect(screen.getByRole("textbox", { name: /GMO permit/ })).toBeInTheDocument();
+    expect(permitBox()).toBeInTheDocument();
+    await wait(SETTLE_DELAY_MS);
+    expect(permitBox()).not.toBeInTheDocument();
+  });
+
+  it("keeps a field the values hide while focus stays inside it, such as in a frame", async () => {
+    const sample = renderSampleFields(weightFields("4"));
+    await focusPermitThenHideIt(sample);
+    const permit = screen.getByRole("textbox", { name: /Heavy goods permit/ });
+
+    // focus entering a frame inside the field reports no target, but the field still holds focus
+    fireEvent.focusOut(permit);
+    await wait(1);
+
+    expect(permitBox()).toBeInTheDocument();
+  });
+
+  it("keeps a field the values hide while the window, not the field, loses focus", async () => {
+    const sample = renderSampleFields(weightFields("4"));
+    await focusPermitThenHideIt(sample);
+    vi.spyOn(document, "hasFocus").mockReturnValue(false);
+
+    act(() => screen.getByRole("textbox", { name: /Heavy goods permit/ }).blur());
+    await wait(1);
+
+    expect(permitBox()).toBeInTheDocument();
+  });
+
+  it("hides a field the values hide once the record leaves edit mode, even if it held focus", async () => {
+    const sample = renderSampleFields(weightFields("4"));
+    await focusPermitThenHideIt(sample);
+    // with the window in the background, the field still counts as holding focus once it is disabled
+    vi.spyOn(document, "hasFocus").mockReturnValue(false);
+
+    act(() => sample.currentlyEditableFields.delete("fields"));
+    await wait(1);
+
+    expect(screen.getByText("Weight")).toBeInTheDocument();
+    expect(screen.queryByText("Heavy goods permit")).not.toBeInTheDocument();
+  });
+
+  it("does not treat a field the values hide as mandatory while focus keeps it on screen", async () => {
+    const onErrorStateChange = vi.fn();
+    const sample = renderSampleFields(weightFields("4"), onErrorStateChange);
+    const user = await focusPermitThenHideIt(sample);
+    const permit = screen.getByRole("textbox", { name: /Heavy goods permit/ });
+
+    await user.type(permit, "x");
+    await user.clear(permit);
+
+    expect(permit).not.toBeRequired();
+    expect(permit).not.toBeInvalid();
+    expect(screen.queryByText("This field is mandatory. Please enter a value.")).not.toBeInTheDocument();
+    expect(onErrorStateChange).toHaveBeenLastCalledWith("template_Heavy goods permit", false);
+  });
+
   it("lets a number typed into an instrument decide at once whether it can be saved", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const instrument = makeMockInstrument({ fields: weightFields("1") });
     instrument.currentlyEditableFields.add("fields");
     render(
@@ -225,7 +378,15 @@ describe("Template fields with a number source", () => {
     expect(instrument.submittable.isOk).toBe(false);
   });
 
-  it("reads loaded numbers and typed text from the record's current content", () => {
+  it("reads typed text in a plain text source", () => {
+    const sample = makeMockSample({ fields: batchFields("B-7") });
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(true);
+
+    sample.fields[0].setAttributesDirty({ content: "b-lot-7" });
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(false);
+  });
+
+  it("reads loaded numbers, and typed text that is not a number, from the record's current content", () => {
     const sample = makeMockSample({ fields: weightFields("2.5") });
     expect(sample.isFieldHidden(sample.fields[1])).toBe(false);
 
