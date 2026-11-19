@@ -18,7 +18,7 @@
 
   <properties>
     <java.version>25</java.version>
-    <jodconverter.version>4.4.11</jodconverter.version>
+    <jodconverter.version>5.1.1</jodconverter.version>
     <libreoffice.version>26.2.2</libreoffice.version>
   </properties>
 
