@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.dao.FieldFormDao;
 import com.researchspace.model.dtos.AbstractFormFieldDTO;
@@ -32,7 +31,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -81,11 +79,10 @@ public class FormFieldListSaver {
    * @param items every field the form should have, in order
    * @param copiedFieldIds ids of draft fields copied from the published version; omitting one is an
    *     error, not a deletion
-   * @return the form's active fields, in their new order
+   * @return whether the field list changed: a field was added, deleted, moved or changed
    * @throws FormFieldsValidationException if anything in the save is invalid
    */
-  public List<FieldForm> apply(
-      AbstractForm form, List<FormFieldSaveItem> items, Set<Long> copiedFieldIds) {
+  public boolean apply(AbstractForm form, List<FormFieldSaveItem> items, Set<Long> copiedFieldIds) {
     List<String> errors = new ArrayList<>();
     Map<Long, FieldForm> activeById = new LinkedHashMap<>();
     for (FieldForm field : form.getFieldForms()) {
@@ -169,23 +166,6 @@ public class FormFieldListSaver {
       throw new FormFieldsValidationException(errors);
     }
     return persist(form, planned, toDelete);
-  }
-
-  /**
-   * The version of the form's field list: a hash of every active field's id, position, type, key,
-   * display rule and settings. Anything a save can change changes it.
-   */
-  public String version(AbstractForm form) {
-    ArrayNode fields = fingerprintMapper.createArrayNode();
-    for (FieldForm field : form.getFieldForms()) {
-      if (!field.isDeleted()) {
-        ObjectNode node = settingsFingerprint(field);
-        node.put("id", field.getId());
-        node.put("type", field.getType().getType());
-        fields.add(node);
-      }
-    }
-    return DigestUtils.sha256Hex(fields.toString());
   }
 
   private PlannedField planSavedField(
@@ -339,33 +319,34 @@ public class FormFieldListSaver {
     }
   }
 
-  private List<FieldForm> persist(
-      AbstractForm form, List<PlannedField> planned, List<FieldForm> toDelete) {
+  private boolean persist(AbstractForm form, List<PlannedField> planned, List<FieldForm> toDelete) {
     long now = new Date().getTime();
+    boolean changed = !toDelete.isEmpty();
     for (FieldForm field : toDelete) {
       field.setDeleted(true);
       field.setModificationDate(now);
       fieldFormDao.save(field);
     }
-    List<FieldForm> ordered = new ArrayList<>(planned.size());
     for (int index = 0; index < planned.size(); index++) {
       PlannedField plan = planned.get(index);
       FieldForm field = plan.field();
-      field.setColumnIndex(index);
       if (plan.isNew()) {
+        changed = true;
+        field.setColumnIndex(index);
         field.setModificationDate(now);
         field.setForm(form);
         field = fieldFormDao.save(field);
         form.addFieldForm(field);
       } else {
-        field.setModificationDate(
-            plan.settingsBefore().equals(settingsFingerprint(field)) ? plan.modifiedBefore() : now);
+        boolean settingsChanged = !plan.settingsBefore().equals(settingsFingerprint(field));
+        changed |= settingsChanged || field.getColumnIndex() != index;
+        field.setColumnIndex(index);
+        field.setModificationDate(settingsChanged ? now : plan.modifiedBefore());
         fieldFormDao.save(field);
       }
-      ordered.add(field);
     }
     form.setModificationDate(new Date(now));
-    return ordered;
+    return changed;
   }
 
   /**

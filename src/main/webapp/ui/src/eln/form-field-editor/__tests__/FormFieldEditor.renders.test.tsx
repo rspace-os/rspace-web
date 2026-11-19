@@ -57,11 +57,11 @@ const rename = (from: string, to: string) =>
   });
 
 describe("Renaming a field of a large form", () => {
-  it("re-renders only the display conditions that show that name", async () => {
+  it("re-renders only the display conditions that can show that name", async () => {
     await renderWithRealI18n(
       <ThemeProvider theme={materialTheme}>
         <ConfirmProvider>
-          <FormFieldEditor initialFields={fields} onSave={async (saved) => saved} editable />
+          <FormFieldEditor initialFields={fields} onSave={async (saved) => saved} onCheck={async () => {}} editable />
         </ConfirmProvider>
       </ThemeProvider>,
       { resources: { common, workspace }, defaultNS: "workspace" },
@@ -75,8 +75,8 @@ describe("Renaming a field of a large form", () => {
 
     renders.clear();
     rename("Field 4", "Is this a GMO?");
-    // a radio: its own card and the one field that reads it, not the other cards that could read it
-    expect([...renders.keys()].sort()).toEqual([keyOf(4), keyOf(5)]);
+    // a radio: any card's condition can read it, in a draft or in its field menu
+    expect(renders.size).toBe(COUNT);
     expect(
       within(screen.getByRole("region", { name: "Field 5" })).getByRole("combobox", { name: "Field" }),
     ).toHaveTextContent("Is this a GMO?");

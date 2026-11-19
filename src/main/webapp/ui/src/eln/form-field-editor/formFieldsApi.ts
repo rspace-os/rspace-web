@@ -2,8 +2,9 @@
  * The form field editor's server contract: `GET` and `POST
  * /workspace/editor/form/ajax/fields?formId=` (RSFormController). Each item is
  * a field as the legacy field DTOs describe it, plus its id, key, display rule
- * and whether it can be deleted. The list comes with its version, which a save
- * sends back so that it cannot overwrite a newer save from elsewhere.
+ * and whether it can be deleted. The list comes with its version, the revision
+ * that every save of the list advances; a save sends it back, so that it
+ * cannot overwrite a newer save from elsewhere.
  */
 import * as v from "valibot";
 import axios, { isAxiosError } from "@/common/axios";
@@ -107,7 +108,7 @@ export type FormFieldSaveItem = {
   source: Record<string, string | boolean>;
 };
 
-const FieldListSchema = v.object({ fields: v.array(ItemSchema), version: v.string() });
+const FieldListSchema = v.object({ fields: v.array(ItemSchema), version: v.number() });
 
 /** The form's saved fields, in order, and the version of that list. */
 export type FormFieldList = v.InferOutput<typeof FieldListSchema>;
@@ -149,27 +150,34 @@ export async function fetchFormFields(formId: number): Promise<FormFieldList> {
   return fieldListFrom(data);
 }
 
+/** The messages of a rejection, when the response carries them. */
+function rejectionMessages(body: unknown): ReadonlyArray<string> {
+  const parsed = v.safeParse(ResponseSchema, body);
+  return parsed.success ? (parsed.output.errorMsg?.errorMessages ?? []) : [];
+}
+
 /**
  * Saves the full, ordered field list; the server applies every change in one
  * transaction and returns the saved fields with their new version.
  *
  * @param version the version of the field list the items were edited from
  * @throws {FormFieldsConflictError} when the fields changed after that version
- * @throws {FormFieldsSaveError} when the server rejects the save
+ * @throws {FormFieldsSaveError} when the server rejects the save, for example
+ *   because the user may not change the form
  */
 export async function saveFormFields(
   formId: number,
   items: ReadonlyArray<FormFieldSaveItem>,
-  version: string,
+  version: number,
 ): Promise<FormFieldList> {
   try {
     const { data } = await axios.post<unknown>(fieldsUrl(formId), items, { params: { version } });
     return fieldListFrom(data);
   } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 409) {
-      const parsed = v.safeParse(ResponseSchema, error.response.data);
-      throw new FormFieldsConflictError(parsed.success ? (parsed.output.errorMsg?.errorMessages ?? []) : []);
-    }
+    if (!isAxiosError(error) || !error.response) throw error;
+    const messages = rejectionMessages(error.response.data);
+    if (error.response.status === 409) throw new FormFieldsConflictError(messages);
+    if (messages.length > 0) throw new FormFieldsSaveError(messages);
     throw error;
   }
 }

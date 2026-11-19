@@ -228,13 +228,14 @@ function unlockform() {
 }
 
 /*
- * Saves the form field editor's changes. With onlyIfDirty, a clean editor is not asked.
- * Resolves true when there is nothing left to save; false when the save failed, in which
- * case the editor stays open and dirty and shows why.
+ * Saves the form field editor's changes; with none, the editor checks that its fields are still
+ * the server's, so a page left open cannot update or publish fields its author never saw.
+ * Resolves true when there is nothing left to save; false when the save or check failed, in which
+ * case the editor stays open and shows why.
  */
-function saveFieldEditor(onlyIfDirty) {
+function saveFieldEditor() {
   var fieldEditor = window.formFieldEditor;
-  if (!fieldEditor || (onlyIfDirty && !fieldEditor.isDirty())) {
+  if (!fieldEditor) {
     return Promise.resolve(true);
   }
   return fieldEditor.save().then(function () {
@@ -268,7 +269,7 @@ function setUpPublishButtons() {
         window.formFieldEditor.setReadOnly(true);
       }
       RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
-      saveFieldEditor(true).then(function (saved) {
+      saveFieldEditor().then(function (saved) {
         RS.unblockPage();
         if (!saved) {
           finishPublish(false);
@@ -327,7 +328,7 @@ function saveForm() {
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
   formSaveIncomplete = true;
-  saveFieldEditor(false).then(function (saved) {
+  saveFieldEditor().then(function (saved) {
     if (!saved) {
       RS.unblockPage();
       endToolbarAction();
@@ -370,7 +371,7 @@ function updateForm() {
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
   formSaveIncomplete = true;
-  saveFieldEditor(true).then(function (saved) {
+  saveFieldEditor().then(function (saved) {
     if (!saved) {
       RS.unblockPage();
       endToolbarAction();

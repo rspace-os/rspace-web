@@ -1,0 +1,15 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-19-rsdev1709-form-fields-revision" context="run" author="tchoi-rs">
+        <comment>RSDEV-1709: a revision of each form's field list, which every save of the field list advances. The form field editor sends back the revision it read, and a save advances it only if it is unchanged, so a save from an out-of-date page is refused. Existing forms start at 0. Not mapped by Hibernate, so not audited and never written back from a loaded form.</comment>
+        <addColumn tableName="RSForm">
+            <column name="fieldsRevision" type="bigint" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
