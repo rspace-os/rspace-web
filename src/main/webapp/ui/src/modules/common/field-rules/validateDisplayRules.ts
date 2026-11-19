@@ -125,8 +125,8 @@ export function ruleProblem(rule: FieldDisplayRule, kind: SourceKind): DisplayRu
  * cannot), and the operator must suit the source's kind. An option rule must
  * list each value once and only options the source offers. A text or number
  * comparison must have exactly one value that is not blank, and against a
- * number source that value must be a plain decimal number. Rules must not form
- * a cycle.
+ * number source that value must be a number in the same syntax as field
+ * numbers, valid as written, without trimming. Rules must not form a cycle.
  */
 export function validateDisplayRules(fields: ReadonlyArray<FieldSnapshot>): Array<DisplayRuleError> {
   const indexByKey = new Map<string, number>();

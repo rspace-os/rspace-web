@@ -2,9 +2,13 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
@@ -13,6 +17,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.inventory.field.InventoryAttachmentField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
@@ -241,5 +246,22 @@ class SampleApiManagerImplTemplateFieldMergeTest {
             List.of(operationField("Cryomedium", "")), template.getActiveFields());
 
     assertSame(plain, merged.get(0));
+  }
+
+  @Test
+  void theRequestValidatorCopiesOnlyTheFieldsAValueMergesInto() {
+    // it runs outside the request's transaction, where copying an attachment field would read its
+    // lazy files without a session
+    InventoryAttachmentField attachment = mock(InventoryAttachmentField.class);
+    InventoryEntityField passage = new InventoryStringField("Passage number");
+
+    List<InventoryEntityField> merged =
+        InheritedFieldMerge.withMergedValues(
+            List.of(operationField("Passage number", "4")), List.of(attachment, passage));
+
+    verify(attachment, never()).shallowCopy();
+    assertSame(attachment, merged.get(0));
+    assertNotSame(passage, merged.get(1));
+    assertEquals("4", merged.get(1).getFieldData());
   }
 }
