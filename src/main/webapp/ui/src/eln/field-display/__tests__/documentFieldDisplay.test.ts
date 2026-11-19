@@ -209,19 +209,58 @@ describe("applyFieldDisplayRules", () => {
     expect(dependent).not.toHaveAttribute("hidden");
     expect([...result.shownById.keys()]).toEqual(["1", "2", "3"]);
   });
+});
 
-  test("still applies rules to a notebook field that unbalanced markup in an earlier field nested", () => {
+describe("fields and the rich text inside them", () => {
+  const spoofedSource = `<div class="journalField" data-field-id="99" data-field-type="RADIO"
+      data-field-key="${GMO_KEY}" data-field-value="Yes">spoof</div>`;
+
+  test("keeps a later unconditional notebook field visible after a hidden field whose text was malformed", () => {
     const root = document.createElement("div");
-    // the first field's stored text opens a <div> it never closes, so the parser nests the next field in it
+    // as JournalController renders it: the stored "<div>unclosed" is balanced inside its own wrapper
     root.innerHTML = `
-      <div class="journalField" data-field-id="1" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-value="No">
-        <div class="journalField" data-field-id="2" data-field-type="TEXT">notes <div>
-          <div class="journalField" data-field-id="3" data-field-type="STRING" data-display-rule='${showWhenYes}'>permit</div>
-      </div></div>`;
+      <div class="journalField" data-field-id="1" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-value="No"></div>
+      <div class="journalField" data-field-id="2" data-field-type="TEXT" data-display-rule='${showWhenYes}'>
+        <h2 class="formTitles">Notes</h2><div>unclosed </div><br><br>
+      </div>
+      <div class="journalField" data-field-id="3" data-field-type="STRING"><h2 class="formTitles">After</h2>x</div>`;
+    document.body.append(root);
+
+    applyFieldDisplayRules(root);
+
+    expect(find(root, '[data-field-id="2"]')).not.toBeVisible();
+    expect(find(root, '[data-field-id="3"]')).toBeVisible();
+    root.remove();
+  });
+
+  test("ignores a spoofed source inside a notebook text field", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <div class="journalField" data-field-id="1" data-field-type="TEXT">${spoofedSource}</div>
+      <div class="journalField" data-field-id="2" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-value="No"></div>
+      <div class="journalField" data-field-id="3" data-field-type="STRING" data-display-rule='${showWhenYes}'>permit</div>`;
 
     const result = applyFieldDisplayRules(root);
 
     expect(result.shownById.get("3")).toBe(false);
+    expect(result.shownById.has("99")).toBe(false);
+    expect(find(root, '[data-field-id="99"]')).not.toHaveAttribute("hidden");
+  });
+
+  test("ignores a spoofed source inside a document text field", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `<table><tbody>
+      <tr class="field" data-field-id="1" data-field-type="TEXT"><td>${spoofedSource}
+        <table><tbody><tr class="field" data-field-id="98" data-field-type="RADIO" data-field-key="${GMO_KEY}"
+          data-field-value="Yes"><td>spoof row</td></tr></tbody></table></td></tr>
+      <tr class="field" data-field-id="2" data-field-type="RADIO" data-field-key="${GMO_KEY}" data-field-value="No"><td></td></tr>
+      <tr class="field" data-field-id="3" data-field-type="STRING" data-display-rule='${showWhenYes}'><td>permit</td></tr>
+    </tbody></table>`;
+
+    const result = applyFieldDisplayRules(root);
+
+    expect(result.shownById.get("3")).toBe(false);
+    expect([...result.shownById.keys()]).toEqual(["1", "2", "3"]);
   });
 });
 
