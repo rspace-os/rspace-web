@@ -263,6 +263,7 @@ describe("restoring autosaved data on load (_updateAutosavedFields)", () => {
 
   test("an autosaved empty choice over a stored value no longer offered hides what needs a value", async () => {
     await renderPage("");
+    glovesBox().checked = true;
     expect(controlsNoteRow()).toBeVisible();
 
     legacy._updateAutosavedFields([{ id: 13, fieldData: "", choiceOptionSelectedAsList: [] }]);
