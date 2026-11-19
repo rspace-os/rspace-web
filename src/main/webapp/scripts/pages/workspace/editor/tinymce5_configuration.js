@@ -140,7 +140,9 @@ var tinymcesetup = {
 			var plainTextMode = shortcutUsesPlainText || pastePlugin.clipboard.pasteFormat.get() === 'text';
 			var html = clipboardData.getData('text/html');
 			if (!html) {
-				if (plainTextMode || Array.from(clipboardData.types || []).includes('text/html')) {
+				// Only when the browser offers nothing but the file: its default paste then supplies the HTML.
+				var types = Array.from(clipboardData.types || []);
+				if (plainTextMode || types.length !== 1 || types[0] !== 'Files') {
 					return;
 				}
 				var pasteBin = ed.dom.get('mcepastebin');

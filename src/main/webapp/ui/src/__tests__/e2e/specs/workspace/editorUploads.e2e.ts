@@ -47,8 +47,11 @@ async function pasteImageWith(
       const allowDefault = target.dispatchEvent(
         new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }),
       );
-      // The browser's default paste runs after dispatch, before TinyMCE's zero-delay paste-bin read.
-      if (allowDefault && payload.htmlInPasteBin) target.innerHTML = payload.html;
+      // The browser's default paste runs after dispatch, before TinyMCE's zero-delay paste-bin read,
+      // and inserts only the clipboard fragment.
+      if (allowDefault && payload.htmlInPasteBin) {
+        target.innerHTML = payload.html.match(/<!--StartFragment-->([\s\S]*)<!--EndFragment-->/)?.[1] ?? payload.html;
+      }
     },
     { html, text, plainTextShortcut, htmlInPasteBin, png },
   );
@@ -139,6 +142,22 @@ test.describe("Workspace editor uploads", () => {
         await expect(savedField.getByRole("img", { name: "image Photos-copy.png" })).toBeVisible();
       });
     }
+
+    test("A local image pasted with other clipboard text is not uploaded", async ({ page, pageWorkspace }) => {
+      await pageWorkspace.open();
+      const editor = await pageWorkspace.createBasicDocument();
+      const field = await editor.getField("New List of Materials");
+      await field.typeLines(["Before image"]);
+      await field.body.getByText("Before image").click();
+      await field.body.press("End");
+      const uploads = countGalleryUploads(page);
+
+      // The event offers a caption as well as the file, so the paste bin's local image is left alone.
+      await pasteImageWith(field, { html: PHOTOS_HTML, text: "Visible caption", htmlInPasteBin: true });
+      await expect(field.body.locator('img[src^="file:"]')).toHaveCount(1);
+      await expect(field.body.locator("#mcepastebin")).toHaveCount(0);
+      expect(uploads()).toBe(0);
+    });
 
     test("As a user, I can paste the text that accompanies a local image", async ({ page, pageWorkspace }) => {
       await pageWorkspace.open();
