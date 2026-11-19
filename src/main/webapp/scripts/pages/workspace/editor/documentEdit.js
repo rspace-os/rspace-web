@@ -288,7 +288,12 @@ function updateFieldsContentFromServer(forceUpdate) {
   );
   jqxhr.done(function (data) {
     _updateFields(data.data);
-    renderToolbar({ canSign: data.data.every(f => f.mandatoryStateSatisfied) && data.data.length > 0 });
+    // Mandatory fields hidden by a display rule do not block signing.
+    var shownById = window.elnFieldDisplay ? window.elnFieldDisplay.refresh().shownById : new Map();
+    var mandatorySatisfied = window.elnFieldDisplay
+      ? window.elnFieldDisplay.shownMandatoryFieldsSatisfied(data.data, shownById)
+      : data.data.every(f => f.mandatoryStateSatisfied);
+    renderToolbar({ canSign: mandatorySatisfied && data.data.length > 0 });
 
     /* if user have the lock the content won't be edited by others (RSPAC-418) */
     if (hasEditLock) {
@@ -365,6 +370,10 @@ function _updateFields(fields) {
           }
         );
       });
+      // choice data as display rules read it, options no longer offered included
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
+      }
       $("#choiceText_" + field.id).text(field.choiceOptionSelectedAsString);
       return;
     }
@@ -376,6 +385,8 @@ function _updateFields(fields) {
           $(this).prop("checked", true);
         }
       });
+      // radio data, and the picklist's selection, as display rules read them
+      syncRadioFieldValue(field.id, field.fieldData);
       $("#radioText_" + field.id).text(field.fieldData);
       return;
     }
@@ -626,7 +637,9 @@ function _autosavePickList($field) {
   const pickListSelected = $field
       .find("option[class='radioLi " + fieldId + "' ]:selected")
       .val();
-  return _postAutosave(pickListSelected, $field);
+  // no option selected (the empty placeholder, or reloaded empty data) is no answer: send empty
+  // data, as $.ajax drops an undefined dataValue and autosaveField requires it
+  return _postAutosave(pickListSelected === undefined ? "" : pickListSelected, $field);
 }
 
 function _autosaveChoice($field) {
@@ -797,6 +810,9 @@ function checkAndMarkField(element) {
   var currentId = $(element).attr("id");
   var $field = $("#field_" + currentId);
   _setWasChangedFlagOnField($field, true);
+  if (window.elnFieldDisplay && $(element).is(":radio, :checkbox, select")) {
+    window.elnFieldDisplay.fieldChanged(element);
+  }
 }
 
 // checks if it has any error and marks it as modified for autosaving

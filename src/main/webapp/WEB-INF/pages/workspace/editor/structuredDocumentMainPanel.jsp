@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/plugins/autocomplete.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
 <rst:bundle bundle="tinymceGalleryUtils" />
+<rst:bundle bundle="elnFieldDisplay" />
 <script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>

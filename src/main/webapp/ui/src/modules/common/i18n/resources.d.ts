@@ -10338,6 +10338,7 @@ export default interface Resources {
       },
       "field": {
         "lastModifiedLabel": "Last modified:",
+        "picklistPlaceholder": "Select an option",
         "picklistSuffix": "(Picklist)",
         "saveAndViewTitle": "Save and View"
       },
