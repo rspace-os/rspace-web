@@ -1,6 +1,11 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -14,7 +19,6 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -63,6 +67,9 @@ public abstract class InventoryItemCsvImporter {
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
 
   /** The exporter's template field header: {@code Name (TYPE)} or {@code Name (TYPE, IT<n>)}. */
+  private static final ObjectReader STRICT_JSON_READER =
+      new ObjectMapper().reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+
   private static final Pattern EXPORTED_FIELD_COLUMN_NAME =
       Pattern.compile(
           "^(.*?)\\s*\\(("
@@ -305,7 +312,7 @@ public abstract class InventoryItemCsvImporter {
       String columnName, List<ApiInventoryEntityField> templateFields) {
     String trimmedName = columnName.trim();
     Integer index = findTemplateFieldIndexForName(trimmedName, templateFields);
-    if (index == null) {
+    if (index == null && reservedSampleFieldNames.contains(trimmedName.toLowerCase())) {
       // parsing a CSV into a template names the field for a reserved column name "_<name>"
       index = findTemplateFieldIndexForName("_" + trimmedName, templateFields);
     }
@@ -334,19 +341,12 @@ public abstract class InventoryItemCsvImporter {
   }
 
   /**
-   * Options selected by a CSV cell of a radio or choice field: a JSON array of strings (the
-   * exporter's format), else the cell if it is an allowed option, else for a choice field a comma
-   * list of allowed options. Any other cell is taken as one option, which validation rejects.
+   * Options selected by a CSV cell of a radio or choice field: the cell if it is an allowed option,
+   * else a JSON array of strings (the exporter's format), else for a choice field a comma list of
+   * allowed options. Any other cell is taken as one option, which validation rejects.
    */
   protected List<String> getSelectedOptionsFromCsvValue(
       String value, ApiInventoryEntityField templateField) {
-    String trimmedValue = value.trim();
-    if (trimmedValue.startsWith("[")) {
-      String[] jsonOptions = JacksonUtil.fromJson(trimmedValue, String[].class);
-      if (jsonOptions != null) {
-        return Arrays.asList(jsonOptions);
-      }
-    }
     List<String> allowedOptions =
         templateField.getDefinition() == null
             ? List.of()
@@ -354,13 +354,42 @@ public abstract class InventoryItemCsvImporter {
     if (allowedOptions.contains(value)) {
       return List.of(value);
     }
+    List<String> jsonOptions = parseJsonArrayOfStrings(value.trim());
+    if (jsonOptions != null) {
+      return jsonOptions;
+    }
     if (ApiFieldType.CHOICE.equals(templateField.getType())) {
-      List<String> listedOptions = Arrays.stream(value.split(",")).map(String::trim).toList();
-      if (allowedOptions.containsAll(listedOptions)) {
+      List<String> listedOptions = Arrays.stream(value.split(",", -1)).map(String::trim).toList();
+      if (listedOptions.stream().noneMatch(String::isEmpty)
+          && allowedOptions.containsAll(listedOptions)) {
         return listedOptions;
       }
     }
     return List.of(value);
+  }
+
+  /** The strings of a cell that is exactly one JSON array of strings, else null. */
+  private List<String> parseJsonArrayOfStrings(String value) {
+    if (!value.startsWith("[")) {
+      return null;
+    }
+    JsonNode node;
+    try {
+      node = STRICT_JSON_READER.readTree(value);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    if (!node.isArray()) {
+      return null;
+    }
+    List<String> options = new ArrayList<>();
+    for (JsonNode element : node) {
+      if (!element.isTextual()) {
+        return null;
+      }
+      options.add(element.textValue());
+    }
+    return options;
   }
 
   protected void setDefaultFieldFromMappedColumn(

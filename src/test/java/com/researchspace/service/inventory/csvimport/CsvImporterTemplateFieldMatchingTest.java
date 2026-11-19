@@ -144,6 +144,56 @@ public class CsvImporterTemplateFieldMatchingTest {
   }
 
   @Test
+  void cellThatIsExactlyAnAllowedOptionSelectsIt() {
+    ApiSampleTemplate template = new ApiSampleTemplate();
+    template.getFields().add(optionsField("Level", ApiFieldType.RADIO, "[1]", "[2]"));
+    ApiInventoryImportSampleImportResult result = sampleResult(template);
+    List<String[]> lines = List.<String[]>of(new String[] {"s1", "[1]"});
+
+    sampleImporter.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, user);
+
+    assertEquals(List.of("[1]"), sampleFields(result, 0).get(0).getSelectedOptions());
+  }
+
+  @Test
+  void malformedListCellStaysOneOptionForValidationToReject() {
+    ApiInventoryImportSampleImportResult result = sampleResult(hazardsAndGradeTemplate());
+    List<String> cells = List.of("[\"Bio\"] typo", "[1]", "[\"Bio\",null]", "Bio,", ",");
+
+    List<String[]> lines = cells.stream().map(cell -> new String[] {"s", cell, "A"}).toList();
+    sampleImporter.convertLinesToSamples(result, lines, Map.of(0, "name"), 3, user);
+
+    for (int row = 0; row < cells.size(); row++) {
+      assertEquals(List.of(cells.get(row)), sampleFields(result, row).get(0).getSelectedOptions());
+    }
+  }
+
+  @Test
+  void onlyReservedHeadersMatchTheirUnderscoredTemplateField() throws IOException {
+    ApiSampleTemplate template = new ApiSampleTemplate();
+    for (String name : List.of("First", "_Batch", "_Source")) {
+      ApiInventoryEntityField field = new ApiInventoryEntityField();
+      field.setName(name);
+      field.setType(ApiFieldType.STRING);
+      template.getFields().add(field);
+    }
+    ApiInventoryImportSampleImportResult result = sampleResult(template);
+    ApiInventoryImportResult importResult = new ApiInventoryImportResult();
+    importResult.setSampleResult(result);
+
+    sampleImporter.readCsvIntoImportResult(
+        IOUtils.toInputStream("Name,Source,Batch,Other\ns1,src,b,o\n"),
+        Map.of("Name", "name"),
+        importResult,
+        user);
+
+    List<ApiInventoryEntityField> fields = sampleFields(result, 0);
+    assertEquals("b", fields.get(0).getContent());
+    assertEquals("o", fields.get(1).getContent());
+    assertEquals("src", fields.get(2).getContent());
+  }
+
+  @Test
   void instrumentImportMatchesHeadersByNameAndReadsMultiSelectCells() throws IOException {
     ApiInstrumentTemplate template = new ApiInstrumentTemplate();
     template.getFields().addAll(hazardsAndGradeTemplate().getFields());
