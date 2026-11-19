@@ -426,6 +426,10 @@ public abstract class InventoryEntityField
    * but only if field value is empty. If field value is not empty, an exception is thrown. - copies
    * the mandatory flag, field key and display rule.
    *
+   * <p>A field whose template field is deleted, and kept in this record, gets no display rule: it
+   * is always shown. If the template field had a rule, the record field is no longer mandatory
+   * either, since it was required only while shown and the template no longer asks for it.
+   *
    * <p>A field that becomes mandatory without a value is not rejected here: whether it is shown
    * depends on its siblings, so the record checks it once all fields are synced (see {@link
    * InventoryFieldDisplayRules#assertMandatoryInLatestTemplateFilled}).
@@ -459,8 +463,13 @@ public abstract class InventoryEntityField
       setDeleted(true);
       fieldUpdated = true;
     }
-    if (isMandatory() != templateField.isMandatory()) {
-      setMandatory(templateField.isMandatory());
+    boolean keptAfterTemplateDeletion = templateField.isDeleted();
+    FieldDisplayRule latestRule = keptAfterTemplateDeletion ? null : templateField.getDisplayRule();
+    boolean latestMandatory =
+        templateField.isMandatory()
+            && !(keptAfterTemplateDeletion && templateField.getDisplayRule() != null);
+    if (isMandatory() != latestMandatory) {
+      setMandatory(latestMandatory);
       fieldUpdated = true;
     }
     // unconditionally, so a record field made before field keys existed gets its template's key
@@ -468,8 +477,8 @@ public abstract class InventoryEntityField
       setFieldKey(templateField.getFieldKey());
       fieldUpdated = true;
     }
-    if (!Objects.equals(getDisplayRule(), templateField.getDisplayRule())) {
-      setDisplayRule(templateField.getDisplayRule());
+    if (!Objects.equals(getDisplayRule(), latestRule)) {
+      setDisplayRule(latestRule);
       fieldUpdated = true;
     }
 
