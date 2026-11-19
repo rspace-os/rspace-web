@@ -1,11 +1,15 @@
 package com.researchspace.service.archive;
 
 import static com.researchspace.core.util.FieldParserConstants.ANNOTATION_IMG_CLASSNAME;
+import static com.researchspace.core.util.FieldParserConstants.ATTACHMENTICON_CLASSNAME;
+import static com.researchspace.core.util.FieldParserConstants.ATTACHMENTINFOICON_CLASSNAME;
 import static com.researchspace.core.util.FieldParserConstants.ATTACHMENT_CLASSNAME;
 import static com.researchspace.core.util.FieldParserConstants.CHEM_IMG_CLASSNAME;
 import static com.researchspace.core.util.FieldParserConstants.COMMENT_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID;
+import static com.researchspace.core.util.FieldParserConstants.EXTERNALLINK_BADGE_CLASSNAME;
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
+import static com.researchspace.core.util.FieldParserConstants.IMAGE_THMNAIL_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
 
@@ -68,7 +72,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -80,6 +87,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -138,6 +146,10 @@ abstract class AbstractImporterStrategyImpl {
         importGalleryItems(
             galleryMetaData, oldIdToNewFolder, monitor, numElements, report, importingUser);
     updateImportedGalleryItemSelfReferences(galleryMetaData, oldIdToNewGalleryItem, importingUser);
+    ArchiveResourceImages resourceImages =
+        report.getExpandedZipFolderPath() == null
+            ? null
+            : new ArchiveResourceImages(Path.of(report.getExpandedZipFolderPath()).toRealPath());
 
     List<ArchivalDocumentParserRef> refs = archive.getCurrentVersions();
     // preserve order of creation, see RSPAC-1313
@@ -159,6 +171,7 @@ abstract class AbstractImporterStrategyImpl {
             report,
             context,
             oldIdToNewGalleryItem,
+            resourceImages,
             iconfig);
         // handle general exceptions here as we're parsing an archive
         // file that may be modified or inconsistent
@@ -315,6 +328,7 @@ abstract class AbstractImporterStrategyImpl {
       ImportArchiveReport report,
       RecordContext context,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem,
+      ArchiveResourceImages resourceImages,
       ArchivalImportConfig iconfig)
       throws IOException, URISyntaxException {
 
@@ -355,7 +369,13 @@ abstract class AbstractImporterStrategyImpl {
     if (newDoc != null) {
       linkRecord.addOldIdToNewIdMapping(archivalDoc.getDocId(), newDoc.getId());
       convertStructureDocument(
-          archivalDoc, newDoc, importingUser, recordFolder, linkRecord, oldIdToNewGalleryItem);
+          archivalDoc,
+          newDoc,
+          importingUser,
+          recordFolder,
+          linkRecord,
+          oldIdToNewGalleryItem,
+          resourceImages);
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }
@@ -421,7 +441,8 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       ArchiveRecordFolder recordFolder,
       ArchivalLinkRecord linkRecord,
-      Map<String, EcatMediaFile> oldIdToNewGalleryItem)
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem,
+      ArchiveResourceImages resourceImages)
       throws IOException, URISyntaxException {
 
     strucDoc.setName(archivalDoc.getName());
@@ -462,7 +483,8 @@ abstract class AbstractImporterStrategyImpl {
           user,
           recordFolder,
           linkRecord,
-          oldIdToNewGalleryItem);
+          oldIdToNewGalleryItem,
+          resourceImages);
     }
     // the sign state was computed from the form's defaults when the document was created
     strucDoc.setAllFieldsValid(stdFields.stream().allMatch(Field::isMandatoryStateSatisfied));
@@ -478,7 +500,8 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       ArchiveRecordFolder recordFolder,
       ArchivalLinkRecord linkRecord,
-      Map<String, EcatMediaFile> oldIdToNewGalleryItem)
+      Map<String, EcatMediaFile> oldIdToNewGalleryItem,
+      ArchiveResourceImages resourceImages)
       throws IOException, URISyntaxException {
     try {
       fld.setName(archivalField.getFieldName());
@@ -487,9 +510,86 @@ abstract class AbstractImporterStrategyImpl {
       fld.setFieldData(archivalField.getFieldData());
       clearRevisionFromGalleryLinks(fld);
       setFieldAssociates(fld, archivalField, user, recordFolder, linkRecord, oldIdToNewGalleryItem);
+      importResourceImages(fld, user, recordFolder, resourceImages);
       fieldManager.save(fld, user);
     } catch (IllegalArgumentException ex) {
       log.warn(ex.getMessage(), ex);
+    }
+  }
+
+  /**
+   * Links images that the exporter stored as {@code ../resources/<filename>} (such as legacy
+   * emoticons) as Gallery images. Each distinct file is saved once per import. A reference that
+   * cannot be resolved to a valid image inside the archive is left unchanged.
+   */
+  private void importResourceImages(
+      Field fld,
+      User user,
+      ArchiveRecordFolder recordFolder,
+      ArchiveResourceImages resourceImages) {
+    if (resourceImages == null || !fld.isTextField()) {
+      return;
+    }
+    List<Element> candidates =
+        fieldParser.getNonRSpaceImages(fld.getFieldData()).stream()
+            .filter(img -> img.attr("src").startsWith(ArchiveResourceImages.RESOURCES_SRC_PREFIX))
+            .filter(
+                img ->
+                    !img.hasClass(ATTACHMENTICON_CLASSNAME)
+                        && !img.hasClass(ATTACHMENTINFOICON_CLASSNAME)
+                        && !img.hasClass(EXTERNALLINK_BADGE_CLASSNAME))
+            .collect(Collectors.toList());
+    boolean changed = false;
+    for (Element img : candidates) {
+      String src = img.attr("src");
+      Optional<EcatImage> image =
+          resourceImages
+              .resolve(recordFolder.path(), src)
+              .flatMap(file -> getOrImportResourceImage(file, user, resourceImages));
+      if (image.isEmpty()) {
+        log.warn(
+            "Archive resource image {} could not be imported, leaving its reference unchanged",
+            FilenameUtils.getName(src));
+        continue;
+      }
+      Element managed =
+          Jsoup.parseBodyFragment(
+                  rtu.generateURLStringForEcatImageLink(image.get(), Long.toString(fld.getId())))
+              .selectFirst("img");
+      img.attr("id", managed.attr("id"))
+          .attr("src", managed.attr("src"))
+          .addClass(IMAGE_DROPPED_CLASS_NAME)
+          .addClass(IMAGE_THMNAIL_DROPPED_CLASS_NAME)
+          .removeAttr("data-mce-src");
+      changed = true;
+    }
+    if (changed) {
+      Document doc = candidates.get(0).ownerDocument();
+      doc.outputSettings().prettyPrint(false);
+      fld.setFieldData(doc.body().html());
+    }
+  }
+
+  private Optional<EcatImage> getOrImportResourceImage(
+      Path file, User user, ArchiveResourceImages resourceImages) {
+    Optional<EcatImage> imported = resourceImages.getImported(file);
+    if (imported.isPresent()) {
+      return imported;
+    }
+    // validated here so that invalid content never reaches the media save transaction
+    if (!ArchiveResourceImages.isDecodableImage(file)) {
+      return Optional.empty();
+    }
+    try (InputStream in = Files.newInputStream(file)) {
+      EcatImage image = mediaManager.saveNewImage(file.getFileName().toString(), in, user, null);
+      resourceImages.putImported(file, image);
+      return Optional.of(image);
+    } catch (IOException e) {
+      log.warn(
+          "Could not save archive resource image {} ({})",
+          file.getFileName(),
+          e.getClass().getSimpleName());
+      return Optional.empty();
     }
   }
 
