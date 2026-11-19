@@ -53,12 +53,13 @@ import { type ElnFieldType, FormFieldsConflictError, FormFieldsSaveError } from 
 export type FieldEditorHandle = {
   /**
    * Saves the fields if they changed; if they did not, checks that they are
-   * still the server's. Rejects, leaving the editor dirty and showing why, if
-   * the save fails. Once the fields have changed elsewhere, rejects every call
-   * until the page is reloaded. A call while a save is in flight returns that
-   * save.
+   * still the server's. Resolves with the version of the field list that the
+   * server then holds, which the toolbar sends with the action it takes next.
+   * Rejects, leaving the editor dirty and showing why, if the save fails. Once
+   * the fields have changed elsewhere, rejects every call until the page is
+   * reloaded. A call while a save is in flight returns that save.
    */
-  save: () => Promise<void>;
+  save: () => Promise<number>;
   isDirty: () => boolean;
   fieldCount: () => number;
   /** Called after the toolbar publishes a new form: its fields then change only through a new version. */
@@ -68,7 +69,15 @@ export type FieldEditorHandle = {
    * access dialog, until the publish request completes. Released if publishing is cancelled or fails.
    */
   setReadOnly: (readOnly: boolean) => void;
+  /**
+   * Called when the server refused the toolbar's action because the fields changed elsewhere
+   * after `save()` resolved; from then on the editor is as after a refused save.
+   */
+  reportConflict: () => void;
 };
+
+/** The fields as the server holds them, and the version of that list. */
+export type ServerFields = { fields: ReadonlyArray<EditorField>; version: number };
 
 /** Dispatched on `window` whenever the dirty state or the number of fields changes. */
 export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
@@ -82,9 +91,16 @@ type FocusTarget = { kind: "name" | "problem"; key: string } | { kind: "add" } |
 type FormFieldEditorProps = {
   initialFields: ReadonlyArray<EditorField>;
   /** Sends the full field list and resolves with the saved fields. */
-  onSave: (fields: ReadonlyArray<EditorField>) => Promise<ReadonlyArray<EditorField>>;
-  /** Resolves if the server still has these fields, which are as last loaded or saved; rejects otherwise. */
-  onCheck: (fields: ReadonlyArray<EditorField>) => Promise<void>;
+  onSave: (fields: ReadonlyArray<EditorField>) => Promise<ServerFields>;
+  /**
+   * Resolves if the server still has these fields, which are as last loaded or
+   * saved, with the version it holds them at; rejects otherwise. If that is a
+   * newer version, it also resolves with the server's fields, whose ids may
+   * differ, and `fields` is null only when the version is unchanged.
+   */
+  onCheck: (
+    fields: ReadonlyArray<EditorField>,
+  ) => Promise<{ version: number; fields: ReadonlyArray<EditorField> | null }>;
   editable: boolean;
   ref?: Ref<FieldEditorHandle>;
 };
@@ -134,7 +150,7 @@ export default function FormFieldEditor({
   const [focusTarget, setFocusTarget] = useState<FocusTarget>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // one save at a time: a second toolbar action waits for the first
-  const saveInFlight = useRef<Promise<void> | null>(null);
+  const saveInFlight = useRef<Promise<number> | null>(null);
   // once published from this page, the form's fields can only change through a new version
   const [published, setPublished] = useState(false);
   const [heldReadOnly, setHeldReadOnly] = useState(false);
@@ -143,6 +159,7 @@ export default function FormFieldEditor({
   const conflict = useRef<FormFieldsConflictError | null>(null);
   const [conflicted, setConflicted] = useState(false);
   const reloadRef = useRef<HTMLButtonElement>(null);
+  const [sourcesShownBy, setSourcesShownBy] = useState<ReadonlySet<string>>(() => new Set());
   const editable = editableForm && !published && !heldReadOnly && !conflicted;
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -158,11 +175,18 @@ export default function FormFieldEditor({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const namesOf = (list: ReadonlyArray<EditorField>) => formatList(list.map(nameOf), language);
 
+  const latchConflict = (error: FormFieldsConflictError) => {
+    conflict.current = error;
+    setConflicted(true);
+    setStatus(null);
+  };
+
   useImperativeHandle(ref, () => ({
     isDirty: () => latest.current.dirty,
     fieldCount: () => latest.current.fields.length,
     markPublished: () => setPublished(true),
     setReadOnly: (readOnly) => setHeldReadOnly(readOnly),
+    reportConflict: () => latchConflict(new FormFieldsConflictError([])),
     save: () => {
       if (conflict.current) return Promise.reject(conflict.current);
       if (saveInFlight.current) return saveInFlight.current;
@@ -173,31 +197,30 @@ export default function FormFieldEditor({
         return Promise.reject(new FormFieldsSaveError([]));
       }
       const sentSignature = saveSignature(sent);
+      /** Takes the server's fields as saved; edits made while the save was in flight are kept. */
+      const adopt = (saved: ReadonlyArray<EditorField>) => {
+        const savedSignature = saveSignature(saved);
+        // the newer edits only gain what the save gave the fields
+        const keep = (current: ReadonlyArray<EditorField>) =>
+          saveSignature(current) === sentSignature ? saved : adoptSavedIds(current, saved, sent);
+        const next = keep(latest.current.fields);
+        // the toolbar may ask again before React renders
+        latest.current = { ...latest.current, fields: next, dirty: saveSignature(next) !== savedSignature };
+        setFields(keep);
+        setBaseline(savedSignature);
+        setBaselineItems(savedItems(saved));
+      };
       const saving = (async () => {
         try {
-          if (!dirty) {
-            // an untouched page must not update or publish fields its author never saw
-            await onCheck(sent);
-            setStatus(null);
-            return;
-          }
-          const saved = await onSave(sent);
-          const savedSignature = saveSignature(saved);
-          // edits made while the save was in flight are kept; they only gain what the save gave the fields
-          const keep = (current: ReadonlyArray<EditorField>) =>
-            saveSignature(current) === sentSignature ? saved : adoptSavedIds(current, saved);
-          const next = keep(latest.current.fields);
-          // the toolbar may ask again before React renders
-          latest.current = { ...latest.current, fields: next, dirty: saveSignature(next) !== savedSignature };
-          setFields(keep);
-          setBaseline(savedSignature);
-          setBaselineItems(savedItems(saved));
+          // an untouched page must not update or publish fields its author never saw
+          const server = dirty ? await onSave(sent) : await onCheck(sent);
+          // a check that found the same fields at a newer version gives their current ids
+          if (server.fields !== null) adopt(server.fields);
           setStatus(null);
+          return server.version;
         } catch (error) {
           if (error instanceof FormFieldsConflictError) {
-            conflict.current = error;
-            setConflicted(true);
-            setStatus(null);
+            latchConflict(error);
             throw error;
           }
           setStatus({
@@ -326,6 +349,14 @@ export default function FormFieldEditor({
     addOption: (key) => update(key, (f) => (hasOptions(f) ? { ...f, options: [...f.options, ""] } : f)),
     changeSettings: (key, settings) => update(key, (f) => ({ ...f, ...settings, type: f.type }) as EditorField),
     changeRule: (key, rule) => update(key, (f) => ({ ...f, rule })),
+    showSources: (key, shown) =>
+      setSourcesShownBy((current) => {
+        if (current.has(key) === shown) return current;
+        const next = new Set(current);
+        if (shown) next.add(key);
+        else next.delete(key);
+        return next;
+      }),
   };
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
@@ -341,6 +372,7 @@ export default function FormFieldEditor({
       addOption: (...args) => handlersRef.current.addOption(...args),
       changeSettings: (...args) => handlersRef.current.changeSettings(...args),
       changeRule: (...args) => handlersRef.current.changeRule(...args),
+      showSources: (...args) => handlersRef.current.showSources(...args),
     }),
   );
 
@@ -352,14 +384,15 @@ export default function FormFieldEditor({
   ruleFieldsRef.current = elnRuleFields(fields, nameByKey, ruleFieldsRef.current);
   const ruleFields = ruleFieldsRef.current;
   const graph = ruleGraphFor(ruleFields);
-  // A card's condition can show the field its rule reads, any field a draft condition reads, and
-  // every field its field menu lists: any field that a condition can read.
+  // A card's condition shows the field its rule reads and the fields that read it; while it has a
+  // draft or its field menu open, also any field it can read, so only those cards render again
+  // when a field they could read is renamed.
   const sourceNames = fields.filter((field) => canBeSource(field.type)).map((field) => field.name);
   /** The names a field's card shows besides its own. */
   const shownNames = (field: EditorField) =>
     [field.rule?.sourceFieldKey, ...graph.dependentsOf(field.key).map(({ key }) => key)]
       .map((key) => (key === undefined ? "" : (namesRef.current.get(key) ?? "")))
-      .concat(sourceNames)
+      .concat(sourcesShownBy.has(field.key) ? sourceNames : [])
       .join("\u0000");
 
   const creatableOptions = useMemo(
@@ -377,6 +410,7 @@ export default function FormFieldEditor({
           <AlertTitle id={conflictId}>{t("formFieldEditor.conflictTitle")}</AlertTitle>
           <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
             <Typography variant="body2">{t("formFieldEditor.conflict")}</Typography>
+            {dirty && <Typography variant="body2">{t("formFieldEditor.conflictUnsaved")}</Typography>}
             <Button
               ref={reloadRef}
               size="small"

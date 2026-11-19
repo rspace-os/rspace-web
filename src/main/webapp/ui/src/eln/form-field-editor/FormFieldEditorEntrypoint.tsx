@@ -9,7 +9,10 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingCircular from "@/components/LoadingCircular";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "@/theme";
-import FormFieldEditorRoot, { type FormFieldEditorHandle } from "./FormFieldEditorRoot";
+import FormFieldEditorRoot, {
+  type FormFieldEditorHandle,
+  FormFieldEditorUnavailableError,
+} from "./FormFieldEditorRoot";
 
 declare global {
   interface Window {
@@ -21,15 +24,16 @@ declare global {
 const queryClient = new QueryClient();
 const handle = createRef<FormFieldEditorHandle>();
 
-// Until the fields have loaded there is nothing to save. Until React has mounted nothing can ask
-// before Revert, so the draft is kept.
+// Until React has mounted the fields cannot be checked, so the toolbar's actions are refused, and
+// nothing can ask before Revert, so the draft is kept.
 window.formFieldEditor = {
-  save: () => handle.current?.save() ?? Promise.resolve(),
+  save: () => handle.current?.save() ?? Promise.reject(new FormFieldEditorUnavailableError()),
   isDirty: () => handle.current?.isDirty() ?? false,
   fieldCount: () => handle.current?.fieldCount() ?? 0,
   confirmAbandon: () => handle.current?.confirmAbandon() ?? Promise.resolve(false),
   markPublished: () => handle.current?.markPublished(),
   setReadOnly: (readOnly) => handle.current?.setReadOnly(readOnly),
+  reportConflict: () => handle.current?.reportConflict(),
 };
 
 const container = document.getElementById("formFieldEditor");

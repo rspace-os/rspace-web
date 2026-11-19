@@ -13,6 +13,12 @@ var formSaveIncomplete = false;
 var publishRequestRunning = false;
 
 /*
+ * The revision of the field list that Publish saved or checked before opening the access dialog.
+ * The publish request sends it, so the server refuses to publish fields saved elsewhere meanwhile.
+ */
+var publishFieldsRevision = null;
+
+/*
  * Ends a Publish. The fields were held read-only from the field save until now, so no edit is made
  * that the save did not include; if the form was not published, editing resumes.
  */
@@ -103,7 +109,7 @@ $(document).ready(function () {
         publishRequestRunning = true;
         $(this).dialog('close');
         var $form = $('#rsFormSharingForm');
-        var data = $form.serialize();
+        var data = $form.serialize() + '&' + $.param({ fieldsRevision: publishFieldsRevision });
         $.ajax({
           url: $form.attr('action'),
           type: $form.attr('method'),
@@ -121,6 +127,9 @@ $(document).ready(function () {
           },
           error: function (xhr, err) {
             finishPublish(false);
+            if (reportFieldsConflict(xhr)) {
+              return;
+            }
             alert(RS.msg("legacyjs.workspace.form.genericError"));
           }
         });
@@ -230,19 +239,34 @@ function unlockform() {
 /*
  * Saves the form field editor's changes; with none, the editor checks that its fields are still
  * the server's, so a page left open cannot update or publish fields its author never saw.
- * Resolves true when there is nothing left to save; false when the save or check failed, in which
- * case the editor stays open and shows why.
+ * Resolves with the revision of the field list the server then holds, which Update and Publish
+ * send so that the server refuses them if the fields are saved elsewhere meanwhile; null when the
+ * save or check failed, in which case the editor stays open and shows why. If the editor is not
+ * there, or its fields did not load, nothing can be checked, so null too, and an alert says so.
  */
 function saveFieldEditor() {
   var fieldEditor = window.formFieldEditor;
   if (!fieldEditor) {
-    return Promise.resolve(true);
+    apprise(RS.msg("legacyjs.workspace.form.fieldEditorUnavailable"));
+    return Promise.resolve(null);
   }
-  return fieldEditor.save().then(function () {
-    return true;
-  }, function () {
-    return false;
+  return fieldEditor.save().then(function (revision) {
+    return revision;
+  }, function (error) {
+    if (error && error.name === 'FormFieldEditorUnavailableError') {
+      apprise(RS.msg("legacyjs.workspace.form.fieldEditorUnavailable"));
+    }
+    return null;
   });
+}
+
+/* A refusal because the fields were saved elsewhere since this page saved or checked them. */
+function reportFieldsConflict(jqxhr) {
+  if (jqxhr.status !== 409 || !window.formFieldEditor) {
+    return false;
+  }
+  window.formFieldEditor.reportConflict();
+  return true;
 }
 
 /**
@@ -269,12 +293,13 @@ function setUpPublishButtons() {
         window.formFieldEditor.setReadOnly(true);
       }
       RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
-      saveFieldEditor().then(function (saved) {
+      saveFieldEditor().then(function (revision) {
         RS.unblockPage();
-        if (!saved) {
+        if (revision === null) {
           finishPublish(false);
           return;
         }
+        publishFieldsRevision = revision;
         //get the access control dialog; closing it ends publishing
         var jqxhr = $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
           $('#publishShareDlgContent').html(data);
@@ -328,8 +353,8 @@ function saveForm() {
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
   formSaveIncomplete = true;
-  saveFieldEditor().then(function (saved) {
-    if (!saved) {
+  saveFieldEditor().then(function (revision) {
+    if (revision === null) {
       RS.unblockPage();
       endToolbarAction();
       return;
@@ -371,15 +396,16 @@ function updateForm() {
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
   formSaveIncomplete = true;
-  saveFieldEditor().then(function (saved) {
-    if (!saved) {
+  saveFieldEditor().then(function (revision) {
+    if (revision === null) {
       RS.unblockPage();
       endToolbarAction();
       return;
     }
     var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
       templateId: recordId,
-      lockToken: editLockToken
+      lockToken: editLockToken,
+      fieldsRevision: revision
     }, function (data) {
       RS.unblockPage();
       if (data.data !== null) {
@@ -400,7 +426,9 @@ function updateForm() {
     jqxhr.fail(function () {
       RS.unblockPage();
       endToolbarAction();
-      RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
+      if (!reportFieldsConflict(jqxhr)) {
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
+      }
     });
   });
 }

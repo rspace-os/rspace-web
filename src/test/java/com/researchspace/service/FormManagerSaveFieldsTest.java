@@ -40,6 +40,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.record.CopyIndependentFormAndFieldFormPolicy;
@@ -525,6 +526,40 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void singleFieldEditsAdvanceTheFieldsRevision() {
+    RSForm form = formMgr.create(user);
+    long start = revisionOf(form);
+
+    StringFieldForm a =
+        formMgr.createFieldForm(
+            new StringFieldDTO<StringFieldForm>("A", false, "no", ""), form.getId(), user);
+    assertEquals(start + 1, revisionOf(form));
+    formMgr.updateFieldForm(
+        new StringFieldDTO<StringFieldForm>("A2", false, "no", ""), a.getId(), user);
+    assertEquals(start + 2, revisionOf(form));
+    StringFieldForm b =
+        formMgr.createFieldForm(
+            new StringFieldDTO<StringFieldForm>("B", false, "no", ""), form.getId(), user);
+    formMgr.reorderFields(form.getId(), List.of(b.getId(), a.getId()), user);
+    assertEquals(start + 4, revisionOf(form));
+    formMgr.deleteFieldFromForm(a.getId(), user);
+    assertEquals(start + 5, revisionOf(form));
+  }
+
+  @Test
+  public void apiCreateAndEditAdvanceTheFieldsRevision() {
+    RSForm form = formMgr.createForm(definition(apiField(new NumberFieldPost(), "n1")), user);
+    long created = revisionOf(form);
+    assertTrue(created > 0, "the API's save of the new form's fields advances its revision");
+
+    NumberFieldPost renamed = apiField(new NumberFieldPost(), "n2");
+    renamed.setId(activeFields(form).get(0).getId());
+    formMgr.editForm(form.getId(), definition(renamed), user, anySessionTracker());
+
+    assertEquals(created + 1, revisionOf(form));
+  }
+
+  @Test
   public void signingIsBlockedOnlyByShownEmptyMandatoryFields() throws Exception {
     String gmoKey = newKey();
     RadioFieldDTO<RadioFieldForm> gmo = radio("GMO?", YES_NO);
@@ -709,6 +744,12 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
   private static FieldDisplayRuleDTO hasValue(String key) {
     return new FieldDisplayRuleDTO(key, "HAS_VALUE", List.of());
+  }
+
+  /** The column is not mapped, so flush what the test's transaction wrote before reading it. */
+  private long revisionOf(RSForm form) {
+    flushDatabaseState();
+    return formMgr.getForFieldEditor(form.getId(), user).fieldsRevision();
   }
 
   private static String newKey() {

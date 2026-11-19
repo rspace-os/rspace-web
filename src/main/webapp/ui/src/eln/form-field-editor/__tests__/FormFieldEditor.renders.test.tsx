@@ -61,7 +61,12 @@ describe("Renaming a field of a large form", () => {
     await renderWithRealI18n(
       <ThemeProvider theme={materialTheme}>
         <ConfirmProvider>
-          <FormFieldEditor initialFields={fields} onSave={async (saved) => saved} onCheck={async () => {}} editable />
+          <FormFieldEditor
+            initialFields={fields}
+            onSave={async (saved) => ({ fields: saved, version: 1 })}
+            onCheck={async () => ({ version: 0, fields: null })}
+            editable
+          />
         </ConfirmProvider>
       </ThemeProvider>,
       { resources: { common, workspace }, defaultNS: "workspace" },
@@ -75,10 +80,20 @@ describe("Renaming a field of a large form", () => {
 
     renders.clear();
     rename("Field 4", "Is this a GMO?");
-    // a radio: any card's condition can read it, in a draft or in its field menu
-    expect(renders.size).toBe(COUNT);
+    // a radio: its own card, and the field that reads it
+    expect([...renders.keys()].sort()).toEqual([keyOf(4), keyOf(5)]);
     expect(
       within(screen.getByRole("region", { name: "Field 5" })).getByRole("combobox", { name: "Field" }),
     ).toHaveTextContent("Is this a GMO?");
+
+    // a condition being drafted can read any radio, so it shows a renamed one's new name too
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Field 2" })).getByRole("radio", {
+        name: "Only when another field has certain values",
+      }),
+    );
+    renders.clear();
+    rename("Is this a GMO?", "GMO status");
+    expect([...renders.keys()].sort()).toEqual([keyOf(2), keyOf(4), keyOf(5)]);
   });
 });

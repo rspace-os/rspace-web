@@ -181,6 +181,22 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     return form;
   }
 
+  @RequiresPermissions("FORM:SHARE")
+  @Override
+  public RSForm publish(
+      Long id, FormSharingCommand config, long expectedFieldsRevision, User authUser) {
+    assertFieldsRevision(id, expectedFieldsRevision);
+    return publish(id, true, config, authUser);
+  }
+
+  /** First, before the transaction reads anything; see FormDao#lockFieldsRevision. */
+  private void assertFieldsRevision(Long formId, long expectedRevision) {
+    if (!formDao.lockFieldsRevision(formId, expectedRevision)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
+  }
+
   @Override
   public Optional<RSForm> delete(long formId, User user) {
     return formDao.getSafeNull(formId).map(form -> attemptRemoveForm(formId, user, form));
@@ -465,6 +481,12 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     formDao.save(temp);
     formDao.save(orig);
     formDao.remove(temp.getId());
+  }
+
+  @Override
+  public RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user) {
+    assertFieldsRevision(tempFormId, expectedFieldsRevision);
+    return updateVersion(tempFormId, user);
   }
 
   @Override
