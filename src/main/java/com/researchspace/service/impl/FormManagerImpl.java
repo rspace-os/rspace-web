@@ -498,14 +498,24 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   @Override
   public RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user) {
-    get(tempFormId, user);
+    RSForm temp = writableDraft(tempFormId, user);
     assertFieldsRevision(tempFormId, expectedFieldsRevision);
-    return updateVersion(tempFormId, user);
+    return makeCurrentVersion(temp);
   }
 
   @Override
   public RSForm updateVersion(Long tempFormId, User user) {
+    return makeCurrentVersion(writableDraft(tempFormId, user));
+  }
+
+  private RSForm writableDraft(Long tempFormId, User user) {
     RSForm temp = get(tempFormId, user);
+    permissionUtils.assertIsPermitted(temp, PermissionType.WRITE, user, "update form");
+    return temp;
+  }
+
+  private RSForm makeCurrentVersion(RSForm temp) {
+    Long tempFormId = temp.getId();
     RSForm orig = formDao.getOriginalFromTemporaryForm(tempFormId);
     if (orig == null || orig.isSystemForm()) {
       log.error("Cannot update version of a system form!");

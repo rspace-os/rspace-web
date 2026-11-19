@@ -111,6 +111,8 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    *
    * @param expectedFieldsRevision the {@link FieldEditorForm#fieldsRevision()} the editor checked
    * @return the new version, or null if the form is not a draft or is a system form
+   * @throws org.apache.shiro.authz.AuthorizationException if the user cannot write to the draft,
+   *     checked before the revision
    * @throws FormFieldsConflictException if the field list has changed since; nothing is updated
    */
   RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user);

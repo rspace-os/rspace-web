@@ -431,6 +431,32 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void anotherUsersDraftCannotBeMadeTheCurrentVersion() {
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    logoutAndLoginAs(other);
+    RSForm othersForm = formMgr.create(other);
+    formMgr.saveFields(othersForm.getId(), List.of(item(null, null, null, string("one"))), other);
+    formMgr.publish(othersForm.getId(), true, null, other);
+    RSForm draft = formMgr.getForEditing(othersForm.getId(), other, anySessionTracker());
+    formMgr.unlockForm(othersForm.getId(), other);
+    long revision = revisionOf(draft, other);
+    logoutAndLoginAs(user);
+
+    long stale = revision + 1;
+    for (long expected : List.of(stale, revision)) {
+      assertThrows(
+          AuthorizationException.class, () -> formMgr.updateVersion(draft.getId(), expected, user));
+    }
+    assertThrows(AuthorizationException.class, () -> formMgr.updateVersion(draft.getId(), user));
+
+    flushDatabaseState();
+    assertTrue(formMgr.get(draft.getId(), user).isTemporary());
+    assertEquals(draft.getId(), formMgr.get(othersForm.getId(), user).getTempForm().getId());
+    logoutAndLoginAs(other);
+    assertEquals(revision, revisionOf(draft, other));
+  }
+
+  @Test
   public void formVersionsAndCopiesKeepKeysAndRules() {
     String gmoKey = newKey();
     RSForm form = formMgr.create(user);
@@ -767,8 +793,12 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
 
   /** The column is not mapped, so flush what the test's transaction wrote before reading it. */
   private long revisionOf(RSForm form) {
+    return revisionOf(form, user);
+  }
+
+  private long revisionOf(RSForm form, User reader) {
     flushDatabaseState();
-    return formMgr.getForFieldEditor(form.getId(), user).fieldsRevision();
+    return formMgr.getForFieldEditor(form.getId(), reader).fieldsRevision();
   }
 
   private static String newKey() {
