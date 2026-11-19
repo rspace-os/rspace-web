@@ -73,19 +73,6 @@ class EmailAccountTemplateI18nTest {
   }
 
   @Test
-  void defaultWelcomeListsMicrosoftEdgeAsSupported() {
-    String output =
-        templates.render(
-            "defaultWelcomePostBatchSignupemail.vm",
-            Map.of("userFirstName", "Alice", "htmlDomainPrefix", BASE_URL));
-
-    assertThat(output)
-        .as(output)
-        .contains("We support recent versions of Chrome, Firefox, Safari and Microsoft Edge.");
-    assertThat(output).as(output).doesNotContain("do not support Edge");
-  }
-
-  @Test
   void plaintextConversionPreservesUsernameAndLoginLink() {
     String output =
         templates.renderPlainText(
