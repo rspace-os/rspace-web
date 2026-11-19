@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
@@ -606,5 +607,18 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     String name = "p" + boundValues.size();
     boundValues.put(name, value);
     return name;
+  }
+
+  @Override
+  public boolean lockUnchangedSinceTransactionStart(Long formId) {
+    String select = "select modificationDateMillis from RSForm where id = :id";
+    // a plain read sees the transaction's snapshot; a locking read sees the latest commit
+    Object seen = getSession().createNativeQuery(select).setParameter("id", formId).uniqueResult();
+    Object latest =
+        getSession()
+            .createNativeQuery(select + " for update")
+            .setParameter("id", formId)
+            .uniqueResult();
+    return Objects.equals(seen, latest);
   }
 }

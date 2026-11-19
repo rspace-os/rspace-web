@@ -60,9 +60,26 @@ export class FormFieldCardComponent {
     return this.root.getByText(text, { exact: true });
   }
 
-  /** The "Shown when..." summary of the field's display rule. */
-  get ruleSummary(): Locator {
-    return this.root.getByText(/^Shown when /);
+  /** The field's "Display this field when…" editor. */
+  get displayCondition(): Locator {
+    return this.root.getByRole("group", { name: "Display this field when…" });
+  }
+
+  /** The field the display condition reads, as its select shows it. */
+  get conditionSource(): Locator {
+    return this.displayCondition.getByRole("combobox", { name: "Field", exact: true });
+  }
+
+  /** Shows the field only when `source` is any of `options`. */
+  async showOnlyWhen(source: string, options: ReadonlyArray<string>): Promise<void> {
+    await this.displayCondition.getByRole("radio", { name: "Only when another field has certain values" }).check();
+    await this.conditionSource.click();
+    await this.page.getByRole("option", { name: source, exact: true }).click();
+    for (const option of options) {
+      await this.displayCondition.getByRole("combobox", { name: "Options", exact: true }).click();
+      await this.page.getByRole("option", { name: option, exact: true }).click();
+      await this.page.keyboard.press("Escape");
+    }
   }
 
   async moveToTop(): Promise<void> {
@@ -90,12 +107,9 @@ export class FormFieldEditorComponent {
     return new FormFieldCardComponent(this.page, this.root.getByRole("region", { name, exact: true }));
   }
 
-  /** The field at `index` in the form's order; the display rules panel is a region too, so it is left out. */
+  /** The field at `index` in the form's order. */
   fieldAt(index: number): FormFieldCardComponent {
-    const fieldCards = this.root
-      .getByRole("region")
-      .filter({ hasNot: this.page.getByRole("heading", { name: "Display rules" }) });
-    return new FormFieldCardComponent(this.page, fieldCards.nth(index));
+    return new FormFieldCardComponent(this.page, this.root.getByRole("region").nth(index));
   }
 
   /** Adds a field; the new field's name input has focus. */
@@ -104,24 +118,6 @@ export class FormFieldEditorComponent {
     await this.page.getByRole("menuitem", { name: TYPE_MENU_LABELS[type], exact: true }).click();
     await this.root.getByRole("textbox", { name: "Name", exact: true }).last().fill(name);
     return this.field(name);
-  }
-
-  /** Adds the rule "when `source` is any of `options`, show `targets`". */
-  async addRule(source: string, options: ReadonlyArray<string>, targets: ReadonlyArray<string>): Promise<void> {
-    await this.root.getByRole("button", { name: "Add rule" }).click();
-    const rule = this.root.getByRole("listitem", { name: /^New rule/ });
-    await rule.getByRole("combobox", { name: "Field", exact: true }).click();
-    await this.page.getByRole("option", { name: source, exact: true }).click();
-    for (const option of options) {
-      await rule.getByRole("combobox", { name: "Options", exact: true }).click();
-      await this.page.getByRole("option", { name: option, exact: true }).click();
-      await this.page.keyboard.press("Escape");
-    }
-    for (const target of targets) {
-      await rule.getByRole("combobox", { name: "Show these fields", exact: true }).click();
-      await this.page.getByRole("option", { name: target, exact: true }).click();
-      await this.page.keyboard.press("Escape");
-    }
   }
 
   /** The alert shown when the toolbar could not save the fields. */

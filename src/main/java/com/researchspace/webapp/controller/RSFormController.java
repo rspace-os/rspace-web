@@ -16,6 +16,7 @@ import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTOValidator;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTOValidator;
+import com.researchspace.model.dtos.FormFieldEditorFields;
 import com.researchspace.model.dtos.FormFieldEditorItem;
 import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormMenu;
@@ -50,6 +51,7 @@ import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.views.FormSearchCriteria;
+import com.researchspace.service.FormFieldsConflictException;
 import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.FormManager.FormEditorPage;
@@ -69,6 +71,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -434,49 +438,67 @@ public class RSFormController extends BaseController {
 
   /**
    * The fields of the form being edited, for the form field editor: every setting as the legacy
-   * field DTOs, with each field's id, key, display rule, and whether it can be deleted.
+   * field DTOs, with each field's id, key, display rule, and whether it can be deleted, and the
+   * version of the field list, which the editor sends back with its save.
    *
    * @param formId the form being edited (a draft, or a form that has never been published)
    */
   @ResponseBody
   @GetMapping("ajax/fields")
-  public AjaxReturnObject<List<FormFieldEditorItem>> getFields(
-      @RequestParam("formId") long formId) {
+  public AjaxReturnObject<FormFieldEditorFields> getFields(@RequestParam("formId") long formId) {
     User subject = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
-        editorFields(formManager.getWithPopulatedFieldForms(formId, subject)), null);
+        editorFields(formManager.getWithPopulatedFieldForms(formId, subject), subject), null);
   }
 
   /**
    * Saves the full field list of the form being edited in one transaction; see {@link
-   * FormManager#saveFields}. Keeps the edit lock. Returns the saved fields, as {@link
-   * #getFields(long)} does, or the problems that rejected the save.
+   * FormManager#saveFields(Long, List, String, User)}. Keeps the edit lock. Returns the saved
+   * fields, as {@link #getFields(long)} does, or the problems that rejected the save: with status
+   * 409 if the fields changed since the editor read {@code version}, and 403 if the user cannot
+   * change the form.
    */
   @ResponseBody
   @PostMapping("ajax/fields")
-  public AjaxReturnObject<List<FormFieldEditorItem>> saveFields(
-      @RequestParam("formId") long formId, @RequestBody List<FormFieldSaveItem> fields) {
+  public ResponseEntity<AjaxReturnObject<FormFieldEditorFields>> saveFields(
+      @RequestParam("formId") long formId,
+      @RequestParam("version") String version,
+      @RequestBody List<FormFieldSaveItem> fields) {
     User subject = userManager.getAuthenticatedUserInSession();
     RSForm saved;
     try {
-      saved = formManager.saveFields(formId, fields, subject);
+      saved = formManager.saveFields(formId, fields, version, subject);
     } catch (FormFieldsValidationException e) {
-      ErrorList errors = new ErrorList();
-      e.getErrors().forEach(errors::addErrorMsg);
-      return new AjaxReturnObject<>(null, errors);
+      return rejected(HttpStatus.OK, e.getErrors());
+    } catch (FormFieldsConflictException e) {
+      return rejected(HttpStatus.CONFLICT, List.of(e.getMessage()));
+    } catch (AuthorizationException e) {
+      log.warn("User {} may not save the fields of form {}", subject.getUsername(), formId);
+      return rejected(
+          HttpStatus.FORBIDDEN, List.of(getText("form.errors.fieldUpdateUnauthorized")));
     }
-    return new AjaxReturnObject<>(editorFields(saved), null);
+    return ResponseEntity.ok(new AjaxReturnObject<>(editorFields(saved, subject), null));
   }
 
-  private List<FormFieldEditorItem> editorFields(RSForm form) {
+  private static ResponseEntity<AjaxReturnObject<FormFieldEditorFields>> rejected(
+      HttpStatus status, List<String> messages) {
+    ErrorList errors = new ErrorList();
+    messages.forEach(errors::addErrorMsg);
+    return ResponseEntity.status(status).body(new AjaxReturnObject<>(null, errors));
+  }
+
+  /** A reader may not delete any field, whatever the field. */
+  private FormFieldEditorFields editorFields(RSForm form, User subject) {
+    boolean canWrite = formManager.canWrite(form, subject);
     Set<Long> copiedFieldIds = formManager.getCopiedTemporaryFieldIds(form);
     List<FormFieldEditorItem> items = new ArrayList<>();
     for (FieldForm field : form.getFieldForms()) {
       if (!field.isDeleted()) {
-        items.add(FormFieldEditorItem.from(field, !copiedFieldIds.contains(field.getId())));
+        items.add(
+            FormFieldEditorItem.from(field, canWrite && !copiedFieldIds.contains(field.getId())));
       }
     }
-    return items;
+    return new FormFieldEditorFields(items, formManager.getFieldsVersion(form));
   }
 
   /**

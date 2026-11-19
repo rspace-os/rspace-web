@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.dao.FieldFormDao;
 import com.researchspace.model.dtos.AbstractFormFieldDTO;
@@ -31,6 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -167,6 +169,23 @@ public class FormFieldListSaver {
       throw new FormFieldsValidationException(errors);
     }
     return persist(form, planned, toDelete);
+  }
+
+  /**
+   * The version of the form's field list: a hash of every active field's id, position, type, key,
+   * display rule and settings. Anything a save can change changes it.
+   */
+  public String version(AbstractForm form) {
+    ArrayNode fields = fingerprintMapper.createArrayNode();
+    for (FieldForm field : form.getFieldForms()) {
+      if (!field.isDeleted()) {
+        ObjectNode node = settingsFingerprint(field);
+        node.put("id", field.getId());
+        node.put("type", field.getType().getType());
+        fields.add(node);
+      }
+    }
+    return DigestUtils.sha256Hex(fields.toString());
   }
 
   private PlannedField planSavedField(
@@ -353,7 +372,7 @@ public class FormFieldListSaver {
    * Everything the save can change on a field except its position, with the modification time kept
    * aside, so an untouched field keeps its modification time and gains no audit revision.
    */
-  private JsonNode settingsFingerprint(FieldForm field) {
+  private ObjectNode settingsFingerprint(FieldForm field) {
     ObjectNode node = fingerprintMapper.createObjectNode();
     node.set("settings", fingerprintMapper.valueToTree(LegacyFormFieldDTOs.fromFieldForm(field)));
     node.put("fieldKey", field.getFieldKey());
