@@ -20,18 +20,19 @@ import InstrumentTemplateFields from "../../../InstrumentTemplate/Fields/CustomF
 import TemplateForm from "../../Form";
 import CustomFields from "../CustomFields";
 
-const { update, post } = vi.hoisted(() => ({ update: vi.fn(), post: vi.fn() }));
+const { update, post, addAlert } = vi.hoisted(() => ({ update: vi.fn(), post: vi.fn(), addAlert: vi.fn() }));
 vi.mock("@/common/InvApiService", () => ({ default: { update, post } }));
 vi.mock("../SamplesList", () => ({ default: () => null }));
 afterEach(() => {
   update.mockReset();
   post.mockReset();
+  addAlert.mockReset();
 });
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: { assertValidUnitId: () => {}, getUnit: () => ({ label: "ml" }) },
     trackingStore: { trackEvent: () => {} },
-    uiStore: { addAlert: () => {}, setPageNavigationConfirmation: () => {}, setDirty: () => {}, unsetDirty: () => {} },
+    uiStore: { addAlert, setPageNavigationConfirmation: () => {}, setDirty: () => {}, unsetDirty: () => {} },
     searchStore: { search: { setActiveResult: () => Promise.resolve() } },
     peopleStore: { currentUser: null },
   }),
@@ -311,6 +312,25 @@ describe("Template display conditions", () => {
     expect(onErrorStateChange).toHaveBeenLastCalledWith(sectionError, false);
   });
 
+  it("keeps a name error on the badge while another new field's name is still blank", async () => {
+    const user = userEvent.setup();
+    const { onErrorStateChange } = renderEditor(newGmoTemplate());
+    const nameOf = (card: HTMLElement) => within(card).getByRole("textbox", { name: "common:fieldEditor.card.name" });
+
+    await user.clear(nameOf(fieldCard("GMO permit")));
+    await user.clear(nameOf(fieldCard("Is this a GMO?")));
+    const [first] = screen.getAllByRole("region", { name: "common:fieldEditor.card.unnamed" });
+    await user.type(nameOf(first), "Permit");
+
+    // the section badge counts the identifiers last reported in error
+    const inError = new Set<string>();
+    for (const [identifier, value] of onErrorStateChange.mock.calls as Array<[string, boolean]>) {
+      if (value) inError.add(identifier);
+      else inError.delete(identifier);
+    }
+    expect(inError.size).toBe(1);
+  });
+
   it("sends only the rules this edit changed, so a stale tab does not undo another author's change", async () => {
     const user = userEvent.setup();
     const attrs = savedGmoTemplateAttrs();
@@ -489,7 +509,7 @@ describe("Deleting fields while editing display rules", () => {
     const source = within(fieldCard("GMO permit")).getByRole("combobox", {
       name: "common:fieldEditor.condition.sourceLabel",
     });
-    expect(source).toHaveAccessibleDescription("common:fieldEditor.condition.sourceMissing");
+    expect(source).toHaveAccessibleDescription("common:fieldEditor.condition.noOtherFields");
     expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
     expect(template.submittable.isOk).toBe(false);
     await user.click(source);
@@ -578,6 +598,29 @@ describe("Display condition drafts across saves and edit sessions", () => {
 
     expect(update).not.toHaveBeenCalled();
     expect(draftCards()).toHaveLength(1);
+  });
+
+  it("sends nothing on Retry after a refused save when a condition was left unfinished since", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+    update.mockRejectedValueOnce({
+      response: { status: 400, data: { data: { validationErrors: [{ field: "name", message: "Taken" }] } } },
+    });
+    await act(async () => {
+      await template.update().catch(() => {});
+    });
+    const [[{ retryFunction }]] = addAlert.mock.calls as Array<[{ retryFunction: () => Promise<void> }]>;
+    await addDraft(user);
+
+    await act(async () => {
+      await expect(retryFunction()).resolves.toBeUndefined();
+    });
+
+    expect(update).toHaveBeenCalledOnce();
+    // a failed upload leaves a progress bar in the button, which joins its name
+    expect(screen.getByRole("button", { name: /common:actions\.save/ })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent(INCOMPLETE);
   });
 
   it("starts without drafts, and can be saved, for another template or after leaving and re-entering edit mode", async () => {
