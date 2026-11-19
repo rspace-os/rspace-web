@@ -434,8 +434,10 @@ var paginationEventHandler = function (source, e) {
  **/
 function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
 }, onFail) {
-  // block page so that user knows something is loading
-  RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
+  // block page so that user knows something is loading, unless a search link already has
+  if (!searchLinkPending) {
+    RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
+  }
 
   var requestId = ++listingRequestId;
   var jqxhr = $.get(url, data, function (result) {

@@ -475,6 +475,7 @@ test.describe(`Workspace search operations`, () => {
     await overlay.waitFor();
     await page.waitForTimeout(16_000);
     await expect(overlay).toBeVisible();
+    await expect(page.getByText("Loading records")).toHaveCount(1);
 
     await expect(pageWorkspace.table.row(docName)).toBeVisible({ timeout: 10_000 });
     await expect(overlay).toHaveCount(0);
