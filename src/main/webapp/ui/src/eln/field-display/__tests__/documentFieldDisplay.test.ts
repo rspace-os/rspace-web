@@ -439,6 +439,32 @@ describe("text and number sources", () => {
     expect(dose).toHaveAttribute("data-field-value", "");
   });
 
+  test("never reads a password input, even in a field marked as a text source", () => {
+    const BATCH_KEY = "6f1c2e0a-0000-4000-8000-000000000022";
+    const batch = row(
+      {
+        "data-field-id": "1",
+        "data-field-type": "STRING",
+        "data-field-source-kind": "TEXT",
+        "data-field-key": BATCH_KEY,
+        "data-field-name": "Batch",
+        "data-field-value": "",
+      },
+      '<input name="fieldData" type="password" value="secret">',
+    );
+    const note = row({
+      "data-field-id": "2",
+      "data-field-type": "STRING",
+      "data-display-rule": serializeDisplayRule(createDisplayRule(BATCH_KEY, "HAS_VALUE", [])),
+    });
+    const root = page(batch, note);
+
+    expect(markAnswered(find(batch, "input"))).toBeNull();
+    applyFieldDisplayRules(root);
+
+    expect(note).toHaveAttribute("hidden");
+  });
+
   test("keeps a field that contains focus shown, while reporting it as hidden", () => {
     const { root, note, input } = dosePage({ stored: "7", typed: "2" });
     note.innerHTML = '<input name="fieldData">';

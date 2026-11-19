@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+import { waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
@@ -36,6 +37,8 @@ type LegacyPage = Window & {
   numberFieldInput: (control: Element) => void;
   checkAndMarkNumber: (control: Element) => void;
   _autosavePickList: ($field: JQuery) => PromiseLike<unknown>;
+  cancelAutosavedEdits: () => void;
+  saveStructuredDocument: (close: boolean, unlock: boolean) => void;
 };
 const legacy = window as unknown as LegacyPage;
 const renderToolbar = vi.fn();
@@ -58,12 +61,19 @@ beforeAll(() => {
       blockPage: () => {},
       unblockPage: () => {},
       msg: (key: string) => key,
+      confirm: () => {},
       escapeHtml: (text: string) => legacy.$("<div>").text(text).html(),
     },
     createURL: (url: string) => url,
     renderToolbar,
-    apprise: () => {},
+    // the user confirms every dialog
+    apprise: (_message: string, _options?: unknown, onConfirm?: () => void) => onConfirm?.(),
     recordId: "552",
+    editable: "EDIT_MODE",
+    renameDocumentBeforeSaving: () => undefined,
+    displayStatus: () => {},
+    fromNotebook: false,
+    settingsKey: "",
   });
   runScript("scripts/pages/workspace/editor/documentView.js");
   runScript("scripts/pages/workspace/editor/documentEdit.js");
@@ -276,45 +286,189 @@ describe("restoring autosaved data on load (_updateAutosavedFields)", () => {
   });
 });
 
-describe("a number source whose typed value is not a number", () => {
+describe("restoring autosaved text and number data (_updateAutosavedFields)", () => {
+  test("shows markup-shaped text literally, creating no elements", async () => {
+    await renderPage("");
+    const markup = '<img src="x" onerror="window.injected = true">';
+
+    legacy._updateAutosavedFields([{ id: 15, fieldData: markup }]);
+
+    const shown = document.getElementById("plainText_15") as HTMLElement;
+    expect(shown).toHaveTextContent(markup);
+    expect(shown.childElementCount).toBe(0);
+    expect(document.getElementById("15")).toHaveValue(markup);
+  });
+});
+
+describe("a number source", () => {
   const DOSE_KEY = "6f1c2e0a-0000-4000-8000-000000000021";
   const showWhenOver5 = serializeDisplayRule(createDisplayRule(DOSE_KEY, "GREATER_THAN", ["5"]));
+  const dose = () => document.getElementById("21") as HTMLInputElement;
+  const reason = () => document.getElementById("22") as HTMLInputElement;
+  const reasonRow = () => document.getElementById("field_22");
+  const region = () => document.querySelector('[role="status"]');
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  test("shows its dependents again as soon as checkAndMarkNumber restores the last value", async () => {
-    // as numberField.jsp renders it
+  /** "Dose", stored as `stored`, and the mandatory "High dose reason", shown while Dose is over 5. */
+  async function renderDosePage(stored: string) {
+    // as numberField.jsp and stringField.jsp render them
     document.body.innerHTML = `
+      <input type="hidden" id="lastModificationRecord" value="0">
       <table>
         <tr id="field_21" name="number" class="field" data-field-id="21" data-field-key="${DOSE_KEY}"
-            data-field-type="NUMBER" data-field-source-kind="NUMBER" data-field-name="Dose" data-field-value="7">
-          <td><input id="21" class="inputField 21" name="fieldData" type="text" value="7">
-            <input type="hidden" name="wasChanged" value="false"><input type="hidden" name="lastValue" value="7">
-            <input type="hidden" name="minValue" value=""><input type="hidden" name="maxValue" value=""></td>
+            data-field-type="NUMBER" data-field-source-kind="NUMBER" data-field-name="Dose" data-field-value="${stored}">
+          <td><input id="21" class="inputField 21" name="fieldData" type="text" value="${stored}">
+            <p class="plainTextField 21 singleLineFieldInDocViewMode" id="plainText_21">${stored}</p>
+            <input type="hidden" name="wasChanged" value="false"><input type="hidden" name="lastValue" value="${stored}">
+            <input type="hidden" name="minValue" value=""><input type="hidden" name="maxValue" value="">
+            <input type="hidden" name="fieldId" value="21"></td>
         </tr>
         <tr id="field_22" name="string" class="field" data-field-id="22" data-field-type="STRING"
-            data-field-source-kind="TEXT" data-field-name="High dose reason" data-display-rule='${showWhenOver5}'>
-          <td><input id="22" name="fieldData" type="text" value=""></td>
+            data-field-source-kind="TEXT" data-field-name="High dose reason" data-display-rule='${showWhenOver5}'
+            data-field-value="">
+          <td><input id="22" class="inputField 22" name="fieldData" type="text" value="">
+            <p class="plainTextField 22 singleLineFieldInDocViewMode" id="plainText_22"></p>
+            <input type="hidden" name="wasChanged" value="false"><input type="hidden" name="isPassword" value="false">
+            <input type="hidden" name="fieldId" value="22"></td>
         </tr>
       </table>`;
     Object.assign(window, {
       elnFieldDisplay: createLegacyFieldDisplay(await createTestI18n({ common: commonEn }, "common")),
     });
     window.elnFieldDisplay.refresh();
+  }
+
+  /** Types into Dose, which keeps focus; the JSP's inline oninput calls numberFieldInput. */
+  function typeDose(value: string) {
+    dose().focus();
+    dose().value = value;
+    legacy.numberFieldInput(dose());
+  }
+
+  function serveDose(value: string) {
+    server.use(
+      http.get("*/workspace/editor/structuredDocument/ajax/getUpdatedFields", () =>
+        HttpResponse.json({
+          data: [
+            { id: 21, type: "NUMBER", fieldData: value, mandatoryStateSatisfied: true },
+            { id: 22, type: "STRING", fieldData: "", mandatoryStateSatisfied: false },
+          ],
+        }),
+      ),
+    );
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  describe("whose typed value is not a number, so checkAndMarkNumber restores the last value", () => {
+    test("shows its dependents again once focus has landed", async () => {
+      await renderDosePage("7");
+      vi.useFakeTimers();
+      typeDose("abc");
+      vi.advanceTimersByTime(TYPING_PAUSE_MS);
+      expect(reasonRow()).not.toBeVisible();
+
+      legacy.checkAndMarkNumber(dose());
+      vi.advanceTimersByTime(0);
+
+      expect(dose()).toHaveValue("7");
+      expect(reasonRow()).toBeVisible();
+    });
+
+    test("restores the number an autosave restored, with its dependents", async () => {
+      await renderDosePage("7");
+      legacy._updateAutosavedFields([{ id: 21, fieldData: "3" }]);
+      expect(reasonRow()).not.toBeVisible();
+      vi.useFakeTimers();
+
+      typeDose("abc");
+      legacy.checkAndMarkNumber(dose());
+      vi.advanceTimersByTime(0);
+
+      expect(dose()).toHaveValue("3");
+      expect(reasonRow()).not.toBeVisible();
+    });
+
+    test("restores the number the server reloaded, with its dependents", async () => {
+      await renderDosePage("7");
+      serveDose("3");
+      await legacy.updateFieldsContentFromServer(true);
+      expect(reasonRow()).not.toBeVisible();
+      vi.useFakeTimers();
+
+      typeDose("abc");
+      legacy.checkAndMarkNumber(dose());
+      vi.advanceTimersByTime(0);
+
+      expect(dose()).toHaveValue("3");
+      expect(reasonRow()).not.toBeVisible();
+    });
+
+    test("keeps a dependent the user tabbed into shown until focus leaves it", async () => {
+      await renderDosePage("3");
+      vi.useFakeTimers();
+      typeDose("9");
+      vi.advanceTimersByTime(TYPING_PAUSE_MS);
+      expect(reasonRow()).toBeVisible();
+      typeDose("9x");
+
+      // a change event fires as Tab moves focus on
+      legacy.checkAndMarkNumber(dose());
+      reason().focus();
+      vi.advanceTimersByTime(0);
+      expect(reasonRow()).toBeVisible();
+      expect(reason()).toHaveFocus();
+
+      dose().focus();
+      vi.advanceTimersByTime(0);
+      expect(reasonRow()).not.toBeVisible();
+      expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
+    });
+  });
+
+  test("cancelling edits applies and announces no update still waiting for typing to pause", async () => {
+    let cancelled = false;
+    server.use(
+      http.post("*/workspace/editor/structuredDocument/ajax/cancelAutosavedEdits", () => {
+        cancelled = true;
+        return HttpResponse.json({ data: null });
+      }),
+    );
+    await renderDosePage("7");
     vi.useFakeTimers();
-    const dose = document.getElementById("21") as HTMLInputElement;
-    const reasonRow = document.getElementById("field_22");
+    typeDose("3");
 
-    dose.value = "abc";
-    legacy.numberFieldInput(dose);
+    legacy.cancelAutosavedEdits();
+    await vi.waitUntil(() => cancelled);
     vi.advanceTimersByTime(TYPING_PAUSE_MS);
-    expect(reasonRow).not.toBeVisible();
 
-    legacy.checkAndMarkNumber(dose);
+    expect(reasonRow()).toBeVisible();
+    expect(region()).toBeEmptyDOMElement();
+  });
 
-    expect(dose).toHaveValue("7");
-    expect(reasonRow).toBeVisible();
+  test("saving at once while the number still has focus submits it, and Sign reads the visibility it gives", async () => {
+    const autosaved: Array<string | null> = [];
+    server.use(
+      http.post("*/workspace/editor/structuredDocument/ajax/autosaveField", async ({ request }) => {
+        autosaved.push(new URLSearchParams(await request.text()).get("dataValue"));
+        return HttpResponse.json({ data: true });
+      }),
+      http.post("*/workspace/editor/structuredDocument/ajax/saveStructuredDocument", () =>
+        HttpResponse.json({ data: "/workspace/editor/structuredDocument/552" }),
+      ),
+    );
+    await renderDosePage("7");
+    serveDose("3");
+    typeDose("3");
+    // the change event, as Enter fires it, without the typing pause
+    legacy.checkAndMarkNumber(dose());
+
+    legacy.saveStructuredDocument(false, false);
+
+    await waitFor(() => expect(renderToolbar).toHaveBeenCalledWith({ canSign: true }));
+    expect(autosaved).toEqual(["3"]);
+    expect(reasonRow()).not.toBeVisible();
+    expect(dose()).toHaveFocus();
   });
 });
