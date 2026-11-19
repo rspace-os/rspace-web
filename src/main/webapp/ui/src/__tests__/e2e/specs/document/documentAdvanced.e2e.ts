@@ -186,6 +186,76 @@ dynamicUserTest.describe("Choice fields", () => {
       }
     },
   );
+
+  dynamicUserTest(
+    "As a user, a multiple-selection Choice field keeps checkboxes at one or no value and saves any number of ticks",
+    async ({ clientForms, clientDocuments, pageWorkspace, pageDocument, componentDocumentFields }) => {
+      dynamicUserTest.setTimeout(90_000);
+      const options = ["a", "b", "c"];
+      const multi = (name: string, defaultOptions: string[]) =>
+        ({ name, type: "Choice", options, defaultOptions, multipleChoice: true }) as const;
+      const form = await clientForms.create({
+        name: uniqueName("MultiChoiceForm"),
+        fields: [
+          multi("OneValue", ["a"]),
+          multi("NoValue", []),
+          multi("RefreshedToOne", ["a", "b"]),
+          multi("RefreshedToNone", ["a", "b"]),
+          multi("SeveralOptions", []),
+          multi("ClearedOptions", ["a", "b"]),
+          multi("EveryOption", ["a"]),
+        ],
+      });
+      const document = await clientDocuments.create({ name: uniqueName("MultiChoiceDocument"), form: { id: form.id } });
+      await pageWorkspace.openDocument(document.id);
+
+      const expectCheckboxes = async (name: string, checked: string[]) => {
+        await expect(await componentDocumentFields.choiceOptions(name, "radio")).toHaveCount(0);
+        await expect(await componentDocumentFields.choiceOptions(name, "checkbox")).toHaveCount(3);
+        for (const option of options) {
+          const input = await componentDocumentFields.choiceOptions(name, "checkbox", option);
+          if (checked.includes(option)) await expect(input).toBeChecked();
+          else await expect(input).not.toBeChecked();
+        }
+      };
+      await expectCheckboxes("OneValue", ["a"]);
+      await expectCheckboxes("NoValue", []);
+
+      // The refresh on the first edit must not apply the single-field "one value means radios" rule.
+      const fieldId = (name: string) => {
+        const field = document.fields.find((f) => f.name === name);
+        if (!field) throw new Error(`The created document has no ${name} field.`);
+        return field.id;
+      };
+      await clientDocuments.update(document.id, {
+        fields: [
+          { id: fieldId("RefreshedToOne"), content: "c" },
+          { id: fieldId("RefreshedToNone"), content: "" },
+        ],
+      });
+      await componentDocumentFields.setOptions("SeveralOptions", ["a", "c"]);
+      await expectCheckboxes("RefreshedToOne", ["c"]);
+      await expectCheckboxes("RefreshedToNone", []);
+
+      await componentDocumentFields.setOptions("ClearedOptions", []);
+      await componentDocumentFields.setOptions("EveryOption", ["a", "b", "c"]);
+
+      await pageDocument.leaveWithoutSaving();
+      await pageWorkspace.openDocument(document.id);
+      for (const [name, value] of Object.entries({
+        OneValue: "a",
+        NoValue: "",
+        RefreshedToOne: "c",
+        RefreshedToNone: "",
+        SeveralOptions: "a,c",
+        ClearedOptions: "",
+        EveryOption: "a,b,c",
+      })) {
+        await expect(await componentDocumentFields.value(name)).toHaveText(value);
+        await expectCheckboxes(name, value === "" ? [] : value.split(","));
+      }
+    },
+  );
 });
 
 dynamicUserTest.describe("Document recovery and downloadable exports", () => {

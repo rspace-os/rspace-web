@@ -51,10 +51,11 @@ export class CustomDocumentFields {
     );
   }
 
-  /** A Choice field's option inputs of one role, including those hidden outside edit mode. */
-  async choiceOptions(name: string, role: "checkbox" | "radio"): Promise<Locator> {
+  /** A Choice field's option inputs of one role, or one named option, including those hidden outside edit mode. */
+  async choiceOptions(name: string, role: "checkbox" | "radio", option?: string): Promise<Locator> {
     const id = await resolveFieldId(this.page, name, 0, "choiceOptions");
-    return this.page.locator(`#field_${id}`).getByRole(role, { includeHidden: true });
+    const optionName = option === undefined ? {} : { name: option, exact: true };
+    return this.page.locator(`#field_${id}`).getByRole(role, { includeHidden: true, ...optionName });
   }
 
   async value(name: string): Promise<Locator> {
