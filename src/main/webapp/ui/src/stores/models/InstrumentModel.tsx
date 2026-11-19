@@ -3,6 +3,7 @@ import type React from "react";
 import i18n from "@/modules/common/i18n";
 import type { _LINK } from "@/util/types";
 import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
+import { allAreValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import RsSet from "../../util/set";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -305,6 +306,22 @@ export default class InstrumentModel
     return this.hiddenFields.has(field);
   }
 
+  /** A shown mandatory template field needs a value, as a sample's does. */
+  get enforceMandatoryFields(): boolean {
+    return true;
+  }
+
+  /**
+   * Also checks the template fields against the current values, so Save reads
+   * what was just typed. A blank Landing page is exempt: a new instrument starts
+   * with it blank (see `blankLandingPageField`) and registering a PIDINST fills
+   * it, as the backend's mandatory check allows.
+   */
+  validate(): ValidationResult {
+    const checked = this.fields.filter((field) => !(isLandingPageField(field) && !field.hasContent));
+    return allAreValid([super.validate(), ...checked.map((field) => field.validate())]);
+  }
+
   overrideFields(fields: Array<Field>): void {
     this.setAttributes({
       fields: fields.map((f) => {
@@ -352,12 +369,9 @@ export default class InstrumentModel
    * Only the first matching field is blanked, mirroring the backend, which resolves a single
    * Landing page.
    *
-   * Note that this deliberately blanks a field the template may mark mandatory. That is safe only
-   * because instrument structured fields are not validated client-side: `InventoryBaseRecord`
-   * validates `extraFields` only, and `FieldModel`'s mandatory branch reads
-   * `owner.enforceMandatoryFields`, which `InstrumentModel` does not define. If either changes,
-   * this needs revisiting — the backend routes the same case around `setFieldData` for exactly
-   * this reason.
+   * Note that this deliberately blanks a field the template may mark mandatory. `validate` exempts
+   * a blank Landing page from the mandatory check for that reason, as the backend does by routing
+   * the same case around `setFieldData`.
    */
   private blankLandingPageField(): void {
     const landingPage = this.fields.find(isLandingPageField);
