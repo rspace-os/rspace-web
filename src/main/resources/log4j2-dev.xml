@@ -2,9 +2,10 @@
   <!-- pattern for fileNames is system property loggingDirectory (set via deployment property logging.dir) or . (current directory) if property not set,
  OS specific path separator, then log file e.g. my/log/directory/{fileName}-->
   <Appenders>
+    <!-- The OpenTelemetry agent supplies trace_id and span_id. -->
     <Console name="CONSOLE">
       <PatternLayout>
-        <Pattern>%p [-%t] %d{DATE} - %C{1}.%M(%L) | %m%n</Pattern>
+        <Pattern>%p [-%t] %d{DATE} - %C{1}.%M(%L)%notEmpty{ [trace_id=%X{trace_id} span_id=%X{span_id}]} | %m%n</Pattern>
       </PatternLayout>
     </Console>
 
@@ -29,6 +30,16 @@
     </RollingFile>
 
     <RollingFile name="SecurityEventLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSSecurityEvent.log.file}.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
+    <RollingFile name="SlowRequestsLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt.%i">
       <PatternLayout>
         <Pattern>%d{DATE} - %m%n</Pattern>
       </PatternLayout>

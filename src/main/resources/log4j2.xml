@@ -35,9 +35,10 @@
       <DefaultRolloverStrategy max="100000"/>
     </RollingFile>
 
+    <!-- The OpenTelemetry agent supplies trace_id and span_id. -->
     <RollingFile name="ROOT_LOGGER" fileName="${sys:loggingDirectory:-.}${sys:file.separator}error.log" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}error.log.%i">
       <PatternLayout>
-        <Pattern>%p %d{DATE} - %C{1}.%M | %m%n</Pattern>
+        <Pattern>%p %d{DATE} - %C{1}.%M%notEmpty{ [trace_id=%X{trace_id} span_id=%X{span_id}]} | %m%n</Pattern>
       </PatternLayout>
       <Policies>
         <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
