@@ -14,7 +14,7 @@ import {
 } from "../displayRule";
 import { parseElnChoiceValues } from "../elnChoiceValues";
 import { displayRuleVisibility } from "../evaluateDisplayRules";
-import { canonicalRuleNumber } from "../ruleValues";
+import { canonicalRuleNumber, isRuleNumber } from "../ruleValues";
 import {
   DisplayRuleErrorSchema,
   MAX_DISPLAY_RULE_JSON_LENGTH,
@@ -154,6 +154,14 @@ describe("display rule vectors shared with Java", () => {
   test.each(vectors.canonicalNumbers.cases)("canonical number of '$value'", ({ value, canonical }) => {
     expect(canonicalRuleNumber(value)).toBe(canonical);
   });
+
+  test.each(vectors.canonicalNumbers.cases.flatMap(({ canonical }) => (canonical === null ? [] : [canonical])))(
+    "canonical number '%s' is a number and its own canonical form",
+    (canonical) => {
+      expect(isRuleNumber(canonical)).toBe(true);
+      expect(canonicalRuleNumber(canonical)).toBe(canonical);
+    },
+  );
 });
 
 /*
