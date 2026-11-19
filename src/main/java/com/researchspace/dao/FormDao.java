@@ -117,6 +117,19 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    */
   boolean advanceFieldsRevision(Long formId, long expectedRevision);
 
+  /**
+   * Whether the form's field list is still at {@code expectedRevision}, read with a lock on the
+   * form's row that holds until the transaction ends, so no save of its fields can commit before
+   * this transaction does. Lets an action on the whole form (publishing it, or making a draft the
+   * new version) act only on the fields the caller checked.
+   *
+   * <p>Call it before the transaction reads anything, as {@link #advanceFieldsRevision(Long,
+   * long)}; a row changed after the transaction's first read is reported as a changed revision.
+   *
+   * @return false if the revision is not {@code expectedRevision} (or the form does not exist)
+   */
+  boolean lockFieldsRevision(Long formId, long expectedRevision);
+
   /** Advances the revision of the form's field list, whatever it is; for saves that read none. */
   void advanceFieldsRevision(Long formId);
 

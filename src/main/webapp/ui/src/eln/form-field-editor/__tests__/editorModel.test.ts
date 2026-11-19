@@ -141,13 +141,48 @@ describe("fromServer and toSaveItem", () => {
     const sent = { ...legacy, options: [...legacy.options, "c"] };
     const saved = fromServer({ ...item("Choice", toSaveItem(sent).source), id: 7 });
     // while the save was in flight the author added "d"; later both new options are removed
-    const [current] = adoptSavedIds([{ ...sent, options: [...sent.options, "d"] }], [saved]);
+    const [current] = adoptSavedIds([{ ...sent, options: [...sent.options, "d"] }], [saved], [sent]);
     const takenBack = { ...current, options: legacy.options } as EditorField;
 
     expect(toSaveItem(takenBack).source).toMatchObject({
       choiceValues: "fieldChoices=a&fieldChoices=b",
       selectedValues: "fieldSelectedChoices=a",
     });
+  });
+
+  it("read a stored default as its options were read, once the options are written anew", () => {
+    const radio = fromServer(item("Radio", { radioValues: "fieldRadios=X&fieldRadios=Y=1", radioSelected: "Y=1" }));
+    const choice = fromServer(
+      item("Choice", { choiceValues: "fieldChoices=X&fieldChoices=Y=1", selectedValues: "fieldSelectedChoices=Y=1" }),
+    );
+    if (radio.type !== "Radio" || choice.type !== "Choice") throw new Error("not a radio and a choice");
+
+    expect(toSaveItem({ ...radio, options: [...radio.options, "Z"] }).source).toMatchObject({
+      radioValues: "fieldRadios=X&fieldRadios=Y&fieldRadios=Z",
+      radioSelected: "Y",
+    });
+    expect(toSaveItem({ ...choice, options: [...choice.options, "Z"] }).source).toMatchObject({
+      selectedValues: "fieldSelectedChoices=Y",
+    });
+    // a default that, read that way, names no option is cleared
+    expect(toSaveItem({ ...radio, options: ["X", "Z"] }).source).toMatchObject({ radioSelected: "" });
+  });
+
+  it("take the default the server saved unless the author changed it while the save was in flight", () => {
+    const legacy = fromServer(item("Radio", { radioValues: "fieldRadios=X&fieldRadios=Y", radioSelected: "Q" }));
+    if (legacy.type !== "Radio") throw new Error("not a radio");
+    // Q is not an option, so writing the options anew clears it
+    const sent = { ...legacy, options: [...legacy.options, "Z"] };
+    const saved = fromServer(item("Radio", toSaveItem(sent).source));
+    const editedName = { ...sent, name: "Renamed" };
+
+    const [kept] = adoptSavedIds([editedName], [saved], [sent]);
+    expect(kept).toMatchObject({ defaultValue: "", name: "Renamed" });
+    // the options are now as saved, so they and the default go back as stored: never Q again
+    expect(toSaveItem(kept).source).toMatchObject({ radioSelected: "" });
+
+    const [chosen] = adoptSavedIds([{ ...sent, defaultValue: "Y" }], [saved], [sent]);
+    expect(chosen).toMatchObject({ defaultValue: "Y" });
   });
 
   it("send a rule, and an explicit null for a field without one", () => {

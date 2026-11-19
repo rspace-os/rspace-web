@@ -93,6 +93,29 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   RSForm publish(Long id, boolean toPublish, FormSharingCommand formShareCommand, User authUser);
 
   /**
+   * Publishes the form being edited, as {@link #publish(Long, boolean, FormSharingCommand, User)}
+   * does, but only if its field list is still at the revision the form field editor checked. The
+   * revision is checked under a lock on the form's row, in the same transaction as the publish, so
+   * no save of the fields can come between the check and the publish.
+   *
+   * @param expectedFieldsRevision the {@link FieldEditorForm#fieldsRevision()} the editor checked
+   * @throws FormFieldsConflictException if the field list has changed since; nothing is published
+   */
+  RSForm publish(
+      Long id, FormSharingCommand formShareCommand, long expectedFieldsRevision, User authUser);
+
+  /**
+   * Makes the draft the new version of its form, as {@link #updateVersion(Long, User)} does, but
+   * only if the draft's field list is still at the revision the form field editor checked, read
+   * under a lock on the draft's row in the same transaction.
+   *
+   * @param expectedFieldsRevision the {@link FieldEditorForm#fieldsRevision()} the editor checked
+   * @return the new version, or null if the form is not a draft or is a system form
+   * @throws FormFieldsConflictException if the field list has changed since; nothing is updated
+   */
+  RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user);
+
+  /**
    * Updates a form's group eead/write permissions.
    *
    * @param templateid

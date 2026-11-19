@@ -4,9 +4,27 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingCircular from "@/components/LoadingCircular";
-import { type EditorField, fromServer, sameFields, toSaveItem } from "./editorModel";
-import FormFieldEditor, { type FieldEditorHandle } from "./FormFieldEditor";
-import { type FormFieldList, FormFieldsConflictError, fetchFormFields, saveFormFields } from "./formFieldsApi";
+import { adoptSavedIds, type EditorField, fromServer, sameFields, toSaveItem } from "./editorModel";
+import FormFieldEditor, { type FieldEditorHandle, type ServerFields } from "./FormFieldEditor";
+import {
+  type FormFieldList,
+  FormFieldsConflictError,
+  FormFieldsSaveError,
+  fetchFormFields,
+  saveFormFields,
+} from "./formFieldsApi";
+
+/**
+ * The fields have not loaded, or could not be, so they cannot be saved or
+ * checked; the toolbar must not update or publish the form. `form.js` tells
+ * the author by this error's name.
+ */
+export class FormFieldEditorUnavailableError extends Error {
+  constructor() {
+    super("The form's fields are not loaded, so they cannot be saved or checked.");
+    this.name = "FormFieldEditorUnavailableError";
+  }
+}
 
 /** What the legacy toolbar uses; see `form.js`. */
 export type FormFieldEditorHandle = FieldEditorHandle & {
@@ -20,7 +38,7 @@ type LoadedEditorProps = {
   ref: Ref<FieldEditorHandle>;
 };
 
-type LoadedFields = { fields: ReadonlyArray<EditorField>; version: number };
+type LoadedFields = ServerFields;
 
 function LoadedEditor({ formId, editable, ref }: LoadedEditorProps): ReactNode {
   const queryClient = useQueryClient();
@@ -34,31 +52,58 @@ function LoadedEditor({ formId, editable, ref }: LoadedEditorProps): ReactNode {
   // each save is made from the version the last one returned, so a save from elsewhere in between is refused
   const currentVersion = () => queryClient.getQueryData<LoadedFields>(queryKey)?.version ?? data.version;
   const fetchLoaded = async () => toLoaded(await fetchFormFields(formId));
+  // The last save sent whose outcome is unknown: it failed without the server saying why, so it may
+  // have been saved with its response lost.
+  const unknownOutcome = useRef<ReadonlyArray<EditorField> | null>(null);
+  const send = async (fields: ReadonlyArray<EditorField>) => {
+    try {
+      const saved = toLoaded(await saveFormFields(formId, fields.map(toSaveItem), currentVersion()));
+      unknownOutcome.current = null;
+      return saved;
+    } catch (error) {
+      // the server answered, so nothing was saved
+      if (error instanceof FormFieldsSaveError) {
+        if (!(error instanceof FormFieldsConflictError)) unknownOutcome.current = null;
+      } else {
+        unknownOutcome.current = fields;
+      }
+      throw error;
+    }
+  };
   const save = useMutation({
     mutationFn: async (current: ReadonlyArray<EditorField>) => {
       try {
-        return toLoaded(await saveFormFields(formId, current.map(toSaveItem), currentVersion()));
+        return await send(current);
       } catch (error) {
         if (!(error instanceof FormFieldsConflictError)) throw error;
-        // An earlier attempt may have been saved with its response lost, so that a retry finds
-        // the version moved on; if the server has exactly these fields, the save is done.
         const server = await fetchLoaded().catch(() => null);
-        if (server && sameFields(server.fields, current)) return server;
-        throw error;
+        if (!server) throw error;
+        // a save whose response was lost may be what moved the version on
+        if (sameFields(server.fields, current)) {
+          unknownOutcome.current = null;
+          return server;
+        }
+        const lost = unknownOutcome.current;
+        if (lost === null || !sameFields(server.fields, lost)) throw error;
+        // this save follows that one, from its version and with the ids it gave new fields
+        unknownOutcome.current = null;
+        queryClient.setQueryData(queryKey, server);
+        return send(adoptSavedIds(current, server.fields, lost));
       }
     },
     onSuccess: (saved) => queryClient.setQueryData(queryKey, saved),
   });
   const check = async (current: ReadonlyArray<EditorField>) => {
     const server = await fetchLoaded();
-    if (server.version === currentVersion()) return;
+    if (server.version === currentVersion()) return { version: server.version, fields: null };
     if (!sameFields(server.fields, current)) throw new FormFieldsConflictError([]);
     queryClient.setQueryData(queryKey, server);
+    return server;
   };
   return (
     <FormFieldEditor
       initialFields={data.fields}
-      onSave={async (current) => (await save.mutateAsync(current)).fields}
+      onSave={(current) => save.mutateAsync(current)}
       onCheck={check}
       editable={editable}
       ref={ref}
@@ -74,8 +119,9 @@ type FormFieldEditorRootProps = {
 
 /**
  * Loads the form's fields, then edits them; server state is read and written
- * through React Query. Until the fields load, or if they fail to, there is
- * nothing to save, but Revert still asks before discarding the draft.
+ * through React Query. Until the fields load, or if they fail to, they cannot
+ * be checked, so `save()` rejects and the toolbar neither updates nor
+ * publishes; Revert still asks before discarding the draft.
  */
 export default function FormFieldEditorRoot({ formId, editable, ref }: FormFieldEditorRootProps): ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
@@ -83,11 +129,12 @@ export default function FormFieldEditorRoot({ formId, editable, ref }: FormField
   const editor = useRef<FieldEditorHandle>(null);
 
   useImperativeHandle(ref, () => ({
-    save: () => editor.current?.save() ?? Promise.resolve(),
+    save: () => editor.current?.save() ?? Promise.reject(new FormFieldEditorUnavailableError()),
     isDirty: () => editor.current?.isDirty() ?? false,
     fieldCount: () => editor.current?.fieldCount() ?? 0,
     markPublished: () => editor.current?.markPublished(),
     setReadOnly: (readOnly) => editor.current?.setReadOnly(readOnly),
+    reportConflict: () => editor.current?.reportConflict(),
     confirmAbandon: () =>
       confirm(
         t("formFieldEditor.confirm.abandon"),

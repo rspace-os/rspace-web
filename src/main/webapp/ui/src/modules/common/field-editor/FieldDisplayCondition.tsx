@@ -10,7 +10,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -43,6 +43,13 @@ type FieldDisplayConditionProps = {
   fields: ReadonlyArray<RuleEditorField>;
   /** Stores a new rule for this field; null means the field is always shown. */
   onChange: (rule: FieldDisplayRule | null) => void;
+  /**
+   * Told when the condition starts or stops showing names of fields it could
+   * read besides its rule's source: while it has a draft, or its field menu is
+   * open. A host that re-renders a condition only when names it shows change
+   * then knows when to include those names.
+   */
+  onShowsSourcesChange?: (fieldKey: string, shows: boolean) => void;
   editable: boolean;
 };
 
@@ -86,6 +93,7 @@ export default function FieldDisplayCondition({
   fieldKey,
   fields,
   onChange,
+  onShowsSourcesChange,
   editable,
 }: FieldDisplayConditionProps): ReactNode {
   const { t, i18n } = useTranslation("common");
@@ -100,6 +108,12 @@ export default function FieldDisplayCondition({
     draft: DraftCondition | null;
   } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
+  const showsSources = editable && (draft !== null || sourceMenuOpen);
+  useEffect(() => {
+    if (!showsSources || !onShowsSourcesChange) return;
+    onShowsSourcesChange(fieldKey, true);
+    return () => onShowsSourcesChange(fieldKey, false);
+  }, [showsSources, onShowsSourcesChange, fieldKey]);
 
   const graph = ruleGraphFor(fields);
   const rule = graph.byKey.get(fieldKey)?.rule ?? null;
