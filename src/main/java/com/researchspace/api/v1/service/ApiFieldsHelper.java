@@ -22,6 +22,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules.FieldContent;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -415,8 +416,8 @@ public class ApiFieldsHelper {
    * matching templateFields and alsop if they are mandatory.
    *
    * <p>A mandatory field hidden by its display rule is not required. Visibility is judged on the
-   * values the new record will hold: the incoming value where one is posted, the template's default
-   * otherwise.
+   * values the new record will hold, matching fields by position: the template's default for a
+   * field with no entry, and the entry's content (blank when null) or selection otherwise.
    *
    * <p>Otherwise add the errors if there are problems.
    */
@@ -451,19 +452,19 @@ public class ApiFieldsHelper {
       return;
     }
 
-    List<List<String>> effectiveSelections = new ArrayList<>();
+    // The effective record: an omitted field (no entry at its position) keeps the template's
+    // default; an entry replaces it, and null content is stored as blank.
+    List<FieldContent> effectiveRecord = new ArrayList<>();
     for (int i = 0; i < templateFields.size(); i++) {
       InventoryEntityField templateField = templateFields.get(i);
-      boolean hasApiFieldForTemplateField = incomingApiFields.size() > i;
-      effectiveSelections.add(
-          !templateField.isOptionsStoringField()
-              ? List.of()
-              : hasApiFieldForTemplateField
-                  ? incomingApiFields.get(i).getSelectedOptions()
-                  : templateField.getSelectedOptions());
+      if (incomingApiFields.size() > i) {
+        ApiInventoryEntityField incoming = incomingApiFields.get(i);
+        effectiveRecord.add(new FieldContent(incoming.getSelectedOptions(), incoming.getContent()));
+      } else {
+        effectiveRecord.add(FieldContent.of(templateField));
+      }
     }
-    List<Boolean> visible =
-        InventoryFieldDisplayRules.visibility(templateFields, effectiveSelections);
+    List<Boolean> visible = InventoryFieldDisplayRules.visibility(templateFields, effectiveRecord);
 
     for (int i = 0; i < templateFields.size(); i++) {
       InventoryEntityField templateField = templateFields.get(i);

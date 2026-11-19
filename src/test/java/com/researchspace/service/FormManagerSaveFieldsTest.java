@@ -247,8 +247,9 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
     RSForm form = formMgr.create(user);
     String a = newKey();
     String b = newKey();
-    String text = newKey();
-    FormFieldSaveItem textField = item(null, text, null, string("text"));
+    String password = newKey();
+    FormFieldSaveItem passwordField =
+        item(null, password, null, new StringFieldDTO<>("password", false, "yes", ""));
 
     // a cycle
     assertRejected(
@@ -262,9 +263,12 @@ public class FormManagerSaveFieldsTest extends SpringTransactionalTest {
         "does not offer",
         item(null, a, null, radio("a", YES_NO)),
         item(null, null, showWhen(a, "Maybe"), string("dependent")));
-    // a source that is not a radio or choice field
+    // a password field, whose value would appear in rule summaries
     assertRejected(
-        form, "radio or choice", textField, item(null, null, hasValue(text), string("dependent")));
+        form,
+        "not a password field",
+        passwordField,
+        item(null, null, hasValue(password), string("dependent")));
     // a missing source
     assertRejected(
         form, "does not exist", item(null, null, showWhen(newKey(), "Yes"), string("dependent")));
