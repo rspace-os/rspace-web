@@ -34,9 +34,6 @@ describe("feature flag mutations", () => {
 
     await expect(
       patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: true } }),
-    ).rejects.toMatchObject({
-      message: "Forbidden",
-      status: 403,
-    });
+    ).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 403 });
   });
 });

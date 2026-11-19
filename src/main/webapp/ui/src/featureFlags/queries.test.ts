@@ -77,10 +77,7 @@ describe("feature flag queries", () => {
       http.get("/api/v2/feature-flags", () => new HttpResponse(null, { status: 500, statusText: "Server Error" })),
     );
 
-    await expect(getFeatureFlags()).rejects.toMatchObject({
-      message: "Server Error",
-      status: 500,
-    });
+    await expect(getFeatureFlags()).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 500 });
   });
 
   test("disables a flag when its document is invalid", async () => {
