@@ -38,6 +38,7 @@ describe("CustomField", () => {
             i={0}
             editable={true}
             onErrorStateChange={() => {}}
+            onConditionErrorStateChange={() => {}}
             onRemove={onRemove}
             forceColumnLayout={false}
             onMove={() => {}}
@@ -68,6 +69,7 @@ describe("CustomField", () => {
             i={0}
             editable={true}
             onErrorStateChange={() => {}}
+            onConditionErrorStateChange={() => {}}
             onRemove={onRemove}
             forceColumnLayout={false}
             onMove={() => {}}

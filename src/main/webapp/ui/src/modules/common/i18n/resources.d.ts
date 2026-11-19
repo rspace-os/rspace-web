@@ -942,6 +942,70 @@ export default interface Resources {
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
     },
+    "fieldDisplay": {
+      "fieldsHidden": "{count, plural, one {One field is hidden: {fields}.} other {# fields are hidden: {fields}.}}",
+      "fieldsShown": "{count, plural, one {One more field is shown: {fields}.} other {# more fields are shown: {fields}.}}"
+    },
+    "fieldEditor": {
+      "card": {
+        "changeType": "Change type, currently {type}",
+        "delete": "Delete field {field}",
+        "mandatory": "Mandatory",
+        "mandatoryNo": "Not mandatory",
+        "mandatoryYes": "Mandatory",
+        "move": "Move field",
+        "moveDown": "Move {field} down",
+        "moveDownTooltip": "Move down",
+        "moveToBottom": "Move {field} to the bottom",
+        "moveToBottomTooltip": "Move to bottom",
+        "moveToTop": "Move {field} to the top",
+        "moveToTopTooltip": "Move to top",
+        "moveUp": "Move {field} up",
+        "moveUpTooltip": "Move up",
+        "name": "Name",
+        "nameLength": "{length, number} / {max, number}",
+        "type": "Type",
+        "unnamed": "Unnamed field"
+      },
+      "condition": {
+        "always": "Always",
+        "conditional": "Only when another field has certain values",
+        "dependents": "Other fields depend on this field: {fields}",
+        "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "noOtherFields": "No other fields",
+        "operator": {
+          "hasNoValue": "has no value",
+          "hasValue": "has a value",
+          "isAnyOf": "is any of",
+          "isNoneOf": "is none of"
+        },
+        "operatorLabel": "Condition",
+        "sourceLabel": "Field",
+        "sourceMissing": "The field this condition read no longer exists. Choose another field.",
+        "sourceRequired": "Choose a field.",
+        "title": "Display this field when…",
+        "valuesLabel": "Options",
+        "valuesRejected": "This condition cannot be applied. Choose fewer or shorter options.",
+        "valuesRequired": "Choose at least one option."
+      },
+      "options": {
+        "add": "Add option",
+        "blank": "Options cannot be blank.",
+        "duplicate": "Options must all be different.",
+        "optionLabel": "Option {position}",
+        "remove": "Remove option {option}",
+        "required": "Add at least one option.",
+        "title": "Options"
+      },
+      "summary": {
+        "hasNoValue": "Shown when {source} has no value",
+        "hasValue": "Shown when {source} has a value",
+        "isAnyOf": "Shown when {source} is {options}",
+        "isNoneOf": "Shown when {source} is not {options}",
+        "sourceBelowHint": "Placing it below {source} reads better.",
+        "sourceMissing": "Always shown: the field its rule read no longer exists."
+      }
+    },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
       "selectedFolderWithColon": "Selected folder:",
@@ -3404,6 +3468,7 @@ export default interface Resources {
         },
         "customField": {
           "defaultDescription": "Default Description",
+          "defaultOptionsExplanation": "Options selected here are selected in new {recordType} made from this template.",
           "defaultValue": "Default Value",
           "deleteField": "Delete field {fieldName}",
           "deleteNewField": "Delete new field",
@@ -3411,22 +3476,14 @@ export default interface Resources {
             "keep": "Keep field in existing {recordType}",
             "remove": "Remove field from existing {recordType}"
           },
-          "mandatory": "Mandatory",
-          "name": "Name",
           "noMoreFields": "No more fields",
-          "type": "Type",
           "validation": {
             "duplicateName": "You either already have a field with that name or that name is not permitted",
             "emptyName": "Name cannot be empty",
-            "nameTooLong": "Name cannot be longer than 50 characters",
-            "optionsNotUnique": "All values must be unique.",
-            "optionsRequired": "One or more values are required."
-          },
-          "values": "Values",
-          "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+            "nameTooLong": "Name cannot be longer than 50 characters"
+          }
         },
         "defaultValue": {
-          "addValue": "Add Value",
           "allRelationshipTypes": "All relationship types",
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
@@ -3435,13 +3492,6 @@ export default interface Resources {
           "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
           "defaultLinkTarget": "Default link target",
           "none": "None"
-        },
-        "move": {
-          "down": "Down",
-          "label": "Move",
-          "toBottom": "To Bottom",
-          "toTop": "To Top",
-          "up": "Up"
         },
         "quantityUnits": {
           "defaultScale": "Default Scale",
@@ -5087,6 +5137,23 @@ export default interface Resources {
           "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
           "label": "Sample"
         }
+      },
+      "displayRules": {
+        "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
+        "confirmDeleteField": {
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
+          "title": "Delete {field}?"
+        },
+        "confirmOptionRemoval": {
+          "message": "{count, plural, one {The display rule of {fields} uses this option. Removing the option also removes it from that rule, and removes the rule if it has no options left.} other {The display rules of {fields} use this option. Removing the option also removes it from those rules, and removes any rule that has no options left.}}",
+          "title": "Remove option {option}?"
+        },
+        "confirmTypeChange": {
+          "confirm": "Change type",
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Rules can only read radio and choice fields, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules can only read radio and choice fields, so changing the type also removes those rules.}}",
+          "title": "Change the type of {field}?"
+        },
+        "optionInUse": "A display rule uses this option, so it cannot be renamed."
       },
       "fields": {
         "customField": {

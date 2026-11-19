@@ -35,6 +35,7 @@ import { HasQuantityMixin } from "../models/HasQuantity";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { hiddenFieldsOf } from "./fieldVisibility";
 import InventoryBaseRecord, {
   defaultEditableResultFields,
   defaultVisibleResultFields,
@@ -266,6 +267,7 @@ export default class SampleModel
       hasSelectedSubsample: computed,
       enforceMandatoryFields: computed,
       canSetRequestable: computed,
+      hiddenFields: computed,
     });
 
     if (this.recordType === "sample") {
@@ -623,7 +625,7 @@ export default class SampleModel
       storageTempMax: this.storageTempMax,
       newBase64Image,
       fields: [
-        ...this.fields.map((f) => f.paramsForBackend),
+        ...this.fields.map((f) => f.paramsForNewRecord),
         ...this.extraFields.map(({ name, type, content, id }) => ({
           name,
           type,
@@ -829,6 +831,15 @@ export default class SampleModel
     if (this.subSamples.some((ss) => recordIds.has(getSavedGlobalId(ss)))) {
       void this.fetchAdditionalInfo();
     }
+  }
+
+  /** Fields that display rules hide given the current values; they keep their values. */
+  get hiddenFields(): ReadonlySet<Field> {
+    return hiddenFieldsOf(this.fields);
+  }
+
+  isFieldHidden(field: Field): boolean {
+    return this.hiddenFields.has(field);
   }
 
   /*

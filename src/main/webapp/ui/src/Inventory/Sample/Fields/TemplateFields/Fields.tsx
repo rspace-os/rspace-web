@@ -17,6 +17,7 @@ import type { Sample } from "../../../../stores/definitions/Sample";
 import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import type InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
+import useShownTemplateFields from "../../../components/Fields/useShownTemplateFields";
 import FormField from "../../../components/Inputs/FormField";
 import LinkFieldValue from "./LinkFieldValue";
 
@@ -28,7 +29,8 @@ type FieldsArgs = {
 
 function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  return (sample.fields ?? []).map((field: Field) => {
+  const { shownFields, announcer } = useShownTemplateFields(sample, onErrorStateChange);
+  const rendered = shownFields.map((field: Field) => {
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
       label: field.name,
@@ -314,6 +316,12 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
 
     return <Box key={field.name}>{t("sample.fields.unknownFieldType", { type: field.type })}</Box>;
   });
+  return (
+    <>
+      {rendered}
+      {announcer}
+    </>
+  );
 }
 
 export default observer(Fields);
