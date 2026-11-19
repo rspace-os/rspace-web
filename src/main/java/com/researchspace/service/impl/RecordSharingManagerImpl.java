@@ -791,7 +791,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     if (!userInSession.getUsername().equals(toShareWith.asUser().getUsername())
         && !sysAdminUnsharingAPublicLink
         && !communityAdminUnsharingACommunityMemberPublication) {
-      assertHasSharePermission(subject, docOrNotebook, share);
+      if (toShareWith.asUser().hasRole(Role.ANONYMOUS_ROLE) && subject.hasRole(Role.PI_ROLE)) {
+        assertHasPublishPermission(subject, docOrNotebook, share);
+      } else {
+        assertHasSharePermission(subject, docOrNotebook, share);
+      }
     }
   }
 
@@ -1146,6 +1150,15 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
               subject.getUsername() + " made unauthorised attempt to unshare a record");
         }
       }
+    }
+  }
+
+  private void assertHasPublishPermission(User subject, BaseRecord docOrNbook, boolean share) {
+    if ((docOrNbook.isStructuredDocument() || docOrNbook.isNotebook())
+        && !permissnUtils.isPermitted(docOrNbook, PermissionType.PUBLISH, subject)) {
+      String operation = share ? "share" : "unshare";
+      throw new AuthorizationException(
+          subject.getUsername() + " made unauthorised attempt to " + operation + " a record");
     }
   }
 
