@@ -6011,7 +6011,7 @@ components:
           type: array
           description: |
             Options of the source field. Required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`;
-            must be absent for `HAS_VALUE` and `HAS_NO_VALUE`.
+            must be empty or omitted for `HAS_VALUE` and `HAS_NO_VALUE`.
           items:
             type: string
       example:
