@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { OpenApiDocument } from "./openapi.ts";
 import { guaranteedReadFields } from "./resources.ts";
+import { fixture } from "./test-helper.ts";
 
-const document: OpenApiDocument = {
+const document = fixture({
   components: {
     schemas: {
       ItemsRead: {
@@ -26,7 +26,7 @@ const document: OpenApiDocument = {
       },
     },
   },
-};
+});
 
 describe("guaranteed read fields", () => {
   it("reads only the read-guaranteed extension, whatever the access metadata", () => {

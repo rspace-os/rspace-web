@@ -2,11 +2,11 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { OpenApiDocument, OperationObject } from "./openapi.ts";
+import type { OperationObject } from "./openapi.ts";
 
 type Operations = Record<string, Record<string, string>>;
 interface Case {
-  document: OpenApiDocument;
+  document: unknown;
   source?: string | null;
   mode?: "operations" | "generate";
 }
@@ -21,7 +21,7 @@ const op = (kind: string | null, id = "example"): OperationObject => ({
   tags: ["examples"],
   ...(kind == null ? {} : { "x-rspace-operation": kind }),
 });
-const spec = (operation: OperationObject, path = "/api/v2/examples"): OpenApiDocument => ({
+const spec = (operation: OperationObject, path = "/api/v2/examples") => ({
   paths: { [path]: { get: operation } },
 });
 
@@ -54,11 +54,7 @@ function invokeMany<T = Operations>(cases: Case[]): Result<T>[] {
   );
 }
 
-function invoke<T = Operations>(
-  document: OpenApiDocument,
-  mode: Case["mode"] = "operations",
-  source?: string,
-): Result<T> {
+function invoke<T = Operations>(document: unknown, mode: Case["mode"] = "operations", source?: string): Result<T> {
   return invokeMany<T>([{ document, mode, source }])[0];
 }
 

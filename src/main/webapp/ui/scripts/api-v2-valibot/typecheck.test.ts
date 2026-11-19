@@ -3,8 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import type { OpenApiDocument } from "./openapi.ts";
-import { generate } from "./test-helper.ts";
+import { fixture, generate } from "./test-helper.ts";
 
 it("compiles two-way schema/model assertions and rejects drift", () => {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
@@ -12,7 +11,7 @@ it("compiles two-way schema/model assertions and rejects drift", () => {
   mkdirSync(scratch, { recursive: true });
   const directory = mkdtempSync(resolve(scratch, "valibot-types-"));
   try {
-    const document: OpenApiDocument = {
+    const document = fixture({
       components: {
         schemas: {
           Read: {
@@ -30,17 +29,14 @@ it("compiles two-way schema/model assertions and rejects drift", () => {
           },
         },
       },
-    };
+    });
     writeFileSync(resolve(directory, "schemas.ts"), generate(document, { modelImport: "./models" }).schemas);
     // Compare against the HTTP models Orval generates from the same document, not hand-written ones.
     writeFileSync(
       resolve(directory, "spec.json"),
-      JSON.stringify({
-        openapi: "3.1.0",
-        info: { title: "fragment", version: "1" },
-        paths: {},
-        ...document,
-      }),
+      JSON.stringify(
+        Object.assign({ openapi: "3.1.0", info: { title: "fragment", version: "1" }, paths: {} }, document),
+      ),
     );
     writeFileSync(
       resolve(directory, "orval.config.mjs"),

@@ -1,14 +1,16 @@
 import { stripTypeScriptTypes } from "node:module";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import type { OpenApiDocument, PathItem, SchemaObject, SecurityRequirement } from "./openapi.ts";
-import { generate } from "./test-helper.ts";
+import type { OpenApiDocument } from "./openapi.ts";
+import { fixture, generate } from "./test-helper.ts";
 
-function document(schemas: Record<string, SchemaObject>, paths: Record<string, PathItem> = {}): OpenApiDocument {
-  return { security: [{ bearerAuth: [] }], components: { schemas }, paths };
+type SecurityRequirement = NonNullable<OpenApiDocument["security"]>[number];
+
+function document(schemas: Record<string, unknown>, paths: Record<string, unknown> = {}): OpenApiDocument {
+  return fixture({ security: [{ bearerAuth: [] }], components: { schemas }, paths });
 }
 // Runtime checks evaluate the emitted expressions; type assertions are checked separately by tsc.
-function compile(schemas: Record<string, SchemaObject>): Record<string, v.GenericSchema> {
+function compile(schemas: Record<string, unknown>): Record<string, v.GenericSchema> {
   const source = generate(document(schemas))
     .schemas.replace(/^import .*;$/gm, "")
     .split("type Assert<")[0]
@@ -20,12 +22,12 @@ function compile(schemas: Record<string, SchemaObject>): Record<string, v.Generi
       .join(",")}}`,
   )(v);
 }
-function schema(fragment: SchemaObject): v.GenericSchema {
+function schema(fragment: unknown): v.GenericSchema {
   return compile({ Value: fragment }).Value;
 }
 
 describe("schema conversion", () => {
-  it.each<[SchemaObject, unknown, unknown]>([
+  it.each<[unknown, unknown, unknown]>([
     [{ type: "string" }, "x", 1],
     [{ type: "boolean" }, false, "false"],
     [{ type: "number" }, 1.5, "1"],
@@ -116,7 +118,7 @@ describe("schema conversion", () => {
   it.each(["anyOf", "oneOf"])("converts %s to a union", (keyword) => {
     const value = schema({
       [keyword]: [{ type: "integer" }, { type: "string" }],
-    } as SchemaObject);
+    });
     expect(v.safeParse(value, 1).success).toBe(true);
     expect(v.safeParse(value, "a").success).toBe(true);
     expect(v.safeParse(value, false).success).toBe(false);
@@ -164,7 +166,7 @@ describe("schema conversion", () => {
   it.each(["not", "discriminator", "uniqueItems", "exclusiveMaximum", "minProperties", "unknownKeyword", "$defs"])(
     "rejects unsupported keyword %s",
     (key) => {
-      expect(() => schema({ type: "string", [key]: {} } as SchemaObject)).toThrow(`Unsupported keyword ${key}`);
+      expect(() => schema({ type: "string", [key]: {} })).toThrow(`Unsupported keyword ${key}`);
     },
   );
   it("rejects unsupported keywords nested below composition", () => {

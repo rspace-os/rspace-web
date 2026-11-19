@@ -3,27 +3,29 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generate as adapt, type GeneratedSources } from "./generate.ts";
-import { type OpenApiDocument, operationsOf } from "./openapi.ts";
+import { isReference, type OpenApiDocument, operationsOf, responsesOf } from "./openapi.ts";
 import { assertSupportedSpec } from "./preflight.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
+
+/** Test documents are deliberately partial, and some deliberately invalid, so the scripts' runtime checks can reject them. */
+export const fixture = (document: unknown): OpenApiDocument => document as OpenApiDocument;
+
 export function generate(document: OpenApiDocument, options?: { modelImport?: string }): GeneratedSources {
   assertSupportedSpec(document);
   const scratch = resolve(root, "target/api-v2-scratch");
   mkdirSync(scratch, { recursive: true });
   const directory = mkdtempSync(resolve(scratch, "native-fragment-"));
   try {
-    const spec = {
-      openapi: "3.1.0",
-      info: { title: "fragment", version: "1" },
-      paths: {},
-      ...structuredClone(document),
-    };
+    const spec: OpenApiDocument = Object.assign(
+      { openapi: "3.1.0", info: { title: "fragment", version: "1" }, paths: {} },
+      structuredClone(document),
+    );
     for (const path of Object.values(spec.paths ?? {}))
       for (const [, op] of operationsOf(path)) {
         if (!op.operationId) continue;
         if (!Object.keys(op.responses ?? {}).length) op.responses = { 204: { description: "No content" } };
-        for (const response of Object.values(op.responses ?? {})) response.description ??= "Response";
+        for (const [, response] of responsesOf(op)) if (!isReference(response)) response.description ??= "Response";
       }
     writeFileSync(resolve(directory, "spec.json"), JSON.stringify(spec));
     writeFileSync(

@@ -1,5 +1,6 @@
-import type { BodyObject, OpenApiDocument } from "./openapi.ts";
-import { operationsOf } from "./openapi.ts";
+import type { OpenApiResponseObject } from "orval";
+import type { OpenApiDocument, ReferenceObject } from "./openapi.ts";
+import { isReference, operationsOf, responsesOf } from "./openapi.ts";
 
 /** The `apiV2Fetch.ts` mutators an operation can need instead of the default `apiV2Fetch`. */
 export type MutatorOverride = "apiV2HeadersFetch" | "apiV2BlobFetch";
@@ -16,9 +17,12 @@ const isJson = (media: string) => {
   return type === "application/json" || type.endsWith("+json");
 };
 
-function resolveResponse(document: OpenApiDocument, response: BodyObject): BodyObject {
+function resolveResponse(
+  document: OpenApiDocument,
+  response: OpenApiResponseObject | ReferenceObject,
+): OpenApiResponseObject {
+  if (!isReference(response)) return response;
   const ref = response.$ref;
-  if (!ref) return response;
   const name = ref.replace(/^#\/components\/responses\//, "");
   const resolved = document.components?.responses?.[name];
   if (name === ref || !resolved) throw new Error(`Unresolvable response reference ${ref}`);
@@ -43,7 +47,7 @@ export function mutatorOverrides(document: OpenApiDocument, rules: MutatorRules)
       let binary = false;
       let empty = false;
       let etag = false;
-      for (const [status, declared] of Object.entries(operation.responses ?? {})) {
+      for (const [status, declared] of responsesOf(operation)) {
         const response = resolveResponse(document, declared);
         const headers = response.headers;
         if (

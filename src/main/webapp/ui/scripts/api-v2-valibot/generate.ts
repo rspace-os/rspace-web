@@ -2,14 +2,18 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import type { OpenApiRequestBodyObject, OpenApiResponseObject } from "orval";
 import {
-  type BodyObject,
   type Content,
+  isReference,
   type OpenApiDocument,
   operationsOf,
   orvalOperationName,
   orvalTypeName,
+  type ReferenceObject,
+  responsesOf,
   type SchemaObject,
+  type SchemaOrReference,
 } from "./openapi.ts";
 import { assertSupportedSpec } from "./preflight.ts";
 
@@ -31,21 +35,21 @@ export function generate(
   assertSupportedSpec(document);
   if (typeof nativeSource !== "string") throw new Error("Orval native Valibot output is required");
   const components = document.components?.schemas ?? {};
-  function resolveObject<T extends { $ref?: string }>(
-    value: T | undefined,
+  function resolveObject<T extends object>(
+    value: T | ReferenceObject | undefined,
     section: "schemas" | "requestBodies" | "responses",
     seen = new Set<string>(),
   ): T | undefined {
-    if (!value?.$ref) return value;
+    if (!isReference(value)) return value;
     const prefix = `#/components/${section}/`;
     const ref = value.$ref;
     if (!ref.startsWith(prefix) || seen.has(ref)) throw new Error(`Unsupported reference ${ref}`);
-    const target = document.components?.[section]?.[ref.slice(prefix.length)] as T | undefined;
+    const target = document.components?.[section]?.[ref.slice(prefix.length)] as T | ReferenceObject | undefined;
     if (!target) throw new Error(`Missing reference ${ref}`);
     return resolveObject(target, section, new Set([...seen, ref]));
   }
-  function binary(schema: SchemaObject) {
-    return resolveObject(schema, "schemas")?.format === "binary";
+  function binary(schema: SchemaOrReference) {
+    return typeof schema !== "boolean" && resolveObject<SchemaObject>(schema, "schemas")?.format === "binary";
   }
   function jsonContent(content: Content | undefined, location: string) {
     return Object.entries(content ?? {}).filter(([media, entry]) => {
@@ -55,7 +59,7 @@ export function generate(
     });
   }
   // Sort schema keys when comparing: order cannot change media equivalence.
-  function signature(schema: SchemaObject) {
+  function signature(schema: SchemaOrReference) {
     function sorted(value: unknown): unknown {
       if (Array.isArray(value)) return value.map(sorted);
       if (!value || typeof value !== "object") return value;
@@ -84,7 +88,7 @@ export function generate(
         )
       )
         parts.push("session: true");
-      const requestContent = resolveObject<BodyObject>(op.requestBody, "requestBodies")?.content;
+      const requestContent = resolveObject<OpenApiRequestBodyObject>(op.requestBody, "requestBodies")?.content;
       const requests = jsonContent(requestContent, `${id}.request`);
       if (
         requests.length &&
@@ -96,9 +100,9 @@ export function generate(
       const responses: string[] = [],
         signatures = new Set<string>(),
         allSuccessSchemas = new Set<string>();
-      for (const [status, response] of Object.entries(op.responses ?? {})) {
+      for (const [status, response] of responsesOf(op)) {
         if (!/^2(?:\d\d|XX)$/.test(status) || status === "204") continue;
-        const responseContent = resolveObject(response, "responses")?.content;
+        const responseContent = resolveObject<OpenApiResponseObject>(response, "responses")?.content;
         for (const entry of Object.values(responseContent ?? {}))
           if (entry.schema) allSuccessSchemas.add(signature(entry.schema));
         const entries = jsonContent(responseContent, `${id}.responses.${status}`);

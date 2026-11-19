@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { mutatorOverrides } from "./mutators.ts";
-import type { BodyObject, OpenApiDocument } from "./openapi.ts";
+import type { OpenApiDocument } from "./openapi.ts";
+import { fixture } from "./test-helper.ts";
 
 const json = { content: { "application/json": { schema: { type: "object" } } } };
 const png = { content: { "image/png": { schema: { type: "string", format: "binary" } } } };
 const noContent = { description: "No content" };
 const etag = { headers: { ETag: { schema: { type: "string" } } } };
 
-function document(responses: Record<string, BodyObject>, components: Record<string, BodyObject> = {}): OpenApiDocument {
-  return {
+function document(responses: Record<string, unknown>, components: Record<string, unknown> = {}): OpenApiDocument {
+  return fixture({
     components: { responses: components },
     paths: { "/api/v2/items": { get: { operationId: "readItem", responses } } },
-  };
+  });
 }
 const rules = { headers: [], etagExclusions: [] };
 

@@ -3,7 +3,14 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { getTagKey } from "orval";
-import { type OpenApiDocument, operationsOf, orvalOperationName, orvalQueryKeyName } from "./openapi.ts";
+import {
+  isReference,
+  type OpenApiDocument,
+  operationsOf,
+  orvalOperationName,
+  orvalQueryKeyName,
+  responsesOf,
+} from "./openapi.ts";
 
 const slots = {
   LIST: "list",
@@ -39,7 +46,7 @@ export function collectionOperations(document: OpenApiDocument): Map<string, Map
     for (const [, operation] of operationsOf(item)) {
       const kind = operation["x-rspace-operation"];
       if (kind === "CUSTOM") continue;
-      if (kind == null || !Object.hasOwn(slots, kind))
+      if (typeof kind !== "string" || !Object.hasOwn(slots, kind))
         throw new Error(`${path}: ${kind == null ? "Untagged operation" : `Unknown operation kind ${kind}`}`);
       const slot = slots[kind as Kind];
       if (!operation.operationId || !operation.tags?.length) throw new Error(`Invalid resource operation: ${path}`);
@@ -106,15 +113,19 @@ export function guaranteedReadFields(document: OpenApiDocument): Map<string, str
     for (const [, operation] of operationsOf(item)) {
       if (operation["x-rspace-operation"] !== "READ") continue;
       const resource = operation.tags?.[0];
-      const ref = operation.responses?.["200"]?.content?.["application/json"]?.schema?.$ref;
-      const name = ref?.replace(/^#\/components\/schemas\//, "");
+      const response = responsesOf(operation).find(([status]) => status === "200")?.[1];
+      const readSchema = isReference(response) ? undefined : response?.content?.["application/json"]?.schema;
+      const name = isReference(readSchema) ? readSchema.$ref.replace(/^#\/components\/schemas\//, "") : undefined;
       const schema = name === undefined ? undefined : document.components?.schemas?.[name];
-      if (!resource || !schema) throw new Error(`${path}: READ operation without a referenced read schema`);
+      if (!resource || typeof schema !== "object")
+        throw new Error(`${path}: READ operation without a referenced read schema`);
       if (result.has(resource)) throw new Error(`Duplicate READ operation for ${resource}`);
       result.set(
         resource,
-        Object.entries(schema.properties ?? {})
-          .filter(([, property]) => property[GUARANTEED] === true)
+        Object.entries("properties" in schema ? (schema.properties ?? {}) : {})
+          .filter(
+            ([, property]) => typeof property === "object" && GUARANTEED in property && property[GUARANTEED] === true,
+          )
           .map(([field]) => field)
           .sort(),
       );

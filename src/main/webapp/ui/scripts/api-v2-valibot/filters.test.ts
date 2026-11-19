@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { filteredWhereOperations, filteredWhereParameters, generateFilterTypes, rewriteWhereModel } from "./filters.ts";
 import type { OpenApiDocument } from "./openapi.ts";
+import { fixture } from "./test-helper.ts";
 
 const filter = (selectors: Record<string, unknown>) => ({ selectors });
 function document(filters: Record<string, unknown>, parameters: Record<string, unknown> = {}): OpenApiDocument {
-  return {
+  return fixture({
     components: { "x-rspace-filters": filters, parameters },
     paths: {
       "/api/v2/items": {
@@ -18,7 +19,7 @@ function document(filters: Record<string, unknown>, parameters: Record<string, u
       },
       "/api/v2/search": { get: { operationId: "search", parameters: [{ name: "where", in: "query" }] } },
     },
-  };
+  });
 }
 const items = filter({
   id: { operators: ["==", "=in="], schema: { type: "integer", format: "int64" } },

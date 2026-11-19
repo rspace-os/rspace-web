@@ -1,4 +1,4 @@
-import type { OpenApiDocument, SchemaObject } from "./openapi.ts";
+import { isReference, type OpenApiDocument, type SchemaOrReference, schemaType } from "./openapi.ts";
 
 const annotations: ReadonlySet<string> = new Set([
   "description",
@@ -62,17 +62,24 @@ export function assertSupportedSpec(document: OpenApiDocument): void {
     if (!Object.hasOwn(components, name)) fail(path, `Missing component ${name}`);
     return name;
   }
-  function validate(schema: SchemaObject, path: string, owner?: string): void {
+  function validate(schema: SchemaOrReference, path: string, owner?: string): void {
     if (!schema || typeof schema !== "object" || Array.isArray(schema)) fail(path, "Expected a schema object");
-    for (const key of Object.keys(schema)) {
+    for (const [key, value] of Object.entries(schema)) {
       if (
         !keywords.has(key) &&
         !annotations.has(key) &&
         !key.startsWith("x-rspace-") &&
-        !(key === "nullable" && schema[key] === false)
+        !(key === "nullable" && value === false)
       ) {
         fail(path, `Unsupported keyword ${key}`);
       }
+    }
+    if ("$ref" in schema) {
+      const name = refName(schema.$ref, path);
+      if (owner) dependencies.get(owner)?.add(name);
+      if (Object.keys(schema).some((key) => keywords.has(key) && key !== "$ref"))
+        fail(path, "Validation siblings of $ref are unsupported");
+      return;
     }
     if (schema.format && !formats.has(schema.format)) fail(path, `Unsupported format ${schema.format}`);
     if (schema.anyOf || schema.oneOf) {
@@ -82,23 +89,18 @@ export function assertSupportedSpec(document: OpenApiDocument): void {
         if (keywords.has(key) && !["anyOf", "oneOf", "type"].includes(key))
           fail(path, `Unsupported union sibling ${key}`);
       }
-      if (schema.type && (!Array.isArray(schema.type) || !composition.every((part) => part.type)))
+      if (schema.type && (!Array.isArray(schema.type) || !composition.every((part) => schemaType(part))))
         fail(path, "Union type siblings must be redundant typed branches");
     }
     if (schema.allOf) {
       for (const part of schema.allOf) {
-        const target = part.$ref ? components[refName(part.$ref, path)] : part;
-        if (target.type && target.type !== "object") fail(path, "allOf supports object members only");
+        const target = isReference(part) ? components[refName(part.$ref, path)] : part;
+        const type = schemaType(target);
+        if (type && type !== "object") fail(path, "allOf supports object members only");
       }
     }
-    if (schema.$ref) {
-      const name = refName(schema.$ref, path);
-      if (owner) dependencies.get(owner)?.add(name);
-      if (Object.keys(schema).some((key) => keywords.has(key) && key !== "$ref"))
-        fail(path, "Validation siblings of $ref are unsupported");
-    }
     for (const [key, child] of Object.entries(schema.properties ?? {}))
-      validate(child, `${path}.properties.${key}`, owner);
+      validate(child as SchemaOrReference, `${path}.properties.${key}`, owner);
     for (const key of ["items", "additionalProperties"] as const) {
       const child = schema[key];
       if (child !== undefined && typeof child !== "boolean") validate(child, `${path}.${key}`, owner);
@@ -116,7 +118,7 @@ export function assertSupportedSpec(document: OpenApiDocument): void {
     if (!value || typeof value !== "object") return;
     for (const [key, child] of Object.entries(value)) {
       if (annotations.has(key) || key.startsWith("x-")) continue;
-      if (key === "schema") validate(child as SchemaObject, `${path}.schema`);
+      if (key === "schema") validate(child as SchemaOrReference, `${path}.schema`);
       else if (!(path === "document.components" && key === "schemas")) validateInline(child, `${path}.${key}`);
     }
   }

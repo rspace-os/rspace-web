@@ -1,56 +1,34 @@
+import type {
+  OpenApiDocument,
+  OpenApiMediaTypeObject,
+  OpenApiOperationObject,
+  OpenApiPathItemObject,
+  OpenApiReferenceObject,
+  OpenApiRequestBodyObject,
+  OpenApiResponseObject,
+  OpenApiSchemaObject,
+} from "orval";
 import { camel, pascal, sanitize, Verbs } from "orval";
 
-/** The subset of OpenAPI 3.1 that the API v2 generation scripts read. */
-export interface SchemaObject {
-  $ref?: string;
-  type?: string | string[];
-  format?: string;
-  nullable?: boolean;
-  properties?: Record<string, SchemaObject>;
-  items?: SchemaObject | boolean;
-  additionalProperties?: SchemaObject | boolean;
-  required?: string[];
-  allOf?: SchemaObject[];
-  anyOf?: SchemaObject[];
-  oneOf?: SchemaObject[];
-  [keyword: string]: unknown;
-}
-export interface MediaTypeObject {
-  schema?: SchemaObject;
-  [field: string]: unknown;
-}
+export type { OpenApiDocument };
+/** An object schema. OpenAPI 3.1 also allows the boolean schemas `true` and `false`, which callers narrow first. */
+export type SchemaObject = Exclude<OpenApiSchemaObject, boolean>;
+export type ReferenceObject = OpenApiReferenceObject;
+/** Whatever may stand where a schema is expected: an object schema, a boolean schema or a `$ref`. */
+export type SchemaOrReference = OpenApiSchemaObject | ReferenceObject;
+export type MediaTypeObject = OpenApiMediaTypeObject;
 export type Content = Record<string, MediaTypeObject>;
-export interface BodyObject {
-  $ref?: string;
-  content?: Content;
-  [field: string]: unknown;
-}
-export type SecurityRequirement = Record<string, string[]>;
-export interface OperationObject {
-  operationId?: string;
-  tags?: string[];
-  security?: SecurityRequirement[];
-  requestBody?: BodyObject;
-  responses?: Record<string, BodyObject>;
-  "x-rspace-operation"?: string | null;
-  [field: string]: unknown;
-}
+export type BodyObject = OpenApiRequestBodyObject | OpenApiResponseObject;
+export type OperationObject = OpenApiOperationObject;
+
+/** True for a `$ref` object, the only OpenAPI value whose `$ref` is a string. */
+export const isReference = (value: unknown): value is ReferenceObject =>
+  typeof value === "object" && value !== null && "$ref" in value && typeof value.$ref === "string";
+
 /** The HTTP methods Orval generates operations for. */
 export const httpMethods = Object.values(Verbs);
 export type HttpMethod = (typeof Verbs)[keyof typeof Verbs];
-export type PathItem = Partial<Record<HttpMethod, OperationObject>> & Record<string, unknown>;
-export interface OpenApiDocument {
-  security?: SecurityRequirement[];
-  components?: {
-    schemas?: Record<string, SchemaObject>;
-    requestBodies?: Record<string, BodyObject>;
-    responses?: Record<string, BodyObject>;
-    [section: string]: unknown;
-  };
-  paths?: Record<string, PathItem>;
-  [field: string]: unknown;
-}
-
+export type PathItem = OpenApiPathItemObject;
 const methods: ReadonlySet<string> = new Set(httpMethods);
 
 /** Orval's function name for an operation ID; generated request, hook and schema names derive from it. */
@@ -62,6 +40,15 @@ export const orvalQueryKeyName = (operationId: string): string =>
   camel(`get-${orvalOperationName(operationId)}-query-key`);
 /** Orval's URL builder name for an operation ID. */
 export const orvalUrlName = (operationId: string): string => camel(`get-${orvalOperationName(operationId)}-url`);
+
+/** An operation's declared responses by status. */
+export function responsesOf(operation: OperationObject): [string, OpenApiResponseObject | ReferenceObject][] {
+  return Object.entries(operation.responses ?? {}) as [string, OpenApiResponseObject | ReferenceObject][];
+}
+
+/** A schema's `type` keyword; `undefined` for boolean schemas, references and untyped schemas. */
+export const schemaType = (schema: SchemaOrReference | undefined): unknown =>
+  typeof schema === "object" && schema !== null && "type" in schema ? schema.type : undefined;
 
 /** Operations of a path item in document order, skipping path-level fields such as `parameters`. */
 export function operationsOf(item: PathItem): [HttpMethod, OperationObject][] {

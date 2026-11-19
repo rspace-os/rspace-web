@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { generate } from "./generate.ts";
 import type { Content, OpenApiDocument, SchemaObject } from "./openapi.ts";
+import { fixture } from "./test-helper.ts";
 
 const native =
   'import * as v from "valibot";\nexport const SendBody = v.string();\nexport const SendResponse = v.string();\nexport const Binary = v.file();\n';
@@ -9,7 +10,7 @@ function spec(
   responses: Record<string, { content?: Content }>,
   schemas: Record<string, SchemaObject> = {},
 ): OpenApiDocument {
-  return {
+  return fixture({
     components: { schemas },
     paths: {
       "/": {
@@ -20,7 +21,7 @@ function spec(
         },
       },
     },
-  };
+  });
 }
 const media = (schema: SchemaObject): Content => ({
   "application/json": { schema },
