@@ -9,7 +9,7 @@ import { assertSupportedSpec } from "./preflight.ts";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
 export function generate(document: OpenApiDocument, options?: { modelImport?: string }): GeneratedSources {
   assertSupportedSpec(document);
-  const scratch = resolve(root, ".claude");
+  const scratch = resolve(root, "target/api-v2-scratch");
   mkdirSync(scratch, { recursive: true });
   const directory = mkdtempSync(resolve(scratch, "native-fragment-"));
   try {

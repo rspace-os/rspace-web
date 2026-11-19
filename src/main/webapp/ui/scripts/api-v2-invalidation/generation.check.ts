@@ -7,7 +7,7 @@ import { getOperations } from "./index";
 
 const require = createRequire(import.meta.url);
 const ui = resolve(import.meta.dirname, "../..");
-const scratchRoot = resolve(ui, "../../../../.claude");
+const scratchRoot = resolve(ui, "../../../../target/api-v2-scratch");
 function scratch() {
   mkdirSync(scratchRoot, { recursive: true });
   return mkdtempSync(resolve(scratchRoot, "api-v2-generation-"));

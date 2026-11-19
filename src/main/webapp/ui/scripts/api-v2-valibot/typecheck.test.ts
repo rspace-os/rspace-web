@@ -8,7 +8,7 @@ import { generate } from "./test-helper.ts";
 
 it("compiles two-way schema/model assertions and rejects drift", () => {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
-  const scratch = resolve(root, ".claude");
+  const scratch = resolve(root, "target/api-v2-scratch");
   mkdirSync(scratch, { recursive: true });
   const directory = mkdtempSync(resolve(scratch, "valibot-types-"));
   try {

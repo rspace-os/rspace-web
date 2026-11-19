@@ -39,7 +39,7 @@ let defaults: Record<string, (params?: Record<string, unknown>) => string>;
 // Orval's own query serialization, generated from the same spec without the paramsSerializer override,
 // is the reference: apiV2SerializeQuery must produce identical URLs for everything except where objects.
 beforeAll(async () => {
-  const scratch = resolve(root, ".claude");
+  const scratch = resolve(root, "target/api-v2-scratch");
   mkdirSync(scratch, { recursive: true });
   directory = mkdtempSync(resolve(scratch, "params-parity-"));
   writeFileSync(
