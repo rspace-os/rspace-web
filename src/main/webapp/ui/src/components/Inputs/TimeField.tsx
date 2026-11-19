@@ -11,7 +11,12 @@ import NoValue from "../../components/NoValue";
 const TIME_FORMAT = "HH:mm";
 
 export type TimeFieldArgs = {
-  onChange: (event: { target: { value: string | null } }) => void;
+  /**
+   * `value` is the time as "HH:mm", or null when the picker is empty or holds
+   * an incomplete or invalid time; `valid` is false only in the latter case,
+   * as the picker's own validation reports it.
+   */
+  onChange: (event: { target: { value: string | null; valid: boolean } }) => void;
   /*
    * FieldModel stores a time field's value as a Date object (it parses the
    * "HH:mm" string on the way in), whereas other callers pass the "HH:mm"
@@ -40,10 +45,11 @@ export default function TimeField({ disabled, value, onChange, id }: TimeFieldAr
               value={pickerValue}
               format={TIME_FORMAT}
               ampm={false}
-              onChange={(newValue) => {
+              onChange={(newValue, { validationError }) => {
                 onChange({
                   target: {
                     value: newValue && isValid(newValue) ? format(newValue, TIME_FORMAT) : null,
+                    valid: validationError === null,
                   },
                 });
               }}

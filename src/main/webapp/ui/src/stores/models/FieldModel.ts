@@ -401,7 +401,8 @@ export default class FieldModel implements Field {
         return IsInvalid("Options of custom choice fields cannot be empty.");
       if (!this.optionsAreUnique) return IsInvalid("Options of custom choice fields must all be distinct.");
     }
-    if (this.mandatory && this.owner.enforceMandatoryFields && !this.hasContent)
+    const required = this.owner.requiresValue ? this.owner.requiresValue(this) : this.mandatory;
+    if (required && this.owner.enforceMandatoryFields && !this.hasContent)
       return IsInvalid(`The mandatory custom field "${this.name}" must have a valid value.`);
     if (this.type === "link" && this.linkEditInProgress)
       return IsInvalid(`Apply or discard the link changes in "${this.name}" before saving.`);
