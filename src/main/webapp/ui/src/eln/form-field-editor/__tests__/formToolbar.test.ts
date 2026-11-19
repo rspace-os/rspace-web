@@ -103,6 +103,14 @@ function serveForm(revision: { current: number }) {
     ),
     http.post("*/workspace/editor/form/ajax/publishAndShare", ({ request }) => refuseStale(request, "PUBLISHED")),
     http.post("*/workspace/editor/form/ajax/updateForm", ({ request }) => refuseStale(request, 5)),
+    http.post("*/workspace/editor/form/ajax/publish", async ({ request }) => {
+      sent.push(new URLSearchParams(await request.text()));
+      return HttpResponse.json({ data: "UNPUBLISHED", errorMsg: null });
+    }),
+    http.post("*/workspace/editor/form/ajax/saveForm", async ({ request }) => {
+      sent.push(new URLSearchParams(await request.text()));
+      return HttpResponse.json({ data: 5, errorMsg: null });
+    }),
   );
   return sent;
 }
@@ -178,10 +186,13 @@ describe("form.js toolbar", () => {
     expect(ajaxFailed).not.toHaveBeenCalled();
   });
 
-  test("neither updates nor publishes while the editor refuses to save its fields, which says why itself", async () => {
+  test("neither saves, updates nor publishes while the editor refuses to save its fields, which says why itself", async () => {
     // as the editor does while a display condition is not filled out
     const editor = fakeEditor(() => Promise.reject(Object.assign(new Error(""), { name: "FormFieldsSaveError" })));
     const sent = serveForm({ current: 7 });
+    // the page's labels are translated
+    legacy.$("#publish").text("Publier");
+    legacy.$("#unpublish").text("Dépublier");
     // each action unblocks the page once the editor has answered, and would have sent its request by then
     const unblockPage = vi.spyOn((window as unknown as { RS: { unblockPage: () => void } }).RS, "unblockPage");
     onTestFinished(() => unblockPage.mockRestore());
@@ -190,12 +201,18 @@ describe("form.js toolbar", () => {
     await vi.waitFor(() => expect(unblockPage).toHaveBeenCalledTimes(1));
     legacy.$("#update").trigger("click");
     await vi.waitFor(() => expect(unblockPage).toHaveBeenCalledTimes(2));
+    legacy.$("#save").trigger("click");
+    await vi.waitFor(() => expect(unblockPage).toHaveBeenCalledTimes(3));
 
-    expect(editor.save).toHaveBeenCalledTimes(2);
+    expect(editor.save).toHaveBeenCalledTimes(3);
     expect(editor.setReadOnly).toHaveBeenLastCalledWith(false);
     expect(opened.has("publishShareDlg")).toBe(false);
     expect(sent).toHaveLength(0);
     expect(apprise).not.toHaveBeenCalled();
+    // nothing was saved, and the fields are not dirty, so leaving the page does not ask
+    const leaving = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(leaving);
+    expect(leaving.defaultPrevented).toBe(false);
   });
 
   test.each([

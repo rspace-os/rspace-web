@@ -278,7 +278,8 @@ function setUpPublishButtons() {
   $('.publishAction').click(function (e) {
     e.preventDefault();
     var $button = $(this);
-    var publishing = $button.text() === 'Publish';
+    // by id: the label is translated
+    var publishing = $button.attr('id') === 'publish';
     var data = {
       publish: publishing,
       templateId: recordId
@@ -352,13 +353,13 @@ function saveForm() {
     return;
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
-  formSaveIncomplete = true;
   saveFieldEditor().then(function (revision) {
     if (revision === null) {
       RS.unblockPage();
       endToolbarAction();
       return;
     }
+    formSaveIncomplete = true;
     saveFormTag().always(function () {
       var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
         templateId: recordId,
@@ -395,13 +396,13 @@ function updateForm() {
     return;
   }
   RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
-  formSaveIncomplete = true;
   saveFieldEditor().then(function (revision) {
     if (revision === null) {
       RS.unblockPage();
       endToolbarAction();
       return;
     }
+    formSaveIncomplete = true;
     var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
       templateId: recordId,
       lockToken: editLockToken,
