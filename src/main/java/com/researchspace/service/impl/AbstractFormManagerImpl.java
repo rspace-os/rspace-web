@@ -115,9 +115,9 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   }
 
   /**
-   * Rejects an update that stops a display rule source being readable, such as making a String
-   * field that other fields' rules read a password field. The field editor's full save validates
-   * this through {@link FieldDisplayRuleValidator}; this guards the per-field legacy endpoints.
+   * Rejects a legacy String field update that makes the field a password field while other fields'
+   * display rules read it. It does not guard field deletion or option edits; the field editor's
+   * full save validates those through {@link FieldDisplayRuleValidator}.
    */
   private void rejectUnreadableRuleSource(FieldForm stored, FieldForm updated, T form) {
     if (stored.getFieldKey() == null
