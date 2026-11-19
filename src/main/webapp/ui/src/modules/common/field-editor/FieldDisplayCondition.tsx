@@ -185,7 +185,9 @@ export default function FieldDisplayCondition({
             setDraft(pending?.sourceFieldKey != null ? pending : null);
             return;
           }
-          const restored = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+          // a saved rule that no longer validates as it was still comes back with whatever of it still applies
+          const fallback = remembered?.draft ?? remembered?.applied ?? null;
+          const restored = fallback ? sanitiseCondition(graph, fieldKey, fallback) : null;
           update(
             restored?.sourceFieldKey != null
               ? restored
