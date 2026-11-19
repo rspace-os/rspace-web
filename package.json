@@ -203,6 +203,7 @@
     "rsql-builder": "1.4.2",
     "sockjs-client": "1.6.1",
     "tinymce": "8.9.3",
+    "uuid": "14.0.3",
     "valibot": "1.4.2",
     "zustand": "5.0.15",
     "@tanstack/react-devtools": "0.10.13",

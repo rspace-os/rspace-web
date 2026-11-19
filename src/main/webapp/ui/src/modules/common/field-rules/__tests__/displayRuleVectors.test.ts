@@ -9,10 +9,16 @@ import {
   FieldSnapshotSchema,
   parseDisplayRule,
   serializeDisplayRule,
+  storedDisplayRuleLength,
 } from "../displayRule";
 import { parseElnChoiceValues } from "../elnChoiceValues";
 import { displayRuleVisibility } from "../evaluateDisplayRules";
-import { DisplayRuleErrorSchema, validateDisplayRules } from "../validateDisplayRules";
+import {
+  DisplayRuleErrorSchema,
+  MAX_DISPLAY_RULE_JSON_LENGTH,
+  MAX_DISPLAY_RULE_VALUES,
+  validateDisplayRules,
+} from "../validateDisplayRules";
 
 /*
  * The vectors are shared with the Java FieldDisplayRuleVectorsTest so that the
@@ -60,6 +66,22 @@ const VectorsSchema = v.object({
       expectedErrors: v.array(DisplayRuleErrorSchema),
     }),
   ),
+  limits: v.object({
+    description: v.string(),
+    maxValues: v.number(),
+    maxJsonLength: v.number(),
+    cases: v.array(
+      v.object({
+        name: v.string(),
+        valueCount: v.number(),
+        pad: v.string(),
+        padCount: v.number(),
+        tailLength: v.number(),
+        jsonLength: v.number(),
+        expectedErrors: v.array(DisplayRuleErrorSchema),
+      }),
+    ),
+  }),
   elnChoice: v.array(v.object({ data: v.string(), expected: v.array(v.string()) })),
 });
 
@@ -82,6 +104,37 @@ describe("display rule vectors shared with Java", () => {
   test.each(vectors.validation)("validation: $name", ({ fields, expectedErrors }) => {
     expect(validateDisplayRules(fields)).toEqual(expectedErrors);
   });
+
+  test("limits match the shared vectors", () => {
+    expect(MAX_DISPLAY_RULE_VALUES).toBe(vectors.limits.maxValues);
+    expect(MAX_DISPLAY_RULE_JSON_LENGTH).toBe(vectors.limits.maxJsonLength);
+  });
+
+  test.each(vectors.limits.cases)(
+    "limits: $name",
+    ({ valueCount, pad, padCount, tailLength, jsonLength, expectedErrors }) => {
+      const values = Array.from(
+        { length: valueCount },
+        (_unused, i) => pad.repeat(padCount) + String(i).padStart(5, "0"),
+      );
+      if (tailLength > 0) values.push("x".repeat(tailLength));
+      const sourceKey = "00000000-0000-4000-8000-000000000001";
+      const rule = createDisplayRule(sourceKey, "IS_ANY_OF", values);
+      const fields: Array<FieldSnapshot> = [
+        { key: sourceKey, canBeSource: true, rule: null, allowedOptions: values, selectedOptions: [] },
+        {
+          key: "00000000-0000-4000-8000-000000000002",
+          canBeSource: false,
+          rule,
+          allowedOptions: [],
+          selectedOptions: [],
+        },
+      ];
+
+      expect(storedDisplayRuleLength(rule)).toBe(jsonLength);
+      expect(validateDisplayRules(fields)).toEqual(expectedErrors);
+    },
+  );
 
   test.each(vectors.elnChoice)("ELN choice data '$data'", ({ data, expected }) => {
     expect(parseElnChoiceValues(data)).toEqual(expected);
