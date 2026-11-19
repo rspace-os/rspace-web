@@ -27,6 +27,11 @@ public final class FieldDisplayRuleValidator {
   public static final String VALUE_TOO_MANY = "validation.fieldDisplayRule.valueTooMany";
   public static final String RULE_TOO_LONG = "validation.fieldDisplayRule.ruleTooLong";
   public static final String CYCLE = "validation.fieldDisplayRule.cycle";
+  public static final String OPERATOR_NOT_FOR_SOURCE =
+      "validation.fieldDisplayRule.operatorNotForSource";
+  public static final String VALUE_COUNT = "validation.fieldDisplayRule.valueCount";
+  public static final String VALUE_BLANK = "validation.fieldDisplayRule.valueBlank";
+  public static final String VALUE_NOT_A_NUMBER = "validation.fieldDisplayRule.valueNotANumber";
 
   /**
    * The most values one rule may list. Far more than any real radio or choice field offers, and it
@@ -55,10 +60,13 @@ public final class FieldDisplayRuleValidator {
 
   /**
    * Validates every key and rule in the field set. Keys may be null (legacy fields), but non-null
-   * keys must be lowercase UUIDs and unique. Each rule must list each value once, at most {@link
-   * #MAX_VALUES} values, and fit in {@link #MAX_JSON_LENGTH} characters as stored. Each rule's
-   * source must exist, differ from the field itself, be a radio or choice field and offer every
-   * value the rule names, and rules must not form a cycle.
+   * keys must be lowercase UUIDs and unique. Each rule must list at most {@link #MAX_VALUES} values
+   * and fit in {@link #MAX_JSON_LENGTH} characters as stored. Each rule's source must exist, differ
+   * from the field itself and be able to be a source ({@link SourceKind#NONE} cannot), and the
+   * operator must suit the source's kind. An option rule must list each value once and only options
+   * the source offers. A text or number comparison must have exactly one value that is not blank,
+   * and against a number source that value must be a plain decimal number. Rules must not form a
+   * cycle.
    *
    * @return the problems found, in field order; empty when the set is valid
    */
@@ -90,7 +98,8 @@ public final class FieldDisplayRuleValidator {
         errors.add(new RuleError(i, VALUE_TOO_MANY));
       } else if (valuesLongerThanBudget(rule) || rule.toJson().length() > MAX_JSON_LENGTH) {
         errors.add(new RuleError(i, RULE_TOO_LONG));
-      } else if (new HashSet<>(rule.values()).size() < rule.values().size()) {
+      } else if (rule.operator().requiresValues()
+          && new HashSet<>(rule.values()).size() < rule.values().size()) {
         errors.add(new RuleError(i, VALUE_DUPLICATE));
       }
       Integer sourceIndex = indexByKey.get(rule.sourceFieldKey());
@@ -100,9 +109,11 @@ public final class FieldDisplayRuleValidator {
         errors.add(new RuleError(i, SOURCE_SELF));
       } else {
         FieldSnapshot source = fields.get(sourceIndex);
-        if (!source.canBeSource()) {
-          errors.add(new RuleError(i, SOURCE_TYPE));
-        } else if (!new HashSet<>(source.allowedOptions()).containsAll(rule.values())) {
+        String problem = RuleValues.problem(rule, source.sourceKind());
+        if (problem != null) {
+          errors.add(new RuleError(i, problem));
+        } else if (rule.operator().requiresValues()
+            && !new HashSet<>(source.allowedOptions()).containsAll(rule.values())) {
           errors.add(new RuleError(i, VALUE_UNKNOWN));
         }
         if (onCycle[i]) {
