@@ -91,8 +91,14 @@ export default function FieldDisplayCondition({
   const { t, i18n } = useTranslation("common");
   const id = useId();
   const [draft, setDraft] = useState<DraftCondition | null>(null);
-  /** The condition shown when "Always" was last chosen, restored by "Only when…". */
-  const [remembered, setRemembered] = useState<DraftCondition | null>(null);
+  /**
+   * What "Always" set aside, restored by "Only when…": the rule that was applied, and any
+   * unfinished edit on top of it, so arrowing through the radios never loses a stored rule.
+   */
+  const [remembered, setRemembered] = useState<{
+    applied: FieldDisplayRule | null;
+    draft: DraftCondition | null;
+  } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
 
   const graph = ruleGraphFor(fields);
@@ -126,7 +132,7 @@ export default function FieldDisplayCondition({
   const sources = graph.sourcesFor(fieldKey);
   if (draft !== null && rule === null && sources.length === 0) {
     // with nothing left to read, a new condition can never be completed, so it is set aside like "Always" sets it aside
-    setRemembered(draft);
+    setRemembered({ applied: null, draft });
     setDraft(null);
   }
   const shown = draft ?? rule;
@@ -166,12 +172,20 @@ export default function FieldDisplayCondition({
         value={condition ? CONDITIONAL : ALWAYS}
         onChange={({ target: { value } }) => {
           if (value === ALWAYS) {
-            setRemembered(condition);
+            setRemembered({ applied: rule, draft });
             setDraft(null);
             if (rule !== null) onChange(null);
             return;
           }
-          const restored = remembered ? sanitiseCondition(graph, fieldKey, remembered) : null;
+          const applied = remembered?.applied ?? null;
+          if (applied !== null && !ruleIsInvalid(fields, fieldKey, applied)) {
+            // the stored rule comes back as it was, with any unfinished edit still pending on top
+            onChange(applied);
+            const pending = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
+            setDraft(pending?.sourceFieldKey != null ? pending : null);
+            return;
+          }
+          const restored = remembered?.draft ? sanitiseCondition(graph, fieldKey, remembered.draft) : null;
           update(
             restored?.sourceFieldKey != null
               ? restored

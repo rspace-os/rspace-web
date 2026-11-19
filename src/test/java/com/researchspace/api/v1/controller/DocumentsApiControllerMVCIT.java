@@ -816,6 +816,43 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         "Validation problem with field 1: "
             + getMsgFromResourceBundler("validation.fieldData.choiceNotAnOption", "[ No]"),
         changed.getResolvedException().getMessage());
+
+    // content that only converts to the stored form is checked, not taken as unchanged
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, docUrl, anyUser, String.format(docJson, "{\"content\": \"Yes,No\"}", "{}")))
+        .andExpect(status().isOk());
+    assertEquals("Yes,No", getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent());
+    MvcResult smuggled =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(docJson, "{\"content\": \"Yes&fieldChoices=No\"}", "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + getMsgFromResourceBundler(
+                "validation.fieldData.choiceNotAnOption", "[Yes&fieldChoices=No]"),
+        smuggled.getResolvedException().getMessage());
+
+    // the other stored form is accepted when echoed as a GET returned it
+    choiceField = fieldMgr.get(doc.getFields().get(0).getId(), anyUser).get();
+    choiceField.setFieldData("fieldSelectedChoices=Maybe");
+    fieldMgr.save(choiceField, anyUser);
+    assertEquals("Maybe", getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent());
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                docUrl,
+                anyUser,
+                String.format(docJson, "{\"content\": \"Maybe\"}", "{\"content\": \"again\"}")))
+        .andExpect(status().isOk());
   }
 
   private List<ApiDocumentField> getDocumentFields(String apiKey, String docUrl, User user)
