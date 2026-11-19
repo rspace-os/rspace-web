@@ -2184,8 +2184,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "bufferAfterMinutes" : {
             "description" : "Unavailable minutes after a booking.",
@@ -2194,8 +2193,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "bufferBeforeMinutes" : {
             "description" : "Unavailable minutes before a booking.",
@@ -2204,8 +2202,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "capabilities" : {
             "allOf" : [ {
@@ -2214,8 +2211,7 @@
             "readOnly" : true,
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "configurationVersion" : {
             "description" : "Optimistic configuration revision.",
@@ -2224,8 +2220,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdAt" : {
             "description" : "Time at which the resource was created.",
@@ -2234,8 +2229,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdBy" : {
             "anyOf" : [ {
@@ -2248,7 +2242,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -2262,8 +2255,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "effectiveRole" : {
             "maxLength" : 64,
@@ -2271,16 +2263,14 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "enabled" : {
             "description" : "Whether bookings are enabled for the target.",
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable booking-configuration identifier.",
@@ -2301,8 +2291,7 @@
             "example" : "MINUTES",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "maxBookingDurationMinutes" : {
             "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
@@ -2311,8 +2300,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "openingHours" : {
             "description" : "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday). Entries are returned in weekday order; omitted weekdays are closed. Replaces the entire schedule and defaults to institution settings on create.",
@@ -2434,8 +2422,7 @@
                 "pattern" : "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$"
               },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ],
-            "x-rspace-read-guaranteed" : true
+            } ]
           },
           "ownerHealth" : {
             "anyOf" : [ {
@@ -2684,8 +2671,7 @@
               },
               "writeConstraints" : { },
               "writeOperations" : [ "CREATE", "UPDATE" ]
-            } ],
-            "x-rspace-read-guaranteed" : true
+            } ]
           },
           "slotGranularityMinutes" : {
             "description" : "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number of increments. For DAYS it is the day count times 1440 and must be a whole number of days. Defaults to the institution defaults on create.",
@@ -2694,8 +2680,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "state" : {
             "allOf" : [ {
@@ -2704,8 +2689,7 @@
             "description" : "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "target" : {
             "anyOf" : [ {
@@ -2718,7 +2702,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "instruments" : {
@@ -2739,8 +2722,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedAt" : {
             "description" : "Time at which the resource was last updated.",
@@ -2749,8 +2731,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedBy" : {
             "anyOf" : [ {
@@ -2763,7 +2744,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3223,32 +3203,28 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canCancel" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canEdit" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canViewConfiguration" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdAt" : {
             "format" : "date-time",
@@ -3256,24 +3232,21 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "createdBy" : {
             "readOnly" : true,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "end" : {
             "format" : "date-time",
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "format" : "int64",
@@ -3290,24 +3263,21 @@
             } ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "privacy" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "purpose" : {
             "maxLength" : 1000,
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "requester" : {
             "anyOf" : [ {
@@ -3321,7 +3291,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "users" : {
@@ -3335,8 +3304,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "state" : {
             "allOf" : [ {
@@ -3344,8 +3312,7 @@
             } ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "target" : {
             "anyOf" : [ {
@@ -3356,7 +3323,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "instruments" : {
@@ -3375,8 +3341,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "updatedAt" : {
             "format" : "date-time",
@@ -3384,8 +3349,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "version" : {
             "format" : "int64",
@@ -3393,8 +3357,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
@@ -3464,24 +3427,21 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "deleted" : {
             "readOnly" : true,
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "globalId" : {
             "readOnly" : true,
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "format" : "int64",
@@ -3498,8 +3458,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/ContainerRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
@@ -3760,8 +3719,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "canOverride" : {
             "description" : "Whether this caller can set a user override.",
@@ -3769,8 +3727,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "name" : {
             "description" : "Stable lower-camel-case feature flag name.",
@@ -3797,8 +3754,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "value" : {
             "description" : "Effective value for this caller.",
@@ -3806,8 +3762,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/Anyone"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "name" ],
@@ -3868,8 +3823,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "extraFields" : {
             "additionalProperties" : true,
@@ -3883,8 +3837,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable instrument identifier.",
@@ -3907,8 +3860,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "parentContainer" : {
             "anyOf" : [ {
@@ -3934,7 +3886,6 @@
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/InstrumentRead"
             },
-            "x-rspace-read-guaranteed" : true,
             "x-rspace-relationship" : {
               "targets" : {
                 "containers" : {
@@ -4077,8 +4028,7 @@
             "type" : "boolean",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "endDate" : {
             "description" : "End of the maintenance window.",
@@ -4087,8 +4037,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable maintenance identifier.",
@@ -4108,8 +4057,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "startDate" : {
             "description" : "Beginning of the maintenance window.",
@@ -4118,8 +4066,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "stopUserLoginDate" : {
             "description" : "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
@@ -4127,8 +4074,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "version" : {
             "description" : "Version for conditional updates and deletes.",
@@ -4138,8 +4084,7 @@
             "type" : "integer",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/MaintenanceRead"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
@@ -4422,8 +4367,7 @@
             "type" : [ "string", "null" ],
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "email" : {
             "description" : "User's email address.",
@@ -4433,8 +4377,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "firstName" : {
             "description" : "User's given name.",
@@ -4442,8 +4385,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "id" : {
             "description" : "Stable user identifier.",
@@ -4462,8 +4404,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           },
           "username" : {
             "description" : "RSpace login name.",
@@ -4472,8 +4413,7 @@
             "type" : "string",
             "x-rspace-access" : {
               "$ref" : "#/components/x-rspace-access-policies/SysadminOrSelf"
-            },
-            "x-rspace-read-guaranteed" : true
+            }
           }
         },
         "required" : [ "id" ],
