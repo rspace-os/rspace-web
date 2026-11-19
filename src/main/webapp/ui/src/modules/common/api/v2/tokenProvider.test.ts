@@ -1,4 +1,3 @@
-import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import {
@@ -19,10 +18,6 @@ const onSessionEnded = vi.fn();
 const onIdentityChanged = vi.fn();
 const token = (hash?: string, exp = Date.now() / 1000 + 1000) =>
   `e30.${btoa(JSON.stringify({ exp, refreshTokenHash: hash }))}.signature`;
-const html = () => new Response("<html></html>", { headers: { "Content-Type": "text/html;charset=UTF-8" } });
-const publicView = () => {
-  document.body.innerHTML = '<div id="public_document_view"></div>';
-};
 /** Moves the client clock past the 300 s expiry buffer of a token minted with the default expiry. */
 const nearExpiry = () => vi.setSystemTime(Date.now() + 701_000);
 
@@ -41,25 +36,8 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.resetAllMocks();
-  document.body.innerHTML = "";
 });
 const provider = () => new SessionTokenProvider({ onSessionEnded, onIdentityChanged });
-/** Answers the public document token route with each response in turn, repeating the last. */
-const publicTokenRoute = (...responses: (() => Response)[]) =>
-  server.use(
-    ...responses.map((response, index) =>
-      http.get("/public/publicView/userform/ajax/inventoryOauthToken", response, {
-        once: index < responses.length - 1,
-      }),
-    ),
-  );
-/** Answers the whoami probe that recovery sends with the token the server rejected. */
-const probe = (rejected: string, status: number) =>
-  server.use(
-    http.get("/api/v1/userDetails/whoami", ({ request }) =>
-      request.headers.get("Authorization") === `Bearer ${rejected}` ? new HttpResponse(null, { status }) : undefined,
-    ),
-  );
 
 it("deduplicates minting, reuses tokens, and re-mints on demand inside the expiry buffer", async () => {
   const first = token("a");
@@ -74,24 +52,16 @@ it("deduplicates minting, reuses tokens, and re-mints on demand inside the expir
   expect(mint).toHaveBeenCalledTimes(2);
   expect(onIdentityChanged).not.toHaveBeenCalled();
 });
-it("uses the public document legacy route and stores its token", async () => {
-  publicView();
-  publicTokenRoute(() => HttpResponse.json({ data: "public-token" }));
-  expect(await provider().getToken()).toBe("public-token");
-  expect(sessionStorage.getItem("id_token")).toBe("public-token");
-  expect(mint).not.toHaveBeenCalled();
-});
-it("distinguishes permission 401 from an invalid token", async () => {
+it("replaces a rejected token once and hands later callers the replacement", async () => {
   const first = token("a");
   const second = token("a", Date.now() / 1000 + 2000);
   mint.mockResolvedValueOnce({ accessToken: first }).mockResolvedValueOnce({ accessToken: second });
   const p = provider();
   await p.getToken();
-  probe(first, 200);
-  expect(await p.recover(first)).toBe(first);
-  expect(mint).toHaveBeenCalledTimes(1);
-  probe(first, 401);
+  expect(await Promise.all([p.recover(first), p.recover(first)])).toEqual([second, second]);
   expect(await p.recover(first)).toBe(second);
+  expect(mint).toHaveBeenCalledTimes(2);
+  expect(requests).toHaveLength(0);
   expect(onIdentityChanged).not.toHaveBeenCalled();
 });
 it.each(["expiry", "401"])("blocks delivery after a different identity from a %s mint", async (trigger) => {
@@ -105,7 +75,6 @@ it.each(["expiry", "401"])("blocks delivery after a different identity from a %s
     nearExpiry();
     calls = [p.getToken(), p.getToken()];
   } else {
-    probe(first, 401);
     calls = [p.recover(first), p.recover(first)];
   }
   for (const result of await Promise.allSettled(calls)) {
@@ -126,7 +95,6 @@ it.each([
   mint.mockResolvedValueOnce({ accessToken: first }).mockResolvedValueOnce({ accessToken: second });
   const p = provider();
   await p.getToken();
-  probe(first, 401);
   expect(await p.recover(first)).toBe(second);
   expect(onIdentityChanged).not.toHaveBeenCalled();
 });
@@ -184,80 +152,20 @@ describe("getToken mint failures", () => {
   });
 });
 
-describe("public document token route", () => {
-  it.each([
-    ["401", () => new Response(null, { status: 401 })],
-    ["403", () => new Response(null, { status: 403 })],
-    ["the login page", html],
-  ])("reloads on %s once it held a token", async (_, refusal) => {
-    publicView();
-    publicTokenRoute(() => HttpResponse.json({ data: token("a", Date.now() / 1000 + 100) }), refusal);
-    const p = provider();
-    await p.getToken();
-    await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
-    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
-    expect(onSessionEnded).not.toHaveBeenCalled();
-  });
-  it.each([
-    ["401", () => new Response(null, { status: 401 }), ApiV2ProblemError],
-    ["the login page", html, ApiV2UnexpectedResponseError],
-  ])("rejects an initial %s without a handler, so a refused session does not loop", async (_, refusal, type) => {
-    publicView();
-    publicTokenRoute(refusal);
-    await expect(provider().getToken()).rejects.toBeInstanceOf(type);
-    expect(onIdentityChanged).not.toHaveBeenCalled();
-    expect(onSessionEnded).not.toHaveBeenCalled();
-  });
-  it.each([
-    ["malformed JSON", () => new Response("{", { headers: { "Content-Type": "application/json" } }), "malformedJson"],
-    ["an invalid token body", () => Response.json({ data: 1 }), "invalidBody"],
-  ])("normalises %s", async (_, response, reason) => {
-    publicView();
-    publicTokenRoute(response);
-    const error = await provider()
-      .getToken()
-      .catch((caught: unknown) => caught);
-    expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
-    expect(error).toMatchObject({ reason });
-  });
-  it("wraps a network failure", async () => {
-    publicView();
-    publicTokenRoute(() => HttpResponse.error());
-    await expect(provider().getToken()).rejects.toMatchObject({
-      name: "ApiV2NetworkError",
-      cause: expect.any(TypeError),
-    });
-  });
-  it("reloads when the session expires during recovery, without minting", async () => {
-    publicView();
-    publicTokenRoute(() => HttpResponse.json({ data: "public-token" }));
-    probe("public-token", 401);
-    const p = provider();
-    await p.getToken();
-    await expect(p.recover("public-token")).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
-    expect(onIdentityChanged).toHaveBeenCalledTimes(1);
-    expect(requests).toHaveLength(2);
-  });
-});
-
 describe("session handlers", () => {
-  it("defaults to clearing the stored token and navigating, or reloading", async () => {
+  it("defaults to navigating to the login page, or reloading", async () => {
     const location = { assign: vi.fn(), reload: vi.fn() };
     vi.stubGlobal("location", location);
-    sessionStorage.setItem("id_token", "stale");
     mint.mockRejectedValueOnce(new ApiV2ProblemError(401, undefined, "Unauthorized"));
     const p = new SessionTokenProvider();
     await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
     expect(location.assign).toHaveBeenCalledWith("/login");
-    expect(sessionStorage.getItem("id_token")).toBeNull();
 
-    sessionStorage.setItem("id_token", "stale");
     mint.mockResolvedValueOnce({ accessToken: token("a", Date.now() / 1000 + 100) });
     mint.mockResolvedValueOnce({ accessToken: token("b") });
     await p.getToken();
     await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
     expect(location.reload).toHaveBeenCalledTimes(1);
-    expect(sessionStorage.getItem("id_token")).toBeNull();
   });
   it("reads installed handlers at call time until restored", async () => {
     const installed = { onSessionEnded: vi.fn(), onIdentityChanged: vi.fn() };

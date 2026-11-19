@@ -110,32 +110,29 @@ that case before reading details.
 ## Tokens and identity changes
 
 `tokenProvider.ts` exports `ApiV2TokenProvider` with `getToken(signal?: AbortSignal):
-Promise<string>` and `recover(rejected: string, invalid?: boolean): Promise<string>`, plus
+Promise<string>` and `recover(rejected: string): Promise<string>`, plus
 `getApiV2TokenProvider()` and `setApiV2TokenProvider(provider)`. The setter is for tests; it returns a restore
 function.
 
-The default `SessionTokenProvider` shares token creation across concurrent callers and uses the legacy token route on
-public document views. It refreshes on demand only: `getToken` re-mints a token inside the five-minute expiry
-buffer, so an idle tab does no background work. It works independently of a `QueryClient`. V2 callers neither pass
-tokens nor call `useOauthTokenQuery`. 401 recovery distinguishes an invalid token from a resource permission
-failure. Only GET requests replay after recovery; writes never replay automatically.
+The default `SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:
+`getToken` re-mints a token inside the five-minute expiry buffer, so an idle tab does no background work. It works
+independently of a `QueryClient`. V2 callers neither pass tokens nor call `useOauthTokenQuery`. API v2 answers 401
+only when it rejects the credentials and 403 when it refuses a permission, so 401 recovery mints a replacement
+without probing the rejected token. Only GET requests replay after recovery; writes never replay automatically.
 
 The provider decides when a session has ended; session handlers decide what the page does about it.
 `setApiV2SessionHandlers({ onSessionEnded, onIdentityChanged })` installs handlers that the module-level provider
-reads at call time, and returns a restore function. Without it, the defaults clear the stored token and navigate to
-`/login` (session ended) or reload (identity changed). Tests construct `new SessionTokenProvider(handlers)` instead.
+reads at call time, and returns a restore function. Without it, the defaults navigate to `/login` (session ended) or
+reload (identity changed). The provider keeps its token in memory and never reads or writes the API v1 token in
+session storage. Tests construct `new SessionTokenProvider(handlers)` instead.
 
 | Path | Condition | Handler | Caller receives |
 | --- | --- | --- | --- |
-| Mint, authenticated page | 401 or 403 from token issuance, or the HTML login page | `onSessionEnded` | `ApiV2SessionEndedError` |
-| Mint, public document page, provider already held a token | the same refusals | `onIdentityChanged` (the reload restores the anonymous session) | `ApiV2IdentityChangedError` |
-| Mint, public document page, no prior token | the same refusals | none, since some sessions are always refused and a reload would loop | the `ApiV2ProblemError` or `ApiV2UnexpectedResponseError` |
+| Mint | 401 or 403 from token issuance, or the HTML login page | `onSessionEnded` | `ApiV2SessionEndedError` |
 | Mint | network failure, 5xx, malformed JSON, invalid or empty token body | none | the `ApiV2Error`; the next call retries |
-| Recovery | permission 401 (`whoami` accepts the token) | none | the original 401 |
-| Recovery | session ended | `onSessionEnded` | `ApiV2SessionEndedError` |
+| Recovery | the replacement mint is refused | `onSessionEnded` | `ApiV2SessionEndedError` |
 | Recovery | other failure | none | the original 401 |
 | Any mint | token for another identity | `onIdentityChanged` | `ApiV2IdentityChangedError` |
-| Recovery, public document page | session expired | `onIdentityChanged` | `ApiV2IdentityChangedError` |
 
 A tab that makes no v2 call notices an identity change only on its next mint or rejected-token recovery. Starting
 or ending Operate As rotates the browser authentication context, so the server rejects the old token on the next call.
