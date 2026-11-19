@@ -14,6 +14,7 @@ import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EcatVideo;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
@@ -60,6 +61,13 @@ public class ApiFieldsHelper {
   private static final String MANDATORY_FIELD_NO_SELECTION =
       "errors.inventory.field.mandatoryFieldNoSelection";
   private static final String OPTIONS_NOT_ALLOWED = "validation.inventoryField.optionsNotAllowed";
+  private static final String CHOICE_NOT_AN_OPTION = "validation.fieldData.choiceNotAnOption";
+  private static final String CHOICE_NOT_AN_OPTION_MORE =
+      "validation.fieldData.choiceNotAnOptionMore";
+  private static final String CHOICE_EMPTY_VALUE = "validation.fieldData.choiceEmptyValue";
+
+  /** The most rejected choice values a validation message lists. */
+  private static final int MAX_REPORTED_CHOICES = 10;
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
@@ -204,18 +212,29 @@ public class ApiFieldsHelper {
   private ApiFieldContent convertChoiceFieldContentReceivedFromClient(String incomingChoices) {
     String content = incomingChoices;
     if (StringUtils.isNotEmpty(incomingChoices)) {
-      String[] choices = incomingChoices.split(",");
       StringBuilder sb = new StringBuilder();
-      for (String selectedChoice : choices) {
+      for (String choiceToSave : splitIncomingChoices(incomingChoices)) {
         if (sb.length() > 0) {
           sb.append("&");
         }
-        String choiceToSave = selectedChoice.replace(commaReplacement, ",");
         sb.append("fieldChoices=").append(choiceToSave);
       }
       content = sb.toString();
     }
     return new ApiFieldContent(content, null, Collections.emptyList());
+  }
+
+  /**
+   * The options named by choice field content sent by an API client: comma-separated, with each
+   * comma that is part of an option written as {@link #commaReplacement}. Empty pieces, as in
+   * {@code "Yes,"}, are kept so that validation can reject them.
+   */
+  private static List<String> splitIncomingChoices(String incomingChoices) {
+    List<String> choices = new ArrayList<>();
+    for (String choice : incomingChoices.split(",", -1)) {
+      choices.add(choice.replace(commaReplacement, ","));
+    }
+    return choices;
   }
 
   /**
@@ -257,13 +276,49 @@ public class ApiFieldsHelper {
     return choiceFieldContent;
   }
 
+  /**
+   * @param storedContent the content the field holds now, or null for a new document. ELN choice
+   *     content exactly as a GET returns it is accepted unchecked, so a document holding values
+   *     that are not options can still be edited by echoing its fields. The incoming content is not
+   *     compared after conversion: {@code "Yes&fieldChoices=No"} converts to the stored form of
+   *     both options yet names a single option that does not exist.
+   */
   private ErrorList validateIncomingApiFieldContent(
-      String incomingContent, ValidatingField formField) {
+      String incomingContent, ValidatingField formField, String storedContent) {
     String toValidate = incomingContent;
     if (FieldType.CHOICE.equals(formField.getType())) {
       toValidate = convertChoiceFieldContentReceivedFromClient(incomingContent).getContent();
     }
-    return messages.resolve(formField.validate(toValidate));
+    boolean elnChoice =
+        formField instanceof ChoiceFieldForm && StringUtils.isNotEmpty(incomingContent);
+    if (elnChoice && incomingContent.equals(convertChoiceFieldContentSentToClient(storedContent))) {
+      return new ErrorList();
+    }
+    // only the whole content empty clears the selection; an empty piece is a mistake
+    List<String> choices = elnChoice ? splitIncomingChoices(incomingContent) : List.of();
+    if (choices.contains("")) {
+      ErrorList errors = new ErrorList();
+      errors.addErrorMsgCode(CHOICE_EMPTY_VALUE);
+      return messages.resolve(errors);
+    }
+    ErrorList errors = formField.validate(toValidate);
+    if (!errors.hasErrorMessages() && formField instanceof ChoiceFieldForm choiceField) {
+      List<String> options = choiceField.getChoiceOptionAsList();
+      List<String> notOptions =
+          choices.stream()
+              .filter(choice -> !options.contains(choice))
+              .map(choice -> "[" + choice + "]")
+              .toList();
+      if (notOptions.size() > MAX_REPORTED_CHOICES) {
+        errors.addErrorMsgCode(
+            CHOICE_NOT_AN_OPTION_MORE,
+            String.join(", ", notOptions.subList(0, MAX_REPORTED_CHOICES)),
+            String.valueOf(notOptions.size() - MAX_REPORTED_CHOICES));
+      } else if (!notOptions.isEmpty()) {
+        errors.addErrorMsgCode(CHOICE_NOT_AN_OPTION, String.join(", ", notOptions));
+      }
+    }
+    return messages.resolve(errors);
   }
 
   /**
@@ -283,7 +338,7 @@ public class ApiFieldsHelper {
 
     boolean prevalidatedOk = preValidate(apiFields, formFields, errorConsumer);
     if (prevalidatedOk) {
-      validateApiFieldsAgainstFormFields(apiFields, formFields, user, errorConsumer);
+      validateApiFieldsAgainstFormFields(apiFields, formFields, List.of(), user, errorConsumer);
     }
   }
 
@@ -330,6 +385,29 @@ public class ApiFieldsHelper {
         formFields.stream().filter(field -> !field.isDeleted()).toList(),
         user,
         this::consumeErrorMsgAndThrowIAE);
+  }
+
+  /**
+   * As {@link #checkApiFieldsMatchingFormFields(List, List, User)}, for a new revision of an
+   * existing document. Choice content the client left unchanged is not checked against the field's
+   * options, so a document saved with values that are not options can still be edited by echoing
+   * its fields.
+   *
+   * @param docFields the document's fields, in the order of {@code apiFields}
+   */
+  public void checkApiFieldsMatchingDocumentFields(
+      List<? extends ApiField> apiFields,
+      List<FieldForm> formFields,
+      List<Field> docFields,
+      User user) {
+    List<? extends ValidatingField> activeFormFields =
+        formFields.stream().filter(field -> !field.isDeleted()).toList();
+    Consumer<String> errorConsumer = this::consumeErrorMsgAndThrowIAE;
+    if (preValidate(apiFields, activeFormFields, errorConsumer)) {
+      List<String> storedContents = docFields.stream().map(Field::getFieldData).toList();
+      validateApiFieldsAgainstFormFields(
+          apiFields, activeFormFields, storedContents, user, errorConsumer);
+    }
   }
 
   /**
@@ -441,6 +519,7 @@ public class ApiFieldsHelper {
   private void validateApiFieldsAgainstFormFields(
       List<? extends ApiField> apiFields,
       List<? extends ValidatingField> formFields,
+      List<String> storedContents,
       User user,
       Consumer<String> errorConsumer) {
     if (apiFields.isEmpty()) {
@@ -481,7 +560,9 @@ public class ApiFieldsHelper {
                 + "\"");
       }
 
-      ErrorList validate = validateIncomingApiFieldContent(apiFieldContent, formField);
+      String storedContent = i < storedContents.size() ? storedContents.get(i) : null;
+      ErrorList validate =
+          validateIncomingApiFieldContent(apiFieldContent, formField, storedContent);
       if (validate.hasErrorMessages()) {
         errorConsumer.accept(
             "Validation problem with "

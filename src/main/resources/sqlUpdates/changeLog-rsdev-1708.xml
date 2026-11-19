@@ -1,0 +1,31 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-11-18-rsdev1708-fieldform-key-and-display-rule" context="run" author="tchoi-rs">
+        <comment>RSDEV-1708: ELN form fields gain a field key (a lowercase UUID copied with the field) and an optional display rule (JSON) that shows the field only when another field has a given value</comment>
+        <addColumn tableName="FieldForm">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="longtext"/>
+        </addColumn>
+        <addColumn tableName="FieldForm_AUD">
+            <column name="fieldKey" type="varchar(36)"/>
+            <column name="displayRule" type="longtext"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-11-18-rsdev1708-fieldform-key-backfill" context="run" author="tchoi-rs">
+        <!-- The checksum of the first version, which set the keys with SQL lower(uuid()) (version 1).
+             Databases that ran it keep those keys: any lowercase UUID is a valid key. -->
+        <validCheckSum>9:f59994b6f1c419a374b99636a62aced6</validCheckSum>
+        <comment>RSDEV-1708: give every existing ELN form field a key, a lowercase UUID version 7 generated in Java, so that any field can be picked as a rule source or target</comment>
+        <customChange class="com.researchspace.dao.customliquibaseupdates.BackfillFormFieldKeys_RSDEV1708"/>
+    </changeSet>
+
+    <changeSet id="2026-11-19-rsdev1708-draft-field-key-from-original" context="run" author="tchoi-rs">
+        <comment>RSDEV-1708: the backfill gave the unsaved draft copy of a published form's field (FieldForm.tempFieldForm_id) a key of its own; give it its original's key, as a draft made after the upgrade has, so that an API edit echoing the form's keys is accepted. Updates nothing when every draft copy already has its original's key.</comment>
+        <sql>update FieldForm draft join FieldForm original on original.tempFieldForm_id = draft.id set draft.fieldKey = original.fieldKey where original.fieldKey is not null and not (draft.fieldKey &lt;=&gt; original.fieldKey);</sql>
+    </changeSet>
+</databaseChangeLog>

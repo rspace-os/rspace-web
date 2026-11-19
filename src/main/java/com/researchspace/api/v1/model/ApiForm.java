@@ -33,7 +33,9 @@ public class ApiForm extends ApiFormInfo implements ApiFormTemplateLinkSource {
   public ApiForm(AbstractForm form) {
     super(form);
     for (FieldForm formField : form.getFieldForms()) {
-      fields.add(ApiFormField.fromFieldForm(formField));
+      if (!formField.isDeleted()) {
+        fields.add(ApiFormField.fromFieldForm(formField));
+      }
     }
   }
 }

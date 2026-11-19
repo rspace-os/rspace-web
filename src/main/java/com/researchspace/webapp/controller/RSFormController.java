@@ -16,6 +16,8 @@ import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTOValidator;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTOValidator;
+import com.researchspace.model.dtos.FormFieldEditorItem;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
 import com.researchspace.model.dtos.NumberFieldDTO;
@@ -48,6 +50,7 @@ import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.views.FormSearchCriteria;
+import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -55,6 +58,7 @@ import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -391,8 +395,68 @@ public class RSFormController extends BaseController {
       @RequestParam("templateId") long formId, Principal user) {
 
     User u = userManager.getUserByUsername(user.getName());
-    formManager.updateVersion(formId, u);
+    RSForm updated = formManager.updateVersion(formId, u);
+    if (updated == null) {
+      // nothing was written (for example, a system form, or an id that is not a draft); the
+      // editor keeps its lock and reports the failure
+      ErrorList errors = new ErrorList();
+      errors.addErrorMsg(getText("form.errors.versionNotUpdated"));
+      return new AjaxReturnObject<>(null, errors);
+    }
+    // The version is committed. Release the edit lock, which is held on whichever id the editor
+    // opened: the original on a first edit, the draft when editing resumed.
+    formManager.unlockForm(formId, u);
+    if (updated.getPreviousVersion() != null) {
+      formManager.unlockForm(updated.getPreviousVersion().getId(), u);
+    }
     return new AjaxReturnObject<Long>(formId, null);
+  }
+
+  /**
+   * The fields of the form being edited, for the form field editor: every setting as the legacy
+   * field DTOs, with each field's id, key, display rule, and whether it can be deleted.
+   *
+   * @param formId the form being edited (a draft, or a form that has never been published)
+   */
+  @ResponseBody
+  @GetMapping("ajax/fields")
+  public AjaxReturnObject<List<FormFieldEditorItem>> getFields(
+      @RequestParam("formId") long formId) {
+    User subject = userManager.getAuthenticatedUserInSession();
+    return new AjaxReturnObject<>(
+        editorFields(formManager.getWithPopulatedFieldForms(formId, subject)), null);
+  }
+
+  /**
+   * Saves the full field list of the form being edited in one transaction; see {@link
+   * FormManager#saveFields}. Keeps the edit lock. Returns the saved fields, as {@link
+   * #getFields(long)} does, or the problems that rejected the save.
+   */
+  @ResponseBody
+  @PostMapping("ajax/fields")
+  public AjaxReturnObject<List<FormFieldEditorItem>> saveFields(
+      @RequestParam("formId") long formId, @RequestBody List<FormFieldSaveItem> fields) {
+    User subject = userManager.getAuthenticatedUserInSession();
+    RSForm saved;
+    try {
+      saved = formManager.saveFields(formId, fields, subject);
+    } catch (FormFieldsValidationException e) {
+      ErrorList errors = new ErrorList();
+      e.getErrors().forEach(errors::addErrorMsg);
+      return new AjaxReturnObject<>(null, errors);
+    }
+    return new AjaxReturnObject<>(editorFields(saved), null);
+  }
+
+  private List<FormFieldEditorItem> editorFields(RSForm form) {
+    Set<Long> copiedFieldIds = formManager.getCopiedTemporaryFieldIds(form);
+    List<FormFieldEditorItem> items = new ArrayList<>();
+    for (FieldForm field : form.getFieldForms()) {
+      if (!field.isDeleted()) {
+        items.add(FormFieldEditorItem.from(field, !copiedFieldIds.contains(field.getId())));
+      }
+    }
+    return items;
   }
 
   /**

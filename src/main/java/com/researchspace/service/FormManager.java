@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
 import com.researchspace.model.record.FormType;
@@ -182,4 +183,63 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   RSForm retrieveFormForApiForm(User user, ApiFormInfo form, FormType normal);
 
   RSForm findOldestFormByName(String formName);
+
+  /**
+   * Saves the full field list of a form being edited, in one transaction: creates fields without an
+   * id, updates fields with one (by their id in this form), deletes saved fields the list omits,
+   * applies the list order, and sets field keys and display rules. The whole result is validated
+   * (field settings, keys, and every display rule against the final field set) before anything is
+   * persisted; any problem rejects the whole save.
+   *
+   * <p>Does not release the edit lock, unlike {@link #save(RSForm, User)}: the user keeps editing.
+   *
+   * @param formId the form being edited: a draft of a published form, or a form that has never been
+   *     published
+   * @param fields every field the form should have, in order
+   * @param user the subject, who needs write permission on the form
+   * @return the saved form
+   * @throws FormFieldsValidationException if the field list is invalid
+   * @throws org.apache.shiro.authz.AuthorizationException if the user cannot write the form
+   * @throws IllegalStateException if the form is not being edited, or another user is editing it
+   */
+  RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user);
+
+  /**
+   * Creates a form and all its fields in one transaction, for the forms API. A rejected request
+   * leaves no form behind.
+   *
+   * @param definition the form; field ids are ignored
+   * @param user the subject
+   * @return the new form, in the NEW state
+   * @throws FormFieldsValidationException if the field list is invalid
+   */
+  RSForm createForm(FormDefinitionCommand definition, User user);
+
+  /**
+   * Replaces a form's definition in one transaction, for the forms API: opens the form for editing,
+   * applies the definition with {@link #saveFields(Long, List, User)} and, unless the form has
+   * never been published, makes the result the form's new version. Field ids in the definition are
+   * the ids of {@code formId}'s fields; on a published form they are mapped to its draft. As the
+   * API always has, omitting a field deletes it, including a field of the published version.
+   *
+   * <p>If the form already has a draft that was saved (for example in the form field editor) but
+   * not yet made a new version, the request replaces that draft: fields that exist only in the
+   * draft are always deleted (the request can only name fields of {@code formId}, and a draft-only
+   * field id is rejected as unknown), the draft's edits to listed fields are overwritten, and the
+   * result is published as the new version. A rejected request leaves the form, any existing draft
+   * and the edit lock as they were.
+   *
+   * @param formId the form to edit
+   * @param definition the whole new definition
+   * @param user the subject
+   * @param activeUsers the active users, to judge whether someone else is editing
+   * @return the edited form (the new version, if a version was made)
+   * @throws IllegalStateException if the form cannot be edited
+   * @throws FormVersionUpdateException if the draft cannot be made the new version (for example,
+   *     the form is a system form); nothing is changed
+   * @throws IllegalArgumentException if a field id is unknown or repeated
+   * @throws FormFieldsValidationException if the field list is invalid
+   */
+  RSForm editForm(
+      Long formId, FormDefinitionCommand definition, User user, UserSessionTracker activeUsers);
 }

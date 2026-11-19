@@ -248,7 +248,9 @@ paths:
               (images or files) which can be added through main app or API
            * `string` - represents short text content
            * `number` - represents numeric value, may have some validation rules
-           * `choice` - represents multiple-choice field with predefined options
+           * `choice` - represents multiple-choice field with predefined options; its content
+              lists the selected options separated by commas, with a comma inside an option
+              written as `&#44;`
            * `radio`  - represents single-choice field with predefined options
            * `date`   - represents a date in particular format, may have some validation rules
            * `time`   - represents a time in particular format, may have some validation rules
@@ -888,6 +890,19 @@ paths:
           If the original form was NEW state then the form IDs will remain the same.
 
         If the form editing fails, then the original form will remain unchanged.
+
+
+        If the form has a draft that was saved in the form editor but not yet
+        Updated, the request replaces that draft: fields that exist only in the
+        draft are always deleted (the request can only name fields of the form
+        being edited, and a draft-only field id is rejected as unknown), the
+        draft's changes to the fields the request lists are overwritten, and the
+        result is published as the new version.
+
+
+        Radio and Choice options that the request adds or changes must not be
+        blank or contain '=' or '&'. Options that a saved field already has are
+        accepted unchanged.
       tags:
         - Forms
       parameters:
@@ -3870,11 +3885,73 @@ components:
             - time
         content:
           type: string
-          description: The content as a string. For Fields of type 'Text' this will be HTML.
+          description: >
+            The content as a string. For Fields of type 'Text' this will be HTML.
+            For Fields of type 'Choice' it lists the selected options, separated by
+            commas; a comma that is part of an option is written as `&#44;`, so the
+            options "Yes, with permit" and "No" are sent and returned as
+            `Yes&#44; with permit,No`. For Fields of type 'Radio' it is the selected
+            option as it is, commas included. A document request whose Choice or Radio
+            content names a value that is not an option of the field is rejected with
+            422, as is Choice content with an empty value, such as `Yes,`; empty content
+            clears the selection. On a document update, Choice content equal to the
+            field's current content is accepted unchecked.
+        fieldKey:
+          type: string
+          description: The key of this field's form field, in the form version the document
+            was created from. Display rules name their source field by this key.
+        displayRule:
+          description: Read-only, from the field's form field. A document request that
+            sends a malformed rule here is rejected with 400; echoing a rule read from
+            this API is always accepted.
+          allOf:
+            - $ref: "#/components/schemas/FieldDisplayRule"
         files:
           $ref: "#/components/schemas/FileList"
         listOfMaterials:
           $ref: "#/components/schemas/ListOfMaterialsList"
+    FieldDisplayRule:
+      description: >
+        Shows a field only when another field of the same form, a Radio or Choice field
+        named by its key, meets a condition; null when the field is always shown. A
+        field whose source is hidden is hidden too. Hiding is a presentation choice
+        only: a hidden field keeps its value, which the API still returns, and a
+        mandatory field is only required while it is shown. The API reports each
+        field's rule but does not compute visibility. A rule with any other
+        property, or with values that are not strings, is rejected.
+      nullable: true
+      additionalProperties: false
+      required:
+        - sourceFieldKey
+        - operator
+      properties:
+        sourceFieldKey:
+          type: string
+          description: The fieldKey of the Radio or Choice field the condition reads.
+        operator:
+          type: string
+          description: How the source field's selected options are compared.
+            IS_ANY_OF is true when at least one selected option is listed in values;
+            IS_NONE_OF when none is (including when nothing is selected); HAS_VALUE
+            when any option is selected; HAS_NO_VALUE when none is.
+          enum:
+            - IS_ANY_OF
+            - IS_NONE_OF
+            - HAS_VALUE
+            - HAS_NO_VALUE
+        values:
+          type: array
+          description: Options of the source field, each listed once and as the raw
+            option text, so a comma in an option is written as a comma, not as the
+            `&#44;` escape of Choice field content. Required and non-empty for IS_ANY_OF
+            and IS_NONE_OF; empty for HAS_VALUE and HAS_NO_VALUE.
+          items:
+            type: string
+      example:
+        sourceFieldKey: 6f1c2e0a-9b7d-4c1e-8f3a-2d5b6c7e8f90
+        operator: IS_ANY_OF
+        values:
+          - "Yes"
     FieldList:
       description: List of the fields in a Document
       type: array
@@ -4309,6 +4386,23 @@ components:
             - Choice
             - Radio
             - Date
+        fieldKey:
+          type: string
+          description: Optional, and only for a new field. A lower-case UUID, unique among
+            the form's fields, that display rules can use to name this field as their
+            source in the same request; generated when omitted. A saved field's key
+            cannot change, so on PUT a saved field's fieldKey must be omitted or equal
+            its current key.
+        displayRule:
+          description: Show this field only when the rule holds. On PUT, omitting
+            displayRule keeps a saved field's current rule, and null removes it. The
+            rules of the whole form are validated together after the request is
+            applied; a rule whose source is missing, is not a Radio or Choice field, or
+            names an option that the source does not offer, or rules that depend on each
+            other in a loop, reject the whole request. Radio and Choice options that a
+            request adds or changes must not be blank or contain '=' or '&'.
+          allOf:
+            - $ref: "#/components/schemas/FieldDisplayRule"
     Form:
       description: A Form. Examine the example for valid content.
       allOf:
@@ -4399,6 +4493,13 @@ components:
             - Date
             - Choice
             - Radio
+        fieldKey:
+          type: string
+          description: Identifies the field within its form. Display rules name their
+            source field by this key. Copied unchanged into new form versions and form
+            copies.
+        displayRule:
+          $ref: "#/components/schemas/FieldDisplayRule"
     FolderPost:
       description: Fields to create a new folder or notebook
       properties:

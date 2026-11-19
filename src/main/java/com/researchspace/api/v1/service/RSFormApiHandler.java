@@ -37,6 +37,15 @@ public interface RSFormApiHandler {
   AbstractForm editForm(Long id, FormPost formPost, User user, UserSessionTracker activeUsers);
 
   /**
+   * Creates a form with all its fields in one transaction; a rejected request leaves no form.
+   *
+   * @param formPost the form definition
+   * @param user the subject
+   * @return the new form
+   */
+  AbstractForm createForm(FormPost formPost, User user);
+
+  /**
    * Saves an image icon for the form
    *
    * @param file

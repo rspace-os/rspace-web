@@ -1,8 +1,7 @@
 package com.researchspace.model.field;
 
-import java.util.ArrayList;
+import com.researchspace.model.field.rule.ElnChoiceValues;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 
 public class RadioBehaviour {
 
@@ -14,15 +13,8 @@ public class RadioBehaviour {
     } else throw new IllegalStateException();
   }
 
+  /** Radio options stored as {@code name=a&name=b}; see {@link ElnChoiceValues#parse}. */
   public List<String> getAsList(String value) {
-    List<String> result = new ArrayList<>();
-    if (StringUtils.isBlank(value)) {
-      return result;
-    }
-    String[] options = value.split("&");
-    for (String v : options) {
-      result.add(v.split("=")[1]);
-    }
-    return result;
+    return ElnChoiceValues.parse(value);
   }
 }

@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.SortOrder;
@@ -14,6 +15,7 @@ import com.researchspace.model.AccessControl;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
 import com.researchspace.model.field.FieldForm;
@@ -26,7 +28,9 @@ import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.model.views.FormSearchCriteria;
+import com.researchspace.service.FormDefinitionCommand;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.FormVersionUpdateException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
@@ -34,7 +38,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -55,6 +62,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   private @Autowired IconImgDao iconImgDao;
   private @Autowired IRecordFactory recordFactory;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired FormFieldListSaver fieldListSaver;
 
   public FormManagerImpl(@Autowired FormDao formDao) {
     super(formDao, RSForm.class);
@@ -474,5 +482,160 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @Override
   public RSForm findOldestFormByName(String formName) {
     return formDao.findOldestFormByName(formName);
+  }
+
+  @RequiresPermissions("FORM:WRITE")
+  @Override
+  public RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user) {
+    return doSaveFields(formDao.get(formId), fields, user, true);
+  }
+
+  /**
+   * The body of {@link #saveFields(Long, List, User)}, also used by the API entry points, which
+   * call it directly and so carry their own permission annotations.
+   *
+   * @param protectCopiedFields whether omitting a field copied into a draft from the published
+   *     version is an error (the form field editor) rather than a deletion (the forms API, which
+   *     has always replaced the whole field list)
+   */
+  private RSForm doSaveFields(
+      RSForm form, List<FormFieldSaveItem> fields, User user, boolean protectCopiedFields) {
+    if (!hasWritePermission(user, form)) {
+      throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
+    }
+    RSForm original = null;
+    if (form.isTemporary()) {
+      original = formDao.getOriginalFromTemporaryForm(form.getId());
+    }
+    if (form.isTemporary() ? original == null : !form.isNewState()) {
+      throw new IllegalStateException(
+          messages.getMessage("form.errors.notBeingEdited", new Object[] {form.getId()}));
+    }
+    // The edit lock is held on whichever id was opened for editing: the original on a first edit,
+    // the draft when editing resumes. Check both, and never acquire it here.
+    assertNotEditedByOthers(form, user);
+    if (original != null) {
+      assertNotEditedByOthers(original, user);
+    }
+    fieldListSaver.apply(
+        form, fields, protectCopiedFields ? getCopiedTemporaryFieldIds(form) : Set.of());
+    form.setModifiedBy(user.getUsername());
+    return formDao.save(form);
+  }
+
+  private void assertNotEditedByOthers(RSForm form, User user) {
+    if (Boolean.TRUE.equals(formTracker.isSomeoneElseEditing(form, user.getUsername()))) {
+      throw new IllegalStateException(
+          messages.getMessage(
+              "form.errors.notEditable",
+              new Object[] {EditStatus.CANNOT_EDIT_OTHER_EDITING.name()}));
+    }
+  }
+
+  @RequiresPermissions("FORM:CREATE")
+  @Override
+  public RSForm createForm(FormDefinitionCommand definition, User user) {
+    RSForm form = create(user);
+    form.setName(definition.name());
+    form.setTags(definition.tags());
+    if (definition.formType() != null) {
+      form.setFormType(definition.formType());
+    }
+    // a new form's fields are all new, whatever ids a client sends
+    List<FormFieldSaveItem> fields = new ArrayList<>();
+    for (FormFieldSaveItem field : definition.fields()) {
+      if (field == null) {
+        fields.add(null); // reported by the field list check
+        continue;
+      }
+      fields.add(field.withId(null));
+    }
+    return doSaveFields(form, fields, user, false);
+  }
+
+  @RequiresPermissions("FORM:READ") // the minimal permission, as for getForEditing
+  @Override
+  public RSForm editForm(
+      Long formId, FormDefinitionCommand definition, User user, UserSessionTracker activeUsers) {
+    RSForm original = get(formId, user);
+    RSForm editing = getForEditing(formId, user, activeUsers, false);
+    if (!editing.getEditStatus().isEditable()) {
+      throw new IllegalStateException(
+          messages.getMessage(
+              "form.errors.notEditable", new Object[] {editing.getEditStatus().name()}));
+    }
+    List<FormFieldSaveItem> fields =
+        toEditingFormIds(original, editing, definition.fields(), formId);
+    editing = doSaveFields(editing, fields, user, false);
+    editing.setName(definition.name());
+    editing.setTags(definition.tags());
+    editing = formDao.save(editing);
+    if (!original.isNewState()) {
+      Long draftId = editing.getId();
+      editing = updateVersion(draftId, user);
+      if (editing == null) {
+        // unchecked, so the draft changes saved above roll back with the rest
+        throw new FormVersionUpdateException(messages.getMessage("form.errors.versionNotUpdated"));
+      }
+    }
+    return editing;
+  }
+
+  /**
+   * API clients send the ids of the form they read. A form that has never been published is edited
+   * in place, so its ids are kept; a published form is edited through its draft, and each original
+   * field id is replaced by the id of its draft copy, found through the persisted {@code
+   * tempFieldForm} link (fields reordered or added in a saved draft keep their link).
+   */
+  private List<FormFieldSaveItem> toEditingFormIds(
+      RSForm original, RSForm editing, List<FormFieldSaveItem> fields, Long formId) {
+    Map<Long, Long> editingIdByOriginalId = new LinkedHashMap<>();
+    for (FieldForm field : original.getFieldForms()) {
+      if (field.isDeleted()) {
+        continue;
+      }
+      if (original.getId().equals(editing.getId())) {
+        editingIdByOriginalId.put(field.getId(), field.getId());
+      } else if (field.getTempFieldForm() instanceof FieldForm draftField
+          && !draftField.isDeleted()) {
+        if (draftField.getId() == null) {
+          throw new IllegalStateException(
+              "Draft copy of form field " + field.getId() + " has not been saved");
+        }
+        editingIdByOriginalId.put(field.getId(), draftField.getId());
+      }
+    }
+    List<Long> requestedIds =
+        fields.stream()
+            .filter(Objects::nonNull)
+            .map(FormFieldSaveItem::getId)
+            .filter(Objects::nonNull)
+            .toList();
+    if (!editingIdByOriginalId.keySet().containsAll(requestedIds)) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.form.invalidFieldIds",
+              new Object[] {
+                formId,
+                ListFormatUtils.formatList(
+                    editingIdByOriginalId.keySet().stream().map(String::valueOf).toList()),
+                ListFormatUtils.formatList(requestedIds.stream().map(String::valueOf).toList())
+              }));
+    }
+    Set<Long> seen = new HashSet<>();
+    List<FormFieldSaveItem> mapped = new ArrayList<>();
+    for (FormFieldSaveItem field : fields) {
+      if (field == null) {
+        mapped.add(null); // reported by the field list check
+        continue;
+      }
+      Long id = field.getId();
+      if (id != null && !seen.add(id)) {
+        throw new IllegalArgumentException(
+            messages.getMessage("form.errors.fieldIdDuplicate", new Object[] {id}));
+      }
+      mapped.add(field.withId(id == null ? null : editingIdByOriginalId.get(id)));
+    }
+    return mapped;
   }
 }

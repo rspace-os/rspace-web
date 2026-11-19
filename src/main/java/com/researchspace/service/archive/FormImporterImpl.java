@@ -22,6 +22,11 @@ import com.researchspace.model.dtos.TimeFieldDTO;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.rule.ElnChoiceValues;
+import com.researchspace.model.field.rule.FieldDisplayRule;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator.RuleError;
+import com.researchspace.model.field.rule.FieldSnapshot;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.IconEntity;
@@ -33,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -73,10 +79,13 @@ public class FormImporterImpl implements FormImporter {
     form.setVersion(new Version(Long.parseLong(archiveForm.getFormVersion())));
 
     List<ArchivalFieldForm> flds1 = archiveForm.getFieldFormList();
+    ArchivedFieldRules archivedRules = ArchivedFieldRules.check(archiveForm);
     for (ArchivalFieldForm aff : flds1) {
       switch (FieldType.getFieldTypeForString(aff.getType())) {
         case NUMBER:
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new NumberFieldDTO<>(
                   aff.getMin(),
@@ -90,11 +99,15 @@ public class FormImporterImpl implements FormImporter {
         case STRING:
           String tr = aff.isPassword() ? "yes" : "no";
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new StringFieldDTO<>(aff.getName(), aff.isMandatory(), tr, aff.getDefaultValue()));
           break;
         case RADIO:
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new RadioFieldDTO<>(
                   aff.getOptions(),
@@ -106,6 +119,8 @@ public class FormImporterImpl implements FormImporter {
           break;
         case CHOICE:
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new ChoiceFieldDTO<>(
                   aff.getOptions(),
@@ -116,6 +131,8 @@ public class FormImporterImpl implements FormImporter {
           break;
         case DATE:
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new DateFieldDTO<>(
                   aff.getDefaultValue(),
@@ -127,6 +144,8 @@ public class FormImporterImpl implements FormImporter {
           break;
         case TIME:
           persistFieldForm(
+              archivedRules,
+              aff,
               form,
               new TimeFieldDTO<>(
                   aff.getDefaultValue(),
@@ -140,6 +159,8 @@ public class FormImporterImpl implements FormImporter {
         default: // Text
           TextFieldForm tfm =
               persistFieldForm(
+                  archivedRules,
+                  aff,
                   form,
                   new TextFieldDTO<>(aff.getName(), aff.isMandatory(), aff.getDefaultValue()));
           setFieldForm(tfm, aff);
@@ -161,8 +182,14 @@ public class FormImporterImpl implements FormImporter {
    * consistent with the database, so later merges are no-ops. (The form is owned by the importing
    * user, so no permission check is needed here.)
    */
-  private <F extends FieldForm> F persistFieldForm(RSForm form, FormFieldSource<F> dto) {
+  private <F extends FieldForm> F persistFieldForm(
+      ArchivedFieldRules archivedRules,
+      ArchivalFieldForm archived,
+      RSForm form,
+      FormFieldSource<F> dto) {
     F fieldForm = dto.createFieldForm();
+    fieldForm.setFieldKey(archivedRules.fieldKey(archived));
+    fieldForm.setDisplayRule(archivedRules.displayRule(archived));
     fieldForm.setColumnIndex(form.getNumActiveFields());
     fieldForm.setForm(form);
     FieldForm managed = fieldFormDao.save(fieldForm);
@@ -207,6 +234,73 @@ public class FormImporterImpl implements FormImporter {
         .filter(
             f -> f.getName().matches(String.format(FormIconWriter.FORM_ICON_REGEX_TEMPLATE, oldId)))
         .findAny();
+  }
+
+  /**
+   * Which archived field keys and display rules a form can be imported with. Keys are copied with
+   * fields, so imported rules need no rewriting; but an archive is untrusted input, so the archived
+   * keys and rules are validated as a whole first. Malformed or duplicated keys are dropped with
+   * every rule (each field then gets a new key); otherwise rules that fail validation are all
+   * dropped and the keys kept. Either way the form is imported, and a warning logged.
+   */
+  static final class ArchivedFieldRules {
+    private final boolean keepKeys;
+    private final boolean keepRules;
+
+    private ArchivedFieldRules(boolean keepKeys, boolean keepRules) {
+      this.keepKeys = keepKeys;
+      this.keepRules = keepRules;
+    }
+
+    static ArchivedFieldRules check(ArchivalForm archiveForm) {
+      List<FieldSnapshot> snapshots = new ArrayList<>();
+      boolean rulesReadable = true;
+      for (ArchivalFieldForm field : archiveForm.getFieldFormList()) {
+        FieldDisplayRule rule = null;
+        if (field.getDisplayRule() != null) {
+          try {
+            rule = FieldDisplayRule.fromJson(field.getDisplayRule());
+          } catch (IllegalArgumentException e) {
+            rulesReadable = false;
+          }
+        }
+        FieldType type = FieldType.getFieldTypeForString(field.getType());
+        List<String> options =
+            type == FieldType.RADIO || type == FieldType.CHOICE
+                ? ElnChoiceValues.parse(field.getOptions())
+                : List.of();
+        snapshots.add(new FieldSnapshot(field.getFieldKey(), type, rule, options, List.of()));
+      }
+      List<RuleError> errors = FieldDisplayRuleValidator.validate(snapshots);
+      boolean keysValid =
+          errors.stream()
+              .noneMatch(
+                  e ->
+                      FieldDisplayRuleValidator.KEY_INVALID.equals(e.code())
+                          || FieldDisplayRuleValidator.KEY_DUPLICATE.equals(e.code()));
+      boolean rulesValid = keysValid && rulesReadable && errors.isEmpty();
+      if (!keysValid) {
+        log.warn(
+            "Archived form {} has malformed or duplicated field keys; importing it with new keys"
+                + " and without display rules",
+            archiveForm.getFormId());
+      } else if (!rulesValid) {
+        log.warn(
+            "Archived form {} has invalid display rules; importing it without display rules",
+            archiveForm.getFormId());
+      }
+      return new ArchivedFieldRules(keysValid, rulesValid);
+    }
+
+    /** The archived key, or null to have a new key assigned. */
+    String fieldKey(ArchivalFieldForm field) {
+      return keepKeys ? field.getFieldKey() : null;
+    }
+
+    /** The archived rule JSON, or null. */
+    String displayRule(ArchivalFieldForm field) {
+      return keepRules ? field.getDisplayRule() : null;
+    }
   }
 
   private void setFieldForm(FieldForm cff, ArchivalFieldForm aff) {

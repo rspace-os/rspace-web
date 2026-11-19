@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,6 +15,7 @@ import com.researchspace.api.v1.model.ValidName;
 import com.researchspace.api.v1.model.ValidNumberFormFieldPost;
 import com.researchspace.api.v1.model.ValidRadioFormFieldPost;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
@@ -42,11 +44,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.Value;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,6 +121,30 @@ public class FormTemplatesCommon {
     // this will always be null for POST,
     Long id;
 
+    /**
+     * Optional, and only on a new field: a lowercase UUID, unique in the form, that display rules
+     * use to name this field as their source. Generated when absent. A saved field's key cannot
+     * change.
+     */
+    String fieldKey;
+
+    /** Show this field only when the rule holds; null for always shown. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    FieldDisplayRuleDTO displayRule;
+
+    /**
+     * Whether the request carried {@code displayRule} at all. On an edit, an absent rule keeps the
+     * stored rule and an explicit null clears it.
+     */
+    @JsonIgnore
+    @Setter(AccessLevel.NONE)
+    boolean displayRuleSet;
+
+    public void setDisplayRule(FieldDisplayRuleDTO displayRule) {
+      this.displayRule = displayRule;
+      this.displayRuleSet = true;
+    }
+
     // utility method for radoio/choice
     @JsonIgnore
     String getOptionsStringFromList(List<String> optionsList) {
@@ -143,6 +171,11 @@ public class FormTemplatesCommon {
     private List<String> options = new ArrayList<>();
 
     private List<String> defaultOptions = new ArrayList<>();
+
+    @Override
+    public List<String> submittedOptions() {
+      return options;
+    }
 
     public void copyValuesIntoFieldForm(ChoiceFieldForm choiceFieldForm) {
       setValues(choiceFieldForm);
@@ -181,6 +214,11 @@ public class FormTemplatesCommon {
 
     @Size(min = 1)
     private String defaultOption;
+
+    @Override
+    public List<String> submittedOptions() {
+      return options;
+    }
 
     public void copyValuesIntoFieldForm(RadioFieldForm formField) {
       setValues(formField);
@@ -359,15 +397,15 @@ public class FormTemplatesCommon {
     private Long defaultValue = null;
 
     @Override
-    public void copyValuesIntoFieldForm(TimeFieldForm stringFieldForm) {
-      stringFieldForm.setDefaultTime(defaultValue);
-      stringFieldForm.setName(name);
+    public void copyValuesIntoFieldForm(TimeFieldForm timeFieldForm) {
+      timeFieldForm.setDefaultTime(defaultValue == null ? 0 : defaultValue);
+      timeFieldForm.setName(name);
     }
 
     @Override
     public TimeFieldForm createFieldForm() {
       TimeFieldForm tf = new TimeFieldForm(name);
-      tf.setDefaultTime(defaultValue);
+      tf.setDefaultTime(defaultValue == null ? 0 : defaultValue);
       return tf;
     }
   }
@@ -392,6 +430,7 @@ public class FormTemplatesCommon {
     @Override
     public void copyValuesIntoFieldForm(NumberFieldForm numberFieldForm) {
       setValues(numberFieldForm);
+      numberFieldForm.setName(name);
     }
 
     @Override
