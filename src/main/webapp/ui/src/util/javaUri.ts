@@ -34,7 +34,8 @@ const URIC_ONLY = anchored(URIC);
 const PATH_ONLY = anchored(PATH);
 const USERINFO_ONLY = anchored(USERINFO);
 const SCHEME = /^[A-Za-z][A-Za-z0-9+\-.]*$/;
-const SCOPE_ID = /^[A-Za-z0-9]+$/;
+// as `java.net.URI.Parser`'s `L_SCOPE_ID`
+const SCOPE_ID = /^[A-Za-z0-9_.]+$/;
 
 const MAX_PORT = 2147483647;
 

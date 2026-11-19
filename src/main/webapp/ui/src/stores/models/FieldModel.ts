@@ -388,8 +388,11 @@ export default class FieldModel implements Field {
   validate(): ValidationResult {
     const condition = this.validateDisplayCondition();
     if (!condition.isOk) return condition;
-    // a hidden field keeps its value but is not checked (RPD-339)
-    if (this.owner.isFieldHidden?.(this)) return IsValid();
+    // a hidden field keeps its value, and the server still checks a changed value's format (RPD-339)
+    if (this.owner.isFieldHidden?.(this)) {
+      if (!this.error) return IsValid();
+      return IsInvalid(i18n.t("inventory:fields.hiddenFieldInvalid", { field: this.name }));
+    }
     if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");
     if (this.name.length > 50) return IsInvalid("Names for custom fields cannot exceed 50 characters.");
     if (this.type === "radio") {
@@ -420,7 +423,8 @@ export default class FieldModel implements Field {
    */
   get hasContent(): boolean {
     if (hasOptions(this.type)) return Boolean(this.selectedOptions?.length);
-    if (this.type === "number") return this.content !== "";
+    // a number stored blank parses to NaN, and blank is no value to the server
+    if (this.type === "number") return this.content !== "" && !Number.isNaN(this.content);
     if (this.type === "link") {
       const link = this.link;
       if (!link) return false;

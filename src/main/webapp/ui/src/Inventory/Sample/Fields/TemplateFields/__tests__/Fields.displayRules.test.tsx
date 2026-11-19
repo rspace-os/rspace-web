@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import { SETTLE_DELAY_MS } from "@/Inventory/components/Fields/useShownTemplateFields";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
@@ -162,6 +163,28 @@ describe("Template fields with display rules", () => {
   it("is accessible", async () => {
     renderSampleFields(gmoFields(["Yes"]));
     await expectAccessible(document.body);
+  });
+});
+
+describe("A template field hidden while its value is invalid", () => {
+  setupRealAppI18n();
+
+  it("refuses Save on a sample, naming the field, when an impossible date typed over a stored one is hidden", async () => {
+    const user = userEvent.setup();
+    const [question, permit] = gmoFields(["Yes"]);
+    const sample = renderSampleFields([
+      question,
+      { ...permit, name: "Released on", type: "date", content: "2024-01-10", mandatory: false },
+    ]);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(true);
+    expect(sample.submittable.orElseGet((errors) => errors.map(({ message }) => message))).toEqual([
+      expect.stringContaining("Released on"),
+    ]);
   });
 });
 

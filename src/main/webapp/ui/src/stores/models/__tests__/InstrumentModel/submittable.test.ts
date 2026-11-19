@@ -132,15 +132,13 @@ describe("InstrumentModel.submittable", () => {
     expect(instrument.submittable.isOk).toBe(false);
   });
 
-  test("refuses clearing a Landing page saved since it was loaded blank", () => {
-    const address = "https://lab.example.org/lsm980";
-    const instrument = makeMockInstrument({ fields: landingPageFields("") });
-    instrument.fields[0].setAttributesDirty({ content: address });
-    // a save refetches the instrument
-    instrument.populateFromJson(new AlwaysNewFactory(), instrumentAttrs({ fields: landingPageFields(address) }));
+  test("allows an unrelated edit once a reload finds the Landing page blank", () => {
+    const instrument = makeMockInstrument({ fields: landingPageFields("https://lab.example.org/lsm980") });
+    // a save that clears the Landing page with the identifier that wrote it refetches the instrument
+    instrument.populateFromJson(new AlwaysNewFactory(), instrumentAttrs({ fields: landingPageFields("") }));
 
-    instrument.fields[0].setAttributesDirty({ content: "" });
-    expect(instrument.submittable.isOk).toBe(false);
+    instrument.setAttributesDirty({ name: "Renamed" });
+    expect(instrument.submittable.isOk).toBe(true);
   });
 
   test("allows editing other fields while the Landing page stays blank as it was loaded", () => {
@@ -184,6 +182,11 @@ describe("InstrumentModel.submittable", () => {
     expect(instrument.submittable.isOk).toBe(true);
   });
 
+  /*
+   * Refusing to remove a mandatory link from a field without a display rule is
+   * deliberate. The server does not check it, and the client stays stricter
+   * than the server rather than looser.
+   */
   test("keeps a mandatory Filestore link as a value: Save stays enabled until the link is removed", () => {
     const instrument = makeMockInstrument({
       fields: [

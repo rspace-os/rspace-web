@@ -8,10 +8,11 @@ vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break i
 describe("hasContent", () => {
   describe('type = "Number"', () => {
     test.each`
-      value | boolValue
-      ${0}  | ${true}
-      ${4}  | ${true}
-      ${""} | ${false}
+      value   | boolValue
+      ${0}    | ${true}
+      ${4}    | ${true}
+      ${""}   | ${false}
+      ${"  "} | ${false}
     `("{value = $value}", ({ value, boolValue }: { value: string | number; boolValue: boolean }) => {
       const field = new FieldModel(
         {
