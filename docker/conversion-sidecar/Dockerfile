@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
-FROM maven:3.9-eclipse-temurin-25@sha256:1471c0503b1f746e38aa42a220f1cff49ef94351e48b71a2006f08d0e621c02d AS build
+FROM maven:3.9-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976 AS build
 WORKDIR /repo/docker/conversion-sidecar
 COPY docker/conversion-sidecar/pom.xml .
 COPY docker/conversion-sidecar/src src
 COPY src/main/java/com/researchspace/documentconversion/validation /repo/src/main/java/com/researchspace/documentconversion/validation
 RUN --mount=type=cache,target=/root/.m2 mvn -B package -DskipTests
 
-FROM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e
+FROM ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
