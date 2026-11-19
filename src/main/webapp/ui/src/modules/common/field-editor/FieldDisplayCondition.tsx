@@ -84,9 +84,9 @@ const CONDITIONAL = "conditional";
  * Choosing "Always" clears the rule, but the condition is remembered: going
  * back to "Only when…" restores it, and applies it again if it is still valid.
  *
- * A draft lives as long as the component, so it survives a spell of
- * read-only, such as a save that fails. Hosts give the component a new key
- * (for example the record and its edit state) to start a new edit session.
+ * A draft lives as long as the component, and hosts refuse to save while one
+ * exists. Hosts give the component a new key (for example the record and its
+ * edit state) to start a new edit session.
  */
 export default function FieldDisplayCondition({
   fieldKey,
@@ -118,12 +118,14 @@ export default function FieldDisplayCondition({
   const condition = editable && shown ? sanitiseCondition(graph, fieldKey, shown) : null;
   // a stored rule whose field is gone cannot be saved as shown either
   const incomplete = draft !== null || (condition !== null && ruleFromDraft(condition) === null);
-  const reportIncomplete = useEffectEvent((value: boolean) => onIncompleteChange?.(value));
+  const currentReporter = useEffectEvent(() => onIncompleteChange);
+  // another fieldKey is another field: the old one is cleared, by its own reporter, and the new one reported
   useEffect(() => {
     if (!incomplete) return;
-    reportIncomplete(true);
-    return () => reportIncomplete(false);
-  }, [incomplete]);
+    const report = currentReporter();
+    report?.(true);
+    return () => report?.(false);
+  }, [incomplete, fieldKey]);
   const dependentsNote = dependents.length > 0 && (
     <Typography variant="body2" color="text.secondary">
       {t("fieldEditor.condition.dependents", {
@@ -150,6 +152,9 @@ export default function FieldDisplayCondition({
   const sources = graph.sourcesFor(fieldKey);
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
+  // complete, but the shared validator refuses it: too many options, or too long to store
+  const draftRule = draft && condition ? ruleFromDraft(condition) : null;
+  const rejected = draftRule !== null && ruleIsInvalid(fields, fieldKey, draftRule);
 
   /** Applies the condition when it makes a valid rule; keeps it as this field's draft otherwise. */
   const update = (edited: DraftCondition) => {
@@ -213,7 +218,10 @@ export default function FieldDisplayCondition({
               sourceDropped
                 ? t("fieldEditor.condition.sourceMissing")
                 : source === null
-                  ? t("fieldEditor.condition.sourceRequired")
+                  ? // MenuList skips a disabled item, so the helper text is what says there is nothing to choose
+                    sources.length === 0
+                    ? t("fieldEditor.condition.noOtherFields")
+                    : t("fieldEditor.condition.sourceRequired")
                   : isBelow(source)
                     ? t("fieldEditor.summary.sourceBelowHint", { source: nameOf(source) })
                     : undefined
@@ -268,8 +276,14 @@ export default function FieldDisplayCondition({
                 <TextField
                   {...params}
                   label={t("fieldEditor.condition.valuesLabel")}
-                  error={condition.values.length === 0}
-                  helperText={condition.values.length === 0 ? t("fieldEditor.condition.valuesRequired") : undefined}
+                  error={condition.values.length === 0 || rejected}
+                  helperText={
+                    condition.values.length === 0
+                      ? t("fieldEditor.condition.valuesRequired")
+                      : rejected
+                        ? t("fieldEditor.condition.valuesRejected")
+                        : undefined
+                  }
                 />
               )}
               sx={{ flex: "2 1 200px" }}
