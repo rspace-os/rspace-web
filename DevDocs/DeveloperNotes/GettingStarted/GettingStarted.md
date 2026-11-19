@@ -14,7 +14,7 @@ https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-f
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
-Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. A nightly CI job keeps testing on 17. Run Maven on JDK 21 (`JAVA_HOME`): it compiles and runs the tests on that JDK, and the build fails fast on any other.
+Use Java 21 for development; builds, CI and the Docker dev stack default to it. Production servers may still run Java 17, so the code is still compiled for 17 (`release 17`) and a WAR built on either JDK runs on both. CI keeps testing on 17: a nightly job runs the Java tests on it, and the mocked e2e tests run on it after each merge to main. Run Maven on JDK 21 (`JAVA_HOME`): it compiles and runs the tests on that JDK, and the build fails fast on any other.
 
 -   Install Java JDK 21 via [Adoptium](https://adoptium.net/temurin/releases/?version=21). Add JDK 17 if you want to reproduce a Java 17 failure (see [Run the build on Java 17](#optional-run-the-build-on-java-17)).
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
@@ -73,7 +73,7 @@ Builds use the JDK that Maven runs on, so no Maven toolchain setup is needed. To
 </toolchains>
 ```
 
-To run a branch on Java 17 in CI, start the "Coverage" workflow on that branch from the Actions tab. It builds on 21 and runs the unit, Spring and integration tests on a Java 17 JVM; every other workflow runs on 21. To do the same locally, add `-Djvm=/path/to/jdk17/bin/java` to a test command; this needs no toolchain.
+To run a branch on Java 17 in CI, start the "Coverage" workflow on that branch from the Actions tab. It builds on 21 and runs the unit, Spring and integration tests on a Java 17 JVM; the mocked e2e workflow runs on 17 for pushes to main and can be started on 17 by hand; every other workflow runs on 21. To do the same locally, add `-Djvm=/path/to/jdk17/bin/java` to a test command; this needs no toolchain.
 
 ### Enable git hooks (recommended)
 
