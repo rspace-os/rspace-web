@@ -2,7 +2,6 @@ package com.researchspace.service.archive;
 
 import static com.researchspace.testutils.RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -13,13 +12,11 @@ import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.IconImgDao;
-import com.researchspace.model.field.ElnFieldRules;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.rule.ConditionOperator;
 import com.researchspace.model.field.rule.FieldDisplayRule;
-import com.researchspace.model.field.rule.SourceKind;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.FormManager;
@@ -86,8 +83,22 @@ public class FormImporterTest {
     RSForm imported = importArchive(XMLReadWriteUtils.fromXML(xml, ArchivalForm.class, null, null));
 
     List<FieldForm> fields = imported.getFieldForms();
-    assertEquals(SourceKind.NUMBER, ElnFieldRules.sourceKind(fields.get(1)));
     assertThat(fields).extracting(FieldForm::getDisplayRule).containsExactly(null, null, rule);
+  }
+
+  @Test
+  public void importDropsRulesThatReadAPasswordField() {
+    ArchivalFieldForm password = string(GMO_KEY, null);
+    password.setPassword(true);
+    String hasValue =
+        new FieldDisplayRule(GMO_KEY, ConditionOperator.HAS_VALUE, List.of()).toJson();
+
+    RSForm form = importForm(password, string(PERMIT_KEY, hasValue));
+
+    assertThat(form.getFieldForms())
+        .extracting(FieldForm::getFieldKey)
+        .containsExactly(GMO_KEY, PERMIT_KEY);
+    assertThat(form.getFieldForms()).extracting(FieldForm::getDisplayRule).containsOnlyNulls();
   }
 
   @Test

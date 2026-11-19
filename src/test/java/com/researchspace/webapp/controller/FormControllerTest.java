@@ -2,14 +2,19 @@ package com.researchspace.webapp.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.NumberFieldDTO;
+import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
@@ -18,7 +23,9 @@ import com.researchspace.model.record.FormOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -116,6 +123,37 @@ public class FormControllerTest extends SpringTransactionalTest {
         rsFormController.saveEditedStringField("def", "yes", "", rc.getData().getId(), false);
     assertNull(rc2.getData());
     assertNotNull(rc2.getErrorMsg());
+  }
+
+  @Test
+  public void saveEditedStringFieldRejectsMakingARuleSourceAPasswordField() {
+    User u = createAndSaveUserIfNotExists("any");
+    logoutAndLoginAs(u);
+    String key = UUID.randomUUID().toString();
+    RSForm form =
+        formMgr.saveFields(
+            formMgr.create(u).getId(),
+            List.of(
+                stringItem(key, null, "code"),
+                stringItem(
+                    null, new FieldDisplayRuleDTO(key, "HAS_VALUE", List.of()), "dependent")),
+            u);
+    long sourceId = form.getFieldForms().get(0).getId();
+
+    AjaxReturnObject<StringFieldForm> rc =
+        rsFormController.saveEditedStringField("", "yes", "code", sourceId, false);
+
+    assertNull(rc.getData());
+    assertThat(rc.getErrorMsg().getErrorMessages())
+        .singleElement()
+        .asString()
+        .contains("[dependent]", "not a password field");
+    assertFalse(((StringFieldForm) formMgr.getField(sourceId)).isIfPassword());
+  }
+
+  private static FormFieldSaveItem stringItem(String key, FieldDisplayRuleDTO rule, String name) {
+    return new FormFieldSaveItem(
+        null, FieldType.STRING.getType(), key, rule, new StringFieldDTO<>(name, false, "no", ""));
   }
 
   @Test
