@@ -384,6 +384,27 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  void sampleUpdateToLatestDropsTheRuleOfAFieldDeletedButKept() {
+    ApiSampleTemplate template = createGmoSampleTemplate(null);
+    ApiSampleWithFullSubSamples sample = createSample(template, "No", "");
+    ApiSampleTemplate deletePermit = templateUpdate(template);
+    deletePermit.getFields().add(deleteRequest(field(template, PERMIT)));
+    sampleApiMgr.updateApiSampleTemplate(deletePermit, user);
+
+    ApiSample updated = sampleApiMgr.updateSampleToLatestTemplateVersion(sample.getId(), user);
+    assertNull(field(updated, PERMIT).getDisplayRule());
+    assertFalse(field(updated, PERMIT).getMandatory());
+
+    // the old rule would have revealed the empty, mandatory permit and blocked this edit
+    ApiSample echo = sampleUpdate(sample);
+    echo.getFields().add(optionsUpdate(field(updated, GMO), "Yes"));
+    echo.getFields().add(contentUpdate(field(updated, PERMIT), ""));
+    ApiSample saved = sampleApiMgr.updateApiSample(echo, user);
+    assertEquals(List.of("Yes"), field(saved, GMO).getSelectedOptions());
+    assertNull(field(saved, PERMIT).getDisplayRule());
+  }
+
+  @Test
   void ruledLinkFieldIsRequiredOnlyWhileShown() {
     ApiSampleTemplatePost post = new ApiSampleTemplatePost();
     post.setName("GMO with protocol");
@@ -508,6 +529,27 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
     assertThrows(
         LocalizedIllegalStateException.class,
         () -> instrumentApiMgr.updateInstrumentToLatestTemplateVersion(shown.getId(), user));
+  }
+
+  @Test
+  void instrumentUpdateToLatestDropsTheRuleOfAFieldDeletedButKept() {
+    ApiInstrumentTemplate template = createGmoInstrumentTemplate(true);
+    ApiInstrument instrument = createInstrument(template, "No", "");
+    ApiInstrumentTemplate deletePermit = new ApiInstrumentTemplate();
+    deletePermit.setId(template.getId());
+    deletePermit.getFields().add(deleteRequest(field(template, PERMIT)));
+    instrumentApiMgr.updateApiInstrumentTemplate(deletePermit, user);
+
+    ApiInstrument updated =
+        instrumentApiMgr.updateInstrumentToLatestTemplateVersion(instrument.getId(), user);
+    assertNull(field(updated, PERMIT).getDisplayRule());
+    assertFalse(field(updated, PERMIT).getMandatory());
+
+    ApiInstrument echo = new ApiInstrument();
+    echo.setId(instrument.getId());
+    echo.getFields().add(optionsUpdate(field(updated, GMO), "Yes"));
+    echo.getFields().add(contentUpdate(field(updated, PERMIT), ""));
+    assertDoesNotThrow(() -> instrumentApiMgr.updateApiInstrument(echo, user));
   }
 
   @Test
