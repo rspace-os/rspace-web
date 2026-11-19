@@ -381,6 +381,27 @@ class PidinstRecordMapperTest {
   }
 
   @Test
+  void aMappedScalarSourceIsJudgedOnTheValueSent() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
+    record.getManufacturers().clear();
+    String sourceKey = "4e2a9c7b-1d3f-4b8e-9a6c-7f0e2d1b3c5a";
+    InstrumentTemplate template = defaultTemplate();
+    template.getActiveFields().get(2).setFieldKey(sourceKey); // Model, sent as "IX71"
+    template
+        .getActiveFields()
+        .get(1) // Manufacturer, mandatory
+        .setDisplayRule(new FieldDisplayRule(sourceKey, ConditionOperator.HAS_VALUE, null));
+
+    ApiRuntimeException e =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> PidinstRecordMapper.toApiInstrument(record, template, Map.of()));
+    assertEquals(
+        "errors.inventory.identifier.pidinstMandatoryMissing|Manufacturer",
+        e.resolve((code, args) -> code + "|" + args[0]));
+  }
+
+  @Test
   void aResolvedLinkGoesOnItsFieldAndAnUnresolvedLinkFieldStaysEmpty() throws Exception {
     ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
     InstrumentTemplate template = defaultTemplate();

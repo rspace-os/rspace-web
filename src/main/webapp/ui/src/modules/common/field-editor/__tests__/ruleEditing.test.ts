@@ -173,3 +173,38 @@ describe("sameDisplayRule", () => {
     expect(sameDisplayRule(createDisplayRule("gmo", "HAS_VALUE", []), null)).toBe(false);
   });
 });
+
+describe("text and number sources", () => {
+  const text = field("batch", { canBeSource: true, sourceKind: "TEXT" });
+  const number = field("weight", { canBeSource: true, sourceKind: "NUMBER" });
+  const fields = [radio("gmo"), text, number, field("notes")];
+
+  it("can be read by a rule", () => {
+    expect(
+      buildRuleGraph(fields)
+        .sourcesFor("notes")
+        .map((candidate) => candidate.key),
+    ).toEqual(["gmo", "batch", "weight"]);
+  });
+
+  it("keeps a typed value however the source's options read, and trims it into the rule", () => {
+    const draft = sanitiseCondition(buildRuleGraph(fields), "notes", {
+      sourceFieldKey: "batch",
+      operator: "EQUALS",
+      values: [" LOT "],
+    });
+    expect(draft.values).toEqual([" LOT "]);
+    expect(ruleFromDraft(draft)).toEqual(createDisplayRule("batch", "EQUALS", ["LOT"]));
+    expect(ruleFromDraft({ ...draft, values: ["\u00A0"] })).toBeNull();
+  });
+
+  it("replaces an operator the source cannot take with its first, dropping the values", () => {
+    expect(
+      sanitiseCondition(buildRuleGraph(fields), "notes", {
+        sourceFieldKey: "weight",
+        operator: "IS_ANY_OF",
+        values: ["Yes"],
+      }),
+    ).toEqual({ sourceFieldKey: "weight", operator: "EQUALS", values: [] });
+  });
+});
