@@ -1,4 +1,4 @@
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import {
   getLeaveBookingConfigurationAccessMutationOptions,
   getReplaceBookingConfigurationAccessMutationOptions,
