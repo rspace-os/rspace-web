@@ -43,7 +43,9 @@ export type DisplayRuleError = v.InferOutput<typeof DisplayRuleErrorSchema>;
 
 /**
  * A field key: a UUID (Valibot's check) in canonical lower case, as the Java
- * side requires through `UUID.toString()`.
+ * side requires through `UUID.toString()`. Any version is accepted: RSpace
+ * generates version 7 (`newFieldKey`), but older forms and API clients hold
+ * other versions.
  */
 const FieldKeySchema = v.pipe(
   v.string(),
