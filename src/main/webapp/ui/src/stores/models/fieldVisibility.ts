@@ -1,8 +1,23 @@
-import type { FieldDisplayRule, FieldSnapshot } from "@/modules/common/field-rules/displayRule";
+import type { FieldDisplayRule, FieldSnapshot, SourceKind } from "@/modules/common/field-rules/displayRule";
 import { displayRuleVisibility } from "@/modules/common/field-rules/evaluateDisplayRules";
 
-function canBeSource(type: string | undefined): boolean {
-  return type === "radio" || type === "choice";
+/**
+ * What a display rule reading an Inventory field of this type compares:
+ * options for radio and choice, text for plain text (`string`), a number for
+ * `number`. Formatted text and every other type cannot be read.
+ */
+export function sourceKindOfType(type: string | undefined): SourceKind {
+  switch (type) {
+    case "radio":
+    case "choice":
+      return "OPTIONS";
+    case "string":
+      return "TEXT";
+    case "number":
+      return "NUMBER";
+    default:
+      return "NONE";
+  }
 }
 
 /** Just the parts of an Inventory field that display rules read. */
@@ -12,16 +27,31 @@ export type RuleReadableField = {
   type?: string;
   options?: ReadonlyArray<{ value: string }>;
   selectedOptions?: ReadonlyArray<string> | null;
+  content?: unknown;
 };
 
+/**
+ * The value a text or number rule reads, or null for a field of another kind.
+ * While editing, a number field holds the string typed; loaded content was
+ * read through `parseFloat`, so it is compared as `String(content)`.
+ */
+export function ruleSourceValue(field: RuleReadableField): string | null {
+  const kind = sourceKindOfType(field.type);
+  if (kind !== "TEXT" && kind !== "NUMBER") return null;
+  return field.content === null || field.content === undefined ? "" : String(field.content);
+}
+
 export function fieldSnapshot(field: RuleReadableField): FieldSnapshot {
-  const source = canBeSource(field.type);
+  const sourceKind = sourceKindOfType(field.type);
+  const options = sourceKind === "OPTIONS";
   return {
     key: field.fieldKey ?? null,
-    canBeSource: source,
+    canBeSource: sourceKind !== "NONE",
+    sourceKind,
+    value: ruleSourceValue(field) ?? "",
     rule: field.displayRule ?? null,
-    allowedOptions: source ? (field.options ?? []).map((option) => option.value) : [],
-    selectedOptions: source ? [...(field.selectedOptions ?? [])] : [],
+    allowedOptions: options ? (field.options ?? []).map((option) => option.value) : [],
+    selectedOptions: options ? [...(field.selectedOptions ?? [])] : [],
   };
 }
 

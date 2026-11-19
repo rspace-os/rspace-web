@@ -223,7 +223,31 @@ describe("typing in a number source", () => {
     type("3");
 
     expect(display.refresh().shownById.get("12")).toBe(false);
+    // a change that has not been reported yet: only the cancelled update would apply it
+    dose().value = "7";
     vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).not.toBeVisible();
+    expect(region()).toBeEmptyDOMElement();
+  });
+
+  test("applies nothing still pending once cancelled, and announces nothing", () => {
+    type("3");
+
+    display.cancelPending();
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).toBeVisible();
+    expect(region()).toBeEmptyDOMElement();
+  });
+
+  test("applies nothing still pending once the page is hidden", () => {
+    type("3");
+
+    window.dispatchEvent(new Event("pagehide"));
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    expect(note()).toBeVisible();
     expect(region()).toBeEmptyDOMElement();
   });
 
@@ -239,6 +263,35 @@ describe("typing in a number source", () => {
     vi.advanceTimersByTime(0);
 
     expect(note()).not.toBeVisible();
+    expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
+  });
+
+  test("still announces hiding a held field the user's change hid after a refresh, such as after a save", () => {
+    type("3");
+    const reason = note()?.querySelector("input") as HTMLInputElement;
+    reason.focus();
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+
+    display.refresh();
+    dose().focus();
+    vi.advanceTimersByTime(0);
+
+    expect(note()).not.toBeVisible();
+    expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
+  });
+
+  test("hides a held field once focus lands outside it, even when its focusout does not reach the page", () => {
+    type("3");
+    const reasonRow = note() as HTMLElement;
+    (reasonRow.querySelector("input") as HTMLInputElement).focus();
+    vi.advanceTimersByTime(TYPING_PAUSE_MS);
+    // stands in for focus leaving a rich text field's iframe, whose focusout stays in the iframe's document
+    reasonRow.addEventListener("focusout", (event) => event.stopPropagation());
+
+    dose().focus();
+    vi.advanceTimersByTime(0);
+
+    expect(reasonRow).not.toBeVisible();
     expect(region()).toHaveTextContent("One field is hidden: High dose reason.");
   });
 });
