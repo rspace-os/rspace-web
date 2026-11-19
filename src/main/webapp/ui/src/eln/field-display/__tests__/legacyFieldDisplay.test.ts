@@ -110,11 +110,26 @@ describe("createLegacyFieldDisplay", () => {
     restoreConsole();
   });
 
-  test("still announces a reveal from a cached catalog that predates the hidden-fields message", async () => {
+  test("still announces reveals from a cached catalog that predates the hidden-fields message", async () => {
     const { fieldsHidden: _absent, ...olderFieldDisplay } = commonEn.fieldDisplay;
     const olderCatalog = { ...commonEn, fieldDisplay: olderFieldDisplay } as unknown as typeof commonEn;
-    const region = changeWith(await i18nWithCatalog(() => Promise.resolve(olderCatalog)));
+    const showWhenNo = serializeDisplayRule(createDisplayRule(GMO_KEY, "IS_ANY_OF", ["No"]));
+    document
+      .querySelector("tbody")
+      ?.insertAdjacentHTML(
+        "beforeend",
+        `<tr class="field" data-field-id="4" data-field-type="STRING" data-field-name="Export licence" data-display-rule='${showWhenNo}'><td><input type="text"></td></tr>`,
+      );
+    document.querySelector('[role="status"]')?.remove();
+    const early = createLegacyFieldDisplay(await i18nWithCatalog(() => Promise.resolve(olderCatalog)));
+    early.refresh();
+    const region = document.querySelector('[role="status"]');
+    for (const value of ["No", "Yes"]) {
+      answer(value).checked = true;
+      early.fieldChanged(answer(value));
+    }
 
+    // the change to Yes also hides "Export licence", which this catalog cannot say
     await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit."));
   });
 
