@@ -3,6 +3,13 @@ import { expect, type FrameLocator, type Locator, type Page } from "@playwright/
 import { ChemistryFieldContent } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
 import { StoichiometryDialogComponent } from "@/modules/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
+import { SketchDialogComponent } from "./SketchDialogComponent";
+
+type TinyMceInstance = {
+  getBody(): HTMLElement;
+  insertContent(html: string): void;
+  selection: { select(node: Node, content?: boolean): void; collapse(toStart?: boolean): void };
+};
 
 export class TinyMceEditor {
   private readonly frame: FrameLocator;
@@ -183,6 +190,34 @@ export class TinyMceEditor {
   async getImageSourceIds(): Promise<string[]> {
     const srcs = await this.imageElement.evaluateAll((imgs) => imgs.map((img) => img.getAttribute("src") ?? ""));
     return srcs.map((src) => new URL(src, "http://localhost").searchParams.get("sourceId") ?? "");
+  }
+
+  /** Raw and annotated Gallery images; the legacy markup has no distinguishing role. */
+  get galleryImages(): Locator {
+    return this.frame.locator("img.imageDropped");
+  }
+
+  async openSketch(image: Locator): Promise<SketchDialogComponent> {
+    await image.dblclick();
+    return new SketchDialogComponent(this.page).waitForReady();
+  }
+
+  /** Inserts HTML on a new line at the end of the field, as pasted or older stored content would be. */
+  async insertHtmlAtEnd(html: string): Promise<void> {
+    await this.waitForReady();
+    await this.page.evaluate(
+      ({ editorId, html }) => {
+        const editor = (window as unknown as { tinymce: { get(id: string): TinyMceInstance } }).tinymce.get(editorId);
+        editor.selection.select(editor.getBody(), true);
+        editor.selection.collapse(false);
+        editor.insertContent(html);
+      },
+      { editorId: this.editorId, html },
+    );
+  }
+
+  async moveCaretToNewLineAtEnd(): Promise<void> {
+    await this.insertHtmlAtEnd("<p>&nbsp;</p>");
   }
 
   async selectImage(): Promise<ImageQuickToolbar> {

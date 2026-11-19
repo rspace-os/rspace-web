@@ -1,7 +1,7 @@
-import { expect } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
 import { dynamicUserTest } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
-import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
+import { alphaNumericUnique, TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 import { readArchiveDocuments } from "@/__tests__/e2e/zipArchive";
 
 test.describe("Document editor menus and history", () => {
@@ -122,6 +122,72 @@ test.describe("Document editor menus and history", () => {
       await expect(page.locator('img[src="x"]'), "The payload must not render as an element").toHaveCount(0);
     }
     expect(dialogs, "The payload is stored as equation text and never executed").toEqual([]);
+  });
+});
+
+test.describe("Document image annotations", () => {
+  test("As a user, each copy of a Gallery image in a field keeps its own sketch annotation", async ({
+    pageWorkspace,
+    pageDocument,
+    clientFiles,
+  }) => {
+    const fileName = `${alphaNumericUnique("e2eSketchImage")}.png`;
+    await clientFiles.uploadFile({ name: fileName, mimeType: "image/png", buffer: TINY_PNG });
+    await pageWorkspace.open();
+    const editor = await pageWorkspace.createBasicDocument();
+    const field = await editor.getField("", 0);
+    const images = field.galleryImages;
+    for (const count of [1, 2]) {
+      const picker = await editor.openGalleryPicker();
+      await picker.goToSection("Images");
+      await picker.openFolder("Api Inbox");
+      await picker.selectItem(fileName);
+      await picker.add();
+      await expect(images).toHaveCount(count);
+      await field.moveCaretToNewLineAtEnd();
+    }
+    const annotationIds = (copies: Locator) =>
+      copies.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-id")));
+
+    let sketch = await field.openSketch(images.nth(0));
+    await sketch.drawStroke(0.15);
+    await sketch.insert();
+    sketch = await field.openSketch(images.nth(1));
+    expect(await sketch.strokeCount(), "The raw copy opens without the other copy's stroke").toBe(0);
+    await sketch.drawStroke(0.35);
+    await sketch.insert();
+
+    const [firstId, secondId] = await annotationIds(images);
+    expect(firstId).toMatch(/^\d+$/);
+    expect(secondId).toMatch(/^\d+$/);
+    expect(secondId).not.toBe(firstId);
+    const imageIds = await images.evaluateAll((nodes) => nodes.map((node) => node.id));
+    expect(imageIds[1], "Both copies still show the same Gallery image").toBe(imageIds[0]);
+
+    await editor.saveAndView();
+    const savedField = await pageDocument.editField("", 0);
+    const savedImages = savedField.galleryImages;
+    expect(await annotationIds(savedImages)).toEqual([firstId, secondId]);
+    for (const index of [0, 1]) {
+      sketch = await savedField.openSketch(savedImages.nth(index));
+      expect(await sketch.strokeCount(), `Copy ${index + 1} reopens with only its own stroke`).toBe(1);
+      await sketch.cancel();
+    }
+
+    // Copies that already share one annotation, as this bug left them, separate when one is edited.
+    await savedField.insertHtmlAtEnd(await savedImages.nth(0).evaluate((node) => node.outerHTML));
+    await expect(savedImages).toHaveCount(3);
+    sketch = await savedField.openSketch(savedImages.nth(2));
+    expect(await sketch.strokeCount(), "The shared drawing is the starting point").toBe(1);
+    await sketch.drawStroke(0.55);
+    await sketch.insert();
+    const [untouchedId, , editedId] = await annotationIds(savedImages);
+    expect(untouchedId).toBe(firstId);
+    expect(editedId).toMatch(/^\d+$/);
+    expect([firstId, secondId]).not.toContain(editedId);
+    sketch = await savedField.openSketch(savedImages.nth(0));
+    expect(await sketch.strokeCount(), "The untouched copy keeps its original stroke").toBe(1);
+    await sketch.cancel();
   });
 });
 

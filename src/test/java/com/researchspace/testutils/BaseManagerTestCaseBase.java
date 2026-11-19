@@ -886,9 +886,13 @@ public abstract class BaseManagerTestCaseBase {
 
     EcatImageAnnotation annot =
         mediaMgr.saveImageAnnotation(
-            getTestZwibblerAnnotationString(""), base64Image,
-            textField.getId(), textField.getStructuredDocument(),
-            img.getId(), user);
+            getTestZwibblerAnnotationString(""),
+            base64Image,
+            textField.getId(),
+            textField.getStructuredDocument(),
+            img.getId(),
+            null,
+            user);
 
     String annotationLink =
         richTextUpdater.generateAnnotatedImageElement(annot, textField.getId() + "");
@@ -927,6 +931,31 @@ public abstract class BaseManagerTestCaseBase {
     recordMgr.save(textField.getStructuredDocument(), user);
 
     return sketch;
+  }
+
+  /**
+   * Replaces the content of a text field with two copies of one new Gallery image: an annotated
+   * copy followed by a raw copy.
+   *
+   * @return the annotation of the first copy
+   */
+  protected EcatImageAnnotation addAnnotatedAndRawCopiesOfImageToField(Field field, User user)
+      throws IOException {
+    EcatImage image = addImageToGallery(user);
+    EcatImageAnnotation annotation =
+        mediaMgr.saveImageAnnotation(
+            getTestZwibblerAnnotationString("strokes"),
+            getBase64Image(),
+            field.getId(),
+            field.getStructuredDocument(),
+            image.getId(),
+            null,
+            user);
+    field.setFieldData(
+        richTextUpdater.generateAnnotatedImageElement(annotation, field.getId() + "")
+            + richTextUpdater.generateRawImageElement(image, field.getId() + ""));
+    recordMgr.save(field.getStructuredDocument(), user);
+    return annotation;
   }
 
   protected String getTestZwibblerAnnotationString(String includeText) {

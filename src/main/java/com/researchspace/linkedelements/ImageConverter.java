@@ -69,7 +69,7 @@ class ImageConverter extends AbstractFieldElementConverter implements FieldEleme
       } catch (NumberFormatException nfe) {
         log.warn("unparsable data-id: " + el.attr("data-id"));
       }
-    } else {
+    } else if (RichTextUpdater.isLegacyImageURL(el.attr("src"))) {
       long imageId = getElementIdFromComposition(el);
       long fieldId = getFieldIdFromComposition(el);
       annotation = getImageAnnotationByParentAndImageId(fieldId, imageId);

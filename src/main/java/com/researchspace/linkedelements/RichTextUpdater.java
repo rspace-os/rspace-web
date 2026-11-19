@@ -199,13 +199,19 @@ public class RichTextUpdater {
   }
 
   /**
-   * Parses and img src URL for an image in a text field, returning a POJO with the link
-   * information, or <code>null</code> if could not be parsed.
+   * Whether an image src uses the pre-1.29 <code>/image/getImage/fieldId-imageId</code> form, the
+   * only image link that refers to an annotation by field and image rather than annotation ID.
+   */
+  public static boolean isLegacyImageURL(String src) {
+    return src != null && src.contains(GET_IMAGE_URL);
+  }
+
+  /**
+   * Parses an image URL from a text field.
    *
-   * @param sourceURL
-   * @param sourceType one of IMAGE, CHEMfor thumbnil images, or empty string if it's another link
-   *     type
-   * @return An {@link ImageURL}.
+   * @param sourceURL the image src
+   * @param sourceType IMAGE or CHEM for thumbnail URLs, or the empty string for other links
+   * @return the image link information, or <code>null</code> if the URL could not be parsed
    */
   public static ImageURL parseImageIdFromSrcURLInTextField(String sourceURL, String sourceType) {
     // This pattern no longer matches uploaded images
@@ -470,7 +476,13 @@ public class RichTextUpdater {
         Long newFld = oldParent2NewParent.get(oldFld);
         if (newFld != null) {
           el.attr("id", newFld + "-" + oldImg);
-          el.attr("src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());
+          String src = el.attr("src");
+          if (src.startsWith("/thumbnail/data")) {
+            el.attr("src", withThumbnailParentId(src, newFld));
+          } else {
+            el.attr(
+                "src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());
+          }
         }
 
         if (el.hasAttr(DATA_TYPE)
@@ -1565,15 +1577,17 @@ public class RichTextUpdater {
             CLASS, FieldParserConstants.IMAGE_DROPPED_CLASS_NAME);
     for (Element elm : elms) {
       if (elm.attr("src").startsWith("/thumbnail")) {
-        String src = elm.attr("src");
-        src = src.replaceFirst("sourceParentId=\\d+", "sourceParentId=" + newParentId);
-        elm.attr("src", src);
+        elm.attr("src", withThumbnailParentId(elm.attr("src"), newParentId));
         String id = elm.attr("id");
         id = id.replaceFirst("^\\d+-", newParentId + "-");
         elm.attr("id", id);
       }
     }
     return dc.body().html();
+  }
+
+  private String withThumbnailParentId(String src, Long parentId) {
+    return src.replaceFirst(SOURCE_PARENT_ID + "=\\d+", SOURCE_PARENT_ID + "=" + parentId);
   }
 
   /** Generates new src URL for a thumbnail */

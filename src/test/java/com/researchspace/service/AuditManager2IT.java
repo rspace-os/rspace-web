@@ -405,6 +405,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
         ann.getParentId(),
         ann.getRecord(),
         ann.getImageId(),
+        ann.getId(),
         piUser);
     // so now, there are 2 revisions of
     assertThat(auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, ann.getId())).hasSize(2);

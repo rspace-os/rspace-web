@@ -512,6 +512,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
         field.getId(),
         field.getStructuredDocument(),
         ann.getImageId(),
+        imageAnnotationId,
         user);
   }
 
