@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { render, renderHook, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
+import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC, useLighthouseSdk } from "@/modules/common/app/lighthouse";
 import { Route } from "@/routes/__root";
 
@@ -18,7 +19,7 @@ it("does not load Lighthouse on a public route without a help menu", async () =>
   });
   const router = createRouter({
     routeTree: Route.addChildren([publicRoute]),
-    context: {},
+    context: { tokenProvider: getApiV2TokenProvider() },
     history: createMemoryHistory({ initialEntries: ["/public/apiDocs"] }),
   });
   render(

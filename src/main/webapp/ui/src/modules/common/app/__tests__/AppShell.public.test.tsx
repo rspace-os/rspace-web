@@ -1,6 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  type AnyRouter,
   createMemoryHistory,
   createRootRouteWithContext,
   createRoute,
@@ -15,12 +16,13 @@ import { server } from "@/__tests__/mswServer";
 import { getGetCurrentUserQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { SessionTokenProvider, setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import AppShell, { type AppBarRouteContext } from "@/modules/common/app/AppShell";
-import { installAppShellSessionHandlers } from "@/modules/common/app/sessionHandlers";
+import { appShellSessionHandlers } from "@/modules/common/app/sessionHandlers";
 
 const aboutTitle = "About";
 const missingTitle = "Page not found";
 
-function renderShell(path: string) {
+/** `beforeRender` runs once the router exists but before the shell's first query. */
+function renderShell(path: string, beforeRender?: (router: Pick<AnyRouter, "state">) => void) {
   const root = createRootRouteWithContext<AppBarRouteContext>()({
     component: AppShell,
     notFoundComponent: () => <h1>{missingTitle}</h1>,
@@ -37,6 +39,7 @@ function renderShell(path: string) {
     history: createMemoryHistory({ initialEntries: [path] }),
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  beforeRender?.(router);
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
@@ -93,19 +96,18 @@ it("stays on /about without navigating when the token route refuses an anonymous
       ),
     ),
   );
-  const restoreProvider = setApiV2TokenProvider(new SessionTokenProvider());
   const restoreConsole = silenceConsole(
     ["error", "warn"],
     ["browser session ended", "The above error occurred", "Warning: Error in route match"],
   );
-  let restoreHandlers = () => {};
+  let restoreProvider = () => {};
   try {
-    const { router, queryClient } = renderShell("/about");
-    restoreHandlers = installAppShellSessionHandlers(router);
+    const { queryClient } = renderShell("/about", (router) => {
+      restoreProvider = setApiV2TokenProvider(new SessionTokenProvider(appShellSessionHandlers(router)));
+    });
     await expectPublicBarAfterSettling("/about", queryClient);
     expect(location.assign).not.toHaveBeenCalled();
   } finally {
-    restoreHandlers();
     restoreConsole();
     restoreProvider();
     vi.unstubAllGlobals();

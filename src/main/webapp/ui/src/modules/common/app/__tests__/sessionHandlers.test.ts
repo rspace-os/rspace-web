@@ -5,19 +5,17 @@ import { server } from "@/__tests__/mswServer";
 import { ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { ApiV2IdentityChangedError, SessionTokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import type { AppBarRouteContext } from "../AppShell";
-import { installAppShellSessionHandlers } from "../sessionHandlers";
+import { appShellSessionHandlers } from "../sessionHandlers";
 
 // Relative fetch URLs still resolve against the stubbed location.
 const location = { href: window.location.href, origin: window.location.origin, assign: vi.fn(), reload: vi.fn() };
 const token = (hash: string) =>
   `e30.${btoa(JSON.stringify({ exp: Date.now() / 1000 + 1000, refreshTokenHash: hash }))}.x`;
-let restore = () => {};
 
 beforeEach(() => {
   vi.stubGlobal("location", location);
 });
 afterEach(() => {
-  restore();
   vi.unstubAllGlobals();
   vi.resetAllMocks();
 });
@@ -63,8 +61,8 @@ const refuseTokens = () =>
 
 it("navigates to /login when the session ends on a route that needs authentication", async () => {
   refuseTokens();
-  restore = installAppShellSessionHandlers(await routerAt("/workspace"));
-  await expect(new SessionTokenProvider().getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
+  const provider = new SessionTokenProvider(appShellSessionHandlers(await routerAt("/workspace")));
+  await expect(provider.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
   expect(location.assign).toHaveBeenCalledExactlyOnceWith("/login");
 });
 
@@ -72,8 +70,8 @@ it.each(["/about", "/apiDocs", "/bare"])(
   "does not navigate when the session ends on auth-optional %s",
   async (path) => {
     refuseTokens();
-    restore = installAppShellSessionHandlers(await routerAt(path));
-    await expect(new SessionTokenProvider().getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
+    const provider = new SessionTokenProvider(appShellSessionHandlers(await routerAt(path)));
+    await expect(provider.getToken()).rejects.toBeInstanceOf(ApiV2SessionEndedError);
     expect(location.assign).not.toHaveBeenCalled();
   },
 );
@@ -81,8 +79,7 @@ it.each(["/about", "/apiDocs", "/bare"])(
 it("reloads when the identity changes", async () => {
   let minted = 0;
   server.use(http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: token(`${++minted}`) })));
-  restore = installAppShellSessionHandlers(await routerAt("/about"));
-  const provider = new SessionTokenProvider();
+  const provider = new SessionTokenProvider(appShellSessionHandlers(await routerAt("/about")));
   const first = await provider.getToken();
   await expect(provider.recover(first)).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
   expect(location.reload).toHaveBeenCalledOnce();
