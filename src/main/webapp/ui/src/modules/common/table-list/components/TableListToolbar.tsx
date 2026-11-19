@@ -1,6 +1,6 @@
 import { debounce } from "es-toolkit";
 import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { Button } from "@/modules/common/ui/button";
