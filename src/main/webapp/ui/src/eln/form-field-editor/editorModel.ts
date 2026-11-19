@@ -7,7 +7,11 @@
 import { format as formatDate, isValid, parse as parseDate } from "date-fns";
 import { uniq } from "es-toolkit";
 import * as v from "valibot";
-import { type FieldDisplayRule, FieldDisplayRuleSchema } from "@/modules/common/field-rules/displayRule";
+import {
+  type FieldDisplayRule,
+  FieldDisplayRuleSchema,
+  type SourceKind,
+} from "@/modules/common/field-rules/displayRule";
 import { parseElnChoiceValues } from "@/modules/common/field-rules/elnChoiceValues";
 import { newFieldKey } from "@/modules/common/field-rules/newFieldKey";
 import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
@@ -109,7 +113,25 @@ export function hasOptions(field: EditorField): field is FieldOfType<"Radio" | "
   return field.type === "Radio" || field.type === "Choice";
 }
 
-export const canBeSource = (type: ElnFieldType): boolean => type === "Radio" || type === "Choice";
+/**
+ * What a rule reading the field compares, as the server's `ElnFieldRules.sourceKind`
+ * decides it: a password String is never read, so its value cannot appear in a rule.
+ */
+export function elnSourceKind(field: FieldSettings): SourceKind {
+  switch (field.type) {
+    case "Radio":
+    case "Choice":
+      return "OPTIONS";
+    case "Number":
+      return "NUMBER";
+    case "String":
+      return field.password ? "NONE" : "TEXT";
+    default:
+      return "NONE";
+  }
+}
+
+export const canBeSource = (field: FieldSettings): boolean => elnSourceKind(field) !== "NONE";
 
 function defaultSettings(type: CreatableType, previous?: EditorField): FieldSettings {
   const options = previous && hasOptions(previous) ? previous.options : [];
@@ -603,14 +625,24 @@ export function deleteField(fields: ReadonlyArray<EditorField>, key: string): Ar
     .map((field) => (field.rule?.sourceFieldKey === key ? { ...field, rule: null } : field));
 }
 
-/** Changes an unsaved field's type; if it can no longer be a source, the rules that read it go. */
+/** The field with another type's default settings, keeping what every type has and any options. */
+function retyped(field: EditorField, type: CreatableType): EditorField {
+  const { key, id, name, mandatory, rule, canDelete } = field;
+  return { key, id, name, mandatory, rule, canDelete, ...defaultSettings(type, field) };
+}
+
+/** Whether changing the field to `type` changes what a rule reading it compares, which its dependents' rules cannot survive. */
+export const changesSourceKind = (field: EditorField, type: CreatableType): boolean =>
+  elnSourceKind(retyped(field, type)) !== elnSourceKind(field);
+
+/** Changes an unsaved field's type; if what a rule reading it compares changes, the rules that read it go. */
 export function changeType(fields: ReadonlyArray<EditorField>, key: string, type: CreatableType): Array<EditorField> {
+  const target = fields.find((field) => field.key === key);
+  if (!target) return [...fields];
+  const clearsRules = changesSourceKind(target, type);
   return fields.map((field) => {
-    if (field.key === key) {
-      const { key: k, id, name, mandatory, rule, canDelete } = field;
-      return { key: k, id, name, mandatory, rule, canDelete, ...defaultSettings(type, field) };
-    }
-    if (!canBeSource(type) && field.rule?.sourceFieldKey === key) return { ...field, rule: null };
+    if (field.key === key) return retyped(field, type);
+    if (clearsRules && field.rule?.sourceFieldKey === key) return { ...field, rule: null };
     return field;
   });
 }
