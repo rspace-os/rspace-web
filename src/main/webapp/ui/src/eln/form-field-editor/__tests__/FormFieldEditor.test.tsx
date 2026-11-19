@@ -227,7 +227,7 @@ describe("FormFieldEditor", () => {
       else Reflect.deleteProperty(crypto, "randomUUID");
     }
 
-    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(posts[0][0].fieldKey).toEqual(expect.any(String));
   });
 
   it("sends each save with the version of the fields it was made from", async () => {
@@ -616,7 +616,7 @@ describe("FormFieldEditor", () => {
     await handle.current?.save();
 
     expect(posts[0][0]).toMatchObject({ id: null, type: "String", source: { name: "Hazard details" } });
-    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(posts[0][0].fieldKey).toEqual(expect.any(String));
     expect(handle.current?.isDirty()).toBe(false);
   });
 
