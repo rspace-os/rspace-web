@@ -4,6 +4,36 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+### Server
+
+- RSDEV-1706, RSDEV-1708 two Liquibase changesets add `fieldKey` and `displayRule` columns to `InventoryEntityField`, `FieldForm` and their audit tables, and give every existing form field and Inventory template field a key. Sample and instrument fields are not backfilled.
+
+### ELN Features
+
+- RSDEV-1708, RSDEV-1709 conditional field display in Forms: a field can be shown only when a radio or choice field has (or lacks) certain answers. Mandatory applies only while a field is shown, and hidden fields keep their values. Applied in document edit and view, notebooks, document templates, and public documents and notebooks. See [ConditionalFieldDisplay.md](ConditionalFieldDisplay.md)
+- RSDEV-1709 new form field editor: fields, options, order and display rules are edited on the form page and saved together with Save and Close, Update or Publish. The Add Field and Reorder Fields dialogs are replaced
+- RSDEV-1708 the Sign button and the workspace warning ignore mandatory fields hidden by a display rule
+
+### Inventory Features
+
+- RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, Display rules panel and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard
+
+### API
+
+- RSDEV-1706, RSDEV-1708 `fieldKey` and `displayRule` on form fields, document fields and Inventory template, sample and instrument fields; stricter radio and choice option checks on the forms API; a failed form version update returns 422. See [ApiChangelog.md](ApiChangelog.md)
+
+### Known limitations of conditional field display
+
+- Uploading radio options from a file is not yet available in the new ELN form field editor (RSDEV-1712)
+- Inventory CSV export and import do not carry display rules
+- Hidden fields keep their values, which remain in exports (ELN PDF, Word, HTML and XML; Inventory CSV) and in the API, and still match API filters
+- Inventory extra fields cannot have display rules
+- ELN form versions created before the upgrade do not share field keys with each other. This is harmless today, because rules are only ever read within one form version
+- Old revisions and history views show every field and no rules
+- TODO (awaiting product decision): what happens to a rule on an Inventory template field that is deleted from the template but kept in existing records
+
 # 2.28.0 2026-11-06
 
 ### Server
