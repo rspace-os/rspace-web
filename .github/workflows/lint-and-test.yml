@@ -665,7 +665,7 @@ jobs:
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Djdbc.db.maven=rspace \
-            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Djdbc.url=jdbc:mariadb://localhost:3306/rspace \
             -Dmaven.test.failure.ignore=false \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
@@ -760,7 +760,7 @@ jobs:
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
             -Djdbc.db.maven=rspace \
-            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Djdbc.url=jdbc:mariadb://localhost:3306/rspace \
             -Dmaven.test.failure.ignore=false \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
@@ -846,7 +846,7 @@ jobs:
         env:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
-          JDBC_URL: jdbc:mysql://localhost:3306/rspace
+          JDBC_URL: jdbc:mariadb://localhost:3306/rspace
           MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
           MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
         run: scripts/run-chemistry-tests.sh

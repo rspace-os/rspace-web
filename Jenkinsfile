@@ -252,7 +252,7 @@ pipeline {
                 sh "./mvnw -e clean test -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Dlog4j2.configurationFile=log4j2-dev.xml \
-                  -Djdbc.url=jdbc:mysql://localhost:3306/testLiquibaseUpdate -Dhibtest.db=${HIBTEST_DBNAME} \
+                  -Djdbc.url=jdbc:mariadb://localhost:3306/testLiquibaseUpdate -Dhibtest.db=${HIBTEST_DBNAME} \
                   -Dliquibase.context=run \
                   -Dmaven.test.failure.ignore=false   -Denvironment=keepdbintact  \
                   -DRS.devlogLevel=INFO -DRS_FILE_BASE=/var/lib/jenkins/userContent/RS_FileRepoLiquibase"
@@ -292,7 +292,7 @@ pipeline {
                       -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                       -Djavax.xml.accessExternalDTD=all\
                       -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
-                      -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
+                      -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mariadb://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
                       -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
                       -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                       -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
@@ -345,7 +345,7 @@ pipeline {
                     CHEMISTRY_PORT=$(docker port "${CHEMISTRY_CONTAINER_NAME}" 8090/tcp | sed 's/.*://')
                     export CHEMISTRY_URL="http://127.0.0.1:${CHEMISTRY_PORT}"
                     export JDBC_DB="${SANITIZED_DBNAME}"
-                    export JDBC_URL="jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}"
+                    export JDBC_URL="jdbc:mariadb://localhost:3306/${SANITIZED_DBNAME}"
                     if ! scripts/run-chemistry-tests.sh; then
                       docker logs "${CHEMISTRY_CONTAINER_NAME}"
                       exit 1

@@ -28,7 +28,9 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-@EnableBatchProcessing
+// The MariaDB driver reports "MariaDB", for which Spring Batch expects native sequences; the
+// BATCH_*_SEQ objects in our schema are MySQL-style tables.
+@EnableBatchProcessing(databaseType = "MYSQL")
 @Slf4j
 public class BatchConfig {
 

@@ -84,6 +84,6 @@ public class TestDatabaseExtension implements BeforeAllCallback, TestInstancePos
   }
 
   static String jdbcUrl(GenericContainer<?> db) {
-    return "jdbc:mysql://" + db.getHost() + ":" + db.getMappedPort(3306) + "/" + DB_NAME;
+    return "jdbc:mariadb://" + db.getHost() + ":" + db.getMappedPort(3306) + "/" + DB_NAME;
   }
 }

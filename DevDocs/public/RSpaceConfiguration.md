@@ -216,13 +216,14 @@ Instructions on setting up a Chemistry server is in our Help documentation https
 
 ### Database
 
-You can override the default MySQL connection settings in `deployment.properties`
+You can override the default MariaDB connection settings in `deployment.properties`
 
 The properties are as follows:
 
-* **jdbc.url**  	 The database URL, e.g., `jdbc:mysql://localhost:3306/rspace?useSSL=false`
-* **jdbc.username** The MySQL username
-* **jdbc.password** The MySQL password
+* **jdbc.url**  	 The database URL, e.g., `jdbc:mariadb://localhost:3306/rspace`. The `jdbc:mysql:` scheme is deprecated but still accepted; see [Migrating RSpace to MariaDB Connector/J](Migrating-RSpace-to-MariaDB-Connector-J.md)
+* **jdbc.username** The MariaDB username
+* **jdbc.password** The MariaDB password
+* **jdbc.connectionProperties** Extra [MariaDB Connector/J options](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j), semicolon-separated, e.g., `sslMode=verify-full;connectTimeout=5000`
 
 ### Email
 

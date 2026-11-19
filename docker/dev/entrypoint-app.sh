@@ -13,8 +13,8 @@ set -euo pipefail
 
 RS_FILE_BASE="${RS_FILE_BASE:-/var/rspace/filestore}"
 DB_MODE="${RSPACE_DB_MODE:-keepdbintact}"
-JDBC_URL="${JDBC_URL:-jdbc:mysql://db:3306/rspace}"
-JDBC_URL_MAVEN="${JDBC_URL_MAVEN:-jdbc:mysql://db:3306}"
+JDBC_URL="${JDBC_URL:-jdbc:mariadb://db:3306/rspace}"
+JDBC_URL_MAVEN="${JDBC_URL_MAVEN:-jdbc:mariadb://db:3306}"
 VITE_ORIGIN="${VITE_ORIGIN:-http://localhost:5173}"
 APP_PUBLIC_PORT="${APP_PUBLIC_PORT:-8080}"
 # Add the ?v= cache-busting token to legacy /scripts & /styles asset URLs even in

@@ -26,6 +26,9 @@ More details in [Migrating RSpace to Tomcat 10](../public/Migrating-RSpace-to-To
 | Database | MariaDB 10.11+ | MariaDB 10.11+ (unchanged) |
 | JDBC driver | mysql-connector-java 5.1 | **mysql-connector-j 8.4** (bundled in the WAR) |
 
+Later releases replace mysql-connector-j with MariaDB Connector/J; see
+[Migrating RSpace to MariaDB Connector/J](../public/Migrating-RSpace-to-MariaDB-Connector-J.md).
+
 ### Before you upgrade
 
 1. **Back up the database.** The migration rewrites id-sequence counters and replaces
