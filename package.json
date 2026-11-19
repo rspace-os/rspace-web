@@ -87,6 +87,7 @@
     "msw": "3.0.3",
     "playwright-core": "1.63.0",
     "rollup-plugin-visualizer": "7.1.1",
+    "secure-json-parse": "4.1.1",
     "storybook": "10.6.2",
     "type-fest": "6.0.3",
     "typescript": "7.0.2",

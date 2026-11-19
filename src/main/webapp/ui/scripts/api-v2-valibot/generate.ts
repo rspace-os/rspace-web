@@ -10,6 +10,7 @@ import {
   operationsOf,
   orvalOperationName,
   orvalTypeName,
+  parseOpenApiDocument,
   type ReferenceObject,
   responsesOf,
   type SchemaObject,
@@ -141,7 +142,7 @@ export function generate(
 
 /** Writes the adapter output, then runs the same Biome check that Orval runs on its own output. */
 export async function generateFiles(input: string, output: string): Promise<void> {
-  const document: OpenApiDocument = JSON.parse(await readFile(input, "utf8"));
+  const document = parseOpenApiDocument(await readFile(input, "utf8"));
   const result = generate(document, await readFile(resolve(output, "native.ts"), "utf8"));
   await mkdir(output, { recursive: true });
   const files = Object.entries(result).map(([name, source]) => ({

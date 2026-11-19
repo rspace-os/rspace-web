@@ -99,11 +99,8 @@ export function assertSupportedSpec(document: OpenApiDocument): void {
         if (type && type !== "object") fail(path, "allOf supports object members only");
       }
     }
-    for (const [key, child] of Object.entries(schema.properties ?? {})) {
-      // Members are plain names; a prototype name such as __proto__ would read or replace an inherited member.
-      if (key in Object.prototype) fail(path, `Unsupported property name ${key}`);
+    for (const [key, child] of Object.entries(schema.properties ?? {}))
       validate(child as SchemaOrReference, `${path}.properties.${key}`, owner);
-    }
     for (const key of ["items", "additionalProperties"] as const) {
       const child = schema[key];
       if (child !== undefined && typeof child !== "boolean") validate(child, `${path}.${key}`, owner);

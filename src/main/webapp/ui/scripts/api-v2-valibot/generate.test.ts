@@ -1,7 +1,7 @@
 import { stripTypeScriptTypes } from "node:module";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import type { OpenApiDocument } from "./openapi.ts";
+import { type OpenApiDocument, parseOpenApiDocument } from "./openapi.ts";
 import { fixture, generate } from "./test-helper.ts";
 
 type SecurityRequirement = NonNullable<OpenApiDocument["security"]>[number];
@@ -61,12 +61,16 @@ describe("schema conversion", () => {
     expect(v.safeParse(value, invalid).success).toBe(false);
   });
 
-  it("validates quoted members and rejects prototype-named ones", () => {
+  it("validates quoted members", () => {
     const value = schema({ type: "object", properties: { "odd-key": { type: "string" } }, required: ["odd-key"] });
     expect(v.safeParse(value, { "odd-key": "x" }).success).toBe(true);
     expect(v.safeParse(value, {}).success).toBe(false);
-    const prototypeNamed = JSON.parse('{"type":"object","properties":{"__proto__":{"type":"number"}}}');
-    expect(() => schema(prototypeNamed)).toThrow("Unsupported property name __proto__");
+  });
+  it("rejects prototype keys when parsing the document", () => {
+    for (const member of ['"__proto__":{"type":"number"}', '"constructor":{"prototype":{"polluted":true}}'])
+      expect(() => parseOpenApiDocument(`{"components":{"schemas":{"Value":{"properties":{${member}}}}}}`)).toThrow(
+        "forbidden prototype property",
+      );
   });
   it("keeps optional members optional and tolerates undeclared members", () => {
     const value = schema({

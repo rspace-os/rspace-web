@@ -9,6 +9,7 @@ import {
   operationsOf,
   orvalOperationName,
   orvalQueryKeyName,
+  parseOpenApiDocument,
   responsesOf,
 } from "./openapi.ts";
 
@@ -156,7 +157,7 @@ export type ApiV2GuaranteedReadFields = {
 }
 
 export async function generateResourceFile(input: string, output: string): Promise<void> {
-  const document: OpenApiDocument = JSON.parse(await readFile(input, "utf8"));
+  const document = parseOpenApiDocument(await readFile(input, "utf8"));
   const source = await generateResources(document, (file) => readFile(resolve(output, file), "utf8"));
   await writeFile(resolve(output, "apiV2Resources.ts"), source);
   await writeFile(resolve(output, "guaranteedReadFields.ts"), generateGuaranteedReadFields(document));

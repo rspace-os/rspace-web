@@ -9,6 +9,7 @@ import type {
   OpenApiSchemaObject,
 } from "orval";
 import { camel, pascal, sanitize, Verbs } from "orval";
+import secureJsonParse from "secure-json-parse";
 
 export type { OpenApiDocument };
 /** An object schema. OpenAPI 3.1 also allows the boolean schemas `true` and `false`, which callers narrow first. */
@@ -20,6 +21,10 @@ export type MediaTypeObject = OpenApiMediaTypeObject;
 export type Content = Record<string, MediaTypeObject>;
 export type BodyObject = OpenApiRequestBodyObject | OpenApiResponseObject;
 export type OperationObject = OpenApiOperationObject;
+
+/** Parses an OpenAPI document, rejecting prototype-poisoning keys (`__proto__` and `constructor.prototype`). */
+export const parseOpenApiDocument = (text: string): OpenApiDocument =>
+  secureJsonParse(text, null, { protoAction: "error", constructorAction: "error" });
 
 /** True for a `$ref` object, the only OpenAPI value whose `$ref` is a string. */
 export const isReference = (value: unknown): value is ReferenceObject =>
