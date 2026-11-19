@@ -24,6 +24,14 @@ export type LegacyFieldDisplay = {
    * pauses for `TYPING_PAUSE_MS`. Focus stays on the control.
    */
   fieldChanged(control: Element): void;
+  /**
+   * Call when legacy code puts back a value the user had typed over, which
+   * fires no input event. Applies, and announces, once focus has landed, so a
+   * field focus moves into stays shown. Sign and saves still call `refresh`.
+   */
+  valueRestored(): void;
+  /** Cancels display work still waiting to run, such as the update after typing pauses. */
+  cancelPending(): void;
   /** Call when legacy code reloads a field's data; then `refresh`. */
   syncStoredValue(fieldId: string | number, value: string | null | undefined): void;
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
@@ -88,27 +96,42 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
     pending = setTimeout(() => refresh(doc, { announce: true }), delay);
   }
 
+  function cancelPending(): void {
+    clearTimeout(pending);
+    pending = undefined;
+  }
+
+  function release(): void {
+    // once focus has landed, so a field it lands in is held in turn
+    if (pending === undefined) {
+      pending = setTimeout(() => refresh(doc, { announce: announceRelease }), 0);
+    }
+  }
+
   doc.addEventListener("focusout", (event) => {
     const next = event.relatedTarget;
     const leaves = (element: HTMLElement) =>
       event.target instanceof Node &&
       element.contains(event.target) &&
       !(next instanceof Node && element.contains(next));
-    // once focus has landed, so a field it lands in is held in turn
-    if (held.some(leaves) && pending === undefined) {
-      pending = setTimeout(() => refresh(doc, { announce: announceRelease }), 0);
-    }
+    if (held.some(leaves)) release();
   });
+  // focus leaving a rich text field's iframe fires no focusout in this document
+  doc.addEventListener("focusin", (event) => {
+    const target = event.target;
+    if (held.length > 0 && target instanceof Node && !held.some((element) => element.contains(target))) release();
+  });
+  doc.defaultView?.addEventListener("pagehide", cancelPending);
 
   function refresh(
     root: ParentNode = doc,
     { announce: announceChanges = false }: { announce?: boolean } = {},
   ): FieldDisplayResult {
-    clearTimeout(pending);
-    pending = undefined;
+    cancelPending();
     const result = applyFieldDisplayRules(root, { focused: doc.activeElement });
     held = result.held;
-    announceRelease = announceChanges;
+    // a refresh after a save or reload does not undo that the user's change is what hides a held field
+    announceRelease = held.length > 0 && (announceChanges || announceRelease);
     if (result.revealedNames.length === 0 && result.concealedNames.length === 0) return result;
     if (announceChanges) {
       announce(result.revealedNames, result.concealedNames);
@@ -127,6 +150,10 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
       if (change === "typed") schedule(TYPING_PAUSE_MS);
       else if (change === "picked") refresh(doc, { announce: true });
     },
+    valueRestored() {
+      schedule(0);
+    },
+    cancelPending,
     syncStoredValue(fieldId, value) {
       const element = Array.from(doc.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).find(
         (candidate) => candidate.dataset.fieldId === String(fieldId),

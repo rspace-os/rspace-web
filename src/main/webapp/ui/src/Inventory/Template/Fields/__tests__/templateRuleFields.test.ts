@@ -83,8 +83,36 @@ describe("templateRuleFields", () => {
     for (const field of templateRuleFields(template)) graph.sourcesFor(field.key);
     // a generous bound for slow CI machines; locally it takes a few milliseconds
     expect(performance.now() - start).toBeLessThan(100);
-    // a text field may read any of the 75 radios, and a radio any radio but itself
-    expect(graph.sourcesFor(keyOf(1))).toHaveLength(75);
-    expect(graph.sourcesFor(keyOf(0))).toHaveLength(74);
+    // radios and text fields are all readable: a text field may read any other field, and a radio any
+    // but itself and the text field that reads it
+    expect(graph.sourcesFor(keyOf(1))).toHaveLength(149);
+    expect(graph.sourcesFor(keyOf(0))).toHaveLength(148);
+  });
+});
+
+describe("templateRuleFields source kinds", () => {
+  it("passes the kind each type gives a rule to read", () => {
+    const template = makeMockTemplate({
+      fields: (["radio", "string", "number", "text"] as const).map(
+        (type, i): FieldModelAttrs => ({
+          id: i + 1,
+          globalId: `SF${i + 1}`,
+          name: type,
+          type,
+          definition: type === "radio" ? { options: ["Yes"] } : null,
+          selectedOptions: null,
+          columnIndex: i,
+          attachment: null,
+          mandatory: false,
+          fieldKey: keyOf(i),
+        }),
+      ),
+    });
+    expect(templateRuleFields(template).map((field) => field.sourceKind)).toEqual([
+      "OPTIONS",
+      "TEXT",
+      "NUMBER",
+      "NONE",
+    ]);
   });
 });

@@ -394,6 +394,10 @@ function _updateFields(fields) {
     //string, number, date, time
     $("#" + field.id).val(field.fieldData);
     setInputFieldViewModeValue(field.id, field.fieldData);
+    if (field.type == "NUMBER") {
+      // the value an invalid number reverts to
+      $("#field_" + field.id).find("input[name='lastValue']").val(field.fieldData);
+    }
     // text and number data as display rules read it; other fields are ignored
     if (window.elnFieldDisplay) {
       window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
@@ -843,7 +847,7 @@ function checkAndMarkNumber(element) {
       .val($field.find("input[name='lastValue']").val());
     // the restored value fires no input event
     if (window.elnFieldDisplay) {
-      window.elnFieldDisplay.refresh(undefined, { announce: true });
+      window.elnFieldDisplay.valueRestored();
     }
   }
 }
@@ -861,6 +865,10 @@ function cancelAutosavedEdits() {
       textCancel: RS.msg("legacyjs.workspace.documentEdit.cancelConfirmNo"),
     },
     function () {
+      // the page is about to reload: a display update still waiting would announce discarded edits
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.cancelPending();
+      }
       RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.cancellingEdits"));
       var jqxhr = $.post(
         createURL(

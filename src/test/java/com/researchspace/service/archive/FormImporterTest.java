@@ -87,18 +87,24 @@ public class FormImporterTest {
   }
 
   @Test
-  public void importDropsRulesThatReadAPasswordField() {
-    ArchivalFieldForm password = string(GMO_KEY, null);
-    password.setPassword(true);
+  public void importKeepsHasValueRulesOnOrdinaryStringsButDropsThemOnPasswords() {
     String hasValue =
         new FieldDisplayRule(GMO_KEY, ConditionOperator.HAS_VALUE, List.of()).toJson();
+    ArchivalFieldForm password = string(GMO_KEY, null);
+    password.setPassword(true);
 
-    RSForm form = importForm(password, string(PERMIT_KEY, hasValue));
+    RSForm ordinarySource = importForm(string(GMO_KEY, null), string(PERMIT_KEY, hasValue));
+    RSForm passwordSource = importForm(password, string(PERMIT_KEY, hasValue));
 
-    assertThat(form.getFieldForms())
+    assertThat(ordinarySource.getFieldForms())
+        .extracting(FieldForm::getDisplayRule)
+        .containsExactly(null, hasValue);
+    assertThat(passwordSource.getFieldForms())
         .extracting(FieldForm::getFieldKey)
         .containsExactly(GMO_KEY, PERMIT_KEY);
-    assertThat(form.getFieldForms()).extracting(FieldForm::getDisplayRule).containsOnlyNulls();
+    assertThat(passwordSource.getFieldForms())
+        .extracting(FieldForm::getDisplayRule)
+        .containsOnlyNulls();
   }
 
   @Test
