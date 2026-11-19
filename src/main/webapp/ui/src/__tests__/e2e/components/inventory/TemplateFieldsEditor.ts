@@ -47,7 +47,7 @@ export class TemplateFieldsEditor {
 
     await this.root.getByRole("button", { name: "Add new field" }).click();
 
-    // the new field's card is the last region; the display rules panel comes before the cards
+    // the new field's card is the last region; its "Display this field when…" section is a group, not a region
     const newField = this.root.getByRole("region").last();
     await newField.getByRole("textbox", { name: "Name", exact: true }).fill(name);
 
