@@ -282,6 +282,35 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertThat(html).contains("data-display-rule=\"{&quot;sourceFieldKey&quot;:");
   }
 
+  @Test
+  public void eachFieldsTextStaysInsideItsOwnWrapper() {
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
+    RSForm form = recordFactory.createNewForm();
+    TextFieldForm notes = new TextFieldForm("Notes");
+    // an unclosed div, a spoofed field wrapper, and more end tags than start tags
+    notes.setDefaultValue(
+        "<div>unclosed <div class=\"journalField\" data-field-type=\"RADIO\""
+            + " data-field-key=\"spoof\" data-field-value=\"Yes\">spoof</div></div></div><p>tail");
+    notes.setColumnIndex(0);
+    notes.setId(1L);
+    form.addFieldForm(notes);
+    StringFieldForm after = new StringFieldForm("After");
+    after.setColumnIndex(1);
+    after.setId(2L);
+    form.addFieldForm(after);
+    StructuredDocument doc = recordFactory.createStructuredDocument("malformed", user, form);
+
+    String html = journalController.prepareStructuredDocumentContent(doc);
+
+    Elements wrappers = Jsoup.parseBodyFragment(html).select("body > div.journalField");
+    assertEquals(2, wrappers.size());
+    assertEquals("Notes", wrappers.get(0).attr("data-field-name"));
+    assertEquals("After", wrappers.get(1).attr("data-field-name"));
+    Elements spoofs = wrappers.get(0).select("div.journalField[data-field-key=spoof]");
+    assertEquals(1, spoofs.size());
+    assertThat(wrappers.get(0).text()).contains("tail");
+  }
+
   private RSForm createTestForm() {
     RSForm form = recordFactory.createNewForm();
     TextFieldForm textField = new TextFieldForm("Text");

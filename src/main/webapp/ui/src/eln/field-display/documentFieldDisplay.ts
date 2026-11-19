@@ -18,7 +18,7 @@ import { type FieldDisplayRule, parseDisplayRule } from "@/modules/common/field-
 import { parseElnChoiceValues } from "@/modules/common/field-rules/elnChoiceValues";
 import { displayRuleVisibility } from "@/modules/common/field-rules/evaluateDisplayRules";
 
-/** Document field rows and notebook field wrappers; nothing inside a field's rich text matches. */
+/** Document field rows and notebook field wrappers. */
 export const FIELD_SELECTOR = "tr.field[data-field-type], div.journalField[data-field-type]";
 
 /** Set on a picklist once the user picks an option; cleared when its data is reloaded. */
@@ -82,8 +82,12 @@ function selectedOptions(element: HTMLElement): Array<string> {
  * Values are never touched, so a hidden field keeps its data.
  */
 export function applyFieldDisplayRules(root: ParentNode): FieldDisplayResult {
-  // Selected by class, not by nesting: unbalanced markup in one field's stored text can nest the next field.
-  const elements = Array.from(root.querySelectorAll<HTMLElement>(FIELD_SELECTOR));
+  // Only the outermost fields: a field's rich text may carry the same class and attributes (the
+  // sanitiser keeps both), and must never act as a field or a rule's source. The notebook view
+  // balances each field's markup on the server, so a real field is never nested in another.
+  const elements = Array.from(root.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).filter(
+    (element) => element.parentElement?.closest(FIELD_SELECTOR) == null,
+  );
   const rules = elements.map(readRule);
   const visibility = displayRuleVisibility(
     elements.map((element, i) => {

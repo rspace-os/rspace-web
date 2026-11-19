@@ -1,6 +1,9 @@
+import { waitFor } from "@testing-library/react";
 import { createInstance } from "i18next";
+import ICU from "i18next-icu";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { createDisplayRule, serializeDisplayRule } from "@/modules/common/field-rules/displayRule";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import { createLegacyFieldDisplay, type LegacyFieldDisplay } from "../legacyFieldDisplay";
@@ -66,19 +69,55 @@ describe("createLegacyFieldDisplay", () => {
     expect(region).toBeEmptyDOMElement();
   });
 
-  test("never announces the raw message key before the catalog has loaded", async () => {
-    document.querySelector('[role="status"]')?.remove();
-    const notLoaded = createInstance();
-    await notLoaded.init({ lng: "en-US", resources: {}, ns: [] });
-    const early = createLegacyFieldDisplay(notLoaded);
-    early.refresh();
+  /** An i18n instance whose `common` catalog arrives (or fails) when the test says so. */
+  async function i18nWithCatalog(load: () => Promise<typeof commonEn>) {
+    const instance = createInstance();
+    await instance
+      .use(ICU)
+      .use({
+        type: "backend",
+        init: () => {},
+        read: (_language: string, _namespace: string, callback: (error: unknown, data: unknown) => void) => {
+          load().then(
+            (data) => callback(null, data),
+            (error: unknown) => callback(error, false),
+          );
+        },
+      })
+      .init({ lng: "en-US", load: "currentOnly", fallbackLng: false, ns: [], defaultNS: "common" });
+    return instance;
+  }
 
+  function changeWith(i18n: Awaited<ReturnType<typeof i18nWithCatalog>>) {
+    document.querySelector('[role="status"]')?.remove();
+    const early = createLegacyFieldDisplay(i18n);
+    early.refresh();
     const control = answer("Yes");
     control.checked = true;
     early.fieldChanged(control);
-    await Promise.resolve();
+    return document.querySelector('[role="status"]');
+  }
 
-    expect(document.querySelector('[role="status"]')).not.toHaveTextContent("fieldDisplay");
+  test("announces nothing, not even the message key, when the catalog fails to load", async () => {
+    const restoreConsole = silenceConsole(["warn", "error"], [/failed loading/i, /catalog down/]);
+    let fail: (error: Error) => void = () => {};
+    const region = changeWith(await i18nWithCatalog(() => new Promise((_, reject) => (fail = reject))));
+
+    fail(new Error("catalog down"));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(region).toBeEmptyDOMElement();
+    restoreConsole();
+  });
+
+  test("announces in words once a delayed catalog arrives", async () => {
+    let arrive: (catalog: typeof commonEn) => void = () => {};
+    const region = changeWith(await i18nWithCatalog(() => new Promise((resolve) => (arrive = resolve))));
+    expect(region).toBeEmptyDOMElement();
+
+    arrive(commonEn);
+
+    await waitFor(() => expect(region).toHaveTextContent("2 more fields are shown: Containment level and GMO permit"));
   });
 
   test("clears the message when fields hide, so revealing them again is announced again", () => {
