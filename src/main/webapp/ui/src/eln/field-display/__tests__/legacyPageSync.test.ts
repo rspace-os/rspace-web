@@ -1,9 +1,10 @@
 /*
  * Runs the document page's own legacy scripts (documentView.js and
- * documentEdit.js, with the page's jQuery) against field rows as
+ * documentEdit.js, with the page's jQuery and select2) against field rows as
  * structuredDocumentMainPanel.jsp renders them, to check that the two paths
- * that reload field data keep a picklist's answer, its dependents and the Sign
- * calculation in step.
+ * that reload field data keep picklist and choice answers, their dependents
+ * and the Sign calculation in step. EditorFieldJspRenderingTest checks the
+ * JSP markup these rows copy.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -22,12 +23,15 @@ const HAZARD_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
 const showWhenYes = serializeDisplayRule(createDisplayRule(HAZARD_KEY, "IS_ANY_OF", ["Yes"]));
 const CONTROLS_KEY = "6f1c2e0a-0000-4000-8000-000000000013";
 const showWhenControls = serializeDisplayRule(createDisplayRule(CONTROLS_KEY, "HAS_VALUE", []));
+const showWhenGloves = serializeDisplayRule(createDisplayRule(CONTROLS_KEY, "IS_ANY_OF", ["Gloves"]));
 const REMOVED_CHOICE = "fieldSelectedChoicesFinal_13=Removed";
 
 type LegacyPage = Window & {
   $: JQueryStatic;
   updateFieldsContentFromServer: (force: boolean) => PromiseLike<unknown>;
-  _updateAutosavedFields: (fields: Array<{ id: number; fieldData: string }>) => void;
+  _updateAutosavedFields: (
+    fields: Array<{ id: number; fieldData: string; choiceOptionSelectedAsList?: Array<string> }>,
+  ) => void;
   checkAndMarkField: (control: Element) => void;
   _autosavePickList: ($field: JQuery) => PromiseLike<unknown>;
 };
@@ -42,6 +46,7 @@ function runScript(relativePath: string) {
 
 beforeAll(() => {
   runScript("scripts/bower_components/jquery/dist/jquery.min.js");
+  runScript("scripts/bower_components/select2/dist/js/select2.min.js");
   // the pages' ready handlers set up dialogs and toolbars this test does not need
   legacy.$.fn.ready = function ready() {
     return this;
@@ -64,7 +69,8 @@ beforeAll(() => {
 /**
  * A picklist "Hazard?" whose "Yes" shows the mandatory, empty "Hazard permit",
  * and a choice field "Controls" whose stored value "Removed" is no longer an
- * option, with "Controls note" shown while it has a value.
+ * option, with "Controls note" shown while it has a value and "Gloves note"
+ * while it includes Gloves.
  */
 async function renderPage(storedAnswer: string) {
   document.body.innerHTML = `
@@ -72,7 +78,7 @@ async function renderPage(storedAnswer: string) {
     <table>
       <tr id="field_11" name="picklist" class="field" data-field-id="11" data-field-key="${HAZARD_KEY}"
           data-field-type="RADIO" data-field-name="Hazard?" data-field-value="${storedAnswer}">
-        <td><select id="11" class="formPickList 11">
+        <td><select id="11" class="formPickList 11"${storedAnswer === "" ? ' data-placeholder="Select an option"' : ""}>
           ${storedAnswer === "" ? '<option value="" selected></option>' : ""}
           <option class="radioLi 11" value="Yes"${storedAnswer === "Yes" ? " selected" : ""}>Yes</option>
           <option class="radioLi 11" value="No"${storedAnswer === "No" ? " selected" : ""}>No</option>
@@ -81,7 +87,11 @@ async function renderPage(storedAnswer: string) {
       <tr id="field_13" name="choice" class="field" data-field-id="13" data-field-key="${CONTROLS_KEY}"
           data-field-type="CHOICE" data-field-name="Controls" data-field-value="${REMOVED_CHOICE}">
         <td><input type="checkbox" class="13" id="13" name="fieldSelectedChoicesFinal_13" value="Gloves">
-          <p id="choiceText_13">Removed</p></td>
+          <input type="hidden" name="fieldId" value="13"><p id="choiceText_13">Removed</p></td>
+      </tr>
+      <tr id="field_15" name="string" class="field" data-field-id="15" data-field-type="STRING"
+          data-field-name="Gloves note" data-display-rule='${showWhenGloves}'>
+        <td><input class="inputField 15" id="15" name="fieldData" value=""><p id="plainText_15"></p></td>
       </tr>
       <tr id="field_14" name="string" class="field" data-field-id="14" data-field-type="STRING"
           data-field-name="Controls note" data-display-rule='${showWhenControls}'>
@@ -100,6 +110,8 @@ async function renderPage(storedAnswer: string) {
 const pickList = () => document.getElementById("11") as HTMLSelectElement;
 const permitRow = () => document.getElementById("field_12");
 const controlsNoteRow = () => document.getElementById("field_14");
+const glovesNoteRow = () => document.getElementById("field_15");
+const glovesBox = () => document.getElementById("13") as HTMLInputElement;
 
 function serveUpdatedFields(answer: string) {
   server.use(
@@ -173,6 +185,27 @@ describe("reloading field data from the server (_updateFields)", () => {
   });
 });
 
+describe("picking from an empty picklist with select2", () => {
+  test("shows the placeholder, offers only the options, and picking the first reveals its dependent", async () => {
+    await renderPage("");
+    const $select = legacy.$("#11") as JQuery & { select2: (method?: "open") => JQuery };
+    // stands in for the JSP's inline onchange, which jsdom cannot run (see above)
+    $select.on("change", (event) => legacy.checkAndMarkField(event.target));
+    // as pickListField.jsp initialises it
+    $select.select2();
+    expect(document.querySelector(".select2-selection__rendered")).toHaveTextContent("Select an option");
+
+    $select.select2("open");
+    const offered = Array.from(document.querySelectorAll(".select2-results__option"));
+    expect(offered.map((option) => option.textContent)).toEqual(["Yes", "No"]);
+    legacy.$(offered[0]).trigger("mouseup");
+
+    expect(pickList()).toHaveValue("Yes");
+    expect(document.querySelector(".select2-selection__rendered")).toHaveTextContent("Yes");
+    expect(permitRow()).toBeVisible();
+  });
+});
+
 describe("autosaving a picklist (_autosavePickList)", () => {
   test("stores no data while an empty picklist shows its placeholder, and the first option once picked", async () => {
     const saved: Array<string | null> = [];
@@ -213,5 +246,28 @@ describe("restoring autosaved data on load (_updateAutosavedFields)", () => {
 
     expect(pickList()).toHaveValue("No");
     expect(permitRow()).not.toBeVisible();
+  });
+
+  test("an autosaved choice restores its checkboxes and counts as the stored value", async () => {
+    await renderPage("");
+    expect(glovesNoteRow()).not.toBeVisible();
+
+    legacy._updateAutosavedFields([
+      { id: 13, fieldData: "fieldSelectedChoicesFinal_13=Gloves", choiceOptionSelectedAsList: ["Gloves"] },
+    ]);
+
+    expect(glovesBox()).toBeChecked();
+    expect(glovesNoteRow()).toBeVisible();
+    expect(controlsNoteRow()).toBeVisible();
+  });
+
+  test("an autosaved empty choice over a stored value no longer offered hides what needs a value", async () => {
+    await renderPage("");
+    expect(controlsNoteRow()).toBeVisible();
+
+    legacy._updateAutosavedFields([{ id: 13, fieldData: "", choiceOptionSelectedAsList: [] }]);
+
+    expect(glovesBox()).not.toBeChecked();
+    expect(controlsNoteRow()).not.toBeVisible();
   });
 });
