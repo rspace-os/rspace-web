@@ -4,6 +4,7 @@ import com.researchspace.model.field.rule.ElnChoiceValues;
 import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.field.rule.FieldDisplayRuleEvaluator;
 import com.researchspace.model.field.rule.FieldSnapshot;
+import com.researchspace.model.field.rule.SourceKind;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,27 +26,65 @@ public final class ElnFieldRules {
   private ElnFieldRules() {}
 
   /**
-   * The rule engine's view of a form field definition, with nothing selected.
+   * The rule engine's view of a form field definition, with nothing selected and no value.
    *
    * @param field a form field
    */
   public static FieldSnapshot forDefinition(IFieldForm field) {
     return new FieldSnapshot(
-        field.getFieldKey(), field.getType(), storedRule(field), allowedOptions(field), List.of());
+        field.getFieldKey(),
+        field.getType(),
+        storedRule(field),
+        allowedOptions(field),
+        List.of(),
+        sourceKind(field),
+        "");
   }
 
   /**
    * The rule engine's view of a document field: its form field's key, rule and options, and the
-   * options its data selects.
+   * options its data selects or, for a text or number source, its data.
    */
   public static FieldSnapshot forDocumentField(Field field) {
     IFieldForm definition = field.getFieldForm();
+    SourceKind kind = sourceKind(definition);
     return new FieldSnapshot(
         definition.getFieldKey(),
         definition.getType(),
         storedRule(definition),
         allowedOptions(definition),
-        selectedOptions(definition.getType(), field.getFieldData()));
+        selectedOptions(definition.getType(), field.getFieldData()),
+        kind,
+        sourceValue(kind, field.getFieldData()));
+  }
+
+  /**
+   * What a form field offers to the rules that read it: radio and choice fields their options,
+   * number fields their number and String fields their text, unless they are password fields. A
+   * password field's value would appear in rule summaries and API responses, so it is never a
+   * source.
+   */
+  public static SourceKind sourceKind(IFieldForm field) {
+    return sourceKind(
+        field.getType(), field instanceof StringFieldForm string && string.isIfPassword());
+  }
+
+  /**
+   * The source kind of a field of this type, as {@link #sourceKind(IFieldForm)} decides it, for
+   * callers that hold the type and password flag rather than a form field.
+   */
+  public static SourceKind sourceKind(FieldType type, boolean password) {
+    return switch (type) {
+      case RADIO, CHOICE -> SourceKind.OPTIONS;
+      case NUMBER -> SourceKind.NUMBER;
+      case STRING -> password ? SourceKind.NONE : SourceKind.TEXT;
+      default -> SourceKind.NONE;
+    };
+  }
+
+  /** The data that rules read as the value of a text or number source; empty for other kinds. */
+  public static String sourceValue(SourceKind kind, String data) {
+    return kind == SourceKind.TEXT || kind == SourceKind.NUMBER ? data : "";
   }
 
   /**
