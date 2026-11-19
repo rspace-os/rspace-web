@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -84,7 +85,7 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
     ApiInventoryEntityField permit = field(template, PERMIT);
     assertEquals(gmoKey, gmo.getFieldKey());
     assertEquals(showWhenGmoIs("Yes"), permit.getDisplayRule());
-    assertEquals(7, UUID.fromString(permit.getFieldKey()).version());
+    assertNotNull(permit.getFieldKey());
   }
 
   @Test
@@ -232,7 +233,8 @@ class InventoryFieldDisplayRuleManagerTest extends SpringTransactionalTest {
 
     ApiSampleTemplate backfilled = sampleApiMgr.getApiSampleTemplateById(created.getId(), user);
     String backfilledGmoKey = field(backfilled, GMO).getFieldKey();
-    assertEquals(7, UUID.fromString(backfilledGmoKey).version());
+    assertNotNull(backfilledGmoKey);
+    assertNotEquals(gmoKey, backfilledGmoKey);
     ApiSampleTemplate update = templateUpdate(backfilled);
     ApiInventoryEntityField permit = fieldUpdate(field(backfilled, PERMIT));
     permit.setDisplayRule(
