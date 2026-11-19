@@ -1699,6 +1699,15 @@ export default interface Resources {
       }
     },
     "apiErrors": {
+      "apiV2": {
+        "httpStatus": "The request failed with status {status}.",
+        "identityChanged": "Your session changed. Reload the page to continue.",
+        "invalidJson": "The request body is not valid JSON.",
+        "invalidRequest": "The request contains an invalid value.",
+        "network": "The server could not be reached. Check your connection and try again.",
+        "sessionEnded": "Your session has ended. Sign in again to continue.",
+        "unexpectedResponse": "The server returned an unexpected response."
+      },
       "chemicals": {
         "loadElementFailed": "Problem loading chemical element.",
         "loadElementsFailed": "Loading chemical elements failed.",
