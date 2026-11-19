@@ -10,7 +10,14 @@ import OptionsEditor from "@/modules/common/field-editor/OptionsEditor";
 import { type RuleEditorField, ruleGraphFor } from "@/modules/common/field-editor/ruleEditing";
 import type { FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import ElnFieldSettings from "./ElnFieldSettings";
-import { type EditorField, type FieldSettings, fieldProblems, hasOptions, NAME_MAX_LENGTH } from "./editorModel";
+import {
+  type EditorField,
+  type FieldChecks,
+  type FieldSettings,
+  hasOptions,
+  NAME_MAX_LENGTH,
+  problemsFor,
+} from "./editorModel";
 import type { ElnFieldType } from "./formFieldsApi";
 import { useProblemMessage } from "./useProblemMessage";
 
@@ -35,12 +42,13 @@ type ElnFieldCardProps = {
   /** Every field, for the display condition; the same array while only names change. */
   ruleFields: ReadonlyArray<RuleEditorField>;
   /**
-   * The other fields' names this card shows: the field its rule reads and the
-   * fields that read it. Not read here; when one changes, the card renders again.
+   * The other fields' names this card can show: every field a condition can
+   * read, which the condition's field menu lists, and the fields that read this
+   * one. Not read here; when one changes, the card renders again.
    */
   shownNames: string;
-  /** Whether the client checks apply: the field is new or changed since it was saved. */
-  checked: boolean;
+  /** Which client checks apply, depending on what changed since the field was saved. */
+  checks: FieldChecks;
   editable: boolean;
   allTypeOptions: ReadonlyArray<FieldTypeOption<ElnFieldType>>;
   creatableTypeOptions: ReadonlyArray<FieldTypeOption<ElnFieldType>>;
@@ -56,7 +64,7 @@ function ElnFieldCard({
   position,
   count,
   ruleFields,
-  checked,
+  checks,
   editable,
   allTypeOptions,
   creatableTypeOptions,
@@ -64,7 +72,7 @@ function ElnFieldCard({
 }: ElnFieldCardProps): ReactNode {
   const { t } = useTranslation("workspace");
   const problemMessage = useProblemMessage();
-  const problems = checked ? fieldProblems(field) : {};
+  const problems = problemsFor(field, checks);
   const { key } = field;
   const usedOptions = new Set(
     ruleGraphFor(ruleFields)

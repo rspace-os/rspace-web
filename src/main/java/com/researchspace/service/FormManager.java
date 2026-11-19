@@ -260,24 +260,38 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user);
 
   /**
-   * Saves the full field list of the form being edited, as {@link #saveFields(Long, List, User)}
-   * does, but only if the field list is still the one the caller read: the form field editor sends
-   * the version it was given, so a save from an out-of-date page cannot overwrite a newer save.
-   * Saves of one form run one at a time.
+   * The form being edited and the revision of its field list, read together.
    *
-   * @param expectedVersion the {@link #getFieldsVersion(RSForm)} of the field list the caller read
+   * @param form the form, with its fields loaded
+   * @param fieldsRevision the revision of the field list, which every save of it advances
+   */
+  record FieldEditorForm(RSForm form, long fieldsRevision) {}
+
+  /**
+   * The form with its fields and their revision, for the form field editor, which sends the
+   * revision back with its save. The revision is read first, in the same transaction, so the fields
+   * are never older than the revision.
+   *
+   * @throws org.apache.shiro.authz.AuthorizationException if the user cannot read the form
+   */
+  FieldEditorForm getForFieldEditor(Long formId, User user);
+
+  /**
+   * Saves the full field list of the form being edited, as {@link #saveFields(Long, List, User)}
+   * does, but only if the field list is still at the revision the caller read: before anything else
+   * it advances the revision with one conditional update, which also makes saves of one form run
+   * one at a time, so of two saves made from the same revision only the first succeeds. A save that
+   * changes nothing leaves the revision as it was.
+   *
+   * @param expectedRevision the {@link FieldEditorForm#fieldsRevision()} the caller read
+   * @return the saved form and the revision of its field list after the save
    * @throws FormFieldsConflictException if the field list has changed since
    * @throws FormFieldsValidationException if the field list is invalid
    * @throws org.apache.shiro.authz.AuthorizationException if the user cannot write the form
    * @throws IllegalStateException if the form is not being edited, or another user is editing it
    */
-  RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, String expectedVersion, User user);
-
-  /**
-   * The version of the form's field list, which changes whenever a field is added, deleted, moved
-   * or changed.
-   */
-  String getFieldsVersion(RSForm form);
+  FieldEditorForm saveFields(
+      Long formId, List<FormFieldSaveItem> fields, long expectedRevision, User user);
 
   /** Whether the user may change the form, and so its fields. */
   boolean canWrite(RSForm form, User user);

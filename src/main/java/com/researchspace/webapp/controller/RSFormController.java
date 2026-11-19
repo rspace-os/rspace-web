@@ -54,6 +54,7 @@ import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormFieldsConflictException;
 import com.researchspace.service.FormFieldsValidationException;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.FormManager.FieldEditorForm;
 import com.researchspace.service.FormManager.FormEditorPage;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -448,24 +449,24 @@ public class RSFormController extends BaseController {
   public AjaxReturnObject<FormFieldEditorFields> getFields(@RequestParam("formId") long formId) {
     User subject = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
-        editorFields(formManager.getWithPopulatedFieldForms(formId, subject), subject), null);
+        editorFields(formManager.getForFieldEditor(formId, subject), subject), null);
   }
 
   /**
    * Saves the full field list of the form being edited in one transaction; see {@link
-   * FormManager#saveFields(Long, List, String, User)}. Keeps the edit lock. Returns the saved
-   * fields, as {@link #getFields(long)} does, or the problems that rejected the save: with status
-   * 409 if the fields changed since the editor read {@code version}, and 403 if the user cannot
-   * change the form.
+   * FormManager#saveFields(Long, List, long, User)}. Keeps the edit lock. Returns the saved fields
+   * and their new revision, as {@link #getFields(long)} does, or the problems that rejected the
+   * save: with status 409 if the fields changed since the editor read revision {@code version}, and
+   * 403 if the user cannot change the form.
    */
   @ResponseBody
   @PostMapping("ajax/fields")
   public ResponseEntity<AjaxReturnObject<FormFieldEditorFields>> saveFields(
       @RequestParam("formId") long formId,
-      @RequestParam("version") String version,
+      @RequestParam("version") long version,
       @RequestBody List<FormFieldSaveItem> fields) {
     User subject = userManager.getAuthenticatedUserInSession();
-    RSForm saved;
+    FieldEditorForm saved;
     try {
       saved = formManager.saveFields(formId, fields, version, subject);
     } catch (FormFieldsValidationException e) {
@@ -488,7 +489,8 @@ public class RSFormController extends BaseController {
   }
 
   /** A reader may not delete any field, whatever the field. */
-  private FormFieldEditorFields editorFields(RSForm form, User subject) {
+  private FormFieldEditorFields editorFields(FieldEditorForm editing, User subject) {
+    RSForm form = editing.form();
     boolean canWrite = formManager.canWrite(form, subject);
     Set<Long> copiedFieldIds = formManager.getCopiedTemporaryFieldIds(form);
     List<FormFieldEditorItem> items = new ArrayList<>();
@@ -498,7 +500,7 @@ public class RSFormController extends BaseController {
             FormFieldEditorItem.from(field, canWrite && !copiedFieldIds.contains(field.getId())));
       }
     }
-    return new FormFieldEditorFields(items, formManager.getFieldsVersion(form));
+    return new FormFieldEditorFields(items, editing.fieldsRevision());
   }
 
   /**

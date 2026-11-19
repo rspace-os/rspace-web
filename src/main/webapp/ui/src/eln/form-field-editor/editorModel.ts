@@ -294,11 +294,27 @@ export function fromServer(item: FormFieldEditorItem): EditorField {
 const joinOptions = (name: string, options: ReadonlyArray<string>) =>
   options.map((option) => `${name}=${option}`).join("&");
 
+const isStored = (values: ReadonlyArray<string>, stored: StoredList | undefined): stored is StoredList =>
+  stored !== undefined &&
+  stored.values.length === values.length &&
+  stored.values.every((value, i) => value === values[i]);
+
 /** The stored text while the list is as it was read, so untouched legacy data is not rewritten. */
 const writeOptions = (name: string, options: ReadonlyArray<string>, stored: StoredList | undefined) =>
-  stored && stored.values.length === options.length && stored.values.every((value, i) => value === options[i])
-    ? stored.text
-    : joinOptions(name, options);
+  isStored(options, stored) ? stored.text : joinOptions(name, options);
+
+/**
+ * Defaults go back as stored only beside options that go back as stored. Once
+ * the options are written anew, so are the defaults, keeping only those the
+ * new options offer: stored default text may name values its options do not.
+ */
+function writeDefaults<D>(
+  field: { options: ReadonlyArray<string>; stored?: { options: StoredList } },
+  asStored: () => D,
+  offered: (options: ReadonlyArray<string>) => D,
+): D {
+  return isStored(field.options, field.stored?.options) ? asStored() : offered(field.options);
+}
 
 function source(field: EditorField): Record<string, string | boolean> {
   const common = { name: field.name, mandatory: field.mandatory };
@@ -320,7 +336,11 @@ function source(field: EditorField): Record<string, string | boolean> {
         ...common,
         fieldName: field.name,
         radioValues: writeOptions("fieldRadios", field.options, field.stored?.options),
-        radioSelected: field.defaultValue,
+        radioSelected: writeDefaults(
+          field,
+          () => field.defaultValue,
+          (options) => (options.includes(field.defaultValue) ? field.defaultValue : ""),
+        ),
         showAsPickList: field.showAsPickList,
         sortAlphabetic: field.sortAlphabetic,
       };
@@ -330,7 +350,15 @@ function source(field: EditorField): Record<string, string | boolean> {
         fieldName: field.name,
         choiceValues: writeOptions("fieldChoices", field.options, field.stored?.options),
         multipleChoice: field.multiple ? "yes" : "no",
-        selectedValues: writeOptions("fieldSelectedChoices", field.defaults, field.stored?.defaults),
+        selectedValues: writeDefaults(
+          field,
+          () => writeOptions("fieldSelectedChoices", field.defaults, field.stored?.defaults),
+          (options) =>
+            joinOptions(
+              "fieldSelectedChoices",
+              field.defaults.filter((value) => options.includes(value)),
+            ),
+        ),
       };
     case "Date":
       return {
@@ -368,27 +396,75 @@ export function toSaveItem(field: EditorField): FormFieldSaveItem {
   };
 }
 
+/** A field's save item as last saved: its text, and its options as sent. */
+type SavedItem = { readonly text: string; readonly options: unknown };
+
+const optionsOf = (item: FormFieldSaveItem): unknown => item.source.radioValues ?? item.source.choiceValues;
+
 /** Each field's save item by key, as last saved, to tell which fields the author has changed since. */
-export const savedItems = (fields: ReadonlyArray<EditorField>): ReadonlyMap<string, string> =>
-  new Map(fields.map((field) => [field.key, JSON.stringify(toSaveItem(field))]));
+export const savedItems = (fields: ReadonlyArray<EditorField>): ReadonlyMap<string, SavedItem> =>
+  new Map(
+    fields.map((field) => {
+      const item = toSaveItem(field);
+      return [field.key, { text: JSON.stringify(item), options: optionsOf(item) }];
+    }),
+  );
 
-/** Whether a field is new or differs from its saved version; only those are checked before a save. */
-export const isNewOrChanged = (field: EditorField, saved: ReadonlyMap<string, string>): boolean =>
-  field.id === null || saved.get(field.key) !== JSON.stringify(toSaveItem(field));
+/**
+ * Which client checks apply to a field, as on the server: all of them to a new
+ * field; none to a saved field the author has not changed, which may hold data
+ * written through the forms API that the editor would refuse; and the option
+ * checks only once its options change, so that stored options the editor would
+ * refuse do not block other changes to the field.
+ */
+export type FieldChecks = "all" | "exceptOptions" | "none";
 
-/** The server's ids for fields saved while the author kept editing; the newer edits stay. */
+export function checksFor(field: EditorField, saved: ReadonlyMap<string, SavedItem>): FieldChecks {
+  const before = field.id === null ? undefined : saved.get(field.key);
+  if (!before) return "all";
+  const item = toSaveItem(field);
+  if (JSON.stringify(item) === before.text) return "none";
+  return optionsOf(item) === before.options ? "exceptOptions" : "all";
+}
+
+/** The problems the checks that apply find. */
+export function problemsFor(field: EditorField, checks: FieldChecks): FieldProblems {
+  if (checks === "none") return {};
+  const { options, ...problems } = fieldProblems(field);
+  return checks === "all" && options ? { ...problems, options } : problems;
+}
+
+/**
+ * The server's ids for fields saved while the author kept editing, and the
+ * option and default text they were saved with, so that taking an edit back
+ * sends what the server now holds; the newer edits stay.
+ */
 export function adoptSavedIds(
   current: ReadonlyArray<EditorField>,
   saved: ReadonlyArray<EditorField>,
 ): Array<EditorField> {
-  return current.map((field) => {
+  return current.map((field): EditorField => {
     const match = saved.find(({ key }) => key === field.key);
-    return match ? { ...field, id: match.id, canDelete: match.canDelete } : field;
+    if (!match) return field;
+    const ids = { id: match.id, canDelete: match.canDelete };
+    if (field.type === "Radio" && match.type === "Radio") return { ...field, ...ids, stored: match.stored };
+    if (field.type === "Choice" && match.type === "Choice") return { ...field, ...ids, stored: match.stored };
+    return { ...field, ...ids };
   });
 }
 
 /** What a save would send; two equal signatures mean nothing to save. */
 export const saveSignature = (fields: ReadonlyArray<EditorField>): string => JSON.stringify(fields.map(toSaveItem));
+
+/**
+ * Whether two field lists hold the same fields, whatever their ids: what a
+ * save sent, with no ids for new fields, and what the server then holds.
+ */
+export const sameFields = (a: ReadonlyArray<EditorField>, b: ReadonlyArray<EditorField>): boolean => {
+  const withoutIds = (fields: ReadonlyArray<EditorField>) =>
+    JSON.stringify(fields.map((field) => ({ ...toSaveItem(field), id: null })));
+  return withoutIds(a) === withoutIds(b);
+};
 
 /* Client checks, before anything is sent. The server checks everything again. */
 

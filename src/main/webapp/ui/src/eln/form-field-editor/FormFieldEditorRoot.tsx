@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingCircular from "@/components/LoadingCircular";
-import { type EditorField, fromServer, toSaveItem } from "./editorModel";
+import { type EditorField, fromServer, sameFields, toSaveItem } from "./editorModel";
 import FormFieldEditor, { type FieldEditorHandle } from "./FormFieldEditor";
-import { type FormFieldList, fetchFormFields, saveFormFields } from "./formFieldsApi";
+import { type FormFieldList, FormFieldsConflictError, fetchFormFields, saveFormFields } from "./formFieldsApi";
 
 /** What the legacy toolbar uses; see `form.js`. */
 export type FormFieldEditorHandle = FieldEditorHandle & {
@@ -20,7 +20,7 @@ type LoadedEditorProps = {
   ref: Ref<FieldEditorHandle>;
 };
 
-type LoadedFields = { fields: ReadonlyArray<EditorField>; version: string };
+type LoadedFields = { fields: ReadonlyArray<EditorField>; version: number };
 
 function LoadedEditor({ formId, editable, ref }: LoadedEditorProps): ReactNode {
   const queryClient = useQueryClient();
@@ -31,18 +31,35 @@ function LoadedEditor({ formId, editable, ref }: LoadedEditorProps): ReactNode {
     queryFn: async () => toLoaded(await fetchFormFields(formId)),
     staleTime: Number.POSITIVE_INFINITY,
   });
+  // each save is made from the version the last one returned, so a save from elsewhere in between is refused
+  const currentVersion = () => queryClient.getQueryData<LoadedFields>(queryKey)?.version ?? data.version;
+  const fetchLoaded = async () => toLoaded(await fetchFormFields(formId));
   const save = useMutation({
     mutationFn: async (current: ReadonlyArray<EditorField>) => {
-      // each save is made from the version the last one returned, so a save from elsewhere in between is refused
-      const version = queryClient.getQueryData<LoadedFields>(queryKey)?.version ?? data.version;
-      return toLoaded(await saveFormFields(formId, current.map(toSaveItem), version));
+      try {
+        return toLoaded(await saveFormFields(formId, current.map(toSaveItem), currentVersion()));
+      } catch (error) {
+        if (!(error instanceof FormFieldsConflictError)) throw error;
+        // An earlier attempt may have been saved with its response lost, so that a retry finds
+        // the version moved on; if the server has exactly these fields, the save is done.
+        const server = await fetchLoaded().catch(() => null);
+        if (server && sameFields(server.fields, current)) return server;
+        throw error;
+      }
     },
     onSuccess: (saved) => queryClient.setQueryData(queryKey, saved),
   });
+  const check = async (current: ReadonlyArray<EditorField>) => {
+    const server = await fetchLoaded();
+    if (server.version === currentVersion()) return;
+    if (!sameFields(server.fields, current)) throw new FormFieldsConflictError([]);
+    queryClient.setQueryData(queryKey, server);
+  };
   return (
     <FormFieldEditor
       initialFields={data.fields}
       onSave={async (current) => (await save.mutateAsync(current)).fields}
+      onCheck={check}
       editable={editable}
       ref={ref}
     />

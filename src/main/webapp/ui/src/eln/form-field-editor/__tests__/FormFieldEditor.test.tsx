@@ -15,7 +15,7 @@ import common from "@/modules/common/i18n/locales/en-US/common.json";
 import workspace from "@/modules/common/i18n/locales/en-US/workspace.json";
 import materialTheme from "@/theme";
 import FormFieldEditorRoot, { type FormFieldEditorHandle } from "../FormFieldEditorRoot";
-import type { FormFieldEditorItem, FormFieldSaveItem } from "../formFieldsApi";
+import { type FormFieldEditorItem, type FormFieldSaveItem, FormFieldsConflictError } from "../formFieldsApi";
 
 const FIELDS_URL = "/workspace/editor/form/ajax/fields";
 const GMO = "6f1c2e0a-0000-4000-8000-000000000001";
@@ -51,7 +51,7 @@ const permit = saved(
 
 /** The server's answer with these fields, as the version after `saves` saves. */
 const fieldList = (fields: ReadonlyArray<unknown>, saves = 0) =>
-  HttpResponse.json({ data: { fields, version: `v${saves}` }, errorMsg: null });
+  HttpResponse.json({ data: { fields, version: saves }, errorMsg: null });
 
 /** A save's fields as the server returns them, with ids for new fields. */
 const echoed = (body: ReadonlyArray<FormFieldSaveItem>) =>
@@ -198,10 +198,10 @@ describe("FormFieldEditor", () => {
     await user.click(mandatory);
     await handle.current?.save();
 
-    expect(posts.versions).toEqual(["v0", "v1"]);
+    expect(posts.versions).toEqual(["0", "1"]);
   });
 
-  it("says the form was changed elsewhere, and keeps refusing to save over it", async () => {
+  it("says the form was changed elsewhere, and keeps refusing to save until the page is reloaded", async () => {
     const user = userEvent.setup();
     const posts = serveFields([gmo], () =>
       HttpResponse.json(
@@ -212,27 +212,107 @@ describe("FormFieldEditor", () => {
     const { handle } = await renderEditor();
 
     await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
-    await expect(handle.current?.save()).rejects.toThrow();
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldsConflictError);
 
     const alert = await screen.findByRole("alert", { name: "This form was changed elsewhere." });
     expect(within(alert).getByText(/saved in another tab or window after this page loaded them/)).toBeVisible();
-    expect(within(alert).getByRole("button", { name: "Reload" })).toBeVisible();
-    expect(handle.current?.isDirty()).toBe(true);
-    await expect(handle.current?.save()).rejects.toThrow();
-    expect(posts.versions).toEqual(["v0", "v0"]);
+    expect(within(alert).getByRole("button", { name: "Reload" })).toHaveFocus();
+    expect(within(alert).queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    // read-only, so the change cannot be taken back, or made again, and saved over the other one
+    expect(screen.queryByRole("switch", { name: "Mandatory" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add field" })).not.toBeInTheDocument();
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldsConflictError);
+    expect(posts.versions).toEqual(["0"]);
+    act(() => handle.current?.setReadOnly(false));
+    expect(screen.queryByRole("switch", { name: "Mandatory" })).not.toBeInTheDocument();
   });
 
-  it("sends options and defaults stored in an old format back as they were, until they are edited", async () => {
+  it("refuses the toolbar's action on an untouched page whose fields were changed elsewhere", async () => {
+    const posts = serveFields([gmo]);
+    const { handle } = await renderEditor();
+    const renamed = { ...gmo, source: { ...gmo.source, name: "GMO status" } };
+    let gets = 0;
+    server.use(
+      http.get(FIELDS_URL, () => {
+        gets += 1;
+        return fieldList([renamed], 1);
+      }),
+    );
+
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldsConflictError);
+    expect(await screen.findByRole("alert", { name: "This form was changed elsewhere." })).toBeVisible();
+    // latched: later calls are refused without asking the server again
+    await expect(handle.current?.save()).rejects.toThrow(FormFieldsConflictError);
+    expect(gets).toBe(1);
+    expect(posts).toHaveLength(0);
+  });
+
+  it("lets the toolbar act on an untouched page whose fields are still the server's", async () => {
+    const posts = serveFields([gmo]);
+    const { handle } = await renderEditor();
+
+    await handle.current?.save();
+
+    expect(posts).toHaveLength(0);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("treats a save whose response was lost as done when the server has the fields it sent", async () => {
+    const user = userEvent.setup();
+    let lost = true;
+    const posts = serveFields([gmo], () => {
+      // the first attempt was saved, but its response never arrived; the retry finds version 1
+      if (lost) {
+        lost = false;
+        return HttpResponse.json({ data: null, errorMsg: { errorMessages: ["changed elsewhere"] } }, { status: 409 });
+      }
+      return fieldList(echoed(posts.at(-1) ?? []), 2);
+    });
+    const { handle } = await renderEditor();
+    server.use(http.get(FIELDS_URL, () => fieldList(echoed(posts[0]), 1)));
+    const mandatory = within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" });
+
+    await user.click(mandatory);
+    await handle.current?.save();
+
+    expect(handle.current?.isDirty()).toBe(false);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await user.click(mandatory);
+    await handle.current?.save();
+    expect(posts.versions).toEqual(["0", "1"]);
+  });
+
+  it("shows the server's reason when the user may not change the form", async () => {
+    const user = userEvent.setup();
+    serveFields([gmo], () =>
+      HttpResponse.json(
+        { data: null, errorMsg: { errorMessages: ["Unauthorised attempt to update a form field"] } },
+        { status: 403 },
+      ),
+    );
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).rejects.toThrow();
+
+    const alert = await screen.findByRole("alert", { name: "The fields were not saved." });
+    expect(within(alert).getByText("Unauthorised attempt to update a form field")).toBeVisible();
+    expect(within(alert).queryByText(/Try again/)).not.toBeInTheDocument();
+  });
+
+  it("sends options and defaults stored in an old format back as they were, until the options are edited", async () => {
     const user = userEvent.setup();
     const choice = saved(3, "Choice", {
       name: "C",
       choiceValues: "fieldChoices=pH=7&fieldChoices=&fieldChoices=B",
-      multipleChoice: "no",
-      selectedValues: "fieldSelectedChoices=B",
+      multipleChoice: "yes",
+      // read as B and pH, but not written that way
+      selectedValues: "fieldSelectedChoices=B&fieldSelectedChoices=pH=7&junk",
     });
     const radio = saved(4, "Radio", {
       name: "R",
       radioValues: "fieldChoices=X&&fieldChoices=Y=1",
+      // read as no option: the options read are X and Y
       radioSelected: "Y=1",
     });
     const text = saved(5, "String", { name: "S", ifPassword: "no", defaultStringValue: "" });
@@ -242,14 +322,57 @@ describe("FormFieldEditor", () => {
     await user.type(within(card("S")).getByRole("textbox", { name: "Name" }), "2");
     await handle.current?.save();
     await addOption(user, "C", "D");
+    await addOption(user, "R", "Z");
     await handle.current?.save();
 
     expect(posts[0][0].source).toMatchObject({
       choiceValues: "fieldChoices=pH=7&fieldChoices=&fieldChoices=B",
-      selectedValues: "fieldSelectedChoices=B",
+      selectedValues: "fieldSelectedChoices=B&fieldSelectedChoices=pH=7&junk",
     });
     expect(posts[0][1].source).toMatchObject({ radioValues: "fieldChoices=X&&fieldChoices=Y=1", radioSelected: "Y=1" });
-    expect(posts[1][0].source).toMatchObject({ choiceValues: "fieldChoices=pH&fieldChoices=B&fieldChoices=D" });
+    expect(posts[1][0].source).toMatchObject({
+      choiceValues: "fieldChoices=pH&fieldChoices=B&fieldChoices=D",
+      selectedValues: "fieldSelectedChoices=B&fieldSelectedChoices=pH",
+    });
+    expect(posts[1][1].source).toMatchObject({
+      radioValues: "fieldRadios=X&fieldRadios=Y&fieldRadios=Z",
+      radioSelected: "",
+    });
+  });
+
+  it("checks only the settings that changed on a stored field, so stored duplicate options do not block a change", async () => {
+    const user = userEvent.setup();
+    const duplicated = saved(3, "Choice", {
+      name: "Legacy",
+      choiceValues: "fieldChoices=a&fieldChoices=a&fieldChoices=b",
+      multipleChoice: "no",
+      selectedValues: "",
+    });
+    const posts = serveFields([duplicated]);
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("Legacy")).getByRole("switch", { name: "Mandatory" }));
+    await handle.current?.save();
+    expect(posts).toHaveLength(1);
+
+    await addOption(user, "Legacy", "c");
+    await expect(handle.current?.save()).rejects.toThrow();
+    expect(posts).toHaveLength(1);
+  });
+
+  it("shows a source's new name in a condition still being drafted", async () => {
+    const user = userEvent.setup();
+    serveFields([gmo, saved(2, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" })]);
+    await renderEditor();
+
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    const sourceMenu = within(card("Target")).getByRole("combobox", { name: "Field" });
+    expect(sourceMenu).toHaveTextContent("Is this a GMO?");
+    const sourceName = within(card("Is this a GMO?")).getByRole("textbox", { name: "Name" });
+    await user.clear(sourceName);
+    await user.paste("GMO status");
+
+    expect(within(card("Target")).getByRole("combobox", { name: "Field" })).toHaveTextContent("GMO status");
   });
 
   it("gives a new field its key when it is added, and sends it as new", async () => {
