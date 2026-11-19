@@ -463,7 +463,8 @@ public abstract class InventoryEntityField
       setDeleted(true);
       fieldUpdated = true;
     }
-    boolean keptAfterTemplateDeletion = templateField.isDeleted();
+    // only a field that survives its template field's deletion; a removed one keeps its state
+    boolean keptAfterTemplateDeletion = templateField.isDeleted() && !isDeleted();
     FieldDisplayRule latestRule = keptAfterTemplateDeletion ? null : templateField.getDisplayRule();
     boolean latestMandatory =
         templateField.isMandatory()
