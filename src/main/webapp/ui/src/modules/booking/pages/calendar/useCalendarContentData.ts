@@ -9,7 +9,7 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { calendarBookingCatalogueQuery, catalogueItemAsConfiguration } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import type { CollectionConfig, FieldName, SearchSelector } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
