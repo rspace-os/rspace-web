@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Chip, { chipClasses } from "@mui/material/Chip";
 import { dividerClasses } from "@mui/material/Divider";
+import { formControlClasses } from "@mui/material/FormControl";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import { inputClasses } from "@mui/material/Input";
@@ -24,6 +25,8 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
 import UserSelect from "../AdvancedSearch/UserSelect/UserSelect";
+import { SEARCH_INPUT_ID } from "../DefaultSearch/workspaceGlobals";
+import type { SearchOption } from "../DefaultSearch/workspaceSearchUrl";
 import ChemicalSearcher from "./ChemicalSearcher";
 import ScopeDialog from "./SimpleSearchScopeDialog";
 
@@ -34,14 +37,21 @@ declare function doWorkspaceSearch(url: string, settings: any): void;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare function getSelectedGlobalIds(): any[];
 
+const DATE_FILTERS = ["lastModified", "created"];
+
+// Lets the date fields shrink, so a narrow toolbar keeps its other buttons whole
+const dateFieldShrinks = { minWidth: 0, [`& .${formControlClasses.root}`]: { width: "100%" } };
+
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function formatDateForTooltip(date: any) /*: string*/ {
   if (date === null) return "";
   return truncateIsoTimestamp(date, "date").orElse("Invalid date");
 }
 
-function getFilterLabels(includeChemical: boolean): Record<string, string> {
-  const labels: Record<string, string> = {
+type FilterLabels = Record<string, string> & Record<Exclude<SearchOption, "records">, string>;
+
+export function getFilterLabels(includeChemical: boolean): FilterLabels {
+  const labels: FilterLabels = {
     global: i18n.t("workspace:toolbar.simpleSearch.filterTypes.global"),
     fullText: i18n.t("workspace:toolbar.simpleSearch.filterTypes.fullText"),
     tag: i18n.t("workspace:toolbar.simpleSearch.filterTypes.tag"),
@@ -286,7 +296,11 @@ class SimpleSearch extends React.Component<any, any> {
   render() {
     return (
       <>
-        <Paper sx={{ flexGrow: "1", display: "flex" }} elevation={0}>
+        <Paper
+          // Only the date fields shrink; the text search box keeps its size
+          sx={{ flexGrow: "1", display: "flex", minWidth: DATE_FILTERS.includes(this.state.filter) ? 0 : undefined }}
+          elevation={0}
+        >
           <Box component="form" onSubmit={this.submitSearch} sx={{ width: "100%" }}>
             <Box
               sx={{
@@ -389,7 +403,12 @@ class SimpleSearch extends React.Component<any, any> {
                   placeholder={i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder")}
                   value={this.state.term}
                   onChange={this.handleChange}
-                  slotProps={{ input: { "aria-label": i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder") } }}
+                  slotProps={{
+                    input: {
+                      id: SEARCH_INPUT_ID,
+                      "aria-label": i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder"),
+                    },
+                  }}
                 />
               )}
               {this.state.filter === "owner" && (
@@ -406,10 +425,10 @@ class SimpleSearch extends React.Component<any, any> {
                   testId="s-search-input-tag"
                 />
               )}
-              {["lastModified", "created"].includes(this.state.filter) && (
+              {DATE_FILTERS.includes(this.state.filter) && (
                 <>
                   <Tooltip title={formatDateForTooltip(this.state.from)}>
-                    <div>
+                    <Box sx={dateFieldShrinks}>
                       <DateField
                         value={this.state.from}
                         onChange={({ target: { value } }) => this.handleDateChange("from", value)}
@@ -419,10 +438,10 @@ class SimpleSearch extends React.Component<any, any> {
                         label={i18n.t("workspace:toolbar.advancedSearch.dateFrom")}
                         data-test-id="s-search-input-from"
                       />
-                    </div>
+                    </Box>
                   </Tooltip>
                   <Tooltip title={formatDateForTooltip(this.state.to)}>
-                    <div>
+                    <Box sx={dateFieldShrinks}>
                       <DateField
                         value={this.state.to}
                         onChange={({ target: { value } }) => this.handleDateChange("to", value)}
@@ -432,7 +451,7 @@ class SimpleSearch extends React.Component<any, any> {
                         label={i18n.t("workspace:toolbar.advancedSearch.dateTo")}
                         data-test-id="s-search-input-to"
                       />
-                    </div>
+                    </Box>
                   </Tooltip>
                 </>
               )}
@@ -445,6 +464,7 @@ class SimpleSearch extends React.Component<any, any> {
               >
                 <FontAwesomeIcon icon={faSearch} />
               </IconButton>
+              <Box component="span" ref={this.props.defaultSearchSlotRef} sx={{ display: "flex" }} />
               <Tooltip
                 title={i18n.t("workspace:toolbar.simpleSearch.advancedSearch")}
                 enterDelay={300}

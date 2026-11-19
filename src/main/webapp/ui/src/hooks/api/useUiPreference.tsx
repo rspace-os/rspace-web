@@ -1,7 +1,6 @@
 import { mapValues } from "es-toolkit";
 import React from "react";
 import axios from "@/common/axios";
-import type { UseState } from "../../util/types";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -15,6 +14,7 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
   SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
+  WORKSPACE_DEFAULT_SEARCH: Symbol.for("WORKSPACE_DEFAULT_SEARCH"),
 };
 
 type UiPreferencesContextType = {
@@ -77,8 +77,10 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
 
 /**
  * Use this custom hook to get the value of a UI Preference from the page-wide
- * context. The returned tuple has the same shape as a call to React.useState,
- * so that the value can be updated and persisted across page loads.
+ * context. The returned tuple is like a call to React.useState, so that the
+ * value can be updated and persisted across page loads. The setter updates
+ * the value at once and returns a promise that rejects if the server does
+ * not save it; callers may ignore the promise.
  *
  * @arg preference The UI Preference in question
  *
@@ -93,7 +95,7 @@ export default function useUiPreference<T>(
   opts: {
     defaultValue: T;
   },
-): UseState<T> {
+): [T, (newValue: T) => Promise<void>] {
   const { uiPreferences, setUiPreferences } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
@@ -104,7 +106,7 @@ export default function useUiPreference<T>(
 
   return [
     value,
-    (newValue) => {
+    (newValue: T) => {
       setValue(newValue);
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;
@@ -118,8 +120,8 @@ export default function useUiPreference<T>(
         };
       });
 
-      if (!key) return;
-      void (async () => {
+      if (!key) return Promise.resolve();
+      const saved = (async () => {
         const preferences = await fetchPreferences();
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
@@ -137,6 +139,8 @@ export default function useUiPreference<T>(
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       })();
+      void saved.catch((error: unknown) => console.warn(`Could not save the UI preference ${key}`, error));
+      return saved;
     },
   ];
 }

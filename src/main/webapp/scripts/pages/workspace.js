@@ -36,47 +36,48 @@ function showRecordList(result) {
 
   if (noOfRows > 0) {
     $('#record_list').html(result);
+  } else {
+    $('#record_list').hide().html(result);
+  }
 
-    // RSPAC-1212 Blocking: Setting the height to fit the height of the
-    // previously displayed content and the blocking message
-    if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({height: temporaryHeightOfBlockedElement});
-    }
+  // RSPAC-1212 Blocking: Setting the height to fit the height of the
+  // previously displayed content and the blocking message
+  if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
+    $(tableElement).css({height: temporaryHeightOfBlockedElement});
+  }
 
+  updateSearchModePanel(noOfRows > 0);
+  $('#record_list').show(effect, effectDuration);
+  // A newer listing may have replaced a search link's results before they arrived
+  endSearchLinkWait();
+  window.dispatchEvent(new CustomEvent("workspaceRecordListShown"));
+}
+
+// Shows the listing or the empty message, and the search bar when in search mode.
+function updateSearchModePanel(hasRows) {
+  $("#searchModePanel").removeClass();
+  if (hasRows) {
     $(".rs-working-area, .tabularViewBottom").show();
-    $('#record_list').show(effect, effectDuration);
-    $("#searchModePanel").removeClass().addClass("searchSuccess");
+    $("#searchModePanel").addClass("searchSuccess");
     if (workspaceSettings.searchMode) {
-      var message = RS.msg("legacyjs.workspace.main.searchResultsShown");
-      $("#searchModePanel #message").text(message);
+      $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.searchResultsShown"));
       $("#resetSearch").show();
       $("#searchModePanel").slideDown(fadeTime);
     } else {
       $("#searchModePanel").slideUp(fadeTime);
     }
   } else {
-    $('#record_list').hide().html(result);
-
-    // RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
-    if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-      $(tableElement).css({height: temporaryHeightOfBlockedElement});
-    }
-
     $(".rs-working-area, .tabularViewBottom").hide();
-    $('#record_list').show(effect, effectDuration);
-    $("#searchModePanel").removeClass();
     if (workspaceSettings.searchMode) {
       $("#searchModePanel").addClass("searchError");
-      $("#searchModePanel #message").text(
-          RS.msg("legacyjs.workspace.main.searchNoResults"));
+      $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.searchNoResults"));
       $("#resetSearch").show();
-      $("#searchModePanel").slideDown(fadeTime);
     } else {
       $("#searchModePanel").addClass("emptyFolder");
       $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.folderEmpty"));
       $("#resetSearch").hide();
-      $("#searchModePanel").slideDown(fadeTime);
     }
+    $("#searchModePanel").slideDown(fadeTime);
   }
 }
 
@@ -164,15 +165,26 @@ function configurePermittedActions() {
   $('.createMenuItemDivider').toggle(canCreateRecord);
 }
 
+// Only the latest listing request may draw, so a slow reply cannot replace
+// a folder or search the user has moved on to.
+var listingRequestId = 0;
+
 // Open a specific folder.
 function navigateToFolder(folderId) {
   workspaceSettings.url = "/workspace/ajax/view/" + folderId;
   workspaceSettings.pageNumber = 0;
   resetToolbar();
+  var requestId = ++listingRequestId;
   var jqxhr = $.get(workspaceSettings.url, workspaceSettings,
       function (result) {
+        if (requestId !== listingRequestId) {
+          return;
+        }
         hideRecordList();
         setTimeout(function () {
+          if (requestId !== listingRequestId) {
+            return;
+          }
           showRecordList(result);
           workspaceSettings.grandparentFolderId = workspaceSettings.parentFolderId;
           workspaceSettings.parentFolderId = folderId;
@@ -180,6 +192,13 @@ function navigateToFolder(folderId) {
         }, effectDuration);
       });
   jqxhr.fail(function () {
+    if (requestId !== listingRequestId) {
+      return;
+    }
+    // Requests this one superseded will not clear their loading state, so this one does
+    endSearchLinkWait();
+    RS.unblockPage($('.rs-working-area'));
+    $('#record_list').show();
     RS.ajaxFailed(RS.msg("legacyjs.workspace.main.openFolderAction"), false, jqxhr);
   });
 }
@@ -334,21 +353,6 @@ function toolbarButtonsEventHandler() {
     form.submit();
   });
 
-  $("#list_view").click(function () {
-    var id = this.id;
-    list_view();
-    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.listView")}, RS.msg("legacyjs.workspace.main.listView"),
-        "?list_view");
-  });
-
-  $("#tree_view").click(function () {
-    RS.trackEvent('Workspace Tree Viewed');
-    var id = this.id;
-    tree_view();
-    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.treeView")}, RS.msg("legacyjs.workspace.main.treeView"),
-        "?tree_view");
-  });
-
   $('#createRequest').click(function () {
     $('#createRequestDlg').dialog('open');
     RS.trackEvent("user:open:create_request_dialog:workspace");
@@ -423,30 +427,79 @@ var paginationEventHandler = function (source, e) {
  * Reloads the workspace results by either searching or viewing a folder (depending on `url` being either
  * 'workspace/ajax/view' or 'workspace/ajax/search'). `data` should be the workspace settings, which all get added to the
  * URL so that the server knows what they are. Optional parameter onLoad(result) is a function that gets called when
- * the results load.
+ * the results load. Optional parameter onFail(jqxhr) replaces the default error report when the request fails.
  *
  * Gets used when opening a folder, searching, changing sorting options, switching
  * pages, etc.
  **/
 function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
-}) {
-  // block page so that user knows something is loading
-  RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
+}, onFail) {
+  // block page so that user knows something is loading, unless a search link already has
+  if (!searchLinkPending) {
+    RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
+  }
 
+  var requestId = ++listingRequestId;
   var jqxhr = $.get(url, data, function (result) {
+    if (requestId !== listingRequestId) {
+      return;
+    }
     onLoad(result);
     hideRecordList();
     setTimeout(function () {
+      if (requestId !== listingRequestId) {
+        return;
+      }
       showRecordList(result);
       init();
       displayOrderIcon();
       balanceTableColumns();
     }, effectDuration);
   }).fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.main.displaySettingsAction"), true, jqxhr);
+    if (requestId !== listingRequestId) {
+      return;
+    }
+    if (onFail) {
+      onFail(jqxhr);
+    } else {
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.main.displaySettingsAction"), true, jqxhr);
+    }
   }).always(function () {
-    RS.unblockPage($('.rs-working-area'));
+    if (requestId === listingRequestId) {
+      RS.unblockPage($('.rs-working-area'));
+    }
   });
+}
+
+// A search link's results replace the listing, so the listing is blocked
+// from page load until that search has finished or failed. The frame is
+// blocked because .rs-working-area has no height for the overlay to cover.
+var searchLinkPending = false;
+var searchLinkTimeout;
+
+function startSearchLinkWait() {
+  var params = new URLSearchParams(window.location.search);
+  if (!params.has("options[]") && !params.has("terms[]")) {
+    return;
+  }
+  searchLinkPending = true;
+  RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('#record_list_frame'));
+  // Never leave the page blocked, for example if the toolbar fails to load
+  searchLinkTimeout = setTimeout(endSearchLinkWait, 15000);
+}
+
+// Once the toolbar has started the search, its success or failure ends the wait
+function searchLinkSearchStarted() {
+  clearTimeout(searchLinkTimeout);
+}
+
+function endSearchLinkWait() {
+  if (!searchLinkPending) {
+    return;
+  }
+  searchLinkPending = false;
+  clearTimeout(searchLinkTimeout);
+  RS.unblockPage($('#record_list_frame'));
 }
 
 function displayOrderIcon() {
@@ -486,26 +539,41 @@ function initFileTree() {
   });
 }
 
-function list_view(id) {
+// The view that is about to be shown, cancelled when the user switches again before it appears
+var pendingViewSwitch;
+
+// Shows the list without saving it as the user's view
+function showListView() {
+  clearTimeout(pendingViewSwitch);
   $('#fileBrowsing').hide(effect, effectDuration);
-  setTimeout(function () {
+  pendingViewSwitch = setTimeout(function () {
     $('#record_list_frame').show(effect, effectDuration);
     $('#viewMenu .dropdown-toggle i').attr('class', 'icon-th-list');
   }, effectDuration);
+}
+
+function list_view(id) {
+  showListView();
   workspaceSettings.currentViewMode = "LIST_VIEW";
   saveWorkplaceSettings();
 }
 
-function tree_view() {
+// Shows the tree without saving it as the user's view
+function showTreeView() {
+  clearTimeout(pendingViewSwitch);
   resetCrudops();
   $('#record_list_frame').hide(effect, effectDuration);
   if ($('#fancyTree').html() === "") {
     initFileTree();
   }
-  setTimeout(function () {
+  pendingViewSwitch = setTimeout(function () {
     $('#fileBrowsing').show(effect, effectDuration);
     $('#viewMenu .dropdown-toggle i').attr('class', 'icon-flow-split');
   }, effectDuration);
+}
+
+function tree_view() {
+  showTreeView();
   workspaceSettings.currentViewMode = "TREE_VIEW";
   saveWorkplaceSettings();
 }
@@ -537,6 +605,7 @@ function updateUIForWorkspaceSettingsFromServer() {
 }
 
 $(document).ready(function () {
+  startSearchLinkWait();
   workspaceSettings.parentFolderId = recordId;
   workspaceSettings.fallbackFolderId = recordId;
   workspaceSettings.url = "/workspace/ajax/view/"
