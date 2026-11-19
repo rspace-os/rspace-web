@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, within } from "@testing-library/react";
@@ -33,6 +33,7 @@ vi.mock("@/stores/stores/getRootStore", () => ({
 const UUID = v.pipe(v.string(), v.uuid());
 const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
 const PERMIT_KEY = "6f1c2e0a-0000-4000-8000-000000000002";
+const NOTES_KEY = "6f1c2e0a-0000-4000-8000-000000000003";
 
 const savedField = (attrs: Partial<FieldModelAttrs> & Pick<FieldModelAttrs, "type">): FieldModelAttrs => ({
   selectedOptions: null,
@@ -101,10 +102,26 @@ function renderEditor(template: TemplateModel, confirm = vi.fn(() => Promise.res
 }
 
 const fieldCard = (name: string) => screen.getByRole("region", { name });
+const CONDITIONAL = "common:fieldEditor.condition.conditional";
+const OPTIONS = "common:fieldEditor.condition.valuesLabel";
+
+/** Makes `name` shown only when "Is this a GMO?" is `option`, from its own card. */
+async function showWhen(user: ReturnType<typeof userEvent.setup>, name: string, option: string) {
+  await user.click(within(fieldCard(name)).getByRole("radio", { name: CONDITIONAL }));
+  await user.click(within(fieldCard(name)).getByRole("combobox", { name: OPTIONS }));
+  await user.click(screen.getByRole("option", { name: option }));
+  await user.keyboard("{Escape}");
+}
+
+/** Removes the last option of `name`'s condition, leaving it incomplete. */
+async function clearOptions(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(within(fieldCard(name)).getByRole("combobox", { name: OPTIONS }));
+  await user.keyboard("{Backspace}{Escape}");
+}
 const [gmo, permit] = [0, 1];
 const fieldAt = (template: TemplateModel, index: number) => template.fields[index] as FieldModel;
 
-describe("Template display rules", () => {
+describe("Template display conditions", () => {
   it("lets fields added in this session be used in a rule before the template is saved", async () => {
     const user = userEvent.setup();
     const template = makeMockTemplate({ id: null, globalId: null });
@@ -112,11 +129,7 @@ describe("Template display rules", () => {
     template.addField(newField({ name: "GMO permit", type: "string" }));
     renderEditor(template);
 
-    await user.click(screen.getByRole("button", { name: "common:fieldEditor.rules.addRule" }));
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
-    await user.click(screen.getByRole("option", { name: "Yes" }));
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.targetsLabel" }));
-    await user.click(screen.getByRole("option", { name: "GMO permit" }));
+    await showWhen(user, "GMO permit", "Yes");
 
     const [source, dependent] = [fieldAt(template, gmo), fieldAt(template, permit)];
     expect(v.is(UUID, source.fieldKey)).toBe(true);
@@ -125,7 +138,9 @@ describe("Template display rules", () => {
       fieldKey: dependent.fieldKey,
       displayRule: { sourceFieldKey: source.fieldKey, operator: "IS_ANY_OF", values: ["Yes"] },
     });
-    expect(within(fieldCard("GMO permit")).getByText("common:fieldEditor.summary.isAnyOf")).toBeInTheDocument();
+    expect(
+      within(fieldCard("Is this a GMO?")).getByText("common:fieldEditor.condition.dependents"),
+    ).toBeInTheDocument();
   });
 
   it("asks before deleting a field that a rule reads, then clears that rule", async () => {
@@ -200,11 +215,7 @@ describe("Template display rules", () => {
       })
       .slice(-1);
     await user.type(newOption, "Maybe");
-    await user.click(screen.getByRole("button", { name: "common:fieldEditor.rules.addRule" }));
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
-    await user.click(screen.getByRole("option", { name: "Maybe" }));
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.targetsLabel" }));
-    await user.click(screen.getByRole("option", { name: "GMO permit" }));
+    await showWhen(user, "GMO permit", "Maybe");
     expect(within(fieldCard("Is this a GMO?")).getByText("inventory:template.displayRules.optionInUse")).toBeVisible();
   });
 
@@ -253,17 +264,43 @@ describe("Template display rules", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
-  it("keeps the saved rule in the save while an edit leaves it incomplete", async () => {
+  it("keeps the saved rule while an edit leaves it incomplete, so the save leaves it as it is", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
     renderEditor(template);
 
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
-    await user.keyboard("{Backspace}");
+    await clearOptions(user, "GMO permit");
 
-    expect(fieldAt(template, permit).paramsForBackend).toMatchObject({
-      displayRule: { sourceFieldKey: GMO_KEY, operator: "IS_ANY_OF", values: ["Yes"] },
+    expect(within(fieldCard("GMO permit")).getByText("common:fieldEditor.condition.incompleteEdit")).toBeVisible();
+    expect(fieldAt(template, permit).displayRule).toEqual(createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]));
+    expect(fieldAt(template, permit).paramsForBackend).not.toHaveProperty("displayRule");
+  });
+
+  it("sends only the rules this edit changed, so a stale tab does not undo another author's change", async () => {
+    const user = userEvent.setup();
+    const attrs = savedGmoTemplateAttrs();
+    const template = makeMockTemplate({
+      ...attrs,
+      fields: [
+        ...(attrs?.fields ?? []),
+        savedField({ id: 3, globalId: "SF3", name: "Notes", type: "string", fieldKey: NOTES_KEY }),
+      ],
     });
+    renderEditor(template);
+
+    await showWhen(user, "Notes", "No");
+
+    // the permit's rule was loaded and left alone; the server keeps whatever it now holds
+    expect(fieldAt(template, permit).paramsForBackend).not.toHaveProperty("displayRule");
+    expect(fieldAt(template, 2).paramsForBackend).toMatchObject({
+      fieldKey: NOTES_KEY,
+      displayRule: { sourceFieldKey: GMO_KEY, operator: "IS_ANY_OF", values: ["No"] },
+    });
+
+    await user.click(
+      within(fieldCard("GMO permit")).getByRole("radio", { name: "common:fieldEditor.condition.always" }),
+    );
+    expect(fieldAt(template, permit).paramsForBackend).toHaveProperty("displayRule", null);
   });
 
   it("carries a selected default when its new option is renamed", async () => {
@@ -315,8 +352,6 @@ describe("Template display rules", () => {
   });
 });
 
-const NOTES_KEY = "6f1c2e0a-0000-4000-8000-000000000003";
-
 /** GMO? → GMO permit (a radio shown when GMO? is Yes) → Notes (shown when the permit is Granted). */
 const chainTemplate = () =>
   makeMockTemplate({
@@ -349,9 +384,6 @@ const chainTemplate = () =>
     ],
   });
 
-const ruleCards = () =>
-  within(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).queryAllByRole("listitem");
-
 /** Deletes a field, keeping it in existing samples when it is saved. */
 async function deleteField(user: ReturnType<typeof userEvent.setup>, name: string, saved = true) {
   const card = fieldCard(name);
@@ -380,7 +412,9 @@ describe("Deleting fields while editing display rules", () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(fieldAt(template, gmo).deleteFieldRequest).toBe(false);
     expect(fieldAt(template, gmo).options.map((option) => option.value)).toEqual(["Yes", "No"]);
-    expect(ruleCards()).toHaveLength(0);
+    expect(
+      within(fieldCard("Is this a GMO?")).queryByText("common:fieldEditor.condition.dependents"),
+    ).not.toBeInTheDocument();
   });
 
   it("sends no rule for a dependent and its source that are both deleted", async () => {
@@ -426,37 +460,22 @@ describe("Deleting fields while editing display rules", () => {
     expect(template.fields).toEqual([dependent]);
     expect(dependent.displayRule).toBeNull();
   });
-
-  it("drops an incomplete edit whose only field is deleted", async () => {
-    const user = userEvent.setup();
-    const template = savedGmoTemplate();
-    renderEditor(template);
-
-    await user.click(screen.getByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" }));
-    await user.keyboard("{Backspace}{Escape}");
-    expect(ruleCards()).toHaveLength(1);
-    await deleteField(user, "GMO permit");
-
-    expect(ruleCards()).toHaveLength(0);
-  });
 });
 
-describe("Display rule drafts across saves and edit sessions", () => {
+describe("Display condition drafts across saves and edit sessions", () => {
+  /** Leaves an incomplete condition on "GMO permit", whether or not it had a rule. */
   const addDraft = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.click(screen.getByRole("button", { name: "common:fieldEditor.rules.addRule" }));
+    const conditional = within(fieldCard("GMO permit")).getByRole("radio", { name: CONDITIONAL });
+    if ((conditional as HTMLInputElement).checked) await clearOptions(user, "GMO permit");
+    else await user.click(conditional);
   };
-  const draftCards = () =>
-    within(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).queryAllByRole("listitem", {
-      name: "common:fieldEditor.rules.newRuleHeading",
-    });
+  const draftCards = () => screen.queryAllByText(/^common:fieldEditor\.condition\.incomplete/);
 
   it("keeps drafts and incomplete edits when a save fails", async () => {
     const user = userEvent.setup();
     const template = savedGmoTemplate();
     renderEditor(template);
     await addDraft(user);
-    await user.click(screen.getAllByRole("combobox", { name: "common:fieldEditor.rules.valuesLabel" })[0]);
-    await user.keyboard("{Backspace}{Escape}");
     const save = Promise.withResolvers<never>();
     update.mockReturnValueOnce(save.promise);
 
@@ -464,8 +483,8 @@ describe("Display rule drafts across saves and edit sessions", () => {
     act(() => {
       saving = template.update().catch(() => {});
     });
-    // while saving the panel is read-only
-    expect(screen.queryByRole("button", { name: "common:fieldEditor.rules.addRule" })).not.toBeInTheDocument();
+    // while saving the fields are read-only
+    expect(screen.queryByRole("radio", { name: CONDITIONAL })).not.toBeInTheDocument();
     await act(async () => {
       save.reject(new Error("The save failed"));
       await saving;
@@ -473,7 +492,7 @@ describe("Display rule drafts across saves and edit sessions", () => {
 
     expect(update).toHaveBeenCalledOnce();
     expect(draftCards()).toHaveLength(1);
-    expect(screen.getByText("common:fieldEditor.rules.incompleteEdit")).toBeInTheDocument();
+    expect(screen.getByText("common:fieldEditor.condition.incompleteEdit")).toBeInTheDocument();
   });
 
   it("starts without drafts for another template, or after leaving and re-entering edit mode", async () => {
@@ -533,8 +552,8 @@ describe("Display rule drafts across saves and edit sessions", () => {
   });
 });
 
-describe("Instrument template display rules", () => {
-  it("gives new fields a key and mounts the rules panel above the fields", () => {
+describe("Instrument template display conditions", () => {
+  it("gives new fields a key and a display condition", () => {
     const template = makeMockInstrumentTemplate();
     template.currentlyEditableFields.add("fields");
     template.addField(newField({ name: "Calibrated?", type: "radio", definition: { options: ["Yes"] } }));
@@ -552,7 +571,9 @@ describe("Instrument template display rules", () => {
     );
 
     expect(v.is(UUID, (template.fields[0] as FieldModel).fieldKey)).toBe(true);
-    expect(screen.getByRole("region", { name: "common:fieldEditor.rules.title" })).toBeInTheDocument();
+    expect(
+      within(fieldCard("Calibrated?")).getByRole("group", { name: "common:fieldEditor.condition.title" }),
+    ).toBeInTheDocument();
   });
 
   it("moves focus to the name of a field when it is added", async () => {
@@ -579,5 +600,29 @@ describe("Instrument template display rules", () => {
         name: "common:fieldEditor.card.name",
       }),
     ).toHaveFocus();
+  });
+});
+
+describe("Display conditions outside a secure context", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows a template and adds a field without crypto.randomUUID", async () => {
+    const { getRandomValues } = globalThis.crypto;
+    vi.stubGlobal("crypto", { getRandomValues: getRandomValues.bind(globalThis.crypto) });
+    expect(globalThis.crypto.randomUUID).toBeUndefined();
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    renderEditor(template);
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.addNewField" }));
+
+    expect(v.is(UUID, fieldAt(template, 2).fieldKey)).toBe(true);
+    expect(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("group", {
+        name: "common:fieldEditor.condition.title",
+      }),
+    ).toBeInTheDocument();
   });
 });

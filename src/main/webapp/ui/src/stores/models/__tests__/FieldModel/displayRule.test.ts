@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { createDisplayRule, type FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
+import type FieldModel from "../../FieldModel";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 import { makeMockField } from "./mocking";
 
@@ -25,10 +26,30 @@ describe("FieldModel display rules", () => {
     expect(params).not.toHaveProperty("displayRule");
   });
 
-  it("sends the rule as the API's JSON object", () => {
+  it("sends the rule as the API's JSON object once this edit changes it", () => {
     const field = makeMockField({ type: "string", fieldKey: KEY, displayRule: fromApi(RULE_JSON) });
     expect(field.displayRule).toEqual(createDisplayRule(KEY, "IS_ANY_OF", ["Yes"]));
-    expect(field.paramsForBackend).toMatchObject({ fieldKey: KEY, displayRule: RULE_JSON });
+    field.setDisplayRule(createDisplayRule(KEY, "IS_NONE_OF", ["Yes"]));
+    expect(field.paramsForBackend).toMatchObject({
+      fieldKey: KEY,
+      displayRule: { ...RULE_JSON, operator: "IS_NONE_OF" },
+    });
+  });
+
+  it("leaves out a loaded rule this edit did not change, so a stale tab cannot undo another author's change", () => {
+    const field = makeMockField({ type: "string", fieldKey: KEY, displayRule: fromApi(RULE_JSON) });
+    expect(field.paramsForBackend).not.toHaveProperty("displayRule");
+    // setting the same condition again is no change either
+    field.setDisplayRule(createDisplayRule(KEY, "IS_ANY_OF", ["Yes"]));
+    expect(field.paramsForBackend).not.toHaveProperty("displayRule");
+  });
+
+  it("sends every rule of a record being created", () => {
+    const template = makeMockTemplate({ id: null, globalId: null });
+    template.addField({ type: "string", selectedOptions: [], columnIndex: null, attachment: null, mandatory: false });
+    const field = template.fields[0] as FieldModel;
+    field.setDisplayRule(createDisplayRule(KEY, "HAS_VALUE", []));
+    expect(field.paramsForBackend).toHaveProperty("displayRule", { sourceFieldKey: KEY, operator: "HAS_VALUE" });
   });
 
   it("sends an explicit null when a saved rule is cleared, since an absent rule means unchanged", () => {
