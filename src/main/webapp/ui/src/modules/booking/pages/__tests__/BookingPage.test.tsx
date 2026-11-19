@@ -2,7 +2,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   Outlet,
@@ -25,8 +25,9 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
-
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
+import { getApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
+import type { AppRouterContext } from "@/modules/common/app/router";
 import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger } from "@/modules/common/ui/sidebar";
 import { Route as bookingRouteDefinition } from "@/routes/booking/route";
 
@@ -63,7 +64,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
       return HttpResponse.json(inheritedBrowserBookingPreferences);
     }),
   );
-  const rootRoute = createRootRoute({ component: TestShell });
+  const rootRoute = createRootRouteWithContext<AppRouterContext>()({ component: TestShell });
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
@@ -72,6 +73,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
+    context: { tokenProvider: getApiV2TokenProvider() },
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
         createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboard }),
