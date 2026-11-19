@@ -21,23 +21,6 @@ export function operatorRequiresValues(operator: ConditionOperator): boolean {
   return (OPERATORS_WITH_VALUES as ReadonlyArray<ConditionOperator>).includes(operator);
 }
 
-const RULE_PROPERTIES: ReadonlyArray<string> = ["sourceFieldKey", "operator", "values"];
-
-/**
- * Valibot's `strictObject` treats a key as known when `key in entries`, which
- * is also true for inherited names such as "toString" and "constructor", and
- * for an own "__proto__" from `JSON.parse`. The Java parser rejects those, so
- * own keys are checked explicitly first.
- */
-const OnlyRulePropertiesSchema = v.check(
-  (input: unknown) =>
-    typeof input === "object" &&
-    input !== null &&
-    !Array.isArray(input) &&
-    Object.keys(input).every((key) => RULE_PROPERTIES.includes(key)),
-  "A display rule must be a JSON object with only sourceFieldKey, operator and values",
-);
-
 const RuleShapeSchema = v.variant(
   "operator",
   [
@@ -63,7 +46,6 @@ const RuleShapeSchema = v.variant(
  */
 export const FieldDisplayRuleSchema = v.pipe(
   v.unknown(),
-  OnlyRulePropertiesSchema,
   RuleShapeSchema,
   v.transform(
     ({
