@@ -1132,11 +1132,10 @@ export default class InventoryBaseRecord
    * The validation alert's Retry, repeating the save that failed. A template
    * refuses to send an unfinished display condition, and the disabled Save
    * button already says why, so that refusal is not rethrown; every other
-   * failure is. A retry while a save is still in flight sends nothing, so a
-   * create is never sent twice.
+   * failure is. The Retry button is disabled while it runs, so one alert
+   * cannot send its save twice.
    */
   private async retrySave(save: () => Promise<void>): Promise<void> {
-    if (this.loading) return;
     try {
       await save();
     } catch (error) {
