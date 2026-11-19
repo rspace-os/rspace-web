@@ -23,8 +23,11 @@ import org.springframework.test.context.TestPropertySource;
 
 /**
  * Guardrail: boots the prod Spring context, the wiring every running RSpace now uses. Booting runs
- * the prod startup initialisers against the configured database, as an app start would; the tests
- * themselves only read. Group snippet-folder migration is covered by {@code GroupManagerTest}.
+ * the prod startup initialisers against the configured database, as an app start would. That seeds
+ * built-in forms and other content and nothing removes it afterwards, so the pom runs this class in
+ * its own {@code unit-tests-production} execution, after {@code default-test}, and needs a
+ * disposable database. A {@code -Djdbc.url} override is used as is. The tests themselves only read.
+ * Group snippet-folder migration is covered by {@code GroupManagerTest}.
  */
 @ProductionProfileTestConfiguration
 @TestPropertySource(

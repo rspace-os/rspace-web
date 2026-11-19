@@ -298,6 +298,22 @@
             <id>default-test</id>
             <configuration>
               <skip>${skipUnitTests}</skip>
+              <excludes>
+                <exclude>**/ProdConfigWiringTest.java</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+          <execution> <!-- separate execution for 'prod' profile tests -->
+            <id>unit-tests-production</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${skipUnitTests}</skip>
+              <includes>
+                <include>**/ProdConfigWiringTest.java</include>
+              </includes>
             </configuration>
           </execution>
           <execution> <!-- for 'dev' profile IT tests -->
