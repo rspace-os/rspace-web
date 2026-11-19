@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { isEqual } from "es-toolkit";
 import { SaveIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -77,7 +78,7 @@ export function BookingPreferencesContent() {
           onChange={(value) => {
             setDraft((current) => {
               const baseline = current?.baseline ?? inputFrom(document);
-              return JSON.stringify(value) === JSON.stringify(baseline) ? undefined : { baseline, input: value };
+              return isEqual(value, baseline) ? undefined : { baseline, input: value };
             });
           }}
           browserTimezone={browserZone}

@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { uniq } from "es-toolkit";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { BookingDisplayPreferences } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferences";
 import type { BookingDisplayPreferencesReplacement } from "@/modules/common/api/v2/generated/models/bookingDisplayPreferencesReplacement";
@@ -168,7 +169,7 @@ export function todayInTimeZone(timeZone: string, now = new Date()): string {
 
 export function bookingTimeZoneOptions(...required: Array<string | null | undefined>): string[] {
   const supported = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
-  return [...new Set([...supported, ...required.filter((value): value is string => Boolean(value)), "UTC"])].sort(
+  return uniq([...supported, ...required.filter((value): value is string => Boolean(value)), "UTC"]).sort(
     (left, right) => left.localeCompare(right),
   );
 }
