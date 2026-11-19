@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { createDisplayRule, FieldSnapshotSchema } from "../displayRule";
 import { validateDisplayRules } from "../validateDisplayRules";
 
-const V4_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const V7_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe("newFieldKey", () => {
   afterEach(() => {
@@ -23,7 +23,7 @@ describe("newFieldKey", () => {
     const key = newFieldKey();
 
     expect(getRandomValues).toHaveBeenCalled();
-    expect(key).toMatch(V4_UUID);
+    expect(key).toMatch(V7_UUID);
     const source = v.parse(FieldSnapshotSchema, {
       key,
       canBeSource: true,
