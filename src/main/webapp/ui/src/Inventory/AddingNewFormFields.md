@@ -260,12 +260,14 @@ Each template field ([FieldModel]) has two properties for this:
 
   <dt>`fieldKey`</dt>
   <dd>
-    A lower-case UUID that identifies the field within its template. Rules name
-    their source field by key, never by id, because ids change whenever a field
-    is copied. The key is copied unchanged when a template is duplicated, when a
-    record is created from a template, and when a record is updated to the
-    latest template version. A key is immutable once saved. Record fields
-    created before the feature have a `null` key until they are updated.
+    A lower-case UUID that identifies the field within its template. RSpace
+    generates version 7 but accepts any version, so check keys only as
+    lower-case UUIDs. Rules name their source field by key, never by id, because
+    ids change whenever a field is copied. The key is copied unchanged when a
+    template is duplicated, when a record is created from a template, and when a
+    record is updated to the latest template version. A key is immutable once
+    saved. Record fields created before the feature have a `null` key until they
+    are updated.
   </dd>
 
   <dt>`displayRule`</dt>
@@ -280,11 +282,13 @@ Each template field ([FieldModel]) has two properties for this:
 
 ### Adding a template field
 
-- Generate a key when the author adds the field, with `crypto.randomUUID()`, in
-  `TemplateModel.addField` and `InstrumentTemplateModel.addField` only. Do not
-  generate one in the `FieldModel` constructor: it also builds legacy keyless
-  record fields, which must stay keyless. A field with a key can be used in a
-  rule straight away, before the template is first saved.
+- Generate a key when the author adds the field, with `newFieldKey()` from
+  `modules/common/field-rules/newFieldKey.ts` (a UUID version 7 that, unlike
+  `crypto.randomUUID()`, also works on plain HTTP), in `TemplateModel.addField`
+  and `InstrumentTemplateModel.addField` only. Do not generate one in the
+  `FieldModel` constructor: it also builds legacy keyless record fields, which
+  must stay keyless. A field with a key can be used in a rule straight away,
+  before the template is first saved.
 - Keep `fieldKey` and `displayRule` in `FieldModel.paramsForBackend`. Send
   `displayRule: null` explicitly when a saved field's rule is removed: on a
   template PUT an absent `displayRule` means "unchanged" and `null` means

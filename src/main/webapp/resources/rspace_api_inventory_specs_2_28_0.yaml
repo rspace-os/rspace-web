@@ -6002,13 +6002,13 @@ components:
             it, for display rules. A lower-case UUID, copied with the field when a template is
             duplicated or a record is created.
 
-            On template fields it is optional when the field is created (a key is generated if
-            omitted) and cannot be changed afterwards: an update that sends a different key is
-            rejected. A key sent for a new field must be unique among all fields of the template,
-            including deleted ones and the other fields created in the same request. Fields of
-            samples and instruments created before display rules existed have no key until they
-            are updated to the latest template version. Ignored when writing sample or instrument
-            fields.
+            On template fields it is optional when the field is created (a UUID version 7 is
+            generated if omitted; a key sent by the client may be any lower-case UUID) and cannot be
+            changed afterwards: an update that sends a different key is rejected. A key sent for a
+            new field must be unique among all fields of the template, including deleted ones and
+            the other fields created in the same request. Fields of samples and instruments created
+            before display rules existed have no key until they are updated to the latest template
+            version. Ignored when writing sample or instrument fields.
         displayRule:
           $ref: "#/components/schemas/FieldDisplayRule"
     InventoryEntityFieldList:
