@@ -991,6 +991,124 @@ describe("FormFieldEditor", () => {
   });
 });
 
+describe("FormFieldEditor with one-line text and number sources", () => {
+  const BATCH = "6f1c2e0a-0000-4000-8000-000000000003";
+  const WEIGHT = "6f1c2e0a-0000-4000-8000-000000000004";
+  const batch = saved(
+    3,
+    "String",
+    { name: "Batch code", ifPassword: "no", defaultStringValue: "" },
+    { fieldKey: BATCH },
+  );
+  const weight = saved(4, "Number", { name: "Weight" }, { fieldKey: WEIGHT });
+  const target = (displayRule: FormFieldEditorItem["displayRule"] = null) =>
+    saved(5, "String", { name: "Target", ifPassword: "no", defaultStringValue: "" }, { displayRule });
+  const passwordSwitch = (name: string) =>
+    within(card(name)).getByRole("switch", { name: "Hide the value, like a password" });
+
+  it("offers number and non-password one-line text fields, but not password or rich text fields", async () => {
+    const user = userEvent.setup();
+    serveFields([
+      gmo,
+      batch,
+      weight,
+      saved(6, "String", { name: "PIN", ifPassword: "yes", defaultStringValue: "" }),
+      saved(7, "Text", { name: "Notes", defaultValue: "" }),
+      target(),
+    ]);
+    await renderEditor();
+
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.click(within(card("Target")).getByRole("combobox", { name: "Field" }));
+
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Is this a GMO?",
+      "Batch code",
+      "Weight",
+    ]);
+  });
+
+  it("summarises rules on text and number fields, quoting only text", async () => {
+    serveFields([
+      batch,
+      weight,
+      target({ sourceFieldKey: WEIGHT, operator: "EQUALS", values: ["5"] }),
+      saved(
+        6,
+        "String",
+        { name: "Lot note", ifPassword: "no", defaultStringValue: "" },
+        {
+          displayRule: { sourceFieldKey: BATCH, operator: "CONTAINS", values: ["LOT"] },
+        },
+      ),
+    ]);
+    await renderEditor({ editable: false });
+
+    expect(within(card("Target")).getByText("Shown when Weight is 5")).toBeVisible();
+    expect(within(card("Lot note")).getByText("Shown when Batch code contains “LOT”")).toBeVisible();
+  });
+
+  it("asks before an unsaved source becomes a type of another kind, then clears the rules that read it", async () => {
+    const user = userEvent.setup();
+    serveFields([]);
+    await renderEditor();
+    await addField(user, /^Number/, "Source");
+    await addField(user, /^String/, "Target");
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.type(within(card("Target")).getByRole("textbox", { name: "Value" }), "5");
+
+    await user.click(within(card("Source")).getByRole("menuitem", { name: /Change type/ }));
+    await user.click(screen.getByRole("menuitem", { name: /^Radio/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Target/)).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "Change type" }));
+
+    const targetCard = await screen.findByRole("region", { name: "Target" });
+    expect(within(targetCard).getByRole("radio", { name: "Always" })).toBeChecked();
+  });
+
+  it("locks the password toggle of a field a rule reads, saying why, until no rule reads it", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([batch, target({ sourceFieldKey: BATCH, operator: "EQUALS", values: ["LOT"] })]);
+    const { handle } = await renderEditor();
+    const reason = "A display rule reads this field, so it cannot be a password field.";
+
+    // focusable, unlike a disabled control, so the reason can be reached and heard
+    expect(passwordSwitch("Batch code")).toBeEnabled();
+    expect(passwordSwitch("Batch code")).toHaveAttribute("aria-disabled", "true");
+    expect(passwordSwitch("Batch code")).toHaveAccessibleDescription(reason);
+    act(() => passwordSwitch("Batch code").focus());
+    await user.keyboard(" ");
+    expect(passwordSwitch("Batch code")).not.toBeChecked();
+    expect(passwordSwitch("Target")).not.toHaveAttribute("aria-disabled");
+
+    await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+    expect(passwordSwitch("Batch code")).not.toHaveAccessibleDescription(reason);
+    await user.click(passwordSwitch("Batch code"));
+    await handle.current?.save();
+
+    expect(posts[0][0].source).toMatchObject({ ifPassword: "yes" });
+  });
+
+  it("refuses to save or publish while a number condition's value is not a number", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([weight, target()]);
+    const { handle } = await renderEditor();
+    await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
+    await user.type(within(card("Target")).getByRole("textbox", { name: "Value" }), "five");
+
+    await act(() => expect(handle.current?.save()).rejects.toThrow());
+    // Publish and Update hold the fields read-only, then save them
+    act(() => handle.current?.setReadOnly(true));
+    await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+    expect(
+      screen.getByText("Complete the display condition of Target, or choose Always, before saving."),
+    ).toBeInTheDocument();
+    expect(posts).toHaveLength(0);
+  });
+});
+
 describe("ELN field settings", () => {
   async function editAndSave(
     item: FormFieldEditorItem,
