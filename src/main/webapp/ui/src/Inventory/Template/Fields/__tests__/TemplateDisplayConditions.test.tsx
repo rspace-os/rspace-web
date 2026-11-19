@@ -129,6 +129,15 @@ async function clearOptions(user: ReturnType<typeof userEvent.setup>, name: stri
   await user.click(within(fieldCard(name)).getByRole("combobox", { name: OPTIONS }));
   await user.keyboard("{Backspace}{Escape}");
 }
+/** The identifiers the section badge counts: those last reported in error. */
+function reportedErrors(onErrorStateChange: ReturnType<typeof vi.fn>): Set<string> {
+  const inError = new Set<string>();
+  for (const [identifier, value] of onErrorStateChange.mock.calls as Array<[string, boolean]>) {
+    if (value) inError.add(identifier);
+    else inError.delete(identifier);
+  }
+  return inError;
+}
 const [gmo, permit] = [0, 1];
 const fieldAt = (template: TemplateModel, index: number) => template.fields[index] as FieldModel;
 
@@ -322,13 +331,22 @@ describe("Template display conditions", () => {
     const [first] = screen.getAllByRole("region", { name: "common:fieldEditor.card.unnamed" });
     await user.type(nameOf(first), "Permit");
 
-    // the section badge counts the identifiers last reported in error
-    const inError = new Set<string>();
-    for (const [identifier, value] of onErrorStateChange.mock.calls as Array<[string, boolean]>) {
-      if (value) inError.add(identifier);
-      else inError.delete(identifier);
-    }
-    expect(inError.size).toBe(1);
+    expect(reportedErrors(onErrorStateChange).size).toBe(1);
+  });
+
+  it("clears the name error from the badge when the field with the blank name is deleted", async () => {
+    const user = userEvent.setup();
+    const { onErrorStateChange } = renderEditor(newGmoTemplate());
+    await user.clear(within(fieldCard("GMO permit")).getByRole("textbox", { name: "common:fieldEditor.card.name" }));
+    expect(reportedErrors(onErrorStateChange).size).toBe(1);
+
+    await user.click(
+      within(fieldCard("common:fieldEditor.card.unnamed")).getByRole("button", {
+        name: "inventory:fields.templateFields.customField.deleteNewField",
+      }),
+    );
+
+    expect(reportedErrors(onErrorStateChange).size).toBe(0);
   });
 
   it("sends only the rules this edit changed, so a stale tab does not undo another author's change", async () => {
@@ -621,6 +639,67 @@ describe("Display condition drafts across saves and edit sessions", () => {
     // a failed upload leaves a progress bar in the button, which joins its name
     expect(screen.getByRole("button", { name: /common:actions\.save/ })).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent(INCOMPLETE);
+  });
+
+  it("rejects the Retry with the error of a save that fails again", async () => {
+    const template = savedGmoTemplate();
+    renderEditor(template);
+    update.mockRejectedValueOnce({
+      response: { status: 400, data: { data: { validationErrors: [{ field: "name", message: "Taken" }] } } },
+    });
+    await act(async () => {
+      await template.update().catch(() => {});
+    });
+    const [[{ retryFunction }]] = addAlert.mock.calls as Array<[{ retryFunction: () => Promise<void> }]>;
+    const serverError = { response: { status: 500, data: {} } };
+    update.mockRejectedValueOnce(serverError);
+
+    await act(async () => {
+      await expect(retryFunction()).rejects.toBe(serverError);
+    });
+
+    expect(update).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends the create again on Retry after the server refuses a new template", async () => {
+    const user = userEvent.setup();
+    const template = newGmoTemplate();
+    renderEditor(template);
+    post.mockRejectedValueOnce({
+      response: { status: 400, data: { data: { validationErrors: [{ field: "name", message: "Taken" }] } } },
+    });
+    await act(async () => {
+      await template.create().catch(() => {});
+    });
+    const [[{ retryFunction }]] = addAlert.mock.calls as Array<[{ retryFunction: () => Promise<void> }]>;
+    await user.type(
+      within(fieldCard("GMO permit")).getByRole("textbox", { name: "common:fieldEditor.card.name" }),
+      "s",
+    );
+    post.mockResolvedValueOnce({ data: { ...templateAttrs({ id: 9, globalId: "IT9" }), attachments: [] } });
+
+    await act(async () => {
+      await retryFunction();
+    });
+
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(update).not.toHaveBeenCalled();
+    expect(template.globalId).toBe("IT9");
+  });
+
+  it("drops a draft when the template's fields are replaced by new models with the same keys", async () => {
+    const user = userEvent.setup();
+    const template = savedGmoTemplate();
+    template.setAttributes({ editing: true });
+    renderEditor(template);
+    await addDraft(user);
+    expect(draftCards()).toHaveLength(1);
+
+    act(() => template.overrideFields(savedGmoTemplateAttrs()?.fields ?? []));
+
+    expect(fieldAt(template, permit).fieldKey).toBe(PERMIT_KEY);
+    expect(draftCards()).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "common:actions.save" })).toBeEnabled();
   });
 
   it("starts without drafts, and can be saved, for another template or after leaving and re-entering edit mode", async () => {
