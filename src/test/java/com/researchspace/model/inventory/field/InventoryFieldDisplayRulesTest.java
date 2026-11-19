@@ -324,6 +324,24 @@ class InventoryFieldDisplayRulesTest {
   }
 
   @Test
+  void updateToLatestShowsAFieldDeletedFromTheTemplateButKept() {
+    Sample sample = template.copyFromTemplate(user);
+    // "No" hides the permit under its rule, so it was left empty while mandatory
+    sample.getActiveFields().get(0).setSelectedOptions(List.of("No"));
+    template.deleteSampleField(permit, false);
+    template.increaseVersion();
+
+    sample.updateToLatestTemplateVersion();
+
+    InventoryEntityField keptPermit = sample.getActiveFields().get(1);
+    assertNull(keptPermit.getDisplayRule());
+    assertFalse(keptPermit.isMandatory());
+    assertEquals(
+        List.of(true, true), InventoryFieldDisplayRules.visibility(sample.getActiveFields()));
+    assertDoesNotThrow(() -> keptPermit.setFieldData(""));
+  }
+
+  @Test
   void safetyNetGivesTemplateFieldsAKeyButNotRecordFields() {
     InventoryStringField templateField = string(3L, "No key", null);
     template.addSampleField(templateField);
