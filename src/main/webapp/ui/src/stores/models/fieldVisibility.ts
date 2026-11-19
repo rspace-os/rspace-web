@@ -57,6 +57,33 @@ export function fieldSnapshot(field: RuleReadableField): FieldSnapshot {
 
 /** The fields that display rules hide, given the fields' current values. */
 export function hiddenFieldsOf<T extends RuleReadableField>(fields: ReadonlyArray<T>): Set<T> {
-  const visible = displayRuleVisibility(fields.map(fieldSnapshot));
+  return hiddenFieldsReading(fields, []);
+}
+
+/**
+ * The value of each text or number field that some display rule reads, by
+ * position, and null for every other field.
+ */
+export function scalarSourceValues(fields: ReadonlyArray<RuleReadableField>): Array<string | null> {
+  const read = new Set(fields.map((field) => field.displayRule?.sourceFieldKey));
+  return fields.map((field) => (field.fieldKey && read.has(field.fieldKey) ? ruleSourceValue(field) : null));
+}
+
+/**
+ * The fields that display rules hide when each text or number source reads
+ * `scalarValues[index]` instead of its current value; a null or missing entry
+ * reads the current value. Options are always read as they are now.
+ */
+export function hiddenFieldsReading<T extends RuleReadableField>(
+  fields: ReadonlyArray<T>,
+  scalarValues: ReadonlyArray<string | null>,
+): Set<T> {
+  const visible = displayRuleVisibility(
+    fields.map((field, index) => {
+      const snapshot = fieldSnapshot(field);
+      const value = scalarValues[index];
+      return value === null || value === undefined ? snapshot : { ...snapshot, value };
+    }),
+  );
   return new Set(fields.filter((_field, index) => !visible[index]));
 }

@@ -284,7 +284,7 @@ describe("Template display conditions", () => {
     expect(fieldAt(template, permit).displayRule).toBeNull();
   });
 
-  it("asks before giving an unsaved text source a number type, then clears the rules that read it", async () => {
+  it("asks before giving an unsaved text source an option type, then clears the rules that read it", async () => {
     const user = userEvent.setup();
     const template = makeMockTemplate({ id: null, globalId: null });
     template.addField(newField({ name: "Batch code", type: "string" }));
@@ -296,11 +296,51 @@ describe("Template display conditions", () => {
     await user.click(
       within(fieldCard("Batch code")).getByRole("menuitem", { name: "common:fieldEditor.card.changeType" }),
     );
-    await user.click(screen.getByRole("menuitem", { name: /^Number/ }));
+    await user.click(screen.getByRole("menuitem", { name: /^Radio/ }));
 
     expect(confirm).toHaveBeenCalledOnce();
-    expect(source.type).toBe("number");
+    expect(source.type).toBe("radio");
     expect(fieldAt(template, permit).displayRule).toBeNull();
+  });
+
+  it("keeps an unfinished edit when a retype of its source is cancelled, and drops it, allowing Save, when confirmed", async () => {
+    const user = userEvent.setup();
+    const template = makeMockTemplate({ id: null, globalId: null });
+    template.addField(newField({ name: "Weight", type: "number" }));
+    template.addField(newField({ name: "GMO permit", type: "string" }));
+    const source = fieldAt(template, 0);
+    const rule = createDisplayRule(source.fieldKey ?? "", "EQUALS", ["5"]);
+    fieldAt(template, permit).setDisplayRule(rule);
+    renderEditor(template, vi.fn<() => Promise<boolean>>().mockResolvedValueOnce(false).mockResolvedValueOnce(true));
+    const card = within(fieldCard("GMO permit"));
+    const save = screen.getByRole("button", { name: "common:actions.save" });
+    const value = card.getByRole("textbox", { name: "common:fieldEditor.condition.valueLabel" });
+    await user.type(value, "x");
+    expect(save).toBeDisabled();
+    const retypeToRadio = async () => {
+      await user.click(
+        within(fieldCard("Weight")).getByRole("menuitem", { name: "common:fieldEditor.card.changeType" }),
+      );
+      await user.click(screen.getByRole("menuitem", { name: /^Radio/ }));
+    };
+
+    await retypeToRadio();
+    expect(source.type).toBe("number");
+    expect(fieldAt(template, permit).displayRule).toEqual(rule);
+    expect(value).toHaveValue("5x");
+    expect(save).toBeDisabled();
+
+    await retypeToRadio();
+    expect(source.type).toBe("radio");
+    expect(fieldAt(template, permit).displayRule).toBeNull();
+    expect(card.getByRole("radio", { name: "common:fieldEditor.condition.always" })).toBeChecked();
+    // a radio field needs an option before the template can be saved at all
+    await user.click(within(fieldCard("Weight")).getByRole("button", { name: "common:fieldEditor.options.add" }));
+    await user.type(
+      within(fieldCard("Weight")).getByRole("textbox", { name: "common:fieldEditor.options.optionLabel" }),
+      "Heavy",
+    );
+    expect(save).toBeEnabled();
   });
 
   it("stores a number condition, trimmed, on a field that reads a number field", async () => {

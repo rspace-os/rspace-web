@@ -27,20 +27,26 @@ type FieldsArgs = {
   sample: Sample & InventoryBaseRecord;
 };
 
-function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
+function Fields({ onErrorStateChange: reportErrorState, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer, wrapField } = useShownTemplateFields(sample, onErrorStateChange);
+  const { shownFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
+    sample,
+    reportErrorState,
+  );
   const renderField = (field: Field) => {
+    // a field the values hide is on screen only while it holds focus, and is not checked
+    const checked = !hiddenByValues(field);
+    const mandatory = checked && field.mandatory;
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
       label: field.name,
-      error: (field.mandatory && !field.hasContent) || field.error,
-      helperText: field.mandatory
+      error: checked && ((field.mandatory && !field.hasContent) || field.error),
+      helperText: mandatory
         ? "This field is mandatory. Please enter a value."
-        : field.error
+        : checked && field.error
           ? "Invalid value. Please enter a valid value."
           : "",
-      required: field.mandatory,
+      required: mandatory,
     };
 
     if (field.type === "attachment") {
