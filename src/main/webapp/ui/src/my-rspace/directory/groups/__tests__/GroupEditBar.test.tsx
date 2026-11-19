@@ -8,8 +8,12 @@ import GroupEditBar from "../GroupEditBar";
 
 const VALIDATION_MESSAGE = "Please enter some profile information.";
 
-function renderEditBar(profileText: string) {
+function renderEditBar(profileText: string, { piCanEditAll = false }: { piCanEditAll?: boolean } = {}) {
   const domContainer = document.createElement("div");
+  if (piCanEditAll) {
+    domContainer.setAttribute("data-can-editpieditallchioce", "true");
+    domContainer.setAttribute("data-pieditallchoicevalue", "false");
+  }
   domContainer.setAttribute("data-group-id", "1");
   domContainer.setAttribute("data-can-edit", "true");
   domContainer.setAttribute("data-profile-text", profileText);
@@ -19,9 +23,16 @@ function renderEditBar(profileText: string) {
   return render(<GroupEditBar domContainer={domContainer} />);
 }
 
-function mockEndpoints({ hideStatus = 200 }: { hideStatus?: number } = {}) {
+function mockEndpoints({
+  hideStatus = 200,
+  hideResponseGate,
+}: {
+  hideStatus?: number;
+  hideResponseGate?: Promise<void>;
+} = {}) {
   const profilePosts: Array<string> = [];
   const hidePosts: Array<string> = [];
+  const piCanEditPosts: Array<string> = [];
   server.use(
     http.post("/groups/editProfile/1", async ({ request }) => {
       const newProfile = String((await request.formData()).get("newProfile"));
@@ -32,12 +43,17 @@ function mockEndpoints({ hideStatus = 200 }: { hideStatus?: number } = {}) {
     }),
     http.post("/groups/ajax/admin/changeHideProfileSetting/1", async ({ request }) => {
       hidePosts.push(String((await request.formData()).get("hideProfile")));
+      await hideResponseGate;
       return hideStatus === 200
         ? HttpResponse.json({ data: "true", success: true })
         : HttpResponse.json({ exceptionMessage: "Server error" }, { status: hideStatus });
     }),
+    http.post("/groups/ajax/admin/changePiCanEditAll/1", async ({ request }) => {
+      piCanEditPosts.push(String((await request.formData()).get("canPIEditAll")));
+      return HttpResponse.json({ data: "true", success: true });
+    }),
   );
-  return { profilePosts, hidePosts };
+  return { profilePosts, hidePosts, piCanEditPosts };
 }
 
 const editButton = () => screen.getByRole("button", { name: /editTooltip/ });
@@ -135,6 +151,23 @@ describe("GroupEditBar", () => {
     await waitFor(() => expect(hidePosts).toEqual(["true", "false"]));
   });
 
+  it("compares the PI can-edit-all setting against the last saved value", async () => {
+    const user = userEvent.setup();
+    const { piCanEditPosts } = mockEndpoints();
+    renderEditBar("Original", { piCanEditAll: true });
+
+    await user.click(editButton());
+    await user.click(screen.getByRole("checkbox", { name: /piCanEdit/ }));
+    await user.click(saveButton());
+    await waitFor(() => expect(screen.queryByRole("button", { name: /actions\.save/ })).not.toBeInTheDocument());
+
+    await user.click(editButton());
+    await user.click(screen.getByRole("checkbox", { name: /piCanEdit/ }));
+    await user.click(saveButton());
+
+    await waitFor(() => expect(piCanEditPosts).toEqual(["true", "false"]));
+  });
+
   it("sends the hide setting again on retry after it was applied in a partly failed save", async () => {
     const user = userEvent.setup();
     const { profilePosts, hidePosts } = mockEndpoints();
@@ -172,6 +205,45 @@ describe("GroupEditBar", () => {
 
     await user.click(editButton());
     expect(description()).toHaveValue("Original");
+  });
+
+  it("restores the saved hide setting when an unsaved change is cancelled", async () => {
+    const user = userEvent.setup();
+    const { hidePosts } = mockEndpoints();
+    renderEditBar("Original");
+
+    await user.click(editButton());
+    await user.click(screen.getByRole("checkbox", { name: /hideGroup/ }));
+    await user.click(screen.getByRole("button", { name: /actions\.cancel/ }));
+
+    await user.click(editButton());
+    expect(screen.getByRole("checkbox", { name: /hideGroup/ })).not.toBeChecked();
+    await user.click(saveButton());
+    await waitFor(() => expect(screen.queryByRole("button", { name: /actions\.save/ })).not.toBeInTheDocument());
+    expect(hidePosts).toEqual([]);
+  });
+
+  it("disables Save and Cancel while a save is in flight, then shows what was saved", async () => {
+    const user = userEvent.setup();
+    let releaseHide = () => {};
+    const hideResponseGate = new Promise<void>((resolve) => {
+      releaseHide = resolve;
+    });
+    const { hidePosts } = mockEndpoints({ hideResponseGate });
+    renderEditBar("Original");
+
+    await user.click(editButton());
+    await user.click(screen.getByRole("checkbox", { name: /hideGroup/ }));
+    await user.click(saveButton());
+
+    await waitFor(() => expect(hidePosts).toEqual(["true"]));
+    expect(screen.getByRole("button", { name: /actions\.cancel/ })).toBeDisabled();
+    expect(saveButton()).toBeDisabled();
+
+    releaseHide();
+    await waitFor(() => expect(screen.queryByRole("button", { name: /actions\.save/ })).not.toBeInTheDocument());
+    await user.click(editButton());
+    expect(screen.getByRole("checkbox", { name: /hideGroup/ })).toBeChecked();
   });
 
   it("reports a failed hide request, keeps editing, and still saves the changed description", async () => {

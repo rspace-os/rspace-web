@@ -31,6 +31,7 @@ class GroupEditBar extends React.Component<any, any> {
     this.state = {
       toast: false,
       editing: false,
+      saving: false,
       group_id: props.domContainer.getAttribute("data-group-id"),
       can_edit: props.domContainer.getAttribute("data-can-edit") === "true",
       profile_text: props.domContainer.getAttribute("data-profile-text"),
@@ -68,6 +69,10 @@ class GroupEditBar extends React.Component<any, any> {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   submitForm = async (event: any) => {
     event.preventDefault();
+    if (this.state.saving) return;
+    // Save, Cancel and the fields stay disabled until every request settles, so Cancel can't restore values
+    // that a pending request then saves, and a second click can't post again.
+    this.setState({ saving: true });
     const requests: Array<Promise<boolean>> = [];
     const onRequestError = (error: unknown) => {
       this.handleError(getErrorMessage(error, i18n.t("apiErrors.unknown")));
@@ -131,9 +136,7 @@ class GroupEditBar extends React.Component<any, any> {
     }
 
     const results = await Promise.all(requests);
-    if (results.every(Boolean)) {
-      this.setState({ editing: false });
-    }
+    this.setState({ saving: false, ...(results.every(Boolean) ? { editing: false } : {}) });
   };
 
   handleError = (error: string) => {
@@ -197,6 +200,7 @@ class GroupEditBar extends React.Component<any, any> {
                     label={i18n.t("profile.groups.editBar.profileDescription")}
                     margin="dense"
                     data-test-id="profile-description"
+                    disabled={this.state.saving}
                     slotProps={{
                       htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
                     }}
@@ -222,7 +226,7 @@ class GroupEditBar extends React.Component<any, any> {
                       control={
                         <Checkbox
                           {...({
-                            disabled: !this.state.editing || !this.state.pi_can_edit_permission,
+                            disabled: !this.state.editing || this.state.saving || !this.state.pi_can_edit_permission,
                             onChange: this.handleSwitch("pi_can_edit_value"),
                             color: "primary",
                             checked: this.state.pi_can_edit_value,
@@ -243,7 +247,7 @@ class GroupEditBar extends React.Component<any, any> {
                       control={
                         <Checkbox
                           {...({
-                            disabled: !this.state.can_hide_profile || !this.state.editing,
+                            disabled: !this.state.can_hide_profile || !this.state.editing || this.state.saving,
                             onChange: this.handleSwitch("profile_is_hidden"),
                             color: "primary",
                             checked: this.state.profile_is_hidden,
@@ -260,10 +264,20 @@ class GroupEditBar extends React.Component<any, any> {
               </CardContent>
               {this.state.editing && (
                 <CardActions sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Button onClick={this.handleClickClose} data-test-id="button-cancel-edit">
+                  <Button
+                    onClick={this.handleClickClose}
+                    disabled={this.state.saving}
+                    data-test-id="button-cancel-edit"
+                  >
                     {i18n.t("actions.cancel")}
                   </Button>
-                  <Button onClick={this.submitForm} variant="contained" color="primary" data-test-id="button-save-edit">
+                  <Button
+                    onClick={this.submitForm}
+                    disabled={this.state.saving}
+                    variant="contained"
+                    color="primary"
+                    data-test-id="button-save-edit"
+                  >
                     {i18n.t("actions.save")}
                   </Button>
                 </CardActions>
