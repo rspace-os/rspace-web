@@ -77,7 +77,7 @@ template subsample, workbench, deleted option, type, owner, bookable). 1000 matc
 Lucene limit. When more matched, the response carries `structureSearchLimitReached` and the results
 feedback shows a warning. Sorting applies only within those 1000. The Workspace listing uses the same
 limit silently, because `ChemicalSearchResults` has no notice field. Loading only the requested page
-would remove the limit; that is a follow-up, not yet ticketed.
+would remove the limit; that is follow-up RSDEV-1713.
 
 The chemistry service is called by `InventorySearchApiController` before the transactional
 `InventoryStructureSearchManager`, which takes the chem ids, as the Workspace path does. A slow
