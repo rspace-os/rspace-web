@@ -13,13 +13,12 @@ public class BackfillInventoryTemplateFieldKeys_RSDEV1706 extends AbstractFieldK
   }
 
   @Override
-  protected String idsToKeySql() {
-    return "select f.id from InventoryEntityField f join Sample s on s.id = f.sample_id"
-        + " where f.fieldKey is null and s.DTYPE = 'SampleTemplate'"
-        + " union"
-        + " select f.id from InventoryEntityField f join InstrumentEntity i"
-        + " on i.id = f.instrumentEntity_id"
-        + " where f.fieldKey is null and i.DTYPE = 'InstrumentTemplate'"
-        + " order by id";
+  protected String pageOfIdsToKeySql() {
+    return "select f.id from InventoryEntityField f"
+        + " left join Sample s on s.id = f.sample_id"
+        + " left join InstrumentEntity i on i.id = f.instrumentEntity_id"
+        + " where f.id > ? and f.fieldKey is null"
+        + " and (s.DTYPE = 'SampleTemplate' or i.DTYPE = 'InstrumentTemplate')"
+        + " order by f.id limit ?";
   }
 }
