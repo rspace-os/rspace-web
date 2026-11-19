@@ -31,6 +31,8 @@ import java.util.List;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -234,7 +236,9 @@ public class JournalController extends BaseController {
       } else {
         fieldContent = latestField.getFieldData();
       }
-      if (!(latestField instanceof TextField)) {
+      if (latestField instanceof TextField) {
+        fieldContent = balancedHtml(fieldContent);
+      } else {
         fieldContent = StringEscapeUtils.escapeHtml4(fieldContent);
       }
 
@@ -264,6 +268,17 @@ public class JournalController extends BaseController {
       appendAttribute(html, "data-field-value", shownField.getFieldData());
     }
     return html.append(">").toString();
+  }
+
+  /**
+   * The field's stored rich text with every element closed and no stray end tags, so it stays
+   * inside its own field wrapper: an unclosed or extra {@code div} in one field must not nest a
+   * later field inside it, or close this field's wrapper early.
+   */
+  static String balancedHtml(String html) {
+    Document fragment = Jsoup.parseBodyFragment(html == null ? "" : html);
+    fragment.outputSettings().prettyPrint(false);
+    return fragment.body().html();
   }
 
   private static void appendAttribute(StringBuilder html, String name, String value) {

@@ -23,6 +23,8 @@ export type LegacyFieldDisplay = {
   shownMandatoryFieldsSatisfied: typeof shownMandatoryFieldsSatisfied;
 };
 
+const ANNOUNCEMENT = "fieldDisplay.fieldsShown";
+
 const VISUALLY_HIDDEN =
   "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0";
 
@@ -46,16 +48,18 @@ export function createLegacyFieldDisplay(i18n: I18nInstance, doc: Document = doc
     const change = ++latestChange;
     const show = () => {
       if (change !== latestChange) return;
-      region.textContent = i18n.t("fieldDisplay.fieldsShown", {
+      region.textContent = i18n.t(ANNOUNCEMENT, {
         count: names.length,
         fields: formatList(names, i18n.resolvedLanguage ?? i18n.language),
       });
     };
-    // Never show the raw key: wait for the catalog if it has not loaded yet.
-    if (i18n.isInitialized && i18n.hasLoadedNamespace("common")) show();
+    // Never show the raw key: wait for the message, and say nothing if its catalog failed to load
+    // (a failed load can still count as loaded).
+    const ready = () => i18n.isInitialized && i18n.exists(ANNOUNCEMENT, { ns: "common" });
+    if (ready()) show();
     else
       void i18n.loadNamespaces("common").then(() => {
-        if (i18n.hasLoadedNamespace("common")) show();
+        if (ready()) show();
       });
   }
 
