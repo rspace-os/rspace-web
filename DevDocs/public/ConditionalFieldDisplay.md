@@ -42,19 +42,31 @@ Each field's card has a **Display this field when…** section. It offers two ch
 - **Always**: the field has no rule and is always shown. This is the default.
 - **Only when another field has certain values**: the field has a rule.
 
+![The Containment level field's card while editing: Display this field when… is set to Only when another field has certain values, with Field "Is this a GMO?", Condition "is any of" and Options "Yes", and the note "Other fields depend on this field: CL3 approval"](images/conditional-field-display/template-field-condition.png)
+
 To give a field a rule:
 
-1. Add at least one other radio or choice field. Until there is one, **Only when another field
-   has certain values** is disabled, and the card explains that rules can only read radio and
-   choice fields.
-2. In the field's card, choose **Only when another field has certain values**.
-3. Choose the **Field** the rule reads and the **Condition**. For "is any of" and "is none of",
-   also choose the **Options**. The **Field** list leaves out fields that would make a loop.
+1. In the field's card, choose **Only when another field has certain values**.
+2. Choose the **Field** the rule reads. The list offers only the other radio and choice fields,
+   and leaves out fields that would make a loop. The first of them is chosen for you.
+3. Choose the **Condition**. For "is any of" and "is none of", also choose the **Options**.
 4. Save the form or template.
 
-A condition that is not finished (for example, no options chosen yet) is kept as a draft in that
-card, with a warning, and is not applied. Until the draft is complete, the field keeps the rule
-it had when you started, or stays always shown if it had none.
+If there is no field the rule could read yet, for example because the form has no other radio or
+choice field, the **Field** list shows a disabled "No other fields" item, and the same text
+appears below the list. Add a radio or choice field first, or choose **Always**.
+
+The condition is applied as soon as it is complete. Until then, the missing part is marked in
+the card:
+
+- "Choose a field." when no field is chosen.
+- "Choose at least one option." when "is any of" or "is none of" has no options.
+- "This condition cannot be applied. Choose fewer or shorter options." when the condition is
+  complete but too large to store (more than 1,000 options, or too long altogether).
+
+Meanwhile the field keeps the rule it had when you started, or stays always shown if it had
+none, and the form or template cannot be saved. Finish the condition or choose **Always**, then
+save again. See the ELN and Inventory parts below for what Save says.
 
 To remove a rule, choose **Always**; the field is then always shown. If you switch back to
 **Only when another field has certain values** before you save, the condition you had comes
@@ -95,12 +107,24 @@ Use this part for the ELN Forms article.
 - Save with the toolbar as before. **Save and Close**, **Update** and **Publish** save the
   fields first. If a field has a problem, nothing is saved, the problem is marked on the field,
   and the editor stays open. **Revert** asks before it discards your changes.
+- While a display condition is unfinished, **Save and Close**, **Update** and **Publish** do
+  nothing, even if no other field changed. The editor's error alert says "Fix the problems
+  marked below, then save again." and "Complete the display condition of {field}, or choose
+  Always, before saving.", naming the field, and moves focus to the condition.
 - If you leave the page with unsaved field changes, the browser asks you to confirm.
 - If the form's fields were saved somewhere else (for example in another tab) after this page
-  loaded them, your field changes are not saved, so they cannot overwrite the other changes.
-  This applies to **Save and Close**, **Update** and **Publish** alike, and none of them goes
-  ahead. The editor says "This form was changed elsewhere." and offers **Reload**. Reload, then
-  make your changes again.
+  loaded or saved them, your field changes are not saved, so they cannot overwrite the other
+  changes. **Save and Close**, **Update** and **Publish** check this even when you changed
+  nothing, and **Update** and **Publish** check it again as they make the version, so they never
+  publish or update fields you have not seen. None of them goes ahead. The editor says "This
+  form was changed elsewhere." and "Its fields were saved in another tab or window after this
+  page loaded them, so nothing was saved from this page. Reload to see the latest fields, then
+  make your changes again.", and offers **Reload**.
+  If the page has changes that were not saved, it also says "The changes you made on this page
+  that were not saved will be lost when you reload."
+- If another change to the same form was being saved at the same moment, the database may
+  refuse one of them. Nothing is saved, and the error says to try again. This is not treated as
+  a change made elsewhere, so you do not need to reload.
 - On a published form, fields copied from the published version cannot be deleted, and a saved
   field cannot change type. Fields you add in the new version can.
 - Uri, Reference and Attachment fields can only be created through the API. In the editor you
@@ -115,13 +139,18 @@ Use this part for the Inventory templates article.
 
 - Each field in the template's fields section has its own **Display this field when…** section,
   in both sample templates and instrument templates.
+- While a display condition is unfinished, the template cannot be saved. Choosing **Save**
+  sends nothing and shows, beside the button, "Complete the display condition of {field}, or
+  choose Always, before saving.", naming the field.
 - Rules apply to template fields only. Extra fields (the fields you add to a single sample,
   subsample, container or instrument) cannot have rules and are always shown.
 - When you duplicate a template, its rules come with it and still point at the right fields.
 
 ## Filling in documents, samples and instruments
 
-![A sample answered Yes: Containment level and CL3 approval are shown, and the approval typed earlier is still there](images/conditional-field-display/inventory-sample-shown.png)
+![A new sample with "Is this a GMO?" answered No: Containment level and CL3 approval are hidden, and only Notes is shown below it](images/conditional-field-display/inventory-sample-hidden.png)
+
+![The same sample answered Yes, with CL3 chosen: Containment level and CL3 approval are shown, with the approval filled in](images/conditional-field-display/inventory-sample-shown.png)
 
 - Fields appear and disappear as soon as you change the answer, without reloading the page.
 - **Hidden values are kept.** If you type into a field and then change the answer so the field
