@@ -3,13 +3,14 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
+import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { usableOptions } from "@/modules/common/field-editor/ruleEditing";
 import {
@@ -37,17 +38,46 @@ function Toggle({
   checked,
   onChange,
   editable,
+  lockedReason,
 }: {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   editable: boolean;
+  /** Why the toggle cannot change. It stays focusable and describes itself with this, as a locked option does. */
+  lockedReason?: string;
 }): ReactNode {
-  return (
+  const reasonId = useId();
+  // read-only, the toggle is disabled anyway
+  const locked = editable && lockedReason !== undefined;
+  const toggle = (
     <FormControlLabel
-      control={<Switch checked={checked} disabled={!editable} onChange={({ target }) => onChange(target.checked)} />}
+      control={
+        <Switch
+          checked={checked}
+          disabled={!editable}
+          onChange={({ target }) => {
+            if (!locked) onChange(target.checked);
+          }}
+          slotProps={
+            locked
+              ? {
+                  switchBase: { className: "Mui-disabled" },
+                  input: { "aria-disabled": true, "aria-describedby": reasonId },
+                }
+              : undefined
+          }
+        />
+      }
       label={label}
     />
+  );
+  if (!locked) return toggle;
+  return (
+    <div>
+      {toggle}
+      <FormHelperText id={reasonId}>{lockedReason}</FormHelperText>
+    </div>
   );
 }
 
@@ -76,7 +106,12 @@ function NumberSettings({ field, onChange, problems, editable }: SettingsProps<"
   );
 }
 
-function StringSettings({ field, onChange, editable }: SettingsProps<"String">): ReactNode {
+function StringSettings({
+  field,
+  onChange,
+  editable,
+  readByRule,
+}: SettingsProps<"String"> & { readByRule: boolean }): ReactNode {
   const { t } = useTranslation("workspace");
   return (
     <Stack spacing={1.5}>
@@ -85,6 +120,8 @@ function StringSettings({ field, onChange, editable }: SettingsProps<"String">):
         checked={field.password}
         onChange={(password) => onChange({ password })}
         editable={editable}
+        // a password field is never a source; one already a password stays free to stop being one
+        lockedReason={readByRule && !field.password ? t("formFieldEditor.settings.passwordReadByRule") : undefined}
       />
       <TextField
         size="small"
@@ -262,16 +299,32 @@ type ElnFieldSettingsProps = {
   onChange: (settings: Partial<FieldSettings>) => void;
   problems: FieldProblems;
   editable: boolean;
+  /** Whether another field's display rule reads this one. */
+  readByRule: boolean;
 };
 
 /** The settings only ELN fields have, by type; options are edited by the shared options editor. */
-export default function ElnFieldSettings({ field, onChange, problems, editable }: ElnFieldSettingsProps): ReactNode {
+export default function ElnFieldSettings({
+  field,
+  onChange,
+  problems,
+  editable,
+  readByRule,
+}: ElnFieldSettingsProps): ReactNode {
   const { t } = useTranslation("workspace");
   switch (field.type) {
     case "Number":
       return <NumberSettings field={field} onChange={onChange} problems={problems} editable={editable} />;
     case "String":
-      return <StringSettings field={field} onChange={onChange} problems={problems} editable={editable} />;
+      return (
+        <StringSettings
+          field={field}
+          onChange={onChange}
+          problems={problems}
+          editable={editable}
+          readByRule={readByRule}
+        />
+      );
     case "Text":
       return (
         <TextDefaultEditor

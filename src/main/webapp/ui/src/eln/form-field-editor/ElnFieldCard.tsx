@@ -79,11 +79,8 @@ function ElnFieldCard({
   const problemMessage = useProblemMessage();
   const problems = problemsFor(field, checks);
   const { key } = field;
-  const usedOptions = new Set(
-    ruleGraphFor(ruleFields)
-      .dependentsOf(key)
-      .flatMap(({ rule }) => rule?.values ?? []),
-  );
+  const dependents = ruleGraphFor(ruleFields).dependentsOf(key);
+  const usedOptions = new Set(dependents.flatMap(({ rule }) => rule?.values ?? []));
   const typeOptions = creatableTypeOptions.some(({ value }) => value === field.type)
     ? creatableTypeOptions
     : allTypeOptions.filter(({ value }) => value === field.type);
@@ -151,6 +148,7 @@ function ElnFieldCard({
             onChange={(settings) => actions.changeSettings(key, settings)}
             problems={problems}
             editable={editable}
+            readByRule={dependents.length > 0}
           />
         </Stack>
       </FieldCard>
