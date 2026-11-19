@@ -390,3 +390,66 @@ describe("shownMandatoryFieldsSatisfied", () => {
     expect(shownMandatoryFieldsSatisfied([{ id: 9, mandatoryStateSatisfied: false }], shownById)).toBe(false);
   });
 });
+
+describe("text and number sources", () => {
+  const DOSE_KEY = "6f1c2e0a-0000-4000-8000-000000000021";
+  const showWhenDoseOver5 = serializeDisplayRule(createDisplayRule(DOSE_KEY, "GREATER_THAN", ["5"]));
+
+  function dosePage({ stored, typed, kind = "NUMBER" }: { stored: string; typed: string; kind?: string }) {
+    const dose = row(
+      {
+        "data-field-id": "1",
+        "data-field-type": kind === "NUMBER" ? "NUMBER" : "STRING",
+        "data-field-source-kind": kind,
+        "data-field-key": DOSE_KEY,
+        "data-field-name": "Dose",
+        "data-field-value": stored,
+      },
+      `<input name="fieldData" type="${kind === "NONE" ? "password" : "text"}" value="${typed}">`,
+    );
+    const note = row({ "data-field-id": "2", "data-field-type": "STRING", "data-display-rule": showWhenDoseOver5 });
+    return { root: page(dose, note), dose, note, input: find<HTMLInputElement>(dose, "input") };
+  }
+
+  test("reads the stored value until the user types, then the input until the data is reloaded", () => {
+    const { root, dose, note, input } = dosePage({ stored: "7", typed: "2" });
+
+    applyFieldDisplayRules(root);
+    expect(note).not.toHaveAttribute("hidden");
+
+    expect(markAnswered(input)).toBe("typed");
+    applyFieldDisplayRules(root);
+    expect(note).toHaveAttribute("hidden");
+
+    syncStoredValue(dose, "9");
+    applyFieldDisplayRules(root);
+    expect(dose).toHaveAttribute("data-field-value", "9");
+    expect(note).not.toHaveAttribute("hidden");
+  });
+
+  test("never reads a password field, nor records its data", () => {
+    const { root, dose, note, input } = dosePage({ stored: "", typed: "7", kind: "NONE" });
+
+    expect(markAnswered(input)).toBeNull();
+    syncStoredValue(dose, "7");
+
+    // a rule that reads a field rules cannot read does not apply
+    expect(applyFieldDisplayRules(root).shownById.get("2")).toBe(true);
+    expect(note).not.toHaveAttribute("hidden");
+    expect(dose).toHaveAttribute("data-field-value", "");
+  });
+
+  test("keeps a field that contains focus shown, while reporting it as hidden", () => {
+    const { root, note, input } = dosePage({ stored: "7", typed: "2" });
+    note.innerHTML = '<input name="fieldData">';
+    applyFieldDisplayRules(root);
+    markAnswered(input);
+
+    const result = applyFieldDisplayRules(root, { focused: find(note, "input") });
+
+    expect(note).not.toHaveAttribute("hidden");
+    expect(result.held).toEqual([note]);
+    expect(result.shownById.get("2")).toBe(false);
+    expect(result.concealedNames).toEqual([]);
+  });
+});

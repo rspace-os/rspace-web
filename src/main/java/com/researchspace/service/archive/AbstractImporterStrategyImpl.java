@@ -355,6 +355,8 @@ abstract class AbstractImporterStrategyImpl {
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }
+      // the document was created from the form's defaults; display rules now read the archive's
+      newDoc.setAllFieldsValid(newDoc.everyShownMandatoryFieldHasData());
       recordManager.save(newDoc, importingUser);
       String dnm = ref.getDocumentFileName();
       if (dnm != null && dnm.trim().length() > 1) {

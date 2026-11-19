@@ -12,6 +12,8 @@ import com.researchspace.model.field.NumberField;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.RadioField;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.StringField;
+import com.researchspace.model.field.StringFieldForm;
 import jakarta.el.ELProcessor;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,14 +83,37 @@ class EditorFieldJspRenderingTest {
   }
 
   @Test
-  void numberRowHasNoStoredDataAttribute() {
-    NumberField field = new NumberField(new NumberFieldForm("Dose"));
-    field.setId(14L);
-    field.setFieldData("5");
+  void numberAndTextRowsCarryTheirKindAndData() {
+    NumberField number = new NumberField(new NumberFieldForm("Dose"));
+    number.setId(14L);
+    number.setFieldData("5");
+    StringField text = new StringField(new StringFieldForm("Batch"));
+    text.setId(15L);
+    text.setFieldData("LOT \"7\"");
 
-    Element row = render("numberField.jsp", field).selectFirst("tr.field");
+    Element numberRow = render("numberField.jsp", number).selectFirst("tr.field");
+    Element textRow = render("stringField.jsp", text).selectFirst("tr.field");
+
+    assertNotNull(numberRow);
+    assertEquals("NUMBER", numberRow.attr("data-field-source-kind"));
+    assertEquals("5", numberRow.attr("data-field-value"));
+    assertNotNull(textRow);
+    assertEquals("TEXT", textRow.attr("data-field-source-kind"));
+    assertEquals("LOT \"7\"", textRow.attr("data-field-value"));
+  }
+
+  @Test
+  void passwordRowIsNoSourceAndHasNoStoredDataAttribute() {
+    StringFieldForm form = new StringFieldForm("Secret");
+    form.setIfPassword(true);
+    StringField field = new StringField(form);
+    field.setId(16L);
+    field.setFieldData("hunter2");
+
+    Element row = render("stringField.jsp", field).selectFirst("tr.field");
 
     assertNotNull(row);
+    assertEquals("NONE", row.attr("data-field-source-kind"));
     assertFalse(row.hasAttr("data-field-value"));
   }
 
@@ -134,7 +159,7 @@ class EditorFieldJspRenderingTest {
     }
   }
 
-  /** Evaluates c:if, c:forEach, c:set and ${...} as the JSTL tags would. */
+  /** Evaluates c:if, c:choose, c:forEach, c:set and ${...} as the JSTL tags would. */
   private static final class Renderer {
     private static final Pattern TAG =
         Pattern.compile("<(/?)c:(\\w+)((?:\\s+\\w+=\"[^\"]*\")*)\\s*(/?)>|<\\w+:\\w+");
@@ -176,11 +201,30 @@ class EditorFieldJspRenderingTest {
             el.defineBean(attributes.get("var"), item);
             out.append(render(body));
           }
+        } else if (name.equals("choose")) {
+          out.append(render(chosenBranch(body)));
         } else {
           throw new IllegalStateException("Unsupported tag c:" + name);
         }
       }
       return out.append(substitute(source.substring(position))).toString();
+    }
+
+    /** The body of the first c:when whose test holds, else of c:otherwise, else nothing. */
+    private String chosenBranch(String choose) {
+      Matcher branch =
+          Pattern.compile("<c:(when|otherwise)((?:\\s+\\w+=\"[^\"]*\")*)\\s*>").matcher(choose);
+      int position = 0;
+      while (branch.find(position)) {
+        String name = branch.group(1);
+        int bodyEnd = matchingClose(choose, branch.end(), name);
+        position = bodyEnd + ("</c:" + name + ">").length();
+        if (name.equals("otherwise")
+            || Boolean.TRUE.equals(evaluateAttribute(attributes(branch.group(2)).get("test")))) {
+          return choose.substring(branch.end(), bodyEnd);
+        }
+      }
+      return "";
     }
 
     private static int matchingClose(String source, int from, String name) {
