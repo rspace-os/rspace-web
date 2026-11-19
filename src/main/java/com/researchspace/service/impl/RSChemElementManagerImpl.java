@@ -130,7 +130,12 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       String chemQuery, String searchType, int searchResultLimit, User subject) {
 
     ChemicalSearchResultsDTO chemServiceResults = chemistryProvider.search(chemQuery, searchType);
-    List<Long> chemServiceResultIds = chemServiceResults.getChemicalHits();
+    return searchChemIds(chemServiceResults.getChemicalHits(), searchResultLimit, subject);
+  }
+
+  @Override
+  public List<ChemSearchedItem> searchChemIds(
+      List<Long> chemServiceResultIds, int searchResultLimit, User subject) {
     int chemServiceTotalHits = chemServiceResultIds.size();
     log.info("Chemical service search reported " + chemServiceTotalHits + " hits");
 

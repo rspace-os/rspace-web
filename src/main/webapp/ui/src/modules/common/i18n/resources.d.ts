@@ -2429,6 +2429,14 @@ export default interface Resources {
         "title": "Discard changes?"
       },
       "insertChemicalTitle": "Ketcher Insert Chemical",
+      "structureSearch": {
+        "drawInstruction": "Draw a single molecule below to search",
+        "searchType": "Search Type",
+        "searchTypeExact": "Exact",
+        "searchTypeSubstructure": "Substructure",
+        "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
+        "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+      },
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
@@ -6428,6 +6436,12 @@ export default interface Resources {
           "no": "Not bookable",
           "yes": "Bookable"
         },
+        "chemical": {
+          "blockedByScope": "Chemical structure search can't be combined with a container, basket or the Requestable filter. Remove those filters first.",
+          "blocksScope": "Not available while a chemical structure filter is set. Remove the structure filter first.",
+          "dialogTitle": "Search Inventory by chemical structure",
+          "label": "Chemical"
+        },
         "nameDialog": {
           "duplicateName": "This name is already taken. Please modify it.",
           "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -6496,6 +6510,7 @@ export default interface Resources {
         "searchFailed": "Search failed."
       },
       "feedback": {
+        "chemicalSearchFailed": "{message} Remove the chemical structure filter to see other results.",
         "containerContents": "{count} container contents found.",
         "errorGlobalId": "ERROR",
         "foundGlobalId": "Found {globalId}.",
@@ -6509,8 +6524,10 @@ export default interface Resources {
         "results": "{count} search results found.",
         "samples": "{count} samples found.",
         "samplesOfTemplate": "{count} samples of the template found.",
+        "structureSearchLimitReached": "Results may be incomplete: the chemical search matched more than 1,000 items. Refine the structure or add filters.",
         "subsamples": "{count} subsamples found.",
         "templates": "{count} templates found.",
+        "textSearchLimitReached": "Results may be incomplete: your text search matched too many items. Narrow your text search to see all chemical structure matches.",
         "thisBasket": "this basket",
         "topLevelContainers": "{count} top-level containers found.",
         "undetermined": "Results cannot be fully determined."
@@ -6533,6 +6550,8 @@ export default interface Resources {
         "basket": "Basket: {basket}",
         "benchOwner": "Bench Owner: {owner}",
         "bookable": "Bookable: {value}",
+        "chemical": "{matchType}: {structure}",
+        "chemicalEdit": "Edit chemical structure filter, {matchType}: {structure}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
         "requestable": "Requestable only",
@@ -9794,6 +9813,13 @@ export default interface Resources {
           "wrongActor": "You are not permitted to make this change to the request."
         },
         "search": {
+          "chemSearchType": {
+            "invalid": "Requested chemSearchType must be one of: EXACT or SUBSTRUCTURE"
+          },
+          "chemistry": {
+            "incompatibleFilter": "Structure search can't be combined with a parentGlobalId (container, bench, basket, sample or template) or with requestable",
+            "unavailable": "Structure search is not available: chemistry is not configured on this server, or the Chemistry app is not enabled for you"
+          },
           "deletedItems": {
             "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
           },
@@ -13728,16 +13754,10 @@ export default interface Resources {
           "preview": "Preview"
         },
         "dialogTitle": "Chemical Search",
-        "drawInstruction": "Draw a single molecule below to search",
         "errorFetching": "Error fetching search results: {message}",
         "ketcherTitle": "Chemistry Search",
         "loading": "Loading...",
-        "noResults": "No Search Results",
-        "searchType": "Search Type",
-        "searchTypeExact": "Exact",
-        "searchTypeSubstructure": "Substructure",
-        "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
-        "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+        "noResults": "No Search Results"
       },
       "compareDialog": {
         "columnHeaders": {

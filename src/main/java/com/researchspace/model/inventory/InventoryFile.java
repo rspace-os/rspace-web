@@ -152,11 +152,13 @@ public class InventoryFile extends InventoryRecordConnectedEntity implements Ser
   }
 
   /**
-   * Performs shallow copy of the attachment with copied reference to FileProperty. Does not set
-   * InventoryRecord relation.
+   * Performs shallow copy of the attachment with copied references to FileProperty and the Gallery
+   * file it came from, so a copied record's attachment is still found by structure search. Does not
+   * set InventoryRecord relation.
    */
   public InventoryFile shallowCopy() {
     InventoryFile copy = new InventoryFile(getFileName(), getFileProperty());
+    copy.setMediaFile(getMediaFile());
     copy.setCreatedBy(getCreatedBy());
     copy.setExtension(getExtension());
     copy.setSize(getSize());

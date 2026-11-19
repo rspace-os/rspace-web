@@ -4,7 +4,11 @@ type KetcherWindow = {
   ketcher?: { setMolecule: (structure: string) => Promise<void>; getKet: () => Promise<string> };
 };
 
-export type KetcherDialogTitle = "Ketcher Insert Chemical" | "Ketcher Chemical Viewer (Read-Only)" | "Chemistry Search";
+export type KetcherDialogTitle =
+  | "Ketcher Insert Chemical"
+  | "Ketcher Chemical Viewer (Read-Only)"
+  | "Chemistry Search"
+  | "Search Inventory by chemical structure";
 
 export class KetcherDialogComponent {
   readonly root: Locator;
@@ -31,6 +35,29 @@ export class KetcherDialogComponent {
     await openModal.waitFor({ state: "detached" });
     await this.waitForMoleculeLoaded();
     await this.canvas.click();
+  }
+
+  /**
+   * Pastes a structure as text (e.g. SMILES) through Ketcher's own "Open" dialog, the way a user
+   * pastes a structure into the editor, rather than setting it programmatically.
+   */
+  async pasteStructureText(text: string): Promise<void> {
+    // like setMoleculeFromSmiles: before Ketcher's parser is ready a structure can be dropped or
+    // revert to empty without any DOM signal, so paste again until it stays on the canvas
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await this.root.locator('[data-testid="open-file-button"]:visible').click();
+      const openModal = this.page.locator('[data-testid="openStructureModal"]');
+      await openModal.waitFor({ state: "visible" });
+      await openModal.locator('[data-testid="paste-from-clipboard-button"]').click();
+      await openModal.locator('[data-testid="open-structure-textarea"]').fill(text);
+      await openModal.locator('[data-testid="add-to-canvas-button"]').click();
+      await openModal.waitFor({ state: "detached" });
+      if (await this.hasMoleculeLoaded()) {
+        await this.page.waitForTimeout(300);
+        if (await this.hasMoleculeLoaded()) return;
+      }
+    }
+    throw new Error(`pasteStructureText: "${text}" did not stay on the canvas after 5 attempts`);
   }
 
   // Ketcher 3.18's KET schema nests molecule data under root.nodes, not the older mol0/mol1/... keys.

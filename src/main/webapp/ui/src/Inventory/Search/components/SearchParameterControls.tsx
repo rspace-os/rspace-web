@@ -19,6 +19,7 @@ import * as Parser from "../../../util/parsers";
 import RsSet from "../../../util/set";
 import PeopleField from "../../components/Inputs/PeopleField";
 import BookableFilter from "./BookableFilter";
+import { ChemicalFilterButton } from "./ChemicalFilter";
 import RequestableFilter from "./RequestableFilter";
 import SavedList from "./SavedList";
 import StatusFilter from "./StatusFilter";
@@ -92,6 +93,10 @@ function SearchParameterControls(): React.ReactNode {
     search.fetcher.parentGlobalId === `BE${peopleStore.currentUser.workbenchId}`;
   const showRequestable = sampleRequestsAvailable && (samplesSelected || myBenchSelected);
 
+  // a structure filter cannot be combined with a parent scope or Requestable (see ChemicalFilterButton)
+  const hasChemicalFilter = Boolean(search.fetcher.chemQuery);
+  const blockedByChemicalFilter = hasChemicalFilter ? t("search.controls.chemical.blocksScope") : undefined;
+
   return (
     <Grid container direction="row" spacing={1}>
       <DropdownButton
@@ -134,7 +139,8 @@ function SearchParameterControls(): React.ReactNode {
         onClick={({ target }) => {
           setBenchDropdown(target as HTMLElement);
         }}
-        disabled={!search.showBenchFilter}
+        disabled={!search.showBenchFilter || hasChemicalFilter}
+        disabledReason={blockedByChemicalFilter}
       >
         <Panel anchorEl={benchDropdown} onClose={() => setBenchDropdown(null)}>
           <PeopleField
@@ -167,6 +173,7 @@ function SearchParameterControls(): React.ReactNode {
           }}
         />
       </DropdownButton>
+      {search.showChemicalFilter && <ChemicalFilterButton />}
       <DropdownButton
         name={t("search.controls.bookable.label")}
         onClick={({ target }) => setBookableDropdown(target as HTMLElement)}
@@ -253,7 +260,8 @@ function SearchParameterControls(): React.ReactNode {
       </DropdownButton>
       <DropdownButton
         name="Baskets"
-        disabled={!search.showSavedBaskets}
+        disabled={!search.showSavedBaskets || hasChemicalFilter}
+        disabledReason={blockedByChemicalFilter}
         onClick={({ target }) => {
           void (async () => {
             await searchStore.getBaskets();
@@ -283,6 +291,8 @@ function SearchParameterControls(): React.ReactNode {
           onClick={({ target }) => {
             setRequestableDropdown(target as HTMLElement);
           }}
+          disabled={hasChemicalFilter}
+          disabledReason={blockedByChemicalFilter}
         >
           <RequestableFilter
             anchorEl={requestableDropdown}

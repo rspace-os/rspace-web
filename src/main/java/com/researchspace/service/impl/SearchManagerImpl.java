@@ -5,7 +5,6 @@ import static com.axiope.search.IFullTextSearcher.ALL_LUCENE_SEARCH_STRATEGY;
 import static com.axiope.search.IFullTextSearcher.SINGLE_LUCENE_SEARCH_STRATEGY;
 import static com.axiope.search.SearchConstants.ALL_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.ATTACHMENT_SEARCH_OPTION;
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.axiope.search.IFileSearcher;
 import com.axiope.search.IFullTextSearcher;
@@ -21,8 +20,7 @@ import com.axiope.search.WorkspaceSearchConfig;
 import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
-import com.researchspace.booking.dao.BookingConfigurationDao;
-import com.researchspace.booking.service.BookingResourceRoleScheme;
+import com.researchspace.booking.service.BookableInstrumentLookup;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleTemplateDao;
@@ -37,7 +35,6 @@ import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
@@ -45,7 +42,6 @@ import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
-import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,9 +75,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired MessageSourceUtils messages;
   private @Autowired IPropertyHolder properties;
-  private @Autowired BookingConfigurationDao bookingConfigurationDao;
-  private @Autowired BookingResourceRoleScheme bookingRoleScheme;
-  private @Autowired FeatureFlagManager featureFlags;
+  private @Autowired BookableInstrumentLookup bookableInstrumentLookup;
 
   private ISearchResults<BaseRecord> getAttachments(WorkspaceListingConfig input, User user)
       throws IOException {
@@ -231,6 +225,7 @@ public class SearchManagerImpl implements SearchManager {
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       Boolean bookable,
+      List<String> limitResultsToGlobalIds,
       PaginationCriteria<InventoryRecord> pgCrit,
       User user) {
 
@@ -250,12 +245,7 @@ public class SearchManagerImpl implements SearchManager {
     searchConfig.setBookable(bookable);
     if (bookable != null) {
       searchConfig.setBookableInstrumentIds(
-          featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, user)
-              ? bookingConfigurationDao.findBookableInstrumentIds(
-                  user,
-                  bookingRoleScheme.rolesWithCapability(
-                      ResourceRoleScheme.READ_RESOURCE_CAPABILITY))
-              : Set.of());
+          bookableInstrumentLookup.findReadableBookableInstrumentIds(user));
     }
 
     boolean filterOnly = bookable != null && StringUtils.isBlank(searchQuery);
@@ -287,6 +277,13 @@ public class SearchManagerImpl implements SearchManager {
         terms.add(parentOid.getDbId().toString());
       }
     }
+    if (limitResultsToGlobalIds != null) {
+      List<String> basketLimit = searchConfig.getLimitResultsToGlobalIds();
+      searchConfig.setLimitResultsToGlobalIds(
+          basketLimit == null
+              ? limitResultsToGlobalIds
+              : basketLimit.stream().filter(limitResultsToGlobalIds::contains).toList());
+    }
     searchConfig.setOptions(options.toArray(new String[0]));
     searchConfig.setTerms(terms.toArray(new String[0]));
 
@@ -307,8 +304,16 @@ public class SearchManagerImpl implements SearchManager {
     ISearchResults<? extends InventoryRecord> foundResults =
         textSearchDao.getSearchedInventoryResults(searchConfig);
 
-    return sampleApiManager.convertToApiInventorySearchResult(
-        foundResults.getTotalHits(), foundResults.getPageNumber(), foundResults.getResults(), user);
+    ApiInventorySearchResult result =
+        sampleApiManager.convertToApiInventorySearchResult(
+            foundResults.getTotalHits(),
+            foundResults.getPageNumber(),
+            foundResults.getResults(),
+            user);
+    if (limitResultsToGlobalIds != null && searchConfig.isLuceneResultLimitReached()) {
+      result.setTextSearchLimitReached(true);
+    }
+    return result;
   }
 
   private String adjustUserSearchQueryForBestResults(String searchQuery) {

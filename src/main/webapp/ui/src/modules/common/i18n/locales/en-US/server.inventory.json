@@ -267,6 +267,13 @@
         }
       },
       "search": {
+        "chemSearchType": {
+          "invalid": "Requested chemSearchType must be one of: EXACT or SUBSTRUCTURE"
+        },
+        "chemistry": {
+          "incompatibleFilter": "Structure search can't be combined with a parentGlobalId (container, bench, basket, sample or template) or with requestable",
+          "unavailable": "Structure search is not available: chemistry is not configured on this server, or the Chemistry app is not enabled for you"
+        },
         "deletedItems": {
           "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
         },

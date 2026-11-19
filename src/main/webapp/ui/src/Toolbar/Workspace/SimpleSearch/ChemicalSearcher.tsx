@@ -6,20 +6,21 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormLabel from "@mui/material/FormLabel";
 import Link from "@mui/material/Link";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import { IsInvalid, IsValid } from "../../../components/ValidatingSubmitButton";
+import {
+  StructureSearchTypeControl,
+  useSingleMoleculeValidation,
+} from "../../../components/Ketcher/StructureSearchControls";
+import { galleryItemHref } from "../../../eln/gallery/components/GalleryItemLink";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import type { ChemSearchType } from "../../../stores/definitions/Search";
 import { DataGridColumn } from "../../../util/table";
+import InventoryHitIcon from "./InventoryHitIcon";
 
 const KetcherDialog = React.lazy(() => import("../../../components/Ketcher/KetcherDialog"));
 
@@ -35,7 +36,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
   const [totalItems, setTotalItems] = useState(0);
   const [searchSmiles, setSearchSmiles] = useState("");
   const itemsPerPage = 10;
-  const [searchType, setSearchType] = useState("SUBSTRUCTURE");
+  const [searchType, setSearchType] = useState<ChemSearchType>("SUBSTRUCTURE");
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: itemsPerPage,
@@ -91,27 +92,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     setErrorMessage(null);
   };
 
-  const [isValid, setIsValid] = useState(IsValid());
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const validate = (ketcher: any) => {
-    if (!ketcher) {
-      setIsValid(IsValid());
-      return;
-    }
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    ketcher.getKet().then((ketData: any) => {
-      const molecules = Object.keys(JSON.parse(ketData)).filter((key) => key.startsWith("mol"));
-      if (molecules.length === 0) {
-        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationNoMolecule")));
-        return;
-      }
-      if (molecules.length > 1) {
-        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationMultipleMolecules")));
-        return;
-      }
-      setIsValid(IsValid());
-    });
-  };
+  const { validationResult: isValid, validate } = useSingleMoleculeValidation();
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleInsert = (ketcher: any) => {
@@ -128,18 +109,27 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     DataGridColumn.newColumnWithValueGetter(
       "preview",
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      ({ breadcrumb, chemId }: any) =>
-        breadcrumb.startsWith("/Gallery") ? "/images/icons/chemistry-file.png" : `/chemical/getImageChem/${chemId}/1`,
+      ({ breadcrumb, chemId, source, inventoryType }: any) => {
+        if (source === "INVENTORY") return { inventoryType };
+        return {
+          src: breadcrumb.startsWith("/Gallery")
+            ? "/images/icons/chemistry-file.png"
+            : `/chemical/getImageChem/${chemId}/1`,
+        };
+      },
       {
         headerName: t("toolbar.chemicalSearch.columnHeaders.preview"),
-        renderCell: (params) => (
-          <Box
-            component="img"
-            src={params.value}
-            alt={t("toolbar.chemicalSearch.chemicalPreviewAlt")}
-            sx={{ width: "150px", height: "150px", marginTop: "8px" }}
-          />
-        ),
+        renderCell: (params) =>
+          params.value.inventoryType ? (
+            <InventoryHitIcon inventoryType={params.value.inventoryType} />
+          ) : (
+            <Box
+              component="img"
+              src={params.value.src}
+              alt={t("toolbar.chemicalSearch.chemicalPreviewAlt")}
+              sx={{ width: "150px", height: "150px", marginTop: "8px" }}
+            />
+          ),
         sortable: false,
         flex: 1,
       },
@@ -149,8 +139,9 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       ({ breadcrumb, globalId, recordName }: any) => {
         if (breadcrumb.startsWith("/Gallery")) {
+          // a Gallery hit's global id is GL<file id>; the item page opens its folder with it selected
           return {
-            href: "/gallery?mediaType=Chemistry",
+            href: galleryItemHref(globalId.replace(/^GL/, "")),
             text: breadcrumb.slice(1),
           };
         }
@@ -206,35 +197,11 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
             handleClose={closeAndReset}
             existingChem={searchSmiles}
             validationResult={isValid}
-            instructionText={t("toolbar.chemicalSearch.drawInstruction")}
+            instructionText={t("common:ketcher.structureSearch.drawInstruction")}
             onChange={() => {
               validate(window.ketcher);
             }}
-            additionalControls={
-              <FormControl>
-                <FormLabel id="search-type">{t("toolbar.chemicalSearch.searchType")}</FormLabel>
-                <RadioGroup
-                  row
-                  aria-labelledby="search-type"
-                  name="search-type"
-                  value={searchType}
-                  onChange={(e) => {
-                    setSearchType(e.target.value);
-                  }}
-                >
-                  <FormControlLabel
-                    value="SUBSTRUCTURE"
-                    control={<Radio />}
-                    label={t("toolbar.chemicalSearch.searchTypeSubstructure")}
-                  />
-                  <FormControlLabel
-                    value="EXACT"
-                    control={<Radio />}
-                    label={t("toolbar.chemicalSearch.searchTypeExact")}
-                  />
-                </RadioGroup>
-              </FormControl>
-            }
+            additionalControls={<StructureSearchTypeControl value={searchType} onChange={setSearchType} />}
           />
         </React.Suspense>
       )}
@@ -275,7 +242,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
                   noRowsLabel: t("toolbar.chemicalSearch.noResults"),
                 }}
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                getRowId={(row: any) => row.chemId}
+                getRowId={(row: any) => `${row.globalId}-${row.chemId ?? ""}`}
                 paginationMode="server"
                 pageSizeOptions={[itemsPerPage]}
                 paginationModel={paginationModel}

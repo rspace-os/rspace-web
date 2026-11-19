@@ -140,6 +140,14 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  /** Attaches an existing Gallery file to an Inventory item, as the item's attachment. */
+  async attachGalleryFile(parentGlobalId: string, mediaFileGlobalId: string): Promise<void> {
+    await this.requestJson("post", "/api/inventory/v1/attachments", {
+      data: { parentGlobalId, mediaFileGlobalId },
+      action: "attachGalleryFileToInventoryItem",
+    });
+  }
+
   async moveSubSample(subSampleId: number, move: ApiInventorySubSampleMoveRequest): Promise<ApiInventorySubSample> {
     return this.requestJson("put", `/api/inventory/v1/subSamples/${subSampleId}`, {
       data: move,

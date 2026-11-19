@@ -60,6 +60,21 @@ export class ChemistrySearchDialogComponent {
       .count();
   }
 
+  /** The result rows, in the order listed. */
+  resultRows(): Locator {
+    return this.resultsDialog.getByRole("row").filter({ has: this.page.getByRole("gridcell") });
+  }
+
+  /** Opens a result's link, which opens in a new tab, and returns that tab. */
+  async openResult(name: string): Promise<Page> {
+    const [resultTab] = await Promise.all([
+      this.page.context().waitForEvent("page"),
+      this.resultsDialog.getByRole("link", { name, exact: true }).click(),
+    ]);
+    await resultTab.waitForLoadState("domcontentloaded");
+    return resultTab;
+  }
+
   async close(): Promise<void> {
     await this.resultsDialog.getByRole("button", { name: "Close" }).click();
     await this.resultsDialog.waitFor({ state: "detached" });

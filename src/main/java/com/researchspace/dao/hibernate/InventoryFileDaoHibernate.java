@@ -4,6 +4,7 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.InventoryFileDao;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
@@ -50,6 +51,44 @@ public class InventoryFileDaoHibernate extends GenericDaoHibernate<InventoryFile
                 + " and af.deleted = false",
             InventoryAttachmentField.class)
         .setParameter("mediaFileId", mediaFileId)
+        .list();
+  }
+
+  @Override
+  public List<InventoryFile> findByMediaFileIds(Collection<Long> mediaFileIds) {
+    if (mediaFileIds == null || mediaFileIds.isEmpty()) {
+      return List.of();
+    }
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "select distinct f from InventoryFile f join fetch f.mediaFile mf"
+                + " left join fetch f.sample left join fetch f.subSample"
+                + " left join fetch f.container left join fetch f.instrumentEntity"
+                + " where mf.id in (:mediaFileIds) and f.deleted = false",
+            InventoryFile.class)
+        .setParameterList("mediaFileIds", mediaFileIds)
+        .list();
+  }
+
+  @Override
+  public List<InventoryAttachmentField> findAttachmentFieldsByMediaFileIds(
+      Collection<Long> mediaFileIds) {
+    if (mediaFileIds == null || mediaFileIds.isEmpty()) {
+      return List.of();
+    }
+    // same live-file and live-field rule as findAttachmentFieldsByMediaFileId
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "select distinct af from InventoryAttachmentField af join af.files f"
+                + " join f.mediaFile mf"
+                + " left join fetch af.sample left join fetch af.instrumentEntity"
+                + " left join fetch af.templateField"
+                + " where mf.id in (:mediaFileIds) and f.deleted = false"
+                + " and af.deleted = false",
+            InventoryAttachmentField.class)
+        .setParameterList("mediaFileIds", mediaFileIds)
         .list();
   }
 }

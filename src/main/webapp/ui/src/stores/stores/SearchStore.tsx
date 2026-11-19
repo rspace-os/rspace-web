@@ -20,7 +20,7 @@ import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel
 import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "../models/InstrumentTemplateModel";
 import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
-import Search from "../models/Search";
+import Search, { DEFAULT_SEARCH_MODULES } from "../models/Search";
 import TemplateModel, { type TemplateAttrs } from "../models/TemplateModel";
 import type { RootStore } from "./RootStore";
 
@@ -97,6 +97,8 @@ export default class SearchStore {
     this.rootStore = rootStore;
     this.search = new Search({
       factory: new MemoisedFactory(),
+      // structure search is offered in the main Inventory search only
+      uiConfig: { allowedSearchModules: new Set([...DEFAULT_SEARCH_MODULES, "CHEMISTRY"]) },
       callbacks: {
         setActiveResult: (r: InventoryRecord | null) => r?.refreshAssociatedSearch(),
       },

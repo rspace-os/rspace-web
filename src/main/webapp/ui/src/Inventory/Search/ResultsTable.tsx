@@ -143,7 +143,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
                   <ResultRow
                     key={result.globalId}
                     result={result}
-                    adjustableColumns={search.uiConfig.adjustableColumns}
+                    adjustableColumns={search.displayedAdjustableColumns}
                   />
                 ))}
           </TableBody>

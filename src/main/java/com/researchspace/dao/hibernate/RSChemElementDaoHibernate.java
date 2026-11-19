@@ -5,6 +5,7 @@ import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.annotations.QueryHints;
@@ -85,5 +86,19 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
                 RSChemElement.class);
     query.setParameter("format", format);
     return query.list();
+  }
+
+  @Override
+  public List<Long> getGalleryChemFileIds(Collection<Long> chemIds) {
+    if (CollectionUtils.isEmpty(chemIds)) {
+      return List.of();
+    }
+    return getSession()
+        .createQuery(
+            "select distinct chem.ecatChemFileId from RSChemElement chem"
+                + " where chem.id in (:chemIds) and chem.ecatChemFileId is not null",
+            Long.class)
+        .setParameterList("chemIds", chemIds)
+        .list();
   }
 }

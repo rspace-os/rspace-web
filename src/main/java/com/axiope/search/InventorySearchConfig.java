@@ -53,6 +53,12 @@ public class InventorySearchConfig extends SearchConfig {
   private Set<Long> bookableInstrumentIds = Set.of();
 
   /**
+   * Set by the search: true when Lucene returned {@link #getMaxResults()} hits, so further text
+   * matches were not considered before filtering.
+   */
+  private boolean luceneResultLimitReached;
+
+  /**
    * Constructor using default settings for all other properties. Constructor using settings for
    * advanced search.
    *

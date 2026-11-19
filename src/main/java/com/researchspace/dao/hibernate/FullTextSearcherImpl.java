@@ -401,8 +401,10 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     // exists only to compensate for the default owners being added to the Lucene username filter
     // (RSDEV-1219 E2), so it has no role on the direct-lookup path either: a default owner's
     // ordinary record found by exact id/barcode is public-view sanitised like anyone else's.
+    List<InventoryRecord> rawLuceneHits = getLuceneInventoryQueryList(srchConfig);
+    srchConfigInput.setLuceneResultLimitReached(rawLuceneHits.size() >= srchConfig.getMaxResults());
     List<InventoryRecord> luceneHits =
-        getLuceneInventoryQueryList(srchConfig).stream()
+        rawLuceneHits.stream()
             .filter(
                 rec ->
                     isNotOwnedByDefaultTemplatesOwnerOrTemplate(

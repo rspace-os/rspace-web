@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -18,19 +19,26 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemElementDataDto;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
+import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
+import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.impl.RSChemService;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
+import com.researchspace.service.inventory.InventoryStructureHit;
+import com.researchspace.service.inventory.InventoryStructureSearchManager;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +63,13 @@ public class ChemistryServiceTest {
 
   @Mock EcatChemistryFileManager fileManager;
 
+  @Mock InventoryStructureSearchManager inventoryStructureSearchManager;
+
+  @Mock SystemPropertyPermissionManager systemPropertyPermissionManager;
+
   @InjectMocks RSChemService chemistryService;
+
+  private static final List<Long> CHEM_IDS = List.of(11L, 12L, 13L);
 
   User user;
 
@@ -91,8 +105,9 @@ public class ChemistryServiceTest {
     String searchType = "substructure";
 
     // chem manager finding 10 results for any search
-    List<ChemSearchedItem> searchedItems = createSearchItems();
-    when(chemElementManager.search(eq(chemQuery), eq(searchType), anyInt(), eq(user)))
+    List<ChemSearchedItem> searchedItems = createSearchItems(10);
+    stubChemistryServiceHits(chemQuery, searchType);
+    when(chemElementManager.searchChemIds(eq(CHEM_IDS), anyInt(), eq(user)))
         .thenReturn(searchedItems);
 
     // let's test different pagination & result limiting
@@ -231,8 +246,112 @@ public class ChemistryServiceTest {
     assertEquals("", actual);
   }
 
-  private List<ChemSearchedItem> createSearchItems() {
-    int resultsSize = 10;
+  @Test
+  public void inventoryHitsAreListedAfterDocumentAndGalleryHits() {
+    List<ChemSearchedItem> elnHits = createSearchItems(3);
+    List<InventoryStructureHit> inventoryHits = createInventoryHits(3);
+    stubChemistryServiceHits("CC", "SUBSTRUCTURE");
+    when(chemElementManager.searchChemIds(eq(CHEM_IDS), anyInt(), eq(user))).thenReturn(elnHits);
+    stubInventoryAvailable();
+    when(inventoryStructureSearchManager.findReadableStructureHits(CHEM_IDS, user))
+        .thenReturn(inventoryHits);
+
+    ChemicalSearchResults firstPage =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 0, 2, user);
+    assertThat(firstPage.getPagedRecords()).containsExactlyElementsOf(elnHits.subList(0, 2));
+    assertThat(firstPage.getPagedInventoryHits()).isEmpty();
+    assertEquals(6, firstPage.getTotalHitCount());
+    assertEquals(3, firstPage.getTotalPageCount());
+
+    ChemicalSearchResults boundaryPage =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 1, 2, user);
+    assertThat(boundaryPage.getPagedRecords()).containsExactly(elnHits.get(2));
+    assertThat(boundaryPage.getPagedInventoryHits()).containsExactly(inventoryHits.get(0));
+    assertEquals(2, boundaryPage.getStartHit());
+    assertEquals(3, boundaryPage.getEndHit());
+
+    ChemicalSearchResults inventoryPage =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 2, 2, user);
+    assertThat(inventoryPage.getPagedRecords()).isEmpty();
+    assertThat(inventoryPage.getPagedInventoryHits())
+        .containsExactlyElementsOf(inventoryHits.subList(1, 3));
+    assertEquals(5, inventoryPage.getEndHit());
+
+    // one chemistry service query per page serves both searches
+    verify(chemistryProvider, times(3)).search("CC", "SUBSTRUCTURE");
+  }
+
+  @Test
+  public void inventoryIsNotSearchedWhileMoreDocumentAndGalleryHitsFollow() {
+    stubChemistryServiceHits("CC", "SUBSTRUCTURE");
+    // 5 hits reach the limit for the first page of 2 (one page ahead plus one)
+    when(chemElementManager.searchChemIds(eq(CHEM_IDS), anyInt(), eq(user)))
+        .thenReturn(createSearchItems(5));
+
+    ChemicalSearchResults actual =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 0, 2, user);
+
+    assertThat(actual.getPagedRecords()).hasSize(2);
+    assertNull(actual.getTotalHitCount());
+    verifyNoInteractions(inventoryStructureSearchManager, systemPropertyPermissionManager);
+  }
+
+  @Test
+  public void inventoryIsNotSearchedWhenInventoryIsUnavailable() {
+    stubChemistryServiceHits("CC", "SUBSTRUCTURE");
+    when(chemElementManager.searchChemIds(eq(CHEM_IDS), anyInt(), eq(user)))
+        .thenReturn(createSearchItems(1));
+    when(systemPropertyPermissionManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_AVAILABLE))
+        .thenReturn(false);
+
+    ChemicalSearchResults actual =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 0, 2, user);
+
+    assertEquals(1, actual.getTotalHitCount());
+    verifyNoInteractions(inventoryStructureSearchManager);
+  }
+
+  @Test
+  public void inventoryIsNotSearchedWhenStructureSearchIsUnavailable() {
+    stubChemistryServiceHits("CC", "SUBSTRUCTURE");
+    when(chemElementManager.searchChemIds(eq(CHEM_IDS), anyInt(), eq(user)))
+        .thenReturn(createSearchItems(1));
+    when(systemPropertyPermissionManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_AVAILABLE))
+        .thenReturn(true);
+    when(inventoryStructureSearchManager.isStructureSearchAvailable(user)).thenReturn(false);
+
+    ChemicalSearchResults actual =
+        chemistryService.searchChemicals("CC", "SUBSTRUCTURE", 0, 2, user);
+
+    assertEquals(1, actual.getTotalHitCount());
+    verify(inventoryStructureSearchManager, never()).findReadableStructureHits(CHEM_IDS, user);
+  }
+
+  private void stubChemistryServiceHits(String chemQuery, String searchType) {
+    when(chemistryProvider.search(chemQuery, searchType))
+        .thenReturn(new ChemicalSearchResultsDTO(CHEM_IDS, CHEM_IDS.size()));
+  }
+
+  private void stubInventoryAvailable() {
+    when(systemPropertyPermissionManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_AVAILABLE))
+        .thenReturn(true);
+    when(inventoryStructureSearchManager.isStructureSearchAvailable(user)).thenReturn(true);
+  }
+
+  private List<InventoryStructureHit> createInventoryHits(int count) {
+    List<InventoryStructureHit> hits = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      hits.add(
+          new InventoryStructureHit(
+              "SA" + i, "sample " + i, InventoryRecordType.SAMPLE, "Owner", new Date()));
+    }
+    return hits;
+  }
+
+  private List<ChemSearchedItem> createSearchItems(int resultsSize) {
     List<ChemSearchedItem> searchResults = new ArrayList<>();
     for (int i = 0; i < resultsSize; i++) {
       ChemSearchedItem searchResult = new ChemSearchedItem();

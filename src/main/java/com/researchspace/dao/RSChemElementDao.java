@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
+import java.util.Collection;
 import java.util.List;
 
 public interface RSChemElementDao extends GenericDao<RSChemElement, Long> {
@@ -35,4 +36,13 @@ public interface RSChemElementDao extends GenericDao<RSChemElement, Long> {
   List<Object[]> getAllIdAndSmilesStringPairs();
 
   List<RSChemElement> getAllChemicalsWithFormat(ChemElementsFormat format);
+
+  /**
+   * Gallery chemistry file ids of the given chem elements, without loading the elements themselves.
+   * Elements that are not Gallery chemistry files, and ids with no row, are skipped.
+   *
+   * @param chemIds chem element ids, e.g. raw hits from the chemistry service
+   * @return distinct, possibly empty, list of {@code EcatChemistryFile} ids
+   */
+  List<Long> getGalleryChemFileIds(Collection<Long> chemIds);
 }
