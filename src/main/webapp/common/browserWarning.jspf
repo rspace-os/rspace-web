@@ -24,7 +24,7 @@
     </div>
     <div class="col-md-3 text-center">
       <a class="browser-container" href="https://www.microsoft.com/en-us/edge/download" target="_blank" rel="noreferrer">
-        <img src="/images/download.png" width="64" height="64" alt=""><br />
+        <img src="/images/icons/edge-icon.svg" width="64" height="64" alt=""><br />
         <spring:message code="signup.browserWarning.edge"/>
       </a>
     </div>
