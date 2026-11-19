@@ -8,13 +8,16 @@ import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.PostArchiveCompletion;
+import com.researchspace.service.archive.export.ExportFailureException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -49,6 +52,7 @@ public class ExportTasklet implements Tasklet {
 
   private @Autowired PostArchiveCompletion postArchiveCompleter;
   private @Autowired ExportApiStateTracker exportApiState;
+  private @Autowired MessageSourceUtils messages;
 
   Supplier<ExportRecordList> exportListSupplier(String id) {
     return () -> exportApiState.getById(id).get();
@@ -94,7 +98,7 @@ public class ExportTasklet implements Tasklet {
         updateContext(chunkContext, result);
       } catch (Exception e) {
         log.error("Error syncing user work: ", e);
-        throw e;
+        throw jobFailure(e);
       } finally {
         clearUp(externalExportId);
       }
@@ -108,7 +112,7 @@ public class ExportTasklet implements Tasklet {
           updateContext(chunkContext, result);
         } catch (Exception e) {
           log.error("Error syncing group: ", e);
-          throw e;
+          throw jobFailure(e);
         } finally {
           clearUp(externalExportId);
         }
@@ -122,7 +126,7 @@ public class ExportTasklet implements Tasklet {
         updateContext(chunkContext, result);
       } catch (Exception e) {
         log.error("Error syncing record selection: ", e);
-        throw e;
+        throw jobFailure(e);
       } finally {
         clearUp(externalExportId);
       }
@@ -151,6 +155,33 @@ public class ExportTasklet implements Tasklet {
         new ProgressMonitorImpl(Math.max(1, tickCount), "number of items to export");
     pm.worked(1); // initialises and shows initial progress to date
     return pm;
+  }
+
+  /**
+   * The jobs API reports a failed job by the first line of its exit description, which Spring Batch
+   * takes from the thrown exception's {@code toString()}. Rethrow with the same user-facing text
+   * the export notification shows, so the API doesn't expose exception class names or internal
+   * detail.
+   */
+  private ExportJobFailureException jobFailure(Exception e) {
+    String message = messages.getExceptionChainMessage(e);
+    if (StringUtils.isBlank(message)) {
+      message = messages.getMessage("export.errors.jobFailed");
+    }
+    return new ExportJobFailureException(message, e);
+  }
+
+  static final class ExportJobFailureException extends ExportFailureException {
+    ExportJobFailureException(String message, Exception cause) {
+      super(message, cause);
+    }
+
+    @Override
+    public String toString() {
+      return getMessage();
+    }
+
+    private static final long serialVersionUID = 1L;
   }
 
   private boolean exportingAnotherUser(User user, Long optionalUserToExportId) {

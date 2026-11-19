@@ -1,5 +1,7 @@
 package com.researchspace.api.v1.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,6 +13,7 @@ import com.researchspace.archive.ExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.PostArchiveCompletion;
@@ -39,6 +42,7 @@ class ExportTaskletTest {
   @Mock private UserManager userManager;
   @Mock private PostArchiveCompletion postArchiveCompleter;
   @Mock private ExportApiStateTracker exportApiState;
+  @Mock private MessageSourceUtils messages;
 
   @InjectMocks private ExportTasklet tasklet;
 
@@ -61,6 +65,7 @@ class ExportTaskletTest {
     when(properties.getServerUrl()).thenReturn("http://localhost:8080");
     URI serverUrl = URI.create("http://localhost:8080");
     ExportFailureException writeFailure = new ExportFailureException("Error writing form XML");
+    when(messages.getExceptionChainMessage(writeFailure)).thenReturn("SD1 could not be exported");
     switch (scope) {
       case "user" ->
           when(exportService.syncExportUserWorkToArchive(
@@ -90,7 +95,11 @@ class ExportTaskletTest {
               .thenThrow(writeFailure);
     }
 
-    assertThrows(ExportFailureException.class, () -> tasklet.execute(null, chunkContext));
+    ExportFailureException jobFailure =
+        assertThrows(ExportFailureException.class, () -> tasklet.execute(null, chunkContext));
     verify(exportApiState).clear(EXPORT_ID);
+    assertSame(writeFailure, jobFailure.getCause());
+    // the jobs API reports the first line of the stack trace, which starts with toString()
+    assertEquals("SD1 could not be exported", jobFailure.toString());
   }
 }

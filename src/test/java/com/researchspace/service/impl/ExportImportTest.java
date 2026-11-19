@@ -24,6 +24,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.export.ExportFailureException;
+import com.researchspace.service.archive.export.RecordExportFailureException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletResponse;
@@ -150,13 +151,45 @@ public class ExportImportTest {
         exportFailureNotification(exportFailure));
   }
 
+  @Test
+  public void recordWriteFailureNotificationNamesTheRecordAndReferenceButNotTheError()
+      throws IOException {
+    RecordExportFailureException recordFailure =
+        new RecordExportFailureException(
+            "Doc <b>1</b>",
+            "SD1",
+            "AbCdEfGhIj",
+            new ExportFailureException("URIFieldForm cannot be cast to TextFieldForm"));
+
+    String notificationMessage =
+        exportFailureNotification(new ExportFailureException(recordFailure), "TIFF export");
+
+    assertEquals(
+        "Your export [TIFF export] failed for the following reason: &quot;Doc"
+            + " &lt;b&gt;1&lt;/b&gt;&quot; (SD1) could not be added to the export. If this keeps"
+            + " happening, contact your RSpace administrator and quote error reference AbCdEfGhIj.",
+        notificationMessage);
+  }
+
+  @Test
+  public void unnamedExportFailureNotificationHasNoEmptyName() throws IOException {
+    assertEquals(
+        "Your export failed for the following reason: java.io.IOException: disk",
+        exportFailureNotification(new ExportFailureException(new IOException("disk")), ""));
+  }
+
   private String exportFailureNotification(ExportFailureException exportFailure)
+      throws IOException {
+    return exportFailureNotification(exportFailure, "TIFF export");
+  }
+
+  private String exportFailureNotification(ExportFailureException exportFailure, String exportName)
       throws IOException {
     doThrow(exportFailure)
         .when(pdfWordExportManager)
         .doExport(any(), any(), any(), any(), any(), any());
     ExportToFileConfig config = new ExportToFileConfig();
-    config.setExportName("TIFF export");
+    config.setExportName(exportName);
     User exporter = new User("exporter");
 
     assertThrows(

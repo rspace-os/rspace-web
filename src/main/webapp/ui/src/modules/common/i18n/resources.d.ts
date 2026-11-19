@@ -6838,7 +6838,9 @@ export default interface Resources {
         "archiveFolderCreationFailed": "Could not create archive folder",
         "batchLaunchFailure": "Export batch job launch failure",
         "insufficientDiskSpace": "Insufficient disk space to begin export",
+        "jobFailed": "The export failed because of an unexpected error.",
         "launchFailed": "couldn't launch export job",
+        "recordWriteFailed": "\"{0}\" ({1}) could not be added to the export. If this keeps happening, contact your RSpace administrator and quote error reference {2}.",
         "selectionLimit": "Maximum number of Ids to export is {0}, request contains {1} Ids",
         "selectionRequired": "Please include one or more IDs to export",
         "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
@@ -10743,6 +10745,7 @@ export default interface Resources {
         "selectionNamesRequired": "Export item names are required.",
         "selectionTypesRequired": "Export item types are required.",
         "successMessage": "Your export [{0}] is now available in the Exports section of <a href=\"{1}\">the Gallery</a>.",
+        "unnamedFailureMessage": "Your export failed for the following reason: {0}",
         "usernameRequired": "Username is required.",
         "usernameTooLong": "Username cannot be greater than {0} characters."
       },

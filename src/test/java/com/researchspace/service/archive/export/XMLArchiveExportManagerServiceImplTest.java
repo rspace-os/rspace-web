@@ -1,5 +1,7 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -19,6 +21,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RoRService;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,9 +70,15 @@ class XMLArchiveExportManagerServiceImplTest {
             any(), any(), any(), any(), anyInt(), any(), any(), any(), any(), any()))
         .thenThrow(new ExportFailureException("Error writing form XML"));
 
-    assertThrows(
-        ExportFailureException.class,
-        () -> exporter.exportArchive(new ArchiveManifest(), exportList, config));
+    RecordExportFailureException failure =
+        assertThrows(
+            RecordExportFailureException.class,
+            () -> exporter.exportArchive(new ArchiveManifest(), exportList, config));
     verifyNoInteractions(archiveDao);
+    assertEquals("Error writing form XML", failure.getCause().getMessage());
+    String userMessage = failure.resolve((code, args) -> code + " " + Arrays.toString(args));
+    assertThat(userMessage)
+        .startsWith(RecordExportFailureException.MESSAGE_CODE + " [" + doc.getName() + ", SD1, ")
+        .doesNotContain("Error writing form XML");
   }
 }
