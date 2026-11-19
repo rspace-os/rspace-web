@@ -1,4 +1,6 @@
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import {
   ApiV2NetworkError,
   ApiV2ProblemError,
@@ -13,7 +15,6 @@ const { mint } = vi.hoisted(() => {
   return { mint: vi.fn() };
 });
 vi.mock("./generated/oauth/oauth", () => ({ createUiOAuthToken: mint }));
-const fetchMock = vi.fn<typeof fetch>();
 const onSessionEnded = vi.fn();
 const onIdentityChanged = vi.fn();
 const token = (hash?: string, exp = Date.now() / 1000 + 1000) =>
@@ -25,17 +26,40 @@ const publicView = () => {
 /** Moves the client clock past the 300 s expiry buffer of a token minted with the default expiry. */
 const nearExpiry = () => vi.setSystemTime(Date.now() + 701_000);
 
+const requests: Request[] = [];
+const record = ({ request }: { request: Request }) => {
+  requests.push(request);
+};
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.stubGlobal("fetch", fetchMock);
+  server.events.on("request:start", record);
 });
 afterEach(() => {
+  server.events.removeListener("request:start", record);
+  requests.length = 0;
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.resetAllMocks();
   document.body.innerHTML = "";
 });
 const provider = () => new SessionTokenProvider({ onSessionEnded, onIdentityChanged });
+/** Answers the public document token route with each response in turn, repeating the last. */
+const publicTokenRoute = (...responses: (() => Response)[]) =>
+  server.use(
+    ...responses.map((response, index) =>
+      http.get("/public/publicView/userform/ajax/inventoryOauthToken", response, {
+        once: index < responses.length - 1,
+      }),
+    ),
+  );
+/** Answers the whoami probe that recovery sends with the token the server rejected. */
+const probe = (rejected: string, status: number) =>
+  server.use(
+    http.get("/api/v1/userDetails/whoami", ({ request }) =>
+      request.headers.get("Authorization") === `Bearer ${rejected}` ? new HttpResponse(null, { status }) : undefined,
+    ),
+  );
 
 it("deduplicates minting, reuses tokens, and re-mints on demand inside the expiry buffer", async () => {
   const first = token("a");
@@ -52,9 +76,8 @@ it("deduplicates minting, reuses tokens, and re-mints on demand inside the expir
 });
 it("uses the public document legacy route and stores its token", async () => {
   publicView();
-  fetchMock.mockResolvedValue(Response.json({ data: "public-token" }));
+  publicTokenRoute(() => HttpResponse.json({ data: "public-token" }));
   expect(await provider().getToken()).toBe("public-token");
-  expect(fetchMock).toHaveBeenCalledWith("/public/publicView/userform/ajax/inventoryOauthToken", expect.any(Object));
   expect(sessionStorage.getItem("id_token")).toBe("public-token");
   expect(mint).not.toHaveBeenCalled();
 });
@@ -64,10 +87,10 @@ it("distinguishes permission 401 from an invalid token", async () => {
   mint.mockResolvedValueOnce({ accessToken: first }).mockResolvedValueOnce({ accessToken: second });
   const p = provider();
   await p.getToken();
-  fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+  probe(first, 200);
   expect(await p.recover(first)).toBe(first);
   expect(mint).toHaveBeenCalledTimes(1);
-  fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
+  probe(first, 401);
   expect(await p.recover(first)).toBe(second);
   expect(onIdentityChanged).not.toHaveBeenCalled();
 });
@@ -82,7 +105,7 @@ it.each(["expiry", "401"])("blocks delivery after a different identity from a %s
     nearExpiry();
     calls = [p.getToken(), p.getToken()];
   } else {
-    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    probe(first, 401);
     calls = [p.recover(first), p.recover(first)];
   }
   for (const result of await Promise.allSettled(calls)) {
@@ -92,9 +115,7 @@ it.each(["expiry", "401"])("blocks delivery after a different identity from a %s
   expect(onIdentityChanged).toHaveBeenCalledTimes(1);
   await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
   await expect(p.recover(first)).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
-  expect(
-    fetchMock.mock.calls.every(([, init]) => new Headers(init?.headers).get("Authorization") !== `Bearer ${mismatch}`),
-  ).toBe(true);
+  expect(requests.map((request) => request.headers.get("Authorization"))).not.toContain(`Bearer ${mismatch}`);
 });
 it.each([
   [undefined, "b"],
@@ -105,7 +126,7 @@ it.each([
   mint.mockResolvedValueOnce({ accessToken: first }).mockResolvedValueOnce({ accessToken: second });
   const p = provider();
   await p.getToken();
-  fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+  probe(first, 401);
   expect(await p.recover(first)).toBe(second);
   expect(onIdentityChanged).not.toHaveBeenCalled();
 });
@@ -170,9 +191,7 @@ describe("public document token route", () => {
     ["the login page", html],
   ])("reloads on %s once it held a token", async (_, refusal) => {
     publicView();
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ data: token("a", Date.now() / 1000 + 100) }))
-      .mockResolvedValueOnce(refusal());
+    publicTokenRoute(() => HttpResponse.json({ data: token("a", Date.now() / 1000 + 100) }), refusal);
     const p = provider();
     await p.getToken();
     await expect(p.getToken()).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
@@ -184,7 +203,7 @@ describe("public document token route", () => {
     ["the login page", html, ApiV2UnexpectedResponseError],
   ])("rejects an initial %s without a handler, so a refused session does not loop", async (_, refusal, type) => {
     publicView();
-    fetchMock.mockResolvedValue(refusal());
+    publicTokenRoute(refusal);
     await expect(provider().getToken()).rejects.toBeInstanceOf(type);
     expect(onIdentityChanged).not.toHaveBeenCalled();
     expect(onSessionEnded).not.toHaveBeenCalled();
@@ -194,7 +213,7 @@ describe("public document token route", () => {
     ["an invalid token body", () => Response.json({ data: 1 }), "invalidBody"],
   ])("normalises %s", async (_, response, reason) => {
     publicView();
-    fetchMock.mockResolvedValue(response());
+    publicTokenRoute(response);
     const error = await provider()
       .getToken()
       .catch((caught: unknown) => caught);
@@ -203,20 +222,21 @@ describe("public document token route", () => {
   });
   it("wraps a network failure", async () => {
     publicView();
-    const offline = new TypeError("offline");
-    fetchMock.mockRejectedValue(offline);
-    await expect(provider().getToken()).rejects.toMatchObject({ name: "ApiV2NetworkError", cause: offline });
+    publicTokenRoute(() => HttpResponse.error());
+    await expect(provider().getToken()).rejects.toMatchObject({
+      name: "ApiV2NetworkError",
+      cause: expect.any(TypeError),
+    });
   });
   it("reloads when the session expires during recovery, without minting", async () => {
     publicView();
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ data: "public-token" }))
-      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+    publicTokenRoute(() => HttpResponse.json({ data: "public-token" }));
+    probe("public-token", 401);
     const p = provider();
     await p.getToken();
     await expect(p.recover("public-token")).rejects.toBeInstanceOf(ApiV2IdentityChangedError);
     expect(onIdentityChanged).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requests).toHaveLength(2);
   });
 });
 
