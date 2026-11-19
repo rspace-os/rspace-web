@@ -12,6 +12,18 @@ import materialTheme from "@/theme";
 import CustomFields from "../CustomFields";
 
 const renders = vi.hoisted(() => new Map<string, number>());
+const cardRenders = vi.hoisted(() => new Map<string, number>());
+
+/** Counts how often each field's card renders. */
+vi.mock("@/modules/common/field-editor/FieldCard", async (importOriginal) => {
+  const { default: FieldCard } = await importOriginal<typeof import("@/modules/common/field-editor/FieldCard")>();
+  return {
+    default: function CountedFieldCard(props: ComponentProps<typeof FieldCard>) {
+      cardRenders.set(props.name, (cardRenders.get(props.name) ?? 0) + 1);
+      return FieldCard(props);
+    },
+  };
+});
 
 /** Counts how often each field's display condition renders. */
 vi.mock("@/modules/common/field-editor/FieldDisplayCondition", async (importOriginal) => {
@@ -36,10 +48,10 @@ const COUNT = 30;
 const keyOf = (i: number) => `6f1c2e0a-0000-4000-8000-${String(i).padStart(12, "0")}`;
 
 /** Even fields are radios; each odd field is shown when the radio above it is Yes. */
-const template = () => {
+const template = (count: number) => {
   const record = makeMockTemplate({
     fields: Array.from(
-      { length: COUNT },
+      { length: count },
       (_, i): FieldModelAttrs => ({
         id: i + 1,
         globalId: `SF${i + 1}`,
@@ -64,33 +76,54 @@ const rename = (from: string, to: string) =>
     target: { value: to },
   });
 
+const renderTemplate = (count = COUNT) =>
+  render(
+    <ThemeProvider theme={materialTheme}>
+      <storesContext.Provider
+        value={makeMockRootStore({
+          searchStore: { activeResult: template(count) },
+          uiStore: { isLarge: true, confirm: vi.fn() },
+        })}
+      >
+        <CustomFields onErrorStateChange={() => {}} />
+      </storesContext.Provider>
+    </ThemeProvider>,
+  );
+
 describe("Renaming a field of a large template", () => {
   it("re-renders only the display conditions that show that name", () => {
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <storesContext.Provider
-          value={makeMockRootStore({
-            searchStore: { activeResult: template() },
-            uiStore: { isLarge: true, confirm: vi.fn() },
-          })}
-        >
-          <CustomFields onErrorStateChange={() => {}} />
-        </storesContext.Provider>
-      </ThemeProvider>,
-    );
+    renderTemplate();
     expect(renders.size).toBe(COUNT);
 
     renders.clear();
     rename("Field 3", "Notes");
-    // a text field: its own card, and the field it reads, which lists it as a dependent
-    expect([...renders.keys()].sort()).toEqual([keyOf(2), keyOf(3)]);
+    // a text field: only the field it reads, which lists it as a dependent
+    expect([...renders.keys()]).toEqual([keyOf(2)]);
 
     renders.clear();
     rename("Field 4", "Is this a GMO?");
-    // a radio: its own card and the one field that reads it, not the other cards that could read it
-    expect([...renders.keys()].sort()).toEqual([keyOf(4), keyOf(5)]);
+    // a radio: only the one field that reads it, not the other fields that could read it
+    expect([...renders.keys()]).toEqual([keyOf(5)]);
     expect(
       within(screen.getByRole("region", { name: "Field 5" })).getByRole("combobox", { name: /sourceLabel/ }),
     ).toHaveTextContent("Is this a GMO?");
+  });
+});
+
+describe("Editing the options of a field", () => {
+  it("re-renders that field's card, and not the others", () => {
+    renderTemplate(6);
+    const card = () => within(screen.getByRole("region", { name: "Field 4" }));
+
+    cardRenders.clear();
+    fireEvent.click(card().getByRole("button", { name: /options\.add/ }));
+    expect([...cardRenders.keys()]).toEqual(["Field 4"]);
+
+    cardRenders.clear();
+    const [newOption] = card()
+      .getAllByRole("textbox", { name: /options\.optionLabel/ })
+      .slice(-1);
+    fireEvent.change(newOption, { target: { value: "Maybe" } });
+    expect([...cardRenders.keys()]).toEqual(["Field 4"]);
   });
 });
