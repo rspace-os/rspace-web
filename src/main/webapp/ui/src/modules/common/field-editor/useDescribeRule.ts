@@ -25,6 +25,20 @@ export function useDescribeRule(): {
           return t("fieldEditor.summary.hasValue", { source: sourceName });
         case "HAS_NO_VALUE":
           return t("fieldEditor.summary.hasNoValue", { source: sourceName });
+        case "EQUALS":
+          return t("fieldEditor.summary.equals", { source: sourceName, value: rule.values[0] ?? "" });
+        case "NOT_EQUALS":
+          return t("fieldEditor.summary.notEquals", { source: sourceName, value: rule.values[0] ?? "" });
+        case "CONTAINS":
+          return t("fieldEditor.summary.contains", { source: sourceName, value: rule.values[0] ?? "" });
+        case "LESS_THAN":
+          return t("fieldEditor.summary.lessThan", { source: sourceName, value: rule.values[0] ?? "" });
+        case "AT_MOST":
+          return t("fieldEditor.summary.atMost", { source: sourceName, value: rule.values[0] ?? "" });
+        case "GREATER_THAN":
+          return t("fieldEditor.summary.greaterThan", { source: sourceName, value: rule.values[0] ?? "" });
+        case "AT_LEAST":
+          return t("fieldEditor.summary.atLeast", { source: sourceName, value: rule.values[0] ?? "" });
       }
     },
   };

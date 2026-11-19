@@ -12,10 +12,10 @@ import { type ReactNode, useEffect, useEffectEvent, useId, useState } from "reac
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
-  CONDITION_OPERATORS,
   type ConditionOperator,
   ConditionOperatorSchema,
   type FieldDisplayRule,
+  OPERATORS_BY_SOURCE_KIND,
   operatorRequiresValues,
   sameDisplayRule,
 } from "@/modules/common/field-rules/displayRule";
@@ -61,6 +61,20 @@ function OperatorLabel({ operator }: { operator: ConditionOperator }): string {
       return t("fieldEditor.condition.operator.hasValue");
     case "HAS_NO_VALUE":
       return t("fieldEditor.condition.operator.hasNoValue");
+    case "EQUALS":
+      return t("fieldEditor.condition.operator.equals");
+    case "NOT_EQUALS":
+      return t("fieldEditor.condition.operator.notEquals");
+    case "CONTAINS":
+      return t("fieldEditor.condition.operator.contains");
+    case "LESS_THAN":
+      return t("fieldEditor.condition.operator.lessThan");
+    case "AT_MOST":
+      return t("fieldEditor.condition.operator.atMost");
+    case "GREATER_THAN":
+      return t("fieldEditor.condition.operator.greaterThan");
+    case "AT_LEAST":
+      return t("fieldEditor.condition.operator.atLeast");
   }
 }
 
@@ -293,7 +307,7 @@ export default function FieldDisplayCondition({
             }
             sx={{ flex: "1 1 160px" }}
           >
-            {CONDITION_OPERATORS.map((operator) => (
+            {OPERATORS_BY_SOURCE_KIND.OPTIONS.map((operator) => (
               <MenuItem key={operator} value={operator}>
                 <OperatorLabel operator={operator} />
               </MenuItem>
