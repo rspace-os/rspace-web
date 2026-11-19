@@ -9,6 +9,7 @@ import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.operations.InheritedFieldMerge;
 import java.util.List;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
@@ -78,9 +79,14 @@ public class SampleApiPostFullValidator implements Validator {
     }
   }
 
+  /**
+   * The mandatory check reads the template fields with any operation-generated values merged in, as
+   * creating the sample writes them; an explicitly posted field still takes precedence.
+   */
   private void validateFieldsAndTemplateFields(Errors errors, ApiSampleFullPost apiSamplePost) {
     if (apiSamplePost.getTemplate() != null) {
-      List<ApiInventoryEntityField> incomingApiFields = apiSamplePost.getApiSample().getFields();
+      ApiSampleWithFullSubSamples apiSample = apiSamplePost.getApiSample();
+      List<ApiInventoryEntityField> incomingApiFields = apiSample.getFields();
       List<InventoryEntityField> templateFields = apiSamplePost.getTemplate().getActiveFields();
 
       if (!incomingApiFields.isEmpty()) {
@@ -91,7 +97,10 @@ public class SampleApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      fieldHelper.validateMandatoryFieldsForEntityPost(incomingApiFields, templateFields, errors);
+      fieldHelper.validateMandatoryFieldsForEntityPost(
+          incomingApiFields,
+          InheritedFieldMerge.withMergedValues(apiSample.getExtraFields(), templateFields),
+          errors);
     }
   }
 
