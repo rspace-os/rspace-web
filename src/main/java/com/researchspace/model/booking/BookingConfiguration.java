@@ -30,7 +30,6 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
@@ -45,31 +44,39 @@ public class BookingConfiguration implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
-  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
-  @Setter
-  private Long id;
+  @Setter private Long id;
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "enabled")})
-  @Setter
-  private boolean enabled;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 16),
-        @AuditTrailProperty(name = "state")
-      })
-  @Setter
-  private BookingConfigurationState state = BookingConfigurationState.ACTIVE;
+  @Setter private boolean enabled;
 
-  @Getter(
-      onMethod_ = {
-        @Column(nullable = false),
-        @NotBlank(message = "{errors.api.v2.bookingConfiguration.timeZone.required}"),
-        @AuditTrailProperty(name = "timezone")
-      })
-  @Setter
-  private String timeZone;
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "enabled")
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Setter private BookingConfigurationState state = BookingConfigurationState.ACTIVE;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  @AuditTrailProperty(name = "state")
+  public BookingConfigurationState getState() {
+    return state;
+  }
+
+  @Setter private String timeZone;
+
+  @Column(nullable = false)
+  @NotBlank(message = "{errors.api.v2.bookingConfiguration.timeZone.required}")
+  @AuditTrailProperty(name = "timezone")
+  public String getTimeZone() {
+    return timeZone;
+  }
 
   private Date createdAt;
   private Date updatedAt;
@@ -82,76 +89,99 @@ public class BookingConfiguration implements Serializable {
    * LazyInitializationException} and every list and read of this resource answered 500. Fetching it
    * with the row costs one join for a value the default field selection returns anyway.
    */
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.EAGER),
-        @JoinColumn(name = "createdBy_id", updatable = false),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private User createdBy;
+  @Setter private User createdBy;
 
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.EAGER),
-        @JoinColumn(name = "updatedBy_id"),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private User updatedBy;
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "createdBy_id", updatable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getCreatedBy() {
+    return createdBy;
+  }
+
+  @Setter private User updatedBy;
+
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "updatedBy_id")
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getUpdatedBy() {
+    return updatedBy;
+  }
 
   @Embedded
   @Access(AccessType.FIELD)
   private BookableTargetReference target;
 
-  @Getter(onMethod_ = {@Version, @Column(nullable = false)})
-  @Setter
-  private long configurationVersion;
+  @Setter private long configurationVersion;
 
-  @Getter(
-      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "slotGranularityMinutes")})
+  @Version
+  @Column(nullable = false)
+  public long getConfigurationVersion() {
+    return configurationVersion;
+  }
+
   @Setter
   private long slotGranularityMinutes = BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES;
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 8),
-        @AuditTrailProperty(name = "incrementUnit")
-      })
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "slotGranularityMinutes")
+  public long getSlotGranularityMinutes() {
+    return slotGranularityMinutes;
+  }
+
   @Setter
   private BookingIncrementUnit incrementUnit = BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT;
 
-  @Getter(
-      onMethod_ = {
-        @Convert(converter = BookingOpeningHoursConverter.class),
-        @Column(nullable = false, length = 1024),
-        @AuditTrailProperty(name = "openingHours")
-      })
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 8)
+  @AuditTrailProperty(name = "incrementUnit")
+  public BookingIncrementUnit getIncrementUnit() {
+    return incrementUnit;
+  }
+
   private List<BookingOpeningHoursEntry> openingHours =
       BookingSchedulingSettings.DEFAULT_OPENING_HOURS;
 
-  @Getter(
-      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
-  @Setter
-  private long bufferBeforeMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+  @Convert(converter = BookingOpeningHoursConverter.class)
+  @Column(nullable = false, length = 1024)
+  @AuditTrailProperty(name = "openingHours")
+  public List<BookingOpeningHoursEntry> getOpeningHours() {
+    return openingHours;
+  }
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferAfterMinutes")})
-  @Setter
-  private long bufferAfterMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+  @Setter private long bufferBeforeMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
 
-  @Getter(
-      onMethod_ = {
-        @Column(nullable = false),
-        @AuditTrailProperty(name = "maxBookingDurationMinutes")
-      })
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "bufferBeforeMinutes")
+  public long getBufferBeforeMinutes() {
+    return bufferBeforeMinutes;
+  }
+
+  @Setter private long bufferAfterMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "bufferAfterMinutes")
+  public long getBufferAfterMinutes() {
+    return bufferAfterMinutes;
+  }
+
   @Setter
   private long maxBookingDurationMinutes =
       BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES;
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "allowDoubleBooking")})
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "maxBookingDurationMinutes")
+  public long getMaxBookingDurationMinutes() {
+    return maxBookingDurationMinutes;
+  }
+
   @Setter
   private boolean allowDoubleBooking = BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING;
+
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "allowDoubleBooking")
+  public boolean isAllowDoubleBooking() {
+    return allowDoubleBooking;
+  }
 
   @Transient private String effectiveRole;
   @Transient private List<ResourceRoleSource> roleSources;

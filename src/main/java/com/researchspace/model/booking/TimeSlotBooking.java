@@ -19,7 +19,6 @@ import jakarta.persistence.Version;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
@@ -33,94 +32,112 @@ public class TimeSlotBooking implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
-  @Getter(
-      onMethod_ = {@Column(name = "idempotency_key", length = 64, updatable = false), @NotAudited})
-  @Setter
-  private String idempotencyKey;
+  @Setter private String idempotencyKey;
 
-  @Getter(
-      onMethod_ = {
-        @Column(name = "idempotency_fingerprint", length = 64, updatable = false),
-        @NotAudited
-      })
-  @Setter
-  private String idempotencyFingerprint;
+  @Column(name = "idempotency_key", length = 64, updatable = false)
+  @NotAudited
+  public String getIdempotencyKey() {
+    return idempotencyKey;
+  }
 
-  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
-  @Setter
-  private Long id;
+  @Setter private String idempotencyFingerprint;
 
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.LAZY, optional = false),
-        @JoinColumn(name = "bookingConfiguration_id", nullable = false),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private BookingConfiguration bookingConfiguration;
+  @Column(name = "idempotency_fingerprint", length = 64, updatable = false)
+  @NotAudited
+  public String getIdempotencyFingerprint() {
+    return idempotencyFingerprint;
+  }
 
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.LAZY, optional = false),
-        @JoinColumn(name = "requester_id", nullable = false),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private User requester;
+  @Setter private Long id;
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 32),
-        @AuditTrailProperty(name = "kind")
-      })
-  @Setter
-  private BookingEventKind kind = BookingEventKind.BOOKING;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
+
+  @Setter private BookingConfiguration bookingConfiguration;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "bookingConfiguration_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public BookingConfiguration getBookingConfiguration() {
+    return bookingConfiguration;
+  }
+
+  @Setter private User requester;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "requester_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getRequester() {
+    return requester;
+  }
+
+  @Setter private BookingEventKind kind = BookingEventKind.BOOKING;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "kind")
+  public BookingEventKind getKind() {
+    return kind;
+  }
 
   private Date startTime;
   private Date endTime;
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 32),
-        @AuditTrailProperty(name = "state")
-      })
-  @Setter
-  private BookingState state;
+  @Setter private BookingState state;
 
-  @Getter(onMethod_ = {@Column(length = 1000), @AuditTrailProperty(name = "purpose")})
-  @Setter
-  private String purpose;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "state")
+  public BookingState getState() {
+    return state;
+  }
 
-  @Getter(onMethod_ = {@Column(nullable = false)})
-  @Setter
-  private boolean deleted;
+  @Setter private String purpose;
+
+  @Column(length = 1000)
+  @AuditTrailProperty(name = "purpose")
+  public String getPurpose() {
+    return purpose;
+  }
+
+  @Setter private boolean deleted;
+
+  @Column(nullable = false)
+  public boolean isDeleted() {
+    return deleted;
+  }
 
   private Date createdAt;
   private Date updatedAt;
 
-  @Getter(onMethod_ = {@Version, @Column(nullable = false)})
-  @Setter
-  private long version;
+  @Setter private long version;
 
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.LAZY),
-        @JoinColumn(name = "createdBy_id", updatable = false),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private User createdBy;
+  @Version
+  @Column(nullable = false)
+  public long getVersion() {
+    return version;
+  }
 
-  @Getter(
-      onMethod_ = {
-        @ManyToOne(fetch = FetchType.LAZY),
-        @JoinColumn(name = "updatedBy_id"),
-        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-      })
-  @Setter
-  private User updatedBy;
+  @Setter private User createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "createdBy_id", updatable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getCreatedBy() {
+    return createdBy;
+  }
+
+  @Setter private User updatedBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updatedBy_id")
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public User getUpdatedBy() {
+    return updatedBy;
+  }
 
   private transient BookingPrivacy preparedPrivacy = BookingPrivacy.BUSY;
   private transient boolean preparedCanEdit;

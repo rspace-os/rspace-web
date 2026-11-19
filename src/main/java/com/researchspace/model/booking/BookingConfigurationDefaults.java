@@ -16,7 +16,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
-import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
@@ -30,86 +29,113 @@ public class BookingConfigurationDefaults implements Serializable {
 
   public static final long SINGLETON_ID = 1L;
 
-  @Getter(onMethod_ = {@Id})
-  @Setter
-  private Long id;
+  @Setter private Long id;
 
-  @Getter(
-      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "slotGranularityMinutes")})
-  @Setter
-  private long slotGranularityMinutes;
+  @Id
+  public Long getId() {
+    return id;
+  }
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 8),
-        @AuditTrailProperty(name = "incrementUnit")
-      })
+  @Setter private long slotGranularityMinutes;
+
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "slotGranularityMinutes")
+  public long getSlotGranularityMinutes() {
+    return slotGranularityMinutes;
+  }
+
   @Setter
   private BookingIncrementUnit incrementUnit = BookingSchedulingSettings.DEFAULT_INCREMENT_UNIT;
 
-  @Getter(
-      onMethod_ = {
-        @Convert(converter = BookingOpeningHoursConverter.class),
-        @Column(nullable = false, length = 1024),
-        @AuditTrailProperty(name = "openingHours")
-      })
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 8)
+  @AuditTrailProperty(name = "incrementUnit")
+  public BookingIncrementUnit getIncrementUnit() {
+    return incrementUnit;
+  }
+
   private List<BookingOpeningHoursEntry> openingHours =
       BookingSchedulingSettings.DEFAULT_OPENING_HOURS;
 
-  @Getter(
-      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
-  @Setter
-  private long bufferBeforeMinutes;
+  @Convert(converter = BookingOpeningHoursConverter.class)
+  @Column(nullable = false, length = 1024)
+  @AuditTrailProperty(name = "openingHours")
+  public List<BookingOpeningHoursEntry> getOpeningHours() {
+    return openingHours;
+  }
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferAfterMinutes")})
-  @Setter
-  private long bufferAfterMinutes;
+  @Setter private long bufferBeforeMinutes;
 
-  @Getter(
-      onMethod_ = {
-        @Column(nullable = false),
-        @AuditTrailProperty(name = "maxBookingDurationMinutes")
-      })
-  @Setter
-  private long maxBookingDurationMinutes;
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "bufferBeforeMinutes")
+  public long getBufferBeforeMinutes() {
+    return bufferBeforeMinutes;
+  }
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "allowDoubleBooking")})
-  @Setter
-  private boolean allowDoubleBooking;
+  @Setter private long bufferAfterMinutes;
 
-  @Getter(
-      onMethod_ = {
-        @Column(nullable = false, length = 5),
-        @AuditTrailProperty(name = "availabilityWindowStart")
-      })
-  @Setter
-  private String availabilityWindowStart;
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "bufferAfterMinutes")
+  public long getBufferAfterMinutes() {
+    return bufferAfterMinutes;
+  }
 
-  @Getter(
-      onMethod_ = {
-        @Column(nullable = false, length = 5),
-        @AuditTrailProperty(name = "availabilityWindowEnd")
-      })
-  @Setter
-  private String availabilityWindowEnd;
+  @Setter private long maxBookingDurationMinutes;
 
-  @Getter(
-      onMethod_ = {
-        @Enumerated(EnumType.STRING),
-        @Column(nullable = false, length = 32),
-        @AuditTrailProperty(name = "timezoneMode")
-      })
-  @Setter
-  private BookingTimezoneMode timezoneMode;
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "maxBookingDurationMinutes")
+  public long getMaxBookingDurationMinutes() {
+    return maxBookingDurationMinutes;
+  }
 
-  @Getter(onMethod_ = {@Column(length = 255), @AuditTrailProperty(name = "customTimezone")})
-  @Setter
-  private String customTimezone;
+  @Setter private boolean allowDoubleBooking;
 
-  @Getter(onMethod_ = {@Version, @Column(nullable = false)})
-  @Setter
-  private long configurationVersion;
+  @Column(nullable = false)
+  @AuditTrailProperty(name = "allowDoubleBooking")
+  public boolean isAllowDoubleBooking() {
+    return allowDoubleBooking;
+  }
+
+  @Setter private String availabilityWindowStart;
+
+  @Column(nullable = false, length = 5)
+  @AuditTrailProperty(name = "availabilityWindowStart")
+  public String getAvailabilityWindowStart() {
+    return availabilityWindowStart;
+  }
+
+  @Setter private String availabilityWindowEnd;
+
+  @Column(nullable = false, length = 5)
+  @AuditTrailProperty(name = "availabilityWindowEnd")
+  public String getAvailabilityWindowEnd() {
+    return availabilityWindowEnd;
+  }
+
+  @Setter private BookingTimezoneMode timezoneMode;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 32)
+  @AuditTrailProperty(name = "timezoneMode")
+  public BookingTimezoneMode getTimezoneMode() {
+    return timezoneMode;
+  }
+
+  @Setter private String customTimezone;
+
+  @Column(length = 255)
+  @AuditTrailProperty(name = "customTimezone")
+  public String getCustomTimezone() {
+    return customTimezone;
+  }
+
+  @Setter private long configurationVersion;
+
+  @Version
+  @Column(nullable = false)
+  public long getConfigurationVersion() {
+    return configurationVersion;
+  }
 
   public BookingConfigurationDefaults() {}
 
