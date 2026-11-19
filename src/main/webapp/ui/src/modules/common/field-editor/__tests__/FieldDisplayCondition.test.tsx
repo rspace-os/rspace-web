@@ -615,6 +615,20 @@ describe("FieldDisplayCondition with text and number sources", () => {
     expect(card("Notes").getByRole("textbox", { name: "Value" })).toHaveAccessibleDescription("Enter a value.");
   });
 
+  it("does not bring back a condition set aside by Always once the field it read changes kind and back", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, { ...notes, rule: createDisplayRule("gmo", "HAS_VALUE", []) }]);
+    await user.click(card("Notes").getByRole("radio", { name: "Always" }));
+
+    const changeKind = screen.getByRole("button", { name: "Change the kind of Is this a GMO?" });
+    await user.click(changeKind);
+    await user.click(changeKind);
+    await user.click(conditional("Notes"));
+
+    expect(onChange.mock.calls).toEqual([["notes", null]]);
+    expect(card("Notes").getByRole("combobox", { name: "Condition" })).toHaveTextContent("is any of");
+  });
+
   it("quotes text values in the summary, but not numbers", async () => {
     await renderConditions(
       [
