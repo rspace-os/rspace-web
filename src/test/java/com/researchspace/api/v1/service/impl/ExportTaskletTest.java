@@ -18,8 +18,9 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,6 +32,7 @@ import org.springframework.batch.test.MetaDataInstanceFactory;
 class ExportTaskletTest {
 
   private static final String EXPORT_ID = "abcde";
+  private static final Long GROUP_ID = 7L;
 
   @Mock private ExportImport exportService;
   @Mock private IPropertyHolder properties;
@@ -40,25 +42,53 @@ class ExportTaskletTest {
 
   @InjectMocks private ExportTasklet tasklet;
 
-  @Test
-  void exportFailureFailsTheBatchStep() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"user", "group", "selection"})
+  void exportFailureFailsTheBatchStep(String scope) throws Exception {
     User user = TestFactory.createAnyUser("exporter");
+    user.setId(1L);
+    ExportApiConfig apiConfig = new ExportApiConfig("xml", scope);
+    if ("group".equals(scope)) {
+      apiConfig.setId(GROUP_ID);
+    }
     ChunkContext chunkContext =
         new ChunkContext(
             new StepContext(
                 MetaDataInstanceFactory.createStepExecution(
-                    ExportJobParamFactory.createJobParams(
-                        new ExportApiConfig("xml", "selection"), user, EXPORT_ID))));
+                    ExportJobParamFactory.createJobParams(apiConfig, user, EXPORT_ID))));
     when(userManager.getUserByUsernameNoSession(user.getUsername())).thenReturn(user);
     when(exportApiState.getById(EXPORT_ID)).thenReturn(Optional.of(new ExportRecordList()));
     when(properties.getServerUrl()).thenReturn("http://localhost:8080");
-    when(exportService.syncExportSelectionToArchive(
-            any(ArchiveExportConfig.class),
-            eq(user),
-            eq(URI.create("http://localhost:8080")),
-            eq(postArchiveCompleter),
-            any()))
-        .thenThrow(new ExportFailureException("Error writing form XML"));
+    URI serverUrl = URI.create("http://localhost:8080");
+    ExportFailureException writeFailure = new ExportFailureException("Error writing form XML");
+    switch (scope) {
+      case "user" ->
+          when(exportService.syncExportUserWorkToArchive(
+                  any(ArchiveExportConfig.class),
+                  eq(user),
+                  eq(serverUrl),
+                  eq(user),
+                  eq(postArchiveCompleter),
+                  any()))
+              .thenThrow(writeFailure);
+      case "group" ->
+          when(exportService.syncExportGroupToArchive(
+                  any(ArchiveExportConfig.class),
+                  eq(user),
+                  eq(GROUP_ID),
+                  eq(serverUrl),
+                  eq(postArchiveCompleter),
+                  any()))
+              .thenThrow(writeFailure);
+      default ->
+          when(exportService.syncExportSelectionToArchive(
+                  any(ArchiveExportConfig.class),
+                  eq(user),
+                  eq(serverUrl),
+                  eq(postArchiveCompleter),
+                  any()))
+              .thenThrow(writeFailure);
+    }
 
     assertThrows(ExportFailureException.class, () -> tasklet.execute(null, chunkContext));
     verify(exportApiState).clear(EXPORT_ID);
