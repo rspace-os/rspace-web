@@ -1470,6 +1470,20 @@
             "code": "validation.fieldDisplayRule.ruleTooLong"
           }
         ]
+      },
+      {
+        "name": "one value longer than a whole rule may be",
+        "valueCount": 0,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 40000,
+        "jsonLength": 40094,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
       }
     ]
   }
