@@ -889,6 +889,25 @@ describe("FormFieldEditor", () => {
       expect(posts.map((body) => body[1].displayRule)).toEqual(displayRule ? [displayRule] : []);
     });
 
+    it("keeps its alert, on the field still unfinished, until both are fixed", async () => {
+      const user = userEvent.setup();
+      const notes = saved(3, "String", { name: "Notes", ifPassword: "no", defaultStringValue: "" });
+      const { handle } = await renderWithIncompleteCondition(user, [gmo, target, notes]);
+      await user.click(
+        within(card("Notes")).getByRole("radio", { name: "Only when another field has certain values" }),
+      );
+      await act(() => expect(handle.current?.save()).rejects.toThrow());
+
+      await user.click(within(card("Target")).getByRole("radio", { name: "Always" }));
+      const alert = screen.getByRole("alert", { name: "Fix the problems marked below, then save again." });
+      expect(
+        within(alert).getByText("Complete the display condition of Notes, or choose Always, before saving."),
+      ).toBeVisible();
+
+      await user.click(within(card("Notes")).getByRole("radio", { name: "Always" }));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
     it("clears its alert and saves once the field it is on is deleted", async () => {
       const user = userEvent.setup();
       const { posts, handle } = await refuseASave(user);

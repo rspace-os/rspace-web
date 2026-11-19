@@ -185,7 +185,8 @@ export default function FormFieldEditor({
     status?.kind === "incompleteCondition"
       ? (fields.find((field) => status.keys.has(field.key) && incompleteKeys.has(field.key)) ?? null)
       : null;
-  if (status?.kind === "incompleteCondition" && stillIncomplete === null) setStatus(null);
+  // read-only, a condition without a draft stops reporting, so only an editable page can show it was fixed
+  if (editable && status?.kind === "incompleteCondition" && stillIncomplete === null) setStatus(null);
 
   const unnamed = t("common:fieldEditor.card.unnamed");
   const nameOf = (field: EditorField) => field.name || unnamed;
