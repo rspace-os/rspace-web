@@ -65,8 +65,8 @@ public final class FieldDisplayRuleValidator {
    * from the field itself and be able to be a source ({@link SourceKind#NONE} cannot), and the
    * operator must suit the source's kind. An option rule must list each value once and only options
    * the source offers. A text or number comparison must have exactly one value that is not blank,
-   * and against a number source that value must be a plain decimal number. Rules must not form a
-   * cycle.
+   * and against a number source that value must be a number in the same syntax as field numbers,
+   * valid as written, without trimming. Rules must not form a cycle.
    *
    * @return the problems found, in field order; empty when the set is valid
    */

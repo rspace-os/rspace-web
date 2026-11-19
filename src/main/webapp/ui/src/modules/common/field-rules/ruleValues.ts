@@ -26,8 +26,10 @@ const MAX_EXPONENT_DIGITS = 9;
 
 /**
  * The largest power of ten, either way, of a non-zero number's leading digit.
- * It bounds the plain form of a number and covers everything a 1000-character
- * value with a three-digit exponent can write.
+ * A size bound, not an agreement check: both libraries read such numbers
+ * alike, but it keeps the plain form of any number accepted to a few thousand
+ * characters. It covers everything a 1000-character value with a three-digit
+ * exponent can write.
  */
 const MAX_MAGNITUDE = 2000;
 
@@ -69,16 +71,23 @@ export function readRuleNumber(value: string): Decimal | null {
 /**
  * A number in canonical form: trimmed, in plain decimal notation without
  * trailing zeros, so `1.50` becomes `1.5`, `+5` becomes `5`, `1e3` becomes
- * `1000` and `-0` becomes `0`. Null when the value is not a number. Java's
+ * `1000` and `-0` becomes `0`. When the plain form would be longer than
+ * `MAX_NUMBER_LENGTH`, the trimmed value is returned as written (`1e1000`
+ * stays `1e1000`), so the result is always a number as written and canonical
+ * again. Null when the value is not a number. Java's
  * `RuleValues.canonicalNumber` returns the same strings.
  */
 export function canonicalRuleNumber(value: string): string | null {
-  return readRuleNumber(value)?.toFixed() ?? null;
+  const trimmed = trimRuleValue(value);
+  const plain = parseNumber(trimmed)?.toFixed();
+  if (plain === undefined) return null;
+  return plain.length > MAX_NUMBER_LENGTH ? trimmed : plain;
 }
 
 /**
- * The value as a number, or null when `decimal.js` cannot read it or it falls
- * outside the checks that keep `decimal.js` and `BigDecimal` in agreement.
+ * The value as a number, or null when `decimal.js` cannot read it, it fails
+ * the checks that keep `decimal.js` and `BigDecimal` in agreement, or it is
+ * outside the size bound.
  */
 function parseNumber(value: string): Decimal | null {
   if (value.length > MAX_NUMBER_LENGTH || ![...value].every((c) => NUMBER_CHARACTERS.includes(c))) return null;
@@ -89,10 +98,16 @@ function parseNumber(value: string): Decimal | null {
   } catch {
     return null;
   }
+  // A size bound on the plain form, not an agreement check.
   return number.isZero() || Math.abs(number.e) <= MAX_MAGNITUDE ? number : null;
 }
 
-/** The characters after the first `e` or `E`, less a sign; 0 when there is none. */
+/**
+ * The characters after the later of the first `e` and the first `E`, less a
+ * sign; 0 when there is neither. A value with more than one marker is not a
+ * number either way, so which one is measured only decides whether it is
+ * rejected here or by the parser.
+ */
 function exponentDigits(value: string): number {
   const marker = Math.max(value.indexOf("e"), value.indexOf("E"));
   if (marker < 0) return 0;
