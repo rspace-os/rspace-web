@@ -46,7 +46,8 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
         : checked && field.error
           ? t("instrument.templateFields.invalid")
           : "",
-      required: mandatory,
+      // a mandatory field may stay empty as it was loaded, but is still marked mandatory
+      required: checked && field.mandatory,
     };
 
     if (field.type === "attachment") {

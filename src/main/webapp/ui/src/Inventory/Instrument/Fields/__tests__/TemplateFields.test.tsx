@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
+import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
+import type { FieldModelAttrs } from "@/stores/models/FieldModel";
 import { LANDING_PAGE_FIELD_NAME } from "@/stores/models/InstrumentModel";
 import materialTheme from "@/theme";
 import TemplateFields from "../TemplateFields";
@@ -235,6 +237,16 @@ describe("TemplateFields -- Landing page", () => {
     expect(screen.queryByText("inventory:instrument.templateFields.mandatory")).not.toBeInTheDocument();
   });
 
+  it("still marks a mandatory field required while it may stay empty as it was loaded", () => {
+    const serial = { ...landingPage(""), id: 13, globalId: "IF13", name: "Serial", type: "string" as const };
+    const instrument = makeMockInstrument({ fields: [landingPage(""), serial] });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    expect(instrument.requiresValue(instrument.fields[1])).toBe(false);
+    expect(within(screen.getByRole("group", { name: "Serial" })).getByText("*")).toBeVisible();
+  });
+
   it.each(["", "   "])("refuses a Landing page that was filled in and is cleared to %j", async (cleared) => {
     const user = userEvent.setup();
     const instrument = makeMockInstrument({ fields: [landingPage("https://lab.example.org/lsm980")] });
@@ -246,5 +258,71 @@ describe("TemplateFields -- Landing page", () => {
     if (cleared) await user.type(textbox, cleared);
 
     expect(instrument.submittable.isOk).toBe(false);
+  });
+});
+
+describe("TemplateFields -- a field hidden while its value is invalid", () => {
+  setupRealAppI18n();
+  const SERVICED_KEY = "6f1c2e0a-0000-4000-8000-000000000041";
+
+  /** A Yes/No question, answered Yes, and `field`, shown only while the answer is Yes. */
+  const shownWhileServiced = (field: Partial<FieldModelAttrs>): Array<FieldModelAttrs> => [
+    {
+      id: 1,
+      globalId: "IF1",
+      name: "Serviced?",
+      type: "radio",
+      definition: { options: ["Yes", "No"] },
+      selectedOptions: ["Yes"],
+      columnIndex: 1,
+      attachment: null,
+      mandatory: false,
+      fieldKey: SERVICED_KEY,
+    },
+    {
+      id: 2,
+      globalId: "IF2",
+      name: "Service report",
+      type: "uri",
+      content: "",
+      selectedOptions: null,
+      columnIndex: 2,
+      attachment: null,
+      mandatory: false,
+      fieldKey: "6f1c2e0a-0000-4000-8000-000000000042",
+      displayRule: createDisplayRule(SERVICED_KEY, "IS_ANY_OF", ["Yes"]),
+      ...field,
+    },
+  ];
+  const saveReasons = (instrument: ReturnType<typeof makeMockInstrument>) =>
+    instrument.submittable.orElseGet((errors) => errors.map(({ message }) => message));
+
+  it("refuses Save, naming the field, when a URI the server cannot parse is hidden", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: shownWhileServiced({}) });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.type(screen.getByRole("textbox", { name: "Service report" }), "a b");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+
+    expect(instrument.isFieldHidden(instrument.fields[1])).toBe(true);
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining("Service report")]);
+  });
+
+  it("refuses Save, naming the field, when an impossible date typed over a stored one is hidden", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({
+      fields: shownWhileServiced({ name: "Serviced on", type: "date", content: "2024-01-10" }),
+    });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+
+    expect(instrument.isFieldHidden(instrument.fields[1])).toBe(true);
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining("Serviced on")]);
   });
 });
