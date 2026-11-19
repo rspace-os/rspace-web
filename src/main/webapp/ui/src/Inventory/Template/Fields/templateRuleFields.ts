@@ -1,7 +1,8 @@
 import { computed, type IComputedValue } from "mobx";
 import { type RuleEditorField, usableOptions } from "@/modules/common/field-editor/ruleEditing";
 import type { Field } from "../../../stores/definitions/Field";
-import FieldModel, { hasOptions } from "../../../stores/models/FieldModel";
+import FieldModel from "../../../stores/models/FieldModel";
+import { sourceKindOfType } from "../../../stores/models/fieldVisibility";
 
 type FieldOwner = { readonly fields?: ReadonlyArray<Field> | null };
 
@@ -31,7 +32,8 @@ export function templateRuleFields(owner: FieldOwner): ReadonlyArray<RuleEditorF
             get name() {
               return field.name;
             },
-            canBeSource: hasOptions(field.type),
+            canBeSource: sourceKindOfType(field.type) !== "NONE",
+            sourceKind: sourceKindOfType(field.type),
             options: usableOptions(field.options.map((option) => option.value)),
             rule: field.displayRule,
           }),

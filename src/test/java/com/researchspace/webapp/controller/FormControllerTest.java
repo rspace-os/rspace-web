@@ -148,6 +148,8 @@ public class FormControllerTest extends SpringTransactionalTest {
         .singleElement()
         .asString()
         .contains("[dependent]", "not a password field");
+    flushDatabaseState();
+    clearSessionAndEvictAll();
     assertFalse(((StringFieldForm) formMgr.getField(sourceId)).isIfPassword());
   }
 

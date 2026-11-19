@@ -5,6 +5,7 @@ import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
@@ -31,6 +32,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
@@ -196,39 +198,16 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     initUser(user);
     logoutAndLoginAs(user);
 
-    // Reason is mandatory, and shown only while Weight, which defaults to 1, is above 2
-    String weightKey = UUID.randomUUID().toString();
-    RSForm form = formMgr.create(user);
-    formMgr.saveFields(
-        form.getId(),
-        List.of(
-            new FormFieldSaveItem(
-                null,
-                FieldType.NUMBER.getType(),
-                weightKey,
-                null,
-                new NumberFieldDTO<>("", "", "", "1", FieldType.NUMBER, "Weight")),
-            new FormFieldSaveItem(
-                null,
-                FieldType.STRING.getType(),
-                null,
-                new FieldDisplayRuleDTO(weightKey, "GREATER_THAN", List.of("2")),
-                new StringFieldDTO<>("Reason", true, "no", ""))),
-        user);
-    formMgr.publish(form.getId(), true, null, user);
-
-    StructuredDocument doc =
-        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
-    String docName = "Doc_with_rule_" + getRandomName(6);
-    doc.setName(docName);
-    Field weight = doc.getFields().get(0);
-    weight.setFieldData("4");
-    fieldMgr.save(weight, user);
-    recordMgr.save(doc, user);
-
+    // Reason is mandatory, and shown only while Weight is above 2
+    String run = getRandomName(6);
+    String shownOnlyInArchive = "Doc_default_weight_1_archived_4_" + run;
+    String hiddenOnlyInArchive = "Doc_default_weight_4_archived_1_" + run;
     ExportRecordList exportList = new ExportRecordList();
-    exportList.add(doc.getOid());
+    exportList.add(createRuleDocument(user, shownOnlyInArchive, "1", "4").getOid());
+    exportList.add(createRuleDocument(user, hiddenOnlyInArchive, "4", "1").getOid());
+
     ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    expCfg.setExportScope(ExportScope.SELECTION);
     archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
     File zipFile =
         archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
@@ -240,9 +219,55 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             importStrategy::doImport);
 
     assertTrue(report.isSuccessful());
-    StructuredDocument imported = findImportedDoc(report, docName, user);
-    assertEquals("4", imported.getFields().get(0).getFieldData());
-    assertFalse(imported.isAllFieldsValid(), "the empty mandatory Reason is shown");
+    StructuredDocument reasonShown = findImportedDoc(report, shownOnlyInArchive, user);
+    assertEquals("4", reasonShown.getFields().get(0).getFieldData());
+    assertImportedReasonKeepsItsRule(reasonShown, user);
+    assertFalse(reasonShown.isAllFieldsValid(), "the empty mandatory Reason is shown");
+
+    StructuredDocument reasonHidden = findImportedDoc(report, hiddenOnlyInArchive, user);
+    assertEquals("1", reasonHidden.getFields().get(0).getFieldData());
+    assertImportedReasonKeepsItsRule(reasonHidden, user);
+    assertTrue(reasonHidden.isAllFieldsValid(), "the empty mandatory Reason is hidden");
+  }
+
+  private StructuredDocument createRuleDocument(
+      User user, String docName, String defaultWeight, String archivedWeight) throws Exception {
+    String weightKey = UUID.randomUUID().toString();
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(
+                null,
+                FieldType.NUMBER.getType(),
+                weightKey,
+                null,
+                new NumberFieldDTO<>("", "", "", defaultWeight, FieldType.NUMBER, "Weight")),
+            new FormFieldSaveItem(
+                null,
+                FieldType.STRING.getType(),
+                null,
+                new FieldDisplayRuleDTO(weightKey, "GREATER_THAN", List.of("2")),
+                new StringFieldDTO<>("Reason", true, "no", ""))),
+        user);
+    formMgr.publish(form.getId(), true, null, user);
+
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    doc.setName(docName);
+    Field weight = doc.getFields().get(0);
+    weight.setFieldData(archivedWeight);
+    fieldMgr.save(weight, user);
+    recordMgr.save(doc, user);
+    return doc;
+  }
+
+  private void assertImportedReasonKeepsItsRule(StructuredDocument imported, User user) {
+    RSForm form = formMgr.getWithPopulatedFieldForms(imported.getForm().getId(), user);
+    String weightKey = form.getFieldForms().get(0).getFieldKey();
+    String rule = form.getFieldForms().get(1).getDisplayRule();
+    assertNotNull(rule, "imported Reason keeps its display rule");
+    assertEquals(weightKey, FieldDisplayRule.fromJson(rule).sourceFieldKey());
   }
 
   @Test
