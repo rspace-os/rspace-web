@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { SETTLE_DELAY_MS } from "@/Inventory/components/Fields/useShownTemplateFields";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "@/stores/models/__tests__/SampleModel/mocking";
@@ -142,5 +143,76 @@ describe("Template fields with display rules", () => {
   it("is accessible", async () => {
     renderSampleFields(gmoFields(["Yes"]));
     await expectAccessible(document.body);
+  });
+});
+
+const WEIGHT_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
+
+/** A number source, loaded as `weight`, and a mandatory permit shown while it is greater than 2. */
+const weightFields = (weight: string): Array<FieldModelAttrs> => [
+  {
+    id: 1,
+    globalId: "SF1",
+    name: "Weight",
+    type: "number",
+    content: weight,
+    selectedOptions: null,
+    columnIndex: 1,
+    attachment: null,
+    mandatory: false,
+    fieldKey: WEIGHT_KEY,
+  },
+  {
+    id: 2,
+    globalId: "SF2",
+    name: "Heavy goods permit",
+    type: "string",
+    content: "",
+    selectedOptions: null,
+    columnIndex: 2,
+    attachment: null,
+    mandatory: true,
+    fieldKey: "6f1c2e0a-0000-4000-8000-000000000012",
+    displayRule: createDisplayRule(WEIGHT_KEY, "GREATER_THAN", ["2"]),
+  },
+];
+
+describe("Template fields with a number source", () => {
+  it("moves fields once typing pauses, while the record already follows each key", async () => {
+    const user = userEvent.setup();
+    const sample = renderSampleFields(weightFields("4"));
+    const permitField = sample.fields[1];
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+
+    await user.clear(weight);
+    await user.type(weight, "1");
+    expect(sample.isFieldHidden(permitField)).toBe(true);
+    expect(permitField.validate().isOk).toBe(true);
+    expect(screen.getByRole("textbox", { name: /Heavy goods permit/ })).toBeInTheDocument();
+
+    await waitForElementToBeRemoved(() => screen.queryByRole("textbox", { name: /Heavy goods permit/ }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("common:fieldDisplay.fieldsHidden"));
+    expect(weight).toHaveFocus();
+  });
+
+  it("announces nothing when typing ends where it started", async () => {
+    const user = userEvent.setup();
+    renderSampleFields(weightFields("4"));
+    const weight = screen.getByRole("spinbutton", { name: "Weight" });
+
+    await user.clear(weight);
+    await user.type(weight, "5");
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_DELAY_MS + 100));
+
+    expect(screen.getByRole("textbox", { name: /Heavy goods permit/ })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("reads loaded numbers and typed text from the record's current content", () => {
+    const sample = makeMockSample({ fields: weightFields("2.5") });
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(false);
+
+    sample.fields[0].setAttributesDirty({ content: "abc" });
+    expect(sample.isFieldHidden(sample.fields[1])).toBe(true);
   });
 });

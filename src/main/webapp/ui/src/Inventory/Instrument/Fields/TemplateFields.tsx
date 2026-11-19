@@ -27,8 +27,8 @@ type TemplateFieldsArgs = {
 
 function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer } = useShownTemplateFields(instrument, onErrorStateChange);
-  const rendered = shownFields.map((field: Field) => {
+  const { shownFields, announcer, wrapField } = useShownTemplateFields(instrument, onErrorStateChange);
+  const renderField = (field: Field) => {
     const commonProps = {
       disabled: !instrument.isFieldEditable("fields"),
       label: field.name,
@@ -285,7 +285,8 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
     }
 
     return <Box key={field.name}>{t("instrument.templateFields.unknownFieldType", { type: field.type })}</Box>;
-  });
+  };
+  const rendered = shownFields.map((field) => wrapField(field, renderField(field)));
   return (
     <>
       {rendered}

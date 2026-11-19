@@ -196,6 +196,28 @@ describe("templateStepValid", () => {
   });
 });
 
+describe("templateBlockReason with a number source", () => {
+  const WEIGHT_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
+  const template = (weight: unknown) => ({
+    fields: [
+      { name: "Weight", mandatory: false, type: "number", content: weight, fieldKey: WEIGHT_KEY },
+      {
+        name: "Heavy goods permit",
+        mandatory: true,
+        type: "string",
+        content: "",
+        displayRule: createDisplayRule(WEIGHT_KEY, "GREATER_THAN", ["2"]),
+      },
+    ],
+  });
+
+  it("needs a mandatory field only while the template's default number shows it", () => {
+    // loaded defaults are numbers, compared through String(content)
+    expect(templateBlockReason(template(4), "en-US").blocked).toBe(true);
+    expect(templateBlockReason(template(1), "en-US").blocked).toBe(false);
+  });
+});
+
 describe("templateBlockReason with display rules", () => {
   const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
   const template = (defaultAnswer: Array<string>) => ({
