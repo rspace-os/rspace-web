@@ -1,3 +1,4 @@
+import { uniq } from "es-toolkit";
 import * as v from "valibot";
 import {
   type ApiV2ReadOperation,
@@ -51,7 +52,7 @@ export function instrumentRelationshipSource(
     },
     batchSize: 100,
     resolveMany: async (values, signal) => {
-      const ids = [...new Set(values.map((value) => databaseIdFromGlobalId(value, "IN")))].filter(
+      const ids = uniq(values.map((value) => databaseIdFromGlobalId(value, "IN"))).filter(
         (id): id is number => id !== null,
       );
       if (!isNonEmpty(ids)) return {};

@@ -12,6 +12,7 @@ import {
   rowSortingFeature,
   tableFeatures,
 } from "@tanstack/react-table";
+import { isNil } from "es-toolkit";
 import type { ReactNode } from "react";
 import type { FieldOrigin, LabelText } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
@@ -48,7 +49,7 @@ export const tableListFeatures = tableFeatures({
 });
 
 export function displayValue(value: unknown, language: string | undefined, formatNumbers = false): string {
-  if (value === null || value === undefined) return "";
+  if (isNil(value)) return "";
   if (value instanceof Date) return value.toLocaleString(language);
   if (typeof value === "number") return formatNumbers ? formatNumber(value, language) : String(value);
   if (typeof value === "boolean")

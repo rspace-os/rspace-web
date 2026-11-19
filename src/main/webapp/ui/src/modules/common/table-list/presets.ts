@@ -1,3 +1,4 @@
+import { isEqual } from "es-toolkit";
 import type { FilterExpression } from "./types";
 
 type Rule<T> = Extract<FilterExpression<T>, { kind: "comparison" }>;
@@ -12,7 +13,7 @@ function matches<T>(expression: FilterExpression<T>, rule: Rule<T>) {
     expression.kind === "comparison" &&
     expression.field === rule.field &&
     expression.operator === rule.operator &&
-    JSON.stringify(expression.value) === JSON.stringify(rule.value)
+    isEqual(expression.value, rule.value)
   );
 }
 

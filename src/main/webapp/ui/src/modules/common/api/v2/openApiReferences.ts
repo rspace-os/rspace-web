@@ -1,3 +1,5 @@
+import { mapValues } from "es-toolkit";
+
 const COMPONENTS = "#/components/";
 const SCHEMAS = `${COMPONENTS}schemas/`;
 
@@ -34,7 +36,7 @@ export function dereferenceApiV2OpenApi(document: unknown): unknown {
       if (seen.includes(ref)) throw new Error(`Recursive OpenAPI reference ${ref}`);
       return resolve(target(ref), [...seen, ref]);
     }
-    return Object.fromEntries(Object.entries(node).map(([key, value]) => [key, resolve(value, seen)]));
+    return mapValues(node, (value) => resolve(value, seen));
   };
   return resolve(document, []);
 }

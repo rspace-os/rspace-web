@@ -1,4 +1,5 @@
 import { useQuery, useSuspenseQueries } from "@tanstack/react-query";
+import { uniq } from "es-toolkit";
 import { useCallback, useMemo, useState } from "react";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
@@ -69,7 +70,7 @@ export function useApiV2RuntimeFields<
     fields: emptySelections,
   });
   const selected = selection.scope === selectionScope ? selection.fields : emptySelections;
-  const requested = [...new Set(selectors)]
+  const requested = uniq(selectors)
     .filter((name) => namespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace.namespace)))
     .sort();
   const unresolved = requested.filter(

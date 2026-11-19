@@ -1,3 +1,4 @@
+import { clamp } from "es-toolkit";
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AlertEntry, TableListAlert, TableListAlertsApi } from "../components/TableListAlerts";
 
@@ -90,7 +91,7 @@ export function useTableListAlertsState({
     const index = current.findIndex((alert) => alert.id === id);
     const remaining = current.filter((alert) => alert.id !== id);
     setAlerts((alerts) => alerts.filter((alert) => alert.id !== id));
-    const neighbour = remaining[Math.min(Math.max(index, 0), remaining.length - 1)];
+    const neighbour = remaining[clamp(index, 0, remaining.length - 1)];
     setFocusRequest(neighbour ? { kind: "alert", id: neighbour.id } : { kind: "fallback" });
   }, []);
 

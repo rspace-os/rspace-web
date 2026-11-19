@@ -1,4 +1,5 @@
 import { type ColumnDef, createColumnHelper } from "@tanstack/react-table";
+import { isNil } from "es-toolkit";
 import type { Namespace } from "i18next";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,13 +29,13 @@ function valueFromSource<TDocument extends Record<string, unknown>>(
     if (typeof value === "number" && source.targetField !== "id") {
       return formatNumber(value, language);
     }
-    return value === null || value === undefined ? "" : String(value);
+    return isNil(value) ? "" : String(value);
   }
 
   const response = row[source.responseField];
   if (typeof response !== "object" || response === null || Array.isArray(response)) return "";
   const value = (response as Record<string, unknown>)[source.id];
-  if (value === null || value === undefined) return "";
+  if (isNil(value)) return "";
   const format = (item: unknown) =>
     source.numeric && typeof item === "number" ? formatNumber(item, language) : String(item);
   return Array.isArray(value) ? formatList(value.map(format), language, VALUE_LIST) : format(value);

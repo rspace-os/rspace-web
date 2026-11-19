@@ -1,3 +1,4 @@
+import { escapeRegExp, isNil, isNotNil } from "es-toolkit";
 import type { SearchSelector } from "@/modules/common/collection/config";
 import type { FilterExpression, FilterState, TableListProps } from "../types";
 
@@ -58,9 +59,7 @@ function matchesExpression<TDocument extends Record<string, unknown>>(
     case "matches":
       return wildcardPattern(String(expression.value)).test(String(rowValue ?? ""));
     case "exists":
-      return expression.value
-        ? rowValue !== null && rowValue !== undefined
-        : rowValue === null || rowValue === undefined;
+      return expression.value ? isNotNil(rowValue) : isNil(rowValue);
   }
 }
 

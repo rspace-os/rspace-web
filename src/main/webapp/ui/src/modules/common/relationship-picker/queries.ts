@@ -1,5 +1,5 @@
 import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { chunk } from "es-toolkit";
+import { chunk, uniq } from "es-toolkit";
 import type {
   RelationshipOption,
   RelationshipOptionAvailabilitySource,
@@ -76,7 +76,7 @@ export function useRelationshipOptionAvailability({
   availabilitySource: RelationshipOptionAvailabilitySource | undefined;
   authScope?: string | number;
 }) {
-  const values = [...new Set(options.map((option) => String(option.value)))].sort();
+  const values = uniq(options.map((option) => String(option.value))).sort();
   const query = useQuery<Readonly<Record<string, UnavailableRelationshipOption>>>({
     queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, authScope ?? null, ...values],
     enabled: availabilitySource !== undefined && values.length > 0,

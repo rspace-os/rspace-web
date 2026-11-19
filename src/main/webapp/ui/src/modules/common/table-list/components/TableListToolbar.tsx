@@ -1,5 +1,6 @@
+import { debounce } from "es-toolkit";
 import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { Button } from "@/modules/common/ui/button";
@@ -27,39 +28,32 @@ function SearchRecordsInput({
 }) {
   const { t } = useTranslation("common");
   const [draft, setDraft] = useState(value);
-  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentValue = useRef(value);
   const commit = useRef(onCommit);
   currentValue.current = value;
   commit.current = onCommit;
 
-  const cancel = useCallback(() => {
-    if (timeout.current !== null) clearTimeout(timeout.current);
-    timeout.current = null;
+  const commitIfChanged = useCallback((next: string) => {
+    if (next !== currentValue.current) commit.current(next);
   }, []);
+  const debouncedCommit = useMemo(() => debounce(commitIfChanged, debounceMs), [commitIfChanged, debounceMs]);
 
-  useEffect(() => cancel, [cancel]);
+  useEffect(() => () => debouncedCommit.cancel(), [debouncedCommit]);
   useEffect(() => {
-    cancel();
+    debouncedCommit.cancel();
     setDraft(value);
-  }, [cancel, resetSignal, value]);
+  }, [debouncedCommit, resetSignal, value]);
 
   const commitNow = (next: string) => {
-    cancel();
-    if (next !== currentValue.current) commit.current(next);
+    debouncedCommit.cancel();
+    commitIfChanged(next);
   };
 
   const change = (next: string) => {
     setDraft(next);
-    cancel();
-    if (debounceMs === 0) {
-      if (next !== currentValue.current) commit.current(next);
-      return;
-    }
-    timeout.current = setTimeout(() => {
-      timeout.current = null;
-      if (next !== currentValue.current) commit.current(next);
-    }, debounceMs);
+    // debounce(fn, 0) still defers to the next tick, so a zero delay commits at once.
+    if (debounceMs === 0) commitNow(next);
+    else debouncedCommit(next);
   };
 
   return (
