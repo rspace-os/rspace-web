@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.documentconversion.ext.DocumentConversionError;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -158,13 +159,26 @@ public class FileDownloadControllerTest {
   }
 
   @Test
+  public void testRejectsNonPdfFormatBeforeUserOrRecordLookup() throws Exception {
+    AjaxReturnObject<String> result = ctrller.convertFile(123L, "docx", null, resp);
+
+    assertNull(result.getData());
+    assertEquals(400, resp.getStatus());
+    verify(userMgr, never()).getAuthenticatedUserInSession();
+    verify(baseRecordMgr, never())
+        .retrieveMediaFile(
+            Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+  }
+
+  @Test
   public void testConvertFailureHandling() throws Exception {
     final EcatMediaFile mediaFile = getAnyMediaFile();
     mediaFile.setOwner(user);
     ctrller.anyOutfile = setupFileToConvert("pdf");
     mediaFile.setExtension("doc");
     mediaFile.setFileProperty(setUpFileProperty(ctrller.anyOutfile));
-    final ConversionResult error = new ConversionResult("error");
+    final ConversionResult error =
+        new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
     mockMediaFileLookup(mediaFile);
     when(converter.convert(
             Mockito.eq(new FileDownloadController.FileWrapper(fileStore, mediaFile)),
@@ -177,22 +191,38 @@ public class FileDownloadControllerTest {
 
     AjaxReturnObject<String> rcError = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
     assertNull(rcError.getData());
-    assertEquals("error", rcError.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""));
+    assertEquals(
+        "The input document is invalid or unavailable.",
+        rcError.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""));
+    assertEquals(422, resp.getStatus());
+    assertTrue(!ctrller.anyOutfile.exists());
   }
 
   @Test
   public void testUnsupportedConversionRejectedBeforeTouchingFiles() throws Exception {
-    mockGetUserFromSession();
-    EcatMediaFile mediaFile = getAnyMediaFile();
-    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("doc")));
-    mockMediaFileLookup(mediaFile);
-
     AjaxReturnObject<String> rc = ctrller.convertFile(1L, "pdf -l /tmp/x", null, resp);
     assertNull(rc.getData());
     assertNotNull(rc.getErrorMsg());
+    assertEquals(400, resp.getStatus());
+    verify(converter, never()).convert(Mockito.any(), Mockito.anyString(), Mockito.any(File.class));
+    verifyNoInteractions(fileStore);
+  }
+
+  @Test
+  public void testUnsupportedSourceFormatRejectedBeforeTouchingFiles() throws Exception {
+    mockGetUserFromSession();
+    EcatMediaFile mediaFile = getAnyMediaFile();
+    mediaFile.setFileProperty(setUpFileProperty(setupFileToConvert("zip")));
+    mockMediaFileLookup(mediaFile);
+    when(properties.isConversionEnabled()).thenReturn(true);
+
+    AjaxReturnObject<String> rc = ctrller.convertFile(1L, "pdf", null, resp);
+    assertNull(rc.getData());
+    assertNotNull(rc.getErrorMsg());
+    assertEquals(422, resp.getStatus());
     verify(converter)
         .supportsConversion(
-            Mockito.argThat(c -> "file.doc".equals(c.getName())), Mockito.eq("pdf -l /tmp/x"));
+            Mockito.argThat(c -> "file.zip".equals(c.getName())), Mockito.eq("pdf"));
     verify(converter, never()).convert(Mockito.any(), Mockito.anyString(), Mockito.any(File.class));
     verifyNoInteractions(fileStore);
   }
@@ -212,7 +242,7 @@ public class FileDownloadControllerTest {
     when(fileStore.findFile(Mockito.any(FileProperty.class))).thenReturn(fileToConvert);
     mockFileInputStreamonFile(fileToConvert);
     mockMediaFileLookup(mediaFile);
-    mockEnableAsposeCaching();
+    mockEnableConversionCaching();
     mockSupportsConversionToPdf();
     when(fileStore.getCurrentFileStoreRoot()).thenReturn(root);
     AjaxReturnObject<String> rcOk = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
@@ -231,8 +261,9 @@ public class FileDownloadControllerTest {
             Optional.of(new FileInputStream(fileToConvert)));
   }
 
-  private void mockEnableAsposeCaching() {
-    when(properties.isAsposeCachingEnabled()).thenReturn(true);
+  private void mockEnableConversionCaching() {
+    when(properties.isConversionEnabled()).thenReturn(true);
+    when(properties.isConversionCachingEnabled()).thenReturn(true);
   }
 
   private void mockGetUserFromSession() {
@@ -305,7 +336,7 @@ public class FileDownloadControllerTest {
     mockGetUserFromSession();
     when(fileStore.exists(Mockito.any(FileProperty.class))).thenReturn(false);
     when(fileStore.getCurrentFileStoreRoot()).thenReturn(root);
-    mockEnableAsposeCaching();
+    mockEnableConversionCaching();
     mockSupportsConversionToPdf();
   }
 
@@ -344,6 +375,21 @@ public class FileDownloadControllerTest {
             Mockito.any(FileProperty.class),
             Mockito.any(File.class),
             Mockito.any(FileDuplicateStrategy.class));
+    assertTrue(!ctrller.anyOutfile.exists());
+  }
+
+  @Test
+  public void streamConvertedPdfUsesPdfContentType() throws IOException {
+    EcatMediaFile mediaFile = getAnyMediaFile();
+    mediaFile.setOwner(user);
+    mockGetUserFromSession();
+    mockMediaFileLookup(mediaFile);
+    mockInputStreamFromFileStore(RSpaceTestUtils.getAnyPdf());
+    when(fileStore.getCurrentFileStoreRoot()).thenReturn(root);
+
+    ctrller.streamDirect(mediaFile.getId(), "converted.pdf", resp);
+
+    assertEquals("application/pdf", resp.getContentType());
   }
 
   @Test

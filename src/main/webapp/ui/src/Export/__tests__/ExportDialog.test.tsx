@@ -398,7 +398,7 @@ describe("ExportDialog", () => {
           },
         });
       });
-      await user.click(await screen.findByRole("radio", { name: (name) => name.startsWith(".DOC file") }));
+      await user.click(await screen.findByRole("radio", { name: (name) => name.startsWith(".DOCX file") }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
       await user.click(screen.getByRole("combobox"));

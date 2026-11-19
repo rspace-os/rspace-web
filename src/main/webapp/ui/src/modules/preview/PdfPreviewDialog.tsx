@@ -3,7 +3,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { CallableAsposePreview, useAsposePreview } from "@/eln/gallery/components/CallableAsposePreview";
+import { CallableDocumentPreview, useDocumentPreview } from "@/eln/gallery/components/CallableDocumentPreview";
 import { CallablePdfPreview, usePdfPreview } from "@/eln/gallery/components/CallablePdfPreview";
 import materialTheme from "@/theme";
 
@@ -30,7 +30,7 @@ function buildPdfStreamUrl({
 
 export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
   const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreviewFromDetails } = useAsposePreview();
+  const { openDocumentPreviewFromDetails } = useDocumentPreview();
 
   React.useEffect(() => {
     function handler(event: Event) {
@@ -46,7 +46,7 @@ export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
         return;
       }
 
-      void openAsposePreviewFromDetails({
+      void openDocumentPreviewFromDetails({
         documentId,
         revisionId,
         fileExtension,
@@ -58,7 +58,7 @@ export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
     return () => {
       window.removeEventListener(OPEN_PDF_PREVIEW_DIALOG, handler);
     };
-  }, [openAsposePreviewFromDetails, openPdfPreview]);
+  }, [openDocumentPreviewFromDetails, openPdfPreview]);
 
   return null;
 }
@@ -70,9 +70,9 @@ export function PdfPreviewDialogWrapper(): React.ReactNode {
         <ErrorBoundary topOfViewport>
           <Alerts>
             <CallablePdfPreview>
-              <CallableAsposePreview>
+              <CallableDocumentPreview>
                 <PdfPreviewDialogFromGlobalEvent />
-              </CallableAsposePreview>
+              </CallableDocumentPreview>
             </CallablePdfPreview>
           </Alerts>
         </ErrorBoundary>

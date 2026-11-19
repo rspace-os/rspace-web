@@ -160,7 +160,7 @@ public class NotebookEditorController extends BaseController {
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
     model.addAttribute("workspaceFolderId", bcrumb.getParentFolderId());
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(user));
-    model.addAttribute("asposeEnabled", isAsposeEnabled());
+    model.addAttribute("conversionEnabled", isConversionEnabled());
     model.addAttribute("isPublished", notebook.isPublished());
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));

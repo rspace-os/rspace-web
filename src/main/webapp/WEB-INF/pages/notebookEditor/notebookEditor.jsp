@@ -48,7 +48,7 @@
         data-can-create-record="${permDTO.createRecord}"
         data-settings-key="${settingsKey}"
         data-pio-enabled="${pioEnabled}"
-        data-aspose-enabled="${asposeEnabled}"
+        data-conversion-enabled="${conversionEnabled}"
         data-can-delete="${permDTO.deleteRecord}"
         data-can-share="${canShare}">
       </div>

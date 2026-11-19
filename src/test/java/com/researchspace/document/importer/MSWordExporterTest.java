@@ -2,6 +2,7 @@ package com.researchspace.document.importer;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,12 +19,20 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -86,6 +95,23 @@ public class MSWordExporterTest {
   }
 
   @Test
+  void temporaryInputNameIgnoresTheUploadedPath() throws IOException {
+    ArgumentCaptor<Convertible> input = ArgumentCaptor.forClass(Convertible.class);
+    when(docConverter.convert(input.capture(), eq("html"), any(File.class)))
+        .thenReturn(new ConversionResult("error message"));
+
+    try (FileInputStream fis = new FileInputStream(inputFile)) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> wordImporter.create(fis, any, targetFolder, null, "../../evil.DOCX"));
+    }
+
+    File tempInput = new File(URI.create(input.getValue().getFileUri()));
+    assertTrue(tempInput.getName().startsWith("word-import-"));
+    assertTrue(tempInput.getName().endsWith(".docx"));
+  }
+
+  @Test
   public void failedReplacementConversionThrowsISE() throws Exception {
     ConversionResult result = new ConversionResult("error message");
     when(docConverter.convert(any(Convertible.class), eq("html"), any(File.class)))
@@ -117,6 +143,53 @@ public class MSWordExporterTest {
     ArgumentCaptor<ContentProvider> provider = ArgumentCaptor.forClass(ContentProvider.class);
     verify(creator).replace(eq(targetId), provider.capture(), eq(docName), eq(any));
     assertTrue(provider.getValue() instanceof HTMLContentProvider);
-    assertTrue(provider.getValue().getContentFolder().isDirectory());
+    assertFalse(provider.getValue().getContentFolder().exists());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void replacementExtractsDataUriImagesAndCleansTemporaryFiles(boolean creatorFails)
+      throws Exception {
+    String png =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    AtomicReference<Path> tempInput = new AtomicReference<>();
+    AtomicReference<Path> tempFolder = new AtomicReference<>();
+    when(docConverter.convert(any(Convertible.class), eq("html"), any(File.class)))
+        .thenAnswer(
+            invocation -> {
+              Convertible input = invocation.getArgument(0);
+              File output = invocation.getArgument(2);
+              tempInput.set(Path.of(java.net.URI.create(input.getFileUri())));
+              tempFolder.set(output.toPath().getParent());
+              Files.writeString(
+                  output.toPath(),
+                  "<html><body><img src='data:image/png;base64," + png + "'></body></html>");
+              return new ConversionResult(output, "text/html");
+            });
+    StructuredDocument doc = TestFactory.createAnySD();
+    when(creator.replace(eq(123L), any(ContentProvider.class), eq("image"), eq(any)))
+        .thenAnswer(
+            invocation -> {
+              ContentProvider provider = invocation.getArgument(1);
+              var images = provider.getImages();
+              assertEquals(1, images.size());
+              Path image = provider.getContentFolder().toPath().resolve(images.first().attr("src"));
+              assertEquals(Base64.getDecoder().decode(png).length, Files.size(image));
+              if (creatorFails) {
+                throw new IOException("test creator failure");
+              }
+              return doc;
+            });
+
+    try (var input = new ByteArrayInputStream(new byte[] {1})) {
+      if (creatorFails) {
+        assertThrows(IOException.class, () -> wordImporter.replace(input, any, 123L, "image.docx"));
+      } else {
+        assertEquals(doc, wordImporter.replace(input, any, 123L, "image.docx"));
+      }
+    }
+
+    assertFalse(Files.exists(tempInput.get()));
+    assertFalse(Files.exists(tempFolder.get()));
   }
 }

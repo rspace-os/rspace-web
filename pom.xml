@@ -47,6 +47,33 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.23.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>3.0.8</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <version>5.6.5</version>
+      </dependency>
+      <!-- httpclient5 5.6.5 needs httpcore5 5.4.4; managed so the AWS SDK's apache5-client
+           resolves the same version instead of its 5.4.3 -->
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5</artifactId>
+        <version>5.4.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <version>5.4.4</version>
+      </dependency>
+      <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
         <version>${javax.cache.version}</version>
@@ -754,12 +781,10 @@
     <dependency>
       <groupId>org.apache.httpcomponents.core5</groupId>
       <artifactId>httpcore5</artifactId>
-      <version>5.4.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents.core5</groupId>
       <artifactId>httpcore5-h2</artifactId>
-      <version>5.4.3</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -988,7 +1013,7 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
-      <version>3.2.2</version>
+      <version>3.3.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.opengis</groupId>
@@ -1079,13 +1104,28 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>3.2.2</version>
+      <version>3.3.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.28.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.22.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+      <artifactId>owasp-java-html-sanitizer</artifactId>
+      <version>20261110.1</version>
     </dependency>
     <dependency>
       <groupId>jakarta.ws.rs</groupId>
@@ -1249,6 +1289,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
+      <version>1.23.2</version>
     </dependency>
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
@@ -1269,7 +1310,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>3.0.5</version>
+      <version>3.0.8</version>
     </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
@@ -1578,11 +1619,6 @@
       <version>2.0.13</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>1.28.0</version>
-    </dependency>
-    <dependency>
       <!-- barcode/QR generation and decoding, used by com.researchspace.core.util.imageutils.BarcodeUtils -->
       <groupId>com.google.zxing</groupId>
       <artifactId>core</artifactId>
@@ -1612,7 +1648,6 @@
     <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.6.4</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
