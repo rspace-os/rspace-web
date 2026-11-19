@@ -23,6 +23,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
@@ -121,7 +122,8 @@ public class CsvImporterTemplateFieldMatchingTest {
     importResult.setSampleResult(result);
 
     sampleImporter.readCsvIntoImportResult(
-        IOUtils.toInputStream("Name," + greekMu + "," + microSign + "\ns1,mu,micro\n"),
+        IOUtils.toInputStream(
+            "Name," + greekMu + "," + microSign + "\ns1,mu,micro\n", StandardCharsets.UTF_8),
         Map.of("Name", "name"),
         importResult,
         user);
