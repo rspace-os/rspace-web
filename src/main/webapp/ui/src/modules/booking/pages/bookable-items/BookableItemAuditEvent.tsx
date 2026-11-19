@@ -1,5 +1,5 @@
-import { isNil } from "es-toolkit";
 import { Link } from "@tanstack/react-router";
+import { isNil } from "es-toolkit";
 import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

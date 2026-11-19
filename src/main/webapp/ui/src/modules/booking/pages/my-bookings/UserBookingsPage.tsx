@@ -9,9 +9,9 @@ import {
   mapBookingListDocument,
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { apiV2Resources } from "@/modules/common/api/v2/apiV2Resources";
 import { assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
+import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
