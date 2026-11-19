@@ -283,6 +283,31 @@ describe("FieldDisplayCondition", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("applies a refused edit that has become storable on its way back from Always", async () => {
+    const user = userEvent.setup();
+    const [long, longer] = ["a".repeat(20_000), "b".repeat(20_000)];
+    const stored = createDisplayRule("gmo", "IS_ANY_OF", [longer]);
+    const { onChange, onIncompleteChange } = await renderConditions([
+      { ...gmo, options: [long, longer] },
+      { ...permit, rule: stored },
+    ]);
+    await user.click(card("GMO permit").getByRole("combobox", { name: "Options" }));
+    await user.click(screen.getByRole("option", { name: long }));
+    await user.keyboard("{Escape}");
+    conditional("GMO permit").focus();
+    await user.keyboard("{ArrowUp}");
+
+    // the refused edit now holds only the stored option, which can be applied
+    await user.click(screen.getByRole("button", { name: "Remove the first option of Is this a GMO?" }));
+    await user.click(conditional("GMO permit"));
+
+    expect(onChange).toHaveBeenLastCalledWith("permit", stored);
+    expect(onIncompleteChange.mock.calls).toEqual([
+      ["permit", true],
+      ["permit", false],
+    ]);
+  });
+
   it("clears the field it was showing, and reports the new one, when given another field", async () => {
     const calls: Array<[string, boolean]> = [];
     const orphan = (key: string): RuleEditorField => ({ ...permit, key, name: key, rule: yes });
