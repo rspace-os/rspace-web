@@ -11413,6 +11413,7 @@ export default interface Resources {
         "removeOption": "Remove the option {option}?"
       },
       "errorTitle": "The fields were not saved.",
+      "firstProblem": "The first is in {field}.",
       "heading": "Fields",
       "loadFailed": "The fields of this form could not be loaded.",
       "noFields": "This form has no fields yet.",
@@ -11455,7 +11456,8 @@ export default interface Resources {
         "sortAlphabetic": "Sort options alphabetically",
         "time12Hour": "12-hour (02:30 PM)",
         "time24Hour": "24-hour (14:30)",
-        "timeFormat": "Time format"
+        "timeFormat": "Time format",
+        "unreadValue": "Stored as {value}, which cannot be shown here. It is kept unless you enter a new value."
       },
       "types": {
         "attachment": "Attachment",

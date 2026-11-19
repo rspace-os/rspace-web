@@ -124,6 +124,16 @@ public interface FormManager extends AbstractFormManager<RSForm> {
   void unlockForm(Long formId, User user);
 
   /**
+   * Releases the user's edit lock on a form and, when the form is a draft (temporary copy) of a
+   * published form, on its original too. The form editor holds its lock on whichever id it opened:
+   * the original on a first edit, the draft when editing resumed; the page only knows the draft.
+   *
+   * @param formId the form the editor page shows
+   * @param user the user leaving the editor
+   */
+  void unlockFormAndOriginal(Long formId, User user);
+
+  /**
    * Gets the IDs of fields on a temporary form that were copied from the original form.
    *
    * <p>Fields added directly to the temporary form are excluded.

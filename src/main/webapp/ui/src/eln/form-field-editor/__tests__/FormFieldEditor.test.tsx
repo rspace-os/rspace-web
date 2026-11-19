@@ -8,13 +8,13 @@ import { HttpResponse, http } from "msw";
 import { createRef } from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import ConfirmProvider from "@/components/ConfirmProvider";
 import common from "@/modules/common/i18n/locales/en-US/common.json";
 import workspace from "@/modules/common/i18n/locales/en-US/workspace.json";
 import materialTheme from "@/theme";
-import type { FormFieldEditorHandle } from "../FormFieldEditor";
-import FormFieldEditorRoot from "../FormFieldEditorRoot";
+import FormFieldEditorRoot, { type FormFieldEditorHandle } from "../FormFieldEditorRoot";
 import type { FormFieldEditorItem, FormFieldSaveItem } from "../formFieldsApi";
 
 const FIELDS_URL = "/workspace/editor/form/ajax/fields";
@@ -50,7 +50,7 @@ const permit = saved(
 );
 
 /** Serves the fields, echoes each save back with ids for new fields, and records what was sent. */
-function serveFields(items: Array<FormFieldEditorItem>, saveResponse?: () => Response) {
+function serveFields(items: Array<FormFieldEditorItem>, saveResponse?: () => Response | Promise<Response>) {
   const posts: Array<Array<FormFieldSaveItem>> = [];
   server.use(
     http.get(FIELDS_URL, () => HttpResponse.json({ data: items, errorMsg: null })),
@@ -67,7 +67,7 @@ function serveFields(items: Array<FormFieldEditorItem>, saveResponse?: () => Res
   return posts;
 }
 
-async function renderEditor({ editable = true } = {}) {
+async function renderRoot({ editable = true } = {}) {
   const handle = createRef<FormFieldEditorHandle>();
   const result = await renderWithRealI18n(
     <ThemeProvider theme={materialTheme}>
@@ -79,9 +79,14 @@ async function renderEditor({ editable = true } = {}) {
     </ThemeProvider>,
     { resources: { common, workspace }, defaultNS: "workspace" },
   );
+  return { handle, ...result };
+}
+
+async function renderEditor(options: { editable?: boolean } = {}) {
+  const rendered = await renderRoot(options);
   // the rules panel appears once there is a field
   await screen.findByText(/^(This form has no fields yet\.|Display rules)$/);
-  return { handle, ...result };
+  return rendered;
 }
 
 const card = (name: string) => screen.getByRole("region", { name });
@@ -92,7 +97,23 @@ async function addField(user: ReturnType<typeof userEvent.setup>, typeLabel: Reg
   const nameInput = screen.getAllByRole("textbox", { name: "Name" }).at(-1);
   if (!nameInput) throw new Error("no name input");
   expect(nameInput).toHaveFocus();
-  await user.type(nameInput, name);
+  await user.paste(name);
+}
+
+async function addOption(user: ReturnType<typeof userEvent.setup>, fieldName: string, option: string) {
+  await user.click(within(card(fieldName)).getByRole("button", { name: "Add option" }));
+  const inputs = within(card(fieldName)).getAllByRole("textbox", { name: /^Option \d+$/ });
+  await user.click(inputs[inputs.length - 1]);
+  await user.paste(option);
+}
+
+/** A response the test releases, to act while a save is in flight. */
+function heldResponse() {
+  let release: () => void = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { release, released };
 }
 
 afterEach(() => {
@@ -108,14 +129,25 @@ describe("FormFieldEditor", () => {
     await expectAccessible(container);
   });
 
-  it("uses a new field in a rule before the first save, and sends its key with the rule", async () => {
+  it("gives a new field its key when it is added, and sends it as new", async () => {
     const user = userEvent.setup();
     const posts = serveFields([]);
     const { handle } = await renderEditor();
 
+    await addField(user, /^String/, "Hazard details");
+    await handle.current?.save();
+
+    expect(posts[0][0]).toMatchObject({ id: null, type: "String", source: { name: "Hazard details" } });
+    expect(posts[0][0].fieldKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(handle.current?.isDirty()).toBe(false);
+  });
+
+  it("uses new fields in a rule before the first save", async () => {
+    const user = userEvent.setup();
+    const posts = serveFields([]);
+    const { handle } = await renderEditor();
     await addField(user, /^Radio/, "Hazardous?");
-    await user.click(within(card("Hazardous?")).getByRole("button", { name: "Add option" }));
-    await user.type(within(card("Hazardous?")).getByRole("textbox", { name: "Option 1" }), "Yes");
+    await addOption(user, "Hazardous?", "Yes");
     await addField(user, /^String/, "Hazard details");
 
     await user.click(screen.getByRole("button", { name: "Add rule" }));
@@ -126,10 +158,87 @@ describe("FormFieldEditor", () => {
     await handle.current?.save();
 
     const [source, target] = posts[0];
-    expect(source).toMatchObject({ id: null, type: "Radio", source: { radioValues: "fieldRadios=Yes" } });
     expect(target.displayRule).toEqual({ sourceFieldKey: source.fieldKey, operator: "IS_ANY_OF", values: ["Yes"] });
-    expect(handle.current?.isDirty()).toBe(false);
-  }, 40_000);
+  });
+
+  it("keeps edits made while a save is in flight, and gives the saved new fields their ids", async () => {
+    const user = userEvent.setup();
+    const held = heldResponse();
+    let release = true;
+    const posts = serveFields([gmo], async () => {
+      if (release) {
+        release = false;
+        await held.released;
+      }
+      const body = posts.at(-1) ?? [];
+      return HttpResponse.json({
+        data: body.map((item, i) => ({ ...item, id: item.id ?? 100 + i, canDelete: true })),
+        errorMsg: null,
+      });
+    });
+    const { handle } = await renderEditor();
+    await addField(user, /^String/, "Permit");
+
+    const saving = handle.current?.save();
+    const gmoName = within(card("Is this a GMO?")).getByRole("textbox", { name: "Name" });
+    await user.clear(gmoName);
+    await user.paste("GMO status");
+    held.release();
+    await saving;
+
+    expect(within(card("GMO status")).getByRole("textbox", { name: "Name" })).toHaveValue("GMO status");
+    expect(handle.current?.isDirty()).toBe(true);
+    await handle.current?.save();
+    expect(posts[1]).toEqual([
+      expect.objectContaining({ id: 1, source: expect.objectContaining({ name: "GMO status" }) }),
+      expect.objectContaining({ id: 101, source: expect.objectContaining({ name: "Permit" }) }),
+    ]);
+  });
+
+  it("sends one save when the toolbar asks again while a save is in flight", async () => {
+    const user = userEvent.setup();
+    const held = heldResponse();
+    const posts = serveFields([gmo], async () => {
+      await held.released;
+      return HttpResponse.json({ data: [gmo], errorMsg: null });
+    });
+    const { handle } = await renderEditor();
+    await user.click(within(card("Is this a GMO?")).getByRole("switch", { name: "Mandatory" }));
+
+    const first = handle.current?.save();
+    const second = handle.current?.save();
+    held.release();
+    await Promise.all([first, second]);
+
+    expect(posts).toHaveLength(1);
+  });
+
+  it("does not let stored fields that break the editor's checks block saving other changes", async () => {
+    const user = userEvent.setup();
+    // written through the forms API, which does not check options the way the editor does
+    const apiField = saved(3, "Radio", { name: "x".repeat(60), radioValues: "fieldRadios=a=b&fieldRadios=a=b" });
+    const posts = serveFields([apiField, permit]);
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("GMO permit")).getByRole("switch", { name: "Mandatory" }));
+    await handle.current?.save();
+
+    expect(posts).toHaveLength(1);
+    expect(screen.queryByText("Use at most 50 characters.")).not.toBeInTheDocument();
+  });
+
+  it("checks a stored field again once it is changed", async () => {
+    const user = userEvent.setup();
+    const apiField = saved(3, "Radio", { name: "x".repeat(60), radioValues: "fieldRadios=a&fieldRadios=b" });
+    const posts = serveFields([apiField]);
+    const { handle } = await renderEditor();
+
+    await user.click(within(card("x".repeat(60))).getByRole("switch", { name: "Mandatory" }));
+    await expect(handle.current?.save()).rejects.toThrow();
+
+    expect(screen.getByText("Use at most 50 characters.")).toBeInTheDocument();
+    expect(posts).toHaveLength(0);
+  });
 
   it("asks before deleting a field that a rule reads, then clears that rule explicitly", async () => {
     const user = userEvent.setup();
@@ -155,6 +264,26 @@ describe("FormFieldEditor", () => {
 
     expect(await screen.findByRole("region", { name: "Is this a GMO?" })).toBeInTheDocument();
     expect(within(card("GMO permit")).getByText("Shown when Is this a GMO? is Yes")).toBeInTheDocument();
+  });
+
+  it("moves focus to the next field after a delete", async () => {
+    const user = userEvent.setup();
+    serveFields([permit, gmo]);
+    await renderEditor();
+
+    await user.click(screen.getByRole("button", { name: "Delete field GMO permit" }));
+
+    expect(within(card("Is this a GMO?")).getByRole("textbox", { name: "Name" })).toHaveFocus();
+  });
+
+  it("moves focus to Add field after deleting the last field", async () => {
+    const user = userEvent.setup();
+    serveFields([gmo, permit]);
+    await renderEditor();
+
+    await user.click(screen.getByRole("button", { name: "Delete field GMO permit" }));
+
+    expect(screen.getByRole("button", { name: "Add field" })).toHaveFocus();
   });
 
   it("asks before removing an option a rule uses, and removes it from the rule", async () => {
@@ -184,8 +313,7 @@ describe("FormFieldEditor", () => {
     serveFields([]);
     await renderEditor();
     await addField(user, /^Radio/, "Source");
-    await user.click(within(card("Source")).getByRole("button", { name: "Add option" }));
-    await user.type(within(card("Source")).getByRole("textbox", { name: "Option 1" }), "A");
+    await addOption(user, "Source", "A");
     await addField(user, /^Number/, "Target");
     await user.click(screen.getByRole("button", { name: "Add rule" }));
     await user.click(screen.getByRole("combobox", { name: "Options" }));
@@ -199,7 +327,7 @@ describe("FormFieldEditor", () => {
 
     const target = await screen.findByRole("region", { name: "Target" });
     expect(within(target).queryByText(/Shown when/)).not.toBeInTheDocument();
-  }, 40_000);
+  });
 
   it("keeps the editor dirty and shows the server's reasons when a save is rejected", async () => {
     const user = userEvent.setup();
@@ -223,9 +351,9 @@ describe("FormFieldEditor", () => {
     await user.click(screen.getByRole("menuitem", { name: /^Number/ }));
     await expect(handle.current?.save()).rejects.toThrow();
 
-    expect(
-      await screen.findByRole("alert", { name: "Fix the problems marked below, then save again." }),
-    ).toBeInTheDocument();
+    const alert = await screen.findByRole("alert", { name: "Fix the problems marked below, then save again." });
+    expect(within(alert).getByText("The first is in Unnamed field.")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
     expect(screen.getByText("Enter a name.")).toBeInTheDocument();
     expect(posts).toHaveLength(0);
   });
@@ -239,6 +367,21 @@ describe("FormFieldEditor", () => {
     expect(screen.getByText(/This form is published\. To change its fields, edit it again/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add field" })).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Name" })).not.toBeInTheDocument();
+  });
+
+  it("still asks before Revert discards the draft when the fields could not be loaded", async () => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["error"], [/fields/i, /Request failed/, /above error/]);
+    server.use(http.get(FIELDS_URL, () => HttpResponse.json({ message: "down" }, { status: 500 })));
+    const { handle } = await renderRoot();
+    expect(await screen.findByText("The fields of this form could not be loaded.")).toBeInTheDocument();
+
+    const answer = handle.current?.confirmAbandon();
+    const dialog = await screen.findByRole("dialog", { name: "Abandon the changes to this form?" });
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    await expect(answer).resolves.toBe(false);
+    restoreConsole();
   });
 
   it("is read-only when the form cannot be edited", async () => {
@@ -384,22 +527,28 @@ describe("ELN field settings", () => {
     const preview = within(card("Notes")).getByRole("group", { name: "Default text" });
     expect(preview).toHaveTextContent("Hello");
     expect(within(preview).getByRole("img")).not.toHaveAttribute("onerror");
+    // it scrolls, so it must be reachable by keyboard
+    expect(preview).toHaveAttribute("tabindex", "0");
     expect(within(card("Notes")).getByRole("button", { name: "Edit default text of Notes" })).toBeInTheDocument();
   });
 
-  it("uri: can be renamed, made mandatory and reordered, but not created", async () => {
+  it.each([
+    ["Uri", "URI"],
+    ["Reference", "Reference"],
+    ["Attachment", "Attachment"],
+  ] as const)("%s: can be renamed, made mandatory and reordered, but not created", async (type, menuLabel) => {
     const user = userEvent.setup();
-    const posts = serveFields([gmo, saved(4, "Uri", { name: "Link" })]);
+    const posts = serveFields([gmo, saved(4, type, { name: "Link" })]);
     const { handle } = await renderEditor();
 
-    const link = card("Link");
-    await user.type(within(link).getByRole("textbox", { name: "Name" }), "s");
+    await user.click(within(card("Link")).getByRole("textbox", { name: "Name" }));
+    await user.paste("s");
     await user.click(within(card("Links")).getByRole("switch", { name: "Mandatory" }));
     await user.click(within(card("Links")).getByRole("button", { name: "Move Links up" }));
     await handle.current?.save();
 
-    expect(posts[0][0]).toMatchObject({ id: 4, type: "Uri", source: { name: "Links", mandatory: true } });
+    expect(posts[0][0]).toMatchObject({ id: 4, type, source: { name: "Links", mandatory: true } });
     await user.click(screen.getByRole("button", { name: "Add field" }));
-    expect(screen.queryByRole("menuitem", { name: "URI" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: menuLabel })).not.toBeInTheDocument();
   });
 });

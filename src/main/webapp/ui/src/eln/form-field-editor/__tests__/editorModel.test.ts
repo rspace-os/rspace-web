@@ -91,6 +91,30 @@ describe("fromServer and toSaveItem", () => {
     expect(toSaveItem(field).source).toEqual({ name: "Field", mandatory: true, ...source });
   });
 
+  it("keep a stored date the editor cannot read, and send it back unchanged", () => {
+    // another locale's month abbreviation
+    const source = { dateFormat: "dd MMM yyyy", minValue: "18 nov. 2026", maxValue: "31 Dec 2026", defaultValue: "" };
+    const field = fromServer(item("Date", source));
+
+    expect(field).toMatchObject({ min: "", max: "2026-12-31", unread: { min: "18 nov. 2026" } });
+    expect(toSaveItem(field).source).toMatchObject({ minValue: "18 nov. 2026", maxValue: "31 Dec 2026" });
+  });
+
+  it("load a field whose format the editor does not know, keeping its values", () => {
+    // "F" is a Java pattern letter that date-fns rejects with an error
+    const source = { timeFormat: "HH:mm F", minValue: "09:00 2", maxValue: "", defaultValue: "" };
+    const field = fromServer(item("Time", source));
+
+    expect(field).toMatchObject({ format: "HH:mm F", unread: { min: "09:00 2" } });
+    expect(toSaveItem(field).source).toMatchObject(source);
+  });
+
+  it("replace an unread value once the author enters a new one", () => {
+    const field = fromServer(item("Date", { dateFormat: "dd MMM yyyy", defaultValue: "18 nov. 2026" }));
+    const edited = { ...field, defaultValue: "2026-11-20", unread: {} } as EditorField;
+    expect(toSaveItem(edited).source).toMatchObject({ defaultValue: "20 Nov 2026" });
+  });
+
   it("keep the text default", () => {
     expect(roundTrip(item("Text", { defaultValue: "<p>Hello</p>" }))).toEqual({
       name: "Field",

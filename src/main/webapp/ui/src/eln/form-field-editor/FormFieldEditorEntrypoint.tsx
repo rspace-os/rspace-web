@@ -9,8 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingCircular from "@/components/LoadingCircular";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "@/theme";
-import type { FormFieldEditorHandle } from "./FormFieldEditor";
-import FormFieldEditorRoot from "./FormFieldEditorRoot";
+import FormFieldEditorRoot, { type FormFieldEditorHandle } from "./FormFieldEditorRoot";
 
 declare global {
   interface Window {
@@ -22,12 +21,13 @@ declare global {
 const queryClient = new QueryClient();
 const handle = createRef<FormFieldEditorHandle>();
 
-// Until the fields have loaded there is nothing to save.
+// Until the fields have loaded there is nothing to save. Until React has mounted nothing can ask
+// before Revert, so the draft is kept.
 window.formFieldEditor = {
   save: () => handle.current?.save() ?? Promise.resolve(),
   isDirty: () => handle.current?.isDirty() ?? false,
   fieldCount: () => handle.current?.fieldCount() ?? 0,
-  confirmAbandon: () => handle.current?.confirmAbandon() ?? Promise.resolve(true),
+  confirmAbandon: () => handle.current?.confirmAbandon() ?? Promise.resolve(false),
   markPublished: () => handle.current?.markPublished(),
 };
 
