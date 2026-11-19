@@ -22,7 +22,7 @@ import type { Template } from "../definitions/Template";
 import { categoryOfUnit } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
 import type { UnitCategory } from "../stores/UnitStore";
-import FieldModel, { clearRulesReading, type FieldModelAttrs } from "./FieldModel";
+import FieldModel, { assertDisplayConditionsComplete, clearRulesReading, type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
   defaultVisibleSampleFields,
@@ -114,6 +114,7 @@ export default class TemplateModel extends SampleModel implements Template {
       recordTypeLabel: override,
       paramsForBackend: override,
       setEditing: override,
+      create: override,
       update: override,
       hasSubSamples: override,
       iconName: override,
@@ -314,7 +315,13 @@ export default class TemplateModel extends SampleModel implements Template {
     return latest;
   }
 
+  async create(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
+    await super.create();
+  }
+
   async update(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
     const oldVersion = this.version;
     await super.update(false);
     /*
