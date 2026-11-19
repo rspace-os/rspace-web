@@ -165,12 +165,6 @@ export default function FieldDisplayCondition({
     draft: Draft | null;
   } | null>(null);
   const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
-  const showsSources = editable && (draft !== null || sourceMenuOpen);
-  useEffect(() => {
-    if (!showsSources || !onShowsSourcesChange) return;
-    onShowsSourcesChange(fieldKey, true);
-    return () => onShowsSourcesChange(fieldKey, false);
-  }, [showsSources, onShowsSourcesChange, fieldKey]);
   /**
    * The comparison value as typed. The applied rule holds it trimmed, so the
    * box shows this while it trims to the condition's value, and a space typed
@@ -189,6 +183,12 @@ export default function FieldDisplayCondition({
     keptDraft !== null && sourceRetyped(graph, keptDraft.condition.sourceFieldKey, keptDraft.sourceKind);
   if (draftRetyped) setDraft(null);
   const draft = draftRetyped ? null : keptDraft;
+  const showsSources = editable && (draft !== null || sourceMenuOpen);
+  useEffect(() => {
+    if (!showsSources || !onShowsSourcesChange) return;
+    onShowsSourcesChange(fieldKey, true);
+    return () => onShowsSourcesChange(fieldKey, false);
+  }, [showsSources, onShowsSourcesChange, fieldKey]);
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
