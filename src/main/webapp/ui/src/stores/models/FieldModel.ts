@@ -4,6 +4,7 @@ import * as v from "valibot";
 import {
   type FieldDisplayRule,
   FieldDisplayRuleSchema,
+  sameDisplayRule,
   serializeDisplayRule,
 } from "@/modules/common/field-rules/displayRule";
 import { isBlankOption, withoutOptions } from "@/modules/common/field-rules/ruleOptions";
@@ -103,8 +104,8 @@ export default class FieldModel implements Field {
   link: FieldLink | null = null;
   fieldKey: string | null = null;
   displayRule: FieldDisplayRule | null = null;
-  /** Whether the field had a rule when loaded, so clearing it is sent as an explicit null. */
-  private readonly loadedWithRule: boolean;
+  /** The rule the field had when loaded, so a save sends the rule only when this edit changed it. */
+  private readonly loadedRule: FieldDisplayRule | null;
 
   constructor(_params: FieldModelAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
@@ -231,7 +232,7 @@ export default class FieldModel implements Field {
     this.fieldKey = _params.fieldKey ?? null;
     // attrs built from API JSON carry the rule unparsed whatever their type says, so it is parsed here
     this.displayRule = parseRule(_params.displayRule as unknown);
-    this.loadedWithRule = this.displayRule !== null;
+    this.loadedRule = this.displayRule;
     this.error = false;
   }
 
@@ -451,9 +452,15 @@ export default class FieldModel implements Field {
     if (this.fieldKey !== null) params.fieldKey = this.fieldKey;
     // a field being deleted sends no rule, so the request never depends on rules of deleted fields
     if (this.deleteFieldRequest) return params;
-    // the API reads an absent rule as unchanged, so a cleared rule is sent as null
+    /*
+     * The API reads an absent rule as unchanged. Updating a saved record, a
+     * saved field sends its rule only when this edit changed it, as null when
+     * cleared, so a tab opened before someone else changed the rule does not
+     * put the old rule back. A record being created sends every rule.
+     */
+    if (this.owner.id && this.id && sameDisplayRule(this.displayRule, this.loadedRule)) return params;
     if (this.displayRule !== null) params.displayRule = JSON.parse(serializeDisplayRule(this.displayRule));
-    else if (this.loadedWithRule) params.displayRule = null;
+    else if (this.loadedRule !== null) params.displayRule = null;
     return params;
   }
 }

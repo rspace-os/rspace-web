@@ -2271,6 +2271,29 @@ export default interface Resources {
         "type": "Type",
         "unnamed": "Unnamed field"
       },
+      "condition": {
+        "always": "Always",
+        "conditional": "Only when another field has certain values",
+        "dependents": "Other fields depend on this field: {fields}",
+        "explanation": "A field can be set to show only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "incomplete": "This condition is not applied until it has a field and any options it needs. Until then this field is always shown.",
+        "incompleteEdit": "This change is not applied until the condition has a field and any options it needs. Until then the saved condition stays as it was.",
+        "invalid": "This condition cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself.",
+        "invalidEdit": "This change cannot be applied: its field or an option it uses does not allow it, or a field would end up depending on itself. Until it is fixed the saved condition stays as it was.",
+        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
+        "operator": {
+          "hasNoValue": "has no value",
+          "hasValue": "has a value",
+          "isAnyOf": "is any of",
+          "isNoneOf": "is none of"
+        },
+        "operatorLabel": "Condition",
+        "sourceLabel": "Field",
+        "sourceMissing": "The field this condition read no longer exists. Choose another field.",
+        "title": "Display this field when…",
+        "valuesLabel": "Options",
+        "valuesRequired": "Choose at least one option."
+      },
       "options": {
         "add": "Add option",
         "blank": "Options cannot be blank.",
@@ -2279,40 +2302,6 @@ export default interface Resources {
         "remove": "Remove option {option}",
         "required": "Add at least one option.",
         "title": "Options"
-      },
-      "rules": {
-        "addRule": "Add rule",
-        "deleteRule": "Delete rule: {rule}",
-        "explanation": "Show fields only when a radio or choice field has certain values. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
-        "heading": {
-          "hasNoValue": "When {source} has no value",
-          "hasValue": "When {source} has a value",
-          "isAnyOf": "When {source} is {options}",
-          "isNoneOf": "When {source} is not {options}",
-          "sourceMissing": "When a deleted field has a value"
-        },
-        "incomplete": "This rule is not applied until it has a field, a condition, any options it needs, and at least one field to show.",
-        "incompleteEdit": "This change is not applied until the rule has a field, a condition, any options it needs, and at least one field to show. Until then the saved rule stays as it was.",
-        "invalid": "This rule cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself.",
-        "invalidEdit": "This change cannot be applied: its field, an option it uses, or a field it shows no longer allows it, or a field would end up depending on itself. Until it is fixed the saved rule stays as it was.",
-        "newRuleHeading": "New rule {position}",
-        "noSources": "Add a radio or choice field first. Rules can only read those fields.",
-        "none": "No display rules. Every field is always shown.",
-        "operator": {
-          "hasNoValue": "has no value",
-          "hasValue": "has a value",
-          "isAnyOf": "is any of",
-          "isNoneOf": "is none of"
-        },
-        "operatorLabel": "Condition",
-        "shows": "Shows {fields}",
-        "sourceLabel": "Field",
-        "sourceMissing": "The field this rule read no longer exists. Choose another field.",
-        "targetsLabel": "Show these fields",
-        "targetsRequired": "Choose at least one field to show.",
-        "title": "Display rules",
-        "valuesLabel": "Options",
-        "valuesRequired": "Choose at least one option."
       },
       "summary": {
         "hasNoValue": "Shown when {source} has no value",
@@ -8452,7 +8441,9 @@ export default interface Resources {
         "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
       },
       "fieldData": {
+        "choiceEmptyValue": "The choice content has an empty value. Separate options with single commas, with none at the start or end, and send empty content to clear the selection",
         "choiceNotAnOption": "The choice content names values that are not options of the field: {0}. Separate options with commas, and write a comma that is part of an option as &#44;",
+        "choiceNotAnOptionMore": "The choice content names values that are not options of the field: {0} and {1} more. Separate options with commas, and write a comma that is part of an option as &#44;",
         "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
         "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
         "invalidChoice": "Invalid data for Choice Field [{0}]",
@@ -12459,6 +12450,7 @@ export default interface Resources {
         "fieldTypeImmutable": "Field [{0}] is a {1} field, and a saved field cannot change its type to {2}",
         "fieldTypeUnknown": "Field [{0}] has an unknown type [{1}]",
         "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
+        "fieldsChangedElsewhere": "This form's fields were changed elsewhere, for example in another tab. Reload to see the latest fields; this save was not applied.",
         "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
         "infoUnauthorized": "Unauthorized attempt to get form info",
         "notBeingEdited": "Form [{0}] is not open for editing; save fields to its draft instead",
@@ -13571,6 +13563,8 @@ export default interface Resources {
         "dependents": "{count, plural, one {The display rule of {fields} reads it and will be removed.} other {The display rules of {fields} read it and will be removed.}}",
         "removeOption": "Remove the option {option}?"
       },
+      "conflict": "Its fields were saved in another tab or window after this page loaded them, so these changes were not saved. Reload to see the latest fields, then make your changes again.",
+      "conflictTitle": "This form was changed elsewhere.",
       "errorTitle": "The fields were not saved.",
       "firstProblem": "The first is in {field}.",
       "heading": "Fields",
@@ -13592,6 +13586,7 @@ export default interface Resources {
       },
       "problemsTitle": "Fix the problems marked below, then save again.",
       "publishedNotice": "This form is published. To change its fields, edit it again from the list of forms; your changes then make a new version.",
+      "reload": "Reload",
       "saveFailed": "The fields could not be saved. Try again.",
       "settings": {
         "apiOnlyType": "Fields of this type are added through the API. Here you can rename, reorder, delete it, make it mandatory, or show it with a display rule.",

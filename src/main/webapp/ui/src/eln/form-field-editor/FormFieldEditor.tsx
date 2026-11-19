@@ -7,17 +7,24 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { type ReactNode, type Ref, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type Ref,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
-import DisplayRuleSummary from "@/modules/common/field-editor/DisplayRuleSummary";
-import DisplayRulesPanel from "@/modules/common/field-editor/DisplayRulesPanel";
-import FieldCard from "@/modules/common/field-editor/FieldCard";
+import DisplayConditionsNote from "@/modules/common/field-editor/DisplayConditionsNote";
 import type { FieldTypeOption } from "@/modules/common/field-editor/FieldTypeSelect";
-import OptionsEditor from "@/modules/common/field-editor/OptionsEditor";
-import { type RuleChange, type RuleEditorField, usableOptions } from "@/modules/common/field-editor/ruleEditing";
+import { type RuleEditorField, ruleGraphFor } from "@/modules/common/field-editor/ruleEditing";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import ElnFieldSettings from "./ElnFieldSettings";
+import ElnFieldCard, { type FieldCardActions } from "./ElnFieldCard";
 import {
   adoptSavedIds,
   CREATABLE_TYPES,
@@ -27,13 +34,11 @@ import {
   deleteField,
   dependentsOf,
   type EditorField,
-  type FieldSettings,
   fieldProblems,
   fieldsUsingOption,
   hasOptions,
   isNewOrChanged,
   moveField,
-  NAME_MAX_LENGTH,
   newField,
   removeOption,
   renameOption,
@@ -41,8 +46,8 @@ import {
   saveSignature,
   updateField,
 } from "./editorModel";
-import { type ElnFieldType, FormFieldsSaveError } from "./formFieldsApi";
-import { useProblemMessage } from "./useProblemMessage";
+import { elnRuleFields } from "./elnRuleFields";
+import { type ElnFieldType, FormFieldsConflictError, FormFieldsSaveError } from "./formFieldsApi";
 
 /** The editor's part of the toolbar handle; see `FormFieldEditorRoot` and `form.js`. */
 export type FieldEditorHandle = {
@@ -67,7 +72,12 @@ export type FieldEditorHandle = {
 export const FORM_FIELD_EDITOR_CHANGE_EVENT = "formFieldEditor:change";
 export type FormFieldEditorChangeDetail = { dirty: boolean; fieldCount: number };
 
-type Status = { kind: "problems"; field: string } | { kind: "error"; messages: ReadonlyArray<string> } | null;
+type Status =
+  | { kind: "problems"; field: string }
+  | { kind: "error"; messages: ReadonlyArray<string> }
+  /** The fields changed elsewhere; saving again would overwrite them, so the author has to reload. */
+  | { kind: "conflict" }
+  | null;
 
 /** Where focus goes after the next render: a field's name, its first invalid control, or "Add field". */
 type FocusTarget = { kind: "name" | "problem"; key: string } | { kind: "add" } | null;
@@ -82,18 +92,22 @@ type FormFieldEditorProps = {
 
 function useTypeOptions(): ReadonlyArray<FieldTypeOption<ElnFieldType>> {
   const { t } = useTranslation("workspace");
-  return [
-    { value: "Number", label: t("formFieldEditor.types.number") },
-    { value: "String", label: t("formFieldEditor.types.string") },
-    { value: "Text", label: t("formFieldEditor.types.text") },
-    { value: "Radio", label: t("formFieldEditor.types.radio") },
-    { value: "Choice", label: t("formFieldEditor.types.choice") },
-    { value: "Date", label: t("formFieldEditor.types.date") },
-    { value: "Time", label: t("formFieldEditor.types.time") },
-    { value: "Uri", label: t("formFieldEditor.types.uri") },
-    { value: "Reference", label: t("formFieldEditor.types.reference") },
-    { value: "Attachment", label: t("formFieldEditor.types.attachment") },
-  ];
+  // the same array while the language is the same, so the field cards need not render again
+  return useMemo(
+    () => [
+      { value: "Number", label: t("formFieldEditor.types.number") },
+      { value: "String", label: t("formFieldEditor.types.string") },
+      { value: "Text", label: t("formFieldEditor.types.text") },
+      { value: "Radio", label: t("formFieldEditor.types.radio") },
+      { value: "Choice", label: t("formFieldEditor.types.choice") },
+      { value: "Date", label: t("formFieldEditor.types.date") },
+      { value: "Time", label: t("formFieldEditor.types.time") },
+      { value: "Uri", label: t("formFieldEditor.types.uri") },
+      { value: "Reference", label: t("formFieldEditor.types.reference") },
+      { value: "Attachment", label: t("formFieldEditor.types.attachment") },
+    ],
+    [t],
+  );
 }
 
 /**
@@ -109,7 +123,6 @@ export default function FormFieldEditor({
 }: FormFieldEditorProps): ReactNode {
   const { t, i18n } = useTranslation(["workspace", "common"]);
   const confirm = useConfirm();
-  const problemMessage = useProblemMessage();
   const allTypeOptions = useTypeOptions();
   const statusId = useId();
   const [fields, setFields] = useState<ReadonlyArray<EditorField>>(initialFields);
@@ -130,8 +143,8 @@ export default function FormFieldEditor({
   const dirty = saveSignature(fields) !== baseline;
   // Stored data that is not touched is not checked, as on the server: options and names
   // written through the forms API may break the editor's rules without blocking other edits.
-  const problemsOf = (field: EditorField) => (isNewOrChanged(field, baselineItems) ? fieldProblems(field) : {});
-  const firstInvalid = fields.find((field) => Object.keys(problemsOf(field)).length > 0) ?? null;
+  const checked = fields.map((field) => isNewOrChanged(field, baselineItems));
+  const firstInvalid = fields.find((field, i) => checked[i] && Object.keys(fieldProblems(field)).length > 0) ?? null;
   // the handle is called from legacy code at any time, so it reads the latest render
   const latest = useRef({ fields, dirty, firstInvalid });
   latest.current = { fields, dirty, firstInvalid };
@@ -172,6 +185,10 @@ export default function FormFieldEditor({
           setBaselineItems(savedItems(saved));
           setStatus(null);
         } catch (error) {
+          if (error instanceof FormFieldsConflictError) {
+            setStatus({ kind: "conflict" });
+            throw error;
+          }
           setStatus({
             kind: "error",
             messages:
@@ -205,7 +222,11 @@ export default function FormFieldEditor({
     } else {
       const card = listRef.current?.querySelector(`[data-field-key="${focusTarget.key}"]`);
       const name = card?.querySelector<HTMLElement>('input[name="name"]');
-      const invalid = card?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      // a display condition still being drafted is not a problem with the field
+      const invalid =
+        name?.getAttribute("aria-invalid") === "true"
+          ? name
+          : card?.querySelector<HTMLElement>('[data-field-settings] [aria-invalid="true"]');
       (focusTarget.kind === "problem" ? (invalid ?? name) : name)?.focus();
     }
     setFocusTarget(null);
@@ -230,64 +251,100 @@ export default function FormFieldEditor({
       t("common:actions.cancel"),
     );
 
-  const remove = async (field: EditorField) => {
+  /* Each reads the fields when it runs, so the cards can be given one object for good. */
+  const byKey = (key: string) => latest.current.fields.find((field) => field.key === key);
+
+  const remove = async (key: string) => {
+    const current = latest.current.fields;
+    const field = byKey(key);
+    if (!field) return;
     if (
       await confirmDependents(
-        dependentsOf(fields, field.key),
+        dependentsOf(current, key),
         t("formFieldEditor.confirm.deleteField", { field: nameOf(field) }),
         t("common:actions.delete"),
       )
     ) {
-      const next = fields[fields.indexOf(field) + 1];
-      setFields((current) => deleteField(current, field.key));
+      const next = current[current.indexOf(field) + 1];
+      setFields((now) => deleteField(now, key));
       setFocusTarget(next ? { kind: "name", key: next.key } : { kind: "add" });
     }
   };
 
-  const retype = async (field: EditorField, type: ElnFieldType) => {
-    if (!(CREATABLE_TYPES as ReadonlyArray<string>).includes(type)) return;
+  const retype = async (key: string, type: ElnFieldType) => {
+    const field = byKey(key);
+    if (!field || !(CREATABLE_TYPES as ReadonlyArray<string>).includes(type)) return;
     if (
       await confirmDependents(
-        canBeSource(type) ? [] : dependentsOf(fields, field.key),
+        canBeSource(type) ? [] : dependentsOf(latest.current.fields, key),
         t("formFieldEditor.confirm.changeType", { field: nameOf(field) }),
         t("formFieldEditor.confirm.changeTypeAction"),
       )
     )
-      setFields((current) => changeType(current, field.key, type as CreatableType));
+      setFields((current) => changeType(current, key, type as CreatableType));
   };
 
-  const dropOption = async (field: EditorField, index: number) => {
-    if (!hasOptions(field)) return;
+  const dropOption = async (key: string, index: number) => {
+    const field = byKey(key);
+    if (!field || !hasOptions(field)) return;
     const option = field.options[index] ?? "";
     const stillOffered = field.options.some((other, i) => i !== index && other === option);
     if (
       await confirmDependents(
-        stillOffered ? [] : fieldsUsingOption(fields, field.key, option),
+        stillOffered ? [] : fieldsUsingOption(latest.current.fields, key, option),
         t("formFieldEditor.confirm.removeOption", { option }),
         t("common:actions.remove"),
       )
     )
-      setFields((current) => removeOption(current, field.key, index));
+      setFields((current) => removeOption(current, key, index));
   };
 
-  const ruleFields: Array<RuleEditorField> = fields.map((field) => ({
-    key: field.key,
-    name: nameOf(field),
-    canBeSource: canBeSource(field.type),
-    options: hasOptions(field) ? usableOptions(field.options) : [],
-    rule: field.rule,
-  }));
+  const handlers: FieldCardActions = {
+    rename: (key, name) => update(key, (f) => ({ ...f, name })),
+    setMandatory: (key, mandatory) => update(key, (f) => ({ ...f, mandatory })),
+    retype: (key, type) => void retype(key, type),
+    move: (key, position) => setFields((current) => moveField(current, key, position)),
+    remove: (key) => void remove(key),
+    renameOption: (key, index, value) => setFields((current) => renameOption(current, key, index, value)),
+    removeOption: (key, index) => void dropOption(key, index),
+    addOption: (key) => update(key, (f) => (hasOptions(f) ? { ...f, options: [...f.options, ""] } : f)),
+    changeSettings: (key, settings) => update(key, (f) => ({ ...f, ...settings, type: f.type }) as EditorField),
+    changeRule: (key, rule) => update(key, (f) => ({ ...f, rule })),
+  };
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
+  const [actions] = useState(
+    (): FieldCardActions => ({
+      rename: (...args) => handlersRef.current.rename(...args),
+      setMandatory: (...args) => handlersRef.current.setMandatory(...args),
+      retype: (...args) => handlersRef.current.retype(...args),
+      move: (...args) => handlersRef.current.move(...args),
+      remove: (...args) => handlersRef.current.remove(...args),
+      renameOption: (...args) => handlersRef.current.renameOption(...args),
+      removeOption: (...args) => handlersRef.current.removeOption(...args),
+      addOption: (...args) => handlersRef.current.addOption(...args),
+      changeSettings: (...args) => handlersRef.current.changeSettings(...args),
+      changeRule: (...args) => handlersRef.current.changeRule(...args),
+    }),
+  );
 
-  const applyRuleChanges = (changes: ReadonlyArray<RuleChange>) =>
-    setFields((current) =>
-      current.map((field) => {
-        const change = changes.find(({ key }) => key === field.key);
-        return change ? { ...field, rule: change.rule } : field;
-      }),
-    );
+  // Names are read when shown, so a rename keeps the same rule fields and the candidates are not worked out again.
+  const namesRef = useRef<ReadonlyMap<string, string>>(new Map());
+  namesRef.current = new Map(fields.map((field) => [field.key, field.name]));
+  const nameByKey = useCallback((key: string) => namesRef.current.get(key) ?? "", []);
+  const ruleFieldsRef = useRef<ReadonlyArray<RuleEditorField>>([]);
+  ruleFieldsRef.current = elnRuleFields(fields, nameByKey, ruleFieldsRef.current);
+  const ruleFields = ruleFieldsRef.current;
+  const graph = ruleGraphFor(ruleFields);
+  /** The names a field's card shows besides its own: the field its rule reads, and the fields that read it. */
+  const shownNames = (field: EditorField) =>
+    [field.rule?.sourceFieldKey, ...graph.dependentsOf(field.key).map(({ key }) => key)]
+      .map((key) => (key === undefined ? "" : (namesRef.current.get(key) ?? "")))
+      .join("\u0000");
 
-  const creatableOptions = allTypeOptions.filter(({ value }) =>
-    (CREATABLE_TYPES as ReadonlyArray<string>).includes(value),
+  const creatableOptions = useMemo(
+    () => allTypeOptions.filter(({ value }) => (CREATABLE_TYPES as ReadonlyArray<string>).includes(value)),
+    [allTypeOptions],
   );
 
   return (
@@ -298,8 +355,20 @@ export default function FormFieldEditor({
       {status !== null && (
         <Alert severity="error" role="alert" aria-labelledby={statusId} onClose={() => setStatus(null)}>
           <AlertTitle id={statusId}>
-            {status.kind === "problems" ? t("formFieldEditor.problemsTitle") : t("formFieldEditor.errorTitle")}
+            {status.kind === "problems"
+              ? t("formFieldEditor.problemsTitle")
+              : status.kind === "conflict"
+                ? t("formFieldEditor.conflictTitle")
+                : t("formFieldEditor.errorTitle")}
           </AlertTitle>
+          {status.kind === "conflict" && (
+            <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
+              <Typography variant="body2">{t("formFieldEditor.conflict")}</Typography>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => window.location.reload()}>
+                {t("formFieldEditor.reload")}
+              </Button>
+            </Stack>
+          )}
           {status.kind === "problems" && (
             <Typography variant="body2">{t("formFieldEditor.firstProblem", { field: status.field })}</Typography>
           )}
@@ -313,83 +382,28 @@ export default function FormFieldEditor({
         </Alert>
       )}
       {published && <Alert severity="info">{t("formFieldEditor.publishedNotice")}</Alert>}
-      {fields.length > 0 && <DisplayRulesPanel fields={ruleFields} onChange={applyRuleChanges} editable={editable} />}
+      {fields.length > 0 && editable && <DisplayConditionsNote />}
       {fields.length === 0 && (
         <Typography variant="body1" color="text.secondary">
           {t("formFieldEditor.noFields")}
         </Typography>
       )}
       <Stack spacing={2} ref={listRef}>
-        {fields.map((field, index) => {
-          const problems = problemsOf(field);
-          const source = field.rule ? (fields.find((other) => other.key === field.rule?.sourceFieldKey) ?? null) : null;
-          const typeOptions = creatableOptions.some(({ value }) => value === field.type)
-            ? creatableOptions
-            : allTypeOptions.filter(({ value }) => value === field.type);
-          return (
-            <Box key={field.key} data-field-key={field.key}>
-              <FieldCard
-                name={field.name}
-                onNameChange={(name) => update(field.key, (f) => ({ ...f, name }))}
-                nameError={problemMessage(problems.name) ?? null}
-                nameMaxLength={NAME_MAX_LENGTH}
-                type={field.type}
-                typeOptions={typeOptions}
-                onTypeChange={(type) => void retype(field, type)}
-                canChangeType={field.id === null}
-                mandatory={field.mandatory}
-                onMandatoryChange={(mandatory) => update(field.key, (f) => ({ ...f, mandatory }))}
-                position={index}
-                count={fields.length}
-                onMove={(position) => setFields((current) => moveField(current, field.key, position))}
-                canDelete={field.canDelete}
-                onDelete={() => void remove(field)}
-                editable={editable}
-                summary={
-                  <DisplayRuleSummary
-                    rule={field.rule}
-                    sourceName={source ? nameOf(source) : null}
-                    sourceIsBelow={source !== null && fields.indexOf(source) > index}
-                  />
-                }
-              >
-                {hasOptions(field) && (
-                  <Box>
-                    <OptionsEditor
-                      options={field.options.map((option) => {
-                        const usedByRule = fieldsUsingOption(fields, field.key, option).length > 0;
-                        return {
-                          value: option,
-                          editable: !usedByRule,
-                          lockedReason: usedByRule ? t("formFieldEditor.optionInUse") : undefined,
-                        };
-                      })}
-                      onOptionChange={(i, value) => setFields((current) => renameOption(current, field.key, i, value))}
-                      onOptionRemove={(i) => void dropOption(field, i)}
-                      onOptionAdd={() =>
-                        update(field.key, (f) => (hasOptions(f) ? { ...f, options: [...f.options, ""] } : f))
-                      }
-                      disabled={!editable}
-                    />
-                    {problems.options && problems.options !== "optionsRequired" && (
-                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                        {problemMessage(problems.options)}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-                <ElnFieldSettings
-                  field={field}
-                  onChange={(settings: Partial<FieldSettings>) =>
-                    update(field.key, (f) => ({ ...f, ...settings, type: f.type }) as EditorField)
-                  }
-                  problems={problems}
-                  editable={editable}
-                />
-              </FieldCard>
-            </Box>
-          );
-        })}
+        {fields.map((field, index) => (
+          <ElnFieldCard
+            key={field.key}
+            field={field}
+            position={index}
+            count={fields.length}
+            ruleFields={ruleFields}
+            shownNames={shownNames(field)}
+            checked={checked[index]}
+            editable={editable}
+            allTypeOptions={allTypeOptions}
+            creatableTypeOptions={creatableOptions}
+            actions={actions}
+          />
+        ))}
       </Stack>
       {editable && (
         <Box>

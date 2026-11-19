@@ -19,12 +19,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.researchspace.dao.FieldFormDao;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.ChoiceFieldDTO;
+import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FieldDisplayRuleDTO;
 import com.researchspace.model.dtos.FormFieldSaveItem;
+import com.researchspace.model.dtos.FormSharingCommand;
+import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
+import com.researchspace.model.field.ChoiceFieldForm;
+import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.SessionAttributeUtils;
@@ -46,6 +56,7 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 
 /** The form field editor's read and save endpoints, and the edit lock around Update. */
 public class FormFieldEditorMVCIT extends MVCTestBase {
@@ -54,6 +65,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
 
   private @Autowired RSFormController formController;
   private @Autowired RecordEditorTracker recordTracker;
+  private @Autowired FieldFormDao fieldFormDao;
   private final ObjectMapper mapper = new ObjectMapper();
   private User user;
   private MockPrincipal principal;
@@ -79,16 +91,16 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm draft = openInEditor(form);
 
     JsonNode read = getFields(draft.getId());
-    assertThat(read.get("data")).hasSize(2);
-    JsonNode gmo = read.get("data").get(0);
+    assertThat(fieldsOf(read)).hasSize(2);
+    JsonNode gmo = fieldsOf(read).get(0);
     String gmoKey = gmo.get("fieldKey").asText();
     assertEquals("Radio", gmo.get("type").asText());
     assertFalse(gmo.get("canDelete").asBoolean(), "copied from the published version");
     assertEquals("GMO?", gmo.get("source").get("name").asText());
-    assertEquals("IS_ANY_OF", read.get("data").get(1).get("displayRule").get("operator").asText());
+    assertEquals("IS_ANY_OF", fieldsOf(read).get(1).get("displayRule").get("operator").asText());
 
     // rename the source, change the rule and add a field, sending back what was read
-    ArrayNode fields = (ArrayNode) read.get("data").deepCopy();
+    ArrayNode fields = (ArrayNode) fieldsOf(read).deepCopy();
     ((ObjectNode) fields.get(0).get("source")).put("name", "Is this a GMO?");
     ((ObjectNode) fields.get(0).get("source")).put("fieldName", "Is this a GMO?");
     ((ObjectNode) fields.get(1))
@@ -100,17 +112,16 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
         mapper.valueToTree(
             new FormFieldSaveItem(
                 null, "String", newKey, null, new StringFieldDTO<>("Notes", false, "no", ""))));
-    JsonNode saved = postFields(draft.getId(), fields);
+    JsonNode saved = postFields(draft.getId(), fields, versionOf(read));
     assertTrue(saved.get("errorMsg").isNull(), saved.toString());
-    assertThat(saved.get("data")).hasSize(3);
-    assertEquals("Is this a GMO?", saved.get("data").get(0).get("source").get("name").asText());
-    assertEquals(
-        "IS_NONE_OF", saved.get("data").get(1).get("displayRule").get("operator").asText());
-    assertEquals(newKey, saved.get("data").get(2).get("fieldKey").asText());
-    assertTrue(saved.get("data").get(2).get("canDelete").asBoolean());
+    assertThat(fieldsOf(saved)).hasSize(3);
+    assertEquals("Is this a GMO?", fieldsOf(saved).get(0).get("source").get("name").asText());
+    assertEquals("IS_NONE_OF", fieldsOf(saved).get(1).get("displayRule").get("operator").asText());
+    assertEquals(newKey, fieldsOf(saved).get(2).get("fieldKey").asText());
+    assertTrue(fieldsOf(saved).get(2).get("canDelete").asBoolean());
 
     // renames again and adds another field, but the source's own rule names itself
-    ArrayNode rejected = (ArrayNode) saved.get("data").deepCopy();
+    ArrayNode rejected = (ArrayNode) fieldsOf(saved).deepCopy();
     ((ObjectNode) rejected.get(0).get("source")).put("name", "rejected name");
     ((ObjectNode) rejected.get(0))
         .set(
@@ -120,15 +131,152 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
         mapper.valueToTree(
             new FormFieldSaveItem(
                 null, "String", null, null, new StringFieldDTO<>("More", false, "no", ""))));
-    JsonNode failure = postFields(draft.getId(), rejected);
+    JsonNode failure = postFields(draft.getId(), rejected, versionOf(saved));
     assertTrue(failure.get("data").isNull());
     assertThat(failure.get("errorMsg").get("errorMessages").toString())
         .contains("cannot depend on the field itself");
 
     JsonNode reread = getFields(draft.getId());
-    assertEquals(saved.get("data"), reread.get("data"));
+    assertEquals(fieldsOf(saved), fieldsOf(reread));
+    assertEquals(versionOf(saved), versionOf(reread));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
     formController.unlockForm(draft.getId(), pageLockToken(), principal);
+  }
+
+  @Test
+  public void aSaveFromAPageThatReadOlderFieldsIsRejectedAndChangesNothing() throws Exception {
+    RSForm form = publishedForm();
+    RSForm draft = openInEditor(form);
+    // two tabs of the same user read the same fields
+    JsonNode tabA = getFields(draft.getId());
+    JsonNode tabB = getFields(draft.getId());
+    assertEquals(versionOf(tabA), versionOf(tabB));
+
+    ArrayNode fromA = (ArrayNode) fieldsOf(tabA).deepCopy();
+    ((ObjectNode) fromA.get(1)).putNull("displayRule");
+    fromA.add(
+        mapper.valueToTree(
+            new FormFieldSaveItem(
+                null,
+                "Number",
+                UUID.randomUUID().toString(),
+                null,
+                new NumberFieldDTO<>("0", "10", "2", "5", FieldType.NUMBER, "Amount", false))));
+    fromA.add(
+        mapper.valueToTree(
+            new FormFieldSaveItem(
+                null,
+                "Date",
+                UUID.randomUUID().toString(),
+                null,
+                new DateFieldDTO<>(
+                    "2026-01-02", "2026-01-01", "2026-12-31", "yyyy-MM-dd", "On", false))));
+    JsonNode savedByA = postFields(draft.getId(), fromA, versionOf(tabA));
+    assertTrue(savedByA.get("errorMsg").isNull(), savedByA.toString());
+    assertNotEquals(versionOf(tabA), versionOf(savedByA));
+    assertEquals(versionOf(savedByA), versionOf(getFields(draft.getId())));
+
+    // the stale tab renames a field and sends the field list it read, without A's new fields
+    ArrayNode fromB = (ArrayNode) fieldsOf(tabB).deepCopy();
+    ((ObjectNode) fromB.get(0).get("source")).put("name", "stale rename");
+    MvcResult stale =
+        postFieldsExpecting(draft.getId(), fromB, versionOf(tabB), status().isConflict());
+
+    JsonNode rejection = mapper.readTree(stale.getResponse().getContentAsString());
+    assertTrue(rejection.get("data").isNull());
+    assertThat(rejection.get("errorMsg").get("errorMessages").toString())
+        .contains("changed elsewhere");
+    JsonNode afterStale = getFields(draft.getId());
+    assertEquals(fieldsOf(savedByA), fieldsOf(afterStale));
+
+    // the tab that saved last keeps saving
+    ArrayNode again = (ArrayNode) fieldsOf(savedByA).deepCopy();
+    ((ObjectNode) again.get(0).get("source")).put("name", "Is this a GMO?");
+    JsonNode savedAgain = postFields(draft.getId(), again, versionOf(savedByA));
+    assertTrue(savedAgain.get("errorMsg").isNull(), savedAgain.toString());
+    formController.unlockForm(draft.getId(), pageLockToken(), principal);
+  }
+
+  @Test
+  public void optionsStoredInAnOldFormatAreKeptAsTheyAreWhenSentBackUnchanged() throws Exception {
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(
+                null,
+                "Radio",
+                null,
+                null,
+                new RadioFieldDTO<>("fieldChoices=X&fieldChoices=Y", "", "R", false, false)),
+            new FormFieldSaveItem(
+                null,
+                "Choice",
+                null,
+                null,
+                new ChoiceFieldDTO<>("fieldChoices=A&fieldChoices=B", "no", "", "C", false)),
+            new FormFieldSaveItem(
+                null, "String", null, null, new StringFieldDTO<>("S", false, "no", ""))),
+        user);
+    // as written long ago or through the forms API, which did not check options
+    doInTransaction(
+        () -> {
+          List<FieldForm> fields = formMgr.get(form.getId(), user).getFieldForms();
+          RadioFieldForm radio = (RadioFieldForm) fields.get(0);
+          radio.setRadioOption("fieldChoices=X&&fieldChoices=Y=1");
+          radio.setDefaultRadioOption("Y=1");
+          ChoiceFieldForm choice = (ChoiceFieldForm) fields.get(1);
+          choice.setChoiceOptions("fieldChoices=pH=7&fieldChoices=&fieldChoices=B");
+          choice.setDefaultChoiceOption("fieldSelectedChoices=B");
+          fields.forEach(fieldFormDao::save);
+        });
+    JsonNode read = getFields(form.getId());
+
+    ArrayNode fields = (ArrayNode) fieldsOf(read).deepCopy();
+    ((ObjectNode) fields.get(2).get("source")).put("name", "S2");
+    JsonNode saved = postFields(form.getId(), fields, versionOf(read));
+
+    assertTrue(saved.get("errorMsg").isNull(), saved.toString());
+    JsonNode radio = fieldsOf(saved).get(0).get("source");
+    assertEquals("fieldChoices=X&&fieldChoices=Y=1", radio.get("radioValues").asText());
+    assertEquals("Y=1", radio.get("radioSelected").asText());
+    JsonNode choice = fieldsOf(saved).get(1).get("source");
+    assertEquals(
+        "fieldChoices=pH=7&fieldChoices=&fieldChoices=B", choice.get("choiceValues").asText());
+    assertEquals("fieldSelectedChoices=B", choice.get("selectedValues").asText());
+  }
+
+  @Test
+  public void aReaderCanDeleteNoFieldAndASaveIsForbiddenAsJson() throws Exception {
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(
+                null, "String", null, null, new StringFieldDTO<>("S", false, "no", ""))),
+        user);
+    FormSharingCommand readable = new FormSharingCommand();
+    readable.setWorldOptions(List.of(PermissionType.READ.toString()));
+    formMgr.updatePermissions(form.getId(), readable, user);
+    JsonNode asOwner = getFields(form.getId());
+    assertTrue(fieldsOf(asOwner).get(0).get("canDelete").asBoolean());
+
+    User reader = createInitAndLoginAnyUser();
+    principal = new MockPrincipal(reader.getUsername());
+    JsonNode asReader = getFields(form.getId());
+    assertFalse(fieldsOf(asReader).get(0).get("canDelete").asBoolean());
+
+    ArrayNode fields = (ArrayNode) fieldsOf(asReader).deepCopy();
+    ((ObjectNode) fields.get(0).get("source")).put("name", "changed by a reader");
+    MvcResult forbidden =
+        postFieldsExpecting(form.getId(), fields, versionOf(asReader), status().isForbidden());
+
+    assertThat(forbidden.getResponse().getContentType()).contains(MediaType.APPLICATION_JSON_VALUE);
+    JsonNode body = mapper.readTree(forbidden.getResponse().getContentAsString());
+    assertTrue(body.get("data").isNull());
+    assertThat(body.get("errorMsg").get("errorMessages").toString())
+        .contains("Unauthorised attempt to update a form field");
+    assertEquals(fieldsOf(asReader), fieldsOf(getFields(form.getId())));
   }
 
   @Test
@@ -443,7 +591,7 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     assertNull(response.getData());
     assertThat(response.getErrorMsg().getErrorMessages())
         .anySatisfy(message -> assertThat(message).contains("It may be a system form"));
-    assertEquals(before.get("data"), getFields(draft.getId()).get("data"));
+    assertEquals(fieldsOf(before), fieldsOf(getFields(draft.getId())));
     assertTrue(doInTransaction(() -> formMgr.get(draft.getId(), user).isTemporary()));
     assertEquals(user.getUsername(), recordTracker.isEditing(form).orElse(null));
     formController.unlockForm(draft.getId(), pageLockToken(), principal);
@@ -454,28 +602,28 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     RSForm form = publishedForm();
     RSForm draft = openInEditor(form);
     JsonNode read = getFields(draft.getId());
-    String gmoKey = read.get("data").get(0).get("fieldKey").asText();
+    String gmoKey = fieldsOf(read).get(0).get("fieldKey").asText();
     String prefix = "{\"sourceFieldKey\":\"" + gmoKey + "\",\"operator\":\"IS_ANY_OF\",";
     // a number where an option is expected, and a property the rule format does not have
     List<String> malformed =
         List.of(prefix + "\"values\":[1]}", prefix + "\"values\":[\"Yes\"],\"note\":\"x\"}");
 
     for (String rule : malformed) {
-      ArrayNode fields = (ArrayNode) read.get("data").deepCopy();
+      ArrayNode fields = (ArrayNode) fieldsOf(read).deepCopy();
       ((ObjectNode) fields.get(1)).set("displayRule", mapper.readTree(rule));
-      JsonNode failure = postFields(draft.getId(), fields);
+      JsonNode failure = postFields(draft.getId(), fields, versionOf(read));
       assertTrue(failure.get("data").isNull());
       assertThat(failure.get("errorMsg").get("errorMessages").toString())
           .contains("display rule on field [Permit] is malformed");
     }
-    ArrayNode withEmptyEntry = (ArrayNode) read.get("data").deepCopy();
+    ArrayNode withEmptyEntry = (ArrayNode) fieldsOf(read).deepCopy();
     withEmptyEntry.addNull();
-    JsonNode failure = postFields(draft.getId(), withEmptyEntry);
+    JsonNode failure = postFields(draft.getId(), withEmptyEntry, versionOf(read));
     assertTrue(failure.get("data").isNull());
     assertThat(failure.get("errorMsg").get("errorMessages").toString())
         .contains("Field #3 in the list is empty");
 
-    assertEquals(read.get("data"), getFields(draft.getId()).get("data"));
+    assertEquals(fieldsOf(read), fieldsOf(getFields(draft.getId())));
     formController.unlockForm(draft.getId(), pageLockToken(), principal);
   }
 
@@ -495,7 +643,23 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
     return mapper.readTree(result.getResponse().getContentAsString());
   }
 
-  private JsonNode postFields(Long formId, JsonNode fields) throws Exception {
+  private static JsonNode fieldsOf(JsonNode response) {
+    return response.get("data").get("fields");
+  }
+
+  private static String versionOf(JsonNode response) {
+    return response.get("data").get("version").asText();
+  }
+
+  private JsonNode postFields(Long formId, JsonNode fields, String version) throws Exception {
+    return mapper.readTree(
+        postFieldsExpecting(formId, fields, version, status().isOk())
+            .getResponse()
+            .getContentAsString());
+  }
+
+  private MvcResult postFieldsExpecting(
+      Long formId, JsonNode fields, String version, ResultMatcher expected) throws Exception {
     // the read shape carries canDelete, which the save ignores
     for (JsonNode field : fields) {
       if (field instanceof ObjectNode object) {
@@ -507,12 +671,13 @@ public class FormFieldEditorMVCIT extends MVCTestBase {
             .perform(
                 post(FIELDS_URL)
                     .param("formId", formId.toString())
+                    .param("version", version)
                     .principal(principal)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(fields)))
-            .andExpect(status().isOk())
+            .andExpect(expected)
             .andReturn();
-    return mapper.readTree(result.getResponse().getContentAsString());
+    return result;
   }
 
   /** A published form: radio "GMO?" (Yes, No) and string "Permit" shown when GMO? is Yes. */
