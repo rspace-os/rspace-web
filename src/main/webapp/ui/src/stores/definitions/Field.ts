@@ -75,7 +75,10 @@ export interface Field extends BaseRecord {
   /** Shows the field only when another field meets a condition; null when always shown. */
   displayRule: FieldDisplayRule | null;
 
+  /** The field for saving its own record. */
   readonly paramsForBackend: object;
+  /** The field for a new record built from its record, such as a template made from a sample. */
+  readonly paramsForNewRecord: object;
   readonly hasContent: boolean;
   readonly renderContentAsString: string;
 

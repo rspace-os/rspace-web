@@ -5,7 +5,6 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { usableOptions } from "@/modules/common/field-editor/ruleEditing";
-import { newFieldKey } from "@/modules/common/field-rules/newFieldKey";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
 import type { Option } from "../../../stores/definitions/Field";
@@ -34,12 +33,12 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
    * flicker every time, so we need to minimise the number of times we render
    * it. Now, for fields that already exist on the server, the id acts as a
    * perfectly fine key but for new fields they have no unique identifier.
-   * So for the purposes here, we just generate a string that is very unlikely
-   * to be the same for any two new fields and will only change when this
-   * component is re-mounted and thus the TinyMCE of the rich text field will
-   * have to be re-rendered anyway.
+   * So for those, this component's own id serves, which only changes when it
+   * is re-mounted and thus the TinyMCE of the rich text field will have to be
+   * re-rendered anyway.
    */
-  const key = React.useMemo(() => field.id ?? newFieldKey(), [field.id]);
+  const instanceId = React.useId();
+  const key = field.id ?? instanceId;
 
   /*
    * A Link template field's "default value" is two things: the whitelist of relationship types
