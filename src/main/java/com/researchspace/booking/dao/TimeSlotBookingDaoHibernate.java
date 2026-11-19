@@ -25,6 +25,17 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Booking queries for REST API v2 lists and the calendar.
+ *
+ * <p>Booking lists keep the counted entity path: their documents carry caller-specific privacy,
+ * capabilities, role sources and owner health prepared from access aggregates. The ordered page
+ * query selects IDs, then fetches the selected entities with their to-one actors and access
+ * aggregate in one ID-scoped query; assignments and instrument targets are resolved in batches.
+ * Moving these lists to scalar read documents would also require projecting those access inputs and
+ * preserving their caller-specific preparation, so until then they count internally even without
+ * {@code totals=true}.
+ */
 @Repository("timeSlotBookingDao")
 public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBooking, Long>
     implements TimeSlotBookingDao {

@@ -29,6 +29,12 @@ import org.hibernate.StaleObjectStateException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Booking-configuration queries for REST API v2 lists.
+ *
+ * <p>Lists keep the counted entity path for the reasons given on {@link
+ * TimeSlotBookingDaoHibernate}.
+ */
 @Repository("bookingConfigurationDao")
 public class BookingConfigurationDaoHibernate
     extends GenericDaoHibernate<BookingConfiguration, Long> implements BookingConfigurationDao {
