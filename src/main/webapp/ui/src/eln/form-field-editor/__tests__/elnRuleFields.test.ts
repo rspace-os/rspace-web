@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ruleGraphFor } from "@/modules/common/field-editor/ruleEditing";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
-import { type EditorField, removeOption, updateField } from "../editorModel";
+import { changeType, type EditorField, removeOption, updateField } from "../editorModel";
 import { elnRuleFields } from "../elnRuleFields";
 
 const keyOf = (i: number) => `6f1c2e0a-0000-4000-8000-${String(i).padStart(12, "0")}`;
@@ -60,6 +60,15 @@ describe("elnRuleFields", () => {
 
     expect(elnRuleFields(withoutRule, namesOf(withoutRule), list)).not.toBe(list);
     expect(elnRuleFields(withoutOption, namesOf(withoutOption), list)).not.toBe(list);
+  });
+
+  it("gives a new list when a field with no rule becomes another kind of source", () => {
+    const fields = updateField(largeForm(), keyOf(1), (field) => ({ ...field, rule: null }));
+    const list = elnRuleFields(fields, namesOf(fields));
+
+    const retyped = changeType(fields, keyOf(1), "Number");
+
+    expect(elnRuleFields(retyped, namesOf(retyped), list)).not.toBe(list);
   });
 
   it("works out every field's candidates on 150 fields quickly", () => {
