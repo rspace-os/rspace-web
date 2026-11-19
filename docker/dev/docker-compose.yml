@@ -209,7 +209,7 @@ services:
   # from the bond strength branch of the chemistry repo first (see README).
   # ---------------------------------------------------------------------------
   bond-strength:
-    image: ${BOND_STRENGTH_IMAGE:-rspace-bond-strength:poc}
+    image: ${BOND_STRENGTH_IMAGE:-rspace-bond-strength:0.0.1}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-bond-strength
     profiles: ["bond-strength"]
     restart: unless-stopped

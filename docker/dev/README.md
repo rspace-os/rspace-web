@@ -193,7 +193,7 @@ strength branch of the chemistry repo:
 
 ```bash
 docker build -t rspace-chemistry:bond-strength-poc .
-docker build -t rspace-bond-strength:poc bond-strength
+docker build -t rspace-bond-strength:0.0.1 bond-strength
 ```
 
 Then turn on the `bondStrengthsEnabled` [feature flag](../../DevDocs/DeveloperNotes/FeatureFlags.md).
