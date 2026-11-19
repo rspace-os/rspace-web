@@ -2,8 +2,8 @@ import { Form, isDirty, useField, useForm } from "@formisch/react";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { isNil, pick } from "es-toolkit";
 import { useMemo, useState } from "react";
-import { isNil } from "es-toolkit";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -52,10 +52,6 @@ const createBookableItemFormSchema = v.intersect([
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
-
-function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
-  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
-}
 
 // The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
 function withInstitutionTimeZone(institutionTimezone: string) {

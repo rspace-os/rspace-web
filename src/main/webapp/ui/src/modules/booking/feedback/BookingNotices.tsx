@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { clamp } from "es-toolkit";
 import {
   createContext,
   type ReactNode,
@@ -196,7 +197,7 @@ export function BookingLocalNotices({
     if (focusedAlert?.dataset.tableListAlert === id) {
       const index = alerts.findIndex((alert) => alert.id === id);
       const remaining = alerts.filter((alert) => alert.id !== id);
-      const neighbour = remaining[Math.min(Math.max(index, 0), remaining.length - 1)];
+      const neighbour = remaining[clamp(index, 0, remaining.length - 1)];
       focusRequest.current = { dismissedId: id, targetId: neighbour?.id ?? null };
     }
     onDismiss(id);
