@@ -299,6 +299,7 @@
       "noDefault": "No default",
       "noDefaultText": "No default text.",
       "password": "Hide the value, like a password",
+      "passwordReadByRule": "A display rule reads this field, so it cannot be a password field.",
       "showAsPickList": "Show as a drop-down list",
       "sortAlphabetic": "Sort options alphabetically",
       "time12Hour": "12-hour (02:30 PM)",
