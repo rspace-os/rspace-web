@@ -69,6 +69,24 @@ function Harness({
               )
             }
           />
+          <button
+            type="button"
+            aria-label={`Change the kind of ${field.name}`}
+            // as hosts do once the author confirms, rules that read the retyped field are cleared
+            onClick={() =>
+              setFields((current) =>
+                current.map((other) =>
+                  other.key === field.key
+                    ? other.sourceKind === "NUMBER"
+                      ? { ...other, sourceKind: "OPTIONS", options: ["Light", "Heavy"] }
+                      : { ...other, sourceKind: "NUMBER", options: [] }
+                    : other.rule?.sourceFieldKey === field.key
+                      ? { ...other, rule: null }
+                      : other,
+                ),
+              )
+            }
+          />
           <FieldDisplayCondition
             fieldKey={field.key}
             fields={fields}
@@ -568,6 +586,33 @@ describe("FieldDisplayCondition with text and number sources", () => {
       "Choose at least one option.",
     );
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("drops an unfinished edit, reporting nothing incomplete, once the field it reads changes kind", async () => {
+    const user = userEvent.setup();
+    const { onIncompleteChange } = await renderConditions([
+      weight,
+      { ...notes, rule: createDisplayRule("weight", "EQUALS", ["5"]) },
+    ]);
+    await user.type(card("Notes").getByRole("textbox", { name: "Value" }), "x");
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("notes", true);
+
+    await user.click(screen.getByRole("button", { name: "Change the kind of Weight" }));
+
+    expect(card("Notes").getByRole("radio", { name: "Always" })).toBeChecked();
+    expect(onIncompleteChange).toHaveBeenLastCalledWith("notes", false);
+  });
+
+  it("does not bring back a condition set aside by Always once the field it read changes kind", async () => {
+    const user = userEvent.setup();
+    const { onChange } = await renderConditions([gmo, { ...notes, rule: createDisplayRule("gmo", "HAS_VALUE", []) }]);
+    await user.click(card("Notes").getByRole("radio", { name: "Always" }));
+
+    await user.click(screen.getByRole("button", { name: "Change the kind of Is this a GMO?" }));
+    await user.click(conditional("Notes"));
+
+    expect(onChange.mock.calls).toEqual([["notes", null]]);
+    expect(card("Notes").getByRole("textbox", { name: "Value" })).toHaveAccessibleDescription("Enter a value.");
   });
 
   it("quotes text values in the summary, but not numbers", async () => {
