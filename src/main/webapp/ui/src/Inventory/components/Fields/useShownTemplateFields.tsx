@@ -44,8 +44,13 @@ type Settled = { session: string; typed: string };
  *  - Another record, a reload, or leaving edit mode applies the current
  *    visibility at once; the pending update is dropped, as it is on unmount.
  *
- * Hosts wrap each rendered field with `wrapField`, which tracks focus, and
- * report errors through the returned `onErrorStateChange`. A field that the
+ * A hidden field whose value is invalid stays mounted but hidden, so the text
+ * the user typed, which a number input or a date or time picker holds only in
+ * itself, is there to correct or clear when the field is shown again.
+ *
+ * Hosts render `renderedFields`, wrapping each with `wrapField`, which tracks
+ * focus and hides the fields kept for their invalid text, and report errors
+ * through the returned `onErrorStateChange`. A field that the
  * values hide but focus keeps on screen is not mandatory and reports no error;
  * `hiddenByValues` tells hosts which fields those are.
  */
@@ -58,7 +63,7 @@ export default function useShownTemplateFields(
   },
   onErrorStateChange: (fieldName: string, hasError: boolean) => void,
 ): {
-  shownFields: Array<Field>;
+  renderedFields: Array<Field>;
   announcer: ReactNode;
   wrapField: (field: Field, node: ReactNode) => ReactNode;
   hiddenByValues: (field: Field) => boolean;
@@ -121,6 +126,7 @@ export default function useShownTemplateFields(
 
   const renderedHidden = settledHidden.filter((field) => field !== focused);
   const shownFields = fields.filter((field) => !renderedHidden.includes(field));
+  const renderedFields = fields.filter((field) => !renderedHidden.includes(field) || field.error);
   const hiddenNames = renderedHidden.map((field) => field.name);
   // the values say these are hidden even while they are still on screen, so they no longer count as errors
   const errorFreeSignature = JSON.stringify([hidden.map((field) => field.name), hiddenNames]);
@@ -135,6 +141,7 @@ export default function useShownTemplateFields(
     // biome-ignore lint/a11y/noStaticElementInteractions: it only observes focus moving among the field's own controls
     <div
       key={identityOf(field)}
+      hidden={renderedHidden.includes(field)}
       onFocus={({ currentTarget }: FocusEvent<HTMLDivElement>) => {
         clearTimeout(blurCheck.current);
         focusedWrapper.current = currentTarget;
@@ -151,7 +158,7 @@ export default function useShownTemplateFields(
   );
 
   return {
-    shownFields,
+    renderedFields,
     wrapField,
     hiddenByValues: (field) => record.isFieldHidden?.(field) ?? false,
     onErrorStateChange: (fieldName, hasError) => {
