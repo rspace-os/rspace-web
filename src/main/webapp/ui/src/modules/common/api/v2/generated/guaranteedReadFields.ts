@@ -27,6 +27,7 @@ export const apiV2GuaranteedReadFields = {
     "canCancel",
     "canEdit",
     "canViewConfiguration",
+    "cancellationReason",
     "createdAt",
     "createdBy",
     "end",

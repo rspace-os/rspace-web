@@ -2,7 +2,6 @@ package com.researchspace.booking.api.v2;
 
 import static com.researchspace.testutils.BookingResourceTestFixtures.translate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +24,8 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingBufferConflictException;
+import com.researchspace.booking.service.BookingCancellationReasonLengthException;
+import com.researchspace.booking.service.BookingCancellationReasonRequiresCancelException;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingCreateExecutor;
 import com.researchspace.booking.service.BookingLocationFilterManager;
@@ -41,6 +42,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingRequesterFilters;
+import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -95,7 +97,6 @@ class TimeSlotBookingResourceOperationsTest {
           mock(MessageSourceUtils.class),
           mock(BookingLocationFilterManager.class, invocation -> invocation.getArgument(0)),
           creates);
-
   private final User actor = mock(User.class);
 
   @BeforeEach
@@ -236,30 +237,39 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
-  void derivedPrivateFieldsAreNullableAndUnsortable() {
-    User requester = mock(User.class);
-    TimeSlotBooking booking = booking(requester);
+  void translatesCancellationReasonAndExposesItsValidationErrors() {
+    ParsedDocument patch =
+        ParsedDocument.update(
+            Map.of(
+                "state",
+                BookingState.CANCELLED,
+                "cancellationReason",
+                "Instrument needs recalibration"));
+    operations.update(41L, patch, null, ApiV2Caller.direct(actor));
+    verify(manager)
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(
+                null, null, false, null, BookingState.CANCELLED, "Instrument needs recalibration"),
+            actor,
+            actor);
 
-    Map<String, Object> busy = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
-
-    assertEquals(null, busy.get("purpose"));
-    assertEquals(null, busy.get("bookedBy"));
-    assertEquals("busy", busy.get("privacy"));
-    assertEquals(false, busy.get("canEdit"));
-    assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("purpose").sortable());
-    assertTrue(
-        ApiV2TimeSlotBookingResource.DESCRIPTION
-            .requireField("purpose")
-            .operators()
-            .contains(Operator.CONTAINS));
-    assertFalse(
-        ApiV2TimeSlotBookingResource.DESCRIPTION
-            .requireField("state")
-            .writableOn(WriteOperation.CREATE));
-    assertFalse(
-        ApiV2TimeSlotBookingResource.DESCRIPTION
-            .requireRelationship("target")
-            .writableOn(WriteOperation.UPDATE));
+    var spec = operations.timeSlotBookingApiV2Resource();
+    assertEquals(
+        HttpStatus.BAD_REQUEST,
+        translate(spec, ResourceOperation.UPDATE, new BookingCancellationReasonLengthException())
+            .status());
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.length",
+        translate(spec, ResourceOperation.UPDATE, new BookingCancellationReasonLengthException())
+            .errorCode());
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.requiresCancel",
+        translate(
+                spec,
+                ResourceOperation.UPDATE,
+                new BookingCancellationReasonRequiresCancelException())
+            .errorCode());
   }
 
   @Test

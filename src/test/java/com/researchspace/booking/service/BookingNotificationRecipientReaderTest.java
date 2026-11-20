@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
@@ -130,6 +131,7 @@ class BookingNotificationRecipientReaderTest {
 
     assertEquals(List.of(requester.getId()), selected.stream().map(r -> r.user().getId()).toList());
     assertTrue(selected.get(0).requester());
+    verify(displayPreferences).resolveForNotificationSnapshot(requester);
   }
 
   @Test
@@ -165,6 +167,9 @@ class BookingNotificationRecipientReaderTest {
 
   @ParameterizedTest
   @CsvSource({
+    "owner,NOTIFICATION_BOOKING_RESTORED,true,true,true,1",
+    "owner,NOTIFICATION_BOOKING_RESTORED,false,true,true,0",
+    "owner,NOTIFICATION_BOOKING_RESTORED,true,false,true,0",
     "owner,NOTIFICATION_BOOKING_CHANGED,true,true,true,1",
     "owner,NOTIFICATION_BOOKING_CHANGED,false,true,true,0",
     "owner,NOTIFICATION_BOOKING_CHANGED,true,false,true,0",

@@ -34,6 +34,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingState;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -45,6 +46,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.PermissionType;
@@ -108,6 +110,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
   private static final NotificationType CREATED = NotificationType.NOTIFICATION_BOOKING_CREATED;
   private static final NotificationType CANCELLED = NotificationType.NOTIFICATION_BOOKING_CANCELLED;
+  private static final String LONG_CANCELLATION_REASON = "&".repeat(500);
 
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationManager configurationManager;
@@ -202,6 +205,51 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     createBooking(setup, owner);
     assertSingleNotification(owner, "UTC");
     assertEquals(emailEnabled ? 1 : 0, emailCapture.deliveries().size());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void ownBookingRestoreFollowsOwnActionPreference(boolean notifyOwnActions) throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Own booking restore " + getRandomName(6));
+    setRecipientPreferences(owner, true, false, "UTC");
+    TimeSlotBooking booking = createBooking(setup, owner);
+    TimeSlotBooking cancelled =
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+                booking.getVersion(),
+                owner,
+                owner)
+            .orElseThrow();
+    List<Notification> before =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, owner, CREATED);
+    assertEquals(1, before.size());
+    if (!notifyOwnActions) {
+      userMgr.setPreference(Preference.BOOKING_NOTIFY_OWN_ACTIONS, "false", owner.getUsername());
+    }
+
+    bookingManager
+        .updateBooking(
+            booking.getId(),
+            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CONFIRMED),
+            cancelled.getVersion(),
+            owner,
+            owner)
+        .orElseThrow();
+
+    List<Notification> restored =
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_RESTORED);
+    assertEquals(notifyOwnActions ? 1 : 0, restored.size());
+    if (notifyOwnActions) {
+      assertTrue(restored.get(0).getNotificationMessage().contains("was restored"));
+      assertTrue(
+          assertInstanceOf(
+                  BookingNotificationData.class, restored.get(0).getNotificationDataObject())
+              .isRestored());
+    }
   }
 
   @Test
@@ -363,24 +411,48 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         Boolean.FALSE.toString(),
         requester.getUsername());
 
-    logoutAndLoginAs(requester);
-    TimeSlotBooking booking = createBooking(setup, requester);
-    assertNoNotification(requester);
-    emailCapture.clear();
+    TimeSlotBooking booking = requesterBookingToCancel(setup, requester);
 
     logoutAndLoginAs(owner);
-    bookingManager
-        .updateBooking(
-            booking.getId(),
-            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
-            owner,
-            owner)
-        .orElseThrow();
+    TimeSlotBooking cancelled =
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, LONG_CANCELLATION_REASON),
+                booking.getVersion(),
+                owner,
+                owner)
+            .orElseThrow();
 
+    assertEquals(LONG_CANCELLATION_REASON, cancelled.getCancellationReason());
     assertSingleNotification(requester, "UTC", CANCELLED);
+    String escapedReason = "&amp;".repeat(500);
+    Notification cancellationNotification =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, requester, CANCELLED)
+            .get(0);
+    assertTrue(
+        cancellationNotification.getNotificationMessage().contains("Reason: " + escapedReason));
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              Notification persisted =
+                  (Notification)
+                      communicationDao
+                          .getWithTargets(cancellationNotification.getId())
+                          .orElseThrow();
+              assertTrue(persisted.getNotificationMessage().contains("Reason: " + escapedReason));
+            });
     if (emailEnabled) {
       assertEquals(1, emailCapture.deliveries().size());
       assertEquals(List.of(requester.getEmail()), emailCapture.deliveries().get(0).addresses());
+      assertTrue(
+          emailCapture
+              .deliveries()
+              .get(0)
+              .notificationMessage()
+              .contains("Reason: " + escapedReason));
+      assertTrue(emailCapture.deliveries().get(0).htmlContent().contains(escapedReason));
     } else {
       assertTrue(emailCapture.deliveries().isEmpty());
     }
@@ -397,23 +469,29 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
     shareWithBookersOnly(setup.instrumentId(), bookerGroup);
     setRecipientPreferences(requester, false, false, "UTC");
+    userMgr.setPreference(
+        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF,
+        Boolean.FALSE.toString(),
+        requester.getUsername());
 
-    logoutAndLoginAs(requester);
-    TimeSlotBooking booking = createBooking(setup, requester);
-    assertNoNotification(requester);
-    emailCapture.clear();
+    TimeSlotBooking booking = requesterBookingToCancel(setup, requester);
     applyRequesterIneligibility(requester, ineligibility);
 
     logoutAndLoginAs(owner);
     bookingManager
         .updateBooking(
             booking.getId(),
-            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+            new TimeSlotBookingManager.Patch(
+                null, null, false, null, BookingState.CANCELLED, "No longer needed"),
+            booking.getVersion(),
             owner,
             owner)
         .orElseThrow();
 
-    assertNoNotification(requester, CANCELLED);
+    assertTrue(
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, requester, CANCELLED)
+            .isEmpty(),
+        ineligibility.name());
     assertTrue(emailCapture.deliveries().isEmpty(), ineligibility.name());
   }
 
@@ -1205,7 +1283,12 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         Boolean.toString(emailEnabled),
         user.getUsername());
     displayPreferences.replace(
-        new BookingDisplaySettings("08:00", "18:00", BookingTimezoneMode.CUSTOM, customTimezone),
+        new BookingDisplaySettings(
+            "08:00",
+            "18:00",
+            BookingTimezoneMode.CUSTOM,
+            customTimezone,
+            BookingTimeFormat.AUTOMATIC),
         user,
         user);
   }
@@ -1248,6 +1331,15 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         configurationManager.createConfiguration(
             new BookingConfigurationManager.Create(true, "UTC", resolved), owner, owner);
     return new BookingSetup(configuration, resolved, created.getId());
+  }
+
+  private TimeSlotBooking requesterBookingToCancel(BookingSetup setup, User requester)
+      throws Exception {
+    logoutAndLoginAs(requester);
+    TimeSlotBooking booking = createBooking(setup, requester);
+    assertNoNotification(requester);
+    emailCapture.clear();
+    return booking;
   }
 
   private TimeSlotBooking createBooking(BookingSetup setup, User actor) {
@@ -1374,7 +1466,8 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     }
   }
 
-  private record EmailDelivery(List<String> addresses, String notificationMessage) {}
+  private record EmailDelivery(
+      List<String> addresses, String notificationMessage, String htmlContent) {}
 
   private enum RequesterIneligibility {
     DISABLED,
@@ -1389,7 +1482,10 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     public void sendEmail(EmailContent content, List<String> recipients, Communication comm) {
       Notification notification = (Notification) comm;
       recorded.add(
-          new EmailDelivery(List.copyOf(recipients), notification.getNotificationMessage()));
+          new EmailDelivery(
+              List.copyOf(recipients),
+              notification.getNotificationMessage(),
+              content.htmlContent()));
     }
 
     List<EmailDelivery> deliveries() {
