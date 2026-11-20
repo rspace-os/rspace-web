@@ -113,6 +113,88 @@ var tinymcesetup = {
 			ed.setDirty(true);
 		});
 
+		// The paste plugin keeps its Ctrl+Shift+V state private, so track it here.
+		var plainTextKeyboardPaste = false;
+		ed.on('keydown', function (e) {
+			if ((e.ctrlKey || e.metaKey) && e.keyCode === 86) {
+				plainTextKeyboardPaste = e.shiftKey;
+			}
+		}, true);
+
+		var pendingImagePaste = null;
+		// Run before the paste plugin so it can clean up a paste that we cancel.
+		ed.on('paste', function (e) {
+			pendingImagePaste = null;
+			var shortcutUsesPlainText = plainTextKeyboardPaste;
+			plainTextKeyboardPaste = false;
+			var pastePlugin = ed.plugins.paste;
+			if (!pastePlugin || e.isDefaultPrevented()) {
+				return;
+			}
+			var clipboardData = e.clipboardData;
+			var imageFile = getSingleImagePasteFile(clipboardData);
+			if (!imageFile) {
+				return;
+			}
+
+			var plainTextMode = shortcutUsesPlainText || pastePlugin.clipboard.pasteFormat.get() === 'text';
+			var html = clipboardData.getData('text/html');
+			if (!html) {
+				// Only when the browser offers nothing but the file: its default paste then supplies the HTML.
+				var types = Array.from(clipboardData.types || []);
+				if (plainTextMode || types.length !== 1 || types[0] !== 'Files') {
+					return;
+				}
+				var pasteBin = ed.dom.get('mcepastebin');
+				if (pasteBin) {
+					var pending = { file: imageFile, pasteBin: pasteBin };
+					pendingImagePaste = pending;
+					// Let TinyMCE queue its zero-delay paste-bin read before scheduling expiry.
+					queueMicrotask(function () {
+						setTimeout(function () {
+							if (pendingImagePaste === pending) {
+								pendingImagePaste = null;
+							}
+						}, 0);
+					});
+				}
+				return;
+			}
+
+			// Parse in an inert template so checking the HTML does not load the local image.
+			var template = document.createElement('template');
+			template.innerHTML = html;
+			if (!isSingleLocalImage(template.content)) {
+				return;
+			}
+			var plainText = plainTextMode ? clipboardData.getData('text/plain') : '';
+			if (plainText.trim()) {
+				e.preventDefault();
+				// The paste plugin removes its paste bin and restores the caret before this runs.
+				queueMicrotask(function () {
+					if (!ed.removed) {
+						ed.execCommand('mceInsertClipboardContent', false, { text: plainText });
+					}
+				});
+				return;
+			}
+			if (uploadGalleryFile([imageFile], ed)) {
+				e.preventDefault();
+			}
+		}, true);
+
+		ed.on('PastePostProcess', function (args) {
+			var pending = pendingImagePaste;
+			pendingImagePaste = null;
+			// TinyMCE removes the paste bin and restores the caret before post-processing.
+			// Check both fragments so filtering cannot make a rich paste eligible.
+			if (pending && !pending.pasteBin.isConnected && isSingleLocalImage(pending.pasteBin)
+					&& isSingleLocalImage(args.node) && uploadGalleryFile([pending.file], ed)) {
+				args.node.textContent = '';
+				args.preventDefault();
+			}
+		}, true);
+
 		ed.on("dblclick", function (e) {
 			var $target = $(e.target ? e.target : e.explicitOriginalTarget);
 			if ($target.is('img')) {
@@ -1016,13 +1098,51 @@ function loadVideo(videoId, videoData) {
 	openMedia(id, filename, extension);
 }
 
-//Handles Dnd into text editor using jqueryFileUpload plugin.
-function uploadGalleryFile(event, ed) {
-	if (event.dataTransfer) {
-		var files = event.dataTransfer.files;
-		var fieldEditing = getFieldIdFromTextFieldId(ed.id);
-		$('#fromLocalComputerToGallery_' + fieldEditing).fileupload('add', { files: files });
+// Uploads files dropped or pasted into a text field to the Gallery; the upload inserts them into the field.
+// Returns false if the field's Gallery upload widget isn't initialised.
+function uploadGalleryFile(files, ed) {
+	var fieldEditing = getFieldIdFromTextFieldId(ed.id);
+	var $galleryUpload = $('#fromLocalComputerToGallery_' + fieldEditing);
+	if (!$galleryUpload.data('blueimp-fileupload')) {
+		return false;
 	}
+	$galleryUpload.fileupload('add', { files: files });
+	return true;
+}
+
+var LOCAL_IMAGE_PASTE_WRAPPERS = ['HTML', 'HEAD', 'BODY', 'META', 'DIV', 'SPAN', 'P', 'BR'];
+
+function _hasRSpaceMarkup(element) {
+	return Array.from(element.attributes).some(function (attr) {
+		return attr.name === 'class' || attr.name === 'id' || attr.name.indexOf('data-') === 0;
+	});
+}
+
+function getSingleImagePasteFile(clipboardData) {
+	if (!clipboardData) {
+		return null;
+	}
+	var files = Array.from(clipboardData.files || []);
+	if (!files.length && clipboardData.items) {
+		files = Array.from(clipboardData.items)
+			.filter(function (item) { return item.kind === 'file'; })
+			.map(function (item) { return item.getAsFile(); })
+			.filter(Boolean);
+	}
+	return files.length === 1 && /^image\//.test(files[0].type) ? files[0] : null;
+}
+
+// Windows Photos can supply HTML containing only an image pointed at a local file.
+function isSingleLocalImage(fragment) {
+	var images = fragment.querySelectorAll('img');
+	if (images.length !== 1 || !/^file:/i.test((images[0].getAttribute('src') || '').trim())
+			|| fragment.textContent.trim()) {
+		return false;
+	}
+	return Array.from(fragment.querySelectorAll('*')).every(function (element) {
+		return !_hasRSpaceMarkup(element)
+			&& (element === images[0] || LOCAL_IMAGE_PASTE_WRAPPERS.indexOf(element.nodeName) !== -1);
+	});
 }
 
 //Handles Dnd into text editor using jqueryFileUpload plugin for chem
