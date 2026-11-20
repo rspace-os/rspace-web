@@ -93,7 +93,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
           aria-label={t("callablePdfPreview.title")}
         >
           <DialogContent tabIndex={0} sx={{ overflowY: "auto" }}>
-            <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
+            <Document suspense={false} file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
               {[...take(incrementForever(), numPages)].map((index) => (
                 <Box key={`page_${index + 1}`}>
                   <Page pageNumber={index + 1} width={550} scale={scale} />
