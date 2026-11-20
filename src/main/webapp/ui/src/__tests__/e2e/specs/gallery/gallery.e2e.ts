@@ -1,27 +1,70 @@
 import { expect, type Frame } from "@playwright/test";
+import type { FilesClient } from "@/__tests__/e2e/api/clients/FilesClient";
+import type { FoldersClient } from "@/__tests__/e2e/api/clients/FoldersClient";
+import { dynamicUserTest } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
+/**
+ * Creates an Images subfolder holding the given PNGs, so tests do not rely on seeded examples.
+ * Callers use a fresh dynamic user so the folder is on the first page of the Images listing.
+ */
+async function createImagesFolder(
+  clientFiles: FilesClient,
+  clientFolders: FoldersClient,
+  fileNames: string[],
+): Promise<string> {
+  // An upload without a folder lands in Images > Api Inbox, whose parent is the Images folder.
+  const inboxUpload = await clientFiles.uploadFile({
+    name: `${uniqueName("e2e-gallery-inbox")}.png`,
+    mimeType: "image/png",
+    buffer: TINY_PNG,
+  });
+  if (inboxUpload.parentFolderId === undefined) throw new Error("Uploaded file has no parentFolderId");
+  const inbox = await clientFolders.get(inboxUpload.parentFolderId);
+  if (inbox.parentFolderId === undefined) throw new Error("Api Inbox has no parentFolderId");
+  const folder = await clientFolders.create({
+    name: uniqueName("e2e-gallery-folder"),
+    parentFolderId: inbox.parentFolderId,
+  });
+  for (const name of fileNames) {
+    await clientFiles.uploadFile({ name, mimeType: "image/png", buffer: TINY_PNG, folderId: folder.id });
+  }
+  return folder.name;
+}
+
 test.describe("Gallery", { tag: tags.MOBILE }, () => {
-  test("As a user, I can navigate to the Images section and browse the Examples folder", async ({ pageGallery }) => {
-    await pageGallery.openInSection("Images");
-    await pageGallery.openFolder("Examples");
+  dynamicUserTest(
+    "As a user, I can navigate to the Images section and browse a folder",
+    async ({ clientFiles, clientFolders, pageGallery }) => {
+      const fileName = `${uniqueName("e2e-gallery-browse")}.png`;
+      const folderName = await createImagesFolder(clientFiles, clientFolders, [fileName]);
 
-    await pageGallery.waitForFile("anaphase.jpg");
-  });
+      await pageGallery.openInSection("Images");
+      await pageGallery.openFolder(folderName);
 
-  test("As a user, the first click on a file selects it", async ({ page, pageGallery }) => {
-    await pageGallery.openInSection("Images");
-    await pageGallery.openFolder("Examples");
-    await pageGallery.waitForFile("anaphase.jpg");
-    const urlBeforeClick = page.url();
-    const file = pageGallery.fileCell("anaphase.jpg");
-    await file.click();
-    await expect(file).toHaveAttribute("aria-selected", "true");
-    await pageGallery.infoPanel.waitUntilSelected("anaphase.jpg");
-    await expect(page).toHaveURL(urlBeforeClick);
-  });
+      await pageGallery.waitForFile(fileName);
+    },
+  );
+
+  dynamicUserTest(
+    "As a user, the first click on a file selects it",
+    async ({ clientFiles, clientFolders, page, pageGallery }) => {
+      const fileName = `${uniqueName("e2e-gallery-select")}.png`;
+      const folderName = await createImagesFolder(clientFiles, clientFolders, [fileName]);
+
+      await pageGallery.openInSection("Images");
+      await pageGallery.openFolder(folderName);
+      await pageGallery.waitForFile(fileName);
+      const urlBeforeClick = page.url();
+      const file = pageGallery.fileCell(fileName);
+      await file.click();
+      await expect(file).toHaveAttribute("aria-selected", "true");
+      await pageGallery.infoPanel.waitUntilSelected(fileName);
+      await expect(page).toHaveURL(urlBeforeClick);
+    },
+  );
 
   test("As a user, I can see a selected file's Global ID in the info panel", async ({ clientFiles, pageGallery }) => {
     const fileName = `${uniqueName("e2e-gallery-global-id")}.png`;
@@ -70,13 +113,17 @@ test.describe("Gallery", { tag: tags.MOBILE }, () => {
     await expect(page.getByRole("tree")).toBeVisible();
   });
 
-  test("As a user, I can sort files by Name", async ({ pageGallery }) => {
+  dynamicUserTest("As a user, I can sort files by Name", async ({ clientFiles, clientFolders, pageGallery }) => {
+    const base = uniqueName("e2e-gallery-sort");
+    const [first, second] = [`${base}-a.png`, `${base}-b.png`];
+    const folderName = await createImagesFolder(clientFiles, clientFolders, [first, second]);
+
     await pageGallery.openInSection("Images");
-    await pageGallery.openFolder("Examples");
-    await pageGallery.waitForFile("anaphase.jpg");
+    await pageGallery.openFolder(folderName);
+    await pageGallery.waitForFile(second);
 
     await pageGallery.sort.sortBy("Name");
 
-    await expect(pageGallery.fileGrid.getByRole("gridcell").first()).toHaveText("anaphase.jpg");
+    await expect(pageGallery.fileGrid.getByRole("gridcell").first()).toHaveText(first);
   });
 });
