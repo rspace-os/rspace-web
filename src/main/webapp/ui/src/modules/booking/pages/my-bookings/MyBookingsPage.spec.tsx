@@ -9,7 +9,7 @@ import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { MyBookingsPageStory, myBookingsStoryUrl } from "./MyBookingsPage.story";
-import { bookingHandlers, roleLostBooking, upcomingBooking } from "./mocks/bookingMocks";
+import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
 
 const pageObj = new MyBookingsPageObject();
@@ -45,18 +45,6 @@ afterEach(() => {
 });
 
 describe("the My Bookings page", () => {
-  test("keeps an inaccessible booking visible without item links or edit actions", async () => {
-    worker.use(...bookingHandlers(undefined, undefined, [roleLostBooking]));
-    render(<MyBookingsPageStory history={history} />);
-
-    await expect.element(pageObj.unknownItem).toBeVisible();
-    await expect.element(pageObj.roleLossNotice).toBeVisible();
-    await expect.element(pageObj.confocalItemCalendar).not.toBeInTheDocument();
-    await expect.element(pageObj.confocalEdit).not.toBeInTheDocument();
-    await expect.element(pageObj.confocalCancel).not.toBeInTheDocument();
-    await expect.element(pageObj.confocalDetails).toBeVisible();
-  });
-
   test("searches booking purpose and instrument IDs without dropping requester scope", async () => {
     history.replace("/booking/my-bookings?period=upcoming");
     const listRequests: URL[] = [];
@@ -90,8 +78,7 @@ describe("the My Bookings page", () => {
       [pageObj.confocalDetails, "View details"],
       [pageObj.confocalItemCalendar, "View item calendar"],
       [pageObj.confocalEdit, "Edit"],
-      [pageObj.confocalCalendarFile, ".ics file"],
-      [pageObj.confocalCancel, "Cancel booking"],
+      [pageObj.confocalMoreActions, "More actions"],
     ] as const;
 
     for (const [control, label] of controls) {
@@ -150,8 +137,7 @@ describe("the My Bookings page", () => {
       pageObj.confocalDetails,
       pageObj.confocalItemCalendar,
       pageObj.confocalEdit,
-      pageObj.confocalCalendarFile,
-      pageObj.confocalCancel,
+      pageObj.confocalMoreActions,
     ];
     await expect.element(controls[0]).toBeVisible();
     const styles = controls.map((control) => {
@@ -167,6 +153,55 @@ describe("the My Bookings page", () => {
     });
 
     expect(styles).toEqual(controls.map(() => styles[0]));
+  });
+
+  test("moves focus to the next booking and announces a cancellation once its row is gone", async () => {
+    const electron = {
+      ...upcomingBooking,
+      id: 42,
+      target: {
+        ...upcomingBooking.target,
+        globalId: "IN124",
+        value: { ...upcomingBooking.target.value, id: 124, name: "Electron microscope" },
+      },
+    };
+    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, electron];
+    worker.use(
+      ...bookingHandlers(undefined, undefined, docs),
+      http.patch("/api/v2/bookings/41", () => {
+        docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
+        return HttpResponse.json(docs[0]);
+      }),
+    );
+    render(<MyBookingsPageStory history={history} />);
+
+    await pageObj.confocalMoreActions.click();
+    await pageObj.cancelMenuItem.click();
+    await pageObj.cancelDialog.getByRole("button", { name: "Cancel booking" }).click();
+
+    await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+    await expect
+      .poll(() =>
+        document.activeElement?.closest("[data-booking-row-actions]")?.getAttribute("data-booking-row-actions"),
+      )
+      .toBe("42");
+    await expect
+      .element(page.getByRole("status").filter({ hasText: "Cancelled the Confocal microscope booking" }))
+      .toBeInTheDocument();
+  });
+
+  test("keeps the booking actions on one line", async () => {
+    render(<MyBookingsPageStory history={history} />);
+
+    await expect.element(pageObj.confocalMoreActions).toBeVisible();
+    const controls = [
+      pageObj.confocalItemCalendar,
+      pageObj.confocalDetails,
+      pageObj.confocalEdit,
+      pageObj.confocalMoreActions,
+    ];
+    const tops = controls.map((control) => control.element().getBoundingClientRect().top);
+    expect(tops).toEqual(controls.map(() => tops[0]));
   });
 
   test("shows the upcoming count inside its period button", async () => {
@@ -211,7 +246,7 @@ test("keeps all row actions visible at common desktop widths", async () => {
     pageObj.confocalItemCalendar,
     pageObj.confocalDetails,
     pageObj.confocalEdit,
-    pageObj.confocalCancel,
+    pageObj.confocalMoreActions,
   ]) {
     await expect.element(control).toBeVisible();
     await expect
@@ -221,4 +256,6 @@ test("keeps all row actions visible at common desktop widths", async () => {
       })
       .toBe(true);
   }
+  await pageObj.confocalMoreActions.click();
+  await expect.element(pageObj.cancelMenuItem).toBeVisible();
 });

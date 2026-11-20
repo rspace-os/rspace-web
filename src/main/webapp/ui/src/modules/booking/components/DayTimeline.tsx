@@ -8,6 +8,7 @@ import { elapsedNowMinute, useBookingNow } from "@/modules/booking/domain/useBoo
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import {
+  CLOSED_HOURS_CLASS_NAME,
   type DayTimelineActionRenderers,
   type DayTimelineEvent,
   type DayTimelineRange,
@@ -126,6 +127,7 @@ export function DayTimeline({
   timezone,
   events,
   eventPositions,
+  closedPeriods = [],
   startWindow: wallStartWindow,
   endWindow: wallEndWindow,
   nowMinute: suppliedNowMinute,
@@ -150,6 +152,8 @@ export function DayTimeline({
   events: ReadonlyArray<DayTimelineEvent>;
   /** Keep open cards positioned during reconciliation while displaying their live event times. */
   eventPositions?: ReadonlyMap<string, DayTimelineRange>;
+  /** Periods outside the item's opening hours, in elapsed day minutes; shaded behind the events. */
+  closedPeriods?: ReadonlyArray<DayTimelineRange>;
   startWindow: number;
   endWindow: number;
   nowMinute?: number;
@@ -263,6 +267,7 @@ export function DayTimeline({
     const box = canvas.getBoundingClientRect();
     return snapMinute(((clientX - box.left) / box.width) * dayMinutes);
   };
+  // React bubbles events out of portals, so a click inside an event's popover must not start a range.
   const freeCanvas = (target: EventTarget | null, canvas: HTMLElement) =>
     target instanceof HTMLElement && canvas.contains(target) && !target.closest("article, button, a");
 
@@ -365,6 +370,21 @@ export function DayTimeline({
               style={{ width: `${(Math.max(0, Math.min(dayMinutes, pastMinute)) / dayMinutes) * 100}%` }}
             />
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+              {closedPeriods.map(({ startMinute, endMinute }) => {
+                const from = Math.max(0, startMinute);
+                const to = Math.min(dayMinutes, endMinute);
+                return to > from ? (
+                  <div
+                    key={`closed-${from}-${to}`}
+                    data-testid="day-timeline-closed-hours"
+                    className={`absolute inset-y-0 ${CLOSED_HOURS_CLASS_NAME}`}
+                    style={{
+                      left: `${(from / dayMinutes) * 100}%`,
+                      width: `${((to - from) / dayMinutes) * 100}%`,
+                    }}
+                  />
+                ) : null;
+              })}
               {hourLabels.map((label, hour) => (
                 <div
                   key={hour}

@@ -15,9 +15,12 @@ import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
+import bookingCatalog from "@/modules/common/i18n/locales/en-US/booking.json";
+import commonCatalog from "@/modules/common/i18n/locales/en-US/common.json";
 import { BookableItemAuditLog } from "../BookableItemAuditLog";
-import { auditPage } from "./bookableItemAuditFixtures";
+import { auditPage, permanentDeleteEvent } from "./bookableItemAuditFixtures";
 
 const event = {
   eventId: "a".repeat(64),
@@ -27,7 +30,11 @@ const event = {
   domain: "RECORD",
   action: "WRITE",
   description: "Updated booking configuration IN123",
-  payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
+  payload: {
+    enabled: true,
+    bookingConfigurationId: "booking-configurations:7",
+    openingHours: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+  },
   target: "bookings:41",
 };
 
@@ -54,6 +61,52 @@ function renderAudit() {
 }
 
 describe("BookableItemAuditLog", () => {
+  it("distinguishes archives and permanent deletions under the shared DELETE filter", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(
+          auditPage([
+            {
+              ...event,
+              action: "DELETE",
+              description: null,
+              target: "booking-configurations:7",
+              payload: { state: "ARCHIVED" },
+            },
+            {
+              ...event,
+              eventId: "f".repeat(64),
+              ...permanentDeleteEvent,
+              target: "booking-configurations:7",
+            },
+          ]),
+        );
+      }),
+    );
+    render(
+      await wrapWithRealI18n(<BookableItemAuditLog configurationId={7} />, {
+        resources: { booking: bookingCatalog, common: commonCatalog },
+        defaultNS: "booking",
+      }),
+      { wrapper },
+    );
+
+    expect(within(await screen.findByRole("article", { name: "Archived" })).getByText("Archived")).toBeVisible();
+    const permanentlyDeleted = screen.getByRole("article", { name: "Permanently deleted" });
+    expect(within(permanentlyDeleted).getByText("Permanently deleted")).toBeVisible();
+    await user.click(within(permanentlyDeleted).getByRole("button", { name: "Expand" }));
+    expect(within(permanentlyDeleted).getByText("Deleted at (UTC)")).toBeVisible();
+    const filter = screen.getByRole("combobox", { name: "Action" });
+    expect(within(filter).getByRole("option", { name: "Archived or deleted" })).toHaveValue("DELETE");
+    await user.selectOptions(filter, "Archived or deleted");
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1].searchParams.getAll("actions")).toEqual(["DELETE"]);
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+  });
+
   it("labels the permanent-deletion timestamp and retains unknown recorded field names", async () => {
     const user = userEvent.setup();
     server.use(
@@ -126,7 +179,66 @@ describe("BookableItemAuditLog", () => {
     );
     expect(within(item).getByText("booking:bookableItemDetails.audit.fields.values")).toBeVisible();
     expect(within(item).getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.openingHours").nextElementSibling,
+    ).toHaveTextContent("Saturday 10:00 AM\u201304:00 PM");
     await expectAccessible(container);
+  });
+
+  it("offers only Booking actions in Booking terms and labels a cancellation", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json(
+          auditPage([
+            { ...event, eventId: "c".repeat(64), description: "Cancelled booking 41", payload: { state: "CANCELLED" } },
+            { ...event, eventId: "d".repeat(64), description: "Edited booking 41", payload: { state: "CONFIRMED" } },
+            { ...event, eventId: "e".repeat(64), action: "CREATE", description: "Created booking 41" },
+          ]),
+        ),
+      ),
+    );
+    const { container } = renderAudit();
+
+    const cancelled = await screen.findByRole("article", { name: "Cancelled booking 41" });
+    expect(within(cancelled).getByText("booking:bookableItemDetails.audit.actions.cancelled")).toBeVisible();
+    expect(within(cancelled).queryByText("WRITE")).not.toBeInTheDocument();
+    const edited = screen.getByRole("article", { name: "Edited booking 41" });
+    expect(within(edited).getByText("booking:bookableItemDetails.audit.actions.changed")).toBeVisible();
+    const created = screen.getByRole("article", { name: "Created booking 41" });
+    expect(within(created).getByText("booking:bookableItemDetails.audit.actions.created")).toBeVisible();
+
+    const filter = screen.getByRole("combobox", { name: "booking:bookableItemDetails.audit.fields.action" });
+    expect(
+      within(filter)
+        .getAllByRole("option")
+        .map((option) => [(option as HTMLOptionElement).value, option.textContent]),
+    ).toEqual([
+      ["", "booking:bookableItemDetails.audit.allActions"],
+      ["CREATE", "booking:bookableItemDetails.audit.actions.created"],
+      ["WRITE", "booking:bookableItemDetails.audit.actions.changedOrCancelled"],
+      ["DELETE", "booking:bookableItemDetails.audit.actions.archivedOrDeleted"],
+      ["RESTORE", "booking:bookableItemDetails.audit.actions.restored"],
+    ]);
+    await expectAccessible(container);
+  });
+
+  it("explains the daily update when a range reaching today has no recorded changes yet", async () => {
+    // The server snapshot is the previous completed UTC day, so the default range ending today reaches past it.
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    server.use(
+      http.get("/api/v2/booking-configurations/7/audit", () =>
+        HttpResponse.json({
+          ...auditPage([]),
+          endExclusive: new Date(new Date(`${yesterday}T00:00:00Z`).getTime() + 86400000).toISOString(),
+        }),
+      ),
+    );
+    renderAudit();
+
+    expect(await screen.findByText("booking:bookableItemDetails.audit.emptyThroughSnapshot")).toBeVisible();
+    expect(screen.queryByText("booking:bookableItemDetails.audit.emptyStable")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookableItemDetails.audit.empty")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
   });
 
   it("sends free-text searches to the audit endpoint before paging", async () => {

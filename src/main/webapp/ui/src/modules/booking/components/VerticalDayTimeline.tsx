@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { resizeDisabledReason } from "@/modules/booking/creation/timelineEditText";
 import type { TimelinePolicy } from "@/modules/booking/creation/timelineRange";
-import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
   type BookingWindowDraft,
@@ -15,7 +15,7 @@ import {
 import { elapsedNowMinute, useBookingNow } from "@/modules/booking/domain/useBookingNow";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
-import type { DayTimelineEvent } from "./DayTimelineEvent";
+import { type DayTimelineEvent, openingRangesOnDate } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
 import { timeRange, useVerticalDayTimelineInteraction } from "./useVerticalDayTimelineInteraction";
@@ -68,12 +68,7 @@ function openingSegments(
   scheduleWindow: VerticalDayTimelineScheduleWindow | undefined,
 ): Array<{ startMinute: number; endMinute: number }> {
   if (!scheduleWindow) return [];
-  return openingIntervals(scheduleWindow, scheduleWindow.timezone, zonedDayBounds(date, displayTimezone)).map(
-    (opening) => ({
-      startMinute: instantToDayMinute(opening.start, date, displayTimezone),
-      endMinute: instantToDayMinute(opening.end, date, displayTimezone),
-    }),
-  );
+  return openingRangesOnDate(date, displayTimezone, scheduleWindow);
 }
 
 function closedSegments(open: readonly { startMinute: number; endMinute: number }[], dayMinutes: number) {
@@ -345,6 +340,7 @@ export function VerticalDayTimeline({
                     date={date}
                     timezone={timezone}
                     compactCards={false}
+                    truncateTitle
                     expanded={expandedEventId === event.id}
                     onExpandedChange={(expanded) => openDetails(event.id, expanded)}
                     portalContainer={portalContainer}

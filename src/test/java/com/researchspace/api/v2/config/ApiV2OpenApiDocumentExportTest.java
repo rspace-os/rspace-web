@@ -74,6 +74,16 @@ class ApiV2OpenApiDocumentExportTest {
   }
 
   @Test
+  void bookingCreateDocumentsRetryHeaderAndResponses() throws IOException {
+    JsonNode create =
+        MAPPER.readTree(generatedDocument()).path("paths").path("/api/v2/bookings").path("post");
+    assertTrue(create.path("parameters").toString().contains("Idempotency-Key"));
+    assertTrue(create.path("responses").has("200"));
+    assertTrue(create.path("responses").has("201"));
+    assertTrue(create.path("responses").has("422"));
+  }
+
+  @Test
   void generatedDocumentIncludesAnnotatedBookingRoutes() throws IOException {
     JsonNode paths = MAPPER.readTree(generatedDocument()).path("paths");
     assertTrue(paths.has("/api/v2/booking-settings/admin"));
