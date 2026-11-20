@@ -13,7 +13,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 import UserDetails from "@/components/UserDetails";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { escapeRichText } from "@/modules/common/i18n/TransRichText";
 
 export default function TransferOwnershipDialog({
   open,
@@ -60,11 +60,14 @@ export default function TransferOwnershipDialog({
       <DialogContent>
         <Alert severity="info" sx={{ mb: 2 }}>
           {isNewlyCreatedSample ? (
-            t("requestsManagement.detail.transferDialog.newSampleHint", { sampleName })
+            <TransRichText
+              i18nKey="inventory:requestsManagement.detail.transferDialog.newSampleHint"
+              components={{ sampleName: escapeRichText(sampleName, "strong") }}
+            />
           ) : (
             <TransRichText
               i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
-              values={{ requester: requesterFullName }}
+              components={{ requester: escapeRichText(requesterFullName) }}
             />
           )}
         </Alert>

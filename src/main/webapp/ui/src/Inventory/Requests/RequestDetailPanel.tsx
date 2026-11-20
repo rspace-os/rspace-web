@@ -480,7 +480,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </CollapsibleSection>
         )}
         <CollapsibleSection title={t("requestsManagement.detail.history.sectionTitle")}>
-          <RequestHistoryTable statusChanges={statusChanges} />
+          <RequestHistoryTable statusChanges={statusChanges} requesterNote={detailQuery.data?.note ?? request.note} />
         </CollapsibleSection>
       </Box>
       <RejectRequestDialog

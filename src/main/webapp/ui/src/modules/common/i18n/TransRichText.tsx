@@ -1,7 +1,7 @@
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { createContext, useContext } from "react";
+import { createContext, Fragment, useContext } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link as RouterLink, useInRouterContext } from "react-router";
 import i18n from "@/modules/common/i18n";
@@ -73,6 +73,11 @@ const muiRichTextComponents: RichTextComponents = {
   sub: <sub />,
   ul: <ul />,
 };
+
+/** Renders a user-supplied value as literal text in a TransRichText component slot; its markup is never parsed. */
+export function escapeRichText(value: string, Wrapper: React.ElementType = Fragment): React.ReactElement {
+  return <Wrapper i18nIsDynamicList>{value}</Wrapper>;
+}
 
 export const RichTextComponentsContext = createContext<RichTextComponents>(muiRichTextComponents);
 
