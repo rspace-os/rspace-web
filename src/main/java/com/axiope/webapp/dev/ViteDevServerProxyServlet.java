@@ -153,7 +153,8 @@ public class ViteDevServerProxyServlet extends HttpServlet {
   }
 
   private URI buildUpstreamUri(HttpServletRequest req) {
-    String path = req.getRequestURI();
+    // Jetty can expose literal braces in TanStack optional-parameter module paths.
+    String path = req.getRequestURI().replace("{", "%7B").replace("}", "%7D");
     String query = req.getQueryString();
     return URI.create(upstreamOrigin + path + (query == null ? "" : "?" + query));
   }
