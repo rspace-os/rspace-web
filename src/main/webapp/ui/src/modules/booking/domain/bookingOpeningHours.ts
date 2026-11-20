@@ -1,0 +1,130 @@
+import * as v from "valibot";
+import type { BookingOpeningHoursEntry } from "@/modules/common/api/v2/generated/models/bookingOpeningHoursEntry";
+import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { requireBookingValue } from "./bookingMapping";
+
+/** The absolute booking-duration limit, which also bounds opening-hour date enumeration. */
+export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+
+export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
+
+const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
+export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
+
+export type OpeningHoursEntry = BookingOpeningHoursEntry;
+
+/** Check schedule policy and sort without mutating the wire response. */
+export function mapOpeningHours(entries: readonly BookingOpeningHoursEntry[]): OpeningHoursEntry[] {
+  if (entries.length < 1 || entries.length > 7) throw new Error("Invalid opening-hours schedule length");
+  const days = new Set<number>();
+  const mapped = entries.map((entry) => {
+    const dayOfWeek = requireBookingValue(entry.dayOfWeek, "dayOfWeek");
+    const start = requireBookingValue(entry.start, "start");
+    const end = requireBookingValue(entry.end, "end");
+    if (
+      !Number.isInteger(dayOfWeek) ||
+      dayOfWeek < 1 ||
+      dayOfWeek > 7 ||
+      days.has(dayOfWeek) ||
+      !validOpeningHours(start, end)
+    )
+      throw new Error("Invalid opening-hours entry");
+    days.add(dayOfWeek);
+    return { dayOfWeek, start, end };
+  });
+  return mapped.toSorted((left, right) => left.dayOfWeek - right.dayOfWeek);
+}
+
+/** The opening-hour pair used both by schedule entries and absolute intervals. */
+export type OpeningInterval = Pick<BookingOpeningHoursEntry, "start" | "end">;
+
+/** The opening-hour part of scheduling settings. */
+export type OpeningSchedule = { openingHours: readonly BookingOpeningHoursEntry[] };
+
+/** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
+export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
+  return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
+    new Date(Date.UTC(2024, 0, dayOfWeek)),
+  );
+}
+
+/** Whether `start`-`end` is one opening interval. A `24:00` end closes at midnight, so it follows any valid start. */
+export function validOpeningHours(start: string, end: string): boolean {
+  if (!WALL_TIME.test(start)) return false;
+  if (end === "24:00") return true;
+  return WALL_TIME.test(end) && start < end;
+}
+
+/** The complete local day, from midnight to the next midnight, which Open all day selects. */
+export function isOpenAllDay(hours: OpeningInterval | null | undefined): boolean {
+  return hours?.start === "00:00" && hours.end === "24:00";
+}
+
+/** A valid interval shorter than the whole day, as Open all day remembers it; undefined otherwise. */
+export function customOpeningHours(hours: OpeningInterval): OpeningInterval | undefined {
+  return validOpeningHours(hours.start, hours.end) && !isOpenAllDay(hours)
+    ? { start: hours.start, end: hours.end }
+    : undefined;
+}
+
+/** A non-empty schedule with unique weekdays and valid per-day intervals. */
+export function validOpeningHoursSchedule(openingHours: unknown): openingHours is OpeningHoursEntry[] {
+  if (
+    !Array.isArray(openingHours) ||
+    openingHours.some(
+      (entry: unknown) =>
+        typeof entry !== "object" ||
+        entry === null ||
+        Object.keys(entry).some((key) => !["dayOfWeek", "start", "end"].includes(key)),
+    )
+  )
+    return false;
+  const parsed = v.safeParse(v.array(BookingOpeningHoursEntrySchema), openingHours);
+  if (!parsed.success) return false;
+  try {
+    mapOpeningHours(parsed.output);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Closed when no entry exists for the weekday. */
+export function effectiveHours(settings: OpeningSchedule, dayOfWeek: number): OpeningInterval | null {
+  const entry = settings.openingHours.find((candidate) => candidate.dayOfWeek === dayOfWeek);
+  return entry ? { start: entry.start, end: entry.end } : null;
+}
+
+/** The local minute at a wall-time boundary; `24:00` is the next day's 00:00. */
+export function minuteOfWallTime(time: string): number {
+  return time === "24:00" ? 1440 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+}
+
+export type OpeningPeriod = { start: number; end: number };
+
+/** Continuous opening periods in two unrolled weeks, so a period crossing Sunday into Monday is whole. */
+export function openingPeriods(settings: OpeningSchedule): OpeningPeriod[] {
+  const periods: OpeningPeriod[] = [];
+  for (let day = 0; day < 14; day++) {
+    const hours = effectiveHours(settings, (day % 7) + 1);
+    if (!hours || !validOpeningHours(hours.start, hours.end)) continue;
+    const start = day * 1440 + minuteOfWallTime(hours.start);
+    const end = day * 1440 + minuteOfWallTime(hours.end);
+    const previous = periods.at(-1);
+    if (previous && previous.end === start) previous.end = end;
+    else periods.push({ start, end });
+  }
+  return periods;
+}
+
+/** Longest continuous weekly opening, including periods touching across the week boundary. */
+export function longestOpeningMinutes(settings: OpeningSchedule): number {
+  return Math.max(
+    0,
+    ...openingPeriods(settings).map(({ start, end }) => {
+      const duration = end - start;
+      return duration >= 10080 ? MAX_BOOKING_DURATION_MINUTES : duration;
+    }),
+  );
+}

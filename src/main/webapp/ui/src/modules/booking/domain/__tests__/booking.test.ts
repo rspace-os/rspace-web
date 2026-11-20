@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+import { BOOKING_READ_FIELDS, mapBookingSummary, type SelectedBooking } from "@/modules/booking/domain/booking";
+import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
+
+describe("booking response intervals", () => {
+  it("retains a valid response and reports a non-increasing interval at end", () => {
+    const target = {
+      relationTo: "instruments" as const,
+      value: {
+        id: 34,
+        name: "Spectrometer",
+        deleted: false,
+        parentContainer: {
+          relationTo: "containers" as const,
+          value: { id: 12, globalId: "IC12", name: "Lab" },
+          globalId: "IC12",
+        },
+      },
+      globalId: "IN34",
+    };
+    const summary = {
+      id: 17,
+      target,
+      timezone: "Europe/Berlin",
+      start: "2026-08-17T10:00:00Z",
+      end: "2026-08-17T11:00:00Z",
+      state: "CONFIRMED" as const,
+      kind: "BOOKING" as const,
+    };
+    const document: SelectedBooking = {
+      ...summary,
+      version: 1,
+      canViewConfiguration: true,
+      purpose: null,
+      bookedBy: null,
+      createdBy: null,
+      privacy: "full",
+      canEdit: true,
+      canCancel: true,
+      createdAt: "2026-08-01T10:00:00Z",
+      updatedAt: "2026-08-01T10:00:00Z",
+    };
+    expect(mapBookingSummary(document)).toEqual(summary);
+
+    expect(() => mapBookingSummary({ ...document, end: document.start })).toThrow("Booking end must follow start");
+  });
+});
+
+it("requests the booking read fields in a fixed order", () => {
+  expect(apiV2Fields(BOOKING_READ_FIELDS)).toBe(
+    "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+  );
+});

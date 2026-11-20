@@ -32,9 +32,10 @@ public final class ApiV2TimeSlotBookingResource {
 
   private static final Relationship<TimeSlotBooking> TARGET =
       ApiV2BookingConfigurationResource.instrumentTarget(
-          ApiV2TimeSlotBookingResource::targetReference,
-          "bookingConfiguration.target.type",
-          "bookingConfiguration.target.id");
+              ApiV2TimeSlotBookingResource::targetReference,
+              "bookingConfiguration.target.type",
+              "bookingConfiguration.target.id")
+          .readGuaranteed();
 
   public static final CollectionDescription<TimeSlotBooking> DESCRIPTION =
       description(AccessFunction.authenticated());
@@ -103,12 +104,14 @@ public final class ApiV2TimeSlotBookingResource {
                     "version",
                     CollectionFieldTypes.longNumber(),
                     TimeSlotBooking::getVersion)
+                .readGuaranteed()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "timezone",
                     "timeZone",
                     CollectionFieldTypes.text(255),
                     TimeSlotBooking::getVisibleTimeZone)
+                .readGuaranteed()
                 .allowNull()
                 .withQueryCapabilities(false, false),
             requesterRelationship(),
@@ -118,6 +121,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.enumeration(BookingEventKind.class),
                     TimeSlotBooking::getKind,
                     TimeSlotBooking::setKind)
+                .readGuaranteed()
                 .writeOnlyOn(WriteOperation.CREATE),
             Field.writable(
                     "start",
@@ -125,6 +129,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.instant(),
                     TimeSlotBooking::getStartTime,
                     TimeSlotBooking::setStartTime)
+                .readGuaranteed()
                 .required(),
             Field.writable(
                     "end",
@@ -132,6 +137,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.instant(),
                     TimeSlotBooking::getEndTime,
                     TimeSlotBooking::setEndTime)
+                .readGuaranteed()
                 .required(),
             Field.writable(
                     "state",
@@ -139,6 +145,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.enumeration(BookingState.class),
                     TimeSlotBooking::getState,
                     TimeSlotBooking::setState)
+                .readGuaranteed()
                 .writeOnlyOn(WriteOperation.UPDATE),
             Field.writable(
                     "purpose",
@@ -146,6 +153,7 @@ public final class ApiV2TimeSlotBookingResource {
                     CollectionFieldTypes.text(1000),
                     TimeSlotBooking::getVisiblePurpose,
                     TimeSlotBooking::setPurpose)
+                .readGuaranteed()
                 .allowNull()
                 .withQueryCapabilities(true, false),
             Field.readOnly(
@@ -153,6 +161,7 @@ public final class ApiV2TimeSlotBookingResource {
                     "visibleBookedBy",
                     CollectionFieldTypes.text(),
                     TimeSlotBooking::getVisibleBookedBy)
+                .readGuaranteed()
                 .allowNull()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
@@ -160,6 +169,7 @@ public final class ApiV2TimeSlotBookingResource {
                     "visibleCreatedBy",
                     CollectionFieldTypes.text(),
                     TimeSlotBooking::getVisibleCreatedBy)
+                .readGuaranteed()
                 .allowNull()
                 .withQueryCapabilities(false, false),
             Field.<TimeSlotBooking, String>readOnly(
@@ -167,32 +177,38 @@ public final class ApiV2TimeSlotBookingResource {
                     "privacy",
                     CollectionFieldTypes.text(),
                     booking -> booking.getPrivacy().name().toLowerCase(Locale.ROOT))
+                .readGuaranteed()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "canEdit", "canEdit", CollectionFieldTypes.bool(), TimeSlotBooking::isCanEdit)
+                .readGuaranteed()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "canCancel",
                     "canCancel",
                     CollectionFieldTypes.bool(),
                     TimeSlotBooking::isCanCancel)
+                .readGuaranteed()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "canViewConfiguration",
                     "canViewConfiguration",
                     CollectionFieldTypes.bool(),
                     TimeSlotBooking::isCanViewConfiguration)
+                .readGuaranteed()
                 .withQueryCapabilities(false, false),
             Field.readOnly(
-                "createdAt",
-                "createdAt",
-                CollectionFieldTypes.instant(),
-                TimeSlotBooking::getCreatedAt),
+                    "createdAt",
+                    "createdAt",
+                    CollectionFieldTypes.instant(),
+                    TimeSlotBooking::getCreatedAt)
+                .readGuaranteed(),
             Field.readOnly(
-                "updatedAt",
-                "updatedAt",
-                CollectionFieldTypes.instant(),
-                TimeSlotBooking::getUpdatedAt),
+                    "updatedAt",
+                    "updatedAt",
+                    CollectionFieldTypes.instant(),
+                    TimeSlotBooking::getUpdatedAt)
+                .readGuaranteed(),
             TARGET),
         "id",
         List.of(new Sort("start", true), new Sort("id", true)),
