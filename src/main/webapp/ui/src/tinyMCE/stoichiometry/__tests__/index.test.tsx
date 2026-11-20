@@ -2,7 +2,7 @@
 
 import { waitFor } from "@testing-library/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 
@@ -56,7 +56,7 @@ type EditorStub = {
       addMenuItem: ReturnType<typeof vi.fn>;
     };
   };
-  execCommand: ReturnType<typeof vi.fn>;
+  execCommand: Mock<(command: string, ui: boolean, value?: string) => void>;
   id: string;
   addCommand: ReturnType<typeof vi.fn>;
   setDirty: ReturnType<typeof vi.fn>;
@@ -170,7 +170,7 @@ function createEditorHarness({
 }: {
   editorDocument?: Document | null;
   initialSelectionNode: HTMLElement;
-  execCommand?: ReturnType<typeof vi.fn>;
+  execCommand?: EditorStub["execCommand"];
 }) {
   const commands = new Map<string, EditorCommand>();
   const buttons = new Map<string, ButtonConfig>();
@@ -406,6 +406,38 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(editorDocument.querySelector('[data-stoichiometry-table-only="true"]')).not.toBeNull();
   });
 
+  it("keeps focus in the open dialog when a created table is written into the editor", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const initialSelectionNode: HTMLElement = editorDocument.createElement("p");
+    editorDocument.body.appendChild(initialSelectionNode);
+    const editorFrame = document.createElement("button");
+    const dialogButton = document.createElement("button");
+    document.body.append(editorFrame, dialogButton);
+    const { editor, menuItems } = createEditorHarness({ editorDocument, initialSelectionNode });
+    const execCommand = editor.execCommand;
+    // Like TinyMCE, replacing content focuses the editor.
+    editor.execCommand = vi.fn((command: string, ui: boolean, value?: string) => {
+      execCommand(command, ui, value);
+      if (command === "mceReplaceContent") {
+        editorFrame.focus();
+      }
+    });
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    new StoichiometryPlugin(editor);
+    menuItems.get("stoichiometryMenuItem")?.onAction();
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+    });
+    dialogButton.focus();
+
+    getLastRenderedDialogProps()?.onTableCreated?.(9, 2);
+
+    expect(editor.execCommand).toHaveBeenCalledWith("mceReplaceContent", false, expect.any(String));
+    expect(dialogButton).toHaveFocus();
+  });
+
   it("reopens the selected stoichiometry table from the toolbar button instead of inserting a new one", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const registeredPlugins = registerTinymcePlugins();
@@ -444,6 +476,28 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]')).toHaveLength(1);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it("returns focus to the editor when the dialog closes", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const tableOnlyNode = createTableOnlyNode(editorDocument, {
+      id: "stoichiometry-1",
+      stoichiometry: { id: 12, revision: 4 },
+    });
+    const { buttons, editor } = createEditorHarness({ editorDocument, initialSelectionNode: tableOnlyNode });
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    new StoichiometryPlugin(editor);
+    buttons.get("stoichiometryInsertButton")?.onAction();
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+    });
+    expect(editor.focus).not.toHaveBeenCalled();
+
+    getLastRenderedDialogProps()?.onClose?.();
+
+    expect(editor.focus).toHaveBeenCalledTimes(1);
   });
 
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {
