@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.GroupDao;
@@ -42,14 +43,17 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   private @Autowired GroupDao groupDao;
   private @Autowired CommunityDao communityDao;
   private @Autowired SystemPropertyDao sysPropertDao;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   @Override
   public Community save(Community community) {
+    calendarRevocations.affectAll();
     return communityDao.save(community);
   }
 
   @Override
   public Community saveNewCommunity(Community community, User subject) {
+    calendarRevocations.affectAll();
     Validate.notEmpty(community.getAdmins(), "Community's admin list can't be empty");
     communityDao.save(community);
     if (community.getGroupIds() != null) {
@@ -84,6 +88,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
 
   @Override
   public Community addGroupToCommunity(Long grpId, Long communityId, User subject) {
+    calendarRevocations.affectAll();
     Community community = communityDao.get(communityId);
     if (!permUtils.isPermitted(community, PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
@@ -106,6 +111,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   }
 
   public void removeGroupFromCommunity(Group grp, Community existingCommunitty) {
+    calendarRevocations.affectAll();
     existingCommunitty.removeLabGroup(grp);
     communityDao.save(existingCommunitty);
   }
@@ -122,6 +128,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
 
   @Override
   public Community addAdminsToCommunity(Long[] adminIds, Long communityId) {
+    calendarRevocations.affectAll();
     Community comm = getWithAdmins(communityId);
     for (Long adminId : adminIds) {
       User admin = userDao.get(adminId);
@@ -143,6 +150,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   @Override
   public ServiceOperationResult<Community> removeAdminFromCommunity(
       Long adminId, Long communityId) {
+    calendarRevocations.affectAll();
     Community comm = getWithAdmins(communityId);
     User admin = userDao.get(adminId);
     boolean removed = comm.removeAdmin(admin);
@@ -158,6 +166,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
 
   @Override
   public ServiceOperationResult<Community> removeCommunity(Long commId) {
+    calendarRevocations.affectAll();
     Community comm = get(commId);
     if (Community.DEFAULT_COMMUNITY_ID.equals(commId)) {
       return new ServiceOperationResult<Community>(comm, false);

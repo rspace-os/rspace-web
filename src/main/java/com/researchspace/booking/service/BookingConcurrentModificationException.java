@@ -4,4 +4,10 @@ package com.researchspace.booking.service;
 public class BookingConcurrentModificationException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
+
+  public BookingConcurrentModificationException() {}
+
+  public BookingConcurrentModificationException(Throwable cause) {
+    super(cause);
+  }
 }

@@ -16,6 +16,7 @@ public record BookingConfigurationPermanentDeleteSnapshot(
     String targetName,
     BookingConfigurationState priorState,
     int bookingCount,
+    int subscriptionCount,
     Instant deletedAt) {
 
   @AuditTrailIdentifier
@@ -46,6 +47,11 @@ public record BookingConfigurationPermanentDeleteSnapshot(
   @AuditTrailProperty(name = "removedBookings")
   public int getBookingCount() {
     return bookingCount;
+  }
+
+  @AuditTrailProperty(name = "removedSubscriptions")
+  public int getSubscriptionCount() {
+    return subscriptionCount;
   }
 
   @AuditTrailProperty(name = "deletedAt")
