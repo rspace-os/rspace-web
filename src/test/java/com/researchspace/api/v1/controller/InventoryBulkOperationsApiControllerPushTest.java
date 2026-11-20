@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,12 +14,14 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler.InventoryBulkOperationException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,6 +44,7 @@ public class InventoryBulkOperationsApiControllerPushTest {
   @Mock private InstrumentsApiController instrumentsApiController;
   @Mock private SmartValidator mvcValidator;
   @Mock private ApiControllerAdvice apiControllerAdvice;
+  @Mock private UserManager userManager;
 
   @InjectMocks private InventoryBulkOperationsApiController controller;
 
@@ -108,5 +112,19 @@ public class InventoryBulkOperationsApiControllerPushTest {
     run(BulkApiOperationType.RESTORE);
 
     verify(instrumentsApiController, never()).pushExternalMetadataUpdates(any(), any());
+  }
+
+  @Test
+  public void aBulkTransferRunsAsTheSubjectAndRecordsTheOperateAsActor() throws BindException {
+    User sysadmin = new User("sysadmin");
+    when(userManager.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
+    ArgumentCaptor<InventoryBulkOperationConfig> config =
+        ArgumentCaptor.forClass(InventoryBulkOperationConfig.class);
+    when(bulkOperationManager.runBulkOperation(config.capture())).thenReturn(resultOf());
+
+    run(BulkApiOperationType.CHANGE_OWNER);
+
+    assertSame(user, config.getValue().getUser());
+    assertSame(sysadmin, config.getValue().getActor());
   }
 }
