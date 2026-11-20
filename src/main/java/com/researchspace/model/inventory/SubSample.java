@@ -175,7 +175,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
-    refreshActiveExtraFields();
+    invalidateActiveExtraFields();
   }
 
   /**
@@ -190,7 +190,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
-    refreshActiveBarcodes();
+    invalidateActiveBarcodes();
   }
 
   @OneToMany(mappedBy = "subSample", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -202,7 +202,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
   protected void setIdentifiers(List<DigitalObjectIdentifier> identifiers) {
     this.identifiers = identifiers;
-    refreshActiveIdentifiers();
+    invalidateActiveIdentifiers();
   }
 
   /**
@@ -216,7 +216,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
   protected void setFiles(List<InventoryFile> files) {
     this.files = files;
-    refreshActiveAttachedFiles();
+    invalidateActiveAttachedFiles();
   }
 
   /**

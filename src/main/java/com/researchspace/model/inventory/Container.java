@@ -209,7 +209,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
-    refreshActiveExtraFields();
+    invalidateActiveExtraFields();
   }
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -221,6 +221,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
+    invalidateActiveBarcodes();
   }
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -232,7 +233,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   protected void setIdentifiers(List<DigitalObjectIdentifier> identifiers) {
     this.identifiers = identifiers;
-    refreshActiveIdentifiers();
+    invalidateActiveIdentifiers();
   }
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -243,7 +244,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   protected void setFiles(List<InventoryFile> files) {
     this.files = files;
-    refreshActiveAttachedFiles();
+    invalidateActiveAttachedFiles();
   }
 
   @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})

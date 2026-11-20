@@ -344,7 +344,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             createSubSampleFromIncomingApiSample(subSampleName, apiSubSample, sample, user);
         newSubSamples.add(subSample);
       }
-      sample.setSubSamples(newSubSamples);
+      sample.replaceSubSamples(newSubSamples);
     }
     setWorkbenchAsParentForNewSubSamples(sample, user);
     sample.recalculateTotalQuantity();

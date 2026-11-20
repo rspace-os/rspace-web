@@ -375,8 +375,12 @@ public abstract class InventoryRecord {
     return activeExtraFields;
   }
 
-  public void refreshActiveExtraFields() {
+  protected void invalidateActiveExtraFields() {
     activeExtraFields = null;
+  }
+
+  public void refreshActiveExtraFields() {
+    invalidateActiveExtraFields();
     getActiveExtraFields();
   }
 
@@ -424,8 +428,12 @@ public abstract class InventoryRecord {
     return attachedFiles;
   }
 
-  public void refreshActiveAttachedFiles() {
+  protected void invalidateActiveAttachedFiles() {
     attachedFiles = null;
+  }
+
+  public void refreshActiveAttachedFiles() {
+    invalidateActiveAttachedFiles();
     getAttachedFiles();
   }
 
@@ -455,8 +463,12 @@ public abstract class InventoryRecord {
     return activeBarcodes;
   }
 
-  public void refreshActiveBarcodes() {
+  protected void invalidateActiveBarcodes() {
     activeBarcodes = null;
+  }
+
+  public void refreshActiveBarcodes() {
+    invalidateActiveBarcodes();
     getActiveBarcodes();
   }
 
@@ -486,8 +498,12 @@ public abstract class InventoryRecord {
     return activeIdentifiers;
   }
 
-  public void refreshActiveIdentifiers() {
+  protected void invalidateActiveIdentifiers() {
     activeIdentifiers = null;
+  }
+
+  public void refreshActiveIdentifiers() {
+    invalidateActiveIdentifiers();
     getActiveIdentifiers();
   }
 
