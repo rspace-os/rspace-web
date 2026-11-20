@@ -43,22 +43,36 @@ var tinymceDialogUtils = {
     const closeButton = iframe?.closest('.tox-dialog')
       ?.querySelector('.tox-dialog__header button.tox-button--naked');
 
-    if (closeButton) {
-      // TinyMCE 5 closes unconditionally after onCancel. Let the request handler decide when to close.
-      closeButton.addEventListener('click', (event) => {
-        event.stopImmediatePropagation();
-        onCancelRequest();
-      }, true);
-
-      // TinyMCE handles these keys directly, bypassing the click event.
-      closeButton.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          if (!event.repeat) closeButton.click();
-        }
-      }, true);
+    if (!closeButton) {
+      console.warn('tinymceDialogUtils.openUrlWithCancel: title-bar close button not found');
+      return api;
     }
+
+    // TinyMCE 5 closes unconditionally after onCancel. Let the request handler decide when to close.
+    closeButton.addEventListener('click', (event) => {
+      event.stopImmediatePropagation();
+      onCancelRequest();
+    }, true);
+
+    // Block Alloy's tap handler and let the browser generate the click.
+    closeButton.addEventListener('touchend', (event) => {
+      event.stopImmediatePropagation();
+    }, true);
+
+    // Stop TinyMCE's keyboard activation. Only Enter needs a synthetic click.
+    closeButton.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.stopImmediatePropagation();
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (!event.repeat) closeButton.click();
+      }
+    }, true);
+
+    // TinyMCE cancels Space keyup, which would suppress the browser's click.
+    closeButton.addEventListener('keyup', (event) => {
+      if (event.key === ' ') event.stopImmediatePropagation();
+    }, true);
     return api;
   },
 
