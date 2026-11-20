@@ -4,12 +4,14 @@ import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMM
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IMutablePropertyHolder;
@@ -132,6 +134,15 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   @Test
   public void testOnAccessDenied() throws Exception {
     assertFalse(filter.onAccessDenied(req, resp));
+  }
+
+  @Test
+  public void deniedSsoAjaxRequestSignalsSessionEnded() throws Exception {
+    req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
+    assertFalse(filter.onAccessDenied(req, resp));
+    assertEquals("ended", resp.getHeader("X-RSpace-Session"));
+    assertEquals("", resp.getContentAsString());
+    assertNull(resp.getRedirectedUrl());
   }
 
   @Test

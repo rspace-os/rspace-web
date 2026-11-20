@@ -147,7 +147,8 @@ public class StructuredDocumentControllerTest {
     final StructuredDocument sd = setUpStructuredDocument();
 
     // check error generated for an empty name.
-    AjaxReturnObject<String> rc2 = strucDocCtrller.rename(sd.getId(), "", mockPrincipal);
+    AjaxReturnObject<String> rc2 =
+        strucDocCtrller.rename(sd.getId(), "", user.getUsername(), mockPrincipal);
     // indicates failure
     assertNull(rc2.getData());
     assertNotNull(rc2.getErrorMsg());
@@ -161,7 +162,7 @@ public class StructuredDocumentControllerTest {
 
     // check error generated for a name with a '/'. RSPAC-295
     AjaxReturnObject<String> rc3 =
-        strucDocCtrller.rename(sd.getId(), "some / slash", mockPrincipal);
+        strucDocCtrller.rename(sd.getId(), "some / slash", user.getUsername(), mockPrincipal);
     // indicates failure
     assertNull(rc3.getData());
     assertNotNull(rc3.getErrorMsg());
@@ -178,7 +179,8 @@ public class StructuredDocumentControllerTest {
     when(baseRecordMgr.get(anyLong(), eq(user))).thenReturn(sd);
     when(recordMgr.renameRecord("newname", sd.getId(), user)).thenReturn(true);
 
-    AjaxReturnObject<String> rc = strucDocCtrller.rename(sd.getId(), "newname", mockPrincipal);
+    AjaxReturnObject<String> rc =
+        strucDocCtrller.rename(sd.getId(), "newname", user.getUsername(), mockPrincipal);
     // indicates success
     assertNotNull(rc.getData());
     verify(auditTrail).notify(eq(renameAuditEvent));
@@ -195,7 +197,8 @@ public class StructuredDocumentControllerTest {
     when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
     when(baseRecordMgr.get(anyLong(), eq(user))).thenReturn(sd);
     when(recordMgr.renameRecord("newname", sd.getId(), user)).thenReturn(false);
-    AjaxReturnObject<String> rc = strucDocCtrller.rename(sd.getId(), "newname", mockPrincipal);
+    AjaxReturnObject<String> rc =
+        strucDocCtrller.rename(sd.getId(), "newname", user.getUsername(), mockPrincipal);
     // indicates success
     assertNotNull(rc.getErrorMsg());
     verifyNoInteractions(auditTrail);
@@ -369,7 +372,8 @@ public class StructuredDocumentControllerTest {
     when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
     when(fieldManager.get(1L, user)).thenReturn(Optional.of(field));
 
-    AjaxReturnObject<Boolean> rc = strucDocCtrller.autosaveField("11", 1L, mockPrincipal);
+    AjaxReturnObject<Boolean> rc =
+        strucDocCtrller.autosaveField("11", 1L, user.getUsername(), mockPrincipal);
 
     assertEquals(
         List.of("Data [11] greater than maximum [10.0]"), rc.getErrorMsg().getErrorMessages());

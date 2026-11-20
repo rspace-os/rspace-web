@@ -147,7 +147,8 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     final int finalImgSize = fres.getData().getItems().getHits().intValue();
     assertEquals(initialImgSize + 1, finalImgSize);
 
-    strDocumentController.rename(id, "newname", new MockPrincipal(user.getUsername()));
+    strDocumentController.rename(
+        id, "newname", user.getUsername(), new MockPrincipal(user.getUsername()));
 
     AjaxReturnObject<GalleryData> fres2 =
         galleryController.getUploadedFiles(

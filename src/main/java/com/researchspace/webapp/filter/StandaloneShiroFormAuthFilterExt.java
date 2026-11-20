@@ -57,7 +57,9 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
                 + "]");
       }
       if (RequestUtil.isAjaxRequest(request)) {
-        ((HttpServletResponse) response).setStatus(HttpStatus.FORBIDDEN.value());
+        HttpServletResponse httpResponse = WebUtils.toHttp(response);
+        httpResponse.setStatus(HttpStatus.FORBIDDEN.value());
+        httpResponse.setHeader(RequestUtil.RSPACE_SESSION_HEADER, RequestUtil.RSPACE_SESSION_ENDED);
         String msg = messages.getMessage("errors.ajax.unauthenticated.refreshRequired");
         response.getWriter().append(msg);
       } else if (!isResponseAlreadyRedirected(response)) {
