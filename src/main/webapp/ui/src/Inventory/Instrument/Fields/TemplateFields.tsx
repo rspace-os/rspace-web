@@ -27,7 +27,7 @@ type TemplateFieldsArgs = {
 
 function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: TemplateFieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
+  const { renderedFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
     instrument,
     reportErrorState,
   );
@@ -292,7 +292,7 @@ function TemplateFields({ onErrorStateChange: reportErrorState, instrument }: Te
 
     return <Box key={field.name}>{t("instrument.templateFields.unknownFieldType", { type: field.type })}</Box>;
   };
-  const rendered = shownFields.map((field) => wrapField(field, renderField(field)));
+  const rendered = renderedFields.map((field) => wrapField(field, renderField(field)));
   return (
     <>
       {rendered}
