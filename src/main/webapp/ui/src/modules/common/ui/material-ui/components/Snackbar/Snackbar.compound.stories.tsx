@@ -6,6 +6,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Feedback/Snackbar/Composition",
+  tags: ["autodocs"],
   component: SnackbarContent,
   parameters: { a11y: { test: "error" } },
   argTypes: { message: { control: "text" } },
