@@ -1,16 +1,19 @@
 package com.researchspace.service.metadata;
 
+import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.UserExternalIdResolver;
@@ -22,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -30,8 +34,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * Composes metadata sidecars for an S3 filestore folder and writes them back to S3. Deliberately
- * not a {@code *Manager}: no DAO, only S3 writes plus an audit event, so it runs outside a DB
- * transaction. Phase 1: folder-level, current user as sole creator, DataCite the only format.
+ * not a {@code *Manager}: no DAO, so it runs outside a DB transaction; the Linked documents come
+ * from {@link NfsFieldLinkManager} in its own. Phase 1: folder-level, current user as sole creator,
+ * DataCite the only format.
  */
 @Service
 @AllArgsConstructor
@@ -49,13 +54,14 @@ public class S3SidecarFileService {
   private final AuditTrailService auditService;
   private final MessageSourceUtils messages;
   private final RoRService rorService;
+  private final NfsFieldLinkManager nfsFieldLinkManager;
 
   /** Composes and returns a sidecar for the folder without writing anything. */
   public GeneratedSidecarFile preview(Long filestoreId, String folderPath, User user) {
     NfsFileStore filestore = loadS3Filestore(filestoreId);
     aclChecker.assertCanRead(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
-    return compose(s3, prefixFor(filestore, folderPath), user);
+    return compose(s3, prefixFor(filestore, folderPath), user, filestore.getFileSystem());
   }
 
   /** Composes a sidecar, writes it into the folder, and records the action in the audit trail. */
@@ -64,7 +70,7 @@ public class S3SidecarFileService {
     aclChecker.assertCanWrite(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
     String prefix = prefixFor(filestore, folderPath);
-    GeneratedSidecarFile sidecarFile = compose(s3, prefix, user);
+    GeneratedSidecarFile sidecarFile = compose(s3, prefix, user, filestore.getFileSystem());
     writeToS3(s3, prefix, sidecarFile, user);
     String filestoreName = filestore.getFileSystem().getName();
     auditService.notify(
@@ -85,7 +91,9 @@ public class S3SidecarFileService {
     return normalizeKeyPrefix(filestore.getAbsolutePath(folderPath));
   }
 
-  private GeneratedSidecarFile compose(S3Utilities s3, String prefix, User user) {
+  private GeneratedSidecarFile compose(
+      S3Utilities s3, String prefix, User user, NfsFileSystem fileSystem) {
+    List<SidecarFileEntry> files = listFiles(s3, prefix);
     SidecarFileGenerationContext ctx =
         SidecarFileGenerationContext.builder()
             .user(user)
@@ -98,9 +106,28 @@ public class S3SidecarFileService {
             .rorId(rorService.getSystemRoRValue())
             .bucketName(s3.getBucketName())
             .folderPath(prefix)
-            .files(listFiles(s3, prefix))
+            .files(files)
+            .linkedDocumentUrls(linkedDocumentUrls(fileSystem, prefix, files, user))
             .build();
     return sidecarFileGenerator.generate(ctx);
+  }
+
+  /** Readable documents linking the folder itself or one of its files, once each, oldest first. */
+  private List<String> linkedDocumentUrls(
+      NfsFileSystem fileSystem, String prefix, List<SidecarFileEntry> files, User user) {
+    List<String> paths = new ArrayList<>(List.of(prefix));
+    files.forEach(file -> paths.add(file.key()));
+    List<String> globalIds =
+        nfsFieldLinkManager.getLinkedDocuments(fileSystem, paths, user).stream()
+            // documents the user cannot read come back as placeholders without a Global ID
+            .filter(info -> info.getOid() != null)
+            .map(info -> info.getOid().getIdString())
+            .toList();
+    if (globalIds.isEmpty()) {
+      return globalIds;
+    }
+    String serverUrl = propertyHolder.getServerUrl();
+    return globalIds.stream().map(id -> ArchiveUtils.getAbsoluteGlobalLink(id, serverUrl)).toList();
   }
 
   /** Files in the folder, skipping subfolders and any existing sidecar, with full S3 keys. */
