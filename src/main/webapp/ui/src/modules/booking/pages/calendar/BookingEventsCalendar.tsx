@@ -1,4 +1,4 @@
-import { CalendarCheck2Icon } from "lucide-react";
+import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -17,9 +17,9 @@ import type { useCalendarAvailabilityLayout } from "./availability/useCalendarAv
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
 import {
+  CalendarAppliedFilters,
   CalendarFilterIssue,
   type CalendarFilterIssueState,
-  CalendarTargetFilterChip,
   type CalendarTargetFilterState,
 } from "./CalendarFilterPanels";
 import { CalendarResourceSchedule, ResourceScheduleSkeleton } from "./CalendarResourceSchedule";
@@ -276,7 +276,7 @@ export function BookingEventsCalendar({
           renderRowsWhenEmpty
           renderRows={() => (
             <>
-              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
+              {targetFilter ? <CalendarAppliedFilters targetFilter={targetFilter} quickFilters={[]} /> : null}
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               <CalendarAvailabilityRows data={availabilityLayout} />
             </>
@@ -335,10 +335,12 @@ export function BookingEventsCalendar({
             eventFilterExpression !== null ||
             mineOnly ||
             myItemsOnly,
+          presentation: "menu",
           buttons: [
             {
               id: "mine",
               label: t("calendar.quickFilters.mine"),
+              description: t("calendar.quickFilters.mineDescription"),
               icon: <CalendarCheck2Icon aria-hidden="true" />,
               pressed: mineOnly,
               inExpression: true,
@@ -347,6 +349,8 @@ export function BookingEventsCalendar({
             {
               id: "my-items",
               label: t("calendar.quickFilters.myItems"),
+              description: t("calendar.quickFilters.myItemsDescription"),
+              icon: <PackageCheckIcon aria-hidden="true" />,
               pressed: myItemsOnly,
               inExpression: true,
               onClick: () => onMyItemsChange?.(!myItemsOnly),
@@ -377,7 +381,29 @@ export function BookingEventsCalendar({
           );
           return (
             <BookingEditorsContext.Provider value={editorContext}>
-              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
+              <CalendarAppliedFilters
+                targetFilter={targetFilter}
+                quickFilters={[
+                  ...(mineOnly
+                    ? [
+                        {
+                          id: "mine",
+                          label: t("calendar.quickFilters.mine"),
+                          onRemove: () => onMineChange?.(false),
+                        },
+                      ]
+                    : []),
+                  ...(myItemsOnly
+                    ? [
+                        {
+                          id: "my-items",
+                          label: t("calendar.quickFilters.myItems"),
+                          onRemove: () => onMyItemsChange?.(false),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
               {availabilityLayout && layout === "availability" ? (
                 <CalendarAvailabilityRows data={availabilityLayout} />
@@ -444,6 +470,7 @@ export function BookingEventsCalendar({
                   events={calendarEvents}
                   timezone={timezone}
                   today={todayValue}
+                  search={eventFiltering === false ? "" : eventFiltering.value.search}
                   isLoading={isLoading}
                 />
               )}

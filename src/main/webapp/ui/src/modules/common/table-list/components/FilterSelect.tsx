@@ -45,18 +45,13 @@ export function FilterSelect({
   const { t } = useTranslation<Namespace>("common");
   const [open, setOpen] = useState(false);
 
-  const byKey = new Map<string, OptionGroup & { items: FilterSelectOption[] }>();
-  for (const option of options) {
-    const key = option.groupKey ?? option.groupLabelKey ?? "";
-    const group = byKey.get(key) ?? {
-      key,
-      heading: option.groupLabel ?? (option.groupLabelKey === null ? null : t(option.groupLabelKey)),
-      items: [],
-    };
-    group.items.push(option);
-    byKey.set(key, group);
-  }
-  const groups: OptionGroup[] = [...byKey.values()];
+  const groups: OptionGroup[] = [
+    ...Map.groupBy(options, (option) => option.groupKey ?? option.groupLabelKey ?? option.groupLabel ?? ""),
+  ].map(([key, items]) => ({
+    key,
+    heading: items[0].groupLabel ?? (items[0].groupLabelKey === null ? null : t(items[0].groupLabelKey)),
+    items,
+  }));
 
   const selected = options.find((option) => option.value === value) ?? null;
 
