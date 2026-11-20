@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -97,7 +98,8 @@ class ResourceAccessControllerMVCIT {
             get("/api/v2/booking-configurations/" + configurationId)
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.ownerHealth").value(equalTo(Map.of())));
+        // Sysadmins may read ownerHealth, but nothing computes it yet, so it renders as null.
+        .andExpect(jsonPath("$.ownerHealth").value(nullValue()));
   }
 
   @Test
