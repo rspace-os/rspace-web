@@ -114,7 +114,7 @@ To give a field a rule:
 5. Save the form or template.
 
 If there is no field the rule could read yet, for example because the form has no other field
-that can be a source, the **Field** list shows a disabled "No other fields" item, followed by the
+that can be a source, the **Field** list shows a disabled "No available fields" item, followed by the
 unavailable fields and their reasons, and the same text appears below the list. Add a radio,
 choice, one-line text or number field first, or choose **Always**.
 
@@ -357,8 +357,9 @@ no rules, so they show every field.
   on a field that has disappeared. A field shown beside the one you are typing in is announced,
   and focus stays where it is.
 - Everything in **Display this field when…**, including choosing the field, condition and
-  options, works with the keyboard. Each field's move and delete buttons name the field they
-  act on.
+  options, works with the keyboard. The arrow keys also stop on the greyed-out fields in the
+  **Field** list, so screen readers read out why each one cannot be chosen. Each field's move
+  and delete buttons name the field they act on.
 
 ## Known limitations
 

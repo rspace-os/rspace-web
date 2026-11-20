@@ -412,11 +412,15 @@ renders `DisplayConditionsNote` once above the fields while editing.
   the fields that depend on this one. The Field list shows every other field
   in order; `RuleGraph.candidatesFor` says why a rule cannot read one (an
   unsupported type, a value hidden like a password, or a loop), and such a
-  field is a disabled item with that reason in its accessible name. Hosts
+  field is a disabled item with that reason in its accessible name. The menu
+  sets `disabledItemsFocusable`, so the arrow keys reach those items and screen
+  readers announce the reason; MUI ignores a click, Enter or Space on them.
+  `sourcesFor` is cached per field, but `candidatesFor` builds its list on
+  every call, so call it only while the menu is open. Hosts
   pass the type's label from their type menu as `RuleEditorField.typeLabel`,
   and `hidesValue` for a password field. The "Only when…" radio is always
   enabled: with no field the condition could read, the Field list starts with
-  a disabled "No other fields" item and the same text is its helper.
+  a disabled "No available fields" item and the same text is its helper.
 - It reports a rule through `onChange` only once the condition is complete and
   the shared validator accepts it. An unfinished or rejected condition stays a
   draft inside the component, with inline errors on the missing part, and the
