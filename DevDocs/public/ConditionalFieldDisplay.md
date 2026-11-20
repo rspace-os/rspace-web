@@ -51,7 +51,8 @@ Text:
   answer that is only spaces counts as no value, so **has no value** is true and **has a value**
   is false.
 - Upper and lower case do not matter: `LOT-7` is `lot-7`. This is plain lowercasing, not full
-  case folding, so `STRASSE` does not equal `straße`.
+  case folding, so `STRASSE` does not equal `straße`. Greek final sigma (ς) is treated as sigma
+  (σ).
 - Accented letters match however they were typed or pasted: an "é" typed as one character
   equals an "e" followed by a combining accent.
 - **is not** is also true when the field has no value. **contains** is false when the field has
@@ -242,20 +243,25 @@ Use this part for the Inventory templates article.
   saved even while hidden.
 - **Mandatory applies only while shown.**
   - Inventory: a hidden mandatory field never blocks saving. A shown, empty mandatory field does,
-    as before. For samples the Save button is disabled; for instruments the check is made when
-    you save. One exception, also as before: an instrument's Landing page may be left blank when
-    you create the instrument, even if the template makes it mandatory.
+    as before: for samples and instruments the Save button is disabled, with the reason beside
+    it. One exception, also as before: an instrument's Landing page may be left blank when you
+    create the instrument, even if the template makes it mandatory. When you update an
+    instrument, a mandatory field that was already empty when the instrument was loaded may stay
+    empty, unless a rule hid it then and it is now shown.
   - Instrument **Save** now checks the instrument's template fields in the browser before
     sending anything, as sample Save already did, with the same checks the server makes:
     mandatory fields that are shown, and the format of dates, URIs and other values. Before,
     the server found these problems only after Save.
   - Samples and instruments: a hidden field that holds a value the server would reject, such
-    as an impossible date, stops **Save**. The message names the field: "{field} is hidden but
-    holds a value that cannot be saved. Show it again by changing the answer it depends on,
-    then correct or clear it."
+    as an impossible date, stops **Save**. The message names the field and, usually, the field
+    whose answer shows it: 'The field "{field}" is hidden but holds a value that cannot be
+    saved. Change "{source}" to show it, then correct or clear it.' When no such field can be
+    named, the message is: "{field} is hidden but holds a value that cannot be saved. Show it
+    again by changing the answer it depends on, then correct or clear it." What you typed is
+    kept, so it is there to correct when the field is shown again.
   - ELN: a hidden mandatory field does not stop the document from being signed and does not
-    raise the workspace warning. A shown, empty mandatory field still disables **Sign**, as
-    before. Saving a document is never blocked by mandatory fields.
+    raise the workspace warning. A shown, empty mandatory field still makes **Sign**
+    unavailable (the button is not shown), as before. Saving a document is never blocked by mandatory fields.
 - In view mode, hidden fields are not shown. This applies to ELN document view, notebooks and
   public (published) documents and notebooks, and to Inventory sample, subsample and instrument
   views. A subsample shows its sample's template fields read-only, with the same rules applied.

@@ -25,7 +25,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 ### Inventory Features
 
 - RSDEV-1706, RSDEV-1707 conditional field display in sample and instrument templates, with the same rules, per-field "Display this field when…" editor and behaviour as ELN Forms. Applied when creating, editing and viewing samples, subsamples and instruments, and in the Operations wizard. Plain text and number fields can be sources as well as radio and choice fields. A template whose display condition is unfinished or invalid cannot be saved until it is completed or set to Always
-- RSDEV-1707 instrument Save now checks the instrument's template fields in the browser, as sample Save does, with the same checks as the server (shown mandatory fields, dates, URIs and links). A hidden field holding a value that cannot be saved stops Save on samples and instruments, with a message naming the field so the user can show it again and correct it
+- RSDEV-1707 instrument Save now checks the instrument's template fields in the browser, as sample Save does, with the same checks as the server (shown mandatory fields, dates, URIs and links). A hidden field holding a value that cannot be saved stops Save on samples and instruments, with a message naming the field and, usually, the field whose answer shows it; the typed value is kept so the user can show the field again and correct it
 - RSDEV-1706 the server now treats a blank value sent for a field whose stored value is also blank as no change. Before, an instrument with a blank mandatory Landing page could not be saved from the UI, which sends an empty value for it
 
 ### API
