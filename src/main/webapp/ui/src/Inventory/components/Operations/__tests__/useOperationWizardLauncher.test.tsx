@@ -54,7 +54,7 @@ const gate = { available: true };
 vi.mock("../../ContextMenu/useProcessAvailable", () => ({ useProcessAvailable: () => gate.available }));
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
-  default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) }, uiStore: { addAlert } }),
+  default: () => ({ uiStore: { addAlert } }),
 }));
 
 function Workflow({

@@ -18,9 +18,8 @@ import type { RecordDetails } from "../definitions/Record";
 import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
-import { categoryOfUnit } from "../definitions/Units";
+import { getUnit, type UnitCategory } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
-import type { UnitCategory } from "../stores/UnitStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
@@ -488,15 +487,9 @@ export default class TemplateModel extends SampleModel implements Template {
    * is always null on a template: it would fall back to unit id 3 and report every template as
    * "volume", so a mass or count template would offer volume units. A template declares its unit as
    * `defaultUnitId` instead.
-   *
-   * The static unit table is consulted before the unit store because the store is seeded from
-   * localStorage and holds nothing until GET /units has resolved once; the store still answers for
-   * molarity and concentration, which the static table does not enumerate.
    */
   get quantityCategory(): UnitCategory {
-    const known = categoryOfUnit(this.defaultUnitId);
-    if (known) return known;
-    const unit = getRootStore().unitStore.getUnit(this.defaultUnitId);
+    const unit = getUnit(this.defaultUnitId);
     if (!unit) throw new Error("Could not get unit category");
     return unit.category;
   }

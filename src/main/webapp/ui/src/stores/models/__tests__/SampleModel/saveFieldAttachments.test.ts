@@ -3,11 +3,7 @@ import InvApiService from "../../../../common/InvApiService";
 import { makeMockSample } from "./mocking";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

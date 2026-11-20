@@ -1,5 +1,5 @@
 import { formatList } from "@/modules/common/i18n/listFormat";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
+import type { UnitCategory } from "@/stores/definitions/Units";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
 // concrete templateId like "pick", but is presented as a banner with no radio selected so the user

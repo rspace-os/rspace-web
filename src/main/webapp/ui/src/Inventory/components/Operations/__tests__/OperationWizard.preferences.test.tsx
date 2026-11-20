@@ -49,7 +49,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
       getTemplate: () => Promise.resolve({ id: 5, name: "T5", quantityCategory: "volume", deleted: false, fields: [] }),
     },
     uiStore: { addAlert: vi.fn() },
-    unitStore: { getUnit: () => ({ label: "ml" }) },
   }),
 }));
 vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));

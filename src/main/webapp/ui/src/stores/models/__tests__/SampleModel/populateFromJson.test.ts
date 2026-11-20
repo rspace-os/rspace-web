@@ -7,11 +7,7 @@ import { sampleAttrs } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {

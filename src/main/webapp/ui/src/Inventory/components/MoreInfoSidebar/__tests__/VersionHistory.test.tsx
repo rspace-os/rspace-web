@@ -19,11 +19,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   },
 }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 
 const revisionsResponse = (

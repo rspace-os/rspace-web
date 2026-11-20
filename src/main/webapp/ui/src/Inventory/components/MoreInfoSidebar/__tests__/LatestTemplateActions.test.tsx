@@ -2,7 +2,6 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 
 const mockRootStore = {
   uiStore: { confirm: vi.fn(() => Promise.resolve(true)), addAlert: vi.fn() },
-  unitStore: { getUnit: () => ({ label: "ml" }) },
 };
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => mockRootStore,

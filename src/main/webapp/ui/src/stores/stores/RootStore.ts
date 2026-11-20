@@ -8,12 +8,10 @@ import { registerRootStore } from "./rootStoreRegistry";
 import SearchStore from "./SearchStore";
 import TrackingStore from "./TrackingStore";
 import UiStore from "./UiStore";
-import UnitStore from "./UnitStore";
 
 export type StoreContainer = {
   authStore: AuthStore;
   uiStore: UiStore;
-  unitStore: UnitStore;
   searchStore: SearchStore;
   peopleStore: PeopleStore;
   moveStore: MoveStore;
@@ -27,7 +25,6 @@ class RootStore {
   stores: StoreContainer;
   authStore: AuthStore;
   uiStore: UiStore;
-  unitStore: UnitStore;
   searchStore: SearchStore;
   peopleStore: PeopleStore;
   moveStore: MoveStore;
@@ -40,7 +37,6 @@ class RootStore {
     this.uiStore = new UiStore(this);
     this.authStore = new AuthStore(this);
     this.searchStore = new SearchStore(this);
-    this.unitStore = new UnitStore(this);
     this.peopleStore = new PeopleStore(this);
     this.moveStore = new MoveStore(this);
     this.trackingStore = new TrackingStore(this);
@@ -52,7 +48,6 @@ class RootStore {
       uiStore: this.uiStore,
       authStore: this.authStore,
       searchStore: this.searchStore,
-      unitStore: this.unitStore,
       peopleStore: this.peopleStore,
       moveStore: this.moveStore,
       trackingStore: this.trackingStore,

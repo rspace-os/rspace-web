@@ -1,4 +1,4 @@
-import type { UnitCategory } from "../stores/UnitStore";
+import type { UnitCategory } from "@/stores/definitions/Units";
 import type { AdjustableTableRowOptions } from "./Tables";
 
 /**
