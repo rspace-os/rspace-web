@@ -3,7 +3,13 @@ package com.researchspace.model.audittrail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Persists audit data using a string format to Log4j. */
+/**
+ * Persists audit data using a string format to Log4j.
+ *
+ * <p>Format changes, including the Log4j timestamp prefix, must update AuditLogLineFormat,
+ * LogLineParser and ApiV2AuditStrictSearch together. AuditLogLineFormatTest feeds common samples to
+ * both readers; see DevDocs/DeveloperNotes/Logging.md for their policy differences.
+ */
 public class Log4jHistoryDAOImpl implements HistoryDAO {
 
   public static final Logger log = LoggerFactory.getLogger(AuditTrailService.class);

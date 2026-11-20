@@ -29,6 +29,7 @@ public record ApiV2ResourceSpec<T, ID>(
     CollectionMutationLimits mutationLimits,
     List<RuntimeCollectionFields<T>> runtimeFields,
     Optional<ResourceAccessSpec<T, ID>> resourceAccess,
+    Optional<ResourceAuditPolicy<T, ID>> audit,
     MutationPolicy mutationPolicy,
     Optional<ScalarReader> scalarReader) {
 
@@ -56,6 +57,7 @@ public record ApiV2ResourceSpec<T, ID>(
     Objects.requireNonNull(mutationLimits, "Collection mutation limits");
     runtimeFields = List.copyOf(Objects.requireNonNull(runtimeFields, "Runtime collection fields"));
     resourceAccess = Objects.requireNonNull(resourceAccess, "Resource access spec");
+    audit = Objects.requireNonNull(audit, "Audit policy");
     Set<String> namespaces = new LinkedHashSet<>();
     for (RuntimeCollectionFields<T> provider : runtimeFields) {
       if (provider.namespace().isEmpty() || !namespaces.add(provider.namespace())) {
@@ -103,6 +105,7 @@ public record ApiV2ResourceSpec<T, ID>(
     private CollectionMutationLimits mutationLimits = CollectionMutationLimits.DEFAULT;
     private List<RuntimeCollectionFields<T>> runtimeFields = List.of();
     private Optional<ResourceAccessSpec<T, ID>> resourceAccess = Optional.empty();
+    private Optional<ResourceAuditPolicy<T, ID>> audit = Optional.empty();
     private MutationPolicy mutationPolicy = MutationPolicy.DEFAULT;
     private Optional<ScalarReader> scalarReader = Optional.empty();
 
@@ -159,6 +162,11 @@ public record ApiV2ResourceSpec<T, ID>(
       return this;
     }
 
+    public Builder<T, ID> audit(ResourceAuditPolicy<T, ID> policy) {
+      audit = Optional.of(policy);
+      return this;
+    }
+
     public Builder<T, ID> mutationPolicy(MutationPolicy policy) {
       mutationPolicy = policy;
       return this;
@@ -194,6 +202,7 @@ public record ApiV2ResourceSpec<T, ID>(
           mutationLimits,
           runtimeFields,
           resourceAccess,
+          audit,
           mutationPolicy,
           scalarReader);
     }
