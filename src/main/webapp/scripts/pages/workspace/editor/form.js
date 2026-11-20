@@ -1,5 +1,49 @@
-var fieldId = -1;
 var LISTFORMS_BY_MODFICATIONDATE_DESC = "/workspace/editor/form/list?orderBy=modificationDate&sortOrder=DESC&userFormsOnly=true";
+
+/* Set before the page navigates on purpose, so leaving does not ask about unsaved fields. */
+var leavingFormEditor = false;
+
+/*
+ * Set while a Save or Update has saved the fields but not yet the form, and kept if the form step
+ * fails: the fields are no longer dirty, but leaving would still lose the save the user asked for.
+ */
+var formSaveIncomplete = false;
+
+/* Set while the access dialog's publish request runs, so closing the dialog does not cancel it. */
+var publishRequestRunning = false;
+
+/*
+ * The revision of the field list that Publish saved or checked before opening the access dialog.
+ * The publish request sends it, so the server refuses to publish fields saved elsewhere meanwhile.
+ */
+var publishFieldsRevision = null;
+
+/*
+ * Ends a Publish. The fields were held read-only from the field save until now, so no edit is made
+ * that the save did not include; if the form was not published, editing resumes.
+ */
+function finishPublish(published) {
+  publishRequestRunning = false;
+  if (!published && window.formFieldEditor) {
+    window.formFieldEditor.setReadOnly(false);
+  }
+  endToolbarAction();
+}
+
+/* One toolbar action (Save, Update, Publish, Revert) at a time; a second click while one runs is ignored. */
+var toolbarActionRunning = false;
+
+function startToolbarAction() {
+  if (toolbarActionRunning) {
+    return false;
+  }
+  toolbarActionRunning = true;
+  return true;
+}
+
+function endToolbarAction() {
+  toolbarActionRunning = false;
+}
 
 function initChangeFormIconDialog() {
   $('#changeFormIconDialog').dialog({
@@ -33,8 +77,6 @@ function initChangeFormIconDialog() {
 $(document).ready(function () {
 
   initChangeFormIconDialog();
-  // basic document is read only
-  disableInputs();
 
   $('#changeFormIconButton').click(function () {
     $('#changeFormIconDialog').dialog('open');
@@ -53,14 +95,21 @@ $(document).ready(function () {
     autoOpen: false,
     width: 350,
     title: RS.msg("legacyjs.workspace.form.publishShareDialogTitle"),
+    // closing the dialog any way but OK cancels publishing
+    close: function () {
+      if (!publishRequestRunning) {
+        finishPublish(false);
+      }
+    },
     buttons: {
       [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
         $(this).dialog('close');
       },
       [RS.msg("legacyjs.workspace.form.okButton")]: function () {
+        publishRequestRunning = true;
         $(this).dialog('close');
         var $form = $('#rsFormSharingForm');
-        var data = $form.serialize();
+        var data = $form.serialize() + '&' + $.param({ fieldsRevision: publishFieldsRevision });
         $.ajax({
           url: $form.attr('action'),
           type: $form.attr('method'),
@@ -71,8 +120,18 @@ $(document).ready(function () {
             $('#publish').hide();
             $('#unpublish').show();
             stylePublishStatus(response.data);
+            if (window.formFieldEditor) {
+              window.formFieldEditor.markPublished();
+            }
+            finishPublish(true);
           },
-          error: function (xhr, err) { alert(RS.msg("legacyjs.workspace.form.genericError")); }
+          error: function (xhr, err) {
+            finishPublish(false);
+            if (reportFieldsConflict(xhr)) {
+              return;
+            }
+            alert(RS.msg("legacyjs.workspace.form.genericError"));
+          }
         });
       }
     },
@@ -108,17 +167,9 @@ $(document).ready(function () {
 
   if (editable != 'EDIT_MODE') {
     $('#save').hide();
-    $('#add').hide();
     $('#unpublish').hide();
-    $('.editButton').hide();
-    $('.deleteButton').hide();
-    initNonEditableTinyMCE();
   } else {
     $('#tmp_tag').prop('disabled', false);
-    $('#field-loading').hide();
-    $('#add').bootstrapButton().click(function () {
-      addField();
-    });
 
     $('#save').bootstrapButton().click(function () {
       saveForm();
@@ -131,112 +182,91 @@ $(document).ready(function () {
     $('#abandon').click(function () {
       abandonUpdateForm();
     });
-    $('#changeOrder').click(function () {
-      changeOrder();
-    });
 
-    $("#field-editor").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: 500,
-      width: 550,
-      modal: true,
-      buttons: {
-        [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
-          $(this).dialog('close');
-        },
-        [RS.msg("legacyjs.workspace.form.saveButton")]: function () {
-          $("#errorSummary").hide();
-          $("#errorSummary").empty();
-          if (fieldFormValid()) {
-            var idFieldForm = $("#fieldFormId").val();
-            if (idFieldForm !== "") {
-              saveEditedField(idFieldForm);
-              $('#fieldEditorSelect').show();
-            } else {
-              createField();
-            }
-          }
-        }
-      },
-      open: function () {
-        $("#errorSummary").hide();
-        $("#errorSummary").empty();
-      },
-      close: function () {
-        fieldId = -1;
-        $('.form_field').remove();
-        $("#fieldEditorSelect").val('');
-        $('#fieldEditorSelect').attr('disabled', false);
-        $('#field-loading').hide();
-      }
-    });
-
-    $('#fieldEditorSelect').change(function () {
-      $("#field-editor-form td").removeClass('field-error');
-      var fieldType = $("#fieldEditorSelect").val();
-      loadFieldForm();
-    });
-
-    initNonEditableTinyMCE();
-    initSoftTinyMCE();
-    loadDateFields();
-    loadTimeFields();
     setUpPublishButtons();
 
-    $(window).bind('beforeunload', function () {
-      if (wasAutosaved) {
-        autosave(true);
-        return RS.msg("legacyjs.workspace.documentEdit.exitWithoutSavingConfirm");
+    // The form field editor (formFieldEditor bundle) reports its field count, so Publish is offered
+    // once the form has a field, saved or not: publishing saves the fields first.
+    window.addEventListener('formFieldEditor:change', function (e) {
+      if ($('#unpublish').is(':visible')) {
+        return;
+      }
+      $('#publish').toggle(e.detail.fieldCount > 0);
+    });
+
+    $(window).on('beforeunload', function (e) {
+      var fieldsDirty = window.formFieldEditor && window.formFieldEditor.isDirty();
+      if (!leavingFormEditor && (formSaveIncomplete || fieldsDirty)) {
+        var message = RS.msg("legacyjs.workspace.documentEdit.exitWithoutSavingConfirm");
+        e.preventDefault();
+        e.originalEvent.returnValue = message;
+        return message;
       }
     });
 
-    $(window).unload(function () {
-      if (wasAutosaved) {
-        unlockform();
+    // release the edit lock whenever the page is left, however it is left
+    $(window).on('pagehide', function () {
+      unlockform();
+    });
+
+    // A page restored from the back-forward cache released its lock when it was left, so load it
+    // again: that takes the lock, or shows that someone else is editing.
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        window.location.reload();
       }
     });
   }
-
-  // Events handler related to reorder fields functionality
-  $(document).on('change', 'input[name=fields]:radio', function (e) {
-    //Fist of all, we hide previous order buttons.
-    $(".orderButtons").css('display', 'none');
-    // Select the field id and display the buttons related to the field.
-    var id = $(this).attr('id').split("_")[1];
-    $("#buttonBlock_" + id).css('display', 'inline-block');
-  });
-
-  $(document).on('click', '.fieldMover', function (e) {
-    e.stopPropagation();
-
-    var action = $(this).attr('id').split("_")[0];
-    var row = $(this).parents("tr:first");
-    var tbody = $(this).parents("tbody");
-
-    if (action === "up") {
-      row.insertBefore(row.prev());
-    } else if (action === "down") {
-      row.insertAfter(row.next());
-    } else if (action === "top") {
-      tbody.prepend(row);
-    } else if (action === "bottom") {
-      tbody.append(row);
-    }
-  });
-
 });
 
+/*
+ * Releases the edit lock this page acquired, by its token: a page left earlier (another tab, or this
+ * page before a reload) holds another token, so it can never release this page's lock.
+ */
 function unlockform() {
-  $.ajaxSetup({
-    async: false
+  if (!editLockToken) {
+    // this page took no lock (a new form, or another user is editing)
+    return;
+  }
+  var url = createURL('/workspace/editor/form/unlockform');
+  var data = new URLSearchParams({ id: recordId, lockToken: editLockToken });
+  if (navigator.sendBeacon && navigator.sendBeacon(url, data)) {
+    return;
+  }
+  fetch(url, { method: 'POST', body: data, keepalive: true });
+}
+
+/*
+ * Saves the form field editor's changes; with none, the editor checks that its fields are still
+ * the server's, so a page left open cannot update or publish fields its author never saw.
+ * Resolves with the revision of the field list the server then holds, which Update and Publish
+ * send so that the server refuses them if the fields are saved elsewhere meanwhile; null when the
+ * save or check failed, in which case the editor stays open and shows why. If the editor is not
+ * there, or its fields did not load, nothing can be checked, so null too, and an alert says so.
+ */
+function saveFieldEditor() {
+  var fieldEditor = window.formFieldEditor;
+  if (!fieldEditor) {
+    apprise(RS.msg("legacyjs.workspace.form.fieldEditorUnavailable"));
+    return Promise.resolve(null);
+  }
+  return fieldEditor.save().then(function (revision) {
+    return revision;
+  }, function (error) {
+    if (error && error.name === 'FormFieldEditorUnavailableError') {
+      apprise(RS.msg("legacyjs.workspace.form.fieldEditorUnavailable"));
+    }
+    return null;
   });
-  var data = {
-    id: recordId
-  };
-  $.post(createURL('/workspace/editor/form/unlockform'), data,
-    function () {
-    });
+}
+
+/* A refusal because the fields were saved elsewhere since this page saved or checked them. */
+function reportFieldsConflict(jqxhr) {
+  if (jqxhr.status !== 409 || !window.formFieldEditor) {
+    return false;
+  }
+  window.formFieldEditor.reportConflict();
+  return true;
 }
 
 /**
@@ -248,16 +278,38 @@ function setUpPublishButtons() {
   $('.publishAction').click(function (e) {
     e.preventDefault();
     var $button = $(this);
-    var publishing = $button.text() === 'Publish';
+    // by id: the label is translated
+    var publishing = $button.attr('id') === 'publish';
     var data = {
       publish: publishing,
       templateId: recordId
     };
     if (publishing) {
-      //get the access control dialog
-      $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
-        $('#publishShareDlgContent').html(data);
-        $('#publishShareDlg').dialog('open');
+      if (!startToolbarAction()) {
+        return;
+      }
+      // Read-only from the field save until publishing ends: an edit made meanwhile would miss the
+      // saved fields and then be locked in by the published editor.
+      if (window.formFieldEditor) {
+        window.formFieldEditor.setReadOnly(true);
+      }
+      RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
+      saveFieldEditor().then(function (revision) {
+        RS.unblockPage();
+        if (revision === null) {
+          finishPublish(false);
+          return;
+        }
+        publishFieldsRevision = revision;
+        //get the access control dialog; closing it ends publishing
+        var jqxhr = $.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId=" + recordId), function (data) {
+          $('#publishShareDlgContent').html(data);
+          $('#publishShareDlg').dialog('open');
+        });
+        jqxhr.fail(function () {
+          finishPublish(false);
+          alert(RS.msg("legacyjs.workspace.form.genericError"));
+        });
       });
     } else {
       // unpublishing
@@ -282,698 +334,6 @@ function stylePublishStatus(statusString) {
   }
 }
 
-function disableInputs() {
-  $("#structuredDocument :radio").attr('disabled', true);
-  $("#structuredDocument :checkbox[class!='alwaysActive']").attr('disabled', 'disabled');
-  $("#structuredDocument :text").attr('disabled', 'disabled');
-  $("#structuredDocument :password").attr('disabled', 'disabled');
-}
-
-function initNonEditableTinyMCE() {
-  initReadOnlyTinyMCE($('textarea.tinymce'));
-}
-
-function initReadOnlyTinyMCE(textareas) {
-  var textareas$ = $(textareas);
-  if (textareas$.length === 0) {
-    return;
-  }
-  $(function () {
-    textareas$.tinymce({
-      selector: "",
-      theme: "silver",
-      width: "800px",
-      plugins: [
-        "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
-        "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
-      ],
-      toolbar: [
-        "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-      ],
-      elementpath: false,
-      menubar: false,
-      branding: false,
-      readonly: 1,
-    });
-  });
-}
-
-function appendCreatedFieldRow(data) {
-  var jqxhr = $.get(createURL("/workspace/editor/form/ajax/getFieldRow"), {
-    fieldId: data.id
-  }, function (rowHtml) {
-    var row$ = $(rowHtml).filter("tr.field");
-    if (row$.length === 0) {
-      row$ = $(rowHtml).find("tr.field");
-    }
-    if (row$.length === 0) {
-      apprise(RS.msg("legacyjs.workspace.form.genericError"));
-      return;
-    }
-    $("#field_" + data.id).remove();
-    var tableBody$ = $('#structuredDocument > tbody').first();
-    if (tableBody$.length === 0) {
-      tableBody$ = $('#structuredDocument');
-    }
-    tableBody$.append(row$);
-    disableInputs();
-    if (row$.attr("name") == "date") {
-      loadDatePicker(row$);
-    } else if (row$.attr("name") == "time") {
-      loadTimePicker(row$);
-    }
-    initReadOnlyTinyMCE(row$.find("textarea.tinymce"));
-  });
-
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function initSoftTinyMCE() {
-  $('textarea.tempform').tinymce({
-    selector: "",
-    theme: "silver",
-    width: "800px",
-    plugins: [
-      "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
-      "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
-    ],
-    toolbar: [
-      "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-    ],
-    elementpath: false,
-    menubar: true,
-    branding: false,
-    relative_urls: false,
-    setup: function (ed) {
-      ed.on('keypress', function () {
-        ed.isNotDirty = false;
-      });
-    }
-  });
-}
-
-function initSpecificTinyMCE(id) {
-  $(function () {
-    var objt = '#textfield_' + id;
-
-    $(objt).tinymce({
-      theme: "silver",
-      width: "800px",
-      plugins: [
-        "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
-        "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
-      ],
-      toolbar: [
-        "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-      ],
-      elementpath: false,
-      menubar: true,
-      branding: false,
-      setup: function (ed) {
-        ed.on('keypress', function () {
-          ed.isNotDirty = false;
-        });
-      }
-    });
-  });
-}
-
-function addField() {
-  $('#fieldEditorSelect').show();
-  $('#field-editor').dialog('open');
-  return false;
-}
-
-/**
- * Called when selection changes on the Field select box after clicking 'Add'
- */
-function loadFieldForm() {
-  // remove previous errors
-  $("#errorSummary").hide();
-  $("#errorSummary").empty();
-  // get selected option
-  var name = $('#fieldEditorSelect').val();
-  $('.form_field').remove();
-  if (name !== "") {
-    // disablw hile loading
-    $('#fieldEditorSelect').attr('disabled', true);
-    // loading imahe
-    $('#field-loading').show();
-    $('#field-editor').dialog('open');
-
-    $.get(createURL("/workspace/editor/form/ajax/getField"), {
-      name: name, // the field type - number, string etc
-      recordId: recordId
-    }, function (data) {
-      $('#field-loading').hide();
-      if (fieldId == -1) {
-        $('#fieldEditorSelect').attr('disabled', false);
-      }
-      $("#field-editor-form").append(data);
-      fieldFormValidation(name);
-    });
-  }
-}
-
-function editField(id) {
-  $("#errorSummary").hide();
-  $("#errorSummary").empty();
-  $('.form_field').remove();
-  $('#fieldEditorSelect').hide();
-  $('#field-loading').show();
-  $('#field-editor').dialog('open');
-
-  $.get(createURL("/workspace/editor/form/ajax/getFieldById"), {
-    fieldId: id
-  }, function (data) {
-    $('#field-loading').hide();
-    $("#field-editor-form").append(data);
-    var name = $("#fieldFormType").val();
-
-    // Date needs to be initialize on a different way if you are editing.
-    if (name == "Date") {
-      name = "DateEdit";
-    }
-    fieldFormValidation(name);
-  });
-}
-
-/*
- * Every field form is unique so to prevent major code bloat we only load the
- * javascript we need for which ever form is selected.
- */
-function fieldFormValidation(field) {
-
-  if (field == "Text") {
-    initSpecificTinyMCE();
-  }
-
-  if (field == "Date") {
-    // $(".datepickerAddNew").datepicker();
-    var datef = "dd/mm/yy";
-
-    $('.datepickerAddNew').datepicker({
-
-      beforeShow: function () {
-        setTimeout(function () {
-          $('.ui-datepicker').css('z-index', 99999999999999);
-        }, 0);
-      }
-    });
-    $('.datepickerAddNew').datepicker('option', {
-      dateFormat: datef
-    });
-    $("#field_dateformat").change(function () {
-      // jquery format is very different from the date formatter format
-      // the following code makes date act like the one used in the forms
-      var dateformat = $(this).val();
-      if (dateformat == "dd/MM/yyyy") {
-        dateformat = "dd/mm/yy";
-      }
-      if (dateformat == "dd MM yyyy") {
-        dateformat = "dd mm yy";
-      }
-      if (dateformat == "dd-MM-yyyy") {
-        dateformat = "dd-mm-yy";
-      }
-      if (dateformat == "dd MMM yyyy") {
-        dateformat = "dd M yy";
-      }
-      if (dateformat == "yyyy/MM/dd") {
-        dateformat = "yy/mm/dd";
-      }
-      if (dateformat == "yyyy MM dd") {
-        dateformat = "yy mm dd";
-      }
-      if (dateformat == "yyyy-MM-dd") {
-        dateformat = "yy-mm-dd";
-      }
-      if (dateformat == "yyyy MMM dd") {
-        dateformat = "yy M dd";
-      }
-      $('.datepickerAddNew').datepicker('option', {
-        dateFormat: dateformat
-      });
-    });
-  }
-
-  if (field == "DateEdit") {
-    // $(".datepickerAddNew").datepicker();
-    var dateformat = $("#field_dateformat").val();
-    if (dateformat == "dd/MM/yyyy") {
-      dateformat = "dd/mm/yy";
-    }
-    if (dateformat == "dd MM yyyy") {
-      dateformat = "dd mm yy";
-    }
-    if (dateformat == "dd-MM-yyyy") {
-      dateformat = "dd-mm-yy";
-    }
-    if (dateformat == "dd MMM yyyy") {
-      dateformat = "dd M yy";
-    }
-    if (dateformat == "yyyy/MM/dd") {
-      dateformat = "yy/mm/dd";
-    }
-    if (dateformat == "yyyy MM dd") {
-      dateformat = "yy mm dd";
-    }
-    if (dateformat == "yyyy-MM-dd") {
-      dateformat = "yy-mm-dd";
-    }
-    if (dateformat == "yyyy MMM dd") {
-      dateformat = "yy M dd";
-    }
-    $('.datepickerAddNew').datepicker({
-      dateFormat: dateformat
-    });
-
-    $("#field_dateformat").change(function () {
-      // jquery format is very different from the date formatter format
-      // the following code makes date act like the one used in the forms
-      var dateformat = $(this).val();
-      if (dateformat == "dd/MM/yyyy") {
-        dateformat = "dd/mm/yy";
-      }
-      if (dateformat == "dd MM yyyy") {
-        dateformat = "dd mm yy";
-      }
-      if (dateformat == "dd-MM-yyyy") {
-        dateformat = "dd-mm-yy";
-      }
-      if (dateformat == "dd MMM yyyy") {
-        dateformat = "dd M yy";
-      }
-      if (dateformat == "yyyy/MM/dd") {
-        dateformat = "yy/mm/dd";
-      }
-      if (dateformat == "yyyy MM dd") {
-        dateformat = "yy mm dd";
-      }
-      if (dateformat == "yyyy-MM-dd") {
-        dateformat = "yy-mm-dd";
-      }
-      if (dateformat == "yyyy MMM dd") {
-        dateformat = "yy M dd";
-      }
-      $('.datepickerAddNew').datepicker('option', {
-        dateFormat: dateformat
-      });
-    });
-  } else if (field == "Time") {
-    $(".timePickerForm").timepicker("destroy");
-    $("#field_defaulttime.timePickerForm").timepicker({
-      ampm: true,
-      minDate: new Date(1970, 01, 02, 00, 00),
-      maxDate: new Date(1970, 01, 02, 11, 59),
-    });
-    $("#field_minvalue.timePickerForm").timepicker({
-      ampm: true,
-      minDate: new Date(1970, 01, 02, 00, 00),
-      maxDate: new Date(1970, 01, 02, 11, 59),
-    });
-    $("#field_maxvalue.timePickerForm").timepicker({
-      ampm: true,
-      minDate: new Date(1970, 01, 02, 00, 00),
-      maxDate: new Date(1970, 01, 02, 11, 59),
-    });
-    //
-    $("#field_timeFormat").change(function () {
-      var timeformat = $(this).val();
-
-      var date, hours, min;
-
-      if (timeformat == "hh:mm a") {
-
-        $(".timePickerForm").timepicker("destroy");
-        $(".timePickerForm").timepicker({
-          ampm: true
-        });
-
-        date = $("#field_defaulttime.timePickerForm")
-          .datetimepicker('getDate');
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_defaulttime.timePickerForm").val(
-            $.datepicker.formatTime('hh:mm tt', {
-              hour: hours,
-              minute: min
-            }, { ampm: true }));
-        }
-        date = $("#field_minvalue.timePickerForm")
-          .datetimepicker('getDate');
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_minvalue.timePickerForm").val(
-            $.datepicker.formatTime('hh:mm tt', {
-              hour: hours,
-              minute: min
-            }, { ampm: true }));
-        }
-        date = $("#field_maxvalue.timePickerForm")
-          .datetimepicker('getDate');
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_maxvalue.timePickerForm").val(
-            $.datepicker.formatTime('hh:mm tt', {
-              hour: hours,
-              minute: min
-            }, { ampm: true }));
-        }
-
-      } else {
-        $(".timePickerForm").timepicker("destroy");
-        $(".timePickerForm").timepicker({
-          ampm: false
-        });
-
-        date = $("#field_defaulttime.timePickerForm")
-          .datetimepicker('getDate');
-
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_defaulttime.timePickerForm").val(
-            $.datepicker.formatTime('h:mm', {
-              hour: hours,
-              minute: min
-            }, { ampm: false }));
-        }
-        date = $("#field_minvalue.timePickerForm")
-          .datetimepicker('getDate');
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_minvalue.timePickerForm").val(
-            $.datepicker.formatTime('h:mm', {
-              hour: hours,
-              minute: min
-            }, { ampm: false }));
-        }
-        date = $("#field_maxvalue.timePickerForm")
-          .datetimepicker('getDate');
-        if (date !== null) {
-          hours = date.getHours();
-          min = date.getMinutes();
-          $("#field_maxvalue.timePickerForm").val(
-            $.datepicker.formatTime('h:mm', {
-              hour: hours,
-              minute: min
-            }, { ampm: false }));
-        }
-      }
-    });
-  } else if (field == "Radio") {
-    const existingChoiceNames = [];
-    const populateExistingChoiceNames = () => {
-      if (existingChoiceNames.length === 0) {
-        const displayedChoices = $('#radioFields li input');
-        if (displayedChoices && displayedChoices.length > 0) {
-          displayedChoices.each(index => {
-            const text = displayedChoices[index].value;
-            if(!existingChoiceNames.includes(text)) {
-              existingChoiceNames.push(displayedChoices[index].value);
-            }
-          });
-        }
-      }
-    };
-    const delete_radio_id_prefix = 'del_radio_';
-    const bindDeleteToNewlyAddedOptions = () => {
-      $('.deleteRadio').click(function () {
-        populateExistingChoiceNames();
-        const myName = $(this)[0].id.replace(delete_radio_id_prefix,'');
-        const index = existingChoiceNames.indexOf(myName);
-        if(index>-1) {
-          $(this).parent().remove();
-          existingChoiceNames.splice(index, 1);
-        }
-      });
-    }
-    bindDeleteToNewlyAddedOptions();
-
-    const addValueToExistingChoicesIfIsNewAndNonEmptyValue = (valueText) => {
-      if (valueText) {
-        if(!existingChoiceNames.includes(valueText)) {
-          existingChoiceNames.push(valueText);
-          return true;
-        }
-      }
-      return false;
-    }
-    const addToExistingChoicesAndDisplayValueIfIsNewAndNonEmptyValue = (valueText) => {
-      if(addValueToExistingChoicesIfIsNewAndNonEmptyValue(valueText)){
-        addDisplayOptionForRadio(valueText);
-      }
-    }
-
-    let  fileList;
-    $("#radioFields").sortable();
-    $('#uploadRadioButton').click(function () {
-      populateExistingChoiceNames();
-      const file = fileList[0];
-      const fileSize = file.size;
-      const fileKb = fileSize / 1024;
-      if (fileKb >= 100) {
-        apprise(RS.msg("legacyjs.workspace.form.fileTooLarge"));
-        return;
-      }
-      const reader = new FileReader();
-      let text;
-      reader.addEventListener("load", () => {
-        const displayText = parseRadioOptions(reader.result, {
-          isCSV: file.type === "text/csv"
-        });
-        if(checkSizeAllowsInsertionOfNewTerms(displayText)){
-          if($('#alphabeticSortChoice')[0].checked){
-            displayText.forEach(valueText => {
-              addValueToExistingChoicesIfIsNewAndNonEmptyValue(valueText);
-            });
-            reorderValuesAlphabetically();
-          } else {
-            displayText.forEach(valueText => {
-              addToExistingChoicesAndDisplayValueIfIsNewAndNonEmptyValue(valueText);
-            });
-          }
-        }
-
-        $("#radioFields").sortable();
-        $('#uploadRadioChooser').val('');
-        $('#uploadRadioButton').attr('disabled', 'disabled');
-        bindDeleteToNewlyAddedOptions();
-      }, false);
-      if (file) {
-        reader.readAsText(file);
-      }
-    });
-    const checkSizeAllowsInsertionOfNewTerms = (newText) =>{
-      populateExistingChoiceNames();
-      const merged = [...newText,...existingChoiceNames];
-      const uniqueMerged = new Set(merged);
-      if (uniqueMerged.size >= 2000) {
-        apprise(RS.msg("legacyjs.workspace.form.picklistTooLarge"));
-        return false;
-      }
-      return true;
-    }
-    $('#alphabeticSortChoice').change(function (event) {
-      if(event.target.checked){
-        reorderValuesAlphabetically();
-      }
-    });
-    const reorderValuesAlphabetically = () => {
-      populateExistingChoiceNames();
-      existingChoiceNames.sort((a,b)=> a.localeCompare(b));
-      $("#radioFields").empty();
-      existingChoiceNames.forEach(a=>addDisplayOptionForRadio(a));
-      bindDeleteToNewlyAddedOptions();
-      $("#radioFields").sortable();
-    }
-
-    $('#uploadRadioChooser').change(function (event) {
-      fileList = event.target.files;
-      $('#uploadRadioButton').attr('disabled', false);
-    });
-
-    $('#addRadio').click(function () {
-      var radioName = $("#addRadioName").val();
-      if ("" !== radioName) {
-        const radiosArr = radioName.split(",");
-        populateExistingChoiceNames();
-        if(checkSizeAllowsInsertionOfNewTerms(radiosArr)) {
-          radiosArr.forEach(valueText =>
-              addToExistingChoicesAndDisplayValueIfIsNewAndNonEmptyValue(valueText.trim()));
-          if ($('#alphabeticSortChoice')[0].checked) {
-            reorderValuesAlphabetically();
-          }
-        }
-
-        $("#addRadioName").val("");
-        $("#addRadioName").focus();
-        bindDeleteToNewlyAddedOptions();
-        $("#radioFields").sortable();
-      }
-    });
-
-    const addDisplayOptionForRadio = (radioName) => {
-      if(radioName) {
-        $('#radioFields').append("<li style='white-space: normal;cursor: pointer'><input type='radio' name='fieldDefaultRadio' value='" +
-            radioName + "'> <input type='hidden' name='fieldRadios' value='" + RS.escapeHtml(radioName) + "'> " +
-            RS.escapeHtml(radioName) + " <a href='#' id='"+delete_radio_id_prefix+RS.escapeHtml(radioName)+"' " +
-            "style='font-weight:bold;' class='deleteRadio'>" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
-      }
-    }
-  } else if (field == "Choice") {
-    $('.deleteChoice').click(function () {
-      $(this).parent().remove();
-    });
-    $("#choiceFields").sortable();
-    $('#addChoice').click(function () {
-      var choiceName = $("#addChoiceName").val();
-      if ("" !== choiceName) {
-        $('#choiceFields').append("<li><input type=\"checkbox\" name=\"fieldSelectedChoices\" value=\"" +
-          choiceName + "\"> <input type=\"hidden\" name=\"fieldChoices\" value=\"" + RS.escapeHtml(choiceName) + "\"> " +
-          RS.escapeHtml(choiceName) + " <a href=\"#\" style=\"font-weight:bold;\" class=\"deleteChoice\">" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
-        $("#addChoiceName").val("");
-        $("#addChoiceName").focus();
-        $('.deleteChoice').click(function () {
-          $(this).parent().remove();
-        });
-        $("#choiceFields").sortable();
-      }
-    });
-  } else if (field == "Number") {
-    validateNumberField($("#field_minvalue"));
-    validateNumberField($("#field_maxvalue"));
-    validateNumberField($("#field_defaultvalue"));
-
-    $("#field_minvalue, #field_maxvalue, #field_defaultvalue").change(
-      function () {
-        validateNumberField(this);
-      });
-
-    $("#field_decimalplaces").change(function () {
-      var decimalPlaces = Number($(this).val());
-      if (!isNaN(decimalPlaces)) {
-        $(this).val(decimalPlaces.toFixed(0));
-      } else {
-        // if its not a number set to 0
-        $(this).val(0);
-      }
-      validateNumberField($("#field_minvalue"));
-      validateNumberField($("#field_maxvalue"));
-      validateNumberField($("#field_defaultvalue"));
-    });
-  }
-}
-
-function validateNumberField(field) {
-  var decimalPlaces = Number($("#field_decimalplaces").val());
-  var fieldValue = Number($(field).val());
-  if ($(field).val() !== "" && !isNaN(fieldValue)) {
-    $(field).val(fieldValue.toFixed(decimalPlaces));
-  } else {
-    // if its not a number, make it empty
-    $(field).val("");
-  }
-}
-
-function createField() {
-  $('#field-loading').show();
-  var fieldType = $("#fieldEditorSelect").val();
-
-  if (fieldType == "Number") {
-    addNumberField();
-  } else if (fieldType == "String") {
-    addStringField();
-  } else if (fieldType == "Text") {
-    addTextField();
-  } else if (fieldType == "Radio") {
-    addRadioField();
-  } else if (fieldType == "Choice") {
-    addChoiceField();
-  } else if (fieldType == "Date") {
-    addDateField();
-  } else if (fieldType == "Time") {
-    addTimeField();
-  }
-  // show publish button if hidden
-  $('#publish').show();
-}
-
-function saveEditedField(fieldId) {
-  $('#field-loading').show();
-  // It needs to know what kind of field is been editing
-  var fieldType = $("#fieldFormType").val();
-  if (fieldType == "Number") {
-    saveEditedNumberField(fieldId);
-  } else if (fieldType == "String") {
-    saveEditedStringField(fieldId);
-  } else if (fieldType == "Text") {
-    saveEditedTextField(fieldId);
-  } else if (fieldType == "Radio") {
-    saveEditedRadioField(fieldId);
-  } else if (fieldType == "Choice") {
-    saveEditedChoiceField(fieldId);
-  } else if (fieldType == "Date") {
-    saveEditedDateField(fieldId);
-  } else if (fieldType == "Time") {
-    saveEditedTimeField(fieldId);
-  }
-}
-
-/*
- * Collects data from form and returns it as a Json version of a
- *  NumberFieldDTO
- */
-function collectDataFromNumberEditor() {
-  var defaultV = $("#field_defaultvalue").val() || "";
-  var minV = $("#field_minvalue").val();
-  var maxV = $("#field_maxvalue").val();
-  var decimalP = $("#field_decimalplaces").val();
-  var fieldName = $("#field_name").val();
-  var isMandatory = $("#mandatoryCheckbox").prop('checked');
-  var dataField = {
-    defaultNumberValue: defaultV,
-    minNumberValue: minV,
-    maxNumberValue: maxV,
-    decimalPlaces: decimalP,
-    name: fieldName,
-    mandatory: isMandatory,
-  };
-  return dataField;
-}
-
-function addNumberField() {
-  var numberEditorData = collectDataFromNumberEditor();
-  numberEditorData.parentId = recordId;
-  var data = JSON.stringify(numberEditorData);
-
-  var jqxhr = jQuery.ajax({
-    url: createURL("/workspace/editor/form/ajax/createNumberField"), dataType: 'json',
-    data: data, type: "POST", contentType: "application/json;", success: function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addNumberCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }
-  });
-
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
 function getValidationErrorString(errorList) {
   var rc = "";
   for (var i = 0; i < errorList.errorMessages.length; i++) {
@@ -985,1163 +345,129 @@ function getValidationErrorString(errorList) {
   return rc;
 }
 
-function addNumberCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedNumberField(fieldId) {
-  var numberEditorData = collectDataFromNumberEditor();
-  numberEditorData.parentId = fieldId;
-  var data = JSON.stringify(numberEditorData);
-
-
-  var jqxhr = jQuery.ajax({
-    url: createURL("/workspace/editor/form/ajax/saveEditedNumberField"),
-    dataType: 'json', data: data, type: "POST", contentType: "application/json;",
-    success: function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editNumberCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }
-  });
-
-  jqxhr.fail(function () {
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
 /*
- * Updates number field when its template properties have been edited.
- */
-function editNumberCode(data) {
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  $(fieldCode).find("input[name='fieldData']").val(data.defaultNumberValue);
-  $(fieldCode).find("input[name='lastValue']").val(data.defaultNumberValue);
-  $(fieldCode).find("input[name='minValue']").val(data.minNumberValue);
-  $(fieldCode).find("input[name='maxValue']").val(data.maxNumberValue);
-  $(fieldCode).find("input[name='decimalPlaces']").val(data.decimalPlaces);
-}
-
-/*
- * Gets the data from the string-field editor configuration dialog
- */
-function collectDataFromStringEditor() {
-  var defaultV = $("#field_defaultvaluestring").val();
-  var ifPasswordV = $("input[name='fieldIfPassword']:checked").val();
-  var fieldName = $("#field_name").val();
-  if (ifPasswordV === undefined) {
-    ifPasswordV = "no";
-  }
-  const isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    defaultValue: defaultV,
-    ifPassword: ifPasswordV,
-    name: fieldName,
-    fieldId: fieldId,
-    mandatory: isMandatory,
-  };
-  return dataField;
-}
-
-function addStringField() {
-  var dataField = collectDataFromStringEditor();
-  dataField.recordId = recordId;
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createStringField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addStringCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      // refreshFields();
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function addStringCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function editStringCode(data) {
-
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  var password = $(fieldCode).find("input[name='isPassword']").val();
-
-  if (password != data.ifPassword) {
-
-    var passwordInput = $(fieldCode).find("input[name='fieldData']");
-    $(passwordInput).hide();
-    var old_id = $(passwordInput).attr("id");
-    $(passwordInput).attr("id", "Password_hidden");
-    var new_input = document.createElement("input");
-    new_input.setAttribute("id", old_id); // Assign old hidden input ID to
-    // new input
-    new_input.setAttribute("name", "fieldData");
-    if (data.ifPassword) {
-      new_input.setAttribute("type", "password"); // Set proper type
-    } else {
-      new_input.setAttribute("type", "text"); // Set proper type
-    }
-
-    new_input.value = data.defaultStringValue; // Transfer the value to new input
-    $("#Password_hidden").after(new_input);
-    $("#Password_hidden").remove();
-
-  }
-  $(fieldCode).find("input[name='fieldData']").val(data.defaultStringValue);
-  $(fieldCode).find("input[name='isPassword']").val(data.ifPassword);
-}
-
-function saveEditedStringField(fieldId) {
-
-  var dataField = collectDataFromStringEditor();
-  dataField.fieldId = fieldId;
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedStringField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editStringCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function collectDataFromTextEditor() {
-
-  var defaultV = $("#field_defaultvaluestring").val();
-  var fieldName = $("#field_name").val();
-  var isMandatory = $("#mandatoryCheckbox").prop('checked');
-  var dataField = {
-    defaultValue: defaultV,
-    name: fieldName,
-    mandatory: isMandatory,
-  };
-  return dataField;
-}
-
-function addTextField() {
-
-  var dataField = collectDataFromTextEditor();
-  dataField.recordId = recordId;
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createTextField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addTextCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function addTextCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedTextField(fieldId) {
-
-  var dataField = collectDataFromTextEditor();
-  dataField.fieldId = fieldId;
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedTextField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editTextCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function editTextCode(data) {
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  var textArea$ = $(fieldCode).find("textarea[name='fieldRtfData']");
-  textArea$.html(data.defaultValue);
-  tinyMCE.activeEditor.isNotDirty = false;
-}
-
-function addRadioField() {
-  var radioValues = $("input[name='fieldRadios']");
-  radioValues = RS._serializeWithNoEscapes(radioValues);
-  var radioSelected = $("input[name=fieldDefaultRadio]:checked").val();
-  if (radioSelected === undefined) {
-    radioSelected = "";
-  }
-  const showAsPickList = $("#radioAsPickListChoice").is(":checked");
-  const sortAlphabetic = $("#alphabeticSortChoice").is(":checked");
-  var fieldName = $("#field_name").val();
-  const isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    radioValues: radioValues,
-    radioSelected: radioSelected,
-    name: fieldName,
-    recordId: recordId,
-    showAsPickList:showAsPickList,
-    sortAlphabetic:sortAlphabetic,
-    mandatory: isMandatory,
-  };
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createRadioField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addRadioCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-
-      // refreshFields();
-      $("#field-editor").dialog('close');
-      updateUIWithRadioOrPicklistAfterSave(data.data);
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function addRadioCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedRadioField(fieldId) {
-
-  var radioValues = $("input[name='fieldRadios']");
-  radioValues = RS._serializeWithNoEscapes(radioValues);
-  var radioSelected = $("input[name=fieldDefaultRadio]:checked").val();
-  if (radioSelected === undefined) {
-    radioSelected = "";
-  }
-  var fieldName = $("#field_name").val();
-  const showAsPickList = $("#radioAsPickListChoice").is(":checked");
-  const sortAlphabetic = $("#alphabeticSortChoice").is(":checked");
-  const isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    radioValues: radioValues,
-    radioSelected: radioSelected,
-    name: fieldName,
-    fieldId: fieldId,
-    showAsPickList:showAsPickList,
-    sortAlphabetic:sortAlphabetic,
-    mandatory: isMandatory,
-  };
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedRadioField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editRadioCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-const updateUIWithRadioOrPicklistAfterSave = (data) => {
-  const fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.showAsPickList ? RS.msg("legacyjs.workspace.form.fieldNamePicklist", data.name) : RS.msg("legacyjs.workspace.form.fieldNameRadio", data.name));
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-}
-
-function editRadioCode(data) {
-  const fieldCode = $("#field_" + data.id);
-  updateUIWithRadioOrPicklistAfterSave(data);
-
-  var ulRadio = $(fieldCode).find("#radioFieldsFinal");
-  $(ulRadio).hide();
-  $(ulRadio).attr("id", "ulRadio_hidden");
-
-  var newCode = "<ul id=\"radioFieldsFinal\">";
-
-  $.each(data.radioOptionAsList, function (i, val) {
-    if (val == data.defaultRadioOption) {
-      newCode = newCode + "<li><input id=\"" + data.id + "\"  disabled='disabled' type=\"radio\" name=\"fieldDefaultRadioFinal_" +
-        data.id + "\"   value=\"" + val + "\" checked> <input type=\"hidden\" name=\"fieldRadioFinal_" + data.id + "\" value=\"" +
-        val + "\">" + RS.escapeHtml(val) + "</li>";
-    } else {
-      newCode = newCode + "<li><input id=\"" + data.id + "\" disabled='disabled' type=\"radio\" name=\"fieldDefaultRadioFinal_" +
-        data.id + "\"   value=\"" + val + "\"> <input type=\"hidden\" name=\"fieldRadioFinal_" + data.id + "\" value=\"" +
-        val + "\">" + RS.escapeHtml(val) + "</li>";
-    }
-  });
-
-  newCode = newCode + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/> <input type=\"hidden\" name=\"fieldId\" value=\"" +
-    data.id + "\"/></ul>";
-
-  $("#ulRadio_hidden").after(newCode);
-  $("#ulRadio_hidden").remove();
-}
-
-
-function collectChoiceFieldEditFormData() {
-  var choiceValues$ = $("input[name='fieldChoices']");
-  var choiceString = RS._serializeWithNoEscapes(choiceValues$);
-  var multipleChoice = $("input[name=fieldMultipleAllowed]:checked").val();
-  var selectedValues = $("input[name='fieldSelectedChoices']:checked");
-  if (selectedValues === undefined) {
-    selectedValues = "";
-  } else {
-    selectedValues = RS._serializeWithNoEscapes(selectedValues);
-  }
-
-  if (multipleChoice === undefined) {
-    multipleChoice = "no";
-  }
-  var fieldName = $("#field_name").val();
-  const isMandatory = $("#mandatoryCheckbox").prop('checked');
-  var dataField = {
-    choiceValues: choiceString,
-    multipleChoice: multipleChoice,
-    selectedValues: selectedValues,
-    name: fieldName,
-    mandatory: isMandatory,
-  };
-  return dataField;
-}
-
-function addChoiceField() {
-  var dataField = collectChoiceFieldEditFormData();
-  dataField.recordId = recordId;
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createChoiceField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addChoiceCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      // refreshFields();
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function addChoiceCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedChoiceField(fieldId) {
-  var dataField = collectChoiceFieldEditFormData();
-  dataField.fieldId = fieldId;
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedChoiceField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editChoiceCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function editChoiceCode(data) {
-
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  var ulChoice = $(fieldCode).find("#choiceFieldsFinal");
-  $(ulChoice).hide();
-  $(ulChoice).attr("id", "ulChoice_hidden");
-
-  var newCode = "<ul id=\"choiceFieldsFinal\">";
-  var isSelected = false;
-  $.each(data.choiceOptionAsList, function (i, val) {
-    isSelected = false;
-    $.each(data.defaultChoiceOptionAsList, function (j, selected) {
-      if (val == selected) {
-        isSelected = true;
-      }
-    });
-
-    if (isSelected) {
-      newCode = newCode + "<li><input id=\"" + data.id + "\"   type=\"checkbox\" name=\"fieldSelectedChoicesFinal_" +
-        data.id + "\"  value=\"" + val + "\" checked><input type=\"hidden\" name=\"fieldChoicesFinal_" +
-        data.id + "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    } else {
-      newCode = newCode + "<li><input id=\"" + data.id + "\"  type=\"checkbox\" name=\"fieldSelectedChoicesFinal_" +
-        data.id + "\"  value=\"" + val + "\"><input type=\"hidden\" name=\"fieldChoicesFinal_" + data.id +
-        "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    }
-  });
-
-  newCode = newCode + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/> <input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/> </ul>";
-  $("#ulChoice_hidden").after(newCode);
-  $("#ulChoice_hidden").remove();
-}
-
-function collectDataFromDateFieldEditor() {
-  var defaultV = $("#field_defaultdate").val();
-  var minV = $("#field_minvalue").val();
-  var maxV = $("#field_maxvalue").val();
-  var dateFormat = $("#field_dateformat").val();
-  var fieldName = $("#field_name").val();
-  var isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    defaultValue: defaultV,
-    minValue: minV,
-    maxValue: maxV,
-    dateFormat: dateFormat,
-    name: fieldName,
-    mandatory: isMandatory,
-  };
-  return dataField;
-}
-
-function addDateField() {
-  var dataField = collectDataFromDateFieldEditor();
-  dataField.recordId = recordId;
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createDateField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addDateCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      // refreshFields();
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
-  });
-}
-
-function addDateCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedDateField(fieldId) {
-  var dataField = collectDataFromDateFieldEditor();
-  dataField.fieldId = fieldId;
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedDateField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editDateCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function editDateCode(data) {
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  $(fieldCode).find("input[name='dateField_" + data.id + "']").val(data.defaultDateAsString);
-  $(fieldCode).find("input[name='format_" + data.id + "']").val(data.format);
-  $(fieldCode).find("input[name='minValue']").val(data.minValue);
-  $(fieldCode).find("input[name='maxValue']").val(data.maxValue);
-  $("#" + data.id + ".datepicker").datepicker("destroy");
-  loadDatePicker(fieldCode);
-}
-
-/*
- * Called when user clicks on 'Save' after creating a time field in Sructured
- * Document Editor
- */
-function addTimeField() {
-
-  var defaultV = $("#field_defaulttime").val();
-  var minV = $("#field_minvalue").val();
-  var maxV = $("#field_maxvalue").val();
-  var timeFormat = $("#field_timeFormat").val();
-  var fieldName = $("#field_name").val();
-  const isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    defaultValue: defaultV,
-    minValue: minV,
-    maxValue: maxV,
-    timeFormat: timeFormat,
-    name: fieldName,
-    recordId: recordId,
-    mandatory: isMandatory,
-  };
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/createTimeField"),
-    dataField, function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        addTimeCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      // refreshFields();
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function addTimeCode(data) {
-  appendCreatedFieldRow(data);
-}
-
-function saveEditedTimeField(fieldId) {
-
-  var defaultV = $("#field_defaulttime").val();
-  var minV = $("#field_minvalue").val();
-  var maxV = $("#field_maxvalue").val();
-  var timeFormat = $("#field_timeFormat").val();
-  var fieldName = $("#field_name").val();
-  var isMandatory = $("#mandatoryCheckbox").prop('checked');
-
-  var dataField = {
-    defaultValue: defaultV,
-    minValue: minV,
-    maxValue: maxV,
-    timeFormat: timeFormat,
-    name: fieldName,
-    fieldId: fieldId,
-    mandatory: isMandatory,
-  };
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveEditedTimeField"), dataField,
-    function (data) {
-      $('#field-loading').hide();
-      if (data.data !== null) {
-        editTimeCode(data.data);
-      } else if (data.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      }
-      $("#field-editor").dialog('close');
-    }, "json");
-  jqxhr.fail(function () {
-    $('#field-loading').hide();
-    $("#field-editor").dialog('close');
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
-  });
-}
-
-function editTimeCode(data) {
-
-  var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.name);
-  $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  $(fieldCode).find("input[name='dateField_" + data.id + "']").val(data.defaultTime);
-  $(fieldCode).find("input[name='format_" + data.id + "']").val(data.timeFormat);
-  $(fieldCode).find("input[name='minTime']").val(data.minTime);
-  $(fieldCode).find("input[name='maxTime']").val(data.maxTime);
-  $(fieldCode).find("input[name='minHour']").val(data.minHour);
-  $(fieldCode).find("input[name='maxHour']").val(data.maxHour);
-  $(fieldCode).find("input[name='minMinutes']").val(data.minMinutes);
-  $(fieldCode).find("input[name='maxMinutes']").val(data.maxMinutes);
-  $("#" + data.id + ".timepicker").timepicker("destroy");
-  loadTimePicker(fieldCode);
-  var date = $("#" + data.id + ".timepicker").datetimepicker('getDate');
-  var hours;
-  var min;
-  if (date !== null) {
-    hours = date.getHours();
-    min = date.getMinutes();
-    if (data.timeFormat == "hh:mm a") {
-      $("#" + data.id + ".timepicker").val(
-        $.datepicker.formatTime('hh:mm tt', {
-          hour: hours,
-          minute: min
-        }, {
-            ampm: true
-          }));
-    } else {
-      $("#" + data.id + ".timepicker").val(
-        $.datepicker.formatTime('h:mm', {
-          hour: hours,
-          minute: min
-        }, {
-            ampm: false
-          }));
-    }
-  }
-}
-
-/**
- * Function classed when a field form is submitted
- */
-function fieldFormValid(field) {
-  $("#field-editor-form td").removeClass('field-error'); // clear highlighted field
-  var fieldType = $("#fieldEditorSelect").val();
-  var isValid = true;
-  // if it is editing a field, fieldType needs to be taken from the hidden
-  // input from the form.
-
-  var fieldId = $("#fieldFormId").val();
-  if (fieldId !== "") {
-    fieldType = $("#fieldFormType").val();
-  }
-
-  if (fieldType === "") {
-    isValid = addError("#fieldEditorSelect", RS.msg("legacyjs.workspace.form.noFieldTypeSelected"));
-  } else {
-    var MAX_FIELD_NAME_LENGTH = 50;
-    if ("" === $("#field_name").val()) {
-      isValid = addError("#field_name", RS.msg("legacyjs.workspace.form.fieldNameRequired"));
-    } else if ($("#field_name").val().length > MAX_FIELD_NAME_LENGTH) {
-      isValid = addError("#field_name", RS.msg("legacyjs.workspace.form.fieldNameMaxLength", MAX_FIELD_NAME_LENGTH));
-    }
-    if (fieldType === "Choice") {
-      if ($("#choiceFields").children().length === 0) {
-        isValid = addError("#addChoiceName",
-          RS.msg("legacyjs.workspace.form.noChoicesAdded"));
-      }
-    }
-    if (fieldType == "Radio") {
-      if ($("#radioFields").children().length === 0) {
-        isValid = addError("#addRadioName",
-          RS.msg("legacyjs.workspace.form.noRadiosAdded"));
-      }
-    }
-    if (fieldType == "Number") {
-      var defaultValue = $("#field_defaultvalue").val();
-      var minValue = $("#field_minvalue").val();
-      var maxValue = $("#field_maxvalue").val();
-      var defaultNumber = Number(defaultValue);
-      if (minValue !== "") {
-        minValue = Number(minValue);
-      } else {
-        minValue = Number.MIN_VALUE;
-      }
-
-      if (maxValue !== "") {
-        maxValue = Number(maxValue);
-      } else {
-        maxValue = Number.MAX_VALUE;
-      }
-
-      if (minValue > maxValue) {
-        isValid = addError("#field_minvalue",
-          RS.msg("legacyjs.workspace.form.minGreaterThanMaxNumber"));
-      }
-
-      // if the minValue maxValue is valid then do default value
-      // validation, otherwise the user will be confused
-      if (minValue < maxValue) {
-        if (defaultValue !== "" && maxValue !== "") {
-          if (defaultNumber > maxValue) {
-            isValid = addError("#field_defaultvalue",
-              RS.msg("legacyjs.workspace.form.defaultGreaterThanMaxNumber"));
-          }
-        }
-        if (defaultValue !== "" && minValue !== "") {
-          if (defaultNumber < minValue) {
-            isValid = addError("#field_defaultvalue",
-              RS.msg("legacyjs.workspace.form.defaultLessThanMinNumber"));
-          }
-        }
-      }
-    }
-    if (fieldType == "Time") {
-
-      var defaultTime = $("#field_defaulttime.timePickerForm")
-        .datetimepicker('getDate');
-      var minTime = $("#field_minvalue.timePickerForm").datetimepicker(
-        'getDate');
-      var maxTime = $("#field_maxvalue.timePickerForm").datetimepicker(
-        'getDate');
-
-      if (defaultTime !== null) {
-        defaultTime = defaultTime.getTime();
-      }
-      if (minTime !== null) {
-        minTime = minTime.getTime();
-      }
-      if (maxTime !== null) {
-        maxTime = maxTime.getTime();
-      }
-      if (minTime !== null && maxTime !== null) {
-        if (minTime > maxTime) {
-          isValid = addError("#field_minvalue",
-            RS.msg("legacyjs.workspace.form.minGreaterThanMaxTime"));
-        }
-      }
-      if (defaultTime !== null && maxTime !== null) {
-        if (defaultTime > maxTime) {
-          isValid = addError("#field_defaulttime",
-            RS.msg("legacyjs.workspace.form.defaultTimeGreaterThanMax"));
-        }
-      }
-      if (defaultTime !== null && minTime !== null) {
-        if (defaultTime < minTime) {
-          isValid = addError("#field_defaulttime",
-            RS.msg("legacyjs.workspace.form.defaultTimeLessThanMin"));
-        }
-      }
-    }
-
-    if (fieldType == "Date") {
-      var defaultDate = $("#field_defaultdate").datepicker("getDate");
-      var minDate = $("#field_minvalue").datepicker("getDate");
-      var maxDate = $("#field_maxvalue").datepicker("getDate");
-      if (maxDate !== null && minDate !== null) {
-        if (minDate > maxDate) {
-          isValid = addError("#field_minvalue",
-            RS.msg("legacyjs.workspace.form.minGreaterThanMaxDate"));
-        }
-      }
-      if (defaultDate !== null && minDate !== null) {
-        if (defaultDate < minDate) {
-          isValid = addError("#field_defaultdate",
-            RS.msg("legacyjs.workspace.form.defaultDateLessThanMin"));
-        }
-      }
-      if (defaultDate !== null && maxDate !== null) {
-        if (defaultDate > maxDate) {
-          isValid = addError("#field_defaultdate",
-            RS.msg("legacyjs.workspace.form.defaultDateGreaterThanMax"));
-        }
-      }
-    }
-  }
-
-  if (!isValid) {
-    $("#errorSummary").show();
-  }
-  return isValid;
-}
-
-function addError(field, message) {
-  $("#errorSummary").append(
-    "<img src=\"/images/iconWarning.gif\" alt=\"" + RS.msg("legacyjs.workspace.form.warningAlt") + "\" class=\"icon\">" + message + " <br/>");
-  $(field).parent().addClass('field-error');
-  return false;
-}
-
-function loadRecord(record) {
-  $.each(record.deletedFieldsIdAsList, function (i, val) {
-    $("#field_" + val).slideUp("slow", function () {
-      $("#field_" + val).remove();
-    });
-  });
-}
-
-/*
- * Saves template and goes to admin page
+ * Saves the fields, then the form, and goes to the list of forms
  */
 function saveForm() {
-
+  if (!startToolbarAction()) {
+    return;
+  }
   RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
-  saveFormTag().always(function () {
-    var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
-      templateId: recordId
-    }, function (success) {
-      if (success.data !== null) {
-        wasAutosaved = false;
+  saveFieldEditor().then(function (revision) {
+    if (revision === null) {
+      RS.unblockPage();
+      endToolbarAction();
+      return;
+    }
+    formSaveIncomplete = true;
+    saveFormTag().always(function () {
+      var jqxhr = $.post(createURL("/workspace/editor/form/ajax/saveForm"), {
+        templateId: recordId,
+        lockToken: editLockToken
+      }, function (success) {
+        if (success.data !== null) {
+          formSaveIncomplete = false;
+          leavingFormEditor = true;
+          RS.unblockPage();
+          window.location.assign(createURL(LISTFORMS_BY_MODFICATIONDATE_DESC));
+          return;
+        }
+        if (success.errorMsg !== null) {
+          apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(success.errorMsg)));
+        }
         RS.unblockPage();
-        window.location.assign(createURL(LISTFORMS_BY_MODFICATIONDATE_DESC));
-      } else if (success.errorMsg !== null) {
-        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(success.errorMsg)));
+        endToolbarAction();
+      }, "json");
+
+      jqxhr.fail(function () {
         RS.unblockPage();
-      } else {
-        RS.unblockPage();
+        endToolbarAction();
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
+      });
+    });
+  });
+}
+
+/*
+ * Saves the fields if they changed, then makes the draft the new version of the form
+ */
+function updateForm() {
+  if (!startToolbarAction()) {
+    return;
+  }
+  RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
+  saveFieldEditor().then(function (revision) {
+    if (revision === null) {
+      RS.unblockPage();
+      endToolbarAction();
+      return;
+    }
+    formSaveIncomplete = true;
+    var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
+      templateId: recordId,
+      lockToken: editLockToken,
+      fieldsRevision: revision
+    }, function (data) {
+      RS.unblockPage();
+      if (data.data !== null) {
+        formSaveIncomplete = false;
+        leavingFormEditor = true;
+        $('#noMessages').html(RS.msg("legacyjs.workspace.form.formUpdatedMessage"));
+        setTimeout(function () {
+          window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
+        }, 1000);
+        return;
       }
+      if (data.errorMsg !== null) {
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
+      }
+      endToolbarAction();
     }, "json");
 
     jqxhr.fail(function () {
       RS.unblockPage();
-      RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
-    });
-  });
-}
-
-function updateForm() {
-  RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
-  $.ajaxSetup({
-    async: false
-  });
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/updateForm"), {
-    templateId: recordId
-  }, function (data) {
-    if (data.data !== null) {
-      wasAutosaved = false;
-      $.ajaxSetup({
-        async: true
-      });
-      RS.unblockPage();
-      $('#noMessages').html(RS.msg("legacyjs.workspace.form.formUpdatedMessage"));
-      setTimeout(function () {
-        window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
-      }, 1000);
-
-    } else if (data.errorMsg !== null) {
-      apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      $.ajaxSetup({
-        async: true
-      });
-      RS.unblockPage();
-    }
-  }, "json");
-
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
-  });
-}
-
-function changeOrder() {
-  // Reorder fields dialog.
-  $("#reorderFieldsDialog").dialog({
-    resizable: false,
-    autoOpen: false,
-    height: 500,
-    width: 500,
-    modal: true,
-    open: function () {
-      // When open the dialog, populate with visible fields !
-      $('.field').each(function () {
-        var id = $(this).attr('id').split("_")[1];
-        var name = $(this).children().first().text().toLowerCase();
-        var row = "<tr id='row_" + id + "' class='reorderField'><td class='fieldLabel'><input id='radio_" + id + "' type=radio name=fields><label>" + RS.escapeHtml(name) + "</label></td><td>" +
-          "<div id='buttonBlock_" + id + "' class='orderButtons' style='display:none;'>" +
-          "<button id='top_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveTop") + "' title='" + RS.msg("legacyjs.workspace.form.moveTop") + "' class=fieldMover><img src='/images/icons/upAll.png'></button>" +
-          "<button id='up_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveUp") + "' title='" + RS.msg("legacyjs.workspace.form.moveUp") + "' class=fieldMover><img src='/images/icons/upOne.png'></button>" +
-          "<button id='down_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveDown") + "' title='" + RS.msg("legacyjs.workspace.form.moveDown") + "' class=fieldMover><img src='/images/icons/downOne.png'></button>" +
-          "<button id='bottom_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveBottom") + "' title='" + RS.msg("legacyjs.workspace.form.moveBottom") + "' class=fieldMover><img src='/images/icons/downAll.png'></button>" +
-          "</div>" + "</td></tr>";
-        $("#reorderFieldTable").append(row);
-      });
-    },
-    close: function () {
-      $(".reorderField").remove();
-    },
-    buttons: {
-      [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
-        $(this).dialog('close');
-      },
-      [RS.msg("legacyjs.workspace.form.doneButton")]: function () {
-        var ids = [];
-        $('.reorderField').each(function () {
-          var id = $(this).attr('id').split("_")[1];
-          ids.push(id);
-        });
-
-        var jqxhr = $.post("/workspace/editor/form/reorderFields",
-          {
-            formId: recordId,
-            "fieldids[]": ids
-          }, function (response) {
-            if (response.data) {
-              RS.confirm(RS.msg("legacyjs.workspace.form.fieldsReorderedMessage"), "success", 3000);
-              location.href = "/workspace/editor/form/edit/" + recordId;
-            }
-          });
-
-        jqxhr.fail(function () {
-          RS.ajaxFailed(RS.msg("legacyjs.workspace.form.reorderingFieldsAction"), false, jqxhr);
-        });
+      endToolbarAction();
+      if (!reportFieldsConflict(jqxhr)) {
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
       }
-    }
+    });
   });
-
-  // Call to open the reorder field dialog.
-  $("#reorderFieldsDialog").dialog("open");
 }
 
+/*
+ * Asks, then discards the draft and every change made since the form was last published
+ */
 function abandonUpdateForm() {
-  RS.blockPage(RS.msg("legacyjs.workspace.form.abandoningFormUpdatesBlock"));
-  $.ajaxSetup({
-    async: false
-  });
-
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/abandonUpdateForm"), {
-    templateId: recordId
-  }, function (data) {
-    if (data.data !== null) {
-      wasAutosaved = false;
-      $.ajaxSetup({
-        async: true
-      });
+  // Without the editor's bundle there is no way to ask, and the draft is never discarded unasked.
+  if (!window.formFieldEditor || !startToolbarAction()) {
+    return;
+  }
+  window.formFieldEditor.confirmAbandon().then(function (abandon) {
+    if (!abandon) {
+      endToolbarAction();
+      return;
+    }
+    RS.blockPage(RS.msg("legacyjs.workspace.form.abandoningFormUpdatesBlock"));
+    var jqxhr = $.post(createURL("/workspace/editor/form/ajax/abandonUpdateForm"), {
+      templateId: recordId
+    }, function (data) {
       RS.unblockPage();
-      window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
-    } else if (data.errorMsg !== null) {
-      apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
-      $.ajaxSetup({
-        async: true
-      });
+      if (data.data !== null) {
+        leavingFormEditor = true;
+        window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
+        return;
+      }
+      if (data.errorMsg !== null) {
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
+      }
+      endToolbarAction();
+    }, "json");
+
+    jqxhr.fail(function () {
       RS.unblockPage();
-    }
-  }, "json");
-
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.revertingFormAction"), true, jqxhr)
-  });
-}
-
-// Take the value of a number field and save/autosave
-function saveNumber(element, autosave) {
-  var inputs = $(element).find(".field-value-inner input");
-  inputs = inputs.serialize();
-  return inputs;
-}
-
-// Take the value of a number field and save/autosave
-function saveString(element, autosave) {
-  var inputs = $(element).find(".field-value-inner input");
-  inputs = inputs.serialize();
-  return inputs;
-}
-
-// Take the value of a number field and save/autosave
-function saveText(element, autosave) {
-  var inputs = $(element).find(".field-value-inner input");
-  inputs = inputs.serialize();
-  var textarea = $(element).find(".field-value-inner textarea");
-  textarea = textarea.serialize();
-  inputs = inputs + "&" + textarea;
-  return inputs;
-}
-
-// Take the value of a number field and save/autosave
-function saveRadio(element, autosave) {
-  var inputs = $(element).find(".field-value-inner input");
-  inputs = inputs.serialize();
-  return inputs;
-}
-
-// Take the value of a number field and save/autosave
-function saveChoice(element, autosave) {
-  var inputs = $(element).find(".field-value-inner input");
-  inputs = inputs.serialize();
-  return inputs;
-}
-
-function checkNumber(element) {
-  var value = $(element).find("input[name='fieldData']").val();
-  //var decimalPlaces = $(element).find("input[name='decimalPlaces']").val();
-  var minValue = $(element).find("input[name='minValue']").val();
-  var maxValue = $(element).find("input[name='maxValue']").val();
-  var numberData = Number(value);
-  var minNumber = Number(minValue);
-  var maxNumber = Number(maxValue);
-  var error = "";
-
-  // if the minValue maxValue is valid then do default value validation,
-  // otherwise the user will be confused
-  if (isNaN(value)) {
-    error = RS.msg("legacyjs.workspace.form.valueNotANumber", value);
-  } else if (value !== "" && maxValue !== "") {
-    if (numberData > maxNumber) {
-      error = RS.msg("legacyjs.workspace.form.valueGreaterThanMaxNumber", maxValue);
-    }
-  } else if (value !== "" && minValue !== "") {
-    if (numberData < minNumber) {
-      error = RS.msg("legacyjs.workspace.form.valueLessThanMinNumber", minValue);
-    }
-  }
-  return error;
-}
-
-function loadDateFields() {
-  $.each($(".field"), function (i, val) {
-    var attr = $(val).attr("name");
-    if (attr == "date") {
-      loadDatePicker(val);
-    }
-  });
-}
-
-function loadTimeFields() {
-  $.each($(".field"), function (i, val) {
-    var attr = $(val).attr("name");
-    if (attr == "time") {
-      loadTimePicker(val);
-    }
-  });
-}
-
-function loadTimePicker(val) {
-  var idDate = $(val).find("input[name='fieldId']").val();
-  var formatTime = $(val).find("input[name='format_" + idDate + "']").val();
-  var minTime = $(val).find("input[name='minTime']").val();
-  minTime = parseInt(minTime);
-  var maxTime = $(val).find("input[name='maxTime']").val();
-  maxTime = parseInt(maxTime);
-  var minHour = $(val).find("input[name='minHour']").val();
-  minHour = parseInt(minHour);
-  var minMinutes = $(val).find("input[name='minMinutes']").val();
-  minMinutes = parseInt(minMinutes);
-  var maxHour = $(val).find("input[name='maxHour']").val();
-  maxHour = parseInt(maxHour);
-  var maxMinutes = $(val).find("input[name='maxMinutes']").val();
-  maxMinutes = parseInt(maxMinutes);
-
-  var timeformat;
-  if (formatTime == "hh:mm a") {
-    timeformat = true;
-
-  } else {
-    timeformat = false;
-  }
-
-  if (minTime > 0 && maxTime > 0) {
-    $("#" + idDate + ".timepicker").timepicker({
-      ampm: timeformat,
-      minDate: new Date(1970, 01, 02, minHour, minMinutes),
-      maxDate: new Date(1970, 01, 02, maxHour, maxMinutes),
+      endToolbarAction();
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.form.revertingFormAction"), true, jqxhr);
     });
-  } else if (minTime > 0 && maxTime === 0) {
-    $("#" + idDate + ".timepicker").timepicker({
-      ampm: timeformat,
-      minDate: new Date(1970, 01, 02, minHour, minMinutes)
-
-    });
-  } else if (minTime === 0 && maxTime > 0) {
-    $("#" + idDate + ".timepicker").timepicker({
-      ampm: timeformat,
-      maxDate: new Date(1970, 01, 02, maxHour, maxMinutes)
-
-    });
-  } else {
-    $("#" + idDate + ".timepicker").timepicker({
-      ampm: timeformat
-    });
-  }
-}
-
-function loadDatePicker(val) {
-
-  var idDate = $(val).find("input[name='fieldId']").val();
-  var minDate = $(val).find("input[name='minValue']").val();
-  minDate = parseInt(minDate);
-  var maxDate = $(val).find("input[name='maxValue']").val();
-  maxDate = parseInt(maxDate);
-  var dateformat = $(val).find("input[name='format_" + idDate + "']").val();
-  if (dateformat == "dd/MM/yyyy") {
-    dateformat = "dd/mm/yy";
-  }
-  if (dateformat == "dd MM yyyy") {
-    dateformat = "dd mm yy";
-  }
-  if (dateformat == "dd-MM-yyyy") {
-    dateformat = "dd-mm-yy";
-  }
-  if (dateformat == "dd MMM yyyy") {
-    dateformat = "dd M yy";
-  }
-  if (dateformat == "yyyy/MM/dd") {
-    dateformat = "yy/mm/dd";
-  }
-  if (dateformat == "yyyy MM dd") {
-    dateformat = "yy mm dd";
-  }
-  if (dateformat == "yyyy-MM-dd") {
-    dateformat = "yy-mm-dd";
-  }
-  if (dateformat == "yyyy MMM dd") {
-    dateformat = "yy M dd";
-  }
-
-  if (minDate > 0 && maxDate > 0) {
-    $("#" + idDate + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      minDate: new Date(minDate),
-      maxDate: new Date(maxDate)
-    });
-  } else if (minDate > 0 && maxDate === 0) {
-    $("#" + idDate + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      minDate: new Date(minDate)
-
-    });
-  } else if (minDate === 0 && maxDate > 0) {
-    $("#" + idDate + ".datepicker").datepicker({
-      dateFormat: dateformat,
-      maxDate: new Date(maxDate)
-
-    });
-  } else {
-    $("#" + idDate + ".datepicker").datepicker({
-      dateFormat: dateformat
-    });
-  }
-}
-
-function deleteField(fieldId) {
-  var jqxhr = $.post(createURL("/workspace/editor/form/ajax/deleteField"), { fieldId: fieldId }, function (data) {
-    if (data.data) {
-      RS.blockPage(RS.msg("legacyjs.workspace.form.deletingFieldBlock"));
-      $("#field_" + fieldId).slideUp("slow", function () {
-        $("#field_" + fieldId).remove();
-      });
-      RS.unblockPage();
-    } else {
-      apprise(getValidationErrorString(data.error));
-    }
-  }, "json");
-
-  jqxhr.fail(function () {
-    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.deletingFieldAction"), false, jqxhr);
   });
 }
 
@@ -2159,18 +485,3 @@ var saveFormTag = function saveTmpTag() {
   return jqxhr;
 };
 
-function parseRadioOptions(text, { isCSV }) {
-  let textArray;
-  if (isCSV) {
-    textArray = text.split(/\r?\n/).join(",").split(",");
-  } else {
-    textArray = text.split(/\r?\n/);
-  }
-  textArray = textArray.filter(a => a.length>0);
-  const uniqueText = new Set(textArray);
-  let displayText = [];
-  for(const item of uniqueText){
-    displayText.push(item.trim());
-  }
-  return displayText;
-}

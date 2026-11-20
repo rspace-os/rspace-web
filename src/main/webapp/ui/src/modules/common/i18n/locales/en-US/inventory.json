@@ -694,6 +694,8 @@
       },
       "validNumber": "Must be a valid number."
     },
+    "hiddenFieldInvalid": "{field} is hidden but holds a value that cannot be saved. Show it again by changing the answer it depends on, then correct or clear it.",
+    "hiddenFieldInvalidWithSource": "The field \"{field}\" is hidden but holds a value that cannot be saved. Change \"{source}\" to show it, then correct or clear it.",
     "identifiers": {
       "assignDialog": {
         "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",
@@ -1132,6 +1134,7 @@
       },
       "customField": {
         "defaultDescription": "Default Description",
+        "defaultOptionsExplanation": "Options selected here are selected in new {recordType} made from this template.",
         "defaultValue": "Default Value",
         "deleteField": "Delete field {fieldName}",
         "deleteNewField": "Delete new field",
@@ -1139,22 +1142,14 @@
           "keep": "Keep field in existing {recordType}",
           "remove": "Remove field from existing {recordType}"
         },
-        "mandatory": "Mandatory",
-        "name": "Name",
         "noMoreFields": "No more fields",
-        "type": "Type",
         "validation": {
           "duplicateName": "You either already have a field with that name or that name is not permitted",
           "emptyName": "Name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 50 characters",
-          "optionsNotUnique": "All values must be unique.",
-          "optionsRequired": "One or more values are required."
-        },
-        "values": "Values",
-        "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+          "nameTooLong": "Name cannot be longer than 50 characters"
+        }
       },
       "defaultValue": {
-        "addValue": "Add Value",
         "allowedRelationshipTypes": "Allowed relationship types",
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
         "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
@@ -1163,13 +1158,6 @@
         "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
         "defaultLinkTarget": "Default link target",
         "none": "None"
-      },
-      "move": {
-        "down": "Down",
-        "label": "Move",
-        "toBottom": "To Bottom",
-        "toTop": "To Top",
-        "up": "Up"
       },
       "quantityUnits": {
         "defaultScale": "Default Scale",
@@ -2854,6 +2842,23 @@
         "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
         "label": "Sample"
       }
+    },
+    "displayRules": {
+      "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
+      "confirmDeleteField": {
+        "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
+        "title": "Delete {field}?"
+      },
+      "confirmOptionRemoval": {
+        "message": "{count, plural, one {The display rule of {fields} uses this option. Removing the option also removes it from that rule, and removes the rule if it has no options left.} other {The display rules of {fields} use this option. Removing the option also removes it from those rules, and removes any rule that has no options left.}}",
+        "title": "Remove option {option}?"
+      },
+      "confirmTypeChange": {
+        "confirm": "Change type",
+        "message": "{count, plural, one {The display rule of {fields} reads this field. Rules read the new type differently, or not at all, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules read the new type differently, or not at all, so changing the type also removes those rules.}}",
+        "title": "Change the type of {field}?"
+      },
+      "optionInUse": "A display rule uses this option, so it cannot be renamed."
     },
     "fields": {
       "customField": {

@@ -370,6 +370,9 @@ function journal($, extensions = default_extensions) {
     _loadPage: function() {
 
       $(".journalPageContent").html($("#cachedData").text());
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.refresh($(".journalPageContent")[0]);
+      }
 
       $(".commentIcon").click(function() {
         showCommentDialog(this, true);

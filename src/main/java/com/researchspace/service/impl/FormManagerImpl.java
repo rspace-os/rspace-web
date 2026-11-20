@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.SortOrder;
@@ -14,6 +15,7 @@ import com.researchspace.model.AccessControl;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.FormSharingCommand;
 import com.researchspace.model.field.FieldForm;
@@ -26,7 +28,10 @@ import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.model.views.FormSearchCriteria;
+import com.researchspace.service.FormDefinitionCommand;
+import com.researchspace.service.FormFieldsConflictException;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.FormVersionUpdateException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
@@ -34,11 +39,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -55,6 +69,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   private @Autowired IconImgDao iconImgDao;
   private @Autowired IRecordFactory recordFactory;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired FormFieldListSaver fieldListSaver;
 
   public FormManagerImpl(@Autowired FormDao formDao) {
     super(formDao, RSForm.class);
@@ -95,7 +110,17 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @Override
   public RSForm save(RSForm form, User user) {
     form = super.save(form, user);
-    formTracker.unlockRecord(form, user, SessionAttributeUtils::getSessionId);
+    unlockUnlessHeldByToken(form, user);
+    return form;
+  }
+
+  @Override
+  public RSForm saveAndReleaseEditLock(RSForm form, String lockToken, User user) {
+    if (StringUtils.isBlank(lockToken)) {
+      return save(form, user);
+    }
+    form = super.save(form, user);
+    releaseEditLock(lockToken, user);
     return form;
   }
 
@@ -125,17 +150,35 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @RequiresPermissions("FORM:SHARE")
   @Override
   public RSForm publish(Long id, boolean toPublish, FormSharingCommand config, User authUser) {
+    return applyPublishing(publishable(id, toPublish, authUser), toPublish, config);
+  }
+
+  @RequiresPermissions("FORM:SHARE")
+  @Override
+  public RSForm publish(
+      Long id, FormSharingCommand config, long expectedFieldsRevision, User authUser) {
+    RSForm form = publishable(id, true, authUser);
+    assertFieldsRevision(id, expectedFieldsRevision);
+    return applyPublishing(form, true, config);
+  }
+
+  /** The form, if it exists and the user may publish or unpublish it. */
+  private RSForm publishable(Long id, boolean toPublish, User authUser) {
     RSForm form = formDao.get(id);
     if (form.isSystemForm() && !toPublish) {
       log.error("Attempted to unpublish a system form by user {}", authUser.getUsername());
       throw new UnsupportedOperationException(
           messages.getMessage("form.errors.systemFormUnpublish"));
     }
-    boolean altered = false;
     if (!permissionUtils.isPermitted(form, PermissionType.SHARE, authUser)) {
       throw new AuthorizationException(
           messages.getMessage("form.errors.publishUnauthorized", new Object[] {form.getId()}));
     }
+    return form;
+  }
+
+  private RSForm applyPublishing(RSForm form, boolean toPublish, FormSharingCommand config) {
+    boolean altered = false;
     // only update on status change
     if (toPublish && !form.isPublishedAndVisible()) {
       form.publish();
@@ -154,6 +197,17 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       formDao.save(form);
     }
     return form;
+  }
+
+  /**
+   * After the form is looked up and the user's permission checked, so that an unknown or forbidden
+   * form is reported as such, but before its fields are read; see FormDao#lockFieldsRevision.
+   */
+  private void assertFieldsRevision(Long formId, long expectedRevision) {
+    if (!formDao.lockFieldsRevision(formId, expectedRevision)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
   }
 
   @Override
@@ -249,6 +303,26 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   public RSForm getForEditing(
       Long id, User user, UserSessionTracker activeUsers, boolean useSessionToCalculateEditStatus) {
+    return open(id, user, activeUsers, useSessionToCalculateEditStatus, false).form();
+  }
+
+  @RequiresPermissions("FORM:READ") // the minimal permission, as for getForEditing
+  @Override
+  public FormEditorPage getForEditorPage(Long id, User user, UserSessionTracker activeUsers) {
+    Opened opened = open(id, user, activeUsers, true, true);
+    return new FormEditorPage(opened.form(), opened.lockToken());
+  }
+
+  /** A form opened for editing, and the token of an editor page's hold on its lock, if any. */
+  private record Opened(RSForm form, String lockToken) {}
+
+  private Opened open(
+      Long id,
+      User user,
+      UserSessionTracker activeUsers,
+      boolean useSessionToCalculateEditStatus,
+      boolean holdForEditorPage) {
+    String lockToken = null;
     // if it's a new form, we'll return this - it's not been published yet
     RSForm formToEdit = get(id, user);
 
@@ -263,8 +337,23 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
         // this *is* a temp form so we'll just return it
         log.info("loading a temp form");
       }
-      EditStatus es =
-          calculateEditStatus(id, user, activeUsers, useSessionToCalculateEditStatus, formToEdit);
+      EditStatus es;
+      if (holdForEditorPage) {
+        // atomic with the hold, so a release by id cannot take the acquisition before it is held
+        synchronized (editLockHolds) {
+          es =
+              formTracker.attemptToEdit(id, user, activeUsers, SessionAttributeUtils::getSessionId);
+          if (EditStatus.EDIT_MODE.equals(es)) {
+            lockToken = UUID.randomUUID().toString();
+            editLockHolds.put(
+                lockToken,
+                new EditLockHold(id, user.getUsername(), SessionAttributeUtils.getSessionId()));
+          }
+        }
+      } else {
+        es =
+            calculateEditStatus(id, user, activeUsers, useSessionToCalculateEditStatus, formToEdit);
+      }
       formToEdit.setEditStatus(es);
     } else if (permissionUtils.isPermitted(formToEdit, PermissionType.READ, user)) {
       formToEdit.setEditStatus(EditStatus.CANNOT_EDIT_NO_PERMISSION);
@@ -272,7 +361,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       formToEdit.setEditStatus(EditStatus.ACCESS_DENIED);
     }
     formToEdit.getFieldForms().size(); // initialize FTs from lazy-loading
-    return formToEdit;
+    return new Opened(formToEdit, lockToken);
   }
 
   private EditStatus calculateEditStatus(
@@ -295,14 +384,73 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   @Override
   public void unlockForm(RSForm form, User user) {
-    formTracker.unlockRecord(form, user, SessionAttributeUtils::getSessionId);
+    unlockUnlessHeldByToken(form, user);
   }
 
   @Override
   public void unlockForm(Long formId, User user) {
     if (formDao.exists(formId)) {
-      formTracker.unlockRecord(formDao.get(formId), user, SessionAttributeUtils::getSessionId);
+      unlockUnlessHeldByToken(formDao.get(formId), user);
     }
+  }
+
+  /** A form editor page's hold on an edit lock, see {@link #getForEditorPage}. */
+  private record EditLockHold(long formId, String username, String sessionId) {}
+
+  /**
+   * Holds by page token. A hold lasts as long as the acquisition it stands for: until its page
+   * releases it, or until the session ends ({@link #removeFromEditorTracker}). Changes to holds and
+   * to the acquisitions they stand for are made while synchronized on this map.
+   */
+  private final Map<String, EditLockHold> editLockHolds = new ConcurrentHashMap<>();
+
+  /**
+   * Releases one of the user's acquisitions on the form in this session by id, only if one is not
+   * held by a form editor page's token, so a by-id release can never take a page's lock.
+   */
+  private void unlockUnlessHeldByToken(RSForm form, User user) {
+    if (form == null || form.getId() == null || user == null) {
+      return;
+    }
+    // outside a session (an archive import, a startup task) no lock can have been taken
+    String sessionId = currentSessionId();
+    if (sessionId == null) {
+      return;
+    }
+    EditLockHold thisAcquisition = new EditLockHold(form.getId(), user.getUsername(), sessionId);
+    synchronized (editLockHolds) {
+      long heldByToken = editLockHolds.values().stream().filter(thisAcquisition::equals).count();
+      if (formTracker.getEditCount(form.getId(), user.getUsername(), sessionId) > heldByToken) {
+        formTracker.unlockRecord(form, user, () -> sessionId);
+      }
+    }
+  }
+
+  /** The current Shiro session's id, or null when there is no subject or session. */
+  private static String currentSessionId() {
+    Subject subject = ThreadContext.getSubject();
+    Session session = subject == null ? null : subject.getSession(false);
+    return session == null ? null : session.getId().toString();
+  }
+
+  @Override
+  public boolean releaseEditLock(String token, User user) {
+    String sessionId = currentSessionId();
+    if (StringUtils.isBlank(token) || sessionId == null) {
+      return false;
+    }
+    synchronized (editLockHolds) {
+      EditLockHold hold = editLockHolds.get(token);
+      if (hold == null
+          || !hold.username().equals(user.getUsername())
+          || !hold.sessionId().equals(sessionId)) {
+        return false;
+      }
+      editLockHolds.remove(token);
+      // by id, so a hold on a form deleted since (a reverted draft) is released too
+      formTracker.unlockRecordById(hold.formId(), user, () -> sessionId);
+    }
+    return true;
   }
 
   @Override
@@ -349,8 +497,25 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   }
 
   @Override
+  public RSForm updateVersion(Long tempFormId, long expectedFieldsRevision, User user) {
+    RSForm temp = writableDraft(tempFormId, user);
+    assertFieldsRevision(tempFormId, expectedFieldsRevision);
+    return makeCurrentVersion(temp);
+  }
+
+  @Override
   public RSForm updateVersion(Long tempFormId, User user) {
+    return makeCurrentVersion(writableDraft(tempFormId, user));
+  }
+
+  private RSForm writableDraft(Long tempFormId, User user) {
     RSForm temp = get(tempFormId, user);
+    permissionUtils.assertIsPermitted(temp, PermissionType.WRITE, user, "update form");
+    return temp;
+  }
+
+  private RSForm makeCurrentVersion(RSForm temp) {
+    Long tempFormId = temp.getId();
     RSForm orig = formDao.getOriginalFromTemporaryForm(tempFormId);
     if (orig == null || orig.isSystemForm()) {
       log.error("Cannot update version of a system form!");
@@ -393,7 +558,10 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
 
   @Override
   public void removeFromEditorTracker(String sessionId) {
-    formTracker.removeLockedRecordInSession(sessionId);
+    synchronized (editLockHolds) {
+      formTracker.removeLockedRecordInSession(sessionId);
+      editLockHolds.values().removeIf(hold -> hold.sessionId().equals(sessionId));
+    }
   }
 
   @Override
@@ -474,5 +642,213 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @Override
   public RSForm findOldestFormByName(String formName) {
     return formDao.findOldestFormByName(formName);
+  }
+
+  @RequiresPermissions("FORM:WRITE")
+  @Override
+  public RSForm saveFields(Long formId, List<FormFieldSaveItem> fields, User user) {
+    return saveFieldsAndAdvanceRevision(formDao.get(formId), fields, user, true);
+  }
+
+  @RequiresPermissions("FORM:WRITE")
+  @Override
+  public FieldEditorForm saveFields(
+      Long formId, List<FormFieldSaveItem> fields, long expectedRevision, User user) {
+    // First, before the transaction reads anything; see FormDao#advanceFieldsRevision
+    if (!formDao.advanceFieldsRevision(formId, expectedRevision)) {
+      throw new FormFieldsConflictException(
+          messages.getMessage("form.errors.fieldsChangedElsewhere"));
+    }
+    RSForm form = formDao.get(formId);
+    if (!hasWritePermission(user, form)) {
+      throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
+    }
+    SavedFieldList saved = doSaveFields(form, fields, user, true);
+    if (saved.changed()) {
+      return new FieldEditorForm(saved.form(), expectedRevision + 1);
+    }
+    // the same fields still have the revision the caller, and any other page, read
+    formDao.restoreFieldsRevision(formId, expectedRevision);
+    return new FieldEditorForm(saved.form(), expectedRevision);
+  }
+
+  @Override
+  public FieldEditorForm getForFieldEditor(Long formId, User user) {
+    long revision = formDao.getFieldsRevision(formId);
+    return new FieldEditorForm(getWithPopulatedFieldForms(formId, user), revision);
+  }
+
+  @Override
+  protected void fieldsChanged(RSForm form) {
+    formDao.advanceFieldsRevision(form.getId());
+  }
+
+  @Override
+  public boolean canWrite(RSForm form, User user) {
+    return hasWritePermission(user, form);
+  }
+
+  /**
+   * The body of {@link #saveFields(Long, List, User)}, also used by the API entry points, which
+   * call it directly and so carry their own permission annotations. Leaves the revision of the
+   * field list to the caller.
+   *
+   * @param protectCopiedFields whether omitting a field copied into a draft from the published
+   *     version is an error (the form field editor) rather than a deletion (the forms API, which
+   *     has always replaced the whole field list)
+   * @return the saved form, and whether its field list changed
+   */
+  private SavedFieldList doSaveFields(
+      RSForm form, List<FormFieldSaveItem> fields, User user, boolean protectCopiedFields) {
+    if (!hasWritePermission(user, form)) {
+      throw new AuthorizationException(messages.getMessage("form.errors.fieldUpdateUnauthorized"));
+    }
+    RSForm original = null;
+    if (form.isTemporary()) {
+      original = formDao.getOriginalFromTemporaryForm(form.getId());
+    }
+    if (form.isTemporary() ? original == null : !form.isNewState()) {
+      throw new IllegalStateException(
+          messages.getMessage("form.errors.notBeingEdited", new Object[] {form.getId()}));
+    }
+    // The edit lock is held on whichever id was opened for editing: the original on a first edit,
+    // the draft when editing resumes. Check both, and never acquire it here.
+    assertNotEditedByOthers(form, user);
+    if (original != null) {
+      assertNotEditedByOthers(original, user);
+    }
+    boolean changed =
+        fieldListSaver.apply(
+            form, fields, protectCopiedFields ? getCopiedTemporaryFieldIds(form) : Set.of());
+    form.setModifiedBy(user.getUsername());
+    return new SavedFieldList(formDao.save(form), changed);
+  }
+
+  private record SavedFieldList(RSForm form, boolean changed) {}
+
+  /** {@link #doSaveFields} for a save made without a revision; advances it if anything changed. */
+  private RSForm saveFieldsAndAdvanceRevision(
+      RSForm form, List<FormFieldSaveItem> fields, User user, boolean protectCopiedFields) {
+    SavedFieldList saved = doSaveFields(form, fields, user, protectCopiedFields);
+    if (saved.changed()) {
+      formDao.advanceFieldsRevision(saved.form().getId());
+    }
+    return saved.form();
+  }
+
+  private void assertNotEditedByOthers(RSForm form, User user) {
+    if (Boolean.TRUE.equals(formTracker.isSomeoneElseEditing(form, user.getUsername()))) {
+      throw new IllegalStateException(
+          messages.getMessage(
+              "form.errors.notEditable",
+              new Object[] {EditStatus.CANNOT_EDIT_OTHER_EDITING.name()}));
+    }
+  }
+
+  @RequiresPermissions("FORM:CREATE")
+  @Override
+  public RSForm createForm(FormDefinitionCommand definition, User user) {
+    RSForm form = create(user);
+    form.setName(definition.name());
+    form.setTags(definition.tags());
+    if (definition.formType() != null) {
+      form.setFormType(definition.formType());
+    }
+    // a new form's fields are all new, whatever ids a client sends
+    List<FormFieldSaveItem> fields = new ArrayList<>();
+    for (FormFieldSaveItem field : definition.fields()) {
+      if (field == null) {
+        fields.add(null); // reported by the field list check
+        continue;
+      }
+      fields.add(field.withId(null));
+    }
+    return saveFieldsAndAdvanceRevision(form, fields, user, false);
+  }
+
+  @RequiresPermissions("FORM:READ") // the minimal permission, as for getForEditing
+  @Override
+  public RSForm editForm(
+      Long formId, FormDefinitionCommand definition, User user, UserSessionTracker activeUsers) {
+    RSForm original = get(formId, user);
+    RSForm editing = getForEditing(formId, user, activeUsers, false);
+    if (!editing.getEditStatus().isEditable()) {
+      throw new IllegalStateException(
+          messages.getMessage(
+              "form.errors.notEditable", new Object[] {editing.getEditStatus().name()}));
+    }
+    List<FormFieldSaveItem> fields =
+        toEditingFormIds(original, editing, definition.fields(), formId);
+    editing = saveFieldsAndAdvanceRevision(editing, fields, user, false);
+    editing.setName(definition.name());
+    editing.setTags(definition.tags());
+    editing = formDao.save(editing);
+    if (!original.isNewState()) {
+      Long draftId = editing.getId();
+      editing = updateVersion(draftId, user);
+      if (editing == null) {
+        // unchecked, so the draft changes saved above roll back with the rest
+        throw new FormVersionUpdateException(messages.getMessage("form.errors.versionNotUpdated"));
+      }
+    }
+    return editing;
+  }
+
+  /**
+   * API clients send the ids of the form they read. A form that has never been published is edited
+   * in place, so its ids are kept; a published form is edited through its draft, and each original
+   * field id is replaced by the id of its draft copy, found through the persisted {@code
+   * tempFieldForm} link (fields reordered or added in a saved draft keep their link).
+   */
+  private List<FormFieldSaveItem> toEditingFormIds(
+      RSForm original, RSForm editing, List<FormFieldSaveItem> fields, Long formId) {
+    Map<Long, Long> editingIdByOriginalId = new LinkedHashMap<>();
+    for (FieldForm field : original.getFieldForms()) {
+      if (field.isDeleted()) {
+        continue;
+      }
+      if (original.getId().equals(editing.getId())) {
+        editingIdByOriginalId.put(field.getId(), field.getId());
+      } else if (field.getTempFieldForm() instanceof FieldForm draftField
+          && !draftField.isDeleted()) {
+        if (draftField.getId() == null) {
+          throw new IllegalStateException(
+              "Draft copy of form field " + field.getId() + " has not been saved");
+        }
+        editingIdByOriginalId.put(field.getId(), draftField.getId());
+      }
+    }
+    List<Long> requestedIds =
+        fields.stream()
+            .filter(Objects::nonNull)
+            .map(FormFieldSaveItem::getId)
+            .filter(Objects::nonNull)
+            .toList();
+    if (!editingIdByOriginalId.keySet().containsAll(requestedIds)) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.form.invalidFieldIds",
+              new Object[] {
+                formId,
+                ListFormatUtils.formatList(
+                    editingIdByOriginalId.keySet().stream().map(String::valueOf).toList()),
+                ListFormatUtils.formatList(requestedIds.stream().map(String::valueOf).toList())
+              }));
+    }
+    Set<Long> seen = new HashSet<>();
+    List<FormFieldSaveItem> mapped = new ArrayList<>();
+    for (FormFieldSaveItem field : fields) {
+      if (field == null) {
+        mapped.add(null); // reported by the field list check
+        continue;
+      }
+      Long id = field.getId();
+      if (id != null && !seen.add(id)) {
+        throw new IllegalArgumentException(
+            messages.getMessage("form.errors.fieldIdDuplicate", new Object[] {id}));
+      }
+      mapped.add(field.withId(id == null ? null : editingIdByOriginalId.get(id)));
+    }
+    return mapped;
   }
 }

@@ -424,8 +424,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
           copyElementsInContent(fieldCopy.getId(), copySD, fieldCopy.getFieldData(), user);
       fieldCopy.setFieldData(updatedContent);
     }
-    List<Field> listFields = copySD.getFields();
-    copySD.setAllFieldsValid(listFields.stream().allMatch(f -> f.isMandatoryStateSatisfied()));
+    copySD.setAllFieldsValid(copySD.everyShownMandatoryFieldHasData());
 
     copyRecordLinks(origSD.getId(), copySD.getId());
     // RSPAC-178: the copy is unsigned so gallery links should again point to latest

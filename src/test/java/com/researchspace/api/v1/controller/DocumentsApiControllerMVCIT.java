@@ -21,6 +21,7 @@ import com.researchspace.api.v1.model.ApiDocumentSearchResult;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.api.v1.model.ApiFolder;
+import com.researchspace.api.v1.model.ApiForm;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
@@ -610,6 +611,258 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             docFromSimpleRequest.getFields().get(i).getContent());
       }
     }
+  }
+
+  @Test
+  public void choiceAndRadioContentMustNameOptions() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    String formJson =
+        "{\"name\":\"permits\",\"fields\":["
+            + "{\"type\":\"Choice\",\"name\":\"conditions\",\"multipleChoice\":true,"
+            + "\"options\":[\"Yes, with permit\",\"No\"]},"
+            + "{\"type\":\"Radio\",\"name\":\"status\","
+            + "\"options\":[\"Yes, with permit\",\"No\"]}]}";
+    MvcResult formResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/forms", anyUser, formJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Long formId = getFromJsonResponseBody(formResult, ApiForm.class).getId();
+    formMgr.publish(formId, true, null, anyUser);
+    String docJson = "{ \"form\" : { \"id\": " + formId + "}, \"fields\" : [ %s, %s ] }";
+
+    // an unescaped comma splits an option into two values that are not options
+    MvcResult rejected =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/documents",
+                    anyUser,
+                    String.format(docJson, "{\"content\": \"Yes, with permit\"}", "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + getMsgFromResourceBundler(
+                "validation.fieldData.choiceNotAnOption", "[Yes], [ with permit]"),
+        rejected.getResolvedException().getMessage());
+    // a radio option is sent as it is
+    rejected =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/documents",
+                    anyUser,
+                    String.format(docJson, "{}", "{\"content\": \"Yes\"}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 2: Invalid data for Radio Field [Yes]",
+        rejected.getResolvedException().getMessage());
+
+    MvcResult created =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/documents",
+                    anyUser,
+                    String.format(
+                        docJson,
+                        "{\"content\": \"Yes&#44; with permit,No\"}",
+                        "{\"content\": \"Yes, with permit\"}")))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiDocument doc = getFromJsonResponseBody(created, ApiDocument.class);
+    assertEquals("Yes&#44; with permit,No", doc.getFields().get(0).getContent());
+    assertEquals("Yes, with permit", doc.getFields().get(1).getContent());
+
+    String docUrl = "/documents/" + doc.getId();
+    rejected =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(docJson, "{\"content\": \"No,Maybe\"}", "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + getMsgFromResourceBundler("validation.fieldData.choiceNotAnOption", "[Maybe]"),
+        rejected.getResolvedException().getMessage());
+    MvcResult cleared =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, docUrl, anyUser, String.format(docJson, "{\"content\": \"\"}", "{}")))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        "", getFromJsonResponseBody(cleared, ApiDocument.class).getFields().get(0).getContent());
+  }
+
+  @Test
+  public void choiceContentRejectsEmptyValuesAndChecksOnlyChangedContent() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    String formJson =
+        "{\"name\":\"permits\",\"fields\":["
+            + "{\"type\":\"Choice\",\"name\":\"conditions\",\"multipleChoice\":true,"
+            + "\"options\":[\"Yes\",\"No\"]},"
+            + "{\"type\":\"String\",\"name\":\"notes\"}]}";
+    MvcResult formResult =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/forms", anyUser, formJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Long formId = getFromJsonResponseBody(formResult, ApiForm.class).getId();
+    formMgr.publish(formId, true, null, anyUser);
+    String docJson = "{ \"form\" : { \"id\": " + formId + "}, \"fields\" : [ %s, %s ] }";
+    MvcResult created =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/documents",
+                    anyUser,
+                    String.format(docJson, "{\"content\": \"Yes\"}", "{}")))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiDocument doc = getFromJsonResponseBody(created, ApiDocument.class);
+    String docUrl = "/documents/" + doc.getId();
+
+    // only wholly empty content clears the selection; an empty piece is rejected
+    for (String content : List.of(",", "Yes,", "Yes,,No")) {
+      MvcResult rejected =
+          this.mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKey,
+                      docUrl,
+                      anyUser,
+                      String.format(docJson, "{\"content\": \"" + content + "\"}", "{}")))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertEquals(
+          "Validation problem with field 1: "
+              + getMsgFromResourceBundler("validation.fieldData.choiceEmptyValue"),
+          rejected.getResolvedException().getMessage(),
+          content);
+    }
+    assertEquals("Yes", getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent());
+
+    // a long list of values that are not options is cut short
+    MvcResult manyRejected =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(
+                        docJson,
+                        "{\"content\": \"a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12\"}",
+                        "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + messages.getMessage(
+                "validation.fieldData.choiceNotAnOptionMore",
+                new Object[] {"[a1], [a2], [a3], [a4], [a5], [a6], [a7], [a8], [a9], [a10]", "2"}),
+        manyRejected.getResolvedException().getMessage());
+
+    // a value saved before choice content was checked against the options
+    Field choiceField = fieldMgr.get(doc.getFields().get(0).getId(), anyUser).get();
+    choiceField.setFieldData("fieldChoices=Yes&fieldChoices= No");
+    fieldMgr.save(choiceField, anyUser);
+    String echoedChoice = getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent();
+    assertEquals("Yes, No", echoedChoice);
+
+    MvcResult echoed =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(
+                        docJson,
+                        "{\"content\": \"" + echoedChoice + "\"}",
+                        "{\"content\": \"edited\"}")))
+            .andExpect(status().isOk())
+            .andReturn();
+    List<ApiDocumentField> echoedFields =
+        getFromJsonResponseBody(echoed, ApiDocument.class).getFields();
+    assertEquals("Yes, No", echoedFields.get(0).getContent());
+    assertEquals("edited", echoedFields.get(1).getContent());
+
+    MvcResult changed =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(docJson, "{\"content\": \" No\"}", "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + getMsgFromResourceBundler("validation.fieldData.choiceNotAnOption", "[ No]"),
+        changed.getResolvedException().getMessage());
+
+    // content that only converts to the stored form is checked, not taken as unchanged
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, docUrl, anyUser, String.format(docJson, "{\"content\": \"Yes,No\"}", "{}")))
+        .andExpect(status().isOk());
+    assertEquals("Yes,No", getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent());
+    MvcResult smuggled =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey,
+                    docUrl,
+                    anyUser,
+                    String.format(docJson, "{\"content\": \"Yes&fieldChoices=No\"}", "{}")))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    assertEquals(
+        "Validation problem with field 1: "
+            + getMsgFromResourceBundler(
+                "validation.fieldData.choiceNotAnOption", "[Yes&fieldChoices=No]"),
+        smuggled.getResolvedException().getMessage());
+
+    // the other stored form is accepted when echoed as a GET returned it
+    choiceField = fieldMgr.get(doc.getFields().get(0).getId(), anyUser).get();
+    choiceField.setFieldData("fieldSelectedChoices=Maybe");
+    fieldMgr.save(choiceField, anyUser);
+    assertEquals("Maybe", getDocumentFields(apiKey, docUrl, anyUser).get(0).getContent());
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                docUrl,
+                anyUser,
+                String.format(docJson, "{\"content\": \"Maybe\"}", "{\"content\": \"again\"}")))
+        .andExpect(status().isOk());
+  }
+
+  private List<ApiDocumentField> getDocumentFields(String apiKey, String docUrl, User user)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(createBuilderForGet(API_VERSION.ONE, apiKey, docUrl, user))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiDocument.class).getFields();
   }
 
   @Test

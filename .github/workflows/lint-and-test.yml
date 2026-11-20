@@ -74,6 +74,7 @@ jobs:
               - 'src/main/resources/feature-flags/**'
               - 'scripts/generate-feature-flags.mjs'
               - 'scripts/templates/**'
+              - 'src/test/resources/inventory/uriFieldCases.json'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'

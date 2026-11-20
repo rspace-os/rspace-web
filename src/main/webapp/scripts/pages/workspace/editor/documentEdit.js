@@ -288,7 +288,12 @@ function updateFieldsContentFromServer(forceUpdate) {
   );
   jqxhr.done(function (data) {
     _updateFields(data.data);
-    renderToolbar({ canSign: data.data.every(f => f.mandatoryStateSatisfied) && data.data.length > 0 });
+    // Mandatory fields hidden by a display rule do not block signing.
+    var shownById = window.elnFieldDisplay ? window.elnFieldDisplay.refresh().shownById : new Map();
+    var mandatorySatisfied = window.elnFieldDisplay
+      ? window.elnFieldDisplay.shownMandatoryFieldsSatisfied(data.data, shownById)
+      : data.data.every(f => f.mandatoryStateSatisfied);
+    renderToolbar({ canSign: mandatorySatisfied && data.data.length > 0 });
 
     /* if user have the lock the content won't be edited by others (RSPAC-418) */
     if (hasEditLock) {
@@ -365,6 +370,10 @@ function _updateFields(fields) {
           }
         );
       });
+      // choice data as display rules read it, options no longer offered included
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
+      }
       $("#choiceText_" + field.id).text(field.choiceOptionSelectedAsString);
       return;
     }
@@ -376,6 +385,8 @@ function _updateFields(fields) {
           $(this).prop("checked", true);
         }
       });
+      // radio data, and the picklist's selection, as display rules read them
+      syncRadioFieldValue(field.id, field.fieldData);
       $("#radioText_" + field.id).text(field.fieldData);
       return;
     }
@@ -383,6 +394,14 @@ function _updateFields(fields) {
     //string, number, date, time
     $("#" + field.id).val(field.fieldData);
     setInputFieldViewModeValue(field.id, field.fieldData);
+    if (field.type == "NUMBER") {
+      // the value an invalid number reverts to
+      $("#field_" + field.id).find("input[name='lastValue']").val(field.fieldData);
+    }
+    // text and number data as display rules read it; other fields are ignored
+    if (window.elnFieldDisplay) {
+      window.elnFieldDisplay.syncStoredValue(field.id, field.fieldData);
+    }
 
     if (field.modificationDate > lastModificationDate) {
       lastModificationDate = field.modificationDate;
@@ -626,7 +645,9 @@ function _autosavePickList($field) {
   const pickListSelected = $field
       .find("option[class='radioLi " + fieldId + "' ]:selected")
       .val();
-  return _postAutosave(pickListSelected, $field);
+  // no option selected (the empty placeholder, or reloaded empty data) is no answer: send empty
+  // data, as $.ajax drops an undefined dataValue and autosaveField requires it
+  return _postAutosave(pickListSelected === undefined ? "" : pickListSelected, $field);
 }
 
 function _autosaveChoice($field) {
@@ -797,6 +818,16 @@ function checkAndMarkField(element) {
   var currentId = $(element).attr("id");
   var $field = $("#field_" + currentId);
   _setWasChangedFlagOnField($field, true);
+  if (window.elnFieldDisplay && $(element).is(":radio, :checkbox, select, input[name='fieldData']")) {
+    window.elnFieldDisplay.fieldChanged(element);
+  }
+}
+
+// display rules read a number as it is typed; autosave waits for checkAndMarkNumber on change
+function numberFieldInput(element) {
+  if (window.elnFieldDisplay) {
+    window.elnFieldDisplay.fieldChanged(element);
+  }
 }
 
 // checks if it has any error and marks it as modified for autosaving
@@ -814,6 +845,20 @@ function checkAndMarkNumber(element) {
     $field
       .find("input[name='fieldData']")
       .val($field.find("input[name='lastValue']").val());
+    // the restored value fires no input event
+    if (window.elnFieldDisplay) {
+      window.elnFieldDisplay.valueRestored();
+    }
+  }
+}
+
+/* A number is checked and marked for autosave only on change, which has not fired
+ * while it keeps focus, so a Save invoked from the keyboard commits it first. */
+function _commitFocusedNumber() {
+  var $input = $(document.activeElement).filter("input[name='fieldData']");
+  var $field = $input.closest(".field[name='number']");
+  if ($field.length && $input.val() !== $field.find("input[name='lastValue']").val()) {
+    checkAndMarkNumber($input[0]);
   }
 }
 
@@ -830,6 +875,10 @@ function cancelAutosavedEdits() {
       textCancel: RS.msg("legacyjs.workspace.documentEdit.cancelConfirmNo"),
     },
     function () {
+      // the page is about to reload: a display update still waiting would announce discarded edits
+      if (window.elnFieldDisplay) {
+        window.elnFieldDisplay.cancelPending();
+      }
       RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.cancellingEdits"));
       var jqxhr = $.post(
         createURL(
@@ -869,6 +918,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
     return;
   }
 
+  _commitFocusedNumber();
   var renamePromise = renameDocumentBeforeSaving();
 
   $.when(renamePromise).done(function () {

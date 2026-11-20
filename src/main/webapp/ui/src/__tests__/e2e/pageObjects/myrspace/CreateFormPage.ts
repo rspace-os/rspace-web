@@ -1,18 +1,23 @@
 import type { Locator } from "@playwright/test";
-import {
-  FieldEditorDialogComponent,
-  type FormFieldType,
-} from "@/__tests__/e2e/components/myrspace/FieldEditorDialogComponent";
 import { FormAccessDialogComponent } from "@/__tests__/e2e/components/myrspace/FormAccessDialogComponent";
-import { ReorderFieldsDialogComponent } from "@/__tests__/e2e/components/myrspace/ReorderFieldsDialogComponent";
+import {
+  type FormFieldCardComponent,
+  FormFieldEditorComponent,
+  type FormFieldType,
+} from "@/__tests__/e2e/components/myrspace/FormFieldEditorComponent";
 import { BasePage } from "../BasePage";
 import { ManageFormsPage } from "./ManageFormsPage";
 
 export class CreateFormPage extends BasePage {
   readonly path = "/workspace/editor/form/";
 
+  get fields(): FormFieldEditorComponent {
+    return new FormFieldEditorComponent(this.page);
+  }
+
   async waitUntilLoaded(): Promise<void> {
     await this.page.getByRole("button", { name: "Save and Close" }).waitFor({ state: "visible" });
+    await this.fields.waitUntilLoaded();
   }
 
   get statusNew(): Locator {
@@ -27,48 +32,21 @@ export class CreateFormPage extends BasePage {
     await this.page.getByText(`Name: ${name}`, { exact: true }).waitFor({ state: "visible" });
   }
 
-  async openFieldEditor(type: FormFieldType): Promise<FieldEditorDialogComponent> {
-    await this.page.getByRole("button", { name: "Add Field" }).click();
-    const editor = new FieldEditorDialogComponent(this.page);
-    await editor.waitUntilVisible();
-    await editor.selectType(type);
-    return editor;
+  /** Adds a field with what its type needs to be saved: an option, or default text. */
+  async addField(type: FormFieldType, name: string, mandatory = false): Promise<FormFieldCardComponent> {
+    const field = await this.fields.addField(type, name);
+    await field.setMandatory(mandatory);
+    if (type === "Text") await field.fillTextDefault("def");
+    if (type === "Radio" || type === "Choice") await field.addOption("Option 1");
+    return field;
   }
 
-  async addField(type: FormFieldType, name: string, required = false): Promise<void> {
-    const editor = await this.openFieldEditor(type);
-    await editor.setName(name);
-    await editor.setRequired(required);
-    if (type === "Text") {
-      await editor.fillTextDefault("def");
-    }
-    if (type === "Radio" || type === "Choice") {
-      await editor.addOption("Option 1");
-    }
-    await editor.save();
-    await this.fieldRow(name).waitFor({ state: "visible" });
+  field(name: string): FormFieldCardComponent {
+    return this.fields.field(name);
   }
 
-  fieldRow(name: string): Locator {
-    return this.page.getByRole("row").filter({ has: this.page.getByText(name, { exact: false }) });
-  }
-
-  fieldRowAt(index: number): Locator {
-    return this.page.getByRole("row").nth(index + 1);
-  }
-
-  async openFieldForEditing(name: string): Promise<FieldEditorDialogComponent> {
-    await this.fieldRow(name).getByRole("button", { name: "Edit" }).click();
-    const editor = new FieldEditorDialogComponent(this.page);
-    await editor.waitUntilVisible();
-    return editor;
-  }
-
-  async reorderFields(): Promise<ReorderFieldsDialogComponent> {
-    await this.page.getByRole("button", { name: "Reorder Fields" }).click();
-    const dialog = new ReorderFieldsDialogComponent(this.page);
-    await dialog.waitUntilVisible();
-    return dialog;
+  fieldAt(index: number): FormFieldCardComponent {
+    return this.fields.fieldAt(index);
   }
 
   async publish(): Promise<FormAccessDialogComponent> {
@@ -78,21 +56,47 @@ export class CreateFormPage extends BasePage {
     return dialog;
   }
 
-  async deleteField(name: string): Promise<void> {
-    await this.fieldRow(name).getByRole("button", { name: "Delete" }).click();
-    await this.fieldRow(name).waitFor({ state: "hidden" });
+  /** Publishes from the editor, saving the fields first, and keeps the form private (the dialog's defaults). */
+  async publishWithoutSharing(): Promise<void> {
+    await this.page.getByRole("button", { name: "Publish" }).click();
+    const dialog = this.page.getByRole("dialog").filter({ has: this.page.locator("#publishShareDlg") });
+    await dialog.getByRole("button", { name: "OK" }).click();
+    await this.page.getByText("PUBLISHED", { exact: true }).waitFor({ state: "visible" });
   }
 
-  async revert(): Promise<void> {
+  /** The overlay that blocks the page while a toolbar action runs. */
+  get pageBlocker(): Locator {
+    return this.page.locator(".blockUI.blockOverlay");
+  }
+
+  /** Abandons the draft of a published form, after confirming. */
+  async revert(): Promise<ManageFormsPage> {
     await this.page.getByRole("button", { name: "Revert" }).click();
+    await this.page
+      .getByRole("dialog", { name: "Abandon the changes to this form?" })
+      .getByRole("button", { name: "Abandon changes" })
+      .click();
+    return this.formsList();
   }
 
-  async update(): Promise<void> {
+  /** Saves the fields and makes the draft the new version of the form. */
+  async update(): Promise<ManageFormsPage> {
     await this.page.getByRole("button", { name: "Update" }).click();
+    return this.formsList();
   }
 
   async saveAndClose(): Promise<ManageFormsPage> {
     await this.page.getByRole("button", { name: "Save and Close" }).click();
+    return this.formsList();
+  }
+
+  /** Save and Close when the fields fail a check: the page stays, with the problems shown. */
+  async saveAndCloseExpectingProblems(): Promise<void> {
+    await this.page.getByRole("button", { name: "Save and Close" }).click();
+    await this.fields.saveProblems.waitFor({ state: "visible" });
+  }
+
+  private async formsList(): Promise<ManageFormsPage> {
     await this.page.waitForURL((url) => url.pathname === "/workspace/editor/form/list");
     const page = new ManageFormsPage(this.page);
     await page.waitUntilLoaded();

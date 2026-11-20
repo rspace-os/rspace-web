@@ -9,16 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
+import com.researchspace.api.v1.model.ApiDocument;
 import com.researchspace.api.v1.model.ApiForm;
 import com.researchspace.api.v1.model.ApiFormField;
 import com.researchspace.api.v1.model.ApiFormSearchResult;
 import com.researchspace.api.v1.model.ApiStringFormField;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
+import com.researchspace.model.field.rule.FieldDisplayRuleValidator;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.RSForm;
@@ -28,8 +32,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -476,6 +482,228 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
         ((ApiStringFormField) apiForm5_fieldEdited.getFields().get(newIndex)).getDefaultValue());
     assertThat(apiForm5_fieldEdited.getFields()).hasSize(originalFieldCount - 1);
     assertFieldOrder(apiForm5_fieldEdited, expectedNames);
+  }
+
+  @Test
+  public void displayRulesAreWrittenAndReadThroughTheFormsAndDocumentsApi() throws Exception {
+    String gmoKey = "6f1c2e0a-0000-4000-8000-0000000000aa";
+    FormTemplatesCommon.RadioFieldPost gmo = new FormTemplatesCommon.RadioFieldPost();
+    gmo.setName("GMO?");
+    gmo.setOptions(List.of("Yes", "No"));
+    gmo.setDefaultOption("No");
+    gmo.setFieldKey(gmoKey);
+    FormTemplatesCommon.StringFieldPost permit = createAStringField();
+    permit.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Yes")));
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("GMO form");
+    formPost.setFields(new ArrayList<>(List.of(gmo, permit)));
+
+    ApiForm created = postANewForm(formPost);
+    assertEquals(gmoKey, created.getFields().get(0).getFieldKey());
+    assertNull(created.getFields().get(0).getDisplayRule());
+    FieldDisplayRuleDTO expectedRule = new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Yes"));
+    assertEquals(expectedRule, created.getFields().get(1).getDisplayRule());
+
+    // a PUT that omits the rule keeps it
+    FormTemplatesCommon.StringFieldPost permitWithoutRule = createAStringField();
+    permitWithoutRule.setId(created.getFields().get(1).getId());
+    gmo.setId(created.getFields().get(0).getId());
+    gmo.setFieldKey(null);
+    formPost.setFields(new ArrayList<>(List.of(gmo, permitWithoutRule)));
+    ApiForm edited = doFormEditPut(formPost, created.getId());
+    assertEquals(expectedRule, edited.getFields().get(1).getDisplayRule());
+
+    // a rule naming an option the source does not offer rejects the whole request
+    FormTemplatesCommon.StringFieldPost badRule = createAStringField();
+    badRule.setName("renamed");
+    badRule.setId(created.getFields().get(1).getId());
+    badRule.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", List.of("Maybe")));
+    formPost.setFields(new ArrayList<>(List.of(gmo, badRule)));
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+        .andExpect(status().is4xxClientError());
+    ApiForm unchanged = getForm(created.getId());
+    assertEquals(permitWithoutRule.getName(), unchanged.getFields().get(1).getName());
+    assertEquals(expectedRule, unchanged.getFields().get(1).getDisplayRule());
+
+    // documents report each field's key and rule from their own form version
+    putUrl(extractLinkByRel(created, "publish"));
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(
+            folderMgr.getRootFolderForUser(anyUser).getId(), created.getId(), anyUser);
+    MvcResult docResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKeyAnyUser, "/documents/" + doc.getId(), anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiDocument apiDoc = getFromJsonResponseBody(docResult, ApiDocument.class);
+    assertEquals(gmoKey, apiDoc.getFields().get(0).getFieldKey());
+    assertEquals(expectedRule, apiDoc.getFields().get(1).getDisplayRule());
+  }
+
+  @Test
+  public void optionsAndRulesAreCheckedAsSubmitted() throws Exception {
+    // each option is checked before the options are joined into the stored format
+    for (List<String> options : List.of(List.of("A&fieldChoices=B"), List.of("A&"))) {
+      FormTemplatesCommon.RadioFieldPost radio = new FormTemplatesCommon.RadioFieldPost();
+      radio.setName("radio");
+      radio.setOptions(options);
+      FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+      formPost.setName("options form");
+      formPost.setFields(new ArrayList<>(List.of(radio)));
+      MvcResult result =
+          mockMvc
+              .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(result.getResponse().getContentAsString()).contains("blank or contains");
+    }
+
+    // rules are read as the rule core reads them: no coercion, no unknown properties
+    String key = "6f1c2e0a-0000-4000-8000-0000000000bb";
+    String prefix = "{\"sourceFieldKey\":\"" + key + "\",\"operator\":\"IS_ANY_OF\",";
+    for (String rule :
+        List.of(prefix + "\"values\":[1]}", prefix + "\"values\":[\"1\"],\"note\":\"x\"}")) {
+      String body =
+          "{\"name\":\"rules form\",\"fields\":["
+              + "{\"type\":\"Radio\",\"name\":\"source\",\"options\":[\"1\",\"2\"],"
+              + "\"fieldKey\":\""
+              + key
+              + "\"},"
+              + "{\"type\":\"String\",\"name\":\"dependent\",\"displayRule\":"
+              + rule
+              + "}]}";
+      mockMvc
+          .perform(
+              preparePostOrPutRequestBody(
+                  post(createUrl(API_VERSION.ONE, "/forms")), body, anyUser, apiKeyAnyUser))
+          .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Test
+  public void putThatCannotMakeANewVersionIsRejectedAndChangesNothing() throws Exception {
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("versioned form");
+    formPost.setFields(new ArrayList<>(List.of(createAStringField())));
+    ApiForm created = postANewForm(formPost);
+    putUrl(extractLinkByRel(created, "publish"));
+    // versioning refuses system forms
+    doInTransaction(() -> formMgr.get(created.getId(), anyUser).setSystemForm(true));
+    try {
+      FormTemplatesCommon.StringFieldPost renamed = createAStringField();
+      renamed.setId(created.getFields().get(0).getId());
+      renamed.setName("renamed");
+      formPost.setFields(new ArrayList<>(List.of(renamed)));
+
+      MvcResult result =
+          mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+
+      assertThat(result.getResponse().getContentAsString()).contains("It may be a system form");
+      ApiForm unchanged = getForm(created.getId());
+      assertEquals(created.getFields().get(0).getName(), unchanged.getFields().get(0).getName());
+      assertNull(doInTransaction(() -> formMgr.get(created.getId(), anyUser).getTempForm()));
+    } finally {
+      doInTransaction(() -> formMgr.get(created.getId(), anyUser).setSystemForm(false));
+    }
+  }
+
+  @Test
+  public void putThatReplacesEveryFieldReturnsTheNewFields() throws Exception {
+    for (boolean published : List.of(false, true)) {
+      FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+      formPost.setName("replaced form");
+      formPost.setFields(new ArrayList<>(List.of(createAStringField())));
+      ApiForm created = postANewForm(formPost);
+      if (published) {
+        putUrl(extractLinkByRel(created, "publish"));
+      }
+      FormTemplatesCommon.StringFieldPost replacement = createAStringField();
+      replacement.setName("replacement");
+      formPost.setFields(new ArrayList<>(List.of(replacement)));
+
+      ApiForm edited = doFormEditPut(formPost, created.getId());
+
+      assertThat(edited.getFields())
+          .extracting(ApiFormField::getName)
+          .containsExactly("replacement");
+      assertThat(getForm(edited.getId()).getFields())
+          .extracting(ApiFormField::getName)
+          .containsExactly("replacement");
+    }
+  }
+
+  @Test
+  public void oversizedOrRepeatedRuleValuesAreRejectedOnPostAndPut() throws Exception {
+    String gmoKey = "6f1c2e0a-0000-4000-8000-0000000000cc";
+    List<String> tooMany = new ArrayList<>();
+    for (int i = 0; i <= FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooMany.add("option " + i);
+    }
+    List<String> tooLong = new ArrayList<>();
+    for (int i = 0; i < FieldDisplayRuleValidator.MAX_VALUES; i++) {
+      tooLong.add("x".repeat(40) + i);
+    }
+    Map<String, List<String>> valuesByCode =
+        Map.of(
+            FieldDisplayRuleValidator.VALUE_TOO_MANY, tooMany,
+            FieldDisplayRuleValidator.RULE_TOO_LONG, tooLong,
+            FieldDisplayRuleValidator.VALUE_DUPLICATE, List.of("Yes", "Yes"));
+    FormTemplatesCommon.RadioFieldPost gmo = new FormTemplatesCommon.RadioFieldPost();
+    gmo.setName("GMO?");
+    gmo.setOptions(List.of("Yes", "No"));
+    gmo.setFieldKey(gmoKey);
+    FormTemplatesCommon.FormPost formPost = new FormTemplatesCommon.FormPost();
+    formPost.setName("GMO form");
+    formPost.setFields(new ArrayList<>(List.of(gmo, createAStringField())));
+    ApiForm created = postANewForm(formPost);
+    Long formCount = getCountOfEntityTable("RSForm");
+
+    for (Map.Entry<String, List<String>> entry : valuesByCode.entrySet()) {
+      String expectedMessage = getMsgFromResourceBundler(entry.getKey(), "sff2");
+      FormTemplatesCommon.StringFieldPost permit = createAStringField();
+      permit.setDisplayRule(new FieldDisplayRuleDTO(gmoKey, "IS_ANY_OF", entry.getValue()));
+      gmo.setId(null);
+      formPost.setFields(new ArrayList<>(List.of(gmo, permit)));
+      MvcResult postResult =
+          mockMvc
+              .perform(createBuilderForPostWithJSONBody(apiKeyAnyUser, "/forms", anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(postResult.getResponse().getContentAsString()).contains(expectedMessage);
+      assertEquals(formCount, getCountOfEntityTable("RSForm"));
+
+      gmo.setId(created.getFields().get(0).getId());
+      permit.setId(created.getFields().get(1).getId());
+      MvcResult putResult =
+          mockMvc
+              .perform(
+                  createBuilderForPutWithJSONBody(
+                      apiKeyAnyUser, "/forms/" + created.getId(), anyUser, formPost))
+              .andExpect(status().isUnprocessableEntity())
+              .andReturn();
+      assertThat(putResult.getResponse().getContentAsString()).contains(expectedMessage);
+      assertNull(getForm(created.getId()).getFields().get(1).getDisplayRule());
+    }
+  }
+
+  private ApiForm getForm(Long formId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKeyAnyUser, "/forms/" + formId, anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiForm.class);
   }
 
   private void assertFieldOrder(ApiForm apiFormWithAddedField, List<String> expectedNames) {

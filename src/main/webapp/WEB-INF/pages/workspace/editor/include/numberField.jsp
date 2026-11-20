@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp" %>
-<tr id="field_${field.id}" name="number" class="field">
+<tr id="field_${field.id}" name="number" class="field"<%@ include file="fieldDisplayAttributes.jspf" %>>
   <td class="field-value">
     <div id="theNumber" style="position:relative;">
       <table>
@@ -25,7 +25,7 @@
         <tr>
           <td class="field-value-inner">
             <input id="${field.id}" class="inputField ${field.id}" name="fieldData" type="text" 
-              value="${field.fieldData}" onchange="checkAndMarkNumber(this)"/>
+              value="${field.fieldData}" oninput="numberFieldInput(this)" onchange="checkAndMarkNumber(this)"/>
             <p class="plainTextField ${field.id} singleLineFieldInDocViewMode" id="plainText_${field.id}">
               ${field.fieldData}
             </p>

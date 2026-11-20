@@ -2246,6 +2246,90 @@ export default interface Resources {
       },
       "warning": "Baseline changes affect every user. Changes made without RSpace support are not covered by RSpace support agreements."
     },
+    "fieldDisplay": {
+      "fieldsHidden": "{count, plural, one {One field is hidden: {fields}.} other {# fields are hidden: {fields}.}}",
+      "fieldsShown": "{count, plural, one {One more field is shown: {fields}.} other {# more fields are shown: {fields}.}}"
+    },
+    "fieldEditor": {
+      "card": {
+        "changeType": "Change type, currently {type}",
+        "delete": "Delete field {field}",
+        "mandatory": "Mandatory",
+        "mandatoryNo": "Not mandatory",
+        "mandatoryYes": "Mandatory",
+        "move": "Move field",
+        "moveDown": "Move {field} down",
+        "moveDownTooltip": "Move down",
+        "moveToBottom": "Move {field} to the bottom",
+        "moveToBottomTooltip": "Move to bottom",
+        "moveToTop": "Move {field} to the top",
+        "moveToTopTooltip": "Move to top",
+        "moveUp": "Move {field} up",
+        "moveUpTooltip": "Move up",
+        "name": "Name",
+        "nameLength": "{length, number} / {max, number}",
+        "type": "Type",
+        "unnamed": "Unnamed field"
+      },
+      "condition": {
+        "always": "Always",
+        "conditional": "Only when another field has certain values",
+        "dependents": "Other fields depend on this field: {fields}",
+        "explanation": "A field can be set to show only when another field meets a condition: a radio or choice field has certain options, or a one-line text or number field has a certain value. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
+        "noOtherFields": "No other fields",
+        "numberRequired": "Enter a number, such as 5, -2 or 2.5.",
+        "operator": {
+          "atLeast": "is at least",
+          "atMost": "is at most",
+          "contains": "contains",
+          "equals": "is",
+          "greaterThan": "is greater than",
+          "hasNoValue": "has no value",
+          "hasValue": "has a value",
+          "isAnyOf": "is any of",
+          "isNoneOf": "is none of",
+          "lessThan": "is less than",
+          "notEquals": "is not"
+        },
+        "operatorLabel": "Condition",
+        "sourceLabel": "Field",
+        "sourceMissing": "The field this condition read no longer exists. Choose another field.",
+        "sourceRequired": "Choose a field.",
+        "title": "Display this field when…",
+        "valueLabel": "Value",
+        "valueRequired": "Enter a value.",
+        "valueTooLong": "This value is too long to store. Shorten it.",
+        "valuesLabel": "Options",
+        "valuesRejected": "This condition cannot be applied. Choose fewer or shorter options.",
+        "valuesRequired": "Choose at least one option."
+      },
+      "options": {
+        "add": "Add option",
+        "blank": "Options cannot be blank.",
+        "duplicate": "Options must all be different.",
+        "optionLabel": "Option {position}",
+        "remove": "Remove option {option}",
+        "required": "Add at least one option.",
+        "title": "Options"
+      },
+      "summary": {
+        "atLeast": "Shown when {source} is at least {value}",
+        "atMost": "Shown when {source} is at most {value}",
+        "contains": "Shown when {source} contains “{value}”",
+        "equals": "Shown when {source} is “{value}”",
+        "equalsNumber": "Shown when {source} is {value}",
+        "greaterThan": "Shown when {source} is greater than {value}",
+        "hasNoValue": "Shown when {source} has no value",
+        "hasValue": "Shown when {source} has a value",
+        "isAnyOf": "Shown when {source} is {options}",
+        "isNoneOf": "Shown when {source} is not {options}",
+        "lessThan": "Shown when {source} is less than {value}",
+        "notEquals": "Shown when {source} is not “{value}”",
+        "notEqualsNumber": "Shown when {source} is not {value}",
+        "sourceBelowHint": "Placing it below {source} reads better.",
+        "sourceMissing": "Always shown: the field its rule read no longer exists."
+      }
+    },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
       "selectedFolderWithColon": "Selected folder:",
@@ -4608,6 +4692,8 @@ export default interface Resources {
           "textContentMustBeString": "The content of textual extra fields must be a string."
         }
       },
+      "hiddenFieldInvalid": "{field} is hidden but holds a value that cannot be saved. Show it again by changing the answer it depends on, then correct or clear it.",
+      "hiddenFieldInvalidWithSource": "The field \"{field}\" is hidden but holds a value that cannot be saved. Change \"{source}\" to show it, then correct or clear it.",
       "identifiers": {
         "assignDialog": {
           "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",
@@ -5046,6 +5132,7 @@ export default interface Resources {
         },
         "customField": {
           "defaultDescription": "Default Description",
+          "defaultOptionsExplanation": "Options selected here are selected in new {recordType} made from this template.",
           "defaultValue": "Default Value",
           "deleteField": "Delete field {fieldName}",
           "deleteNewField": "Delete new field",
@@ -5053,22 +5140,14 @@ export default interface Resources {
             "keep": "Keep field in existing {recordType}",
             "remove": "Remove field from existing {recordType}"
           },
-          "mandatory": "Mandatory",
-          "name": "Name",
           "noMoreFields": "No more fields",
-          "type": "Type",
           "validation": {
             "duplicateName": "You either already have a field with that name or that name is not permitted",
             "emptyName": "Name cannot be empty",
-            "nameTooLong": "Name cannot be longer than 50 characters",
-            "optionsNotUnique": "All values must be unique.",
-            "optionsRequired": "One or more values are required."
-          },
-          "values": "Values",
-          "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+            "nameTooLong": "Name cannot be longer than 50 characters"
+          }
         },
         "defaultValue": {
-          "addValue": "Add Value",
           "allRelationshipTypes": "All relationship types",
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
@@ -5077,13 +5156,6 @@ export default interface Resources {
           "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
           "defaultLinkTarget": "Default link target",
           "none": "None"
-        },
-        "move": {
-          "down": "Down",
-          "label": "Move",
-          "toBottom": "To Bottom",
-          "toTop": "To Top",
-          "up": "Up"
         },
         "quantityUnits": {
           "defaultScale": "Default Scale",
@@ -6769,6 +6841,23 @@ export default interface Resources {
           "label": "Sample"
         }
       },
+      "displayRules": {
+        "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
+        "confirmDeleteField": {
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Deleting the field also removes that rule, so {fields} will always be shown.} other {The display rules of {fields} read this field. Deleting the field also removes those rules, so these fields will always be shown.}}",
+          "title": "Delete {field}?"
+        },
+        "confirmOptionRemoval": {
+          "message": "{count, plural, one {The display rule of {fields} uses this option. Removing the option also removes it from that rule, and removes the rule if it has no options left.} other {The display rules of {fields} use this option. Removing the option also removes it from those rules, and removes any rule that has no options left.}}",
+          "title": "Remove option {option}?"
+        },
+        "confirmTypeChange": {
+          "confirm": "Change type",
+          "message": "{count, plural, one {The display rule of {fields} reads this field. Rules read the new type differently, or not at all, so changing the type also removes that rule.} other {The display rules of {fields} read this field. Rules read the new type differently, or not at all, so changing the type also removes those rules.}}",
+          "title": "Change the type of {field}?"
+        },
+        "optionInUse": "A display rule uses this option, so it cannot be renamed."
+      },
       "fields": {
         "customField": {
           "deleteField": "{fieldType} field will be deleted from this template.",
@@ -8131,6 +8220,7 @@ export default interface Resources {
         "missing": "No id to retrieve"
       },
       "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
+      "concurrentChangeRetry": "Another change was being saved at the same time, so nothing was saved. Try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -8373,6 +8463,9 @@ export default interface Resources {
         "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
       },
       "fieldData": {
+        "choiceEmptyValue": "The choice content has an empty value. Separate options with single commas, with none at the start or end, and send empty content to clear the selection",
+        "choiceNotAnOption": "The choice content names values that are not options of the field: {0}. Separate options with commas, and write a comma that is part of an option as &#44;",
+        "choiceNotAnOptionMore": "The choice content names values that are not options of the field: {0} and {1} more. Separate options with commas, and write a comma that is part of an option as &#44;",
         "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
         "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
         "invalidChoice": "Invalid data for Choice Field [{0}]",
@@ -8385,6 +8478,22 @@ export default interface Resources {
         "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
         "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
         "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
+      },
+      "fieldDisplayRule": {
+        "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
+        "keyDuplicate": "Field [{0}] has the same field key as another field",
+        "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
+        "operatorNotForSource": "The display rule on field [{0}] uses a condition that its source field does not support",
+        "ruleTooLong": "The display rule on field [{0}] is too long to save; use fewer or shorter values",
+        "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
+        "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
+        "sourceType": "The display rule on field [{0}] must depend on a radio, choice, number or one-line text field that is not a password field",
+        "valueBlank": "The display rule on field [{0}] needs a value to compare with",
+        "valueCount": "The display rule on field [{0}] must compare with exactly one value",
+        "valueDuplicate": "The display rule on field [{0}] lists the same option more than once",
+        "valueNotANumber": "The display rule on field [{0}] must compare with a number, such as 5, -2 or 2.5",
+        "valueTooMany": "The display rule on field [{0}] lists more than 1000 options",
+        "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
       },
       "form": {
         "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
@@ -9607,6 +9716,7 @@ export default interface Resources {
           "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
+          "keyChanged": "The field key of field ''{0}'' cannot be changed.",
           "link": {
             "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
             "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
@@ -10811,6 +10921,7 @@ export default interface Resources {
           "deletingFieldBlock": "Deleting field...",
           "doneButton": "Done",
           "editButton": "Edit",
+          "fieldEditorUnavailable": "The fields of this form are not loaded, so they cannot be checked before the form is saved, updated or published. Reload the page and try again.",
           "fieldErrors": "Errors: {0}",
           "fieldNameMaxLength": "Field name maximum length is {0} characters",
           "fieldNamePicklist": "{0} (Picklist)",
@@ -12369,14 +12480,29 @@ export default interface Resources {
         "deleteFailed": "Exception deleting form. This has been logged.",
         "fieldCreateUnauthorized": "Create field form unauthorised",
         "fieldDeleteUnauthorized": "Not permitted to delete field [{0}]",
+        "fieldIdDuplicate": "Field [{0}] is listed more than once",
+        "fieldIdUnknown": "Field [{0}] is not a field of this form",
+        "fieldInvalid": "Field [{0}]: {1}",
+        "fieldKeyImmutable": "The field key of field [{0}] cannot be changed",
+        "fieldKeyInUse": "Field [{0}] has a field key that another field of this form already uses",
+        "fieldMissing": "Field {0} in the list is empty",
+        "fieldNotDeletable": "Field [{0}] is part of the published form and cannot be deleted from this draft",
+        "fieldOptionInvalid": "Field [{0}] has an option that is blank or contains ''&'' or ''=''",
+        "fieldRuleInvalid": "The display rule on field [{0}] is malformed, incomplete or uses an unknown operator",
+        "fieldSettingsMissing": "The settings of field [{0}] are missing or do not match its type",
+        "fieldTypeImmutable": "Field [{0}] is a {1} field, and a saved field cannot change its type to {2}",
+        "fieldTypeUnknown": "Field [{0}] has an unknown type [{1}]",
         "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
+        "fieldsChangedElsewhere": "This form's fields were changed elsewhere, for example in another tab. Reload to see the latest fields; this save was not applied.",
         "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
         "infoUnauthorized": "Unauthorized attempt to get form info",
+        "notBeingEdited": "Form [{0}] is not open for editing; save fields to its draft instead",
         "notEditable": "Cannot edit this form: {0}",
         "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
         "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
         "systemFormUnpublish": "Attempted to unpublish a system form",
-        "unknownFieldType": "Unknown field type [{0}]"
+        "unknownFieldType": "Unknown field type [{0}]",
+        "versionNotUpdated": "This form could not be made a new version. It may be a system form, which cannot be given a new version."
       },
       "experiment": {
         "conclusionFieldName": "Conclusion",
@@ -12409,6 +12535,7 @@ export default interface Resources {
       },
       "field": {
         "lastModifiedLabel": "Last modified:",
+        "picklistPlaceholder": "Select an option",
         "picklistSuffix": "(Picklist)",
         "saveAndViewTitle": "Save and View"
       },
@@ -13465,6 +13592,86 @@ export default interface Resources {
           "peopleLabel": "People",
           "type": "Type"
         }
+      }
+    },
+    "formFieldEditor": {
+      "addField": "Add field",
+      "conditionIncomplete": "Complete the display condition of {field}, or choose Always, before saving.",
+      "confirm": {
+        "abandon": "Abandon the changes to this form?",
+        "abandonAction": "Abandon changes",
+        "abandonMessage": "Every change since the form was last updated is discarded, including any unsaved field changes.",
+        "changeType": "Change the type of {field}?",
+        "changeTypeAction": "Change type",
+        "deleteField": "Delete {field}?",
+        "dependents": "{count, plural, one {The display rule of {fields} reads it and will be removed.} other {The display rules of {fields} read it and will be removed.}}",
+        "removeOption": "Remove the option {option}?"
+      },
+      "conflict": "Its fields were saved in another tab or window after this page loaded them, so nothing was saved from this page. Reload to see the latest fields, then make your changes again.",
+      "conflictTitle": "This form was changed elsewhere.",
+      "conflictUnsaved": "The changes you made on this page that were not saved will be lost when you reload.",
+      "errorTitle": "The fields were not saved.",
+      "firstProblem": "The first is in {field}.",
+      "heading": "Fields",
+      "loadFailed": "The fields of this form could not be loaded.",
+      "noFields": "This form has no fields yet.",
+      "optionInUse": "A display rule uses this option, so it cannot be renamed.",
+      "problems": {
+        "aboveMax": "The default cannot be more than the maximum.",
+        "belowMin": "The default cannot be less than the minimum.",
+        "decimalPlaces": "Enter a whole number from 0 to 127.",
+        "minAboveMax": "The minimum cannot be more than the maximum.",
+        "nameRequired": "Enter a name.",
+        "nameTooLong": "Use at most {max, number} characters.",
+        "notANumber": "Enter a number.",
+        "optionCharacters": "Options cannot contain & or =.",
+        "optionsInvalid": "Options cannot be blank and must all be different.",
+        "optionsRequired": "Add at least one option.",
+        "optionsTooLong": "These options are too long altogether."
+      },
+      "problemsTitle": "Fix the problems marked below, then save again.",
+      "publishedNotice": "This form is published. To change its fields, edit it again from the list of forms; your changes then make a new version.",
+      "reload": "Reload",
+      "saveFailed": "The fields could not be saved. Try again.",
+      "settings": {
+        "apiOnlyType": "Fields of this type are added through the API. Here you can rename, reorder, delete it, make it mandatory, or show it with a display rule.",
+        "clearStoredValue": "Clear stored {bound}",
+        "dateFormat": "Date format",
+        "decimalPlaces": "Decimal places",
+        "defaultOption": "Default option",
+        "defaultOptions": "Selected by default",
+        "defaultText": "Default text",
+        "defaultTextOf": "Default text of {field}",
+        "defaultValue": "Default value",
+        "earliest": "Earliest",
+        "editDefaultText": "Edit default text of {field}",
+        "latest": "Latest",
+        "maximum": "Maximum",
+        "minimum": "Minimum",
+        "multiple": "Multiple selection",
+        "noDefault": "No default",
+        "noDefaultText": "No default text.",
+        "password": "Hide the value, like a password",
+        "passwordReadByRule": "A display rule reads this field, so it cannot be a password field.",
+        "showAsPickList": "Show as a drop-down list",
+        "sortAlphabetic": "Sort options alphabetically",
+        "time12Hour": "12-hour (02:30 PM)",
+        "time24Hour": "24-hour (14:30)",
+        "timeFormat": "Time format",
+        "unlistedFormat": "Choose a listed format to enter a new value; that clears this one.",
+        "unreadValue": "Stored as {value}, which cannot be shown here. It is kept unless you enter a new value or choose another format."
+      },
+      "types": {
+        "attachment": "Attachment",
+        "choice": "Choice (several options)",
+        "date": "Date",
+        "number": "Number",
+        "radio": "Radio (one option)",
+        "reference": "Reference",
+        "string": "String (one line of text)",
+        "text": "Text (formatted text)",
+        "time": "Time",
+        "uri": "URI"
       }
     },
     "tinymce": {

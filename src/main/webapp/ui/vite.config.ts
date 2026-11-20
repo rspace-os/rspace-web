@@ -289,6 +289,7 @@ const vitestAliases: Alias[] = [
 // Audited pure utility suites. DOM-dependent utilities retain the jsdom setup.
 const nodeTestFiles = [
   "src/util/__tests__/{iterators,set,optional,result,ArrayUtils,Util,StringUtils,parsers}/*.test.ts",
+  "src/modules/common/field-rules/__tests__/*.test.ts",
 ];
 
 const resolvedBundleEntries = Object.fromEntries(

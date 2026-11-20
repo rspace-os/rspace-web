@@ -880,6 +880,7 @@
         "deletingFieldBlock": "Deleting field...",
         "doneButton": "Done",
         "editButton": "Edit",
+        "fieldEditorUnavailable": "The fields of this form are not loaded, so they cannot be checked before the form is saved, updated or published. Reload the page and try again.",
         "fieldErrors": "Errors: {0}",
         "fieldNameMaxLength": "Field name maximum length is {0} characters",
         "fieldNamePicklist": "{0} (Picklist)",

@@ -97,4 +97,46 @@ public interface FormDao extends AbstractFormDao<RSForm, Long> {
    * @return a List of RSForms used by other users
    */
   List<RSForm> getFormsUsedByOtherUsers(User formOwner);
+
+  /**
+   * The revision of the form's field list, which every save of its fields advances. Not mapped on
+   * the entity, so read it in the same transaction as the fields it describes, and before them.
+   */
+  long getFieldsRevision(Long formId);
+
+  /**
+   * Advances the revision of the form's field list if it is still {@code expectedRevision}, in one
+   * conditional update that also locks the form's row until the transaction ends, so saves of one
+   * form's fields run one at a time and only one of two saves from the same revision can succeed.
+   *
+   * <p>Call it before the transaction reads anything: with MariaDB's {@code
+   * innodb_snapshot_isolation} a locking write to a row changed after the transaction's first read
+   * fails, and such a failure is reported here as a changed revision.
+   *
+   * @return false if the revision was not {@code expectedRevision} (or the form does not exist)
+   */
+  boolean advanceFieldsRevision(Long formId, long expectedRevision);
+
+  /**
+   * Whether the form's field list is still at {@code expectedRevision}, read with a lock on the
+   * form's row that holds until the transaction ends, so no save of its fields can commit before
+   * this transaction does. Lets an action on the whole form (publishing it, or making a draft the
+   * new version) act only on the fields the caller checked.
+   *
+   * <p>Call it before the transaction reads the form's fields. A row changed after the
+   * transaction's first read is reported as a changed revision, so the fields read afterwards are
+   * those of the revision checked.
+   *
+   * @return false if the revision is not {@code expectedRevision} (or the form does not exist)
+   */
+  boolean lockFieldsRevision(Long formId, long expectedRevision);
+
+  /** Advances the revision of the form's field list, whatever it is; for saves that read none. */
+  void advanceFieldsRevision(Long formId);
+
+  /**
+   * Puts back a revision this transaction advanced, when the save changed nothing; the row is still
+   * locked by the advance, so no other save can have read the advanced revision.
+   */
+  void restoreFieldsRevision(Long formId, long revision);
 }

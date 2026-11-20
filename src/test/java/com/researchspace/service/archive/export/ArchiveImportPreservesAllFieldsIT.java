@@ -4,6 +4,8 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
@@ -15,6 +17,8 @@ import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
+import com.researchspace.model.dtos.FieldDisplayRuleDTO;
+import com.researchspace.model.dtos.FormFieldSaveItem;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
@@ -28,6 +32,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
@@ -46,6 +51,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
@@ -184,6 +190,84 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     assertTrue(importedRadio.isShowAsPickList(), "imported radio field remains a pick-list");
     assertTrue(
         importedRadio.isSortAlphabetic(), "imported radio field remains sorted alphabetically");
+  }
+
+  @Test
+  public void importedDocumentIsSignableOnlyIfItsArchivedValuesAllowIt() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+
+    // Reason is mandatory, and shown only while Weight is above 2
+    String run = getRandomName(6);
+    String shownOnlyInArchive = "Doc_default_weight_1_archived_4_" + run;
+    String hiddenOnlyInArchive = "Doc_default_weight_4_archived_1_" + run;
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(createRuleDocument(user, shownOnlyInArchive, "1", "4").getOid());
+    exportList.add(createRuleDocument(user, hiddenOnlyInArchive, "4", "1").getOid());
+
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    expCfg.setExportScope(ExportScope.SELECTION);
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile =
+        archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
+    ImportArchiveReport report =
+        importer.importArchive(
+            zipFile,
+            createDefaultArchiveImportConfig(user, tempImportFolder),
+            NULL_MONITOR,
+            importStrategy::doImport);
+
+    assertTrue(report.isSuccessful());
+    StructuredDocument reasonShown = findImportedDoc(report, shownOnlyInArchive, user);
+    assertEquals("4", reasonShown.getFields().get(0).getFieldData());
+    assertImportedReasonKeepsItsRule(reasonShown, user);
+    assertFalse(reasonShown.isAllFieldsValid(), "the empty mandatory Reason is shown");
+
+    StructuredDocument reasonHidden = findImportedDoc(report, hiddenOnlyInArchive, user);
+    assertEquals("1", reasonHidden.getFields().get(0).getFieldData());
+    assertImportedReasonKeepsItsRule(reasonHidden, user);
+    assertTrue(reasonHidden.isAllFieldsValid(), "the empty mandatory Reason is hidden");
+  }
+
+  private StructuredDocument createRuleDocument(
+      User user, String docName, String defaultWeight, String archivedWeight) throws Exception {
+    String weightKey = UUID.randomUUID().toString();
+    RSForm form = formMgr.create(user);
+    formMgr.saveFields(
+        form.getId(),
+        List.of(
+            new FormFieldSaveItem(
+                null,
+                FieldType.NUMBER.getType(),
+                weightKey,
+                null,
+                new NumberFieldDTO<>("", "", "", defaultWeight, FieldType.NUMBER, "Weight")),
+            new FormFieldSaveItem(
+                null,
+                FieldType.STRING.getType(),
+                null,
+                new FieldDisplayRuleDTO(weightKey, "GREATER_THAN", List.of("2")),
+                new StringFieldDTO<>("Reason", true, "no", ""))),
+        user);
+    formMgr.publish(form.getId(), true, null, user);
+
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    doc.setName(docName);
+    Field weight = doc.getFields().get(0);
+    weight.setFieldData(archivedWeight);
+    fieldMgr.save(weight, user);
+    recordMgr.save(doc, user);
+    return doc;
+  }
+
+  private void assertImportedReasonKeepsItsRule(StructuredDocument imported, User user) {
+    RSForm form = formMgr.getWithPopulatedFieldForms(imported.getForm().getId(), user);
+    String weightKey = form.getFieldForms().get(0).getFieldKey();
+    String rule = form.getFieldForms().get(1).getDisplayRule();
+    assertNotNull(rule, "imported Reason keeps its display rule");
+    assertEquals(weightKey, FieldDisplayRule.fromJson(rule).sourceFieldKey());
   }
 
   @Test

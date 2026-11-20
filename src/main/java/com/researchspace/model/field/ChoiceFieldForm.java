@@ -1,14 +1,13 @@
 package com.researchspace.model.field;
 
+import com.researchspace.model.field.rule.ElnChoiceValues;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 
 @Entity
@@ -76,18 +75,7 @@ public class ChoiceFieldForm extends FieldForm {
 
   @Transient
   public List<String> getChoiceOptionAsList() {
-    List<String> result = new ArrayList<>();
-    if (StringUtils.isEmpty(getChoiceOptions())) {
-      return result;
-    }
-
-    String[] options = getChoiceOptions().split("&");
-
-    for (String v : options) {
-      result.add(v.split("=")[1]);
-    }
-
-    return result;
+    return ElnChoiceValues.parse(getChoiceOptions());
   }
 
   @Transient
@@ -104,16 +92,7 @@ public class ChoiceFieldForm extends FieldForm {
 
   @Transient
   public List<String> getDefaultChoiceOptionAsList() {
-    List<String> result = new ArrayList<>();
-    if (StringUtils.isEmpty(getDefaultChoiceOption())) {
-      return result;
-    }
-    String[] options = getDefaultChoiceOption().split("&");
-
-    for (String v : options) {
-      result.add(v.split("=")[1]);
-    }
-    return result;
+    return ElnChoiceValues.parse(getDefaultChoiceOption());
   }
 
   @Override

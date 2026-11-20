@@ -1,12 +1,10 @@
-import AddIcon from "@mui/icons-material/Add";
 import Autocomplete from "@mui/material/Autocomplete";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import MuiTextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { usableOptions } from "@/modules/common/field-editor/ruleEditing";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
 import type { Option } from "../../../stores/definitions/Field";
@@ -28,18 +26,19 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
   const { t } = useTranslation("inventory");
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "attachment";
+  const recordType = t(`recordTypes.${recordTypeName}.lowerPlural`);
 
   /*
    * It is quite expensive to re-render TinyMCE, resulting in a slightly
    * flicker every time, so we need to minimise the number of times we render
    * it. Now, for fields that already exist on the server, the id acts as a
    * perfectly fine key but for new fields they have no unique identifier.
-   * So for the purposes here, we just generate a string that is very unlikely
-   * to be the same for any two new fields and will only change when this
-   * component is re-mounted and thus the TinyMCE of the rich text field will
-   * have to be re-rendered anyway.
+   * So for those, this component's own id serves, which only changes when it
+   * is re-mounted and thus the TinyMCE of the rich text field will have to be
+   * re-rendered anyway.
    */
-  const key = React.useMemo(() => field.id ?? crypto.randomUUID(), [field.id]);
+  const instanceId = React.useId();
+  const key = field.id ?? instanceId;
 
   /*
    * A Link template field's "default value" is two things: the whitelist of relationship types
@@ -117,13 +116,6 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
     );
   }
 
-  const errorState = match<void, string | null>([
-    [() => !_hasOptions, null],
-    [() => field.options.length === 0, t("fields.templateFields.customField.validation.optionsRequired")],
-    [() => !field.optionsAreUnique, t("fields.templateFields.customField.validation.optionsNotUnique")],
-    [() => true, null],
-  ])();
-
   /*
    * Have to use a variable here to make the suppression work. No idea why; may
    * well be a bug in Flow.
@@ -183,8 +175,8 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
     value: fieldValue,
     type: fieldType,
     disabled: !editing,
-    error: Boolean(errorState),
-    helperText: errorState ?? "",
+    error: false,
+    helperText: "",
   };
 
   // Common onChange handler
@@ -210,21 +202,14 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
   props.name = field.name;
   props.noValueLabel = t("fields.templateFields.defaultValue.none");
 
-  // Add options for choice/radio fields
+  // choice/radio options are edited in the field's options editor; here the author only picks defaults
   if (field.type === "radio" || field.type === "choice") {
-    props.options = field.options ?? [];
-    props.allowOptionDeletion = true;
+    props.options = usableOptions(field.options.map((option) => option.value)).map((value) => ({
+      value,
+      label: value,
+      editing: false,
+    }));
     props.hideWhenDisabled = false;
-    props.onOptionChange = (index: number, changedOption: Option) => {
-      field.setAttributesDirty({
-        options: field.options.toSpliced(index, 1, changedOption),
-      });
-    };
-    props.onOptionRemove = (index: number) => {
-      field.setAttributesDirty({
-        options: field.options.toSpliced(index, 1),
-      });
-    };
   }
 
   // Add radio-specific props
@@ -239,43 +224,27 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
     props.disableFileUpload = true;
   }
 
-  const custom = React.createElement(CustomField, props as React.ComponentProps<typeof CustomField>);
+  // the wrapper's legend does not label a single input, so name the input itself
+  const inputLabel = {
+    slotProps: { htmlInput: { "aria-label": t("fields.templateFields.customField.defaultValue") } },
+  };
+  const custom = React.createElement(CustomField, {
+    ...props,
+    ...(fieldType === "String" || fieldType === "Number" ? inputLabel : {}),
+  } as React.ComponentProps<typeof CustomField>);
 
   return (
     <InputWrapper
       label={
-        _hasOptions
-          ? t("fields.templateFields.customField.values")
-          : isAttachment
-            ? t("fields.templateFields.customField.defaultDescription")
-            : t("fields.templateFields.customField.defaultValue")
+        isAttachment
+          ? t("fields.templateFields.customField.defaultDescription")
+          : t("fields.templateFields.customField.defaultValue")
       }
-      explanation={_hasOptions ? t("fields.templateFields.customField.valuesExplanation") : null}
+      explanation={
+        _hasOptions ? t("fields.templateFields.customField.defaultOptionsExplanation", { recordType }) : null
+      }
     >
       {custom}
-      {hasOptions(field.fieldType) && editing && (
-        <Box sx={{ display: "inline", mt: 1 }}>
-          <Button
-            color="primary"
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              field.setAttributesDirty({
-                options: [
-                  ...field.options,
-                  {
-                    value: "",
-                    label: "",
-                    editing: true,
-                  },
-                ],
-              });
-            }}
-          >
-            {t("fields.templateFields.defaultValue.addValue")}
-          </Button>
-        </Box>
-      )}
     </InputWrapper>
   );
 }
