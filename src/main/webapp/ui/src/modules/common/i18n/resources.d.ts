@@ -972,7 +972,7 @@ export default interface Resources {
         "conditional": "Only when another field has certain values",
         "dependents": "Other fields depend on this field: {fields}",
         "explanation": "A field can be set to show only when another field meets a condition: a radio or choice field has certain options, or a one-line text or number field has a certain value. A mandatory field is mandatory only while it is shown, and a hidden field keeps its value.",
-        "noOtherFields": "No other fields",
+        "noAvailableFields": "No available fields",
         "numberRequired": "Enter a number, such as 5, -2 or 2.5.",
         "operator": {
           "atLeast": "is at least",
