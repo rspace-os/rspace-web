@@ -236,6 +236,11 @@ function init() {
 	})
 	var domainhtml = Mustache.render($('#auditdomainTemplate').html());
 	$(".domainsRow").append(domainhtml);
+	$.get('/audit/domains', function (xhr) {
+		auditDomains = Array.isArray(xhr.data) ? xhr.data : [];
+	}).fail(function () {
+		console.warn("Could not load audit domains; the Other activity area uses its built-in list.");
+	});
 }
 
 function serializeForm () {
@@ -246,37 +251,53 @@ function _isNotDomain (obj) {
 	return obj["name"] !== "domains"
 }
 
+var ACTIVITY_AREA_DOMAINS = {
+	ELN: ["AUDIT","FOLDER","FORM","MEDIA","NOTEBOOK","RECORD","WORKSPACE"],
+	INV: ["INV_SAMPLE","INV_SUBSAMPLE","INV_CONTAINER","INV_INSTRUMENT"],
+	REQUEST: ["REQUEST"]
+};
+// Used for OTHER until /audit/domains answers, or if it fails.
+var FALLBACK_OTHER_DOMAINS = ["COMMUNITY","GROUP","MESSAGING","UNKNOWN","USER"];
+// All domains from /audit/domains; empty until it answers.
+var auditDomains = [];
+
+/**
+ * Maps checked activity areas to audit domains. OTHER is every known domain outside the named areas,
+ * so a domain added on the server is never silently filtered out.
+ */
+function domainsForActivityAreas(areas, allDomains) {
+	var named = [];
+	for (var area in ACTIVITY_AREA_DOMAINS) {
+		named = named.concat(ACTIVITY_AREA_DOMAINS[area]);
+	}
+	var otherDomains = allDomains.length > 0
+		? allDomains.filter(function (domain) { return named.indexOf(domain) === -1; })
+		: FALLBACK_OTHER_DOMAINS;
+	var domains = [];
+	areas.forEach(function (area) {
+		if (area === "OTHER") {
+			domains = domains.concat(otherDomains);
+		} else if (ACTIVITY_AREA_DOMAINS[area]) {
+			domains = domains.concat(ACTIVITY_AREA_DOMAINS[area]);
+		}
+	});
+	return domains;
+}
+
 /**
  * Serialized form to JSON array and adds additional data / configuration
  */
 function doSerializeForm(forDownload) {
-	// 'INV' and 'ELN' represent a collection of domains.
-	// we can send multiple name-value pairs where value is a single domain, or a single name-value pair
+	// The 'domains' checkboxes are activity areas, each standing for a group of domains.
+	// We can send multiple name-value pairs where value is a single domain, or a single name-value pair
 	// where the value has a comma-separated list of domains, but we can't do both as Spring treats the comma-separated values
 	// as a single value.
 	// So, here we coalesce domain names into a single name-value pair to submit.
-	var elnDomains = ["AUDIT","FOLDER","FORM","MEDIA","NOTEBOOK","RECORD","WORKSPACE"]
-	var invDomains = ["INV_SAMPLE","INV_SUBSAMPLE","INV_CONTAINER"]
-	var requestDomains = ["REQUEST"]
-	var otherDomains = ["COMMUNITY","GROUP","MESSAGING","UNKNOWN","USER"]
-	var domainsToSubmit = []
 	var requestData = $('form').serializeArray();
-	for (i=0; i< requestData.length; i++) {
-		if (requestData[i]["name"] == "domains") {
-			if (requestData[i]["value"] == "ELN") {
-				domainsToSubmit = domainsToSubmit.concat(elnDomains)
-			}
-			if (requestData[i]["value"] == "INV") {
-				domainsToSubmit = domainsToSubmit.concat(invDomains)
-			}
-			if (requestData[i]["value"] == "REQUEST") {
-				domainsToSubmit = domainsToSubmit.concat(requestDomains)
-			}
-			if (requestData[i]["value"] == "OTHER") {
-				domainsToSubmit = domainsToSubmit.concat(otherDomains)
-			}
-		}
-	}
+	var checkedAreas = requestData
+		.filter(function (field) { return !_isNotDomain(field); })
+		.map(function (field) { return field["value"]; });
+	var domainsToSubmit = domainsForActivityAreas(checkedAreas, auditDomains);
 	// replace >=1 'domains' value with single 'domains' value
 	requestData = requestData.filter(_isNotDomain)
 	if(domainsToSubmit.length > 0) {
