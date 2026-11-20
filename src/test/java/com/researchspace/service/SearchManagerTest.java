@@ -121,6 +121,38 @@ public class SearchManagerTest extends SearchSpringTestBase {
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
+  @Test
+  void labGroupMemberCanFindSharedFolderButNotPrivatePiDocument() throws IOException {
+    User pi = createAndSaveUserIfNotExists(getRandomName(8), Constants.PI_ROLE);
+    User member = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, member);
+
+    Group group = createGroup("Shared folder search", pi);
+    addUsersToGroup(pi, group, member);
+    Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
+    assertEquals(pi, sharedFolder.getOwner());
+
+    logoutAndLoginAs(pi);
+    StructuredDocument privateDocument = createBasicDocumentInRootFolderWithText(pi, "Private");
+    assertTrue(recordMgr.renameRecord(sharedFolder.getName(), privateDocument.getId(), pi));
+    flushToSearchIndices();
+
+    assertThat(
+            searchMgr
+                .searchWorkspaceRecords(createSimpleGeneralSearchCfg(sharedFolder.getName()), pi)
+                .getResults())
+        .contains(sharedFolder, privateDocument);
+
+    logoutAndLoginAs(member);
+    assertTrue(permissionUtils.isPermitted(sharedFolder, PermissionType.READ, member));
+    assertFalse(permissionUtils.isPermitted(privateDocument, PermissionType.READ, member));
+    ISearchResults<BaseRecord> results =
+        searchMgr.searchWorkspaceRecords(
+            createSimpleGeneralSearchCfg(sharedFolder.getName()), member);
+    assertThat(results.getResults()).containsExactly(sharedFolder);
+    assertEquals(1L, results.getTotalHits().longValue());
+  }
+
   /** Check if we can search documents created from templates by the template name */
   @Test
   public void testSDqueryByTemplate() throws DocumentAlreadyEditedException, IOException {
@@ -1302,8 +1334,12 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertThat(results).contains(docPi);
     assertThat(results).doesNotContain(docUserB);
 
-    // userInGroup can only see their files
+    // The member can read the PI-owned communal folder.
     input = createSimpleOwnerSearchCfg(pi.getUsername() + "," + otherUser.getUsername());
+    results = searchMgr.searchWorkspaceRecords(input, userInGroup).getResults();
+    assertThat(results).containsExactly(folderDao.getSharedFolderForGroup(group));
+
+    input = createSimpleOwnerSearchCfg(otherUser.getUsername());
     results = searchMgr.searchWorkspaceRecords(input, userInGroup).getResults();
     assertThat(results).isEmpty();
   }

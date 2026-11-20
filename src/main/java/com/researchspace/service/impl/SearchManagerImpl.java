@@ -21,6 +21,7 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.TextSearchDao;
@@ -67,6 +68,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired UserManager userMgr;
   private @Autowired RecordManager recordManager;
   private @Autowired FolderManager folderMgr;
+  private @Autowired FolderDao folderDao;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
@@ -114,6 +116,9 @@ public class SearchManagerImpl implements SearchManager {
         userFilter.stream().map(User::getUsername).collect(Collectors.toList());
     usernameFilter.add(Constants.SYSADMIN_UNAME); // Sysadmin1 added to see public folders
     searchConfig.setUsernameFilter(usernameFilter);
+    if (searchConfig.isRestrictByUser()) {
+      searchConfig.setCommunalFolderIds(folderDao.getCommunalFolderIds(user));
+    }
     return searchConfig;
   }
 
