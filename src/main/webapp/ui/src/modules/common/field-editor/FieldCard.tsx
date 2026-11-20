@@ -153,9 +153,12 @@ export default function FieldCard<T extends string>({
                 spacing={0.5}
                 sx={(theme) => ({
                   alignItems: "center",
-                  // the move buttons and the delete button, the host's own included, show keyboard focus plainly
+                  // the move buttons and the delete button, the host's own included, show keyboard focus plainly.
+                  // The text colour keeps at least 3:1 on the card in every theme, and `!important` lets the
+                  // outline through on legacy pages, whose unlayered `button:focus { outline: none }` (admin.css)
+                  // otherwise beats MUI's layered styles.
                   "& .MuiButtonBase-root.Mui-focusVisible": {
-                    outline: `2px solid ${theme.palette.primary.main}`,
+                    outline: `2px solid ${theme.palette.text.primary} !important`,
                     outlineOffset: -2,
                   },
                 })}
