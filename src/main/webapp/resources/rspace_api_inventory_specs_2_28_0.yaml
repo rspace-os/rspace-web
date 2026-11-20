@@ -6022,8 +6022,10 @@ components:
       type: object
       nullable: true
       description: |
-        Shows the field only when another radio or choice field of the same template meets a
-        condition; null when the field is always shown. A hidden field keeps its value, which is
+        Shows the field only when another field of the same template, its source, meets a
+        condition; null when the field is always shown. The source must be a radio, choice,
+        string (one-line plain text) or number field; text (formatted text) and other field
+        types cannot be sources. A hidden field keeps its value, which is
         still returned by the API, and a mandatory field is only required while it is shown.
 
         Rules are written on template fields and copied to samples and instruments when they are
@@ -6031,6 +6033,12 @@ components:
         `displayRule` to keep the current rule, or send `null` to remove it. The template's rules
         are validated together after every change in the request is applied, so a request may add
         a source field and a rule that uses it, or delete a source and clear the rules that use it.
+        Any problem rejects the whole request with a `422`. The message codes, each under
+        `validation.fieldDisplayRule.`, are `sourceMissing`, `sourceSelf`, `sourceType` (the
+        source is not a radio, choice, string or number field), `operatorNotForSource` (the
+        operator does not suit the source's kind), `valueCount`, `valueBlank`,
+        `valueNotANumber`, `valueUnknown` (an option the source does not offer),
+        `valueDuplicate`, `valueTooMany`, `ruleTooLong` and `cycle`.
 
         Visibility: a field whose source field is hidden is hidden too; a field whose source no
         longer exists is shown.
@@ -6041,7 +6049,7 @@ components:
       properties:
         sourceFieldKey:
           type: string
-          description: The `fieldKey` of the radio or choice field the condition reads.
+          description: The `fieldKey` of the radio, choice, string or number field the condition reads.
         operator:
           type: string
           enum:
@@ -6049,19 +6057,57 @@ components:
             - IS_NONE_OF
             - HAS_VALUE
             - HAS_NO_VALUE
+            - EQUALS
+            - NOT_EQUALS
+            - CONTAINS
+            - LESS_THAN
+            - AT_MOST
+            - GREATER_THAN
+            - AT_LEAST
           description: |
-            `IS_ANY_OF`: at least one selected option is in `values`. `IS_NONE_OF`: no selected
-            option is in `values` (true when nothing is selected). `HAS_VALUE`: at least one option
-            is selected. `HAS_NO_VALUE`: nothing is selected.
+            Each operator suits only some kinds of source; any other combination is rejected with a
+            `422` (`validation.fieldDisplayRule.operatorNotForSource`).
+
+            Radio and choice sources: `IS_ANY_OF`: at least one selected option is in `values`.
+            `IS_NONE_OF`: no selected option is in `values` (true when nothing is selected).
+            `HAS_VALUE`: at least one option is selected. `HAS_NO_VALUE`: nothing is selected.
+
+            String sources: `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `HAS_VALUE`, `HAS_NO_VALUE`. Text is
+            compared after trimming leading and trailing white space (the characters JavaScript's
+            `String.prototype.trim()` removes), Unicode NFC normalisation and lowercasing (not case
+            folding, so `STRASSE` does not equal `straße`).
+
+            Number sources: `EQUALS`, `NOT_EQUALS`, `LESS_THAN`, `AT_MOST` (less than or equal),
+            `GREATER_THAN`, `AT_LEAST` (greater than or equal), `HAS_VALUE`, `HAS_NO_VALUE`. Numbers
+            are compared as exact decimals, so `1.0` equals `1`.
+
+            For string and number sources, `HAS_VALUE` is true when the trimmed content is not
+            empty. When the source has no value, or a number source holds content that is not a
+            number, every comparison is false except `NOT_EQUALS`, which is true.
+
+            Clients that validate this property against a fixed list must accept the members added
+            in this release: `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `LESS_THAN`, `AT_MOST`,
+            `GREATER_THAN` and `AT_LEAST`.
         values:
           type: array
           nullable: true
           description: |
-            Options of the source field, each listed once and as the raw option text. Required and
-            non-empty for `IS_ANY_OF` and `IS_NONE_OF`. For `HAS_VALUE` and `HAS_NO_VALUE`, omit it
-            or send `[]` (`null` is also accepted). Responses omit it when it is empty. At most 1000
-            values, and the stored rule at most 32768 characters; a template request with a rule over
-            either limit, or with a value listed twice, is rejected with a `422`.
+            For `IS_ANY_OF` and `IS_NONE_OF`, options of the source field, each listed once and as
+            the raw option text; required and non-empty. For `HAS_VALUE` and `HAS_NO_VALUE`, omit it
+            or send `[]` (`null` is also accepted). Responses omit it when it is empty.
+
+            For `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `LESS_THAN`, `AT_MOST`, `GREATER_THAN` and
+            `AT_LEAST`, exactly one value (otherwise `422`, `validation.fieldDisplayRule.valueCount`).
+            It is stored as sent, not trimmed, and must not be blank after trimming (`422`,
+            `validation.fieldDisplayRule.valueBlank`). Against a number source it must be a number
+            as written, with no surrounding spaces (`422`,
+            `validation.fieldDisplayRule.valueNotANumber`): ASCII digits with an optional sign,
+            decimal point and exponent, such as `5`, `-2.5`, `+5`, `.5`, `5.`, `05` or `1e3`, at most
+            1000 characters, with at most nine exponent digits and a magnitude within 10^±2000.
+            Commas, `0x` and other prefixes, `Infinity` and `NaN` are not numbers.
+
+            At most 1000 values, and the stored rule at most 32768 characters; a template request
+            with a rule over either limit, or with an option listed twice, is rejected with a `422`.
           items:
             type: string
       example:
