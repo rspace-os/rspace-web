@@ -260,6 +260,8 @@ test.describe("Sharing workflows and permissions", () => {
     clientDocuments,
     flowDocumentSession,
   }) => {
+    // Three actors type into several TinyMCE fields, which takes more than the default minute in Firefox.
+    test.setTimeout(120_000);
     const recipient = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eTemplateRecipient");
     const reader = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eTemplateDocumentReader");
     const groupName = uniqueName("TemplateSharingGroup");

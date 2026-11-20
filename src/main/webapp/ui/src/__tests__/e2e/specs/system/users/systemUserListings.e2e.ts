@@ -87,13 +87,18 @@ test.describe("System User Listings", { tag: tags.SYSTEM }, () => {
     const firstPageUsernames = await users.columnValues("username");
     const firstPageRowCount = await users.rowCount();
 
+    // The pagination summary can change before the grid renders the new page's rows.
     await users.goToNextPage();
-    const secondPageUsernames = await users.columnValues("username");
-    expect(secondPageUsernames).not.toEqual(firstPageUsernames);
+    await expect
+      .poll(async () => {
+        const secondPageUsernames = await users.columnValues("username");
+        return secondPageUsernames.length > 0 && secondPageUsernames.join() !== firstPageUsernames.join();
+      })
+      .toBe(true);
 
     await users.goToPreviousPage();
-    expect(await users.columnValues("username")).toEqual(firstPageUsernames);
-    expect(await users.rowCount()).toBe(firstPageRowCount);
+    await expect.poll(() => users.columnValues("username")).toEqual(firstPageUsernames);
+    await expect.poll(() => users.rowCount()).toBe(firstPageRowCount);
   });
 
   test("As a sysadmin, I can find a user by searching for their tag", async ({
