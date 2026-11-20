@@ -1,6 +1,7 @@
 package com.researchspace.model.inventory.field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,14 +31,15 @@ class InventoryUriFieldCasesTest {
   @TestFactory
   Stream<DynamicTest> validateAgreesWithEachCase() {
     JsonNode cases = loadCases();
-    assertTrue(cases != null && cases.size() >= 30, "the shared cases must not be empty");
+    assertNotNull(cases, "the shared cases file must have a cases array");
+    assertTrue(cases.size() >= 30, "the shared cases must not be empty");
     return StreamSupport.stream(cases.spliterator(), false)
         .map(
             testCase -> {
               String value = testCase.get("value").asText();
               boolean accepted = testCase.get("accepted").asBoolean();
               return DynamicTest.dynamicTest(
-                  (accepted ? "accepts " : "rejects ") + value,
+                  (accepted ? "accepts " : "rejects ") + '"' + value + '"',
                   () ->
                       assertEquals(
                           accepted,
