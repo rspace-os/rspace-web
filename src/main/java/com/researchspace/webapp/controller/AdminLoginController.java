@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
 
 /** Controller handling Admin Login page and actions. */
 @Controller
@@ -71,12 +72,16 @@ public class AdminLoginController extends BaseController {
    * @throws IOException
    */
   @GetMapping("/logoutFromSso")
-  public String logoutFromSso(Principal principal, HttpServletRequest request) throws IOException {
+  public ModelAndView logoutFromSso(Principal principal, HttpServletRequest request)
+      throws IOException {
 
     // log out RSpace user first, if there is one
     if (principal != null) {
       logoutController.logout(principal, request);
     }
-    return "redirect:" + properties.getSSOLogoutUrl();
+    ModelAndView mav = new ModelAndView("logout");
+    mav.addObject("logoutMode", "sso");
+    mav.addObject("redirectLocation", properties.getSSOLogoutUrl());
+    return mav;
   }
 }

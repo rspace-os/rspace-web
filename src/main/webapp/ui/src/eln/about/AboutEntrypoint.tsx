@@ -8,6 +8,7 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { startCrossTabLogout } from "@/modules/common/session/crossTabLogout";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
 import Analytics from "../../components/Analytics";
@@ -17,6 +18,8 @@ import LoaderCircular from "../../components/LoadingCircular";
 import { AboutPage } from "./index";
 
 const queryClient = new QueryClient();
+
+startCrossTabLogout();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("about-page");

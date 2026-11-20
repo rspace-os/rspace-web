@@ -4,6 +4,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { startCrossTabLogout } from "@/modules/common/session/crossTabLogout";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -14,6 +15,8 @@ import { hslToHex } from "../../util/colors";
 import App from "./App";
 
 const queryClient = new QueryClient();
+
+startCrossTabLogout();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");

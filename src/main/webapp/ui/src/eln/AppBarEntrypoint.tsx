@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
+import { startCrossTabLogout } from "@/modules/common/session/crossTabLogout";
 import { color, currentPageKey } from "@/util/pageBranding";
 import createAccentedTheme from "../accentedTheme";
 import Analytics from "../components/Analytics";
@@ -14,6 +15,8 @@ import { DialogBoundary } from "../components/DialogBoundary";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 const queryClient = new QueryClient();
+
+startCrossTabLogout();
 
 window.addEventListener("load", () => {
   /*

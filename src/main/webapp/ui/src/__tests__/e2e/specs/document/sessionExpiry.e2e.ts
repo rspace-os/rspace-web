@@ -8,16 +8,13 @@ test("Document edits survive expiry and can be saved after signing in again", as
   pageDocument,
   pageWorkspace,
 }) => {
-  const otherTab = await context.newPage();
-  await otherTab.goto("/workspace");
   await pageWorkspace.open();
   const document = await pageWorkspace.createBasicDocument();
   const field = await document.getField("", 0);
   const unsavedText = "Unsaved result: 4.25 mg/mL (repeat #2).";
 
-  await otherTab.getByRole("button", { name: "Account Menu" }).click();
-  await otherTab.getByRole("menuitem", { name: "Log Out" }).click();
-  await otherTab.waitForURL("**/login*");
+  // End the session without executing logout.jsp, so only the failed request notifies the editor.
+  expect((await context.request.get("/logout")).ok()).toBe(true);
 
   const requests: string[] = [];
   page.on("request", (request) => {
@@ -38,7 +35,6 @@ test("Document edits survive expiry and can be saved after signing in again", as
   expect(requests).not.toContain("saveStructuredDocument");
   expect(requests).not.toContain("getUpdatedFields");
 
-  await otherTab.close();
   const [loginTab] = await Promise.all([context.waitForEvent("page"), signIn.click()]);
   await loginTab.getByRole("textbox", { name: "Password" }).fill(appUser.password);
   await loginTab.getByRole("textbox", { name: "User" }).fill(appUser.username);
@@ -89,11 +85,12 @@ test("An expired session prompts sign-in when requesting the edit lock", async (
   const viewedDocument = await pageWorkspace.openDocument(document.id);
   const viewedField = await viewedDocument.getFieldViewContent("", 0);
 
-  const otherTab = await context.newPage();
-  await otherTab.goto("/workspace");
-  await otherTab.getByRole("button", { name: "Account Menu" }).click();
-  await otherTab.getByRole("menuitem", { name: "Log Out" }).click();
-  await otherTab.waitForURL("**/login*");
+  // Let the header finish loading as the signed-in user before ending the session.
+  await expect(page.getByRole("button", { name: "Account Menu" })).toBeEnabled();
+  await expect(page.getByRole("link", { name: "Notifications" })).toBeVisible();
+
+  // End the session without executing logout.jsp, so only the failed request notifies the editor.
+  expect((await context.request.get("/logout")).ok()).toBe(true);
 
   const failedLock = page.waitForResponse(
     (response) => response.url().endsWith("/ajax/requestEdit") && response.status() === 403,

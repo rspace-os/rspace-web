@@ -45,8 +45,8 @@ public class LogoutController extends BaseController {
     SecurityUtils.getSubject().logout();
     SECURITY_LOG.info("User [{}] logged out", principal.getName());
 
-    // Needed for clearing RS Inventory session storage on log out
-    ModelAndView mav = new ModelAndView();
+    ModelAndView mav = new ModelAndView("logout");
+    mav.addObject("logoutMode", isRemoteUser ? "sso" : "standalone");
     mav.addObject("redirectLocation", (isRemoteUser) ? properties.getSSOLogoutUrl() : "/workspace");
 
     return mav;
