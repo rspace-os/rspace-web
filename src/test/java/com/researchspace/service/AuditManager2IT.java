@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatComment;
@@ -27,6 +28,9 @@ import com.researchspace.model.dtos.RevisionSearchCriteria;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.netfiles.NfsFieldLink;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.Folder;
@@ -34,6 +38,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
@@ -57,6 +62,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class AuditManager2IT extends RealTransactionSpringTestBase {
 
   private @Autowired AuditManager auditMgr;
+  private @Autowired NfsDao nfsDao;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -341,6 +347,41 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     for (int i = 0; i < doc.getFieldCount(); i++) {
       assertEquals(i + "Rev2", restoredFirstRevisionDoc.getFields().get(i).getFieldData());
     }
+  }
+
+  @Test
+  public void restoringARevisionReindexesItsFilestoreLinks() throws Exception {
+    root = initUser(piUser);
+    logoutAndLoginAs(piUser);
+    NfsFileStore store = savedS3Store(piUser);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(piUser, "v1");
+    Long fieldId = doc.getFields().get(0).getId();
+    // each revision goes through autosave, so the index follows it
+    recordMgr.saveTemporaryDocument(fieldId, piUser, nfsLink(store, "/run.dat"));
+    recordMgr.saveStructuredDocument(doc.getId(), piUser.getUsername(), true, null);
+    Number linkedRevision = getNthRevisionForDocument(doc, 1);
+    recordMgr.saveTemporaryDocument(fieldId, piUser, nfsLink(store, "/other.dat"));
+    recordMgr.saveStructuredDocument(doc.getId(), piUser.getUsername(), true, null);
+    assertThat(indexedRelPaths(fieldId)).containsExactly("/other.dat");
+
+    auditMgr.restoreRevisionAsCurrent(linkedRevision, doc.getId());
+
+    assertThat(indexedRelPaths(fieldId)).containsExactly("/run.dat");
+  }
+
+  private NfsFileStore savedS3Store(User owner) {
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsMgr.saveNfsFileSystem(fileSystem);
+    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
+  }
+
+  private String nfsLink(NfsFileStore store, String path) {
+    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
+  }
+
+  private List<String> indexedRelPaths(Long fieldId) throws Exception {
+    return doInTransaction(
+        () -> nfsDao.getFieldLinks(fieldId).stream().map(NfsFieldLink::getRelPath).toList());
   }
 
   @Test
