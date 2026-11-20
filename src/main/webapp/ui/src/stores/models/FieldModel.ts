@@ -391,7 +391,13 @@ export default class FieldModel implements Field {
     // a hidden field keeps its value, and the server still checks a changed value's format (RPD-339)
     if (this.owner.isFieldHidden?.(this)) {
       if (!this.error) return IsValid();
-      return IsInvalid(i18n.t("inventory:fields.hiddenFieldInvalid", { field: this.name }));
+      const sourceKey = this.displayRule?.sourceFieldKey;
+      const source = sourceKey ? this.liveSiblings.find((field) => field.fieldKey === sourceKey) : undefined;
+      return IsInvalid(
+        source
+          ? i18n.t("inventory:fields.hiddenFieldInvalidWithSource", { field: this.name, source: source.name })
+          : i18n.t("inventory:fields.hiddenFieldInvalid", { field: this.name }),
+      );
     }
     if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");
     if (this.name.length > 50) return IsInvalid("Names for custom fields cannot exceed 50 characters.");

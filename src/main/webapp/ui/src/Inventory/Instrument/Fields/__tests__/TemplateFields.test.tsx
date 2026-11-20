@@ -4,10 +4,13 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import CommonEditActions from "@/Inventory/components/CommonEditActions";
 import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
 import type { FieldModelAttrs } from "@/stores/models/FieldModel";
 import { LANDING_PAGE_FIELD_NAME } from "@/stores/models/InstrumentModel";
+import type { StoreContainer } from "@/stores/stores/RootStore";
+import { storesContext } from "@/stores/stores-context";
 import materialTheme from "@/theme";
 import TemplateFields from "../TemplateFields";
 
@@ -307,7 +310,7 @@ describe("TemplateFields -- a field hidden while its value is invalid", () => {
     await user.click(screen.getByRole("radio", { name: "No" }));
 
     expect(instrument.isFieldHidden(instrument.fields[1])).toBe(true);
-    expect(saveReasons(instrument)).toEqual([expect.stringContaining("Service report")]);
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('"Service report" is hidden')]);
   });
 
   it("refuses Save, naming the field, when an impossible date typed over a stored one is hidden", async () => {
@@ -323,6 +326,87 @@ describe("TemplateFields -- a field hidden while its value is invalid", () => {
     await user.click(screen.getByRole("radio", { name: "No" }));
 
     expect(instrument.isFieldHidden(instrument.fields[1])).toBe(true);
-    expect(saveReasons(instrument)).toEqual([expect.stringContaining("Serviced on")]);
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('"Serviced on" is hidden')]);
+  });
+
+  it("shows an impossible date again as typed once the field is shown, and saves once it is cleared", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: shownWhileServiced({ name: "Serviced on", type: "date" }) });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(screen.queryByRole("spinbutton", { name: "Year" })).not.toBeInTheDocument();
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('"Serviced on" is hidden')]);
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    const year = screen.getByRole("spinbutton", { name: "Year" });
+    expect(
+      [year, screen.getByRole("spinbutton", { name: "Month" }), screen.getByRole("spinbutton", { name: "Day" })].map(
+        ({ textContent }) => textContent,
+      ),
+    ).toEqual(["2024", "02", "30"]);
+
+    await user.click(year);
+    await user.keyboard("{Control>}a{/Control}{Backspace}");
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  it("shows an unreadable number again once the field is shown, and saves once it is cleared", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: shownWhileServiced({ name: "Hours run", type: "number" }) });
+    instrument.currentlyEditableFields.add("fields");
+    renderTemplateFields(instrument);
+    const hours = screen.getByRole("spinbutton", { name: "Hours run" });
+    // jsdom drops text such as "2e" that a browser keeps in a number input, so the input reports a number invalid instead
+    const validity = vi.spyOn(hours as HTMLInputElement, "checkValidity").mockReturnValue(false);
+
+    await user.type(hours, "2");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(screen.queryByRole("spinbutton", { name: "Hours run" })).not.toBeInTheDocument();
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('"Hours run" is hidden')]);
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    // the same input, which holds the text the browser could not read
+    expect(screen.getByRole("spinbutton", { name: "Hours run" })).toBe(hours);
+    expect(hours).toHaveValue(2);
+    expect(hours).toBeInvalid();
+
+    validity.mockRestore();
+    await user.clear(hours);
+    expect(hours).not.toBeInvalid();
+    expect(instrument.submittable.isOk).toBe(true);
+  });
+
+  it("disables Save with an alert naming the hidden field and its question, until it is shown and corrected", async () => {
+    const user = userEvent.setup();
+    const instrument = makeMockInstrument({ fields: shownWhileServiced({}) });
+    instrument.currentlyEditableFields.add("fields");
+    const stores = { uiStore: { confirmDiscardAnyChanges: () => Promise.resolve() } } as unknown as StoreContainer;
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={stores}>
+          <TemplateFields onErrorStateChange={() => {}} instrument={instrument} />
+          <CommonEditActions editableObject={instrument} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+    const save = screen.getByRole("button", { name: "Save" });
+
+    await user.type(screen.getByRole("textbox", { name: "Service report" }), "a b");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(save).toBeDisabled();
+    const alert = screen.getByRole("alert");
+    expect(alert).toMatchTextContent('"Service report" is hidden');
+    expect(alert).toMatchTextContent('Change "Serviced?" to show it, then correct or clear it.');
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    const report = screen.getByRole("textbox", { name: "Service report" });
+    await user.clear(report);
+    await user.type(report, "reports/2024.pdf");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(save).toBeEnabled();
   });
 });
