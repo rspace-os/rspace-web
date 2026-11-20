@@ -15,6 +15,7 @@ import com.researchspace.archive.ArchiveResult;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.IArchiveExportConfig;
+import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.dao.ArchiveDao;
 import com.researchspace.dao.RecordDao;
@@ -145,8 +146,10 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
       RoCrate roCrate,
       List<RoCrateLogicalFolder> logicalTopLevelFolders) {
     Set<String> igsnLinkedInventoryItems = new HashSet<>();
+    String recordName = null;
     try {
       Record record = recordDao.get(rid.getDbId());
+      recordName = record.getName();
       List<AuditedRecord> versionsToExport =
           archivePlanner.getVersionsToExportForRecord(aconfig, rid, record);
       for (AuditedRecord ar : versionsToExport) {
@@ -231,6 +234,15 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
     } catch (Exception ex) {
       if (ex instanceof DiskSpaceLimitException) {
         throw (DiskSpaceLimitException) ex;
+      }
+      // a document or its form could not be written, so the archive would be incomplete
+      if (ex instanceof RecordExportFailureException recordFailure) {
+        throw recordFailure;
+      }
+      if (ex instanceof ExportFailureException) {
+        String errorId = LoggingUtils.generateLogId();
+        log.error("Export error id [{}]: could not write {} to the archive", errorId, rid, ex);
+        throw new RecordExportFailureException(recordName, rid.getIdString(), errorId, ex);
       }
       log.warn("Error exporting record {} : {}", rid, ex.getMessage());
       log.warn("Exception:", ex);

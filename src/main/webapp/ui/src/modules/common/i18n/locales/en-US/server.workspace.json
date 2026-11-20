@@ -933,6 +933,7 @@
     "selectRecordAriaLabel": "Select record",
     "export": {
       "failureMessage": "Your export [{0}] failed for the following reason: {1}",
+      "unnamedFailureMessage": "Your export failed for the following reason: {0}",
       "groupPermissionDenied": "Only PIs or LabAdmins with view-all permission can export a group.",
       "groupRequired": "Group is required.",
       "invalidRepositoryApp": "App [{0}] cannot be used as a repository.",

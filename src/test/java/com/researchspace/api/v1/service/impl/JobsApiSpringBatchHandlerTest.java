@@ -99,6 +99,23 @@ public class JobsApiSpringBatchHandlerTest {
   }
 
   @Test
+  void failedExportJobReportsOnlyTheUserFacingMessage() {
+    Long jobId = 2L;
+    JobExecution exe = MetaDataInstanceFactory.createJobExecution("exportJob", 1L, jobId, params);
+    exe.setStatus(BatchStatus.FAILED);
+    Exception jobFailure =
+        new ExportTasklet.ExportJobFailureException(
+            "SD1 could not be exported", new IllegalStateException("internal detail"));
+    exe.createStepExecution("step1")
+        .setExitStatus(ExitStatus.FAILED.addExitDescription(jobFailure));
+    Mockito.when(explorer.getJobExecution(jobId)).thenReturn(exe);
+
+    ApiJob job = handler.getJob(jobId, user);
+
+    assertEquals(List.of("SD1 could not be exported"), ((ApiError) job.getResult()).getErrors());
+  }
+
+  @Test
   void jobCompletesOK() {
     Long jobId = 2L;
 
