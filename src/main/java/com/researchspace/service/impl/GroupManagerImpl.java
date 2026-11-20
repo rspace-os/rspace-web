@@ -948,8 +948,15 @@ public class GroupManagerImpl implements GroupManager {
                 group.getMembers(), group, TransformerUtils.toSet(ug.getUser()));
             removePiGroupPermissions(group, ug);
           }
-        } else if (isLabAdminDemotion(role, ug)) {
-          removeLabAdminViewAllPermissions(group, ug);
+        } else if (isLabAdminExit(role, ug)) {
+          if (!RoleInGroup.PI.equals(role)) {
+            removeLabAdminViewAllPermissions(group, ug);
+          } else if (ug.isAdminViewDocsEnabled()) {
+            // a new PI keeps the member folders, only the Lab Admin read grant goes (RSDEV-1408)
+            Set<User> members = group.getAllNonPIMembers();
+            members.remove(ug.getUser());
+            removeUsersFromLabAdminPermissions(members, ug.getUser(), group);
+          }
           ug.setAdminViewDocsEnabled(false);
         }
         ug.setRoleInGroup(role, getPermissionsForRole(role, group));
@@ -974,8 +981,9 @@ public class GroupManagerImpl implements GroupManager {
     removeUserFoldersAndLabAdminPermissions(labMembers, labAdmins, g);
   }
 
-  private boolean isLabAdminDemotion(RoleInGroup role, UserGroup ug) {
-    return ug.getRoleInGroup().equals(RoleInGroup.RS_LAB_ADMIN) && RoleInGroup.DEFAULT.equals(role);
+  private boolean isLabAdminExit(RoleInGroup role, UserGroup ug) {
+    return ug.getRoleInGroup().equals(RoleInGroup.RS_LAB_ADMIN)
+        && !RoleInGroup.RS_LAB_ADMIN.equals(role);
   }
 
   private boolean isPiDemotion(RoleInGroup role, UserGroup ug) {
