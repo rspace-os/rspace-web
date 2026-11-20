@@ -6561,7 +6561,7 @@ export default interface Resources {
         },
         "defaultWelcome": {
           "access": "You can access the application at <a href=\"{0}/workspace\">RSpace</a>.",
-          "browserAdvice": "We support recent versions of Chrome, Safari and Firefox.<br>We do not support Edge or Internet Explorer.",
+          "browserAdvice": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge.<br>We do not support Internet Explorer or legacy versions of Microsoft Edge.",
           "contact": "For any help, comments, or questions, contact <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
           "groupMember": "You are part of the Lab Group ''{0}'', and can share documents, send messages, and collaborate with other members of the group.",
           "guidanceHeading": "Guidance",
@@ -9016,11 +9016,12 @@ export default interface Resources {
       "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please sign in now using the same method you just used to sign up.",
       "browserWarning": {
         "chrome": "Chrome",
+        "edge": "Microsoft Edge",
         "firefox": "Firefox",
         "heading": "Browser upgrade recommended to use RSpace",
         "iconAlt": "Icon by Martin Leblanc",
-        "notice1": "It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.",
-        "notice2": "We do fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.",
+        "notice1": "It looks like you are using Internet Explorer or a legacy version of Microsoft Edge, which RSpace does not support. Some RSpace features will not work properly in these browsers.",
+        "notice2": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge. Use the links below to get a supported browser.",
         "safari": "Safari"
       },
       "community": {
