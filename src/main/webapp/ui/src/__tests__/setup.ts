@@ -7,8 +7,13 @@ import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
+
+// Generated REST API v2 calls get a stable token; token provider tests install their own.
+setApiV2TokenProvider({ getToken: async () => OAUTH_TOKEN, recover: async () => OAUTH_TOKEN });
 
 await i18n.loadNamespaces([
   "about",

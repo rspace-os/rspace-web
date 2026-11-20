@@ -36,6 +36,7 @@ public final class Relationship<T> implements ResourceMember<T> {
   final AccessFunction writeAccess;
   private final boolean selfReferenceAllowed;
   final OpenApiSchemaDocumentation openApi;
+  final boolean readGuaranteed;
 
   private Relationship(
       String name,
@@ -49,7 +50,8 @@ public final class Relationship<T> implements ResourceMember<T> {
       AccessFunction readAccess,
       AccessFunction writeAccess,
       boolean selfReferenceAllowed,
-      OpenApiSchemaDocumentation openApi) {
+      OpenApiSchemaDocumentation openApi,
+      boolean readGuaranteed) {
     this.name = CollectionDescription.requireText(name, "Relationship name");
     this.idType = Objects.requireNonNull(idType, "Relationship ID type");
     this.targets = validateTargets(targets);
@@ -62,6 +64,7 @@ public final class Relationship<T> implements ResourceMember<T> {
     this.writeAccess = AccessFunction.requireDocumentedOrInherited(writeAccess);
     this.selfReferenceAllowed = selfReferenceAllowed;
     this.openApi = Objects.requireNonNull(openApi, "OpenAPI relationship documentation");
+    this.readGuaranteed = readGuaranteed;
     validateConfiguration();
   }
 
@@ -97,7 +100,8 @@ public final class Relationship<T> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         false,
-        OpenApiSchemaDocumentation.EMPTY);
+        OpenApiSchemaDocumentation.EMPTY,
+        false);
   }
 
   public static <T, K, ID> Relationship<T> polymorphicToOne(
@@ -122,7 +126,8 @@ public final class Relationship<T> implements ResourceMember<T> {
         AccessFunction.INHERITED,
         AccessFunction.INHERITED,
         false,
-        OpenApiSchemaDocumentation.EMPTY);
+        OpenApiSchemaDocumentation.EMPTY,
+        false);
   }
 
   public Relationship<T> required() {
@@ -279,6 +284,27 @@ public final class Relationship<T> implements ResourceMember<T> {
     return nullable;
   }
 
+  /**
+   * Publishes {@code x-rspace-read-guaranteed} for this relationship, as {@link
+   * Field#readGuaranteed()} does for a field. Requires inherited read access.
+   */
+  public Relationship<T> readGuaranteed() {
+    return new Relationship<>(
+        name,
+        idType,
+        targets,
+        binding,
+        writeOperations,
+        inputForms,
+        requiredOnCreate,
+        nullable,
+        readAccess,
+        writeAccess,
+        selfReferenceAllowed,
+        openApi,
+        true);
+  }
+
   public AccessFunction readAccess() {
     return readAccess;
   }
@@ -341,10 +367,15 @@ public final class Relationship<T> implements ResourceMember<T> {
         reads,
         writes,
         permitsSelf,
-        documentation);
+        documentation,
+        readGuaranteed);
   }
 
   private void validateConfiguration() {
+    if (readGuaranteed && readAccess != AccessFunction.INHERITED) {
+      throw new IllegalArgumentException(
+          "Relationship " + name + " can be read-guaranteed only with inherited read access");
+    }
     Objects.requireNonNull(idType.javaType(), "Relationship ID Java type");
     if (requiredOnCreate && !writeOperations.contains(WriteOperation.CREATE)) {
       throw new IllegalArgumentException("Required relationship must be writable on create");

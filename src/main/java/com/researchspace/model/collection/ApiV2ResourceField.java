@@ -53,6 +53,13 @@ public @interface ApiV2ResourceField {
   AccessPreset readAccess() default AccessPreset.INHERITED;
 
   /**
+   * Publishes {@code x-rspace-read-guaranteed}: a readable document always contains this field when
+   * requested. Mark only fields clients rely on; removing the mark is a breaking change. Requires
+   * {@link AccessPreset#INHERITED} read access.
+   */
+  boolean readGuaranteed() default false;
+
+  /**
    * Who may supply this field when creating a resource.
    *
    * <p>A preset, for the same reason {@link #readAccess} is: annotations cannot carry code. Build

@@ -55,10 +55,12 @@ public final class ApiV2OpenApiDocumentService {
                 document, mapping.getHandlerMethods(), endpoints, generator.text());
           });
     }
-    normalize(document);
     var schemas =
         ApiV2OpenApiMaps.mutableObjectMap(
             ApiV2OpenApiMaps.mutableObjectMap(document.get("components")).get("schemas"));
+    ApiV2OpenApiSchemas.requireResponseOnlyRequired(
+        ApiV2OpenApiMaps.mutableObjectMap(document.get("paths")), schemas);
+    normalize(document);
     schemas.forEach(
         (name, schema) -> {
           if (schema instanceof Map<?, ?> map && map.isEmpty())

@@ -4,10 +4,14 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverter;
+import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.core.jackson.ModelResolver;
@@ -18,7 +22,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +43,15 @@ final class ApiV2OpenApiSchemas {
   static {
     CONVERTERS.addConverter(
         new ModelResolver(Json31.mapper(), new NestedTypeNameResolver()).openapi31(true));
+    // Added last, so it runs first and sees every model the resolver defines.
+    CONVERTERS.addConverter(new ComponentNameGuard());
   }
+
+  /**
+   * Marks the properties that response normalisation made required, so the document can check that
+   * no request body reaches them; {@link #requireResponseOnlyRequired} removes it.
+   */
+  static final String RESPONSE_REQUIRED = "x-rspace-response-required";
 
   private ApiV2OpenApiSchemas() {}
 
@@ -46,8 +60,11 @@ final class ApiV2OpenApiSchemas {
    * ApiV2ConfigBranding} and features cannot collide on short names such as {@code Entry}. An
    * explicit {@code @Schema(name)} still wins. Components are keyed by name alone, so two types
    * with one derived name would silently replace each other's schema; naming the second one fails
-   * instead. Swagger applies an explicit {@code @Schema(name)} without this resolver, so such a
-   * name is the author's responsibility.
+   * instead. Swagger applies an explicit {@code @Schema(name)} without this resolver, so {@link
+   * ComponentNameGuard} checks explicit names too.
+   *
+   * <p>A type nested in a controller or manager needs an explicit {@code @Schema(name)}, so the
+   * public model name does not carry an implementation class name.
    */
   private static final class NestedTypeNameResolver extends TypeNameResolver {
     private final Map<String, Class<?>> named = new ConcurrentHashMap<>();
@@ -56,10 +73,18 @@ final class ApiV2OpenApiSchemas {
     protected String nameForClass(Class<?> cls, Set<Options> options) {
       String simple = super.nameForClass(cls, options);
       Class<?> enclosing = cls.getEnclosingClass();
-      String name =
-          enclosing != null && simple.equals(cls.getSimpleName())
-              ? nameForClass(enclosing, options) + simple
-              : simple;
+      boolean derived = enclosing != null && simple.equals(cls.getSimpleName());
+      if (derived
+          && (enclosing.getSimpleName().endsWith("Controller")
+              || enclosing.getSimpleName().endsWith("Manager"))) {
+        throw new IllegalStateException(
+            "OpenAPI schema "
+                + cls.getName()
+                + " is nested in "
+                + enclosing.getSimpleName()
+                + "; give it an explicit @Schema(name = ...)");
+      }
+      String name = derived ? nameForClass(enclosing, options) + simple : simple;
       Class<?> previous = named.putIfAbsent(name, cls);
       if (previous != null && previous != cls) {
         throw new IllegalStateException(
@@ -71,6 +96,89 @@ final class ApiV2OpenApiSchemas {
                 + cls.getName());
       }
       return name;
+    }
+  }
+
+  /**
+   * Records the Java type behind every component the resolver defines, whether its name is explicit
+   * or derived, and fails when one name would describe two types. Components are keyed by name
+   * alone, so the second type would otherwise silently share the first one's schema.
+   *
+   * <p>Remove once swagger-core detects colliding component names itself:
+   * https://github.com/swagger-api/swagger-core/issues/4789
+   */
+  private static final class ComponentNameGuard implements ModelConverter {
+    private final Map<String, Class<?>> named = new ConcurrentHashMap<>();
+
+    @Override
+    public io.swagger.v3.oas.models.media.Schema<?> resolve(
+        AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
+      return chain.hasNext() ? chain.next().resolve(type, new Recording(context), chain) : null;
+    }
+
+    @Override
+    public boolean isOpenapi31() {
+      return true;
+    }
+
+    private void record(String name, Type type) {
+      if (name == null || type == null) return;
+      Class<?> raw = Json31.mapper().constructType(type).getRawClass();
+      Class<?> previous = named.putIfAbsent(name, raw);
+      if (previous != null && previous != raw) {
+        throw new IllegalStateException(
+            "OpenAPI component name "
+                + name
+                + " names both "
+                + previous.getName()
+                + " and "
+                + raw.getName());
+      }
+    }
+
+    private final class Recording implements ModelConverterContext {
+      private final ModelConverterContext delegate;
+
+      Recording(ModelConverterContext delegate) {
+        this.delegate = delegate;
+      }
+
+      @Override
+      public void defineModel(String name, io.swagger.v3.oas.models.media.Schema model) {
+        delegate.defineModel(name, model);
+      }
+
+      @Override
+      public void defineModel(
+          String name,
+          io.swagger.v3.oas.models.media.Schema model,
+          AnnotatedType type,
+          String prevName) {
+        record(name, type == null ? null : type.getType());
+        delegate.defineModel(name, model, type, prevName);
+      }
+
+      @Override
+      public void defineModel(
+          String name, io.swagger.v3.oas.models.media.Schema model, Type type, String prevName) {
+        record(name, type);
+        delegate.defineModel(name, model, type, prevName);
+      }
+
+      @Override
+      public io.swagger.v3.oas.models.media.Schema resolve(AnnotatedType type) {
+        return delegate.resolve(type);
+      }
+
+      @Override
+      public Map<String, io.swagger.v3.oas.models.media.Schema> getDefinedModels() {
+        return delegate.getDefinedModels();
+      }
+
+      @Override
+      public Iterator<ModelConverter> getConverters() {
+        return delegate.getConverters();
+      }
     }
   }
 
@@ -93,6 +201,9 @@ final class ApiV2OpenApiSchemas {
     return schema;
   }
 
+  // Marks always-written properties required by re-reading Jackson's bean description. Move this
+  // into a resolveRequiredMode override once swagger-core passes the property to it:
+  // https://github.com/swagger-api/swagger-core/issues/5409
   private static void normalizeResponse(
       JavaType type,
       Map<String, Object> schema,
@@ -116,6 +227,9 @@ final class ApiV2OpenApiSchemas {
     var config = RESPONSE_MAPPER.getSerializationConfig();
     var bean = config.introspect(type);
     var inclusion = bean.findPropertyInclusion(config.getDefaultPropertyInclusion());
+    boolean typeOmitsPerCaller =
+        bean.getClassAnnotations().has(JsonView.class)
+            || bean.getClassAnnotations().has(JsonFilter.class);
     for (var property : bean.findProperties()) {
       if (!property.couldSerialize()
           || !(properties.get(property.getName()) instanceof Map<?, ?> value)) {
@@ -124,6 +238,23 @@ final class ApiV2OpenApiSchemas {
       Map<String, Object> shape = mutableObjectMap(value);
       JavaType propertyType = property.getPrimaryType();
       var annotation = property.getPrimaryMember().getAnnotation(Schema.class);
+      boolean notRequired =
+          annotation != null && annotation.requiredMode() == Schema.RequiredMode.NOT_REQUIRED;
+      boolean omittedPerCaller =
+          typeOmitsPerCaller
+              || property.findViews() != null
+              || property.getPrimaryMember().hasAnnotation(JsonView.class)
+              || property.getPrimaryMember().hasAnnotation(JsonFilter.class);
+      if (omittedPerCaller && !notRequired) {
+        throw new IllegalStateException(
+            "OpenAPI response property "
+                + type.getRawClass().getName()
+                + "."
+                + property.getName()
+                + " may be omitted for some callers by @JsonView or @JsonFilter. Use separate types"
+                + " per audience, mark it @Schema(requiredMode = NOT_REQUIRED), or send null in a"
+                + " property declared nullable.");
+      }
       if (annotation != null
           && (annotation.nullable() || List.of(annotation.types()).contains("null"))) {
         // Swagger can emit a bare "null" type alongside a non-null allOf reference in 3.1.
@@ -151,7 +282,102 @@ final class ApiV2OpenApiSchemas {
         }
         if (optional) propertyType = propertyType.containedTypeOrUnknown(0);
       }
+      // The serialiser always writes the key, possibly as null; a primitive is never null.
+      boolean alwaysWritten =
+          !omitsNull || (include == JsonInclude.Include.NON_NULL && propertyType.isPrimitive());
+      if (alwaysWritten && !notRequired && !omittedPerCaller) {
+        requireProperty(object, property.getName());
+      }
       normalizeResponse(propertyType, shape, components, visited);
+    }
+  }
+
+  private static void requireProperty(Map<String, Object> object, String name) {
+    var required =
+        object.get("required") instanceof List<?> existing
+            ? new ArrayList<Object>(existing)
+            : new ArrayList<Object>();
+    if (required.contains(name)) return;
+    required.add(name);
+    object.put("required", required);
+    var marked =
+        object.get(RESPONSE_REQUIRED) instanceof List<?> existing
+            ? new ArrayList<Object>(existing)
+            : new ArrayList<Object>();
+    marked.add(name);
+    object.put(RESPONSE_REQUIRED, marked);
+  }
+
+  /**
+   * Response normalisation writes into shared components, so a component that a request body also
+   * reaches would make those properties required in requests too. Fails when that happens, then
+   * removes the markers.
+   */
+  static void requireResponseOnlyRequired(
+      Map<String, Object> paths, Map<String, Object> components) {
+    Set<String> reachable = new LinkedHashSet<>();
+    paths
+        .values()
+        .forEach(
+            item -> {
+              if (item instanceof Map<?, ?> operations) {
+                operations
+                    .values()
+                    .forEach(
+                        operation -> {
+                          if (operation instanceof Map<?, ?> map) {
+                            collectReferences(map.get("requestBody"), components, reachable);
+                          }
+                        });
+              }
+            });
+    for (String name : reachable) {
+      List<String> marked = new ArrayList<>();
+      collectMarked(components.get(name), marked);
+      if (!marked.isEmpty()) {
+        throw new IllegalStateException(
+            "OpenAPI component "
+                + name
+                + " is used by a request body, but response normalisation requires "
+                + marked
+                + ". Use a separate response type or mark the properties"
+                + " @Schema(requiredMode = REQUIRED) explicitly.");
+      }
+    }
+    removeMarkers(paths);
+    removeMarkers(components);
+  }
+
+  private static void collectReferences(
+      Object value, Map<String, Object> components, Set<String> reachable) {
+    if (value instanceof Map<?, ?> map) {
+      if (map.get("$ref") instanceof String ref && ref.startsWith("#/components/schemas/")) {
+        String name = ref.substring("#/components/schemas/".length());
+        if (reachable.add(name)) collectReferences(components.get(name), components, reachable);
+      }
+      map.values().forEach(child -> collectReferences(child, components, reachable));
+    } else if (value instanceof List<?> list) {
+      list.forEach(child -> collectReferences(child, components, reachable));
+    }
+  }
+
+  private static void collectMarked(Object value, List<String> marked) {
+    if (value instanceof Map<?, ?> map) {
+      if (map.get(RESPONSE_REQUIRED) instanceof List<?> names) {
+        names.forEach(name -> marked.add(String.valueOf(name)));
+      }
+      map.values().forEach(child -> collectMarked(child, marked));
+    } else if (value instanceof List<?> list) {
+      list.forEach(child -> collectMarked(child, marked));
+    }
+  }
+
+  private static void removeMarkers(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      if (map.containsKey(RESPONSE_REQUIRED)) mutableObjectMap(map).remove(RESPONSE_REQUIRED);
+      map.values().forEach(ApiV2OpenApiSchemas::removeMarkers);
+    } else if (value instanceof List<?> list) {
+      list.forEach(ApiV2OpenApiSchemas::removeMarkers);
     }
   }
 
@@ -209,7 +435,9 @@ final class ApiV2OpenApiSchemas {
   private static Map<String, Object> nonNullSchema(
       Map<String, Object> schema, Map<String, Object> components) {
     if (schema.get("$ref") instanceof String ref) {
-      return mutableObjectMap(components.get(RefUtils.extractSimpleName(ref).getLeft()));
+      // A controller may reference a resource schema that a partial document does not register.
+      Object target = components.get(RefUtils.extractSimpleName(ref).getLeft());
+      return target == null ? new LinkedHashMap<>() : mutableObjectMap(target);
     }
     for (String keyword : List.of("anyOf", "oneOf", "allOf")) {
       if (schema.get(keyword) instanceof List<?> alternatives) {

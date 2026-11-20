@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.junit.jupiter.api.Test;
@@ -188,6 +190,61 @@ class AnnotatedCollectionDescriptionFactoryTest {
         "id",
         List.of(new Sort("id", true)));
   }
+
+  @Test
+  void guaranteesOnlyDeclaredReadMembers() {
+    CollectionDescription<AuditEntity> description =
+        CollectionDescription.fromApiV2Resource(
+            GuaranteedAuditResource.class, AuditEntity.class, List.of(new Sort("id", true)));
+
+    assertEquals(
+        Set.of("quantity", "target", "createdAt", "updatedBy"),
+        description.schema().documentFields().stream()
+            .filter(ResourceFieldSchema::readGuaranteed)
+            .map(ResourceFieldSchema::name)
+            .collect(Collectors.toSet()));
+  }
+
+  @Test
+  void rejectsAGuaranteeOnARestrictedField() {
+    IllegalArgumentException failure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                CollectionDescription.fromApiV2Resource(
+                    RestrictedGuaranteeResource.class,
+                    AuditEntity.class,
+                    List.of(new Sort("id", true))));
+    assertTrue(failure.getMessage().contains("can be read-guaranteed only"), failure.getMessage());
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "guaranteedAuditResources",
+      entity = AuditEntity.class,
+      id = "id",
+      readGuaranteedAuditFields = {"createdAt", "updatedBy"})
+  private record GuaranteedAuditResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(readGuaranteed = true) long quantity,
+      @ApiV2ResourceRelationship(
+              relationTo = {
+                @ApiV2RelationshipTarget(resource = "targets", entity = RelatedTarget.class)
+              },
+              idProperty = "targetId",
+              readGuaranteed = true)
+          ResourceReference<?, ?> target) {}
+
+  @ApiV2ResourceDefinition(
+      name = "restrictedGuarantees",
+      entity = AuditEntity.class,
+      id = "id",
+      auditFields = false)
+  private record RestrictedGuaranteeResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(
+              readGuaranteed = true,
+              readAccess = ApiV2ResourceField.AccessPreset.SYSADMIN)
+          long quantity) {}
 
   @ApiV2ResourceDefinition(name = "auditResources", entity = AuditEntity.class, id = "id")
   private record AuditResource(

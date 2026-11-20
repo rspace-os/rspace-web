@@ -75,4 +75,9 @@ allowBuilds:
 # against supply-chain attacks that are typically caught within that window.
 # Stricter than pnpm 11's 1440-minute (1 day) default.
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - orval
+  - "@orval/*"
+  # Exempt only this release, used by the API v2 client types; later versions wait out the window.
+  - type-fest@6.0.3
 strictPeerDependencies: true
