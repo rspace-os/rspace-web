@@ -15,6 +15,7 @@ const inherited = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
+  timeFormat: "AUTOMATIC" as const,
   institutionTimezone: "Europe/Berlin",
   overridden: false,
 };
@@ -63,6 +64,21 @@ describe("Booking display preferences", () => {
     await expect(fetchBookingDisplayPreferences()).rejects.toThrow();
   });
 
+  it("reads the time format and rejects unknown ones", async () => {
+    let document: object = inherited;
+    server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
+
+    const automatic = await fetchBookingDisplayPreferences();
+    expect(automatic.timeFormat).toBe("AUTOMATIC");
+    expect(resolveBookingDisplayPreferences(automatic).timeFormat).toBe("AUTOMATIC");
+
+    document = { ...inherited, timeFormat: "H24" };
+    expect(resolveBookingDisplayPreferences(await fetchBookingDisplayPreferences()).timeFormat).toBe("H24");
+
+    document = { ...inherited, timeFormat: "SOMETIMES" };
+    await expect(fetchBookingDisplayPreferences()).rejects.toThrow();
+  });
+
   it("sends only the strict replacement document", async () => {
     let body: unknown;
     server.use(
@@ -83,12 +99,14 @@ describe("Booking display preferences", () => {
       availabilityWindowEnd: "17:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
     expect(body).toEqual({
       availabilityWindowStart: "09:00",
       availabilityWindowEnd: "17:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
   });
 });

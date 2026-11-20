@@ -1,7 +1,13 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingHourCycle,
+  bookingLocale,
+  formatInstantRange,
+  resolveWallClock,
+} from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import type { BookingListDocument } from "./booking";
-import { resolveWallClock } from "./bookingTime";
 
 export type BookingAgendaDay = {
   date: string;
@@ -50,19 +56,25 @@ function needsOffset(startZoned: Temporal.ZonedDateTime, endZoned: Temporal.Zone
   );
 }
 
-export function formatBookingAgendaTimeRange(start: string, end: string, timeZone: string, locale: string): string {
+export function formatBookingAgendaTimeRange(
+  start: string,
+  end: string,
+  timeZone: string,
+  locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
   const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
   const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
   const startDate = new Date(start);
   const endDate = new Date(end);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
-  const range = `${formatter.format(startDate)}–${formatter.format(endDate)}`;
+  const range = formatInstantRange(formatter, startDate, endDate);
   const startLocalDate = startZoned.toPlainDate();
   const endLocalDate = endZoned.toPlainDate();
   if (startLocalDate.equals(endLocalDate)) return range;
@@ -72,7 +84,7 @@ export function formatBookingAgendaTimeRange(start: string, end: string, timeZon
     day: "numeric",
     ...(startLocalDate.year === endLocalDate.year ? {} : { year: "numeric" }),
   });
-  return `${range} · ${endDateLabel}`;
+  return i18n.t("booking:time.rangeAndEndDate", { period: range, date: endDateLabel, lng: bookingLocale() });
 }
 
 export function formatBookingAgendaDateTime(
@@ -81,6 +93,7 @@ export function formatBookingAgendaDateTime(
   end: string,
   timeZone: string,
   locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const date = new Date(value);
   const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
@@ -89,7 +102,7 @@ export function formatBookingAgendaDateTime(
     return new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
       timeStyle: "short",
-      hourCycle: bookingHourCycle(),
+      hourCycle: bookingHourCycle(timeFormat),
       timeZone,
     }).format(date);
   }
@@ -98,9 +111,9 @@ export function formatBookingAgendaDateTime(
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",
   }).format(date);
 }

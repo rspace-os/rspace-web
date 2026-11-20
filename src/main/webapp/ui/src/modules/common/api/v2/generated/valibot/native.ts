@@ -212,6 +212,8 @@ export const BookingOpeningHoursEntry = v.pipe(
   v.description("One ISO weekday's opening interval in the scheduling timezone."),
 );
 
+export const BookingTimeFormat = v.picklist(["AUTOMATIC", "H12", "H24"]);
+
 export const BookingTimezoneMode = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
 
 export const BookingAdminSettingsDocument = v.object({
@@ -227,6 +229,7 @@ export const BookingAdminSettingsDocument = v.object({
   maxBookingDurationMinutes: v.pipe(v.number(), v.integer()),
   openingHours: v.array(BookingOpeningHoursEntry),
   slotGranularityMinutes: v.pipe(v.number(), v.integer()),
+  timeFormat: BookingTimeFormat,
   timezoneMode: BookingTimezoneMode,
 });
 
@@ -771,6 +774,7 @@ export const BookingDisplayPreferences = v.object({
   customTimezone: v.nullable(v.string()),
   institutionTimezone: v.pipe(v.string(), v.description("The running institution's JVM-default IANA timezone.")),
   overridden: v.pipe(v.boolean(), v.description("Whether these values come from an explicit user override.")),
+  timeFormat: BookingTimeFormat,
   timezoneMode: BookingTimezoneMode,
 });
 
@@ -786,6 +790,14 @@ export const BookingDisplayPreferencesReplacement = v.object({
         "Invalid length: Expected <=255",
       ),
       v.description("Required only when timezoneMode is CUSTOM; must be a valid IANA timezone."),
+    ),
+  ),
+  timeFormat: v.optional(
+    v.pipe(
+      v.union([BookingTimeFormat, v.null()]),
+      v.description(
+        "AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
+      ),
     ),
   ),
   timezoneMode: BookingTimezoneMode,
@@ -842,6 +854,7 @@ export const BookingSettingsDocument = v.object({
   maxBookingDurationMinutes: v.pipe(v.number(), v.integer()),
   openingHours: v.array(BookingOpeningHoursEntry),
   slotGranularityMinutes: v.pipe(v.number(), v.integer()),
+  timeFormat: BookingTimeFormat,
   timezoneMode: BookingTimezoneMode,
 });
 
@@ -880,6 +893,7 @@ export const BookingSettingsPatch = v.object({
     ),
   ),
   slotGranularityMinutes: v.nullish(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(527040))),
+  timeFormat: v.optional(v.union([BookingTimeFormat, v.null()])),
   timezoneMode: v.optional(v.union([BookingTimezoneMode, v.null()])),
 });
 
@@ -3208,7 +3222,7 @@ export const LookupMyBookingNotificationSubscriptionsResponse = BookingNotificat
 export const GetMyBookingPreferencesResponse = BookingDisplayPreferences;
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
  * @summary Replace Booking display preferences
  */
 export const ReplaceMyBookingPreferencesBody = BookingDisplayPreferencesReplacement;

@@ -5,6 +5,7 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+import type { BookingTimeFormat } from "./bookingTimeFormat.ts";
 import type { BookingTimezoneMode } from "./bookingTimezoneMode.ts";
 
 export interface BookingDisplayPreferences {
@@ -16,5 +17,6 @@ export interface BookingDisplayPreferences {
   readonly institutionTimezone: string;
   /** Whether these values come from an explicit user override. */
   readonly overridden: boolean;
+  timeFormat: BookingTimeFormat;
   timezoneMode: BookingTimezoneMode;
 }

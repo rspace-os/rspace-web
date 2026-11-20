@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { resizeDisabledReason } from "@/modules/booking/creation/timelineEditText";
 import type { TimelinePolicy } from "@/modules/booking/creation/timelineRange";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
@@ -95,6 +96,7 @@ export function VerticalDayTimeline({
   const { t, i18n } = useTranslation("booking");
   const now = useBookingNow();
   const pastMinute = elapsedNowMinute(now, date, timezone);
+  const timeFormat = useBookingTimeFormat();
   const instanceId = React.useId();
   const instructionsId = `${instanceId}-keyboard-instructions`;
   const dateHeadingId = `${instanceId}-date-heading`;
@@ -119,7 +121,15 @@ export function VerticalDayTimeline({
     abortInteraction,
     adjuster,
     commitRange,
-  } = useVerticalDayTimelineInteraction({ date, timezone, dayMinutes, editing, schedule, setExpandedEventId });
+  } = useVerticalDayTimelineInteraction({
+    date,
+    timezone,
+    dayMinutes,
+    timeFormat,
+    editing,
+    schedule,
+    setExpandedEventId,
+  });
   const lastAutoScrollContext = React.useRef("");
   const openSegments = React.useMemo(
     () => openingSegments(date, timezone, scheduleWindow),
@@ -300,6 +310,7 @@ export function VerticalDayTimeline({
               date={date}
               timezone={timezone}
               dayMinutes={dayMinutes}
+              timeFormat={timeFormat}
               dateHeadingId={dateHeadingId}
               instructionsId={instructionsId}
               canvasRef={canvasRef}
@@ -353,7 +364,7 @@ export function VerticalDayTimeline({
           {editing && !draftVisible && editingRange ? (
             <p className="text-xs text-muted-foreground">
               {t("dayTimeline.vertical.draftOutsideDay", {
-                period: timeRange(editingRange, date, timezone),
+                period: timeRange(editingRange, date, timezone, timeFormat),
               })}
             </p>
           ) : null}

@@ -5,7 +5,7 @@ import {
   hiddenEdgeLabel,
   resizeDisabledReason,
 } from "@/modules/booking/creation/timelineEditText";
-import { instantToDayMinute } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, instantToDayMinute } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
 import { CLOSED_HOURS_CLASS_NAME, formatMinuteWithDayOffset } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
@@ -32,6 +32,7 @@ type VerticalDayTimelineCanvasProps = {
   date: string;
   timezone: string;
   dayMinutes: number;
+  timeFormat: BookingTimeFormat;
   dateHeadingId: string;
   instructionsId: string;
   canvasRef: React.Ref<HTMLDivElement>;
@@ -64,6 +65,7 @@ export function VerticalDayTimelineCanvas({
   date,
   timezone,
   dayMinutes,
+  timeFormat,
   dateHeadingId,
   instructionsId,
   canvasRef,
@@ -176,7 +178,7 @@ export function VerticalDayTimelineCanvas({
                       className="absolute left-0 -translate-y-1/2 bg-card px-1 text-[11px] leading-none text-muted-foreground tabular-nums"
                       style={{ top: hour * PIXELS_PER_HOUR }}
                     >
-                      {formatMinuteWithDayOffset(date, timezone, hour * 60)}
+                      {formatMinuteWithDayOffset(date, timezone, hour * 60, timeFormat)}
                     </span>
                   ))}
                 </div>

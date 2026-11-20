@@ -5,6 +5,7 @@ export const inheritedBrowserBookingPreferences: BookingDisplayPreferences = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER",
   customTimezone: null,
+  timeFormat: "AUTOMATIC",
   institutionTimezone: "UTC",
   overridden: false,
 };
@@ -15,6 +16,7 @@ export const customNewYorkBookingPreferences: BookingDisplayPreferences = {
   availabilityWindowEnd: "17:00",
   timezoneMode: "CUSTOM",
   customTimezone: "America/New_York",
+  timeFormat: "AUTOMATIC",
   overridden: true,
 };
 

@@ -76,3 +76,26 @@ describe("weeklyOpeningHours", () => {
     expect(week.slice(5).map((day) => day.hours)).toEqual([null, null]);
   });
 });
+
+it.each([
+  { locale: "en-US-u-hc-h12", monday: "09:00 AM - 05:00 PM", tuesday: "10:00 AM - 12:00 AM" },
+  { locale: "en-GB-u-hc-h23", monday: "09:00 - 17:00", tuesday: "10:00 - 00:00" },
+])("formats each independent day with $locale without changing its wire end", ({ locale, monday, tuesday }) => {
+  const schedule = {
+    timezone: "UTC",
+    openingHours: [
+      { dayOfWeek: 1, start: "09:00", end: "17:00" },
+      { dayOfWeek: 2, start: "10:00", end: "24:00" },
+    ],
+  };
+  expect(hours(weeklyOpeningHours(schedule, "UTC", "2026-10-07", locale))).toEqual([
+    monday,
+    tuesday,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+  expect(schedule.openingHours[1]?.end).toBe("24:00");
+});

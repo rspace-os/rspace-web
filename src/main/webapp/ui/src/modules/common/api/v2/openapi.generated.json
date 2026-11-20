@@ -1739,11 +1739,14 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "timeFormat" : {
+            "$ref" : "#/components/schemas/BookingTimeFormat"
+          },
           "timezoneMode" : {
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
-        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "configurationVersion" ],
+        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "timeFormat", "institutionTimezone", "configurationVersion" ],
         "type" : "object"
       },
       "BookingCalendarEventsPage" : {
@@ -3135,11 +3138,14 @@
             "readOnly" : true,
             "type" : "boolean"
           },
+          "timeFormat" : {
+            "$ref" : "#/components/schemas/BookingTimeFormat"
+          },
           "timezoneMode" : {
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
-        "required" : [ "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone", "overridden" ],
+        "required" : [ "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "timeFormat", "institutionTimezone", "overridden" ],
         "type" : "object"
       },
       "BookingDisplayPreferencesReplacement" : {
@@ -3158,6 +3164,13 @@
             "maxLength" : 255,
             "minLength" : 0,
             "type" : [ "string", "null" ]
+          },
+          "timeFormat" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/BookingTimeFormat"
+            } ],
+            "description" : "AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
+            "type" : "null"
           },
           "timezoneMode" : {
             "$ref" : "#/components/schemas/BookingTimezoneMode"
@@ -3362,11 +3375,14 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "timeFormat" : {
+            "$ref" : "#/components/schemas/BookingTimeFormat"
+          },
           "timezoneMode" : {
             "$ref" : "#/components/schemas/BookingTimezoneMode"
           }
         },
-        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "institutionTimezone" ],
+        "required" : [ "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "availabilityWindowStart", "availabilityWindowEnd", "timezoneMode", "customTimezone", "timeFormat", "institutionTimezone" ],
         "type" : "object"
       },
       "BookingSettingsPatch" : {
@@ -3431,6 +3447,13 @@
             "minimum" : 1,
             "type" : [ "integer", "null" ]
           },
+          "timeFormat" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/BookingTimeFormat"
+            }, {
+              "type" : "null"
+            } ]
+          },
           "timezoneMode" : {
             "anyOf" : [ {
               "$ref" : "#/components/schemas/BookingTimezoneMode"
@@ -3443,6 +3466,10 @@
       },
       "BookingState" : {
         "enum" : [ "CONFIRMED", "CANCELLED" ],
+        "type" : "string"
+      },
+      "BookingTimeFormat" : {
+        "enum" : [ "AUTOMATIC", "H12", "H24" ],
         "type" : "string"
       },
       "BookingTimezoneMode" : {
@@ -11423,7 +11450,7 @@
         "x-rspace-operation" : "CUSTOM"
       },
       "put" : {
-        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION.",
+        "description" : "Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.",
         "operationId" : "replaceMyBookingPreferences",
         "requestBody" : {
           "content" : {
