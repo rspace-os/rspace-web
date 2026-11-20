@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.core.util.ListFormatUtils;
+import com.researchspace.extmessages.base.WebhookDestinationPolicy;
 import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
@@ -46,6 +47,7 @@ import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.webapp.integrations.MultiInstanceClient;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -64,6 +66,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -129,6 +132,17 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired PyratClient pyratClient;
   private @Autowired RaIDServiceClientAdapter raidClientService;
   private @Autowired GalaxyService galaxyService;
+
+  @Value("${msteams.webhook.allowed.origins}")
+  private String msTeamsAllowedOrigins;
+
+  private WebhookDestinationPolicy msTeamsWebhookPolicy;
+
+  @PostConstruct
+  void initMsTeamsWebhookPolicy() {
+    msTeamsWebhookPolicy =
+        WebhookDestinationPolicy.parse("msteams.webhook.allowed.origins", msTeamsAllowedOrigins);
+  }
 
   private final Map<SystemProperty, List<SystemProperty>> parent2ChildMap = new HashMap<>();
 
@@ -747,6 +761,10 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         && isBlank(originalOptions.get(credentialSetting))) {
       throw new IllegalArgumentException(
           messages.getMessage("apps.errors.newConfigMissingCredential"));
+    }
+    if (MSTEAMS_APP_NAME.equals(appName)
+        && StringUtils.isNotEmpty(originalOptions.get(MSTEAMS_WEBHOOK_URL))) {
+      msTeamsWebhookPolicy.check(originalOptions.get(MSTEAMS_WEBHOOK_URL));
     }
     UserAppConfig savedConfig =
         appConfigMgr.saveAppConfigElementSet(

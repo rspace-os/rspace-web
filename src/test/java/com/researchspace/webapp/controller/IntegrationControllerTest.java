@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.extmessages.base.WebhookUrlNotAllowedException;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.preference.Preference;
@@ -139,6 +140,23 @@ public class IntegrationControllerTest {
     verify(handler, never())
         .saveAppOptions(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+  }
+
+  @Test
+  public void rejectedWebhookUrlIsReturnedAsAnErrorMessage() {
+    Map<String, String> options =
+        Map.of(IntegrationsHandler.MSTEAMS_WEBHOOK_URL, "http://127.0.0.1:9988/x?sig=s3cret");
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
+    Mockito.doThrow(new WebhookUrlNotAllowedException("origin is not in the allowlist"))
+        .when(handler)
+        .saveAppOptions(null, options, IntegrationsHandler.MSTEAMS_APP_NAME, false, subject);
+
+    AjaxReturnObject<IntegrationInfo> rc =
+        integrationCtrller.saveAppOptions(null, IntegrationsHandler.MSTEAMS_APP_NAME, options);
+
+    assertNull(rc.getData());
+    assertThat(rc.getErrorMsg().getErrorMessages().get(0))
+        .startsWith("This webhook URL is not allowed.");
   }
 
   private IntegrationInfo egnyteInfo(String domainUrl) {

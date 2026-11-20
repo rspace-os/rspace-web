@@ -33,6 +33,31 @@ describe("useIntegrationsEndpoint", () => {
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("1");
       expect(JSON.parse(mockAxios.history.post[0].data).foo).toBe("bar");
     });
+
+    test("Rejects with the server's validation message.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("integration/allIntegrations").reply(500);
+      mockAxios.onPost("integration/saveAppOptions").reply(200, {
+        success: false,
+        data: null,
+        errorMsg: { errorMessages: ["This webhook URL is not allowed."] },
+      });
+      let failure: Error | undefined;
+      function SaveTeams() {
+        const { saveAppOptions } = useIntegrationsEndpoint();
+        useEffect(() => {
+          saveAppOptions("MSTEAMS", Optional.empty(), {}).catch((e: Error) => {
+            failure = e;
+          });
+        }, []);
+        // biome-ignore lint/complexity/noUselessFragments: matches Wrapper above
+        return <></>;
+      }
+
+      render(<SaveTeams />);
+
+      await waitFor(() => expect(failure?.message).toBe("This webhook URL is not allowed."));
+    });
   });
 
   describe("OMERO", () => {

@@ -5,15 +5,17 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
 
-  RestTemplate template;
+  RestClient restClient;
 
   boolean supported = true;
   String message = "{'text':'some json'}";
-  String url = "http://a.b.c";
+  String url = "https://hooks.example.test/x";
+  WebhookDestinationPolicy policy =
+      WebhookDestinationPolicy.parse("test.allowed.origins", "https://hooks.example.test");
 
   @Override
   public boolean supportsApp(App app) {
@@ -25,12 +27,14 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
     return message;
   }
 
-  RestTemplate getRestTemplate() {
-    return template;
+  @Override
+  RestClient getRestClient() {
+    return restClient != null ? restClient : super.getRestClient();
   }
 
-  void setTemplate(RestTemplate template) {
-    this.template = template;
+  @Override
+  protected WebhookDestinationPolicy destinationPolicy() {
+    return policy;
   }
 
   @Override

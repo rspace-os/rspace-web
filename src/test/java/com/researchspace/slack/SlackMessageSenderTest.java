@@ -129,6 +129,9 @@ public class SlackMessageSenderTest {
       when(props.getServerUrl()).thenReturn("https://rspace.example.com");
       ReflectionTestUtils.setField(slackSender, "props", props);
       ReflectionTestUtils.setField(slackSender, "analyticsMgr", mock(AnalyticsManager.class));
+      ReflectionTestUtils.setField(
+          slackSender, "allowedOrigins", "http://localhost:" + server.getAddress().getPort());
+      ReflectionTestUtils.invokeMethod(slackSender, "initDestinationPolicy");
       IRSpaceDoc document = mock(IRSpaceDoc.class);
       when(document.getName()).thenReturn("試料 😀");
       when(document.getGlobalIdentifier()).thenReturn("SD123");

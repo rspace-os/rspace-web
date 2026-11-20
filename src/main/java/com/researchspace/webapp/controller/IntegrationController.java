@@ -28,6 +28,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.upperCase;
 
 import com.researchspace.core.util.ListFormatUtils;
+import com.researchspace.extmessages.base.WebhookUrlNotAllowedException;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
@@ -221,7 +222,13 @@ public class IntegrationController extends BaseController {
           null, ErrorList.of(getText("apps.egnyte.errors.invalidDomainUrl")));
     }
     User subject = userManager.getAuthenticatedUserInSession();
-    integrationsHandler.saveAppOptions(optionsId, options, appName, false, subject);
+    try {
+      integrationsHandler.saveAppOptions(optionsId, options, appName, false, subject);
+    } catch (WebhookUrlNotAllowedException e) {
+      // user input, not a server fault: the Apps dialog shows errorMsg, but not a 500's text
+      log.warn("Webhook URL rejected on save for {}: {}", appName, e.getReason());
+      return new AjaxReturnObject<>(null, ErrorList.of(messages.getMessage(e)));
+    }
     return getIntegrationInfo(appName);
   }
 

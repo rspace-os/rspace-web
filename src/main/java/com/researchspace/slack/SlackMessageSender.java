@@ -6,6 +6,7 @@ import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
+import com.researchspace.extmessages.base.WebhookDestinationPolicy;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -13,10 +14,12 @@ import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserConnectionManager;
+import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 
 public class SlackMessageSender extends AbstractExternalWebhookMessageSender
@@ -28,8 +31,24 @@ public class SlackMessageSender extends AbstractExternalWebhookMessageSender
   @Autowired IPropertyHolder props;
   private final UserConnectionManager userConnectionManager;
 
+  @Value("${slack.webhook.allowed.origins}")
+  private String allowedOrigins;
+
+  private WebhookDestinationPolicy destinationPolicy;
+
   public SlackMessageSender(UserConnectionManager userConnectionManager) {
     this.userConnectionManager = userConnectionManager;
+  }
+
+  @PostConstruct
+  void initDestinationPolicy() {
+    destinationPolicy =
+        WebhookDestinationPolicy.parse("slack.webhook.allowed.origins", allowedOrigins);
+  }
+
+  @Override
+  protected WebhookDestinationPolicy destinationPolicy() {
+    return destinationPolicy;
   }
 
   @Override

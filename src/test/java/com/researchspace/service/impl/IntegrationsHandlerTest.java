@@ -49,6 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.extmessages.base.WebhookUrlNotAllowedException;
 import com.researchspace.model.PropertyDescriptor;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
@@ -118,6 +119,8 @@ public class IntegrationsHandlerTest {
     handler.setUserConnectionManager(userConnectionManager);
     ReflectionTestUtils.setField(
         handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(handler, "msTeamsAllowedOrigins", "https://teams.example");
+    ReflectionTestUtils.invokeMethod(handler, "initMsTeamsWebhookPolicy");
   }
 
   @Test
@@ -447,6 +450,35 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  public void teamsWebhookOutsideTheAllowedOriginsIsNotSaved() {
+    Map<String, String> settings =
+        Map.of(MSTEAMS_WEBHOOK_URL, "http://127.0.0.1:9988/x?sig=s3cret");
+
+    WebhookUrlNotAllowedException e =
+        assertThrows(
+            WebhookUrlNotAllowedException.class,
+            () -> handler.saveAppOptions(42L, settings, MSTEAMS_APP_NAME, false, subject));
+
+    String userMessage = new MessageSourceUtils(new JsonMessageSource()).getMessage(e);
+    assertThat(userMessage).doesNotContain("127.0.0.1", "s3cret").doesNotStartWith("apps.");
+    verifyNoInteractions(appCfgMgr, userConnectionManager);
+  }
+
+  @Test
+  public void teamsSaveWithoutANewWebhookSkipsTheOriginCheck() {
+    Map<String, String> keepSecret = new HashMap<>();
+    keepSecret.put("MSTEAMS_CHANNEL_LABEL", "general");
+    keepSecret.put(MSTEAMS_WEBHOOK_URL, null);
+    handler.saveAppOptions(42L, keepSecret, MSTEAMS_APP_NAME, false, subject);
+
+    Map<String, String> deleteSecret = Map.of(MSTEAMS_WEBHOOK_URL, "");
+    handler.saveAppOptions(42L, deleteSecret, MSTEAMS_APP_NAME, false, subject);
+
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), MSTEAMS_APP_NAME, "42");
+  }
+
+  @Test
   public void newConfigurationsRequireNonBlankCredentials() {
     Map<String, String> credentials =
         Map.of(
@@ -490,7 +522,11 @@ public class IntegrationsHandlerTest {
             MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL);
     for (Map.Entry<String, String> credential : credentials.entrySet()) {
       Map<String, String> options = new HashMap<>();
-      options.put(credential.getValue(), "new-credential");
+      options.put(
+          credential.getValue(),
+          MSTEAMS_APP_NAME.equals(credential.getKey())
+              ? "https://teams.example/hook"
+              : "new-credential");
       if (DSW_APP_NAME.equals(credential.getKey())) {
         options.put(DSW_ALIAS, "dswAlias");
       }

@@ -1446,7 +1446,7 @@ export function useIntegrationsEndpoint(): {
     });
     const response = await api.post<
       | { success: true; data: FetchedState }
-      | { success: false; data: null; errorMsg: string }
+      | { success: false; data: null; errorMsg: string | { errorMessages: Array<string> } }
       | { errorId: string; exceptionMessage: string; tstamp: string }
     >("saveAppOptions", newOption, { params });
 
@@ -1454,8 +1454,14 @@ export function useIntegrationsEndpoint(): {
       throw new Error(response.data.exceptionMessage);
     }
     if (!response.data.success) {
-      if (response.data.errorMsg !== null && typeof response.data.errorMsg !== "undefined") {
-        throw new Error(response.data.errorMsg);
+      const { errorMsg } = response.data;
+      if (errorMsg !== null && typeof errorMsg !== "undefined") {
+        // the controller sends an ErrorList for validation failures such as a rejected URL
+        throw new Error(
+          typeof errorMsg === "string"
+            ? errorMsg
+            : (errorMsg.errorMessages.at(0) ?? t("integrationsEndpoint.unknownReason")),
+        );
       }
       throw new Error(t("integrationsEndpoint.unknownReason"));
     } else {
