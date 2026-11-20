@@ -1048,7 +1048,8 @@ public class RecordManagerImpl implements RecordManager {
       // return success even though no further action was required (false returned only on failure)
       return true;
     }
-    if (!permissnUtils.isPermitted(toSave, PermissionType.RENAME, user)) {
+    if (!permissnUtils.isPermitted(toSave, PermissionType.RENAME, user)
+        && !permissnUtils.isRenamePermittedByEditAccess(toSave, user)) {
       throw new AuthorizationException(
           messages.getMessage(
               "errors.authorization.failure.renameRecord",

@@ -19,6 +19,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
 import com.researchspace.model.record.Folder;
@@ -45,6 +47,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
   private @Autowired RecordGroupSharingDao regGrpDao;
   private @Autowired FormDao formDao;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired SystemPropertyManager systemPropertyManager;
 
   private Group group;
   private User piUser;
@@ -527,27 +530,138 @@ public class RecordSharingTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void renamePermissionsInGrpFolder() throws Exception {
+  public void groupEditMemberCanRenameSharedDocumentButNotFolderCreatedByPi() throws Exception {
     final StructuredDocument toShare = setUpOtherUserAndRecordToShare();
     group = reloadGroup(group);
-    // now share record
     sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "write"));
     logoutAndLoginAs(other);
-    // other user can't rename even though is shared with group.
-    Long recordId = toShare.getId();
-    assertThrows(
-        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
 
-    // get user to create a new folder in the group:
+    assertTrue(recordMgr.renameRecord("renamed by member", toShare.getId(), other));
+    Record renamed = recordMgr.get(toShare.getId());
+    assertEquals("renamed by member", renamed.getName());
+    assertEquals(other.getUsername(), renamed.getModifiedBy());
+
     logoutAndLoginAs(piUser);
     Folder grpFolder = folderDao.getSharedFolderForGroup(group);
     final Folder subf = folderMgr.createNewFolder(grpFolder.getId(), "GROUPSF", piUser);
     logoutAndLoginAs(other);
 
-    // other user can't rename a folder created by group admin even though is shared with group.
+    // folders still need RENAME, which group members don't have on a folder created by the PI
     Long subfolderId = subf.getId();
     assertThrows(
         AuthorizationException.class, () -> recordMgr.renameRecord("XXX", subfolderId, other));
+  }
+
+  @Test
+  public void editShareeCanRenameDocumentButViewShareeCannot() throws Exception {
+    StructuredDocument editShared = setUpOtherUserAndRecordToShare();
+    StructuredDocument viewShared = createBasicDocumentInRootFolderWithText(piUser, "any");
+    sharingMgr.shareRecord(piUser, editShared.getId(), getIndividualShareCommand(other, "write"));
+    sharingMgr.shareRecord(piUser, viewShared.getId(), getIndividualShareCommand(other, "read"));
+    logoutAndLoginAs(other);
+
+    assertTrue(recordMgr.renameRecord("renamed by sharee", editShared.getId(), other));
+    assertEquals("renamed by sharee", recordMgr.get(editShared.getId()).getName());
+
+    Long viewSharedId = viewShared.getId();
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", viewSharedId, other));
+  }
+
+  @Test
+  public void shareeLosesRenameWhenEditShareIsChangedToView() throws Exception {
+    StructuredDocument toShare = setUpOtherUserAndRecordToShare();
+    RecordGroupSharing share =
+        sharingMgr
+            .shareRecord(piUser, toShare.getId(), getIndividualShareCommand(other, "write"))
+            .getEntity()
+            .get(0);
+    logoutAndLoginAs(other);
+    assertTrue(recordMgr.renameRecord("renamed while editable", toShare.getId(), other));
+
+    logoutAndLoginAs(piUser);
+    sharingMgr.updatePermissionForRecord(share.getId(), "read", piUser.getUsername());
+    permissionUtils.refreshCache();
+    other = userDao.get(other.getId());
+    logoutAndLoginAs(other);
+    permissionUtils.refreshCache();
+
+    Long recordId = toShare.getId();
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
+  }
+
+  @Test
+  public void editShareeCanRenameSharedNotebookAndItsEntry() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    Notebook notebook = createNotebookWithNEntries(piUser.getRootFolder().getId(), "nb", 1, piUser);
+    BaseRecord entry = notebook.getChildrens().iterator().next();
+    assertTrue(shareNotebookWithGroupMember(piUser, notebook, other).isPresent());
+    logoutAndLoginAs(other);
+
+    assertTrue(recordMgr.renameRecord("notebook renamed by sharee", notebook.getId(), other));
+    assertEquals("notebook renamed by sharee", folderMgr.getNotebook(notebook.getId()).getName());
+    assertTrue(recordMgr.renameRecord("entry renamed by sharee", entry.getId(), other));
+    assertEquals("entry renamed by sharee", recordMgr.get(entry.getId()).getName());
+  }
+
+  @Test
+  public void viewShareeCanRenameNeitherSharedNotebookNorItsEntry() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    Notebook notebook = createNotebookWithNEntries(piUser.getRootFolder().getId(), "nb", 1, piUser);
+    Long entryId = notebook.getChildrens().iterator().next().getId();
+    Long notebookId = notebook.getId();
+    assertTrue(
+        sharingMgr
+            .shareRecord(piUser, notebookId, getIndividualShareCommand(other, "read"))
+            .isSucceeded());
+    logoutAndLoginAs(other);
+
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", notebookId, other));
+    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("XXX", entryId, other));
+  }
+
+  @Test
+  public void piAllowedToEditAllWorkCanRenameMemberDocument() throws Exception {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    systemPropertyManager.save(
+        Preference.PI_CAN_EDIT_ALL_WORK_IN_LABGROUP,
+        HierarchicalPermission.ALLOWED.name(),
+        sysadmin);
+    logoutAndLoginAs(piUser);
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    StructuredDocument memberDoc = createBasicDocumentInRootFolderWithText(other, "any");
+    Long memberDocId = memberDoc.getId();
+
+    // reading all group work does not allow renaming
+    logoutAndLoginAs(piUser);
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", memberDocId, piUser));
+
+    grpMgr.authorizePIToEditAll(group.getId(), piUser, true);
+    permissionUtils.refreshCache();
+    piUser = userDao.get(piUser.getId());
+    logoutAndLoginAs(piUser);
+    permissionUtils.refreshCache();
+
+    assertTrue(recordMgr.renameRecord("renamed by PI", memberDocId, piUser));
+    assertEquals("renamed by PI", recordMgr.get(memberDocId).getName());
+  }
+
+  @Test
+  public void piCanStillRenameDocumentSharedWithGroupForViewOnly() throws Exception {
+    setUpOtherUserAndRecordToShare();
+    logoutAndLoginAs(other);
+    StructuredDocument memberDoc = createBasicDocumentInRootFolderWithText(other, "any");
+    sharingMgr.shareRecord(other, memberDoc.getId(), getGrpShareCommand(group, "read"));
+
+    // the PI's RENAME comes from the group shared folder, not from edit access
+    logoutAndLoginAs(piUser);
+    assertFalse(permissionUtils.isPermitted(memberDoc, PermissionType.WRITE, piUser));
+    assertTrue(recordMgr.renameRecord("renamed by PI", memberDoc.getId(), piUser));
+    assertEquals("renamed by PI", recordMgr.get(memberDoc.getId()).getName());
   }
 
   @Test
