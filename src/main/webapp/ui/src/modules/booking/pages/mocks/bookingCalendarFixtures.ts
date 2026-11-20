@@ -73,7 +73,6 @@ export const busyBooking: BookingListDocument = {
   bookedBy: null,
   privacy: "busy",
   canEdit: false,
-  canCancel: false,
 };
 
 export function collectionResponse(

@@ -806,6 +806,12 @@ may check behavior without `LocaleFilter`.
 | 11. | [ ] OpenAPI shows examples and resource-specific errors. |
 | 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
 
+Booking filters accept `requester.value==me` through the requester relationship to users. Each
+request resolves the alias using the effective subject, including during operate-as. Booking
+configurations, the catalogue and calendar events accept the filter-only `targetOwner==me` member.
+It includes the Inventory read constraint and accepts only equality with `me`. It is invalid within
+an OR group. Shared links and saved views should retain `me`, rather than substituting a user id.
+
 ## Generated frontend access and relationship clients
 
 Resource-access and relationship-picker requests use registry entries backed by the generated Orval
