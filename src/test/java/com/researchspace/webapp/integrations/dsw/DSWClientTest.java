@@ -113,7 +113,10 @@ class DSWClientTest {
     "'{\"releaseVersion\":\"5.0\"}'",
     "'{\"version\":\"v5.1~f3c60c086\"}'",
     "'{\"releaseVersion\":\"\",\"version\":\"v5.0.0~f3c60c086\"}'",
-    "'{\"version\":\"v5.0.0~f3c60c0860f3c60c0860f3c60c0860f3c60c08\"}'"
+    "'{\"version\":\"v5.0.0~f3c60c0860f3c60c0860f3c60c0860f3c60c08\"}'",
+    "'{\"releaseVersion\":\"5\"}'",
+    "'{\"releaseVersion\":\"1234567.0.0\"}'",
+    "'{\"releaseVersion\":\"5.1234567\"}'"
   })
   void usesCurrentPathWhenApiReportsV5(String infoJson) {
     server
@@ -128,12 +131,9 @@ class DSWClientTest {
   @CsvSource({
     "'{\"releaseVersion\":\"4.26.0\"}'",
     "'{\"releaseVersion\":\"4.26\"}'",
-    "'{\"releaseVersion\":\"5\"}'",
     "'{\"version\":\"4.9.1\"}'",
     "'{\"name\":\"Engine Wizard\"}'",
-    "'{\"releaseVersion\":\"99999999999.0.0\"}'",
-    "'{\"releaseVersion\":\"1234567.0.0\"}'",
-    "'{\"releaseVersion\":\"5.1234567\"}'"
+    "'{\"releaseVersion\":\"99999999999.0.0\"}'"
   })
   void checksLegacyInfoWhenApiReportsNoV5Version(String infoJson) {
     server

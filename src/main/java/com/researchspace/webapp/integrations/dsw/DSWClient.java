@@ -9,7 +9,6 @@ import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -49,11 +48,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.semver4j.Semver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -84,7 +82,7 @@ public class DSWClient {
   public static final String DSW_PATH_PROJECTS_CURRENT = "/projects/";
 
   /** First DSW release that uses the current API and project page paths. */
-  public static final SemanticVersion DSW_API_PATH_CHANGE_VERSION = new SemanticVersion("5.0.0");
+  public static final Semver DSW_API_PATH_CHANGE_VERSION = new Semver("5.0.0");
 
   /** How long a server's detected paths are reused before its version is checked again. */
   public static final int DSW_API_PATH_CACHE_TTL_MINUTES = 15;
@@ -121,15 +119,9 @@ public class DSWClient {
   private static final ThreadLocal<AtomicReference<HttpURLConnection>> VERSION_CHECK_CONNECTION =
       new ThreadLocal<>();
 
-  // Two or three parts, so a future "5.1" is still recognised. SemanticVersion treats a missing
-  // patch number as matching any, so "5.0" counts as 5.0.0. Each part is limited to 6 digits, so
-  // a long digit run is scanned in linear time and cannot overflow SemanticVersion's int parts;
-  // the digit lookarounds stop part of a longer number being matched.
-  private static final Pattern DSW_RELEASE_VERSION =
-      Pattern.compile("(?<!\\d)\\d{1,6}\\.\\d{1,6}(?:\\.\\d{1,6})?(?!\\d)");
-
   // Only the start of the reported version is examined; real values such as "v5.0.0~f3c60c086"
-  // are much shorter, and the version always comes first.
+  // are much shorter, and the version always comes first. This limit is also what keeps
+  // Semver.coerce fast: its time grows much faster than its input (about 11s for 1M digits).
   private static final int DSW_VERSION_STRING_MAX_LENGTH = 32;
 
   public static final int DSW_PROJECT_NAME_LENGTH_MAX = 255;
@@ -354,10 +346,9 @@ public class DSWClient {
   private DSWPaths detectPaths(String serverUrl) {
     // Both checks share one deadline, so that an older server cannot double the wait.
     long deadlineNanos = System.nanoTime() + versionCheckDeadline.toNanos();
-    Optional<SemanticVersion> version =
-        getServerVersion(serverUrl, DSW_PATH_API_CURRENT, deadlineNanos);
+    Optional<Semver> version = getServerVersion(serverUrl, DSW_PATH_API_CURRENT, deadlineNanos);
     if (!isCurrent(version)) {
-      Optional<SemanticVersion> legacyVersion =
+      Optional<Semver> legacyVersion =
           getServerVersion(serverUrl, DSW_PATH_API_LEGACY, deadlineNanos);
       if (isCurrent(legacyVersion)) {
         log.warn(
@@ -392,8 +383,8 @@ public class DSWClient {
     return paths;
   }
 
-  private static boolean isCurrent(Optional<SemanticVersion> version) {
-    return version.filter(v -> v.isSameOrNewerThan(DSW_API_PATH_CHANGE_VERSION)).isPresent();
+  private static boolean isCurrent(Optional<Semver> version) {
+    return version.filter(v -> v.isGreaterThanOrEqualTo(DSW_API_PATH_CHANGE_VERSION)).isPresent();
   }
 
   private String getApiBaseUrl(DSWConnectionConfig connCfg) throws MalformedURLException {
@@ -553,8 +544,7 @@ public class DSWClient {
   }
 
   /** The version reported at {@code serverUrl + path}, or empty if it gives none. */
-  private Optional<SemanticVersion> getServerVersion(
-      String serverUrl, String path, long deadlineNanos) {
+  private Optional<Semver> getServerVersion(String serverUrl, String path, long deadlineNanos) {
     String infoUrl = serverUrl + path;
     VersionInfoResponse response = requestVersionInfoWithDeadline(serverUrl, path, deadlineNanos);
     if (response.status().is3xxRedirection()) {
@@ -596,13 +586,14 @@ public class DSWClient {
       reported = info.path("version").asText("");
     }
     reported = StringUtils.left(reported, DSW_VERSION_STRING_MAX_LENGTH);
-    Matcher matcher = DSW_RELEASE_VERSION.matcher(reported);
-    if (!matcher.find()) {
+    // Fills in missing parts and ignores a leading "v" and trailing text, so "5" and
+    // "v5.1~f3c60c086" are read as 5.0.0 and 5.1.0; returns null for a number too large to parse.
+    Semver version = Semver.coerce(reported);
+    if (version == null) {
       log.warn(
           "DSW version info at {} has no recognisable version ({})", infoUrl, forLog(reported));
       return Optional.empty();
     }
-    SemanticVersion version = new SemanticVersion(matcher.group());
     return Optional.of(version);
   }
 
