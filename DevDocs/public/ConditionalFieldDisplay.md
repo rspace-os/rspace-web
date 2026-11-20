@@ -38,8 +38,8 @@ GMO?" is "Yes", and "Dilution notes" only when "Concentration" is greater than 5
 - If the source field is itself hidden, every field that depends on it is hidden too, whatever
   the condition. Rules can therefore form chains: "GMO?" shows "Containment level", and
   "Containment level" = CL3 shows "CL3 approval".
-- A field cannot depend on itself, directly or through other fields. The editor does not offer
-  such a choice.
+- A field cannot depend on itself, directly or through other fields. The editor lists such a
+  field as unavailable and says why.
 - Hiding is about presentation, not access. A hidden field keeps its value, and that value is
   still in exports and in the API.
 
@@ -94,9 +94,17 @@ Each field's card has a **Display this field when…** section. It offers two ch
 To give a field a rule:
 
 1. In the field's card, choose **Only when another field has certain values**.
-2. Choose the **Field** the rule reads. The list offers only the other fields that can be
-   sources (radio, choice, one-line text and number fields), and leaves out fields that would
-   make a loop. The first of them is chosen for you.
+2. Choose the **Field** the rule reads. The list shows every other field, in order, but only the
+   fields that can be sources (radio, choice, one-line text and number fields) can be chosen.
+   The others are greyed out, with the reason below the name:
+   - Unavailable - Notes has unsupported type "Formatted text": no rule can read this type,
+     which is named as in the type menu.
+   - Unavailable - PIN hides its value, like a password: an ELN String field that hides its
+     value.
+   - Unavailable - CL3 approval depends on this field, so reading it would make a loop: the
+     field's own rule already reads this field, directly or through other fields.
+
+   The first field that can be chosen is chosen for you.
 3. Choose the **Condition**. The list shows only the conditions that suit the chosen field. If
    you choose a field of another kind and the current condition does not suit it, the condition
    changes to the first one that does, and its options or value are cleared.
@@ -106,9 +114,9 @@ To give a field a rule:
 5. Save the form or template.
 
 If there is no field the rule could read yet, for example because the form has no other field
-that can be a source, the **Field** list shows a disabled "No other fields" item, and the same
-text appears below the list. Add a radio, choice, one-line text or number field first, or choose
-**Always**.
+that can be a source, the **Field** list shows a disabled "No other fields" item, followed by the
+unavailable fields and their reasons, and the same text appears below the list. Add a radio,
+choice, one-line text or number field first, or choose **Always**.
 
 The condition is applied as soon as it is complete and valid. Until then, the problem is marked
 in the card:
@@ -175,7 +183,8 @@ Use this part for the ELN Forms article.
 ![The Overflow plan field's card in the ELN form editor: Display this field when… is set to Only when another field has certain values, with Field "Volume", Condition "is at least" and Value "10"](images/conditional-field-display/form-number-condition.png)
 
 - The field editor is built into the form page. Add fields with **Add field**; reorder them with
-  the move buttons on each field. There is no separate "Reorder Fields" dialog any more.
+  the move buttons (to the top, up, down, to the bottom) beside each field's name. There is no
+  separate "Reorder Fields" dialog any more.
 - Save with the toolbar as before. **Save and Close**, **Update** and **Publish** save the
   fields first. If a field has a problem, nothing is saved, the problem is marked on the field,
   and the editor stays open. **Revert** asks before it discards your changes.
