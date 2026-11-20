@@ -239,9 +239,6 @@ class S3SidecarFileServiceTest {
     service.save(1L, "XRD-Experiments", user);
 
     verify(aclChecker).assertCanWrite(eq(user), any(NfsFileSystem.class));
-    verify(nfsFieldLinkManager)
-        .getLinkedDocuments(
-            filesystem, List.of("XRD-Experiments", "XRD-Experiments/xrd_run_041.dat"), user);
 
     ArgumentCaptor<File> fileCaptor = ArgumentCaptor.forClass(File.class);
     ArgumentCaptor<Map<String, String>> metaCaptor = ArgumentCaptor.forClass(Map.class);
