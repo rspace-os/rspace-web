@@ -6,8 +6,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.rule.FieldDisplayRule;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -41,6 +45,8 @@ import org.apache.commons.lang3.StringUtils;
       "content",
       "lastModified",
       "columnIndex",
+      "fieldKey",
+      "displayRule",
       "definition",
       "selectedOptions",
       "attachment",
@@ -83,6 +89,34 @@ public class ApiInventoryEntityField extends ApiField {
 
   @JsonProperty("mandatory")
   private Boolean mandatory;
+
+  /**
+   * Identifies the field within its template, and in records made from it, for display rules.
+   * Optional when a template field is created (a key is generated when omitted) and immutable
+   * afterwards. Ignored when writing sample or instrument fields.
+   */
+  @JsonProperty("fieldKey")
+  private String fieldKey;
+
+  /**
+   * Shows the field only when another field of the template meets a condition; null when always
+   * shown. Written only on template fields; records take their rules from the template.
+   */
+  @JsonProperty("displayRule")
+  @JsonSerialize(using = FieldDisplayRuleJson.Serializer.class)
+  @JsonDeserialize(using = FieldDisplayRuleJson.Deserializer.class)
+  private FieldDisplayRule displayRule;
+
+  /**
+   * Whether the incoming payload mentioned {@code displayRule}, so that on a template update an
+   * absent rule leaves the field's rule unchanged while an explicit {@code null} clears it.
+   */
+  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude private boolean displayRuleProvided;
+
+  public void setDisplayRule(FieldDisplayRule displayRule) {
+    this.displayRule = displayRule;
+    this.displayRuleProvided = true;
+  }
 
   @JsonProperty(value = "newFieldRequest", access = Access.WRITE_ONLY)
   private boolean newFieldRequest;
@@ -142,6 +176,9 @@ public class ApiInventoryEntityField extends ApiField {
       setGlobalId(field.getOid().toString());
     }
     setMandatory(field.isMandatory());
+    setFieldKey(field.getFieldKey());
+    // the field, not the setter, which would mark the outgoing rule as provided
+    this.displayRule = field.getDisplayRule();
 
     if (FieldType.CHOICE.equals(field.getType())) {
       InventoryChoiceField icf = (InventoryChoiceField) field;
@@ -211,9 +248,22 @@ public class ApiInventoryEntityField extends ApiField {
     return contentChanged;
   }
 
-  /** Method for modifying instance of template field. Updates field's content and meta-data. */
+  /**
+   * Method for modifying instance of template field. Updates field's content and meta-data.
+   *
+   * @throws LocalizedIllegalArgumentException if the request names a different field key
+   */
   public boolean applyChangesToDatabaseTemplateField(InventoryEntityField dbField, User user) {
     boolean contentChanged = false;
+    if (getFieldKey() != null && !getFieldKey().equals(dbField.getFieldKey())) {
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.field.keyChanged", dbField.getName());
+    }
+    // validated with the whole template once every change in the request is applied
+    if (isDisplayRuleProvided() && !Objects.equals(getDisplayRule(), dbField.getDisplayRule())) {
+      dbField.setDisplayRule(getDisplayRule());
+      contentChanged = true;
+    }
     if (getName() != null) {
       if (!getName().equals(dbField.getName())) {
         dbField.setName(getName());
@@ -311,7 +361,11 @@ public class ApiInventoryEntityField extends ApiField {
     // for choice/radio the content comes/goes through selectedOptions
     boolean isOptionsField = dbField.isOptionsStoringField();
 
-    if (!isOptionsField && getContent() != null) {
+    // clients send "" for an empty field; over a blank stored value that is no change, and
+    // writing it would fail the mandatory check of a field that was already allowed to be blank
+    boolean blankOverBlank =
+        StringUtils.isBlank(getContent()) && StringUtils.isBlank(dbField.getData());
+    if (!isOptionsField && getContent() != null && !blankOverBlank) {
       if (!getContent().equals(dbField.getData())) {
         dbField.setFieldData(getContent());
         contentChanged = true;

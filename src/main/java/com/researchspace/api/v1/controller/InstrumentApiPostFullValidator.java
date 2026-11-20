@@ -4,6 +4,7 @@ import com.researchspace.api.v1.controller.InstrumentsApiController.ApiInstrumen
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.service.inventory.impl.PidinstFields;
 import java.util.List;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
@@ -60,7 +61,12 @@ public class InstrumentApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      fieldHelper.validateMandatoryFieldsForEntityPost(incomingApiFields, templateFields, errors);
+      // a blank Landing page is a new instrument's resting state, which the manager keeps whatever
+      // the template says (see InstrumentEntityApiManagerImpl.saveNewApiFieldsIntoInstrumentFields)
+      InventoryEntityField landingPage =
+          PidinstFields.landingPage(apiInstrumentPost.getTemplate()).orElse(null);
+      fieldHelper.validateMandatoryFieldsForEntityPost(
+          incomingApiFields, templateFields, field -> field == landingPage, errors);
     }
   }
 }

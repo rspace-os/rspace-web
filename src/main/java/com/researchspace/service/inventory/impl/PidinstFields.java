@@ -24,8 +24,10 @@ import org.apache.commons.lang3.StringUtils;
  * <p>That leaves the Inventory UI's copy of the landing-page rule (see {@code InstrumentModel.tsx})
  * as the only remaining duplicate, which nothing here can keep in step; a rename must be applied
  * there by hand.
+ *
+ * <p>Public only for {@link #landingPage}, which the instrument creation validator needs too.
  */
-final class PidinstFields {
+public final class PidinstFields {
 
   /**
    * Canonical spelling from the default PIDINST template; see CONTEXT.md ("PIDINST-mapped field").
@@ -123,7 +125,7 @@ final class PidinstFields {
    * The record's Landing page field. Shared by the clear, the registration-time write and the
    * PIDINST mapping so they can never act on different fields.
    */
-  static Optional<InventoryEntityField> landingPage(InstrumentEntity record) {
+  public static Optional<InventoryEntityField> landingPage(InstrumentEntity record) {
     return mappedField(record, LANDING_PAGE, FieldType.URI);
   }
 

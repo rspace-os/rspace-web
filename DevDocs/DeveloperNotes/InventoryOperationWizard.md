@@ -408,7 +408,10 @@ The template-choice logic lives in pure, tested helpers (`templateResolution.ts`
 mandatory-field guard). Picking a template whose mandatory fields have no default is
 **blocked in the Template step** with a message naming those fields, so it can never
 fail at submit; the user picks a different template. Collecting values for such template
-fields in the wizard is deferred.
+fields in the wizard is deferred. On the server, the template-conformance check skips a
+mandatory field that the template's display rules hide, given the template's defaults
+(RSDEV-1706); `templateSelectionBlock` does not apply display rules yet, so it can still
+block such a template.
 
 ## Testing
 
