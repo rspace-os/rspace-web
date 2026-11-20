@@ -2,6 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { GlobeIcon, InfoIcon } from "lucide-react";
 import { type ChangeEvent, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { formatBookingLength, formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -11,12 +12,13 @@ import {
   snapEndToIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
-import type { BookingWindowDraft, WallClockResolution } from "@/modules/booking/domain/bookingTime";
 import {
+  type BookingWindowDraft,
   formatPlainDate,
   formatWallClockTime,
   sameDraft,
   sameTimeZone,
+  type WallClockResolution,
   wallClockEndpointFromInstant,
   wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
@@ -482,24 +484,31 @@ export function ZonedBookingWindowFields({
     const dateId = `${fieldId}-${name}-date`;
     const timeId = `${fieldId}-${name}-time`;
     const describedBy = errorDescription(name, endpointResolution);
+    const endpointInstant = wallClockInstant(endpointResolution, occurrence);
+    const dateInput = (
+      <Input
+        id={dateId}
+        aria-label={t(`bookings.form.${name}Date`)}
+        type="date"
+        required
+        aria-invalid={showErrors && (!value[dateKey] || endpointInvalid(name, endpointResolution)) ? true : undefined}
+        aria-describedby={describedBy}
+        disabled={disabled}
+        value={value[dateKey]}
+        onChange={(event) => change({ [dateKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
+      />
+    );
     return (
       <FieldSet className="gap-3">
         <FieldLegend>{t(`bookings.form.${name}`)}</FieldLegend>
         <div className={cn("grid sm:grid-cols-2", density === "compact" ? "gap-2" : "gap-4")}>
           <div className="space-y-2">
             <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
-            <Input
-              id={dateId}
-              aria-label={t(`bookings.form.${name}Date`)}
-              type="date"
-              required
-              aria-invalid={
-                showErrors && (!value[dateKey] || endpointInvalid(name, endpointResolution)) ? true : undefined
-              }
-              aria-describedby={describedBy}
-              disabled={disabled}
-              value={value[dateKey]}
-              onChange={(event) => change({ [dateKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
+            <BookingInstrumentTimeTooltip
+              start={endpointInstant}
+              displayTimeZone={resolvedDisplayTimezone}
+              instrumentTimeZone={resolvedSchedulingTimezone}
+              trigger={dateInput}
             />
           </div>
           <div className="space-y-2">
@@ -585,28 +594,41 @@ export function ZonedBookingWindowFields({
   if (density === "compact" && value.startDate === value.endDate && incrementUnit !== "DAYS") {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate || Boolean(startErrorId);
+    const startInstant = wallClockInstant(result.start, value.startOccurrence);
+    const endInstant = wallClockInstant(result.end, value.endOccurrence);
+    const compactTooltipStart = startInstant ?? endInstant;
+    const compactTooltipEnd = startInstant && !result.orderInvalid ? endInstant : undefined;
+    const dateInput = (
+      <Input
+        id={dateId}
+        aria-label={t("bookings.form.date")}
+        type="date"
+        required
+        aria-invalid={showErrors && dateInvalid ? true : undefined}
+        aria-describedby={showErrors ? (!value.startDate ? windowErrorId : startErrorId) : undefined}
+        disabled={disabled}
+        value={value.startDate}
+        onChange={(event) =>
+          change({
+            startDate: event.currentTarget.value,
+            startOccurrence: undefined,
+            endDate: event.currentTarget.value,
+            endOccurrence: undefined,
+          })
+        }
+      />
+    );
     return (
       <div className="space-y-4">
         {timezoneDescription}
         <div className="space-y-2">
           <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
-          <Input
-            id={dateId}
-            aria-label={t("bookings.form.date")}
-            type="date"
-            required
-            aria-invalid={showErrors && dateInvalid ? true : undefined}
-            aria-describedby={showErrors ? (!value.startDate ? windowErrorId : startErrorId) : undefined}
-            disabled={disabled}
-            value={value.startDate}
-            onChange={(event) =>
-              change({
-                startDate: event.currentTarget.value,
-                startOccurrence: undefined,
-                endDate: event.currentTarget.value,
-                endOccurrence: undefined,
-              })
-            }
+          <BookingInstrumentTimeTooltip
+            start={compactTooltipStart}
+            end={compactTooltipEnd}
+            displayTimeZone={resolvedDisplayTimezone}
+            instrumentTimeZone={resolvedSchedulingTimezone}
+            trigger={dateInput}
           />
         </div>
         <div className="grid grid-cols-2 gap-2">

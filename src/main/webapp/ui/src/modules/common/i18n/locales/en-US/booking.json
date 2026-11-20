@@ -409,6 +409,7 @@
       "target": "Bookable item",
       "targetName": "Bookable item name",
       "timezone": "Time zone",
+      "timezoneDescription": "Opening hours and booking rules use this time zone. It cannot be changed after the item is added.",
       "updatedAt": "Last updated"
     },
     "plural": "Bookable Items",
@@ -572,6 +573,7 @@
       "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
       "timezone": "Times shown in {timezone}."
     },
+    "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
     "itemInformation": {
       "doubleBookingAllowed": "Double booking allowed",
       "title": "Item information",

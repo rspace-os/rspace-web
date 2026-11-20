@@ -77,6 +77,7 @@ const sourced = (
             bookedBy: `User ${id.replace("booking:", "")}`,
             canViewConfiguration: true,
             createdBy: null,
+            instrumentTimeZone: "Europe/Berlin",
           },
         }
       : {}),
@@ -513,7 +514,9 @@ describe("calendar availability", () => {
       ...schedule,
     }));
 
-    await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toThrow("500");
+    await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toMatchObject({
+      status: 500,
+    });
     expect(requests).toHaveLength(2);
   });
 
