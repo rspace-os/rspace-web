@@ -715,8 +715,12 @@ public class WorkspaceController extends BaseController {
   public AjaxReturnObject<SharingResult> shareRecord(
       @RequestBody ShareConfigCommand shareConfig, Principal principal) {
     User sharer = userManager.getUserByUsername(principal.getName(), true);
-    ErrorList error = new ErrorList();
     if (shareConfig.isPublish()) {
+      if (!systemPropertyPermissionManager.isPropertyAllowed(sharer, "public_sharing")) {
+        ErrorList error = ErrorList.of(getText("publishIsDisabled.disabledNotice"));
+        SharingResult sharingResult = new SharingResult(List.of(), List.of(), error);
+        return new AjaxReturnObject<>(sharingResult, sharingResult.getError());
+      }
       User anonymous = userManager.getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
       ShareConfigElement anonymousShare = new ShareConfigElement();
       anonymousShare.setUserId(anonymous.getId());
@@ -729,7 +733,7 @@ public class WorkspaceController extends BaseController {
       shareConfig.setValues(new ShareConfigElement[] {anonymousShare});
     }
     SharingResult sharingResult = recordShareHandler.shareRecordsWithResult(shareConfig, sharer);
-    return new AjaxReturnObject<>(sharingResult, error);
+    return new AjaxReturnObject<>(sharingResult, sharingResult.getError());
   }
 
   @GetMapping("trash/list")
