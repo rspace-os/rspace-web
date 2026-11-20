@@ -1,6 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { resolve } from "node:path";
 import { sortBy, uniq } from "es-toolkit";
 import type { OpenApiDocument } from "orval";
 import { getTagKey } from "orval";
@@ -156,8 +155,8 @@ export async function generateResourceFile(input: string, output: string): Promi
   await writeFile(resolve(output, "guaranteedReadFields.ts"), generateGuaranteedReadFields(document));
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const ui = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+if (import.meta.main) {
+  const ui = resolve(import.meta.dirname, "../..");
   await generateResourceFile(
     resolve(ui, "src/modules/common/api/v2/openapi.generated.json"),
     resolve(ui, "src/modules/common/api/v2/generated"),
