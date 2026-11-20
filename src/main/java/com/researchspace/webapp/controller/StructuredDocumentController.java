@@ -728,7 +728,8 @@ public class StructuredDocumentController extends BaseController {
   }
 
   private void requireOriginalEditor(String expectedUsername, Principal principal) {
-    if (expectedUsername != null && !expectedUsername.equals(principal.getName())) {
+    // Usernames are unique ignoring case, and LDAP principals keep the directory's casing.
+    if (expectedUsername != null && !expectedUsername.equalsIgnoreCase(principal.getName())) {
       throw new EditorAccountChangedException();
     }
   }

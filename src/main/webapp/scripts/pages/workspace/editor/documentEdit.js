@@ -918,6 +918,7 @@ function cancelAutosavedEdits() {
           if (success.data !== null) {
             var url = success.data;
             wasAutosaved = false;
+            hasEditLock = false;
             RS.confirmAndNavigateTo(RS.msg("legacyjs.workspace.documentEdit.editsCancelled"), "success", 1000, url);
           }
         },

@@ -171,6 +171,20 @@ public class StructuredDocumentControllerTest {
   }
 
   @Test
+  public void editorAccountCheckIgnoresUsernameCase() {
+    final StructuredDocument sd = setUpStructuredDocument();
+    when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
+    when(baseRecordMgr.get(anyLong(), eq(user))).thenReturn(sd);
+    when(recordMgr.renameRecord("newname", sd.getId(), user)).thenReturn(true);
+
+    AjaxReturnObject<String> rc =
+        strucDocCtrller.rename(
+            sd.getId(), "newname", user.getUsername().toUpperCase(), mockPrincipal);
+
+    assertNotNull(rc.getData());
+  }
+
+  @Test
   public void testRenameSuccess() {
     final StructuredDocument sd = setUpStructuredDocument();
     RenameAuditEvent renameAuditEvent = new RenameAuditEvent(user, sd, "oldname", "newname");
