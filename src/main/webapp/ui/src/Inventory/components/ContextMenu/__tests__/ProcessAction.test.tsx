@@ -1,6 +1,6 @@
 import MenuList from "@mui/material/MenuList";
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
@@ -140,6 +140,7 @@ describe("ProcessAction lock acquisition", () => {
   });
 
   it("ignores a second click while the first acquisition is still in flight", async () => {
+    const user = userEvent.setup();
     const origin = makeMockSubSample({});
     let finishSecond: (status: "WAS_ALREADY_LOCKED") => void = () => {};
     const secondAttempt = new Promise<"WAS_ALREADY_LOCKED">((resolve) => {
@@ -153,8 +154,8 @@ describe("ProcessAction lock acquisition", () => {
     renderAction([origin]);
 
     const button = screen.getByRole("button", { name: /operations\.action\.process/i });
-    fireEvent.click(button);
-    fireEvent.click(button);
+    await user.click(button);
+    await user.click(button);
     finishSecond("WAS_ALREADY_LOCKED");
 
     await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
@@ -183,6 +184,7 @@ describe("ProcessAction lock acquisition", () => {
     expect(releaseElsewhere).not.toHaveBeenCalled();
   });
   it("releases a lock that arrives after the action has unmounted", async () => {
+    const user = userEvent.setup();
     const origin = makeMockSubSample({});
     let grant: (status: "LOCKED_OK") => void = () => {};
     vi.spyOn(origin, "acquireEditLock").mockReturnValue(
@@ -193,13 +195,14 @@ describe("ProcessAction lock acquisition", () => {
     const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
     const { unmount } = renderAction([origin]);
 
-    fireEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+    await user.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
     unmount();
     grant("LOCKED_OK");
 
     await waitFor(() => expect(release).toHaveBeenCalled());
   });
   it("opens on the origins it locked, not on a selection that changed while it was acquiring", async () => {
+    const user = userEvent.setup();
     const locked = makeMockSubSample({});
     const swappedIn = makeMockSubSample({ id: 2, globalId: "SS2" });
     let grant: (status: "LOCKED_OK") => void = () => {};
@@ -211,7 +214,7 @@ describe("ProcessAction lock acquisition", () => {
     const acquireSwappedIn = vi.spyOn(swappedIn, "acquireEditLock").mockResolvedValue("LOCKED_OK");
     const { rerender } = renderAction([locked]);
 
-    fireEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+    await user.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
     rerender(
       <ThemeProvider theme={materialTheme}>
         <ProcessAction as="button" disabled="" selectedResults={[swappedIn]} closeMenu={() => {}} />

@@ -1,5 +1,5 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent, { PointerEventsCheckLevel } from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
@@ -75,10 +75,7 @@ describe("RequestDetailPanel approve/reject", () => {
     const approveButton = screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" });
     await user.click(approveButton);
     await waitFor(() => expect(approveButton).toBeDisabled());
-    // A disabled button is a no-op click as far as a real user is concerned; userEvent enforces
-    // that by refusing the interaction outright, so a raw DOM event stands in for "clicked again
-    // while disabled" here.
-    fireEvent.click(approveButton);
+    await user.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never }).click(approveButton);
 
     expect(apiUpdate).toHaveBeenCalledTimes(1);
     resolveUpdate?.();

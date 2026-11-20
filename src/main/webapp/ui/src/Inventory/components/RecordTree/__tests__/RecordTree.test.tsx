@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -104,9 +104,14 @@ describe("RecordTree", () => {
     const { setActiveResult } = renderTree([containerWith([], "IC1")], { greyedOut: true });
 
     await user.tab();
-    const notPrevented = fireEvent.keyDown(screen.getByRole("treeitem"), { key: " " });
+    const row = screen.getByRole("treeitem");
+    expect(row).toHaveFocus();
+    const space = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+    act(() => {
+      row.dispatchEvent(space);
+    });
 
-    expect(notPrevented).toBe(false);
+    expect(space.defaultPrevented).toBe(true);
     expect(setActiveResult).not.toHaveBeenCalled();
   });
 

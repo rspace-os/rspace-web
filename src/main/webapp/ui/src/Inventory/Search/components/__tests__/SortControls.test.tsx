@@ -1,7 +1,8 @@
 import "@/stores/stores/RootStore";
 
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
@@ -12,7 +13,8 @@ import { translateAdjustableTableLabel } from "../../../components/Tables/adjust
 import SortControls from "../SortControls";
 
 describe("SortControls", () => {
-  test("Current sort option should have aria-current attribute.", () => {
+  test("Current sort option should have aria-current attribute.", async () => {
+    const user = userEvent.setup();
     const search = new Search({
       factory: mockFactory(),
     });
@@ -29,7 +31,7 @@ describe("SortControls", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "inventory:search.controls.sort.sortBy" }));
+    await user.click(screen.getByRole("button", { name: "inventory:search.controls.sort.sortBy" }));
     const selectedOptions = sortProperties.filter(({ key }) => search.fetcher.isCurrentSort(key));
     if (selectedOptions.length !== 1) throw new Error("Invalid menu selection");
 

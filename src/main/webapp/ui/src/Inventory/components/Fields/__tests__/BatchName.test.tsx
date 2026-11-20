@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -50,17 +51,18 @@ describe("BatchName", () => {
     });
     expect(container).not.toMatchTextContent("fields.name.minLength");
   });
-  test("Should enter an error state when value is only a single character and the suffix is NONE.", () => {
-    fc.assert(
-      fc.property(
+  test("Should enter an error state when value is only a single character and the suffix is NONE.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 1 }).filter((name) => /\S+/.test(name)),
-        (name) => {
+        async (name) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "NONE" }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: name },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(name);
           expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
@@ -71,20 +73,21 @@ describe("BatchName", () => {
    * This is because all of the suffixes have a length >= 2, and the minimum
    * length allows is also 2 chars
    */
-  test("Should not enter an error state when value is only a single character and the suffix is not NONE.", () => {
-    fc.assert(
-      fc.property(
+  test("Should not enter an error state when value is only a single character and the suffix is not NONE.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.tuple(
           fc.string({ minLength: 1, maxLength: 1 }),
           fc.constantFrom<"INDEX_NUMBER" | "INDEX_LETTER" | "CREATED">("INDEX_NUMBER", "INDEX_LETTER", "CREATED"),
         ),
-        ([common, suffix]) => {
+        async ([common, suffix]) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: common },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(common);
           expect(container).not.toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
         },
@@ -92,57 +95,61 @@ describe("BatchName", () => {
     );
   });
   describe("Should enter an error state when the value is too long.", () => {
-    test('When the suffix is "NONE".', () => {
-      fc.assert(
-        fc.property(fc.string({ minLength: 256 - lengthOfSuffix("NONE") }), (common) => {
+    test('When the suffix is "NONE".', async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.string({ minLength: 256 - lengthOfSuffix("NONE") }), async (common) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "NONE" }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: common },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(common);
           expect(container).toMatchTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
     });
-    test('When the suffix is "INDEX_NUMBER".', () => {
-      fc.assert(
-        fc.property(fc.string({ minLength: 256 - lengthOfSuffix("INDEX_NUMBER") }), (common) => {
+    test('When the suffix is "INDEX_NUMBER".', async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.string({ minLength: 256 - lengthOfSuffix("INDEX_NUMBER") }), async (common) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "INDEX_NUMBER" }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: common },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(common);
           expect(container).toMatchTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
     });
-    test('When the suffix is "INDEX_LETTER".', () => {
-      fc.assert(
-        fc.property(fc.string({ minLength: 256 - lengthOfSuffix("INDEX_LETTER") }), (common) => {
+    test('When the suffix is "INDEX_LETTER".', async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.string({ minLength: 256 - lengthOfSuffix("INDEX_LETTER") }), async (common) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "INDEX_LETTER" }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: common },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(common);
           expect(container).toMatchTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
     });
-    test('When the suffix is "CREATED".', () => {
-      fc.assert(
-        fc.property(fc.string({ minLength: 256 - lengthOfSuffix("CREATED") }), (common) => {
+    test('When the suffix is "CREATED".', async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.string({ minLength: 256 - lengthOfSuffix("CREATED") }), async (common) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "CREATED" }, onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: common },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(common);
           expect(container).toMatchTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
@@ -153,43 +160,44 @@ describe("BatchName", () => {
    * Only applies when suffix is NONE because there is no minimum common for
    * the other suffixes
    */
-  test("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
-    fc.assert(
-      fc.property(
+  test("Entering fewer than 2 characters, after having entered something valid, should error.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.tuple(
           fc.string({ minLength: 3, maxLength: 255 }).filter((firstValidValue) => /\S+/.test(firstValidValue)),
           fc.string({ minLength: 0, maxLength: 1 }).filter((secondInvalidValue) => /\S+/.test(secondInvalidValue)),
         ),
-        ([firstValidValue, secondInvalidValue]) => {
+        async ([firstValidValue, secondInvalidValue]) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "NONE" }, onErrorStateChange);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: firstValidValue },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(firstValidValue);
           expect(container).not.toMatchTextContent("fields.name.minLength");
 
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: secondInvalidValue },
-          });
+          await user.clear(input);
+          await user.paste(secondInvalidValue);
           expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
     );
   });
-  test("Should enter an error state when value is just whitespace.", () => {
-    fc.assert(
-      fc.property(
+  test("Should enter an error state when value is just whitespace.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 2, maxLength: 255 }).filter((name) => /^\s+$/.test(name)),
-        (name) => {
+        async (name) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix: "NONE" }, onErrorStateChange);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: name },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(name);
           expect(container).toMatchTextContent("fields.name.nonWhitespace");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
@@ -197,20 +205,21 @@ describe("BatchName", () => {
       { numRuns: 10 },
     );
   });
-  test("When the entered text is of a valid length, there should be character count shown.", () => {
-    fc.assert(
-      fc.property(
+  test("When the entered text is of a valid length, there should be character count shown.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.tuple(
           fc.string({ minLength: 3, maxLength: 255 }),
           fc.constantFrom<"INDEX_NUMBER" | "INDEX_LETTER" | "CREATED">("INDEX_NUMBER", "INDEX_LETTER", "CREATED"),
         ),
-        ([generatedName, suffix]) => {
+        async ([generatedName, suffix]) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
           const { container } = renderWithJustFieldValue({ common: "", suffix }, onErrorStateChange);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: generatedName },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(generatedName);
           expect(container).toMatchTextContent(`${generatedName.length} / ${255 - lengthOfSuffix(suffix)}`);
         },
       ),

@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Alias as AliasType } from "../../../../stores/definitions/Sample";
@@ -8,6 +9,7 @@ import Alias from "../Alias";
 
 describe("Alias", () => {
   test("Typing a custom alias should not select one of the radio buttons", async () => {
+    const user = userEvent.setup();
     const template: HasEditableFields<{ subSampleAlias: AliasType }> = {
       fieldValues: { subSampleAlias: { alias: "foo", plural: "foos" } },
       isFieldEditable: () => true,
@@ -24,14 +26,16 @@ describe("Alias", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByText("inventory:fields.templateFields.alias.custom"));
+    await user.click(screen.getByText("inventory:fields.templateFields.alias.custom"));
     const pluralInput = within(screen.getByTestId("aliasField_pluralBox")).getByRole("textbox");
 
-    fireEvent.input(pluralInput, { target: { value: "x" } });
+    await user.clear(pluralInput);
+    await user.type(pluralInput, "x");
     const singleInput = within(screen.getByTestId("aliasField_singleBox")).getByRole("textbox");
     // entering "unit" as a custom alias...
 
-    fireEvent.input(singleInput, { target: { value: "unit" } });
+    await user.clear(singleInput);
+    await user.type(singleInput, "unit");
     await waitFor(() => {
       expect(template.fieldValues.subSampleAlias.alias).toEqual("unit");
     });

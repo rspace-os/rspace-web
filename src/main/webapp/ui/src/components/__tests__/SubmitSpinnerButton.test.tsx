@@ -1,12 +1,14 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent, { PointerEventsCheckLevel } from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../theme";
 import { calculateProgress } from "../../util/progress";
 import SubmitSpinnerButton from "../SubmitSpinnerButton";
 
 describe("SubmitSpinnerButton", () => {
-  test("When the button is tapped, onClick should be called.", () => {
+  test("When the button is tapped, onClick should be called.", async () => {
+    const user = userEvent.setup();
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -14,10 +16,11 @@ describe("SubmitSpinnerButton", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "foo" }));
+    await user.click(screen.getByRole("button", { name: "foo" }));
     expect(onClick).toHaveBeenCalled();
   });
-  test("When the button is disabled and tapped, onClick should not be called.", () => {
+  test("When the button is disabled and tapped, onClick should not be called.", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never });
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -25,7 +28,7 @@ describe("SubmitSpinnerButton", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "foo" }));
+    await user.click(screen.getByRole("button", { name: "foo" }));
     expect(onClick).not.toHaveBeenCalled();
   });
   test("When progress is set, the progress bar should have correct aria attributes.", () => {

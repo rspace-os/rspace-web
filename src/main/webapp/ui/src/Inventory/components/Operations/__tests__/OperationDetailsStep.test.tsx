@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -545,13 +545,16 @@ describe("OperationDetailsStep (amount modes)", () => {
   });
 
   it("reports a typed per-origin amount through onPerSubsampleAmountsChange, keeping the others", async () => {
+    const user = userEvent.setup();
     const onPerSubsample = vi.fn();
     renderPool({
       amountMode: "perSubsample",
       perSubsampleAmounts: { SS2: { numericValue: 1, unitId: 3 } },
       onPerSubsampleAmountsChange: onPerSubsample,
     });
-    fireEvent.change(screen.getByRole("textbox", { name: /Vial A/ }), { target: { value: "2" } });
+    const input = screen.getByRole("textbox", { name: /Vial A/ });
+    await user.clear(input);
+    await user.type(input, "2");
     expect(onPerSubsample).toHaveBeenCalledWith({
       SS1: { numericValue: 2, unitId: 3 },
       SS2: { numericValue: 1, unitId: 3 },
@@ -682,7 +685,8 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
     expect(screen.getByText(/fields\.countRange/)).toBeInTheDocument();
   });
 
-  it("stores a typed temperature in Celsius (unit 8) without clamping a sub-zero value", () => {
+  it("stores a typed temperature in Celsius (unit 8) without clamping a sub-zero value", async () => {
+    const user = userEvent.setup();
     const cryoOp = tempOp({ maxCelsius: -18 });
     const onChange = vi.fn();
     render(
@@ -693,7 +697,9 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
         onChange={onChange}
       />,
     );
-    fireEvent.change(screen.getByRole("textbox", { name: /fields\.storageTemp/i }), { target: { value: "-20" } });
+    const input = screen.getByRole("textbox", { name: /fields\.storageTemp/i });
+    await user.clear(input);
+    await user.type(input, "-20");
     expect(onChange).toHaveBeenCalledWith({ storageTemp: { numericValue: -20, unitId: CELSIUS_UNIT } });
   });
 });

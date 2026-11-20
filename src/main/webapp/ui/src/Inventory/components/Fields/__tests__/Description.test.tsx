@@ -1,7 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { useState } from "react";
 import materialTheme from "../../../../theme";
@@ -46,46 +47,49 @@ function renderDescriptionField(initialValue: string, onErrorStateChange: (isErr
   return render(<Wrapper />);
 }
 describe("Description", () => {
-  test("Should not enter an error state when value is shorter than 2001.", () => {
-    fc.assert(
-      fc.property(fc.string({ maxLength: 2000, size: "max" }), (generatedDescription) => {
+  test("Should not enter an error state when value is shorter than 2001.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ maxLength: 2000, size: "max" }), async (generatedDescription) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderDescriptionField("foo", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: generatedDescription },
-        });
+        const input = screen.getByRole("textbox");
+        await user.clear(input);
+        await user.paste(generatedDescription);
         expect(container).not.toMatchTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       }),
     );
   });
-  test("Should enter an error state when value is longer than 2000 characters.", () => {
-    fc.assert(
-      fc.property(fc.string({ minLength: 2001 }), (generatedDescription) => {
+  test("Should enter an error state when value is longer than 2000 characters.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ minLength: 2001 }), async (generatedDescription) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderDescriptionField("", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: generatedDescription },
-        });
+        const input = screen.getByRole("textbox");
+        await user.click(input);
+        await user.paste(generatedDescription);
         expect(container).toMatchTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       }),
     );
   });
-  test("When the entered text is of a valid length, there should be character count shown.", () => {
-    fc.assert(
-      fc.property(fc.string({ maxLength: 2000, size: "max" }), (generatedDescription) => {
+  test("When the entered text is of a valid length, there should be character count shown.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ maxLength: 2000, size: "max" }), async (generatedDescription) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderDescriptionField("", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: generatedDescription },
-        });
+        const input = screen.getByRole("textbox");
+        await user.click(input);
+        await user.paste(generatedDescription);
         expect(container).toMatchTextContent(`${generatedDescription.length} / 2000`);
       }),
     );

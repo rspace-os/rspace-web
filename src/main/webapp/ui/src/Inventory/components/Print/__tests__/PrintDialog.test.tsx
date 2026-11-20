@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -75,6 +76,7 @@ describe("Print Tests", () => {
   });
   describe("PrintDialog with items to print (barcodes)", () => {
     test("renders, content responds to clicked options", async () => {
+      const user = userEvent.setup();
       await renderDialog();
       const globalId = mockContainer.globalId;
       const _location = "Location:";
@@ -83,10 +85,7 @@ describe("Print Tests", () => {
       // on default "full" option elements are rendered, on "basic" they are not
       expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
       const basicOption = screen.getAllByLabelText("inventory:print.options.basic")[0];
-      await act(async () => {
-        fireEvent.click(basicOption);
-        await Promise.resolve();
-      });
+      await user.click(basicOption);
 
       expect(basicOption).toBeChecked();
     });
