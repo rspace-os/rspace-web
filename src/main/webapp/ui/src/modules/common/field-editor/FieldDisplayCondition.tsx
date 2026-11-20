@@ -7,6 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
+import type { Theme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { type ReactNode, useEffect, useEffectEvent, useId, useState } from "react";
@@ -113,6 +114,15 @@ function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKi
   const source = sourceFieldKey === null ? undefined : graph.byKey.get(sourceFieldKey);
   return sourceKind !== null && source !== undefined && sourceKindOf(source) !== sourceKind;
 }
+
+/**
+ * MUI gives a disabled item no focus styling, even where the arrow keys can
+ * reach it, so a focused unavailable item would look like any other. The text
+ * colour keeps at least 3:1 on the menu in every theme.
+ */
+const showKeyboardFocus = (theme: Theme) => ({
+  "&:focus-visible": { outline: `2px solid ${theme.palette.text.primary}`, outlineOffset: -2 },
+});
 
 /**
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
@@ -401,7 +411,9 @@ export default function FieldDisplayCondition({
           >
             {/* no value, so the select does not take it for the chosen field */}
             {sourceMenuOpen && sources.length === 0 && (
-              <MenuItem disabled>{t("fieldEditor.condition.noAvailableFields")}</MenuItem>
+              <MenuItem disabled sx={showKeyboardFocus}>
+                {t("fieldEditor.condition.noAvailableFields")}
+              </MenuItem>
             )}
             {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
             {listed.map((candidate) =>
@@ -415,7 +427,7 @@ export default function FieldDisplayCondition({
                   key={candidate.field.key}
                   disabled
                   // full opacity with secondary text, since the default disabled opacity makes the reason too faint to read
-                  sx={{ whiteSpace: "normal", "&.Mui-disabled": { opacity: 1 } }}
+                  sx={[{ whiteSpace: "normal", "&.Mui-disabled": { opacity: 1 } }, showKeyboardFocus]}
                 >
                   <ListItemText
                     primary={nameOf(candidate.field)}
