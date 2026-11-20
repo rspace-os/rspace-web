@@ -12,6 +12,7 @@ import static com.researchspace.service.archive.ExportImport.NFS_EXPORT_XML;
 import static com.researchspace.service.archive.export.HTMLArchiveExporter.NFS_LINKS_HTML;
 import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtmlFile;
 import static com.researchspace.testutils.ArchiveTestUtils.getAllHTMLFilesInArchive;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.join;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,6 +140,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -153,6 +155,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.query.NativeQuery;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -816,6 +819,139 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
       }
     }
     assertEquals(EXPECTED_COMMENT_ITEMS, commentCount);
+  }
+
+  @Test
+  public void importArchiveWithLegacyResourceImages() throws Exception {
+    User exporter = createInitAndLoginAnyUser();
+    String smiley = "<img src=\"/images/smiley.gif\" alt=\"smiley\"";
+    StructuredDocument docA =
+        createBasicDocumentInRootFolderWithText(
+            exporter, "<p>A " + smiley + " width=\"20\" /> and " + smiley + " /></p>");
+    addFileAttachmentToField(docA.getFields().get(0), exporter);
+    recordMgr.renameRecord("legacy-A", docA.getId(), exporter);
+    StructuredDocument docB =
+        createBasicDocumentInRootFolderWithText(exporter, "<p>B " + smiley + " /></p>");
+    recordMgr.renameRecord("legacy-B", docB.getId(), exporter);
+    ArchiveExportConfig cfg = createDefaultArchiveConfig(exporter, tempExportFolder);
+    cfg.setArchiveType(ArchiveExportConfig.XML);
+    ExportSelection selection =
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {docA.getId(), docB.getId()}, new String[] {"NORMAL", "NORMAL"});
+    ArchiveResult result =
+        exportImportMgr
+            .asyncExportSelectionToArchive(selection, cfg, exporter, anyURI(), standardPostExport)
+            .get();
+
+    // the exporter stores the static image in resources/ and references it relatively
+    File archiveRoot = new File(ZipUtils.extractZip(result.getExportFile(), tempImportFolder));
+    File resources = new File(archiveRoot, ExportImport.RESOURCES);
+    assertTrue(new File(resources, "smiley.gif").isFile());
+    File docBXml =
+        FileUtils.listFiles(archiveRoot, new String[] {"xml"}, true).stream()
+            .filter(f -> f.getName().endsWith("-" + docB.getId() + ".xml"))
+            .findFirst()
+            .orElseThrow();
+    String docBContent = FileUtils.readFileToString(docBXml, UTF_8);
+    assertThat(docBContent).contains("../resources/smiley.gif");
+
+    // add references the importer must leave alone
+    FileUtils.writeStringToFile(new File(resources, "broken.gif"), "not an image", UTF_8);
+    byte[] corruptGif = new byte[32];
+    System.arraycopy("GIF89a".getBytes(UTF_8), 0, corruptGif, 0, 6);
+    corruptGif[6] = 16;
+    corruptGif[8] = 16;
+    Arrays.fill(corruptGif, 13, corruptGif.length, (byte) 0x99);
+    FileUtils.writeByteArrayToFile(new File(resources, "corrupt.gif"), corruptGif);
+    FileUtils.copyFile(new File(resources, "smiley.gif"), new File(resources, "notes.txt"));
+    FileUtils.copyFile(new File(resources, "smiley.gif"), new File(resources, "iconcopy.gif"));
+    String invalidRefs =
+        "<p><img src=\"../resources/missing.gif\" alt=\"missing\" />"
+            + "<img src=\"../resources/broken.gif\" alt=\"broken\" />"
+            + "<img src=\"../resources/corrupt.gif\" alt=\"corrupt\" />"
+            + "<img src=\"../resources/notes.txt\" alt=\"notes\" />"
+            + "<img class=\"attachmentIcon\" src=\"../resources/iconcopy.gif\" alt=\"icon\" /></p>";
+    String escapedRefs =
+        invalidRefs.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    FileUtils.writeStringToFile(
+        docBXml, docBContent.replace("</fieldData>", escapedRefs + "</fieldData>"), UTF_8);
+    // a new archive ID, as for an archive from another server: this server's checksum of its own
+    // export would reject the edited contents
+    File manifest = new File(archiveRoot, ExportImport.EXPORT_MANIFEST);
+    FileUtils.writeStringToFile(
+        manifest,
+        FileUtils.readFileToString(manifest, UTF_8)
+            .replaceAll("(?m)^archiveId:.*$", "archiveId:" + UUID.randomUUID()),
+        UTF_8);
+    File toImport = new File(spareFolder, "legacy-resources.zip");
+    ZipUtils.createZip(toImport, archiveRoot);
+
+    User importer = createInitAndLoginAnyUser();
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(toImport.getName(), toImport),
+            importer.getUsername(),
+            new ArchivalImportConfig(),
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(
+        report.isSuccessful(),
+        () -> report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy(";"));
+
+    // one Gallery image for the three occurrences in two documents, none for invalid files
+    Folder imagesFolder =
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, importer);
+    List<BaseRecord> images =
+        recordMgr.listFolderRecords(imagesFolder.getId(), brPg()).getResults().stream()
+            .filter(EcatImage.class::isInstance)
+            .collect(toList());
+    assertThat(images).extracting(BaseRecord::getName).containsExactly("smiley.gif");
+    Long imageId = images.get(0).getId();
+
+    Field fieldA = getImportedField(report, "legacy-A");
+    Field fieldB = getImportedField(report, "legacy-B");
+    Elements smileysA = Jsoup.parse(fieldA.getFieldData()).select("img[alt=smiley]");
+    Elements smileysB = Jsoup.parse(fieldB.getFieldData()).select("img[alt=smiley]");
+    assertEquals(2, smileysA.size());
+    assertEquals(1, smileysB.size());
+    assertEquals("20", smileysA.get(0).attr("width"));
+    for (Element img : smileysA) {
+      assertManagedImage(img, fieldA.getId() + "-" + imageId);
+    }
+    assertManagedImage(smileysB.get(0), fieldB.getId() + "-" + imageId);
+    assertThat(fieldMgr.getFieldAttachments(fieldA.getId()))
+        .extracting(fa -> fa.getMediaFile().getId())
+        .contains(imageId);
+    assertThat(fieldMgr.getFieldAttachments(fieldB.getId()))
+        .extracting(fa -> fa.getMediaFile().getId())
+        .contains(imageId);
+
+    Document fieldBHtml = Jsoup.parse(fieldB.getFieldData());
+    for (String name : List.of("missing.gif", "broken.gif", "corrupt.gif", "notes.txt")) {
+      assertEquals(1, fieldBHtml.select("img[src=../resources/" + name + "]").size(), name);
+    }
+    assertEquals(
+        MediaUtils.getIconPathForSuffix("iconcopy.gif"),
+        fieldBHtml.selectFirst("img[alt=icon]").attr("src"));
+    assertThat(Jsoup.parse(fieldA.getFieldData()).select("img.attachmentIcon"))
+        .isNotEmpty()
+        .allSatisfy(icon -> assertThat(icon.attr("src")).doesNotStartWith("../resources/"));
+  }
+
+  private Field getImportedField(ImportArchiveReport report, String docName) {
+    return report.getImportedRecords().stream()
+        .filter(br -> docName.equals(br.getName()))
+        .findFirst()
+        .orElseThrow()
+        .asStrucDoc()
+        .getFields()
+        .get(0);
+  }
+
+  private void assertManagedImage(Element img, String expectedId) {
+    assertEquals(expectedId, img.id());
+    assertTrue(img.hasClass(FieldParserConstants.IMAGE_DROPPED_CLASS_NAME));
+    assertThat(img.attr("src")).startsWith("/image/getImage/" + expectedId + "/");
   }
 
   @Test
