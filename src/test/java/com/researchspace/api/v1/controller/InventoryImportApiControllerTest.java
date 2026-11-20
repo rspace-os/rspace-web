@@ -4,21 +4,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettingsPost;
+import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryImportManager;
 import com.researchspace.testutils.TestFactory;
+import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryImportApiControllerTest {
@@ -54,5 +59,24 @@ class InventoryImportApiControllerTest {
         "The database refused the import and nothing was imported. Check the rows for values"
             + " longer than their fields allow, then try again.",
         new MessageSourceUtils(new JsonMessageSource()).getExceptionMessage(thrown));
+  }
+
+  @Test
+  void parseFailureReportsCatalogueTextNotBundleKey() throws Exception {
+    controller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
+    User user = TestFactory.createAnyUser("importer");
+    LocalizedIllegalArgumentException coded =
+        new LocalizedIllegalArgumentException("validation.quantity.parseFailed", "lots");
+    when(importManager.parseSamplesCsvFile(any(), any(), any())).thenThrow(coded);
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> controller.parseImportFile(file, "SAMPLES", user));
+
+    assertEquals("Could not parse quantity [lots]", thrown.getMessage());
+    assertSame(coded, thrown.getCause());
   }
 }
