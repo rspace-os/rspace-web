@@ -870,11 +870,25 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
                 + " AND EXISTS (SELECT 1 FROM RecordAttachment attachment"
                 + " WHERE attachment.mediaFile = image AND TYPE(attachment.record) = Snippet)"
                 + " AND EXISTS (SELECT 1 FROM FieldAttachment attachment"
-                + " WHERE attachment.mediaFile = image AND attachment.deleted = false"
+                + " WHERE attachment.mediaFile = image"
                 + " AND attachment.field.structuredDocument.owner <> :owner)",
             EcatMediaFile.class)
         .setParameter("owner", owner)
         .list();
+  }
+
+  @Override
+  public void clearOriginalImageLinksToDepartingOwner(
+      List<Long> retainedImageIds, User departingOwner) {
+    getSession()
+        .createNativeQuery(
+            "UPDATE EcatImage edited JOIN BaseRecord original ON original.id ="
+                + " edited.originalImage_id SET edited.originalImage_id = NULL,"
+                + " edited.originalImageVersion = 1 WHERE edited.id IN :retainedImageIds AND"
+                + " original.owner_id = :departingOwnerId")
+        .setParameter("retainedImageIds", retainedImageIds)
+        .setParameter("departingOwnerId", departingOwner.getId())
+        .executeUpdate();
   }
 
   @Override

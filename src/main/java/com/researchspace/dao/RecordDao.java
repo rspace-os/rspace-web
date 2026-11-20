@@ -194,8 +194,11 @@ public interface RecordDao extends GenericDao<Record, Long> {
    */
   List<EcatMediaFile> getGalleryItemsForTemplates(List<Long> templateIds, User originalOwner);
 
-  /** Finds the owner's snippet images that are still attached to another user's document. */
+  /** Finds the owner's snippet images linked to another user's document, including its history. */
   List<EcatMediaFile> getSnippetImagesUsedInOtherUsersDocuments(User owner);
+
+  /** Clears original-image links on retained snippet images if the originals will be deleted. */
+  void clearOriginalImageLinksToDepartingOwner(List<Long> retainedImageIds, User departingOwner);
 
   /** Updates FileProperty.fileOwner for the given media file IDs. */
   void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername);

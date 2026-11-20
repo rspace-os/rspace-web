@@ -77,6 +77,14 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
     User toDelete = userDao.get(userId);
 
+    List<EcatMediaFile> snippetImages =
+        policy.isForceDelete()
+            ? recordDao.getSnippetImagesUsedInOtherUsersDocuments(toDelete)
+            : List.of();
+    if (!snippetImages.isEmpty()) {
+      templateTransferService.transferGalleryItems(toDelete, subject, snippetImages);
+    }
+
     if (recordDao.hasUserSharedTemplatesUsedByOtherUsers(toDelete)) {
       templateTransferService.transferOwnership(toDelete, subject);
     }
@@ -85,12 +93,10 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       formTransferService.transferOwnership(toDelete, subject);
     }
 
-    List<EcatMediaFile> snippetImages =
-        policy.isForceDelete()
-            ? recordDao.getSnippetImagesUsedInOtherUsersDocuments(toDelete)
-            : List.of();
     if (!snippetImages.isEmpty()) {
-      templateTransferService.transferGalleryItems(toDelete, subject, snippetImages);
+      // A shared template or another snippet may also have retained the original image.
+      recordDao.clearOriginalImageLinksToDepartingOwner(
+          snippetImages.stream().map(EcatMediaFile::getId).toList(), toDelete);
     }
 
     // Collect filestore resources after transfers so that any gallery items whose FileProperty
@@ -104,17 +110,6 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     }
 
     if (policy.isForceDelete()) {
-      for (Group group : toDelete.getGroups()) {
-        String msg;
-        if ((msg = validateGroupMembershipCriteria(toDelete, group, policy)) != null) {
-          if (!snippetImages.isEmpty()) {
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            deletedUserResourcesHelper.removeResourcesListFile(userId, true);
-          }
-          return new ServiceOperationResult<>(null, false, msg);
-        }
-      }
-      // only remove from groups if all group-leaving-criteria are satisfied.
       for (Group group : toDelete.getGroups()) {
         grpMgr.removeUserFromGroup(toDelete.getUsername(), group.getId(), subject);
       }
