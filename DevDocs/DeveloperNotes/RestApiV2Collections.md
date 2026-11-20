@@ -189,8 +189,8 @@ implements only `find`, `count`, and `findById`. Limit `exposedOperations` to `L
 `READ` so OpenAPI documents only the routes the collection serves.
 
 Each resource name has one catalog entry. Registration also makes the resource a relationship
-target. Adding an `ApiV2RelationshipTargetSpec` with an existing resource-spec name therefore causes
-a duplicate-target startup error.
+target. Registering two resource specs with the same name therefore causes a
+duplicate-target startup error.
 
 Describe a collection programmatically when a public field maps to a nested property. The annotated
 record derives the query property from a bean property name, so it cannot describe a value such as
