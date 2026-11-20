@@ -76,6 +76,7 @@ import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
@@ -1070,6 +1071,16 @@ public abstract class BaseManagerTestCaseBase {
     nfsMgr.saveNfsFileSystem(store.getFileSystem());
     nfsMgr.saveNfsFileStore(store);
     return addNfsFileStoreLink(field, owner, store.getId(), filePath, false);
+  }
+
+  protected NfsFileStore savedS3Store(User owner) {
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsMgr.saveNfsFileSystem(fileSystem);
+    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
+  }
+
+  protected String nfsLink(NfsFileStore store, String path) {
+    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   protected NfsElement addNfsFileStoreLink(

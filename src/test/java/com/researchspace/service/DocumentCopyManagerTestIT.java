@@ -25,7 +25,6 @@ import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
-import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
@@ -33,7 +32,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.archive.export.StoichiometryReader;
-import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -299,6 +297,19 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   }
 
   @Test
+  public void templateFromADocumentKeepsTheRowsOfTheFieldsItKeeps() throws Exception {
+    NfsFileStore store = savedS3Store(user);
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(user, nfsLink(store, "/run.dat"));
+
+    StructuredDocument template =
+        recordMgr.createTemplateFromDocument(
+            doc.getId(), List.of(doc.getFields().get(0).getId()), user, "template");
+
+    assertThat(nfsDao.getFieldLinks(template.getTextFields().get(0).getId())).hasSize(1);
+  }
+
+  @Test
   public void pastingIntoAFieldKeepsTheFieldsFilestoreLinkRows() throws Exception {
     NfsFileStore store = savedS3Store(user);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "text");
@@ -309,16 +320,6 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     recordMgr.copyRSpaceContentIntoField("<p>pasted</p>", fieldId, user);
 
     assertThat(nfsDao.getFieldLinks(fieldId)).hasSize(1);
-  }
-
-  private NfsFileStore savedS3Store(User owner) {
-    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
-    nfsMgr.saveNfsFileSystem(fileSystem);
-    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
-  }
-
-  private String nfsLink(NfsFileStore store, String path) {
-    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   private RSChemElement addChemElementToField(StructuredDocument record, Field field, String mol) {
