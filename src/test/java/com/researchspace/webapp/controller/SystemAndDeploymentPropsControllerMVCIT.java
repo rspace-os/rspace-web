@@ -25,7 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
@@ -39,9 +38,6 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
           IGSN_DATACITE_PASSWORD.getPropertyName(),
           PIDINST_DATACITE_PASSWORD.getPropertyName(),
           PIDINST_B2INST_TOKEN.getPropertyName());
-
-  @Value("${egnyte.client.id}")
-  private String egnyteClientId;
 
   @Autowired private DeploymentPropertiesController deploymentPropertiesController;
 
@@ -82,13 +78,6 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
     String result = res.getResponse().getContentAsString();
     HierarchicalPermission.valueOf(result);
     assertFalse(isEmpty(result));
-
-    res =
-        mockMvc
-            .perform(get("/deploymentproperties/ajax/property").param("name", "egnyte.client.id"))
-            .andReturn();
-    result = res.getResponse().getContentAsString();
-    assertEquals(egnyteClientId, result);
 
     mockMvc
         .perform(get("/deploymentproperties/ajax/property").param("name", "box.client.id"))

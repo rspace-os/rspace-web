@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.testutil.CoreTestUtils.configureStringLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +10,6 @@ import com.axiope.search.IFileIndexer;
 import com.axiope.search.IFileSearcher;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.dao.UserDao;
-import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
@@ -49,11 +47,9 @@ public class SanityCheckerTest {
   public void testSanityCheckOnAppStartup() throws Exception {
     when(userDao.getUserByUsername(Mockito.anyString()))
         .thenReturn(TestFactory.createAnyUser("any"));
-    when(searchStrategy.isLocal()).thenReturn(false);
     sanityChecker.onAppStartup(context);
     assertThat(strglogger.logContents).contains(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true");
-    // not local search should not run here, it might not be configured yet
-    verify(searchStrategy, never()).searchFiles(Mockito.anyString(), Mockito.any(User.class));
+    verify(searchStrategy).searchFiles("a search string", null);
     strglogger.logContents = ""; // clear contents
     // get implementation class to set in a mock object that will throw an
     // exception

@@ -7,8 +7,6 @@ import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_WEBHOOK_URL;
@@ -539,48 +537,6 @@ public class IntegrationsHandlerTest {
     handler.updateIntegrationInfo(subject, info);
     assertTrue(slackConfig.isEnabled()); // handler should update slackConfig to enable the app
     Mockito.verify(appCfgMgr, times(1)).save(slackConfig);
-  }
-
-  @Test
-  public void testUpdateEgnyteAppConfigOption() {
-    IntegrationInfo info = new IntegrationInfo();
-    info.setAvailable(true);
-    info.setName(EGNYTE_APP_NAME);
-
-    String testEgnyteDomain = "url://egnyte_domain";
-    Map<String, Object> options = new HashMap<>();
-    options.put(EGNYTE_DOMAIN_SETTING, testEgnyteDomain);
-    options.put("unknown_option", "unknown_value");
-    info.setOptions(options);
-
-    // mock egnyte app in the system
-    App app = new App(EGNYTE_APP_NAME, "Egnyte", false);
-    UserAppConfig egnyteConfig = new UserAppConfig(subject, app, false);
-    when(appCfgMgr.getByAppName("app.egnyte", subject)).thenReturn(egnyteConfig);
-
-    handler.updateIntegrationInfo(subject, info);
-
-    Map<String, String> expectedOptions = new HashMap<>();
-    expectedOptions.put(EGNYTE_DOMAIN_SETTING, testEgnyteDomain);
-    Mockito.verify(appCfgMgr, times(1))
-        .saveAppConfigElementSet(expectedOptions, null, false, subject, "app.egnyte");
-  }
-
-  @Test
-  public void enablingEgnyteWithoutADomainLeavesItsOptionsAlone() {
-    IntegrationInfo info = new IntegrationInfo();
-    info.setAvailable(true);
-    info.setEnabled(true);
-    info.setName(EGNYTE_APP_NAME);
-    UserAppConfig egnyteConfig =
-        new UserAppConfig(subject, new App(EGNYTE_APP_NAME, "Egnyte", false), false);
-    when(appCfgMgr.getByAppName("app.egnyte", subject)).thenReturn(egnyteConfig);
-
-    handler.updateIntegrationInfo(subject, info);
-
-    assertTrue(egnyteConfig.isEnabled());
-    Mockito.verify(appCfgMgr, never())
-        .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
   }
 
   @Test

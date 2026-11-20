@@ -779,7 +779,6 @@ function initTinyMCE(selector) {
 		const boxEnabled = integrations.BOX.enabled && integrations.BOX.available && integrations.BOX.options['box.linking.enabled'];
 		var oneDriveEnabled    = integrations.ONEDRIVE.enabled && integrations.ONEDRIVE.available && integrations.ONEDRIVE.options['onedrive.linking.enabled'];
 		var googleDriveEnabled = integrations.GOOGLEDRIVE.enabled && integrations.GOOGLEDRIVE.available && integrations.GOOGLEDRIVE.options['googledrive.linking.enabled'];
-		var egnyteEnabled      = integrations.EGNYTE.enabled && integrations.EGNYTE.available;
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
 		var chemistryEnabled   = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
@@ -862,11 +861,6 @@ function initTinyMCE(selector) {
 		if (googleDriveConfigured) {
 			enabledFileRepositories += " googledrive";
 			fileRepositoriesMenu += " optGoogleDrive";
-		}
-		if (egnyteEnabled) {
-			localTinymcesetup.external_plugins["egnyte"] = "/scripts/externalTinymcePlugins/egnyte/plugin.min.js";
-			enabledFileRepositories += " egnyte";
-			fileRepositoriesMenu += " optEgnyte";
 		}
 		if (gitHubEnabled) {
 			localTinymcesetup.external_plugins["github"] = "/scripts/externalTinymcePlugins/github/plugin.min.js";

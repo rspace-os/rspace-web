@@ -707,25 +707,4 @@ $(document).ready(function (){
         displayOrcidIdSpan();
     });
   });
-
-  function _redrawFilestoreConnectionSection() {
-      $('#egnyteConnectedDiv').toggle(egnyteFilestoreConnectionOK);
-      $('#egnyteDisonnectedDiv').toggle(!egnyteFilestoreConnectionOK);
-  }
-  
-  if (typeof egnyteFilestoreEnabled !== 'undefined') {
-      _redrawFilestoreConnectionSection();
-      $('#egnyteDisconnectBtn').click(function() {
-          var jqxhr = $.post('/egnyte/disconnectUserFromEgnyteFilestore');
-          jqxhr.done(function(data) {
-              if (data.data) {
-                  egnyteFilestoreConnectionOK = false;
-                  _redrawFilestoreConnectionSection();
-              }
-          });
-          jqxhr.fail(function() {
-              RS.ajaxFailed(RS.msg("legacyjs.userForm.actionRemovingEgnyteToken"), false, jqxhr);
-          });
-      });
-  }
 });

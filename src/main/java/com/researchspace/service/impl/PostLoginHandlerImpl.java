@@ -45,7 +45,7 @@ public class PostLoginHandlerImpl implements PostLoginHandler {
       rc = handleEveryLogin(user, session);
     }
 
-    /* PRT-674: in some cases handleFirstLogin method won't run folder initialization (e.g. egnyte),
+    /* PRT-674: in some cases handleFirstLogin method won't run folder initialization,
      * so check isContentInitialized before trying to run the updates */
     if (user.isContentInitialized()) {
       userContentUpdater.doUserContentUpdates(user);

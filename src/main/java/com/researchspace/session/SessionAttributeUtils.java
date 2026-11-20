@@ -47,9 +47,6 @@ public class SessionAttributeUtils {
   /** Boolean value for whether optional custom example content has been added */
   public static final String EXAMPLECONTENT_HANDLED = "exampleContentHandled";
 
-  /** Whether external filestore connection is set up and working for the user. */
-  public static final String EXT_FILESTORE_CONNECTION_OK = "extFilestoreConnectionOK";
-
   /** Stores latest import result. */
   public static final String LATEST_IMPORT_REPORT = "rs.importResult";
 
@@ -70,9 +67,6 @@ public class SessionAttributeUtils {
 
   /** A text encryptor/decryptor using key derived from user's password. */
   String RS_TEXT_ENCRYPTOR = "rs-textEncryptor";
-
-  /** Name of session attribute for Egnyte session token */
-  public static final String SESSION_EGNYTE_TOKEN = "SESSION_EGNYTE_TOKEN";
 
   /** Name of session variable for RSpace version string. */
   public static final String RSPACE_VERSION = "rspaceVersion";

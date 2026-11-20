@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserConnectionDaoTest extends SpringTransactionalTest {
 
-  private static final String PROVIDER_NAME = "egnyte";
+  private static final String PROVIDER_NAME = "figshare";
   private static final String RSPACEUSERNAME = "rspaceusername";
   private @Autowired UserConnectionDao userConnectionDao;
 
@@ -78,7 +78,7 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
   @Test
   public void createSaveAndFindAndDelete() {
     int initialCount = userConnectionDao.getAllDistinct().size();
-    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "userEgnyteId");
+    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "userFigshareId");
     UserConnection conn = new UserConnection(id, "accessToken");
     conn.setRefreshToken("refreshToken");
     userConnectionDao.save(conn);

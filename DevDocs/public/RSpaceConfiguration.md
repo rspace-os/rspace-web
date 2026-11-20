@@ -487,7 +487,6 @@ These optional settings configure  behaviour of the RSpace application.
 * **max.tiff.conversionSize** The max file size in bytes at which conversion of TIFF images to .png working images will be attempted. The default is 8192000 (8Mb)
 * **rs.attachment.lucene.index.dir** The directory where Lucene indexes are stored. Must be writable by Tomcat.  Default is `$TOMCAT_HOME/LuceneFTsearchIndices`
 * **rs.hibernate.searchIndex.folder** The directory where database full-text indexes are stored. Must be writable by Tomcat.  Default is `$TOMCAT_HOME/FTsearchIndices`
-* **rs.filestore** Whether you are using RSpace's local file-store or Egnyte. Default is 'LOCAL'. Don't change this.
 * **rs.indexOnstartup**  true/false. Default is `true`. Controls whether text-data is re-indexed or not at application start-up. Setting to false will result in faster startup times.
 
 #### UI customization
@@ -581,17 +580,6 @@ All of these options have sensible defaults.
 * **email.signup.authoriser.emails** Only applicable if  `authorised.signup` is true. A comma separated list of email addresses
 * **liquibase.context** Controls which database changesets are applied. Enterprise/on-prem installations use `run` (the default). You normally do not need to change this unless ResearchSpace advises pre-loading installation-specific data.
 * **licenseserver.poll.cron** Crontab value defining how often to poll license server for updates. Default is every 30 minutes.
-
-### Using an external file store
-
-RSpace can now use a 3rd party file storage service as its backing file store. Initially we are supporting Egnyte file store, which requires the following properties to be set:
-
-**rs.filestore=EGNYTE** Tells RSpace to expect to use Egnyte as file store
-**rs.ext.filestore.baseURL** The URL of your Egnyte instance, e.g. `rs.ext.filestore.baseURL=https://apprspace.egnyte.com`
-**rs.ext.filestore.root** The top-level folder under which RSpace will save files, e.g. `rs.ext.filestore.root=/Shared/RSpaceFileStore`
-**egnyte.internal.app.client.id** The client ID obtained after registering RSpace as an integration on Egnyte
-
-This feature is currently in beta, please ask if you are interested in using this feature.
 
 ### Cache configuration
 This is an advanced topic and on initial set up will not require configuration. Regular monitoring

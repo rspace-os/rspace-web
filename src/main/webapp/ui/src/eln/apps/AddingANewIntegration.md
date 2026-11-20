@@ -125,13 +125,13 @@ $NAME: { mode: parseState(data.$Name, credentials: {} },
 ```
 
 For OAuth-based authentication and simple other credentials this isn't too much
-more complex. There are helper functions, `parseCredentialString` and
+more complex. There are helper functions, `parseCredentialSecret` and
 `parseCredentialBoolean` to aid with this process.
 ```typescript
 $NAME: {
   mode: parseState(data.$NAME),
   credentials: {
-    ACCESS_TOKEN: parseCredentialString(data.$NAME.options, "ACCESS_TOKEN"),
+    ACCESS_TOKEN: parseCredentialSecret(data.$NAME.options, "ACCESS_TOKEN"),
   },
 },
 ```

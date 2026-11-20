@@ -100,9 +100,4 @@ public class LuceneSearchStrategy extends AttachmentSearchBase implements FileSe
   public static String absPathToRelPath(String absPath) {
     return absPath.substring(absPath.lastIndexOf("file_store") + 11);
   }
-
-  @Override
-  public boolean isLocal() {
-    return true;
-  }
 }

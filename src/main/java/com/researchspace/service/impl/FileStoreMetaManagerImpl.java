@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.User;
 import com.researchspace.service.FileStoreMetaManager;
 import java.util.List;
@@ -19,16 +18,6 @@ public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, L
   public FileStoreMetaManagerImpl(@Autowired FileMetadataDao userDao) {
     this.dao = userDao;
     this.fileDao = userDao;
-  }
-
-  @Override
-  public FileStoreRoot getCurrentFileStoreRoot(boolean external) {
-    return fileDao.getCurrentFileStoreRoot(external);
-  }
-
-  @Override
-  public FileStoreRoot saveFileStoreRoot(FileStoreRoot root) {
-    return fileDao.saveFileStoreRoot(root);
   }
 
   /**

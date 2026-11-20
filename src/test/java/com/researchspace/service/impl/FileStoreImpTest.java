@@ -9,13 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.FileMetadataDao;
-import com.researchspace.files.service.ExternalFileService;
-import com.researchspace.files.service.ExternalFileStoreLocator;
 import com.researchspace.files.service.FileStoreImpl;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
@@ -129,9 +126,7 @@ public class FileStoreImpTest {
 
     assertNull(saveContents(original.copy(), "rejected", FileDuplicateStrategy.ERROR, stream));
     assertEquals("original", Files.readString(Path.of(first)));
-    ExternalFileStoreLocator locator = mock(ExternalFileStoreLocator.class);
-    ExternalFileService external = mock(ExternalFileService.class);
-    FileStoreImpl composite = new FileStoreImpl(fs, locator, external);
+    FileStoreImpl composite = new FileStoreImpl(fs);
     if (stream) {
       try (var input = new ByteArrayInputStream("rejected".getBytes(StandardCharsets.UTF_8))) {
         assertNull(composite.save(original.copy(), input, "test.txt", FileDuplicateStrategy.ERROR));
@@ -141,7 +136,6 @@ public class FileStoreImpTest {
           composite.save(
               original.copy(), tempDir.resolve("test.txt").toFile(), FileDuplicateStrategy.ERROR));
     }
-    verifyNoInteractions(locator, external);
 
     assertEquals(
         first, saveContents(original, "replacement", FileDuplicateStrategy.REPLACE, stream));
