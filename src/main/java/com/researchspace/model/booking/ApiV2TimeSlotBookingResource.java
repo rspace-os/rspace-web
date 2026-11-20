@@ -211,7 +211,8 @@ public final class ApiV2TimeSlotBookingResource {
                     TimeSlotBooking::getUpdatedAt)
                 .readGuaranteed(),
             TARGET,
-            BookingLocationRelationship.renderedRelationship(TimeSlotBooking::getVisibleLocation)),
+            BookingLocationRelationship.renderedRelationship(TimeSlotBooking::getVisibleLocation)
+                .readGuaranteed()),
         "id",
         List.of(new Sort("start", true), new Sort("id", true)),
         new AccessPolicy(

@@ -15,6 +15,7 @@ const cancelledBooking = {
   createdBy: null,
   kind: "BOOKING",
   canViewConfiguration: true,
+  location: null,
   id: 41,
   version: 1,
   target: {
@@ -42,12 +43,14 @@ const confirmedBookingDetails = {
   kind: "BOOKING",
   canCancel: true,
   canViewConfiguration: true,
+  location: null,
 } satisfies BookingDetails;
 
 const cancelledBookingDetails = {
   ...cancelledBooking,
   kind: "BOOKING",
   canViewConfiguration: true,
+  location: null,
 } satisfies BookingDetails;
 
 function renderDialog(

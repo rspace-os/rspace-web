@@ -19,6 +19,7 @@ export const booking = {
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
 };
 

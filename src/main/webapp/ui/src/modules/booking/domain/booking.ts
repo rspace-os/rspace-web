@@ -71,6 +71,7 @@ export const BOOKING_READ_FIELDS = [
   "id",
   "version",
   "target",
+  "location",
   "canViewConfiguration",
   "timezone",
   "start",
@@ -111,11 +112,29 @@ export const BOOKING_MAPPED_FIELDS = [
 ] as const;
 type MappedBooking = ApiV2Selected<"bookings", typeof BOOKING_MAPPED_FIELDS>;
 
-function mapIdentity<TTarget>(input: MappedBooking, target: TTarget) {
+function mapBookingLocation(location: BookingsRead["location"]) {
+  if (location == null) return location;
+  if (typeof location.value === "number") throw new BookingUnavailableError("Booking location is not expanded");
+  return {
+    ...location,
+    value: {
+      ...location.value,
+      id: location.value.id,
+      globalId: required(location.value.globalId, "location.globalId"),
+      name: required(location.value.name, "location.name"),
+    },
+  };
+}
+function mapMutationLocation(location: BookingsRead["location"]) {
+  return location == null || typeof location.value === "number" ? location : mapBookingLocation(location);
+}
+
+function mapIdentity<TTarget, TLocation>(input: MappedBooking, target: TTarget, location: TLocation) {
   const identity = {
     id: input.id,
     version: input.version,
     target,
+    ...(location === undefined ? {} : { location }),
     timezone: input.timezone,
     start: input.start,
     end: input.end,
@@ -130,6 +149,7 @@ export function mapBookingSummary(input: MappedBooking) {
   const summary = {
     id: input.id,
     target: input.target === null ? null : mapBookingTarget(input.target),
+    ...(input.location === undefined ? {} : { location: mapBookingLocation(input.location) }),
     timezone: input.timezone,
     start: input.start,
     end: input.end,
@@ -176,13 +196,17 @@ function mapPrivacy(input: MappedBooking) {
 }
 
 export function mapBooking(input: MappedBooking) {
-  return { ...mapIdentity(input, mapBookingTarget(input.target)), ...mapPrivacy(input) };
+  return {
+    ...mapIdentity(input, mapBookingTarget(input.target), mapBookingLocation(input.location)),
+    ...mapPrivacy(input),
+  };
 }
 function mapReadIdentity(input: MappedBooking) {
   const identity = {
     id: input.id,
     version: input.version,
     target: input.target === null ? null : mapBookingTarget(input.target),
+    ...(input.location === undefined ? {} : { location: mapBookingLocation(input.location) }),
     timezone: input.timezone,
     start: input.start,
     end: input.end,
@@ -224,7 +248,11 @@ export function mapBookingListDocument(input: MappedBooking) {
 export function mapBookingMutation(input: MappedBooking) {
   const target = required(input.target, "target");
   return {
-    ...mapIdentity(input, typeof target.value === "number" ? target : mapBookingTarget(target)),
+    ...mapIdentity(
+      input,
+      typeof target.value === "number" ? target : mapBookingTarget(target),
+      mapMutationLocation(input.location),
+    ),
     ...mapPrivacy(input),
   };
 }

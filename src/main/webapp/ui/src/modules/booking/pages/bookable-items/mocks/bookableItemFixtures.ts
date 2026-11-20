@@ -184,11 +184,20 @@ export function allDayBookableItemCandidates() {
   }));
 }
 
+/**
+ * How a booking renders its item: the privacy-safe target, with the readable parent Container as
+ * `location` (configuration rows carry it on the target instead).
+ */
+function bookedItem(item: (typeof bookableItemFixtures)[number]) {
+  const { parentContainer, ...value } = item.target.value;
+  return { target: { ...item.target, value }, location: parentContainer };
+}
+
 export const sampleBookingEvents = [
   {
     id: 41,
     version: 0,
-    target: bookableItemFixtures[0].target,
+    ...bookedItem(bookableItemFixtures[0]),
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-17T06:00:00Z",
     end: "2026-08-17T07:30:00Z",
@@ -207,7 +216,7 @@ export const sampleBookingEvents = [
   {
     id: 42,
     version: 0,
-    target: bookableItemFixtures[0].target,
+    ...bookedItem(bookableItemFixtures[0]),
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-17T12:00:00Z",
     end: "2026-08-17T13:00:00Z",
@@ -219,6 +228,7 @@ export const sampleBookingEvents = [
     canEdit: false,
     canCancel: false,
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
@@ -226,7 +236,7 @@ export const sampleBookingEvents = [
   {
     id: 43,
     version: 0,
-    target: bookableItemFixtures[1].target,
+    ...bookedItem(bookableItemFixtures[1]),
     timezone: bookableItemFixtures[1].timezone,
     start: "2026-08-17T08:00:00Z",
     end: "2026-08-17T10:00:00Z",
@@ -238,6 +248,7 @@ export const sampleBookingEvents = [
     canEdit: false,
     canCancel: false,
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
@@ -245,7 +256,7 @@ export const sampleBookingEvents = [
   {
     id: 44,
     version: 0,
-    target: bookableItemFixtures[2].target,
+    ...bookedItem(bookableItemFixtures[2]),
     timezone: bookableItemFixtures[2].timezone,
     start: "2026-08-17T00:00:00Z",
     end: "2026-08-18T00:00:00Z",
@@ -257,6 +268,7 @@ export const sampleBookingEvents = [
     canEdit: false,
     canCancel: false,
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
@@ -264,7 +276,7 @@ export const sampleBookingEvents = [
   {
     id: 45,
     version: 0,
-    target: bookableItemFixtures[3].target,
+    ...bookedItem(bookableItemFixtures[3]),
     timezone: bookableItemFixtures[3].timezone,
     start: "2026-08-17T02:00:00Z",
     end: "2026-08-17T03:30:00Z",
@@ -276,6 +288,7 @@ export const sampleBookingEvents = [
     canEdit: false,
     canCancel: false,
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
@@ -283,7 +296,7 @@ export const sampleBookingEvents = [
   {
     id: 46,
     version: 0,
-    target: bookableItemFixtures[0].target,
+    ...bookedItem(bookableItemFixtures[0]),
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-16T21:30:00Z",
     end: "2026-08-17T00:30:00Z",
@@ -295,6 +308,7 @@ export const sampleBookingEvents = [
     canEdit: false,
     canCancel: false,
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",

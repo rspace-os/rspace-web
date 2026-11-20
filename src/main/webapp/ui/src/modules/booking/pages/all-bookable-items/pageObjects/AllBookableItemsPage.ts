@@ -1,85 +1,21 @@
-import { type Locator, page, userEvent } from "vitest/browser";
-
+import { type Locator, page } from "vitest/browser";
+import { bookableItemHeading, bookableItemTarget } from "../../bookable-items/pageObjects/bookableItemLocators";
 export class AllBookableItemsPage {
+  readonly instrumentName = page.getByRole("link", { name: "Confocal microscope", exact: true }).first();
+  readonly bookableItemDetailsHeading = bookableItemHeading("Confocal microscope");
+  readonly bookableItemDetailsTarget = bookableItemTarget("IN123");
+  readonly heading = page.getByRole("heading", { name: "All items" });
   readonly table = page.getByRole("table");
   get detailsButton(): Locator {
     return this.table
       .getByRole("row")
       .filter({ hasText: "Confocal microscope" })
-      .getByRole("link", { name: "View details for Confocal microscope", exact: true });
+      .getByRole("link", { name: "View details", exact: true });
   }
-  get filterButton(): Locator {
-    return page.getByRole("button", { name: "Filters, none applied" });
-  }
-
-  get columnsButton(): Locator {
-    return page.getByRole("button", { name: "Columns" });
-  }
-
-  get hiddenColumns(): Locator {
-    return page.getByRole("group", { name: "Hidden" });
-  }
-
-  get hiddenInstrumentName(): Locator {
-    return this.hiddenColumns.getByText("Bookable item \u2192 Name", { exact: true });
-  }
-
-  get hiddenDeleted(): Locator {
-    return this.hiddenColumns.getByText("Bookable item \u2192 Deleted", { exact: true });
-  }
-
-  get hiddenGlobalId(): Locator {
-    return this.hiddenColumns.getByText("Bookable item \u2192 Global ID", { exact: true });
-  }
-
-  fieldOption(label: string): Locator {
-    return page.getByRole("option", { name: label });
-  }
-
-  get instrumentNameHeader(): Locator {
-    return page.getByRole("columnheader", { name: "Bookable item \u2192 Name" });
-  }
-
-  get deletedHeader(): Locator {
-    return page.getByRole("columnheader", { name: "Bookable item \u2192 Deleted" });
-  }
-
-  async openColumns(): Promise<void> {
-    await userEvent.click(this.columnsButton);
-  }
-
-  get fieldSelect(): Locator {
-    return page.getByRole("combobox", { name: "Field for filter 1" });
-  }
-
-  get customFieldSearch(): Locator {
-    return page.getByRole("combobox", { name: "Search Bookable item custom fields for filter 1" });
-  }
-
-  get valueInput(): Locator {
-    return page.getByRole("combobox", { name: "Value for filter 1" });
-  }
-
-  get valueTextbox(): Locator {
-    return page.getByRole("textbox", { name: "Value for filter 1" });
-  }
-
-  get operatorSelect(): Locator {
-    return page.getByRole("combobox", { name: "Operator for filter 1" });
-  }
-
-  async openFilters(): Promise<void> {
-    await userEvent.click(this.filterButton);
-    await userEvent.click(page.getByRole("button", { name: "Add filter" }));
-  }
-
-  async chooseField(label: string): Promise<void> {
-    await userEvent.click(this.fieldSelect);
-    await userEvent.fill(this.fieldSelect, label);
-    await userEvent.click(page.getByRole("option", { name: label }));
-  }
-
-  async chooseCustomFieldSource(): Promise<void> {
-    await this.chooseField("Custom field…");
+  get electronBookButton(): Locator {
+    return this.table
+      .getByRole("row")
+      .filter({ hasText: "Electron microscope" })
+      .getByRole("link", { name: "Book", exact: true });
   }
 }

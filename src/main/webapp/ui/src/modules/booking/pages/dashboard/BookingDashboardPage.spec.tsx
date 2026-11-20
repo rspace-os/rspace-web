@@ -66,9 +66,7 @@ describe("Booking dashboard", () => {
     await expect
       .element(dashboard.quickAction("Calendar"))
       .toHaveAttribute("href", "/booking/calendar?date=2026-08-18");
-    await expect
-      .element(dashboard.quickAction("Find an instrument"))
-      .toHaveAttribute("href", "/booking/all-items?date=2026-08-18");
+    await expect.element(dashboard.quickAction("Find an instrument")).toHaveAttribute("href", "/booking/all-items");
     await expect
       .element(dashboard.quickAction("My Bookings"))
       .toHaveAttribute("href", "/booking/my-bookings?period=upcoming");

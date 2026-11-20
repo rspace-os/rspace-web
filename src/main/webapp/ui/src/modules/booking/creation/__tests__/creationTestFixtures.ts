@@ -95,6 +95,7 @@ export function confocalBooking({
     createdAt: "2026-10-01T09:00:00Z",
     updatedAt: "2026-10-01T09:00:00Z",
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
   };
 }

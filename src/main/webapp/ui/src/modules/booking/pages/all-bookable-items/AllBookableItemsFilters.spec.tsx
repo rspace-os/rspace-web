@@ -1,3 +1,5 @@
+import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
+import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
@@ -5,23 +7,23 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { AllBookableItemsStory as BookableItemsStory } from "../all-bookable-items/AllBookableItemsPage.story";
 import { storyUser } from "../bookable-items/BookableItemPage.story";
 import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
-import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
+import { BookableItemsPage } from "../bookable-items/pageObjects/BookableItemsPage";
 
-const pageObj = new AllBookableItemsPage();
+const pageObj = new BookableItemsPage();
 let collectionQuery = "";
 
 let history: RouterHistory;
 let browserUrl: string;
 
 beforeEach(() => {
-  history = createMemoryHistory({ initialEntries: ["/booking/config/bookable-items"] });
+  history = createMemoryHistory({ initialEntries: ["/booking/all-items"] });
   browserUrl = window.location.href;
   collectionQuery = "";
   worker.use(
-    http.get("/api/v2/users/me", () => HttpResponse.json(storyUser)),
+    http.get<never, never, ApiV2CurrentUser | ApiV2Problem>("/api/v2/users/me", () => HttpResponse.json(storyUser)),
     ...bookableItemsHandlers((request) => {
       collectionQuery = decodeURIComponent(new URL(request.url).search);
     }),
@@ -35,7 +37,7 @@ afterEach(() => {
 
 describe("the bookable items table", () => {
   test("reaches the instrument's custom fields through the field dropdown only", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openFilters();
 
@@ -55,7 +57,7 @@ describe("the bookable items table", () => {
   });
 
   test("filters on a text custom field with a value the user types", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -76,7 +78,7 @@ describe("the bookable items table", () => {
   });
 
   test("keeps a value picker for a custom field that publishes its own options", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -95,7 +97,7 @@ describe("the bookable items table", () => {
   });
 
   test("offers a custom field as a column from the rule that filters on it", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
@@ -114,7 +116,7 @@ describe("the bookable items table", () => {
   });
 
   test("lists target fields as optional hidden columns", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openColumns();
 
@@ -125,7 +127,7 @@ describe("the bookable items table", () => {
   });
 
   test("offers a target field that cannot be filtered on as a column only", async () => {
-    render(<AllBookableItemsStory history={history} />);
+    render(<BookableItemsStory history={history} />);
 
     await pageObj.openColumns();
     await expect.element(pageObj.hiddenGlobalId).toBeVisible();

@@ -8,10 +8,8 @@ export type RelationshipSources = Readonly<Record<string, RelationshipSource>>;
 
 export type {
   RelationshipOption,
-  RelationshipOptionAvailabilitySource,
   RelationshipOptions,
   ToOneRelationshipValue,
-  UnavailableRelationshipOption,
 } from "@/modules/common/relationship-picker/types";
 
 /**

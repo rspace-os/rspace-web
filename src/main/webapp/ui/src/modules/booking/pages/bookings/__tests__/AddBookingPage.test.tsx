@@ -113,6 +113,7 @@ const createdBooking = {
   createdAt: "2026-08-17T06:00:00Z",
   updatedAt: "2026-08-17T06:00:00Z",
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
 };
 
