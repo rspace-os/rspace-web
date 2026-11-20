@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ChoiceField from "../../../../components/Inputs/ChoiceField";
 import DateField from "../../../../components/Inputs/DateField";
@@ -28,6 +29,30 @@ type FieldsArgs = {
 
 function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
+
+  // Parents pass a fresh callback on every render; keep the latest in a ref so the effect only
+  // re-runs when the record or the error state changes.
+  const onErrorStateChangeRef = useRef(onErrorStateChange);
+  onErrorStateChangeRef.current = onErrorStateChange;
+
+  // Report on mount and whenever the fields change, not only on input: fields from a template
+  // can start invalid (e.g. an empty mandatory field), and the collapsed section must show it.
+  const editable = sample.isFieldEditable("fields");
+  const fieldErrorsKey = JSON.stringify([
+    sample.globalId,
+    (sample.fields ?? []).map((field) => [
+      `template_${field.name}`,
+      editable && Boolean((field.mandatory && !field.hasContent) || field.error),
+    ]),
+  ]);
+  useEffect(() => {
+    const [, fieldErrors] = JSON.parse(fieldErrorsKey) as [unknown, Array<[string, boolean]>];
+    for (const [key, hasError] of fieldErrors) onErrorStateChangeRef.current(key, hasError);
+    return () => {
+      for (const [key] of fieldErrors) onErrorStateChangeRef.current(key, false);
+    };
+  }, [fieldErrorsKey]);
+
   return (sample.fields ?? []).map((field: Field) => {
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),

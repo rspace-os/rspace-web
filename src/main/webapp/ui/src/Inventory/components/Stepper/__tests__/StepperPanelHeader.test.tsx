@@ -1,5 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { describe, expect, test } from "vitest";
 import { StepperPanelHeader, setFormSectionError, useFormSectionError } from "../StepperPanelHeader";
 import "@/__tests__/__mocks__/matchMedia";
@@ -89,7 +89,36 @@ function DummyFormSection({ result }: { result: DummyResult }) {
     </ThemeProvider>
   );
 }
+function ReportOnMount({ result }: { result: DummyResult }) {
+  const formSectionError = useFormSectionError({ editing: result.editing, globalId: result.globalId });
+  useEffect(() => {
+    setFormSectionError(formSectionError, "on mount", true);
+  }, []);
+  return (
+    <ThemeProvider theme={materialTheme}>
+      <FormSectionsContext.Provider
+        value={{ isExpanded: () => false, setExpanded: () => {}, setAllExpanded: () => {} }}
+      >
+        <StepperPanelHeader
+          onToggle={() => {}}
+          open={false}
+          title="foo"
+          formSectionError={formSectionError}
+          id="mockId"
+          recordType="container"
+        />
+      </FormSectionsContext.Provider>
+    </ThemeProvider>
+  );
+}
 describe("StepperPanelHeader", () => {
+  test("The badge updates when an error is set without any other re-render.", async () => {
+    cleanup();
+    render(<ReportOnMount result={new DummyResult()} />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "inventory:formSections.expandSection" })).toHaveTextContent("1");
+    });
+  });
   test("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
     await fc.assert(
       fc.asyncProperty(
