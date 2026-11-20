@@ -1282,6 +1282,12 @@ type GalleryMainPanelArgs = {
   >;
   folderId: FetchingData.Fetched<Id>;
   refreshListing: () => Promise<void>;
+
+  /**
+   * Re-fetch the listing when the browser tab becomes visible again, so that
+   * changes made in another tab, such as saving in an online editor, show up.
+   */
+  refreshListingOnTabReturn?: boolean;
   sortOrder: "DESC" | "ASC";
   orderBy: "name" | "modificationDate";
   setSortOrder: (order: "DESC" | "ASC") => void;
@@ -1296,6 +1302,7 @@ function GalleryMainPanel({
   galleryListing,
   folderId,
   refreshListing,
+  refreshListingOnTabReturn = false,
   sortOrder,
   orderBy,
   setSortOrder,
@@ -1341,6 +1348,33 @@ function GalleryMainPanel({
   const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
+
+  /*
+   * Tree view and remote filestores are skipped: a root refresh clears a
+   * selection nested in a tree folder, and filestore listings are slow remote
+   * calls.
+   */
+  const refreshOnTabReturn = React.useRef(() => {});
+  React.useEffect(() => {
+    refreshOnTabReturn.current = () => {
+      if (viewMode === "tree" || selectedSection === null || selectedSection === GALLERY_SECTION.NETWORKFILES) return;
+      const listedKeys = new Set(
+        FetchingData.getSuccessValue(galleryListing)
+          .map((listing) => (listing.tag === "list" ? listing.list.map(({ key }) => key) : []))
+          .orElse([]),
+      );
+      if (selection.asSet().some(({ key }) => !listedKeys.has(key))) return;
+      void refreshListing().catch(() => {});
+    };
+  });
+  React.useEffect(() => {
+    if (!refreshListingOnTabReturn) return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshOnTabReturn.current();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [refreshListingOnTabReturn]);
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       /*

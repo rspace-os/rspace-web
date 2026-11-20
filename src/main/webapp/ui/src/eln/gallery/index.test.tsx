@@ -14,6 +14,7 @@ import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { Gallery } from ".";
 import { emptyShareListingHandler, raidIntegrationInfoHandler } from "./__tests__/mocks/raidIntegrationMocks";
 import type { GallerySection } from "./common";
@@ -200,6 +201,19 @@ function getUploadedFilesMediaTypes(): Array<string | null> {
     });
 }
 
+/** Simulates the user switching back to this browser tab. */
+function returnToTab() {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+
+/** The values of the InfoPanel's "Version" rows, one per InfoPanel layout. */
+function infoPanelVersions(): Array<string> {
+  return screen
+    .queryAllByText("gallery:infoPanel.labels.version")
+    .map((label) => label.nextElementSibling?.textContent ?? "");
+}
+
 describe("Gallery", () => {
   beforeEach(() => {
     mockAxios.reset();
@@ -211,6 +225,7 @@ describe("Gallery", () => {
   afterEach(() => {
     mockAxios.reset();
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe("Should have a title that describes the current page", () => {
@@ -317,6 +332,24 @@ describe("Gallery", () => {
   });
 
   describe("Network calls on state change", () => {
+    test("Returning to the tab does not re-fetch remote filestores", async () => {
+      mockAxios.onGet("/deploymentproperties/ajax/property").reply(200, true);
+      mockAxios.onGet("gallery/filestores").reply(200, []);
+      const filestoreRequests = () => mockAxios.history.get.filter(({ url }) => url === "gallery/filestores").length;
+      // a fresh cache, so that earlier tests' disabled filestores do not hide the section
+      render(
+        <DeploymentPropertyContext.Provider value={new Map()}>
+          <GalleryStory urlSuffix="?mediaType=NetworkFiles" />
+        </DeploymentPropertyContext.Provider>,
+      );
+      await screen.findByText("gallery:listing.empty.addFilestore");
+      expect(filestoreRequests()).toBe(1);
+
+      returnToTab();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(filestoreRequests()).toBe(1);
+    });
+
     test("Changing section should only make one request to the server", async () => {
       const user = userEvent.setup();
       render(<GalleryStory urlSuffix="?mediaType=Images" />);
@@ -432,7 +465,7 @@ describe("Gallery", () => {
     }
 
     /** A listing containing the pinned item, so it can be selected. */
-    function mockListingWithItem() {
+    function mockListingWithItem({ version = 3 }: { version?: number } = {}) {
       mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
         data: {
           parentId: 123,
@@ -456,7 +489,7 @@ describe("Gallery", () => {
                 extension: "png",
                 thumbnailId: null,
                 size: 40721,
-                version: 3,
+                version,
                 originalImageOid: null,
               },
             ],
@@ -477,6 +510,35 @@ describe("Gallery", () => {
 
       // rendered once per InfoPanel layout, desktop and mobile drawer alike
       expect(await screen.findAllByText("gallery:pinnedVersion.notice")).not.toHaveLength(0);
+
+      await screen.findByRole("gridcell", { name: /first-draft\.png/ });
+      // returning to the tab refreshes the listing without unpinning the selection
+      mockListingWithItem({ version: 4 });
+      returnToTab();
+      await waitFor(() => expect(getUploadedFilesMediaTypes()).toHaveLength(2));
+      expect(screen.getAllByText("gallery:pinnedVersion.notice")).not.toHaveLength(0);
+      await waitFor(() => expect(infoPanelVersions()).toContain("1"));
+      expect(infoPanelVersions()).not.toContain("4");
+    });
+
+    test("a new version saved in another tab shows in the tile and the info panel on return", async () => {
+      const user = userEvent.setup();
+      mockListingWithItem();
+
+      // a folder rather than the item's own URL, which would re-select the item on every listing
+      render(<GalleryStory urlSuffix="/123" />);
+      const tile = await screen.findByRole("gridcell", { name: /assay\.png/ });
+      await user.click(tile);
+      await waitFor(() => expect(infoPanelVersions()).toContain("3"));
+
+      mockListingWithItem({ version: 4 });
+      returnToTab();
+
+      await waitFor(() =>
+        expect(within(tile).getByLabelText("gallery:mainPanel.versionLabel")).toHaveTextContent("v4"),
+      );
+      await waitFor(() => expect(infoPanelVersions()).toContain("4"));
+      expect(infoPanelVersions()).not.toContain("3");
     });
 
     /**
