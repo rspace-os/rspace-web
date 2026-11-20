@@ -1,6 +1,7 @@
 package com.researchspace.core.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,10 +19,14 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ZipUtilsExtractionTest {
 
@@ -138,6 +143,46 @@ class ZipUtilsExtractionTest {
     assertEquals("bb", Files.readString(new File(dest, "b.txt").toPath()));
   }
 
+  private static final byte[] OK = "ok".getBytes(StandardCharsets.UTF_8);
+
+  /** Layouts written by zip -D, macOS Archive Utility and similar tools outside RSpace. */
+  static Stream<Arguments> archivesMissingDirectoryEntries() {
+    return Stream.of(
+        Arguments.of(
+            "macOS metadata without its directory entry",
+            new EntrySpec[] {dir("root/"), file("root/a.txt", OK), file("__MACOSX/._root", OK)}),
+        Arguments.of(
+            "no directory entries",
+            new EntrySpec[] {file("root/sub/b.txt", OK), file("root/a.txt", OK)}),
+        Arguments.of("./-prefixed names", new EntrySpec[] {file("./root/a.txt", OK)}),
+        Arguments.of(
+            "file before its directory entry",
+            new EntrySpec[] {file("root/a.txt", OK), dir("root/sub/")}));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("archivesMissingDirectoryEntries")
+  void extractsArchiveMissingDirectoryEntries(String layout, EntrySpec[] entries)
+      throws IOException {
+    File zip = makeZip(entries);
+    File dest = newDestination();
+
+    String topLevel = ZipUtils.extractZip(zip, dest);
+
+    assertEquals(new File(dest, "root").getAbsolutePath(), topLevel);
+    assertEquals("ok", Files.readString(new File(dest, "root/a.txt").toPath()));
+  }
+
+  @Test
+  void rollbackRemovesImplicitlyCreatedDirectories() throws IOException {
+    File zip = makeZip(file("root/sub/a.txt", OK), file("../evil.txt", OK));
+    File dest = newDestination();
+
+    assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
+
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
   @Test
   void rejectsTraversalEntryAndRemovesPartialExtraction() throws IOException {
     File zip =
@@ -185,7 +230,10 @@ class ZipUtilsExtractionTest {
         makeZip(dir("./"), dir("root/"), file("root/a.txt", "ok".getBytes(StandardCharsets.UTF_8)));
     File dest = newDestination();
 
-    assertEquals("ok", readAfterExtract(zip, dest, "root/a.txt"));
+    String topLevel = ZipUtils.extractZip(zip, dest);
+
+    assertEquals(new File(dest, "root").getCanonicalPath(), new File(topLevel).getCanonicalPath());
+    assertEquals("ok", Files.readString(new File(dest, "root/a.txt").toPath()));
   }
 
   @Test
@@ -221,6 +269,38 @@ class ZipUtilsExtractionTest {
         "keep me",
         Files.readString(dest.toPath().resolve("keepme/precious.txt")),
         "rollback must not delete pre-existing content");
+  }
+
+  @Test
+  void rejectsEntryOverwritingExistingFileAndKeepsIt() throws IOException {
+    File dest = newDestination();
+    assertTrue(new File(dest, "root").mkdirs());
+    Path precious = dest.toPath().resolve("root/precious.txt");
+    Files.writeString(precious, "keep me");
+    File zip =
+        makeZip(
+            dir("root/"),
+            file("root/new.txt", "new".getBytes(StandardCharsets.UTF_8)),
+            file("root/precious.txt", "overwrite".getBytes(StandardCharsets.UTF_8)));
+
+    assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
+
+    assertEquals("keep me", Files.readString(precious));
+    assertFalse(new File(dest, "root/new.txt").exists(), "new output must be rolled back");
+  }
+
+  @Test
+  void extractsIntoDirectoryHoldingTheArchive() throws IOException {
+    // import saves the upload into the directory it then extracts into
+    File dest = newDestination();
+    assertTrue(dest.mkdirs());
+    File source =
+        makeZip(dir("root/"), file("root/a.txt", "hello".getBytes(StandardCharsets.UTF_8)));
+    File upload = new File(dest, "upload.zip");
+    Files.copy(source.toPath(), upload.toPath());
+
+    assertEquals("hello", readAfterExtract(upload, dest, "root/a.txt"));
+    assertArrayEquals(Files.readAllBytes(source.toPath()), Files.readAllBytes(upload.toPath()));
   }
 
   @Test
@@ -484,6 +564,22 @@ class ZipUtilsExtractionTest {
     ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 5, 0, 0, 0));
 
     assertTrue(new File(dest, "a/b/c/d/e").isDirectory());
+  }
+
+  @Test
+  void countsEachDirectoryAFileEntryCreatesImplicitly() throws IOException {
+    File zip = makeZip(file("a/b/c.txt", OK));
+    File rejectedDest = newDestination();
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () -> ZipUtils.extractZip(zip, rejectedDest, new ZipExtractionLimits(0, 2, 0, 0, 0)));
+    assertEquals(ZipExtractionLimitException.Limit.ENTRY_COUNT, e.getLimit());
+
+    File dest = tempDir.resolve("accepted").toFile();
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 3, 0, 0, 0));
+    assertTrue(new File(dest, "a/b/c.txt").isFile());
   }
 
   private static int indexOfLocalHeader(byte[] raw, int occurrence) {
