@@ -877,12 +877,6 @@
     },
     "cameraViewLabel": "Camera view:",
     "chooseFileAriaLabel": "Choose a file",
-    "egnyte": {
-      "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
-      "disconnectButton": "Disconnect",
-      "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
-      "setupHeading": "Egnyte filestore setup"
-    },
     "lastLoginLabel": "Last Login:",
     "usernameWithAlias": "{0}, login alias: {1}",
     "otherProfileHeading": "User Profile",

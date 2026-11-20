@@ -1,7 +1,5 @@
 package com.axiope.service.cfg;
 
-import static com.researchspace.files.service.ExternalFileStoreProvider.EGNYTE;
-
 import com.axiope.search.FileSearchStrategy;
 import com.axiope.search.IFileIndexer;
 import com.axiope.userimport.AuthorisedPostSignUp;
@@ -38,17 +36,9 @@ import com.researchspace.export.pdf.ImageRetrieverHelperImpl;
 import com.researchspace.export.pdf.MSWordProcessor;
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.msteams.MsTeamsMessageSender;
-import com.researchspace.files.service.ExternalFileService;
-import com.researchspace.files.service.ExternalFileServiceImpl;
-import com.researchspace.files.service.ExternalFileStore;
-import com.researchspace.files.service.ExternalFileStoreLocator;
-import com.researchspace.files.service.ExternalFileStoreLocatorImpl;
-import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.files.service.FileStoreImpl;
 import com.researchspace.files.service.InternalFileStore;
-import com.researchspace.files.service.egnyte.EgnyteFileSearcher;
-import com.researchspace.files.service.egnyte.EgnyteFileStoreAdapter;
 import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.impl.GoogleTokenVerifier;
 import com.researchspace.licensews.client.DefaultLicenseRequestProcessor;
@@ -97,7 +87,6 @@ import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.PiChangeHandler;
-import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
 import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.PostSigningManager;
@@ -241,8 +230,6 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnectorImpl;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProvider;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProviderImpl;
 import com.researchspace.webapp.integrations.dsw.DSWClient;
-import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnector;
-import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnectorImpl;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
 import com.researchspace.webapp.integrations.slack.SlackService;
 import com.researchspace.webapp.integrations.slack.SlackServiceImpl;
@@ -252,7 +239,6 @@ import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler;
 import com.researchspace.webapp.integrations.wopi.WopiProofKeyValidator;
 import com.researchspace.zenodo.rspaceadapter.ZenodoRSpaceRepository;
 import io.vavr.control.Option;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
@@ -315,15 +301,6 @@ public abstract class BaseConfig {
 
   @Value("${apitoken.encryption.key}")
   private String apiTokenEncryptionKey;
-
-  @Value("${rs.filestore}")
-  private String fileStoreType;
-
-  @Value("${rs.ext.filestore.baseURL}")
-  private String fileStoreBaseUrl;
-
-  @Value("${rs.ext.filestore.root}")
-  private String fileStoreRoot;
 
   @Value("${mail.maxEmailsPerSecond:5}")
   private Integer maxEmailsPerSecond;
@@ -760,72 +737,18 @@ public abstract class BaseConfig {
   }
 
   @Bean("compositeFileStore")
-  public FileStore compositeFileStore(InternalFileStore internalFileStore) throws IOException {
-    FileStoreImpl impl =
-        new FileStoreImpl(internalFileStore, externalFileStoreLocator(), externalFileService());
-    return impl;
+  public FileStore compositeFileStore(InternalFileStore internalFileStore) {
+    return new FileStoreImpl(internalFileStore);
   }
 
-  @Bean
-  public ExternalFileService externalFileService() {
-    if ("LOCAL".equals(fileStoreType)) {
-      return ExternalFileService.NOOP;
-    } else {
-      log.info("Creating real external file service");
-      return new ExternalFileServiceImpl();
-    }
-  }
-
-  @Bean
-  public ExternalFileStoreLocator externalFileStoreLocator() {
-    if ("LOCAL".equals(fileStoreType)) {
-      return ExternalFileStoreLocator.NOOP_ExternalFileStoreLocator;
-    } else {
-      log.info("Setting external file store locator for {}", fileStoreType);
-      return new ExternalFileStoreLocatorImpl(
-          ExternalFileStoreProvider.valueOf(fileStoreType.trim()), externalFileStore());
-    }
-  }
-
-  /**
-   * Get the correct file store depending on fileStoreType
-   *
-   * @return
-   * @throws IOException
-   */
-  @Bean
-  public ExternalFileStore externalFileStore() {
-    if (EGNYTE.name().equals(fileStoreType)) {
-      log.info(
-          "Creating Egnyte FileStore at URL {} and root folder {}",
-          fileStoreBaseUrl,
-          fileStoreRoot);
-      return new EgnyteFileStoreAdapter(fileStoreBaseUrl, fileStoreRoot);
-    }
-    return null;
-  }
-
-  /**
-   * We're not indexing files locally if they're stored in external file service
-   *
-   * @return
-   */
   @Bean
   public IFileIndexer fileIndexer() {
-    if (!"LOCAL".equals(fileStoreType)) {
-      return IFileIndexer.NOOP_INDEXER;
-    } else {
-      return new FileIndexer();
-    }
+    return new FileIndexer();
   }
 
   @Bean
   public FileSearchStrategy fileSearchStrategy() {
-    if (!"LOCAL".equals(fileStoreType)) {
-      return new EgnyteFileSearcher(fileStoreBaseUrl, fileStoreRoot, externalFileStoreLocator());
-    } else {
-      return new LuceneSearchStrategy();
-    }
+    return new LuceneSearchStrategy();
   }
 
   @Bean
@@ -1155,26 +1078,15 @@ public abstract class BaseConfig {
 
     List<PostFirstLoginAction> postFirstLoginActions = new ArrayList<>();
 
-    postFirstLoginActions.add(egnyteAuthConnector());
     postFirstLoginActions.add(exampleContentAction());
 
     rc.setPostFirstLoginActions(postFirstLoginActions);
-
-    List<PostAnyLoginAction> postAnyLoginActions = new ArrayList<>();
-    postAnyLoginActions.add(egnyteAuthConnector());
-    rc.setPostAnyLoginActions(postAnyLoginActions);
-
     return rc;
   }
 
   @Bean
   PostFirstLoginAction exampleContentAction() {
     return new ExampleContentAction();
-  }
-
-  @Bean
-  EgnyteAuthConnector egnyteAuthConnector() {
-    return new EgnyteAuthConnectorImpl();
   }
 
   @Bean

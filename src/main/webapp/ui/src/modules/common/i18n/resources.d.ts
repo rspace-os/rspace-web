@@ -370,20 +370,6 @@ export default interface Resources {
         },
         "usage": "You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
       },
-      "egnyte": {
-        "description": "Collaborate, sync and share your files with a security-focused enterprise solution.",
-        "fields": {
-          "domainUrl": "Egnyte Domain URL"
-        },
-        "helpLink": "Cloud Storage integrations docs",
-        "name": "Egnyte",
-        "setup": {
-          "instructions": "<ol><li>Provide your Egnyte domain URL and Save.</li><li>Enable the integration.</li><li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li></ol>",
-          "provideDomain": "Provide your Egnyte domain URL and Save.",
-          "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
-        },
-        "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
-      },
       "fieldmark": {
         "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
         "fields": {
@@ -5661,14 +5647,6 @@ export default interface Resources {
           "serverUrl": "Cannot access the specified server URL"
         }
       },
-      "egnyte": {
-        "errors": {
-          "authenticationFailed": "Couldn't authenticate with provided credentials.",
-          "credentialsRequired": "Egnyte username and password must be provided.",
-          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
-          "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
-        }
-      },
       "errors": {
         "cannotUpdateThisWay": "This App cannot be updated this way",
         "configPropertiesWrongApp": "Configuration properties do not belong to the requested app",
@@ -5786,15 +5764,6 @@ export default interface Resources {
         "closeWindowNotice": "You may now close this window.",
         "defaultTitle": "RSpace connection result",
         "title": "Connected"
-      },
-      "egnyte": {
-        "connectionSetup": {
-          "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
-          "passwordPlaceholder": "Egnyte Password",
-          "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
-          "title": "Connect to Egnyte",
-          "usernamePlaceholder": "Egnyte Username"
-        }
       },
       "msoffice": {
         "officeView": {
@@ -5983,6 +5952,9 @@ export default interface Resources {
           "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
+        "inventoryOauthToken": {
+          "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+        },
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
@@ -8003,15 +7975,6 @@ export default interface Resources {
         "showingForSearchTerm": "Showing {0} for search term ''{1}''.",
         "userSearchPlaceholder": "Type a user's name, email or username"
       },
-      "egnyte": {
-        "authenticationAction": "Egnyte authentication",
-        "connectedSuccessfully": "Egnyte connected successfully",
-        "connectingToFilestore": "Connecting to Egnyte filestore...",
-        "connectionSavedOpeningWorkspace": "Egnyte connection details saved. Opening the Workspace...",
-        "notConfiguredToast": "Connection to your Egnyte account is not configured correctly, please fix it on <a href=\"/egnyte/egnyteConnectionSetup\">connection setup page</a>",
-        "skipConfirm": "Are you sure you want to skip Egnyte account configuration? The files uploaded to RSpace will not be saved in Egnyte.",
-        "skipConfirmOk": "Skip"
-      },
       "errors": {
         "required": "{0} is a required field."
       },
@@ -8361,11 +8324,6 @@ export default interface Resources {
           "confirmYes": "Yes, cancel",
           "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
         },
-        "egnyte": {
-          "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
-          "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
-          "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
-        },
         "googleDrive": {
           "authorizationIncomplete": "Google Drive authorization was not completed. Try again, keep the Google sign-in window open, and approve access when prompted.",
           "pickerTitle": "Select a file from Google Drive",
@@ -8464,7 +8422,6 @@ export default interface Resources {
         "actionChangeVerificationPasswordProcess": "Change verification password process",
         "actionCreatingApiKey": "Creating a new API key",
         "actionEditProfileProcess": "Edit profile process",
-        "actionRemovingEgnyteToken": "Removing Egnyte token",
         "actionSetVerificationPasswordProcess": "Set verification password process",
         "apiKeyDeleted": "Key deleted",
         "apiKeyNotDeleted": "Key was not deleted, please try again or ask support",
@@ -9590,7 +9547,6 @@ export default interface Resources {
           "dropboxLinkingEnabled": "Enables linking to Dropbox in text field editor. Relevant only if 'dropbox.available' is 'true'",
           "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
           "dswAvailable": "Makes DSW integration available.",
-          "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
           "fieldmarkAvailable": "Makes Fieldmark integration available.",
           "galaxyAvailable": "Makes Galaxy integration available.",
           "githubAvailable": "Makes Github integration available. After enabling, user can add links to files in Github repositories.",
@@ -10678,12 +10634,6 @@ export default interface Resources {
       },
       "cameraViewLabel": "Camera view:",
       "chooseFileAriaLabel": "Choose a file",
-      "egnyte": {
-        "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
-        "disconnectButton": "Disconnect",
-        "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
-        "setupHeading": "Egnyte filestore setup"
-      },
       "lastLoginLabel": "Last Login:",
       "otherProfileHeading": "User Profile",
       "ownProfileHeading": "My Profile",

@@ -194,28 +194,6 @@
 				</div>
 			</c:if>
 
-			<rst:hasDeploymentProperty name="fileStoreType" value="EGNYTE">
-				<div style="font-size: 1.5em; margin-bottom: 15px; color: #444;">
-					<spring:message code="userform.egnyte.setupHeading"/>
-				</div>
-				<div class="profileGreyBlocks col-xs-12"">
-								<div id=" egnyteConnectedDiv" style="display:none">
-					<div class="col-xs-8">
-						<spring:message code="userform.egnyte.connectedNotice"/>
-					</div>
-					<div class="pull-right">
-						<a id="egnyteDisconnectBtn" href="#" class="myProfileButton"><spring:message code="userform.egnyte.disconnectButton"/></a>
-					</div>
-				</div>
-				<div id="egnyteDisonnectedDiv" style="display:none">
-					<spring:message code="userform.egnyte.notConfiguredNotice"/>
-				</div>
-				</div>
-				<div class="col-xs-12">
-					<hr>
-				</div>
-			</rst:hasDeploymentProperty>
-
 			<rst:hasCollaborationGroup user="${user}">
 				<br />
 				<div class="profileGreyBlocks col-xs-12">

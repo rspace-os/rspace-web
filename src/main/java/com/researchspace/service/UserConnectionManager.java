@@ -23,7 +23,7 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
    * Gets a UserConnection if it exists. <br>
    *
    * @param rspaceUserName RSpace username
-   * @param providerName e.g. 'egnyte', 'figshare'
+   * @param providerName e.g. 'figshare'
    * @return An Optional<UserConnection>
    */
   Optional<UserConnection> findByUserNameProviderName(String rspaceUserName, String providerName);
@@ -32,7 +32,7 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
    * Gets a list of UserConnections if it exists. <br>
    *
    * @param rspaceUserName RSpace username
-   * @param providerName e.g. 'egnyte', 'figshare'
+   * @param providerName e.g. 'figshare'
    * @return An Optional<UserConnection>
    */
   List<UserConnection> findListByUserNameProviderName(String rspaceUserName, String providerName);

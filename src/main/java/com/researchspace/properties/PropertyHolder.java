@@ -191,9 +191,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${importArchiveFromServer.folder:}")
   private String importArchiveFromServerFolder;
 
-  @Value("${rs.filestore}")
-  private String fileStoreType;
-
   @Value("${sysadmin.limitedIpAddresses.enabled}")
   private String whiteListedIpsEnabled;
 
@@ -807,15 +804,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public void setImportArchiveFromServerFolder(String folder) {
     this.importArchiveFromServerFolder = folder;
-  }
-
-  @Override
-  public String getFileStoreType() {
-    return fileStoreType;
-  }
-
-  public void setFileStoreType(String fileStoreType) {
-    this.fileStoreType = fileStoreType;
   }
 
   @Override

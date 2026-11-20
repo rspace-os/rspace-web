@@ -49,7 +49,6 @@ function printSettingsList() {
             'box.api.enabled',
             'dropbox.available',
             'dropbox.linking.enabled',
-            'egnyte.available',
             'googledrive.available',
             'onedrive.available',
             'onedrive.linking.enabled',

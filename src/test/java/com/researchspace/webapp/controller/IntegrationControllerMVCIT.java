@@ -11,7 +11,6 @@ import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_ALIAS;
@@ -88,7 +87,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 28;
+  final int TOTAL_INTEGRATIONS = 27;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
@@ -133,7 +132,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(FIGSHARE_APP_NAME, new String[] {});
     expectedOptions.put(OWNCLOUD_APP_NAME, new String[] {});
     expectedOptions.put(NEXTCLOUD_APP_NAME, new String[] {});
-    expectedOptions.put(EGNYTE_APP_NAME, new String[] {});
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated
     expectedOptions.put(PYRAT_APP_NAME, new String[] {PYRAT_CONFIGURED_SERVERS});
@@ -345,7 +343,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(piUser);
     GitHubPendingToken.store(piUser.getUsername(), "gho-current-token");
     int originalCount =
-        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size();
+        userAppConfigManager.getByAppName("app.dataverse", piUser).getAppConfigElementSets().size();
     MvcResult result =
         mockMvc
             .perform(
@@ -353,7 +351,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
                     .param("appName", "github")
                     .content(
                         mvcUtils.getAsJsonString(
-                            Map.of("EGNYTE_DOMAIN", "https://acme.egnyte.com")))
+                            Map.of("DATAVERSE_URL", "https://dataverse.example.org")))
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(mockPrincipal))
             .andReturn();
@@ -361,7 +359,10 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertInstanceOf(IllegalArgumentException.class, result.getResolvedException());
     assertEquals(
         originalCount,
-        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size());
+        userAppConfigManager
+            .getByAppName("app.dataverse", piUser)
+            .getAppConfigElementSets()
+            .size());
     assertThat(
             userConnectionManager.findListByUserNameProviderName(
                 piUser.getUsername(), GITHUB_APP_NAME))

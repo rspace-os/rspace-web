@@ -11,7 +11,6 @@ import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
-import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.InternalFileStore;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatComment;
@@ -21,7 +20,6 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
@@ -33,7 +31,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RoleManager;
-import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +66,6 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired InternalFileStore fileStore;
   protected @Autowired RecordDao recordDao;
   protected @Autowired UserDao userDao;
-  protected @Autowired UserConnectionManager connMgr;
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -439,13 +435,5 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
 
   protected User doCreateAndInitUser(String username) {
     return doCreateAndInitUser(username, USER_ROLE);
-  }
-
-  protected UserConnection createAndSaveEgnyteUserConnectionWithAccessToken(
-      User anyUser, String accessToken) {
-    UserConnection connection = TestFactory.createUserConnection(anyUser.getUsername());
-    connection.getId().setProviderId(ExternalFileStoreProvider.EGNYTE.name());
-    connection.setAccessToken(accessToken);
-    return connMgr.save(connection);
   }
 }
