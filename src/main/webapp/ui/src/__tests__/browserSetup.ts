@@ -2,6 +2,7 @@ import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
+import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
 import i18n from "@/modules/common/i18n";
 
 /*
@@ -55,6 +56,7 @@ afterEach(async () => {
     await cdp().send("Emulation.setEmulatedMedia", { features: [] });
   }
   worker.resetHandlers();
+  deploymentPropertyQueryClient.clear();
   // The browser origin — and therefore localStorage/sessionStorage — is shared
   // across every spec file. Clear it after each test so state written by one
   // test cannot leak into a later test or file (the jsdom setup in setup.ts

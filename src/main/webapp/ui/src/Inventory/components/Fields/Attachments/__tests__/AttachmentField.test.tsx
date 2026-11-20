@@ -4,7 +4,10 @@ import { render } from "@testing-library/react";
 import type React from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import FileField from "../../../../../components/Inputs/FileField";
-import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
+import {
+  deploymentPropertyQueryClient,
+  deploymentPropertyQueryKeys,
+} from "../../../../../hooks/api/deploymentPropertyQueryClient";
 import type { Attachment } from "../../../../../stores/definitions/Attachment";
 import { containerAttrs } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
@@ -22,12 +25,10 @@ vi.mock("../../../../../components/Inputs/FileField", () => ({
 vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
 }));
-const renderWithDeploymentProperties = (ui: React.ReactElement) =>
-  render(
-    <DeploymentPropertyContext.Provider value={new Map([["chemistry.provider", ""]])}>
-      {ui}
-    </DeploymentPropertyContext.Provider>,
-  );
+const renderWithDeploymentProperties = (ui: React.ReactElement) => {
+  deploymentPropertyQueryClient.setQueryData(deploymentPropertyQueryKeys.property("chemistry.provider"), "");
+  return render(ui);
+};
 const expectLabel = (text: string) => (container: HTMLElement) => expect(container).toMatchTextContent(text);
 const expectTextField = (value: string) => () =>
   expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), undefined);

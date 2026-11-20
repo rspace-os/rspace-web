@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import type React from "react";
-import { describe, expect, test } from "vitest";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { beforeEach, describe, expect, test } from "vitest";
+import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "@/hooks/api/deploymentPropertyQueryClient";
 import { galleryFile } from "../components/VersionHistoryDialog.story";
 import { HistoricalGalleryFile } from "../historicalGalleryFile";
 import usePrimaryAction from "../primaryActionHooks";
@@ -19,21 +19,21 @@ import { OfficeOnlineContext } from "../useOfficeOnline";
  */
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <DeploymentPropertyContext.Provider
-      value={
-        new Map<string, unknown>([
-          ["collabora.wopi.enabled", true],
-          ["msoffice.wopi.enabled", true],
-          ["snapgene.available", "ALLOWED"],
-        ])
-      }
-    >
-      <CollaboraContext.Provider value={{ supportedExts: new Set(["docx"]) }}>
-        <OfficeOnlineContext.Provider value={{ supportedExts: new Set() }}>{children}</OfficeOnlineContext.Provider>
-      </CollaboraContext.Provider>
-    </DeploymentPropertyContext.Provider>
+    <CollaboraContext.Provider value={{ supportedExts: new Set(["docx"]) }}>
+      <OfficeOnlineContext.Provider value={{ supportedExts: new Set() }}>{children}</OfficeOnlineContext.Provider>
+    </CollaboraContext.Provider>
   );
 }
+
+beforeEach(() => {
+  for (const [name, value] of [
+    ["collabora.wopi.enabled", true],
+    ["msoffice.wopi.enabled", true],
+    ["snapgene.available", "ALLOWED"],
+  ] as const) {
+    deploymentPropertyQueryClient.setQueryData(deploymentPropertyQueryKeys.property(name), value);
+  }
+});
 
 const primaryActionFor = (file: GalleryFile) => renderHook(() => usePrimaryAction(), { wrapper }).result.current(file);
 
