@@ -206,7 +206,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -240,7 +240,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+          "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "incrementUnit", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -372,7 +372,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target" ],
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -406,7 +406,7 @@
         },
         "style" : "deepObject",
         "x-rspace-allowed-fields" : {
-          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target" ],
+          "bookings" : [ "id", "version", "timezone", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "requester", "target", "location" ],
           "containers" : [ "id", "globalId", "name", "containerType", "deleted" ],
           "instruments" : [ "id", "name", "globalId", "deleted", "parentContainer" ],
           "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
@@ -1772,6 +1772,20 @@
         "required" : [ "docs", "page", "limit", "hasNextPage", "totalDocs", "totalIsLowerBound" ],
         "type" : "object"
       },
+      "BookingCatalogueAvailabilityCounts" : {
+        "properties" : {
+          "availableNow" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "freeLaterToday" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "availableNow", "freeLaterToday" ],
+        "type" : "object"
+      },
       "BookingCatalogueCapability" : {
         "enum" : [ "CREATE_BOOKING", "CREATE_BLOCKOUT" ],
         "type" : "string"
@@ -2336,6 +2350,26 @@
               "$ref" : "#/components/x-rspace-access-policies/Authenticated"
             },
             "x-rspace-read-guaranteed" : true
+          },
+          "location" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/ContainersRelationship"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Filter-only: the bookable item's immediate Inventory parent Container or workbench, matched only where the caller may read it. Address a workbench as IC plus its ID. Responses render null; the booking catalogue returns each item's readable location.",
+            "readOnly" : true,
+            "title" : "Location",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "containers" : {
+                  "$ref" : "#/components/schemas/ContainersRead"
+                }
+              }
+            }
           },
           "maxBookingDurationMinutes" : {
             "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
@@ -3377,6 +3411,26 @@
             },
             "x-rspace-read-guaranteed" : true
           },
+          "location" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/ContainersRelationship"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID.",
+            "readOnly" : true,
+            "title" : "Location",
+            "x-rspace-access" : {
+              "$ref" : "#/components/x-rspace-access-policies/Authenticated"
+            },
+            "x-rspace-relationship" : {
+              "targets" : {
+                "containers" : {
+                  "$ref" : "#/components/schemas/ContainersRead"
+                }
+              }
+            }
+          },
           "privacy" : {
             "readOnly" : true,
             "type" : "string",
@@ -3601,6 +3655,40 @@
         },
         "required" : [ "relationTo", "value" ],
         "type" : "object"
+      },
+      "ContainersRelationship" : {
+        "oneOf" : [ {
+          "allOf" : [ {
+            "$ref" : "#/components/schemas/ContainersReference"
+          }, {
+            "properties" : {
+              "globalId" : {
+                "example" : "IC1",
+                "pattern" : "^IC\\d+$",
+                "type" : "string"
+              }
+            },
+            "required" : [ "globalId" ],
+            "type" : "object"
+          } ]
+        }, {
+          "properties" : {
+            "globalId" : {
+              "example" : "IC1",
+              "pattern" : "^IC\\d+$",
+              "type" : "string"
+            },
+            "relationTo" : {
+              "const" : "containers",
+              "type" : "string"
+            },
+            "value" : {
+              "$ref" : "#/components/schemas/ContainersRead"
+            }
+          },
+          "required" : [ "globalId", "relationTo", "value" ],
+          "type" : "object"
+        } ]
       },
       "DeclaredBookingOpeningHoursEntry" : {
         "additionalProperties" : false,
@@ -4770,6 +4858,70 @@
             },
             "wildcards" : false
           },
+          "location" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "picker" : {
+              "globalIdPrefix" : "IC",
+              "identity" : "globalId",
+              "resource" : "containers"
+            },
+            "schema" : {
+              "description" : "RSpace global identifier.",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "location.containerType" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.deleted" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.globalId" : {
+            "operators" : [ ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.name" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : true
+          },
+          "location.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "wildcards" : false
+          },
           "maxBookingDurationMinutes" : {
             "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
             "schema" : {
@@ -4973,6 +5125,70 @@
             "schema" : {
               "enum" : [ "BOOKING", "MAINTENANCE" ],
               "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "location" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "picker" : {
+              "globalIdPrefix" : "IC",
+              "identity" : "globalId",
+              "resource" : "containers"
+            },
+            "schema" : {
+              "description" : "RSpace global identifier.",
+              "type" : "string"
+            },
+            "wildcards" : false
+          },
+          "location.containerType" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "enum" : [ "LIST", "GRID", "IMAGE", "WORKBENCH" ],
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.deleted" : {
+            "operators" : [ "==" ],
+            "schema" : {
+              "type" : "boolean"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.globalId" : {
+            "operators" : [ ],
+            "schema" : {
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.id" : {
+            "operators" : [ "==", "=in=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : false
+          },
+          "location.name" : {
+            "operators" : [ "==", "=contains=", "=in=", "=like=" ],
+            "schema" : {
+              "maxLength" : 255,
+              "type" : "string"
+            },
+            "viaTitle" : "Location",
+            "wildcards" : true
+          },
+          "location.value" : {
+            "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
             },
             "wildcards" : false
           },
@@ -5594,6 +5810,39 @@
           }
         }, {
           "in" : "query",
+          "name" : "availability",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "now",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : true,
           "schema" : {
@@ -5642,6 +5891,109 @@
           "bearerAuth" : [ ]
         } ],
         "summary" : "Search the Booking catalogue",
+        "tags" : [ "booking-catalogue" ],
+        "x-rspace-operation" : "CUSTOM"
+      }
+    },
+    "/api/v2/booking-catalogue/availability-counts" : {
+      "get" : {
+        "operationId" : "countBookingCatalogueAvailability",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "target",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "RSQL item filters, including targetOwner==me (equality only, outside OR groups). The effective subject is resolved on every request.",
+          "in" : "query",
+          "name" : "where",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "type",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "location",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "in" : "query",
+          "name" : "capability",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/components/schemas/BookingCatalogueCapability"
+          }
+        }, {
+          "description" : "Inclusive interval start.",
+          "in" : "query",
+          "name" : "start",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Exclusive interval end.",
+          "in" : "query",
+          "name" : "end",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "now",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCatalogueAvailabilityCounts"
+                }
+              }
+            },
+            "description" : "Successful response."
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Count bookable items by current availability",
         "tags" : [ "booking-catalogue" ],
         "x-rspace-operation" : "CUSTOM"
       }
@@ -5758,6 +6110,17 @@
           "explode" : true,
           "in" : "query",
           "name" : "type",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "explode" : true,
+          "in" : "query",
+          "name" : "globalId",
           "required" : false,
           "schema" : {
             "items" : {

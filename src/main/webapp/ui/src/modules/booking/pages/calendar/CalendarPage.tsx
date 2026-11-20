@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { ResourceScheduleSkeleton } from "@/modules/booking/pages/calendar/CalendarResourceSchedule";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { ResourceScheduleSkeleton } from "./BookingEventsCalendar";
 import { CalendarContent } from "./CalendarContent";
 
 export default function CalendarPage() {
