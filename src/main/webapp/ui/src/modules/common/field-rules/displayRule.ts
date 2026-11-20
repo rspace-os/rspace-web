@@ -182,6 +182,14 @@ export function createDisplayRule(
   return v.parse(FieldDisplayRuleSchema, { sourceFieldKey, operator, values: [...values] });
 }
 
+/** Whether two rules, or two absent rules, are the same condition, whatever the order of their values. */
+export function sameDisplayRule(a: FieldDisplayRule | null, b: FieldDisplayRule | null): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.sourceFieldKey !== b.sourceFieldKey || a.operator !== b.operator) return false;
+  const values = new Set(a.values);
+  return a.values.length === b.values.length && b.values.every((value) => values.has(value));
+}
+
 /** The rule as stored JSON, via `JSON.stringify`; the same JSON value the Java side writes (`values` omitted when empty). */
 export function serializeDisplayRule(rule: FieldDisplayRule): string {
   return JSON.stringify({

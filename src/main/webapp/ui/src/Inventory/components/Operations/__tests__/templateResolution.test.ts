@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createDisplayRule } from "@/modules/common/field-rules/displayRule";
 import {
   initialTemplateSelection,
   resolveTemplateId,
@@ -192,5 +193,59 @@ describe("templateStepValid", () => {
   it("holds fromSample to the same id rule as pick", () => {
     expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(false);
     expect(templateStepValid({ mode: "fromSample", templateId: 9 })).toBe(true);
+  });
+});
+
+describe("templateBlockReason with a number source", () => {
+  const WEIGHT_KEY = "6f1c2e0a-0000-4000-8000-000000000011";
+  const template = (weight: unknown) => ({
+    fields: [
+      { name: "Weight", mandatory: false, type: "number", content: weight, fieldKey: WEIGHT_KEY },
+      {
+        name: "Heavy goods permit",
+        mandatory: true,
+        type: "string",
+        content: "",
+        displayRule: createDisplayRule(WEIGHT_KEY, "GREATER_THAN", ["2"]),
+      },
+    ],
+  });
+
+  it("needs a mandatory field only while the template's default number shows it", () => {
+    // loaded defaults are numbers, compared through String(content)
+    expect(templateBlockReason(template(4), "en-US").blocked).toBe(true);
+    expect(templateBlockReason(template(1), "en-US").blocked).toBe(false);
+  });
+});
+
+describe("templateBlockReason with display rules", () => {
+  const GMO_KEY = "6f1c2e0a-0000-4000-8000-000000000001";
+  const template = (defaultAnswer: Array<string>) => ({
+    fields: [
+      {
+        name: "Is this a GMO?",
+        mandatory: false,
+        type: "radio",
+        options: [{ value: "Yes" }, { value: "No" }],
+        selectedOptions: defaultAnswer,
+        fieldKey: GMO_KEY,
+      },
+      {
+        name: "GMO permit",
+        mandatory: true,
+        type: "string",
+        content: "",
+        fieldKey: "6f1c2e0a-0000-4000-8000-000000000002",
+        displayRule: createDisplayRule(GMO_KEY, "IS_ANY_OF", ["Yes"]),
+      },
+    ],
+  });
+
+  it("ignores a mandatory field that the template's defaults hide", () => {
+    expect(templateBlockReason(template(["No"]), "en-US").blocked).toBe(false);
+  });
+
+  it("blocks on a mandatory field that the template's defaults show", () => {
+    expect(templateBlockReason(template(["Yes"]), "en-US")).toMatchObject({ blocked: true, fields: "GMO permit" });
   });
 });

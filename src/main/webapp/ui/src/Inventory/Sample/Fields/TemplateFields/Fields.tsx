@@ -14,9 +14,10 @@ import UriField from "../../../../components/Inputs/UriField";
 import type { GalleryFile } from "../../../../eln/gallery/useGalleryListing";
 import type { Field } from "../../../../stores/definitions/Field";
 import type { Sample } from "../../../../stores/definitions/Sample";
-import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import type InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
+import { dateContent, isInvalidUri } from "../../../components/Fields/templateFieldValues";
+import useShownTemplateFields from "../../../components/Fields/useShownTemplateFields";
 import FormField from "../../../components/Inputs/FormField";
 import LinkFieldValue from "./LinkFieldValue";
 
@@ -26,19 +27,26 @@ type FieldsArgs = {
   sample: Sample & InventoryBaseRecord;
 };
 
-function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
+function Fields({ onErrorStateChange: reportErrorState, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  return (sample.fields ?? []).map((field: Field) => {
+  const { renderedFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
+    sample,
+    reportErrorState,
+  );
+  const renderField = (field: Field) => {
+    // a field the values hide is on screen only while it holds focus, and is not checked
+    const checked = !hiddenByValues(field);
+    const mandatory = checked && field.mandatory;
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
       label: field.name,
-      error: (field.mandatory && !field.hasContent) || field.error,
-      helperText: field.mandatory
+      error: checked && ((field.mandatory && !field.hasContent) || field.error),
+      helperText: mandatory
         ? "This field is mandatory. Please enter a value."
-        : field.error
+        : checked && field.error
           ? "Invalid value. Please enter a valid value."
           : "",
-      required: field.mandatory,
+      required: mandatory,
     };
 
     if (field.type === "attachment") {
@@ -120,9 +128,8 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
             <DateField
               {...props}
               onChange={({ target }) => {
-                field.setAttributesDirty({
-                  content: target.value ? truncateIsoTimestamp(target.value, "date").orElse("NaN-NaN-NaN") : null,
-                });
+                field.setAttributesDirty({ content: dateContent(target) });
+                field.setError(!target.valid);
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
@@ -255,7 +262,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(target.value ? Number.isNaN(Number(target.value)) : false);
+                field.setError(!target.valid);
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
@@ -278,7 +285,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(false); // URIs are strings, so isNaN is not the right validation
+                field.setError(isInvalidUri(target.value));
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
@@ -313,7 +320,14 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     return <Box key={field.name}>{t("sample.fields.unknownFieldType", { type: field.type })}</Box>;
-  });
+  };
+  const rendered = renderedFields.map((field) => wrapField(field, renderField(field)));
+  return (
+    <>
+      {rendered}
+      {announcer}
+    </>
+  );
 }
 
 export default observer(Fields);

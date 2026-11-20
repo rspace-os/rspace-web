@@ -1,0 +1,236 @@
+{
+  "description": "Values of an Inventory URI field and whether the server accepts them (InventoryUriField.validate, which parses with new java.net.URI(value)). Run by InventoryUriFieldCasesTest (Java) and javaUri.test.ts (TypeScript), so the client's check stays in step with Java.",
+  "cases": [
+    {
+      "value": "",
+      "accepted": true,
+      "note": "blank, which is not checked"
+    },
+    {
+      "value": "   ",
+      "accepted": true,
+      "note": "blank, which is not checked"
+    },
+    {
+      "value": "\u3000",
+      "accepted": true,
+      "note": "blank to Java's Character.isWhitespace"
+    },
+    {
+      "value": "https://lab.example.org/lsm980",
+      "accepted": true
+    },
+    {
+      "value": "https://lab.example.org/search?q=a+b&lang=en#results",
+      "accepted": true
+    },
+    {
+      "value": "http://example.org/?a[]=1",
+      "accepted": true,
+      "note": "brackets are allowed in a query"
+    },
+    {
+      "value": "manuals/lsm980.pdf",
+      "accepted": true,
+      "note": "relative reference"
+    },
+    {
+      "value": "/manuals/lsm980.pdf",
+      "accepted": true,
+      "note": "relative reference"
+    },
+    {
+      "value": "../lsm980",
+      "accepted": true,
+      "note": "relative reference"
+    },
+    {
+      "value": "?q=1",
+      "accepted": true,
+      "note": "relative reference"
+    },
+    {
+      "value": "#section",
+      "accepted": true,
+      "note": "fragment only"
+    },
+    {
+      "value": "//cdn.example.org/a",
+      "accepted": true,
+      "note": "network-path reference"
+    },
+    {
+      "value": "urn:isbn:0-486-27557-4",
+      "accepted": true,
+      "note": "opaque"
+    },
+    {
+      "value": "mailto:lab@example.org",
+      "accepted": true,
+      "note": "opaque"
+    },
+    {
+      "value": "doi:10.1000/182",
+      "accepted": true,
+      "note": "opaque"
+    },
+    {
+      "value": "file:///srv/manual.pdf",
+      "accepted": true,
+      "note": "empty authority before a path"
+    },
+    {
+      "value": "ftp://user:pass@ftp.example.org:21/pub",
+      "accepted": true
+    },
+    {
+      "value": "http://host:abc/",
+      "accepted": true,
+      "note": "a port that is not a number makes a registry-based authority"
+    },
+    {
+      "value": "https://lab.example.org/%41",
+      "accepted": true
+    },
+    {
+      "value": "http://#top",
+      "accepted": true,
+      "note": "empty authority before a fragment"
+    },
+    {
+      "value": "http://ex\u00e4mple.org/\u00fc",
+      "accepted": true,
+      "note": "other characters outside US-ASCII"
+    },
+    {
+      "value": "http://[::1]:8080/",
+      "accepted": true
+    },
+    {
+      "value": "http://[::ffff:192.0.2.1]/",
+      "accepted": true,
+      "note": "IPv4 ending an IPv6 address"
+    },
+    {
+      "value": "http://u@[::1]:2147483647/",
+      "accepted": true,
+      "note": "largest port"
+    },
+    {
+      "value": "http://[fe80::1%eth0]/",
+      "accepted": true,
+      "note": "IPv6 scope id"
+    },
+    {
+      "value": "http://[fe80::1%eth_0]/",
+      "accepted": true,
+      "note": "IPv6 scope id with an underscore"
+    },
+    {
+      "value": "http://[fe80::1%eth0.100]/",
+      "accepted": true,
+      "note": "IPv6 scope id with a dot"
+    },
+    {
+      "value": "a b",
+      "accepted": false,
+      "note": "space"
+    },
+    {
+      "value": "https://lab.example.org/lsm 980",
+      "accepted": false,
+      "note": "space"
+    },
+    {
+      "value": " https://lab.example.org/lsm980",
+      "accepted": false,
+      "note": "leading space"
+    },
+    {
+      "value": "https://lab.example.org/a|b",
+      "accepted": false
+    },
+    {
+      "value": "http://example.org/a^b",
+      "accepted": false
+    },
+    {
+      "value": "http://example.org/<tag>",
+      "accepted": false
+    },
+    {
+      "value": "http://example.org/\"quoted\"",
+      "accepted": false
+    },
+    {
+      "value": "http://example.org/a[b]",
+      "accepted": false,
+      "note": "brackets are not allowed in a path"
+    },
+    {
+      "value": "https://lab.example.org/%zz",
+      "accepted": false,
+      "note": "malformed escape"
+    },
+    {
+      "value": "a#b#c",
+      "accepted": false,
+      "note": "two fragments"
+    },
+    {
+      "value": "1abc:def",
+      "accepted": false,
+      "note": "scheme starting with a digit"
+    },
+    {
+      "value": ":foo",
+      "accepted": false,
+      "note": "empty scheme"
+    },
+    {
+      "value": "mailto:",
+      "accepted": false,
+      "note": "empty scheme-specific part"
+    },
+    {
+      "value": "http://",
+      "accepted": false,
+      "note": "empty authority with nothing after it"
+    },
+    {
+      "value": "C:\\manuals",
+      "accepted": false,
+      "note": "backslash"
+    },
+    {
+      "value": "x\u00a0y",
+      "accepted": false,
+      "note": "no-break space is a space character to Java"
+    },
+    {
+      "value": "x\u3000y",
+      "accepted": false,
+      "note": "ideographic space"
+    },
+    {
+      "value": "http://[::1",
+      "accepted": false,
+      "note": "unclosed IPv6 bracket"
+    },
+    {
+      "value": "http://[1::2::3]/",
+      "accepted": false,
+      "note": "two double colons"
+    },
+    {
+      "value": "http://[::1]:99999999999/",
+      "accepted": false,
+      "note": "port beyond an int"
+    },
+    {
+      "value": "http://[fe80::1%eth-0]/",
+      "accepted": false,
+      "note": "IPv6 scope id with a hyphen"
+    }
+  ]
+}

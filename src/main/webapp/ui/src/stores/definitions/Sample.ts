@@ -28,5 +28,18 @@ export interface Sample extends InventoryRecord {
    */
   readonly enforceMandatoryFields: boolean;
 
+  /**
+   * Whether a display rule hides the field given the current values. A hidden
+   * field keeps its value but is not shown and not validated.
+   */
+  isFieldHidden?(field: Field): boolean;
+
+  /**
+   * Whether a mandatory field must hold a value; mandatory fields that the
+   * record exempts, such as an instrument's blank Landing page, need not.
+   * Records that do not implement it require every mandatory field.
+   */
+  requiresValue?(field: Field): boolean;
+
   subSamplesCount: number;
 }
