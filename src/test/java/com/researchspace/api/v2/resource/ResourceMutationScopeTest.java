@@ -35,50 +35,62 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 class ResourceMutationScopeTest {
-  @ParameterizedTest
-  @CsvSource({
-    "true,true,true",
-    "true,true,false",
-    "true,false,true",
-    "true,false,false",
-    "false,true,true",
-    "false,true,false",
-    "false,false,true",
-    "false,false,false"
-  })
+  static Stream<Arguments> cases() {
+    return Stream.of(versionedTarget(), unversionedTarget())
+        .flatMap(
+            target ->
+                Stream.of(
+                    Arguments.of(target, true, true),
+                    Arguments.of(target, true, false),
+                    Arguments.of(target, false, true),
+                    Arguments.of(target, false, false)));
+  }
+
+  @ParameterizedTest(name = "{0}, delete={1}, visible={2}")
+  @MethodSource("cases")
   void checksAuthorizedScopeInsideMutationBoundary(
-      boolean versioned, boolean delete, boolean visible) {
-    if (versioned) {
-      check(
-          scopeDescription(),
-          Long::valueOf,
-          7L,
-          "enabled",
-          new MutationPolicy(
-              VersionPolicy.required(
-                  "configurationVersion",
-                  "errors.api.v2.bookingConfiguration.ifMatchRequired",
-                  ResourceOperation.UPDATE,
-                  ResourceOperation.DELETE),
-              DeletePolicy.SOFT.withPermanentOption(),
-              IdempotencyPolicy.NONE),
-          delete,
-          visible);
-    } else {
-      check(
-          scopeDescription(),
-          Long::valueOf,
-          7L,
-          "enabled",
-          MutationPolicy.DEFAULT,
-          delete,
-          visible);
-    }
+      Target<?, ?> target, boolean delete, boolean visible) {
+    check(target, delete, visible);
+  }
+
+  /** A collection under test, with the id and writable field the mutation targets. */
+  private record Target<T, ID>(
+      CollectionDescription<T> source,
+      Function<String, ID> parser,
+      ID id,
+      String field,
+      MutationPolicy policy) {}
+
+  private static Named<Target<?, ?>> versionedTarget() {
+    return Named.of(
+        "versioned collection",
+        new Target<>(
+            scopeDescription(),
+            Long::valueOf,
+            7L,
+            "enabled",
+            new MutationPolicy(
+                VersionPolicy.required(
+                    "configurationVersion",
+                    "errors.api.v2.bookingConfiguration.ifMatchRequired",
+                    ResourceOperation.UPDATE,
+                    ResourceOperation.DELETE),
+                DeletePolicy.SOFT.withPermanentOption(),
+                IdempotencyPolicy.NONE)));
+  }
+
+  private static Named<Target<?, ?>> unversionedTarget() {
+    return Named.of(
+        "unversioned collection",
+        new Target<>(scopeDescription(), Long::valueOf, 7L, "enabled", MutationPolicy.DEFAULT));
   }
 
   private static CollectionDescription<ScopeFixture> scopeDescription() {
@@ -104,14 +116,10 @@ class ResourceMutationScopeTest {
 
   private record ScopeFixture(Long id, Long version, Boolean enabled) {}
 
-  private <T, ID> void check(
-      CollectionDescription<T> source,
-      Function<String, ID> parser,
-      ID id,
-      String field,
-      MutationPolicy policy,
-      boolean delete,
-      boolean visible) {
+  private <T, ID> void check(Target<T, ID> target, boolean delete, boolean visible) {
+    CollectionDescription<T> source = target.source();
+    ID id = target.id();
+    MutationPolicy policy = target.policy();
     var constraint =
         new FilterExpression.Comparison(source.idField(), Operator.NOT_EQUAL, List.of(id), false);
     AccessFunction scoped =
@@ -158,7 +166,7 @@ class ResourceMutationScopeTest {
       }
     }
     var spec =
-        ApiV2ResourceSpec.builder(description, operations, parser)
+        ApiV2ResourceSpec.builder(description, operations, target.parser())
             .mutationErrors("create", "update")
             .mutationPolicy(policy)
             .build();
@@ -169,6 +177,8 @@ class ResourceMutationScopeTest {
             ApiV2RelationshipResolver.unavailable(),
             ignored -> List.of(),
             boundary);
+    // A visible item reaches the write, whose stubbed empty result is also a 404; the verify calls
+    // below tell the two cases apart.
     if (delete) {
       assertThrows(
           NotFoundException.class,
@@ -180,7 +190,7 @@ class ResourceMutationScopeTest {
           () ->
               registration.update(
                   id.toString(),
-                  new ObjectMapper().createObjectNode().put(field, true),
+                  new ObjectMapper().createObjectNode().put(target.field(), true),
                   policy.version().field().isPresent() ? 0L : null,
                   caller));
       verify(operations, visible ? times(1) : never()).update(eq(id), any(), any(), same(caller));
