@@ -2,19 +2,24 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.axiope.search.InventorySearchConfig.InventorySearchType;
+import com.axiope.search.SearchUtils;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.IntStream;
 import org.hibernate.stat.Statistics;
@@ -47,6 +52,84 @@ class InventoryCollectionFetchTest extends SpringTransactionalTest {
             () ->
                 containerApiMgr.searchForContentOfContainer(
                     large.getId(), null, null, page, user)));
+  }
+
+  @Test
+  void containerPageHydratesOnlyReturnedOccupants() {
+    ApiContainer container = createContainerWithIndependentSamples(8);
+    var page = PaginationCriteria.createDefaultForClass(InventoryRecord.class);
+    page.setResultsPerPage(1);
+    flushDatabaseState();
+    clearSessionAndEvictAll();
+    Statistics statistics = sessionFactory.getStatistics();
+    boolean enabled = statistics.isStatisticsEnabled();
+    statistics.setStatisticsEnabled(true);
+    try {
+      var subsamples = statistics.getEntityStatistics(SubSample.class.getName());
+      long before = subsamples.getLoadCount();
+      long queriesBefore = occupantQueryExecutions(statistics);
+      var result =
+          containerApiMgr.searchForContentOfContainer(container.getId(), null, null, page, user);
+      assertEquals(8L, result.getTotalHits());
+      assertEquals(1, result.getRecords().size());
+      assertEquals(1L, subsamples.getLoadCount() - before);
+      assertEquals(1L, occupantQueryExecutions(statistics) - queriesBefore);
+    } finally {
+      statistics.setStatisticsEnabled(enabled);
+    }
+  }
+
+  private long occupantQueryExecutions(Statistics statistics) {
+    return Arrays.stream(statistics.getQueries())
+        .filter(query -> query.contains("from ContainerLocation location"))
+        .mapToLong(query -> statistics.getQueryStatistics(query).getExecutionCount())
+        .sum();
+  }
+
+  @Test
+  void containerPageKeepsLexicalOrderAndLocationTies() {
+    ApiContainer container = createBasicContainerForUser(user);
+    var first = addChild(container, "Tube.9", "First sample");
+    var second = addChild(container, "Tube.10", "Second sample");
+    var third = addChild(container, "tube.9", "Third sample");
+    moveContainerIntoListContainer(
+        createBasicContainerForUser(user).getId(), container.getId(), user);
+    flushDatabaseState();
+    clearSessionAndEvictAll();
+
+    var page = PaginationCriteria.createDefaultForClass(InventoryRecord.class);
+    page.setOrderBy(SearchUtils.ORDER_BY_NAME);
+    page.setSortOrder(SortOrder.ASC);
+    page.setPageNumber(99L);
+    var result =
+        containerApiMgr.searchForContentOfContainer(
+            container.getId(), user.getUsername(), InventorySearchType.SUBSAMPLE, page, user);
+    assertEquals(3L, result.getTotalHits());
+    assertEquals(99, result.getPageNumber());
+    assertEquals(
+        List.of(second, first, third), result.getRecords().stream().map(r -> r.getId()).toList());
+
+    page.setSortOrder(SortOrder.DESC);
+    result =
+        containerApiMgr.searchForContentOfContainer(
+            container.getId(), null, InventorySearchType.SUBSAMPLE, page, user);
+    assertEquals(
+        List.of(third, first, second), result.getRecords().stream().map(r -> r.getId()).toList());
+    assertEquals(
+        0L,
+        containerApiMgr
+            .searchForContentOfContainer(
+                container.getId(), user.getUsername().toUpperCase(Locale.ROOT), null, page, user)
+            .getTotalHits());
+  }
+
+  private Long addChild(ApiContainer container, String childName, String sampleName) {
+    ApiSubSample child = new ApiSubSample(childName);
+    child.setParentContainer(container);
+    return createBasicSampleWithSubsampleForUser(child, sampleName, null, user)
+        .getSubSamples()
+        .get(0)
+        .getId();
   }
 
   @Test

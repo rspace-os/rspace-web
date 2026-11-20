@@ -2,7 +2,7 @@ package com.axiope.search;
 
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.InventorySortFields;
 import com.researchspace.model.record.BaseRecord;
 import java.util.Collections;
 import java.util.List;
@@ -66,7 +66,7 @@ public class SearchUtils {
     return list;
   }
 
-  public static <T extends InventoryRecord> List<T> sortInventoryList(
+  public static <T extends InventorySortFields> List<T> sortInventoryList(
       List<T> list, PaginationCriteria<?> paginationCriteria) {
 
     if (paginationCriteria != null) {
@@ -74,17 +74,15 @@ public class SearchUtils {
       SortOrder sortOrder = paginationCriteria.getSortOrder();
       if (orderBy != null && sortOrder != null) {
         if (orderBy.equalsIgnoreCase(ORDER_BY_NAME)) {
-          list.sort(InventoryRecord.NAME_COMPARATOR);
+          list.sort(InventorySortFields.BY_NAME);
         } else if (orderBy.equalsIgnoreCase(ORDER_BY_TYPE)) {
-          list.sort(InventoryRecord.TYPE_COMPARATOR.thenComparing(InventoryRecord.NAME_COMPARATOR));
+          list.sort(InventorySortFields.BY_TYPE.thenComparing(InventorySortFields.BY_NAME));
         } else if (orderBy.equalsIgnoreCase(ORDER_BY_GLOBAL_ID)) {
-          list.sort(
-              InventoryRecord.GLOBAL_ID_PREFIX_COMPARATOR.thenComparing(
-                  InventoryRecord.ID_COMPARATOR));
+          list.sort(InventorySortFields.BY_TYPE.thenComparing(InventorySortFields.BY_ID));
         } else if (orderBy.equalsIgnoreCase(ORDER_BY_CREATION_DATE)) {
-          list.sort(InventoryRecord.CREATION_DATE_COMPARATOR);
+          list.sort(InventorySortFields.BY_CREATED);
         } else if (orderBy.equalsIgnoreCase(ORDER_BY_MODIFICATION_DATE)) {
-          list.sort(InventoryRecord.MODIFICATION_DATE_COMPARATOR);
+          list.sort(InventorySortFields.BY_MODIFIED);
         }
         if (sortOrder == SortOrder.DESC) {
           Collections.reverse(list);

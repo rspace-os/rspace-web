@@ -2,15 +2,18 @@ package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.InventorySearchConfig.InventorySearchType;
+import com.axiope.search.SearchUtils;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
+import com.researchspace.dao.ContainerDao.ContainerOccupant;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -23,7 +26,6 @@ import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.record.IActiveUserStrategy;
@@ -31,12 +33,12 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import com.researchspace.service.inventory.InventoryRecordRetriever;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   public static final String CONTAINER_DEFAULT_NAME = "Generic Container";
 
   @Autowired private InventoryMoveHelper moveHelper;
+  @Autowired private InventoryRecordRetriever invRecRetriever;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Override
@@ -233,25 +236,24 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
       return ApiInventorySearchResult.emptyResult();
     }
 
-    List<InventoryRecord> children = new ArrayList<InventoryRecord>();
-    for (ContainerLocation location : container.getLocations()) {
-      if (location.getStoredRecord() != null) {
-        children.add(location.getStoredRecord());
-      }
-    }
+    List<ContainerOccupant> occupants = containerDao.getOccupants(containerId);
     if (searchType != null && searchType != InventorySearchType.ALL) {
-      children =
-          children.stream()
-              .filter(ir -> ir.getType().equals(InventoryRecordType.valueOf(searchType.toString())))
-              .collect(Collectors.toList());
+      InventoryRecordType type = InventoryRecordType.valueOf(searchType.toString());
+      occupants.removeIf(occupant -> occupant.getType() != type);
     }
     if (StringUtils.isNotBlank(ownedBy)) {
-      children =
-          children.stream()
-              .filter(ir -> ir.getOwner().getUsername().equals(ownedBy))
-              .collect(Collectors.toList());
+      occupants.removeIf(occupant -> !ownedBy.equals(occupant.ownerUsername()));
     }
-    return sortRepaginateConvertToApiInventorySearchResult(pgCrit, children, user);
+    SearchUtils.sortInventoryList(occupants, pgCrit);
+    int pageNumber = pgCrit.getPageNumber().intValue();
+    List<InventoryRecord> page =
+        SearchUtils.repaginateResults(occupants, pgCrit.getResultsPerPage(), pageNumber).stream()
+            .map(
+                occupant ->
+                    invRecRetriever.getInvRecForIdAndType(
+                        occupant.id(), ApiInventoryRecordType.valueOf(occupant.type())))
+            .toList();
+    return convertToApiInventorySearchResult((long) occupants.size(), pageNumber, page, user);
   }
 
   @Override
