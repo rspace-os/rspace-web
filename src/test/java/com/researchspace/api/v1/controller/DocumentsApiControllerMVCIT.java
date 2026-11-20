@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -36,7 +38,6 @@ import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.EcatAudio;
-import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EditStatus;
@@ -53,17 +54,19 @@ import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
@@ -924,26 +927,48 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    EcatChemistryFile chemistryFile = addChemistryFileToGallery("Aminoglutethimide.mol", anyUser);
-    // basic doc with field provided, but content pointing to unaccessible attachment
+    String fileName = "reaction.cdxml";
+    MockMultipartFile file;
+    try (InputStream content = getTestResourceFileStream(fileName)) {
+      file = new MockMultipartFile("file", fileName, MediaType.APPLICATION_XML_VALUE, content);
+    }
+    MvcResult upload =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/files")).file(file).header("apiKey", apiKey))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiFile chemistryFile = getFromJsonResponseBody(upload, ApiFile.class);
     String json =
         String.format(
             "{ \"fields\" : [ { \"content\": \"my attachment <fileId=%d>\" } ] }",
             chemistryFile.getId());
     MvcResult result =
-        this.mockMvc
+        mockMvc
             .perform(createBuilderForPostWithJSONBody(apiKey, "/documents", anyUser, json))
+            .andExpect(status().isCreated())
             .andReturn();
     ApiDocument created = getFromJsonResponseBody(result, ApiDocument.class);
-    assertNotNull(created.getId());
-    assertThat(created.getFields()).hasSize(1);
-    String actual = created.getFields().get(0).getContent();
-    Document doc = Jsoup.parse(actual);
-    Elements elements = doc.select("img.chem");
-    assertThat(elements)
-        .as("unexpected number of chem replacements, actual content: \n" + actual)
-        .hasSize(1);
-    assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
+    MvcResult reopened =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/documents/{id}", anyUser, created.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiDocument document = getFromJsonResponseBody(reopened, ApiDocument.class);
+    String actual = document.getFields().get(0).getContent();
+    Elements elements = Jsoup.parse(actual).select("img.chem");
+    assertThat(elements).as("chemistry attachment in document content: %s", actual).hasSize(1);
+    Element chemical = elements.get(0);
+    assertEquals(chemistryFile.getId().toString(), chemical.attr("data-chemfileid"));
+    mockMvc
+        .perform(
+            get("/chemical/ajax/getInfo")
+                .param("chemId", chemical.id())
+                .principal(createPrincipal(anyUser)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.molecules[0].formula").isNotEmpty());
   }
 
   @Test
