@@ -30,7 +30,6 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
-import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.Folder;
@@ -38,7 +37,6 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
@@ -367,16 +365,6 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     auditMgr.restoreRevisionAsCurrent(linkedRevision, doc.getId());
 
     assertThat(indexedRelPaths(fieldId)).containsExactly("/run.dat");
-  }
-
-  private NfsFileStore savedS3Store(User owner) {
-    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
-    nfsMgr.saveNfsFileSystem(fileSystem);
-    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
-  }
-
-  private String nfsLink(NfsFileStore store, String path) {
-    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   private List<String> indexedRelPaths(Long fieldId) throws Exception {

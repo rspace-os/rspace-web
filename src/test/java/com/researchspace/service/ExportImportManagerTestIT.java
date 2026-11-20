@@ -113,7 +113,6 @@ import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.service.chemistry.DefaultChemistryProvider;
 import com.researchspace.testutils.ArchiveTestUtils;
-import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.SearchTestUtils;
@@ -2287,16 +2286,6 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         doInTransaction(() -> nfsDao.getFieldLinks(imported.getTextFields().get(0).getId()));
     assertThat(rows).hasSize(1);
     assertEquals("/run.dat", rows.get(0).getRelPath());
-  }
-
-  private NfsFileStore savedS3Store(User owner) {
-    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
-    nfsMgr.saveNfsFileSystem(fileSystem);
-    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
-  }
-
-  private String nfsLink(NfsFileStore store, String path) {
-    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   @Test
