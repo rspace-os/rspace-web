@@ -380,6 +380,45 @@ describe("TemplateFields -- a field hidden while its value is invalid", () => {
     expect(instrument.submittable.isOk).toBe(true);
   });
 
+  it("names the nearest question that is shown when the field's own question is hidden too", () => {
+    const CALIBRATED_KEY = "6f1c2e0a-0000-4000-8000-000000000043";
+    const [serviced, report] = shownWhileServiced({});
+    const instrument = makeMockInstrument({
+      fields: [
+        serviced,
+        {
+          ...serviced,
+          id: 2,
+          globalId: "IF2",
+          name: "Calibrated?",
+          columnIndex: 2,
+          fieldKey: CALIBRATED_KEY,
+          displayRule: report.displayRule,
+        },
+        {
+          ...report,
+          id: 3,
+          globalId: "IF3",
+          name: "Calibrated on",
+          type: "date",
+          columnIndex: 3,
+          fieldKey: "6f1c2e0a-0000-4000-8000-000000000044",
+          displayRule: createDisplayRule(CALIBRATED_KEY, "IS_ANY_OF", ["Yes"]),
+        },
+      ],
+    });
+    const [servicedField, calibrated, calibratedOn] = instrument.fields;
+    calibratedOn.setError(true);
+
+    calibrated.setAttributesDirty({ selectedOptions: ["No"] });
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('Change "Calibrated?" to show it')]);
+
+    calibrated.setAttributesDirty({ selectedOptions: ["Yes"] });
+    servicedField.setAttributesDirty({ selectedOptions: ["No"] });
+    expect(instrument.isFieldHidden(calibrated)).toBe(true);
+    expect(saveReasons(instrument)).toEqual([expect.stringContaining('Change "Serviced?" to show it')]);
+  });
+
   it("disables Save with an alert naming the hidden field and its question, until it is shown and corrected", async () => {
     const user = userEvent.setup();
     const instrument = makeMockInstrument({ fields: shownWhileServiced({}) });
