@@ -5750,6 +5750,13 @@
           }
         }, {
           "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : true,
           "schema" : {
@@ -5885,6 +5892,13 @@
           "required" : false,
           "schema" : {
             "$ref" : "#/components/schemas/BookingCatalogueCapability"
+          }
+        }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "in" : "query",
@@ -6028,6 +6042,13 @@
             "$ref" : "#/components/schemas/BookingCatalogueCapability"
           }
         }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "description" : "Inclusive interval start.",
           "in" : "query",
           "name" : "start",
@@ -6119,6 +6140,13 @@
           "required" : false,
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "mine",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "in" : "query",

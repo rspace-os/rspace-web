@@ -91,6 +91,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller) {
@@ -101,6 +102,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         targetTypes,
         locationGlobalIds,
         capability,
+        ownedByCaller,
         null,
         null,
         page,
@@ -116,6 +118,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       Availability availability,
       AvailabilityWindow window,
       int page,
@@ -129,6 +132,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             targetTypes,
             locationGlobalIds,
             capability,
+            ownedByCaller,
             caller,
             null);
     if (scope.isEmpty()) {
@@ -165,6 +169,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       AvailabilityWindow window,
       User caller) {
     Optional<Scope> scope =
@@ -175,6 +180,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             targetTypes,
             locationGlobalIds,
             capability,
+            ownedByCaller,
             caller,
             null);
     Map<Availability, Long> counts = new EnumMap<>(Availability.class);
@@ -197,6 +203,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       ResourceRequest events,
       Instant start,
       Instant end,
+      boolean ownedByCaller,
       int page,
       int limit,
       User caller) {
@@ -210,6 +217,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
             List.of(),
             List.of(),
             null,
+            ownedByCaller,
             caller,
             calendarEvents(events, start, end, query, caller))
         .map(scope -> page(scope, page, limit, caller))
@@ -248,6 +256,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       List<String> targetTypes,
       List<String> locationGlobalIds,
       Capability capability,
+      boolean ownedByCaller,
       User caller,
       Predicate restriction) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
@@ -271,6 +280,9 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
               restriction,
               itemQuery.restriction(
                   caller, true, capability == Capability.CREATE_BLOCKOUT, CONFIGURATION_TARGET));
+    }
+    if (ownedByCaller) {
+      restriction = Predicate.and(restriction, itemQuery.ownedBy(caller, CONFIGURATION_TARGET));
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
