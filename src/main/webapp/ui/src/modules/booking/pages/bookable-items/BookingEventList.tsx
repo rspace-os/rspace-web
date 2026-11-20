@@ -1,0 +1,209 @@
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { Booking } from "@/modules/booking/domain/booking";
+import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { useTableList } from "@/modules/common/table-list/hooks/state";
+import { TableList } from "@/modules/common/table-list/TableList";
+import { Button } from "@/modules/common/ui/button";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { UserBadge } from "@/modules/common/ui/user-badge";
+import { type BookingEventPeriod, bookableItemEventsQueryKey, fetchBookableItemEvents } from "./bookableItemEvents";
+
+export type BookingEventListProps = {
+  globalId: string;
+  timezone: string;
+  period: BookingEventPeriod;
+  cutoff: string;
+};
+
+export function BookingEventList(props: BookingEventListProps) {
+  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
+}
+
+function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
+  const { t, i18n } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: timezone,
+      }),
+    [i18n.language, timezone],
+  );
+  const config = useMemo(
+    () =>
+      resolveCollectionConfig({
+        slug: `bookable-item-${period}-events`,
+        idField: "id",
+        useAsTitle: "kind",
+        defaultColumns: ["start", "kind", "bookedBy", "purpose"],
+        pagination: { defaultLimit: 10, limits: [10] },
+        labels: {
+          singularKey: "booking:calendar.event" satisfies CollectionTranslationKey,
+          pluralKey:
+            period === "upcoming" ? "booking:bookableItemDetails.upcoming" : "booking:bookableItemDetails.past",
+        },
+        fields: [
+          {
+            name: "id",
+            type: "number",
+            labelKey: "booking:calendar.fields.id" satisfies CollectionTranslationKey,
+            list: false,
+          },
+          {
+            name: "start",
+            type: "dateTime",
+            labelKey: "booking:bookings.form.time" satisfies CollectionTranslationKey,
+            list: {
+              width: 280,
+              minWidth: 220,
+              dependencies: ["end"],
+              renderCell: ({ row }) => (
+                <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+              ),
+            },
+          },
+          {
+            name: "end",
+            type: "dateTime",
+            labelKey: "booking:myBookings.fields.end" satisfies CollectionTranslationKey,
+            list: false,
+          },
+          {
+            name: "kind",
+            type: "text",
+            labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
+            list: {
+              width: 180,
+              renderCell: ({ row }) =>
+                row.kind === "MAINTENANCE" ? t("bookings.form.typeBlockout") : t("bookings.form.typeBooking"),
+            },
+          },
+          {
+            name: "bookedBy",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
+            list: {
+              width: 220,
+              renderCell: ({ row }) => {
+                if (row.kind === "MAINTENANCE") {
+                  return row.createdBy ? <UserBadge name={row.createdBy} /> : t("bookings.maintenanceLabel");
+                }
+                return row.privacy === "busy" || row.bookedBy === null ? (
+                  t("bookableItemDetails.events.busy")
+                ) : (
+                  <UserBadge name={row.bookedBy} />
+                );
+              },
+            },
+          },
+          {
+            name: "createdBy",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.actor" satisfies CollectionTranslationKey,
+            list: false,
+          },
+          {
+            name: "purpose",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.purpose" satisfies CollectionTranslationKey,
+            list: {
+              renderCell: ({ row }) => (row.kind === "MAINTENANCE" || row.privacy === "full" ? row.purpose : null),
+            },
+          },
+        ],
+      } satisfies CollectionConfig<Booking>),
+    [formatter, period, t],
+  );
+  const queryPrefix = bookableItemEventsQueryKey({ globalId, period, cutoff, page: 0, limit: 1, totals: true });
+  // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
+  const totals = useQuery({
+    queryKey: [...queryPrefix, "bookableItemEventTotals"],
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const result = await fetchBookableItemEvents({
+        globalId,
+        period,
+        cutoff,
+        page: 0,
+        limit: 1,
+
+        signal,
+        totals: true,
+      });
+      if (result.totalDocs === undefined) throw new Error("Booking totals response omitted totalDocs");
+      return result.totalDocs;
+    },
+  });
+  const table = useTableList<Booking>({
+    config,
+    dataSource: {
+      type: "remote",
+      queryKey: (state) => [
+        ...bookableItemEventsQueryKey({
+          globalId,
+          period,
+          cutoff,
+          page: state.page.pageIndex,
+          limit: state.page.pageSize,
+        }),
+        "bookableItemEventList",
+      ],
+      fetch: async (state, { signal }) => {
+        const result = await fetchBookableItemEvents({
+          globalId,
+          period,
+          cutoff,
+          page: state.page.pageIndex,
+          limit: state.page.pageSize,
+
+          signal,
+        });
+        return { rows: result.docs, hasNextPage: result.hasNextPage };
+      },
+      keepPreviousData: true,
+      retry: false,
+    },
+    features: { filtering: false, sorting: false, columns: false },
+    queryString: false,
+    reserveEmptyRows: false,
+  });
+  if (table.tableProps.status === "error") {
+    return (
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyTitle>{t("bookableItemDetails.events.error.title")}</EmptyTitle>
+          <EmptyDescription>{t("bookableItemDetails.events.error.description")}</EmptyDescription>
+        </EmptyHeader>
+        <Button type="button" variant="outline" onClick={() => void table.refetch()}>
+          {commonT("actions.retry")}
+        </Button>
+      </Empty>
+    );
+  }
+
+  return (
+    <TableList
+      {...table.tableProps}
+      features={{
+        ...table.tableProps.features,
+        pagination:
+          table.tableProps.features.pagination === false
+            ? false
+            : { ...table.tableProps.features.pagination, rowCount: totals.data },
+      }}
+      hideHeader
+      emptyDescription={t("bookableItemDetails.events.empty")}
+      presentations={{ table: "wide", cards: "narrow" }}
+    />
+  );
+}

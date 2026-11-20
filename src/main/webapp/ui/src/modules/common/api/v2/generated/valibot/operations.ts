@@ -10,7 +10,9 @@ export const apiV2Operations: Record<
     responses: Record<string, Record<string, v.GenericSchema>>;
   }
 > = {
+  searchCalendarEvents: { responses: { "200": { "application/json": native.SearchCalendarEventsResponse } } },
   searchBookingCatalogue: { responses: { "200": { "application/json": native.SearchBookingCatalogueResponse } } },
+  searchCalendarCatalogue: { responses: { "200": { "application/json": native.SearchCalendarCatalogueResponse } } },
   searchBookingCatalogueLocations: {
     responses: { "200": { "application/json": native.SearchBookingCatalogueLocationsResponse } },
   },

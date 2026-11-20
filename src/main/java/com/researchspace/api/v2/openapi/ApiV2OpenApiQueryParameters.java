@@ -232,16 +232,27 @@ final class ApiV2OpenApiQueryParameters {
           properties.put(resourceName, ordered("type", "string"));
         });
     Map<String, Object> parameter =
-        parameter(
+        fieldsetParameter(
             name,
-            "query",
-            false,
             ordered("type", "object", "additionalProperties", false, "properties", properties),
             description);
+    parameter.put("x-rspace-allowed-fields", allowedFields);
+    return parameter;
+  }
+
+  static Map<String, Object> fieldset(String name, ApiV2OpenApiText text) {
+    return fieldsetParameter(
+        name,
+        ordered("type", "object", "additionalProperties", ordered("type", "string")),
+        text.get(Key.PARAMETER_GENERIC_FIELDSET, name));
+  }
+
+  private static Map<String, Object> fieldsetParameter(
+      String name, Map<String, Object> schema, String description) {
+    Map<String, Object> parameter = parameter(name, "query", false, schema, description);
     parameter.put("style", "deepObject");
     parameter.put("explode", true);
     parameter.put("x-rspace-comma-separated-values", true);
-    parameter.put("x-rspace-allowed-fields", allowedFields);
     parameter.put("x-rspace-mutually-exclusive-with", name.equals("fields") ? "exclude" : "fields");
     return parameter;
   }
