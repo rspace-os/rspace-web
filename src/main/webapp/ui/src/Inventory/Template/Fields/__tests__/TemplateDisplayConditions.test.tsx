@@ -605,11 +605,11 @@ describe("Deleting fields while editing display rules", () => {
     const source = within(fieldCard("GMO permit")).getByRole("combobox", {
       name: "common:fieldEditor.condition.sourceLabel",
     });
-    expect(source).toHaveAccessibleDescription("common:fieldEditor.condition.noOtherFields");
+    expect(source).toHaveAccessibleDescription("common:fieldEditor.condition.noAvailableFields");
     expect(screen.getByRole("button", { name: "common:actions.save" })).toBeDisabled();
     expect(template.submittable.isOk).toBe(false);
     await user.click(source);
-    expect(screen.getByRole("option", { name: "common:fieldEditor.condition.noOtherFields" })).toHaveAttribute(
+    expect(screen.getByRole("option", { name: "common:fieldEditor.condition.noAvailableFields" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );

@@ -55,16 +55,8 @@ export default function MoveButtons({ position, count, onMove, fieldName }: Move
         <Tooltip key={label} title={tooltip} enterDelay={200}>
           {/* A span keeps the tooltip working on a disabled button. */}
           <span style={{ display: "flex" }}>
-            {/* 30px square, above the 24px minimum target; the outline keeps keyboard focus plain to see */}
-            <IconButton
-              size="small"
-              aria-label={label}
-              disabled={disabled}
-              onClick={() => onMove(target)}
-              sx={(theme) => ({
-                "&.Mui-focusVisible": { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: -2 },
-              })}
-            >
+            {/* 30px square, above the 24px minimum target; the card gives it a focus outline */}
+            <IconButton size="small" aria-label={label} disabled={disabled} onClick={() => onMove(target)}>
               {icon}
             </IconButton>
           </span>
