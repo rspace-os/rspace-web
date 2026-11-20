@@ -1006,7 +1006,7 @@ describe("FormFieldEditor with one-line text and number sources", () => {
   const passwordSwitch = (name: string) =>
     within(card(name)).getByRole("switch", { name: "Hide the value, like a password" });
 
-  it("offers number and non-password one-line text fields, but not password or rich text fields", async () => {
+  it("offers number and non-password one-line text fields, listing password and rich text fields as unavailable", async () => {
     const user = userEvent.setup();
     serveFields([
       gmo,
@@ -1021,10 +1021,14 @@ describe("FormFieldEditor with one-line text and number sources", () => {
     await user.click(within(card("Target")).getByRole("radio", { name: "Only when another field has certain values" }));
     await user.click(within(card("Target")).getByRole("combobox", { name: "Field" }));
 
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Is this a GMO?",
-      "Batch code",
-      "Weight",
+    expect(
+      screen.getAllByRole("option").map((option) => [option.textContent, option.getAttribute("aria-disabled")]),
+    ).toEqual([
+      ["Is this a GMO?", null],
+      ["Batch code", null],
+      ["Weight", null],
+      ["PINUnavailable - PIN hides its value, like a password", "true"],
+      ['NotesUnavailable - Notes has unsupported type "Text (formatted text)"', "true"],
     ]);
   });
 
@@ -1141,6 +1145,7 @@ describe("FormFieldEditor with one-line text and number sources", () => {
       await user.click(within(card("Target")).getByRole("combobox", { name: "Field" }));
       const names = within(await screen.findByRole("listbox"))
         .getAllByRole("option")
+        .filter((option) => !option.hasAttribute("aria-disabled"))
         .map((option) => option.textContent);
       await user.keyboard("{Escape}");
       return names;

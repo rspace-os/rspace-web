@@ -105,31 +105,16 @@ function NumberSettings({ field, onChange, problems, editable }: SettingsProps<"
   );
 }
 
-function StringSettings({
-  field,
-  onChange,
-  editable,
-  readByRule,
-}: SettingsProps<"String"> & { readByRule: boolean }): ReactNode {
+function StringSettings({ field, onChange, editable }: SettingsProps<"String">): ReactNode {
   const { t } = useTranslation("workspace");
   return (
-    <Stack spacing={1.5}>
-      <Toggle
-        label={t("formFieldEditor.settings.password")}
-        checked={field.password}
-        onChange={(password) => onChange({ password })}
-        editable={editable}
-        // a password field is never a source; one already a password stays free to stop being one
-        lockedReason={readByRule && !field.password ? t("formFieldEditor.settings.passwordReadByRule") : undefined}
-      />
-      <TextField
-        size="small"
-        label={t("formFieldEditor.settings.defaultValue")}
-        value={field.defaultValue}
-        disabled={!editable}
-        onChange={({ target }) => onChange({ defaultValue: target.value })}
-      />
-    </Stack>
+    <TextField
+      size="small"
+      label={t("formFieldEditor.settings.defaultValue")}
+      value={field.defaultValue}
+      disabled={!editable}
+      onChange={({ target }) => onChange({ defaultValue: target.value })}
+    />
   );
 }
 
@@ -137,40 +122,24 @@ function RadioSettings({ field, onChange, editable }: SettingsProps<"Radio">): R
   const { t } = useTranslation("workspace");
   const options = usableOptions(field.options);
   return (
-    <Stack spacing={1.5}>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-        <Toggle
-          label={t("formFieldEditor.settings.showAsPickList")}
-          checked={field.showAsPickList}
-          onChange={(showAsPickList) => onChange({ showAsPickList })}
-          editable={editable}
-        />
-        <Toggle
-          label={t("formFieldEditor.settings.sortAlphabetic")}
-          checked={field.sortAlphabetic}
-          onChange={(sortAlphabetic) => onChange({ sortAlphabetic })}
-          editable={editable}
-        />
-      </Stack>
-      <TextField
-        select
-        size="small"
-        label={t("formFieldEditor.settings.defaultOption")}
-        value={options.includes(field.defaultValue) ? field.defaultValue : ""}
-        disabled={!editable}
-        onChange={({ target }) => onChange({ defaultValue: target.value })}
-        sx={{ maxWidth: 360 }}
-      >
-        <MenuItem value="">
-          <em>{t("formFieldEditor.settings.noDefault")}</em>
+    <TextField
+      select
+      size="small"
+      label={t("formFieldEditor.settings.defaultOption")}
+      value={options.includes(field.defaultValue) ? field.defaultValue : ""}
+      disabled={!editable}
+      onChange={({ target }) => onChange({ defaultValue: target.value })}
+      sx={{ maxWidth: 360 }}
+    >
+      <MenuItem value="">
+        <em>{t("formFieldEditor.settings.noDefault")}</em>
+      </MenuItem>
+      {options.map((option) => (
+        <MenuItem key={option} value={option}>
+          {option}
         </MenuItem>
-        {options.map((option) => (
-          <MenuItem key={option} value={option}>
-            {option}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Stack>
+      ))}
+    </TextField>
   );
 }
 
@@ -178,40 +147,32 @@ function ChoiceSettings({ field, onChange, editable }: SettingsProps<"Choice">):
   const { t } = useTranslation("workspace");
   const options = usableOptions(field.options);
   return (
-    <Stack spacing={1.5}>
-      <Toggle
-        label={t("formFieldEditor.settings.multiple")}
-        checked={field.multiple}
-        onChange={(multiple) => onChange({ multiple })}
-        editable={editable}
-      />
-      {options.length > 0 && (
-        <FormControl component="fieldset" variant="standard">
-          <FormLabel component="legend">{t("formFieldEditor.settings.defaultOptions")}</FormLabel>
-          <FormGroup row>
-            {options.map((option) => (
-              <FormControlLabel
-                key={option}
-                label={option}
-                control={
-                  <Checkbox
-                    checked={field.defaults.includes(option)}
-                    disabled={!editable}
-                    onChange={({ target }) =>
-                      onChange({
-                        defaults: target.checked
-                          ? options.filter((o) => o === option || field.defaults.includes(o))
-                          : field.defaults.filter((o) => o !== option),
-                      })
-                    }
-                  />
-                }
-              />
-            ))}
-          </FormGroup>
-        </FormControl>
-      )}
-    </Stack>
+    options.length > 0 && (
+      <FormControl component="fieldset" variant="standard">
+        <FormLabel component="legend">{t("formFieldEditor.settings.defaultOptions")}</FormLabel>
+        <FormGroup row>
+          {options.map((option) => (
+            <FormControlLabel
+              key={option}
+              label={option}
+              control={
+                <Checkbox
+                  checked={field.defaults.includes(option)}
+                  disabled={!editable}
+                  onChange={({ target }) =>
+                    onChange({
+                      defaults: target.checked
+                        ? options.filter((o) => o === option || field.defaults.includes(o))
+                        : field.defaults.filter((o) => o !== option),
+                    })
+                  }
+                />
+              }
+            />
+          ))}
+        </FormGroup>
+      </FormControl>
+    )
   );
 }
 
@@ -298,32 +259,76 @@ type ElnFieldSettingsProps = {
   onChange: (settings: Partial<FieldSettings>) => void;
   problems: FieldProblems;
   editable: boolean;
-  /** Whether another field's display rule reads this one. */
-  readByRule: boolean;
 };
 
-/** The settings only ELN fields have, by type; options are edited by the shared options editor. */
-export default function ElnFieldSettings({
+/**
+ * The switches only some ELN field types have, for the field card's row of
+ * switches beside Mandatory.
+ */
+export function ElnFieldSwitches({
   field,
   onChange,
-  problems,
   editable,
   readByRule,
-}: ElnFieldSettingsProps): ReactNode {
+}: Omit<ElnFieldSettingsProps, "problems"> & {
+  /** Whether another field's display rule reads this one. */
+  readByRule: boolean;
+}): ReactNode {
+  const { t } = useTranslation("workspace");
+  switch (field.type) {
+    case "String":
+      return (
+        <Toggle
+          label={t("formFieldEditor.settings.password")}
+          checked={field.password}
+          onChange={(password) => onChange({ password })}
+          editable={editable}
+          // a password field is never a source; one already a password stays free to stop being one
+          lockedReason={readByRule && !field.password ? t("formFieldEditor.settings.passwordReadByRule") : undefined}
+        />
+      );
+    case "Radio":
+      return (
+        <>
+          <Toggle
+            label={t("formFieldEditor.settings.showAsPickList")}
+            checked={field.showAsPickList}
+            onChange={(showAsPickList) => onChange({ showAsPickList })}
+            editable={editable}
+          />
+          <Toggle
+            label={t("formFieldEditor.settings.sortAlphabetic")}
+            checked={field.sortAlphabetic}
+            onChange={(sortAlphabetic) => onChange({ sortAlphabetic })}
+            editable={editable}
+          />
+        </>
+      );
+    case "Choice":
+      return (
+        <Toggle
+          label={t("formFieldEditor.settings.multiple")}
+          checked={field.multiple}
+          onChange={(multiple) => onChange({ multiple })}
+          editable={editable}
+        />
+      );
+    default:
+      return null;
+  }
+}
+
+/**
+ * The settings only ELN fields have, by type, other than their switches;
+ * options are edited by the shared options editor.
+ */
+export default function ElnFieldSettings({ field, onChange, problems, editable }: ElnFieldSettingsProps): ReactNode {
   const { t } = useTranslation("workspace");
   switch (field.type) {
     case "Number":
       return <NumberSettings field={field} onChange={onChange} problems={problems} editable={editable} />;
     case "String":
-      return (
-        <StringSettings
-          field={field}
-          onChange={onChange}
-          problems={problems}
-          editable={editable}
-          readByRule={readByRule}
-        />
-      );
+      return <StringSettings field={field} onChange={onChange} problems={problems} editable={editable} />;
     case "Text":
       return (
         <TextDefaultEditor

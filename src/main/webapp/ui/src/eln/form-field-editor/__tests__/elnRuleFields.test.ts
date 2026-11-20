@@ -29,6 +29,8 @@ const largeForm = (): Array<EditorField> =>
         };
   });
 
+const typeLabelOf = (type: string) => `${type} type`;
+
 const namesOf = (fields: ReadonlyArray<EditorField>) => (key: string) =>
   fields.find((field) => field.key === key)?.name ?? "";
 
@@ -40,11 +42,11 @@ describe("elnRuleFields", () => {
    */
   it("keeps the same list, and so the same candidate graph, while a field of 150 is renamed", () => {
     let fields = largeForm();
-    const list = elnRuleFields(fields, (key) => namesOf(fields)(key));
+    const list = elnRuleFields(fields, (key) => namesOf(fields)(key), typeLabelOf);
     const graph = ruleGraphFor(list);
 
     fields = updateField(fields, keyOf(0), (field) => ({ ...field, name: "Is this a GMO?" }));
-    const renamed = elnRuleFields(fields, (key) => namesOf(fields)(key), list);
+    const renamed = elnRuleFields(fields, (key) => namesOf(fields)(key), typeLabelOf, list);
 
     expect(renamed).toBe(list);
     expect(ruleGraphFor(renamed)).toBe(graph);
@@ -53,28 +55,38 @@ describe("elnRuleFields", () => {
 
   it("gives a new list when a rule or an option changes", () => {
     const fields = largeForm();
-    const list = elnRuleFields(fields, namesOf(fields));
+    const list = elnRuleFields(fields, namesOf(fields), typeLabelOf);
 
     const withoutRule = updateField(fields, keyOf(1), (field) => ({ ...field, rule: null }));
     const withoutOption = removeOption(fields, keyOf(0), 1);
 
-    expect(elnRuleFields(withoutRule, namesOf(withoutRule), list)).not.toBe(list);
-    expect(elnRuleFields(withoutOption, namesOf(withoutOption), list)).not.toBe(list);
+    expect(elnRuleFields(withoutRule, namesOf(withoutRule), typeLabelOf, list)).not.toBe(list);
+    expect(elnRuleFields(withoutOption, namesOf(withoutOption), typeLabelOf, list)).not.toBe(list);
   });
 
   it("gives a new list when a field with no rule becomes another kind of source", () => {
     const fields = updateField(largeForm(), keyOf(1), (field) => ({ ...field, rule: null }));
-    const list = elnRuleFields(fields, namesOf(fields));
+    const list = elnRuleFields(fields, namesOf(fields), typeLabelOf);
 
     const retyped = changeType(fields, keyOf(1), "Number");
 
-    expect(elnRuleFields(retyped, namesOf(retyped), list)).not.toBe(list);
+    expect(elnRuleFields(retyped, namesOf(retyped), typeLabelOf, list)).not.toBe(list);
+  });
+
+  it("gives a new list, with the new type label, when a field no rule can read changes type", () => {
+    const fields = changeType(largeForm(), keyOf(1), "Date");
+    const list = elnRuleFields(fields, namesOf(fields), typeLabelOf);
+
+    const retyped = elnRuleFields(changeType(fields, keyOf(1), "Time"), namesOf(fields), typeLabelOf, list);
+
+    expect(retyped).not.toBe(list);
+    expect(retyped[1]).toMatchObject({ sourceKind: "NONE", typeLabel: "Time type", hidesValue: false });
   });
 
   it("works out every field's candidates on 150 fields quickly", () => {
     const fields = largeForm();
     const start = performance.now();
-    const list = elnRuleFields(fields, namesOf(fields));
+    const list = elnRuleFields(fields, namesOf(fields), typeLabelOf);
     const graph = ruleGraphFor(list);
     for (const field of list) graph.sourcesFor(field.key);
     // a generous bound for slow CI machines; locally it takes a few milliseconds
