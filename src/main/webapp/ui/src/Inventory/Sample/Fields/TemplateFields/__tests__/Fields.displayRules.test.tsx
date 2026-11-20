@@ -195,7 +195,10 @@ describe("A template field hidden while its value is invalid", () => {
     await user.click(screen.getByRole("spinbutton", { name: "Year" }));
     await user.keyboard("20240230");
     await user.click(screen.getByRole("radio", { name: "No" }));
-    expect(sample.submittable.isOk).toBe(false);
+    expect(screen.queryByRole("spinbutton", { name: "Year" })).not.toBeInTheDocument();
+    expect(sample.submittable.orElseGet((errors) => errors.map(({ message }) => message))).toEqual([
+      expect.stringContaining('"Released on" is hidden'),
+    ]);
 
     await user.click(screen.getByRole("radio", { name: "Yes" }));
     const year = screen.getByRole("spinbutton", { name: "Year" });
@@ -208,6 +211,24 @@ describe("A template field hidden while its value is invalid", () => {
     await user.click(year);
     await user.keyboard("{Control>}a{/Control}{Backspace}");
     expect(sample.submittable.isOk).toBe(true);
+  });
+
+  it("counts the error of an impossible date towards the section again once the field is shown", async () => {
+    const user = userEvent.setup();
+    const onErrorStateChange = vi.fn();
+    const [question, permit] = gmoFields(["Yes"]);
+    renderSampleFields(
+      [question, { ...permit, name: "Released on", type: "date", mandatory: false }],
+      onErrorStateChange,
+    );
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(onErrorStateChange).toHaveBeenLastCalledWith("template_Released on", false);
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    expect(onErrorStateChange).toHaveBeenLastCalledWith("template_Released on", true);
   });
 });
 
