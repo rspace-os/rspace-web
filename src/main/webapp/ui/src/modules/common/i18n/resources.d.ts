@@ -992,6 +992,12 @@ export default interface Resources {
         "sourceMissing": "The field this condition read no longer exists. Choose another field.",
         "sourceRequired": "Choose a field.",
         "title": "Display this field when…",
+        "unavailable": {
+          "dependsOnField": "Unavailable - {field} depends on this field, so reading it would make a loop",
+          "hidesValue": "Unavailable - {field} hides its value, like a password",
+          "unsupportedKind": "Unavailable - {field} has an unsupported type",
+          "unsupportedType": "Unavailable - {field} has unsupported type \"{type}\""
+        },
         "valueLabel": "Value",
         "valueRequired": "Enter a value.",
         "valueTooLong": "This value is too long to store. Shorten it.",

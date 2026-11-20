@@ -35,6 +35,19 @@ export type RuleEditorField = {
   /** The options a rule may name, already passed through {@link usableOptions}. */
   readonly options: ReadonlyArray<string>;
   readonly rule: FieldDisplayRule | null;
+  /** The host's label for the field's type, as its type menu shows it; says why a field of this type cannot be read. */
+  readonly typeLabel?: string;
+  /** Whether no rule can read the field because it hides its value, like a password. */
+  readonly hidesValue?: boolean;
+};
+
+/** Why a rule cannot read a field: its type, a hidden value, or a rule of its own that already depends on the reader. */
+export type UnavailableReason = "unsupportedType" | "hidesValue" | "dependsOnField";
+
+/** Another field a rule might read, with why it cannot, or null when it can. */
+export type SourceCandidate = {
+  readonly field: RuleEditorField;
+  readonly unavailable: UnavailableReason | null;
 };
 
 /** Options a rule may use: blank options and repeats of an earlier option are left out. */
@@ -55,6 +68,8 @@ export type RuleGraph = {
    * itself that do not already depend on it, directly or through other rules.
    */
   sourcesFor(key: string): ReadonlyArray<RuleEditorField>;
+  /** Every field other than `key`, in order, each with why a rule on `key` cannot read it. */
+  candidatesFor(key: string): ReadonlyArray<SourceCandidate>;
   /** The fields whose rule reads `key` directly. */
   dependentsOf(key: string): ReadonlyArray<RuleEditorField>;
 };
@@ -91,20 +106,43 @@ export function buildRuleGraph(fields: ReadonlyArray<RuleEditorField>): RuleGrap
       ancestor = byKey.get(ancestor)?.rule?.sourceFieldKey;
     }
   }
-  const readable = fields.filter((field) => sourceKindOf(field) !== "NONE");
+  const candidates = new Map<string, ReadonlyArray<SourceCandidate>>();
   const sources = new Map<string, ReadonlyArray<RuleEditorField>>();
+  const candidatesFor = (key: string) => {
+    let result = candidates.get(key);
+    if (!result) {
+      const excluded = descendants.get(key);
+      result = fields
+        .filter((field) => field.key !== key)
+        .map((field) => ({
+          field,
+          unavailable:
+            sourceKindOf(field) === "NONE"
+              ? field.hidesValue
+                ? "hidesValue"
+                : "unsupportedType"
+              : excluded?.has(field.key)
+                ? "dependsOnField"
+                : null,
+        }));
+      candidates.set(key, result);
+    }
+    return result;
+  };
   return {
     byKey,
     indexOf: (key) => index.get(key) ?? -1,
     sourcesFor: (key) => {
       let result = sources.get(key);
       if (!result) {
-        const excluded = descendants.get(key);
-        result = readable.filter((field) => field.key !== key && !excluded?.has(field.key));
+        result = candidatesFor(key)
+          .filter(({ unavailable }) => unavailable === null)
+          .map(({ field }) => field);
         sources.set(key, result);
       }
       return result;
     },
+    candidatesFor,
     dependentsOf: (key) => dependents.get(key) ?? [],
   };
 }
