@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
@@ -46,6 +47,13 @@ public interface ChemistryService {
   ChemEditorInputDto getChemicalEditorInput(long chemId, Integer revision, User user);
 
   Optional<ElementalAnalysisDTO> getElementalAnalysis(long chemId, Integer revision, User user);
+
+  /**
+   * Predicted bond strengths for a chemical element the user can read.
+   *
+   * @return the chemistry service's result, or null if there is no such chemical element
+   */
+  JsonNode getBondStrengths(long chemId, Integer revision, User user);
 
   String getChemicalFileContents(long chemId, Integer revision, User subject);
 

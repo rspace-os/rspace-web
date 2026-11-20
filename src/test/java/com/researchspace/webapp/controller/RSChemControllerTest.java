@@ -1,12 +1,16 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.featureflags.FeatureFlags.BOND_STRENGTHS_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
@@ -15,6 +19,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -52,6 +57,7 @@ public class RSChemControllerTest {
   @Mock private FolderManager folderManager;
   @Mock private IControllerInputValidator validator;
   @Mock private ChemistryService chemicalService;
+  @Mock private FeatureFlagManager featureFlagManager;
   private @InjectMocks RSChemController rsChemController;
   private Principal mockPrincipal;
   private User user;
@@ -69,6 +75,42 @@ public class RSChemControllerTest {
 
     imageInBase64 =
         "base64String,AADDEEDDASDGFDFGFDGDFHTRFHFHHHREFGDDFERERRTYETEAFDKSFDKSKLREOFK4KK4KFKDKFJHKSKF";
+  }
+
+  @Test
+  public void bondStrengthsAreHiddenWhileTheFeatureFlagIsOff() {
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, user)).thenReturn(false);
+
+    ResponseEntity<AjaxReturnObject<JsonNode>> response =
+        rsChemController.getBondStrengths(1L, null, mockPrincipal);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    verifyNoInteractions(chemicalService);
+  }
+
+  @Test
+  public void bondStrengthsAreReturnedWhenTheFeatureFlagIsOn() {
+    JsonNode result = JsonNodeFactory.instance.objectNode().put("supported", true);
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, user)).thenReturn(true);
+    when(chemicalService.getBondStrengths(1L, 3, user)).thenReturn(result);
+
+    assertEquals(
+        result, rsChemController.getBondStrengths(1L, 3, mockPrincipal).getBody().getData());
+  }
+
+  @Test
+  public void bondStrengthsForUnknownChemicalReturnAnError() {
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, user)).thenReturn(true);
+    when(chemicalService.getBondStrengths(1L, null, user)).thenReturn(null);
+
+    AjaxReturnObject<JsonNode> response =
+        rsChemController.getBondStrengths(1L, null, mockPrincipal).getBody();
+
+    assertNull(response.getData());
+    assertNotNull(response.getErrorMsg());
   }
 
   @Test

@@ -1,5 +1,8 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.featureflags.FeatureFlags.BOND_STRENGTHS_ENABLED;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.ChemSearchedItem;
@@ -17,6 +20,7 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.service.inventory.InventoryStructureHit;
 import jakarta.validation.Valid;
@@ -53,6 +57,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class RSChemController extends BaseController {
 
   @Autowired private ChemistryService chemistryService;
+  @Autowired private FeatureFlagManager featureFlagManager;
 
   /**
    * Method called to save a chemical element to the database, return RSChemElement object.
@@ -450,6 +455,30 @@ public class RSChemController extends BaseController {
       return new AjaxReturnObject<>(
           ErrorList.of(getText("chem.errors.infoUnavailable", new Object[] {chemId})));
     }
+  }
+
+  /**
+   * Predicted bond strengths for a chemical element. Unsupported structures come back as a normal
+   * result with {@code supported: false}.
+   */
+  @GetMapping("ajax/bondStrengths")
+  @ResponseBody
+  public ResponseEntity<AjaxReturnObject<JsonNode>> getBondStrengths(
+      @RequestParam("chemId") long chemId,
+      @RequestParam(value = "revision", required = false) Integer revision,
+      Principal principal) {
+    User subject = getUserByUsername(principal.getName());
+    if (!featureFlagManager.isFeatureFlagEnabled(BOND_STRENGTHS_ENABLED, subject)) {
+      return ResponseEntity.notFound().build();
+    }
+    JsonNode bondStrengths = chemistryService.getBondStrengths(chemId, revision, subject);
+    if (bondStrengths == null) {
+      log.info("No chem element found for id {} and revision {}", chemId, revision);
+      return ResponseEntity.ok(
+          new AjaxReturnObject<>(
+              ErrorList.of(getText("chem.errors.elementNotFound", new Object[] {chemId}))));
+    }
+    return ResponseEntity.ok(new AjaxReturnObject<>(bondStrengths));
   }
 
   @Data

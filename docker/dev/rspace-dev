@@ -12,6 +12,7 @@
 #
 # Commands:
 #   up [--fresh] [--chemistry|--no-chemistry] [--e2e|--no-e2e] [--mailpit|--no-mailpit]
+#      [--bond-strength|--no-bond-strength]
 #                  Build images (if needed) and start db + app + frontend.
 #                  First boot (or --fresh) recreates the DB schema + sample data.
 #                  --chemistry also starts the optional chemistry microservice
@@ -23,6 +24,10 @@
 #                  --mailpit starts the optional Mailpit SMTP catcher and points
 #                  the app's outbound mail at it (email.enabled=true); the choice
 #                  persists in .env until --no-mailpit.
+#                  --bond-strength starts the bond strength model service and
+#                  the chemistry service, both from locally built images (see
+#                  README); the choice persists in .env until --no-bond-strength
+#                  or --no-chemistry.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -161,6 +166,17 @@ compose() {
   if [ "$(env_get RSPACE_MAILPIT)" = "true" ]; then
     profiles="${profiles:+${profiles},}mailpit"
   fi
+  # The bond strength endpoint only exists in a locally built chemistry image, so
+  # the profile swaps the chemistry image as well as starting the model service.
+  # A CHEMISTRY_IMAGE in .env still wins; compose reads it from there.
+  local chemistry_image_default="" bond_strength_url=""
+  if [ "$(env_get RSPACE_BOND_STRENGTH)" = "true" ]; then
+    profiles="${profiles:+${profiles},}bond-strength"
+    chemistry_image_default="rspace-chemistry:bond-strength-poc"
+    bond_strength_url="http://bond-strength:8000"
+  fi
+  CHEMISTRY_IMAGE_DEFAULT="${chemistry_image_default}" \
+  BONDSTRENGTH_SERVICE_URL="${bond_strength_url}" \
   COMPOSE_PROFILES="${profiles}" docker compose \
     --project-directory "${SCRIPT_DIR}" \
     --env-file "${ENV_FILE}" \
@@ -233,10 +249,18 @@ cmd_up() {
       --chemistry)    env_set RSPACE_CHEMISTRY true
                       echo "rspace-dev: chemistry service enabled (persisted in .env)" >&2 ;;
       --no-chemistry) env_set RSPACE_CHEMISTRY false
+                      env_set RSPACE_BOND_STRENGTH false
                       # A profile-disabled service is invisible to later compose
                       # commands, so stop a leftover container explicitly.
                       docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-chemistry" >/dev/null 2>&1 || true
+                      docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-bond-strength" >/dev/null 2>&1 || true
                       echo "rspace-dev: chemistry service disabled (persisted in .env)" >&2 ;;
+      --bond-strength)    env_set RSPACE_CHEMISTRY true
+                          env_set RSPACE_BOND_STRENGTH true
+                          echo "rspace-dev: bond strength model service enabled, with chemistry (persisted in .env)" >&2 ;;
+      --no-bond-strength) env_set RSPACE_BOND_STRENGTH false
+                          docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-bond-strength" >/dev/null 2>&1 || true
+                          echo "rspace-dev: bond strength model service disabled (persisted in .env)" >&2 ;;
       --e2e)          env_set RSPACE_E2E_MOCKS true
                       echo "rspace-dev: E2E integration mocks enabled (persisted in .env)" >&2 ;;
       --no-e2e)       env_set RSPACE_E2E_MOCKS false

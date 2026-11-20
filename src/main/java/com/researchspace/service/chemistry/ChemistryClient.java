@@ -1,5 +1,6 @@
 package com.researchspace.service.chemistry;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
@@ -70,18 +71,28 @@ public class ChemistryClient {
     Map<String, Object> body = new HashMap<>();
     body.put("input", chem);
     String url = chemistryServiceUrl + "/chemistry/extract";
-    return postForElementalAnalysis(body, url);
+    return post(body, url, ElementalAnalysisDTO.class);
   }
 
-  private Optional<ElementalAnalysisDTO> postForElementalAnalysis(
-      Map<String, Object> body, String url) {
+  /**
+   * Predicted bond strengths for a molecule, in the JSON shape the chemistry service returns. A
+   * structure the model cannot handle is a normal response with {@code supported: false}.
+   */
+  public JsonNode bondStrengths(String chem) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("input", chem);
+    String url = chemistryServiceUrl + "/chemistry/bondStrengths";
+    return post(body, url, JsonNode.class)
+        .orElseThrow(() -> new ChemistryClientException("errors.chemistry.serviceCallFailed"));
+  }
+
+  private <T> Optional<T> post(Map<String, Object> body, String url, Class<T> responseType) {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
 
     try {
-      ResponseEntity<ElementalAnalysisDTO> response =
-          restTemplate.postForEntity(url, httpEntity, ElementalAnalysisDTO.class);
+      ResponseEntity<T> response = restTemplate.postForEntity(url, httpEntity, responseType);
       return Optional.ofNullable(response.getBody());
     } catch (HttpStatusCodeException e) {
       String errorReason = e.getResponseBodyAsString();
@@ -114,7 +125,7 @@ public class ChemistryClient {
     body.put("input", chemString);
     String url = chemistryServiceUrl + "/chemistry/stoichiometry";
 
-    return postForElementalAnalysis(body, url);
+    return post(body, url, ElementalAnalysisDTO.class);
   }
 
   public byte[] exportImage(

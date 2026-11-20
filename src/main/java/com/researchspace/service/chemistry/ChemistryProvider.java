@@ -1,5 +1,6 @@
 package com.researchspace.service.chemistry;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
@@ -44,6 +45,11 @@ public interface ChemistryProvider {
   Optional<ElementalAnalysisDTO> getProperties(String chemical);
 
   Optional<ElementalAnalysisDTO> getStoichiometry(RSChemElement chemicalElement);
+
+  /** Predicted bond strengths for a molecule. Only the Indigo provider supports this. */
+  default JsonNode getBondStrengths(String chemical) {
+    throw new UnsupportedOperationException("Bond strengths need the Indigo chemistry provider");
+  }
 
   ChemicalSearchResultsDTO search(String chemQuery, String chemicalSearchType);
 

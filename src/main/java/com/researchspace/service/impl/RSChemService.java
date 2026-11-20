@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.EcatChemistryFile;
@@ -268,6 +269,15 @@ public class RSChemService implements ChemistryService {
       }
     }
     return analysis;
+  }
+
+  @Override
+  public JsonNode getBondStrengths(long chemId, Integer revision, User user) {
+    RSChemElement chemical = getChemicalElementByRevision(chemId, revision, user);
+    if (chemical == null) {
+      return null;
+    }
+    return chemistryProvider.getBondStrengths(chemical.getChemElements());
   }
 
   @Override

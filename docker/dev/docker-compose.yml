@@ -190,11 +190,29 @@ services:
   # at http://chemistry:8090 over the project network; no host port is published.
   # ---------------------------------------------------------------------------
   chemistry:
-    image: ${CHEMISTRY_IMAGE:-rspaceops/oss-chemistry:latest}
+    # rspace-dev sets CHEMISTRY_IMAGE_DEFAULT when `up --bond-strength` is on.
+    image: ${CHEMISTRY_IMAGE:-${CHEMISTRY_IMAGE_DEFAULT:-rspaceops/oss-chemistry:latest}}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-chemistry
     profiles: ["chemistry"]
+    environment:
+      # Empty unless `up --bond-strength` is on; the chemistry service then answers
+      # 503 for bond strength requests.
+      BONDSTRENGTH_SERVICE_URL: ${BONDSTRENGTH_SERVICE_URL:-}
     volumes:
       - chemistry-files:/home/app
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Bond strength model service (OPTIONAL, proof of concept): predicts bond
+  # dissociation enthalpies for the chemistry service. Enable with
+  # `rspace-dev up --bond-strength` (compose profile "bond-strength"), which also
+  # turns the chemistry service on. Neither image is published yet: build both
+  # from the bond strength branch of the chemistry repo first (see README).
+  # ---------------------------------------------------------------------------
+  bond-strength:
+    image: ${BOND_STRENGTH_IMAGE:-rspace-bond-strength:0.0.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-bond-strength
+    profiles: ["bond-strength"]
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

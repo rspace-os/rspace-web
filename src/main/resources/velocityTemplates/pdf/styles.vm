@@ -120,6 +120,14 @@
     word-wrap: break-word;
   }
 
+  div[data-bond-strengths-for] table {
+    -fs-table-paginate: paginate;
+  }
+
+  div[data-bond-strengths-for] caption {
+    text-align: left;
+  }
+
   #comments { }
 
   #comments-header {

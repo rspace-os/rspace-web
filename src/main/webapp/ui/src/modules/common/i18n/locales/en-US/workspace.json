@@ -242,6 +242,69 @@
     }
   },
   "tinymce": {
+    "bondStrengths": {
+      "about": {
+        "accuracy": "Accuracy",
+        "accuracyNote": "How it was measured",
+        "accuracyValue": "Mean absolute error {error} kcal/mol",
+        "model": "Model",
+        "modelValue": "{name} {version}",
+        "quantity": "What is predicted",
+        "referenceMethod": "Reference method",
+        "showAll": "All details",
+        "showFewer": "Fewer details",
+        "title": "About this calculation",
+        "trainingData": "Training data",
+        "weights": "Model weights"
+      },
+      "action": "Calculate bond strengths",
+      "coverage": "{supported} of {total} bonds have a value. Hydrogens on the same atom share one row.",
+      "dialog": {
+        "error": "Bond strengths could not be calculated. Try again later.",
+        "insert": "Insert into document",
+        "insertedWithoutPicture": "The table is in the document, but the picture could not be added. Insert again to retry.",
+        "insertFailed": "The result could not be inserted into the document. Check that the structure is still in the field you are editing, then try again.",
+        "loading": "Calculating bond strengths…",
+        "title": "Bond strengths"
+      },
+      "document": {
+        "caption": "Predicted bond strengths (bond dissociation enthalpy) from {name} {version}. Typical error {error} kcal/mol against DFT, not checked against experiment. Calculated on {date}.",
+        "imageAlt": "Structure with predicted bond strengths",
+        "legend": "Values in kcal/mol. Atom numbers match the table. Red marks the weakest bond.",
+        "methodItem": "{label}: {value}",
+        "skippedBonds": "{count, plural, one {Ring, double and triple bonds have no value (# bond).} other {Ring, double and triple bonds have no value (# bonds).}}",
+        "weakestBond": "{label}, weakest bond"
+      },
+      "imageAlt": "Structure with atom numbers and predicted bond strengths in kcal/mol. The weakest bond is highlighted.",
+      "legend": "Numbers on bonds are in kcal/mol. Atom numbers match the table. Red marks the weakest bond, or its atom when that bond is to a hydrogen. Bonds to hydrogen are only in the table.",
+      "method": "Predicted values. Typical error {error} kcal/mol against DFT, not checked against experiment.",
+      "notSupported": {
+        "charged": "Bond strengths cannot be calculated for this structure. It has a charge.",
+        "elementNotCovered": "Bond strengths cannot be calculated for this structure. The model does not cover these elements: {elements}.",
+        "multipleFragments": "Bond strengths cannot be calculated for this structure. It has more than one fragment. Use a single molecule.",
+        "other": "Bond strengths cannot be calculated for this structure.",
+        "radical": "Bond strengths cannot be calculated for this structure. It is a radical.",
+        "reaction": "Bond strengths cannot be calculated for a reaction. Use a single molecule.",
+        "tooLarge": "Bond strengths cannot be calculated for this structure. It has more than {limit} atoms, not counting hydrogen."
+      },
+      "noValue": {
+        "bondTypeNotCovered": "No value for {bonds}. The model has too little data for this kind of bond.",
+        "lowConfidence": "No value for {bonds}. Low confidence: two models disagreed by more than {limit} kcal/mol, so the value is not shown.",
+        "lowConfidenceNoLimit": "No value for {bonds}. Low confidence: two models disagreed, so the value is not shown.",
+        "multipleBonds": "{count, plural, one {# double or triple bond has} other {# double or triple bonds have}} no value. Only single bonds are covered.",
+        "other": "No value for {bonds}.",
+        "ringBonds": "{count, plural, one {# ring bond has} other {# ring bonds have}} no value. Ring bonds are not covered."
+      },
+      "noValues": "No bond in this structure has a value.",
+      "table": {
+        "bond": "Bond",
+        "equivalentHydrogens": "{label} (×{count})",
+        "kcalMol": "kcal/mol",
+        "kjMol": "kJ/mol",
+        "label": "Bond strengths, weakest first",
+        "weakest": "Weakest"
+      }
+    },
     "chemCard": {
       "atoms": "Atoms",
       "bonds": "Bonds",

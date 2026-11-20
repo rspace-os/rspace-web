@@ -306,6 +306,26 @@ public class HTMLStringGeneratorTest {
   }
 
   @Test
+  void bondStrengthPicturesPrintAsWideAsStructures() {
+    stubDefaults();
+    String html =
+        "<div data-bond-strengths-for=\"2\"><p><img class=\"imageDropped\" width=\"333\""
+            + " height=\"250\"></p></div><p><img class=\"imageDropped\" width=\"333\""
+            + " height=\"250\"></p>";
+    StructuredDocument anydoc = TestFactory.createAnySDWithText(html);
+    anydoc.setId(1L);
+
+    Document exported =
+        Jsoup.parse(htmlGenerator.extractHtmlStr(anydoc, makeConfig()).getDocumentAsHtml());
+
+    var picture = exported.selectFirst("div[data-bond-strengths-for] img");
+    assertEquals("90%", picture.attr("width"));
+    assertTrue(picture.attr("height").isEmpty());
+    // Other images keep the usual scaling to the page.
+    assertEquals("224", exported.select("img").get(1).attr("width"));
+  }
+
+  @Test
   public void testEmbedIframeFragment() {
     stubDefaults();
     String html = "iframe: <iframe src='https://dummy.source/a?b=c&d=e'/>";
