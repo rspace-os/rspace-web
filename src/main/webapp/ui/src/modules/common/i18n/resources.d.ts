@@ -4693,6 +4693,7 @@ export default interface Resources {
         }
       },
       "hiddenFieldInvalid": "{field} is hidden but holds a value that cannot be saved. Show it again by changing the answer it depends on, then correct or clear it.",
+      "hiddenFieldInvalidWithSource": "The field \"{field}\" is hidden but holds a value that cannot be saved. Change \"{source}\" to show it, then correct or clear it.",
       "identifiers": {
         "assignDialog": {
           "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",

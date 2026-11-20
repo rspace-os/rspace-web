@@ -183,8 +183,31 @@ describe("A template field hidden while its value is invalid", () => {
 
     expect(sample.isFieldHidden(sample.fields[1])).toBe(true);
     expect(sample.submittable.orElseGet((errors) => errors.map(({ message }) => message))).toEqual([
-      expect.stringContaining("Released on"),
+      expect.stringContaining('"Released on" is hidden'),
     ]);
+  });
+
+  it("shows an impossible date on a sample again as typed once the field is shown, and saves once it is cleared", async () => {
+    const user = userEvent.setup();
+    const [question, permit] = gmoFields(["Yes"]);
+    const sample = renderSampleFields([question, { ...permit, name: "Released on", type: "date", mandatory: false }]);
+
+    await user.click(screen.getByRole("spinbutton", { name: "Year" }));
+    await user.keyboard("20240230");
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(sample.submittable.isOk).toBe(false);
+
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    const year = screen.getByRole("spinbutton", { name: "Year" });
+    expect(
+      [year, screen.getByRole("spinbutton", { name: "Month" }), screen.getByRole("spinbutton", { name: "Day" })].map(
+        ({ textContent }) => textContent,
+      ),
+    ).toEqual(["2024", "02", "30"]);
+
+    await user.click(year);
+    await user.keyboard("{Control>}a{/Control}{Backspace}");
+    expect(sample.submittable.isOk).toBe(true);
   });
 });
 
