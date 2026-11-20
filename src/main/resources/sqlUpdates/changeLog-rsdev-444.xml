@@ -184,23 +184,25 @@ END
                 <tableExists tableName="BATCH_JOB_EXECUTION"/>
                 <!-- TYPE_CD exists only in the Spring Batch 3/4 BATCH_JOB_EXECUTION_PARAMS layout;
                      Batch 5 replaced it with PARAMETER_NAME/PARAMETER_TYPE/PARAMETER_VALUE. Its presence
-                     means this is an existing deployment still on the pre-upgrade schema. -->
+                     means the tables are still on the Batch 3 layout from the baseline. -->
                 <columnExists tableName="BATCH_JOB_EXECUTION_PARAMS" columnName="TYPE_CD"/>
             </and>
         </preConditions>
         <comment>
-            Migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
-            existing deployments.
+            Migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5.
 
-            The fresh-install baseline (initial-seed-changeLog.xml) only creates these tables when
-            BATCH_JOB_EXECUTION is ABSENT, so an upgraded database keeps the Batch 3 schema and the async
-            export JobRepository fails at runtime against the changed columns (most notably the redesigned
-            BATCH_JOB_EXECUTION_PARAMS). This changeset drops and recreates the BATCH_* tables using the
-            Batch 5 jar's own scripts, so the layout always matches the Batch version on the classpath.
+            The baseline (rs-dbbaseline-utf8.sql) creates these tables in the Batch 3 layout, so fresh and
+            upgraded databases both start on it, and the async export JobRepository fails at runtime
+            against the changed columns (most notably the redesigned BATCH_JOB_EXECUTION_PARAMS). This
+            changeset drops and recreates the BATCH_* tables from copies of the Spring Batch 5.2.1 MySQL
+            scripts kept next to this file, not the scripts inside the Batch jar, so a Batch upgrade
+            cannot change its checksum or the layout it builds. Do not edit the copies: any change to their
+            SQL changes the checksum and fails validation on every database that already ran this
+            changeset. Later Batch layouts belong in new changesets.
 
-            Guarded to fire ONLY on an un-migrated existing DB (BATCH_JOB_EXECUTION present AND the old
-            TYPE_CD column present): a no-op on fresh installs (the baseline already built the Batch 5
-            schema, so TYPE_CD is absent) and idempotent once migrated (TYPE_CD gone).
+            Guarded to fire only while the Batch 3 layout is present (BATCH_JOB_EXECUTION present AND the
+            old TYPE_CD column present), so it runs once on every database, fresh or upgraded, and is a
+            no-op afterwards (TYPE_CD gone).
 
             TRADE-OFF: drop+recreate discards historical Spring Batch job-execution rows. These back ONLY the
             REST API v1 export (status polled via /api/v1/jobs/{id}); the interactive UI export uses a
@@ -228,9 +230,9 @@ END
                 ('BATCH_JOB_SEQ',            COALESCE((SELECT MAX(JOB_INSTANCE_ID)   FROM BATCH_JOB_INSTANCE),  0)),
                 ('BATCH_STEP_EXECUTION_SEQ', COALESCE((SELECT MAX(STEP_EXECUTION_ID) FROM BATCH_STEP_EXECUTION), 0));
         </sql>
-        <!-- 2) Drop + recreate to the Batch 5 layout from the jar's own scripts (recreates BATCH_*_SEQ at 0). -->
-        <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
-        <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+        <!-- 2) Drop + recreate to the Batch 5 layout from the local script copies (recreates BATCH_*_SEQ at 0). -->
+        <sqlFile path="spring-batch-5-schema-drop-mysql.sql" relativeToChangelogFile="true"/>
+        <sqlFile path="spring-batch-5-schema-mysql.sql" relativeToChangelogFile="true"/>
         <!-- 3) Continue the id sequences from the captured maxima (next allocated id = stored ID + 1). -->
         <sql splitStatements="true" stripComments="false">
             UPDATE BATCH_JOB_EXECUTION_SEQ  SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_JOB_EXECUTION_SEQ');
@@ -241,8 +243,8 @@ END
         <rollback>
             <!-- Best-effort rollback restores the Batch 5 schema shape (history is not recoverable). -->
             <sql splitStatements="true" stripComments="false">DROP TABLE IF EXISTS rsdev444_batch_seq_backup;</sql>
-            <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
-            <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+            <sqlFile path="spring-batch-5-schema-drop-mysql.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="spring-batch-5-schema-mysql.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
