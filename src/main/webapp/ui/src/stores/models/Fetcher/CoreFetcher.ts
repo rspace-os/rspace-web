@@ -348,13 +348,22 @@ export default class CoreFetcher {
           params.permalink.version != null
             ? `${params.permalink.id}/versions/${params.permalink.version}`
             : params.permalink.id;
-        const { data } = await ApiService.get<Record<string, unknown> & { globalId: GlobalId }>(endpoint, slug);
+        const leanSample = endpoint === "samples" && params.permalink.version == null;
+        const leanParams = new URLSearchParams({ includeSubSamples: "false" });
+        type DetailPayload = Record<string, unknown> & { globalId: GlobalId };
+        const { data } = leanSample
+          ? await ApiService.query<DetailPayload>(`${endpoint}/${slug}`, leanParams)
+          : await ApiService.get<DetailPayload>(endpoint, slug);
+        const detail = { ...data };
+        if (leanSample) Reflect.deleteProperty(detail, "subSamples");
         runInAction(() => {
           this.count = 1;
         });
-        const record = this.factory.newFactory().newRecord(data);
+        const record = this.factory.newFactory().newRecord(detail);
         if ((endpoint === "samples" || endpoint === "subSamples") && record instanceof InventoryBaseRecord) {
-          record.rememberPermalinkDetails();
+          record.rememberPermalinkDetails(
+            endpoint === "samples" && !record.historicalVersion ? leanParams : new URLSearchParams(),
+          );
         }
         storeResults([record]);
 

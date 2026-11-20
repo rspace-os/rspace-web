@@ -1,5 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
+import type { AxiosResponse } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+import SampleModel from "../../SampleModel";
 import { makeMockTemplate } from "../TemplateModel/mocking";
 import { makeMockSample, sampleAttrs } from "./mocking";
 
@@ -147,4 +150,24 @@ describe("fetchAdditionalInfo", () => {
     );
     await expect(sample.fetchAdditionalInfo()).resolves.toBeUndefined();
   });
+});
+
+test("uses the child count for split availability and for an unloaded sample after deletion", async () => {
+  const summary = { ...sampleAttrs({ subSamplesCount: 2 }), globalId: "SA1" };
+  Reflect.deleteProperty(summary, "subSamples");
+  const sample = new AlwaysNewFactory().newRecord(summary);
+  if (!(sample instanceof SampleModel)) throw new Error("Expected a sample");
+  const split = () =>
+    sample.createOptions.find((option) => option.parameters?.some((parameter) => parameter.state.key === "split"));
+  expect(split()?.disabled).toBe(true);
+  const query = vi
+    .spyOn(InvApiService, "query")
+    .mockClear()
+    .mockResolvedValue({
+      data: { ...summary, subSamplesCount: 1, subSamples: null },
+    } as AxiosResponse);
+  sample.updateBecauseRecordsChanged(new Set(["SS1"]), new Set(["SA1"]));
+  await vi.waitFor(() => expect(sample.subSamplesCount).toBe(1));
+  expect(query).toHaveBeenCalledTimes(1);
+  expect(split()?.disabled).toBe(false);
 });

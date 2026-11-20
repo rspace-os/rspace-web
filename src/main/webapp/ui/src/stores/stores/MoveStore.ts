@@ -161,27 +161,28 @@ export default class MoveStore {
     }
   }
 
-  setSelectedResults(records: Array<InventoryRecord>) {
+  async setSelectedResults(records: Array<InventoryRecord>): Promise<void> {
     this.selectedResults = [];
-    /*
-     * we have to remove sample objects...
-     * ... and include their aliquots
-     */
-    void records.map(async (record) => {
-      if (record instanceof SampleModel) {
-        if (!record.infoLoaded) {
-          await record.fetchAdditionalInfo();
-        }
-        this.selectedResults = [...this.selectedResults, ...record.subSamples];
-      } else if (
-        record instanceof SubSampleModel ||
-        record instanceof ContainerModel ||
-        record instanceof InstrumentModel
-      ) {
-        this.selectedResults = [...this.selectedResults, record];
-      } else {
-        throw new Error("Unknown type.");
+    const unloadedSamples = records.filter(
+      (record): record is SampleModel => record instanceof SampleModel && !record.subSamplesLoaded,
+    );
+    if (unloadedSamples.length) {
+      this.loading = true;
+      try {
+        await Promise.all(unloadedSamples.map((sample) => sample.fetchWithSubSamples()));
+      } finally {
+        runInAction(() => {
+          this.loading = false;
+        });
       }
+    }
+    runInAction(() => {
+      this.selectedResults = records.flatMap((record): Array<InventoryRecord & HasLocation> => {
+        if (record instanceof SampleModel) return record.subSamples;
+        if (record instanceof SubSampleModel || record instanceof ContainerModel || record instanceof InstrumentModel)
+          return [record];
+        throw new Error("Unknown type.");
+      });
     });
   }
 

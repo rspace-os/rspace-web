@@ -154,8 +154,14 @@ test.each([
   const search = new Search({ factory, callbacks: { setActiveResult: () => {} } });
   await search.setActiveResult(selected);
   expect(search.activeResult?.infoLoaded).toBe(true);
-  expect(get).toHaveBeenCalledTimes(1);
-  expect(query).not.toHaveBeenCalled();
+  if (type === "sample") {
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][1].get("includeSubSamples")).toBe("false");
+    expect(get).not.toHaveBeenCalled();
+  } else {
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(query).not.toHaveBeenCalled();
+  }
 });
 
 test("selecting a sample summary still requests details", async () => {

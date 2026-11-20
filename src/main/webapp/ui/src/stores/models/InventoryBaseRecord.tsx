@@ -1011,10 +1011,9 @@ export default class InventoryBaseRecord
             "the record started being edited while this fetch was in flight.",
         );
       } else if (data) {
-        this.populateFromJson(this.factory.newFactory(), data);
+        this.populateAdditionalInfo(data, queryParameters);
       }
-      await this.fetchImage("image");
-      await this.fetchImage("thumbnail");
+      await this.finishAdditionalInfo();
       return;
     } catch (error) {
       if (!silent) {
@@ -1031,6 +1030,15 @@ export default class InventoryBaseRecord
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     }
+  }
+
+  protected populateAdditionalInfo(data: object, _queryParameters: URLSearchParams): void {
+    this.populateFromJson(this.factory.newFactory(), data);
+  }
+
+  protected async finishAdditionalInfo(): Promise<void> {
+    await this.fetchImage("image");
+    await this.fetchImage("thumbnail");
   }
 
   async create(): Promise<void> {

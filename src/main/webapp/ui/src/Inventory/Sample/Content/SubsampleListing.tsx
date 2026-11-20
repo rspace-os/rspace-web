@@ -29,11 +29,11 @@ type SubsampleListingArgs = {
  */
 function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
   const { search: _ } = useContext(SearchContext);
-  const [searchOpen, setSearchOpen] = useState(sample.subSamples.length > 1);
+  const [searchOpen, setSearchOpen] = useState(sample.subSamplesCount > 1);
 
   useEffect(() => {
-    setSearchOpen(sample.subSamples.length > 1);
-  }, [sample.subSamples]);
+    setSearchOpen(sample.subSamplesCount > 1);
+  }, [sample.subSamplesCount]);
 
   useEffect(() => {
     if (!sample.search.activeResult && sample.search.filteredResults.length > 0) void sample.search.setActiveResult();

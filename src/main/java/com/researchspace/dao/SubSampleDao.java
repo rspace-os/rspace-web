@@ -25,5 +25,10 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
       InventorySearchDeletedOption deletedItemsOption,
       User user);
 
+  /** Counts active children and those in real storage, without hydrating children. */
+  SampleChildCounts getSampleChildCounts(Long sampleId, boolean sampleDeleted);
+
+  record SampleChildCounts(Long activeCount, Long storedCount) {}
+
   List<SubSample> getAllUsingImage(FileProperty fileProperty);
 }
