@@ -24,25 +24,15 @@
         </tr>
         <tr>
           <td class="field-value-inner">
-            <c:choose>
-              <c:when test="${field.ifPassword}">
-                <input class="inputField ${field.id}" id="${field.id}" size="80"
-                  type="password" name="fieldData" value="${field.fieldData}"
-                  oninput="checkAndMarkField(this)" />
-              </c:when>
-              <c:otherwise>
-                <input class="inputField ${field.id}" id="${field.id}" size="80"
-                  type="text" name="fieldData" value="${field.fieldData}" 
-                  oninput="checkAndMarkField(this)" />
-              </c:otherwise>
-            </c:choose>
+            <input class="inputField ${field.id}" id="${field.id}" size="80"
+              type="text" name="fieldData" value="${field.fieldData}"
+              oninput="checkAndMarkField(this)" />
             <p class="plainTextField ${field.id} singleLineFieldInDocViewMode" id="plainText_${field.id}">
               ${field.fieldData}
             </p>
             <p class="lastModified"><spring:message code="form.field.lastModifiedLabel"/> <span>${field.modificationDateAsDate}</span></p>
             <input type="hidden" name="wasChanged" value="false" />
             <input type="hidden" name="defaultValue" value="${field.defaultStringValue}" />
-            <input type="hidden" name="isPassword" value="${field.ifPassword}" />
             <input type="hidden" name="fieldId" value="${field.id}" />
           </td>
         </tr>

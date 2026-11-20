@@ -33,7 +33,6 @@ public class FieldTestUtils {
   public static StringFieldForm createStringForm() {
     StringFieldForm sft = new StringFieldForm();
     sft.setDefaultStringValue("x");
-    sft.setIfPassword(true);
     sft.setName("stringForm");
     return sft;
   }

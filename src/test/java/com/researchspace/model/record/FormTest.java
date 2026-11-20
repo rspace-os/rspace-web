@@ -324,7 +324,6 @@ public class FormTest {
 
   private FieldForm createAnyFieldForm(Long id) {
     StringFieldForm ft = new StringFieldForm();
-    ft.setIfPassword(false);
     ft.setName("Name");
     ft.setColumnIndex(0);
     ft.setDefaultStringValue("default");

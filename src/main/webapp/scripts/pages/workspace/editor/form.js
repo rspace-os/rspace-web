@@ -1034,16 +1034,11 @@ function editNumberCode(data) {
  */
 function collectDataFromStringEditor() {
   var defaultV = $("#field_defaultvaluestring").val();
-  var ifPasswordV = $("input[name='fieldIfPassword']:checked").val();
   var fieldName = $("#field_name").val();
-  if (ifPasswordV === undefined) {
-    ifPasswordV = "no";
-  }
   const isMandatory = $("#mandatoryCheckbox").prop('checked');
 
   var dataField = {
     defaultValue: defaultV,
-    ifPassword: ifPasswordV,
     name: fieldName,
     fieldId: fieldId,
     mandatory: isMandatory,
@@ -1081,31 +1076,7 @@ function editStringCode(data) {
   const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
-  var password = $(fieldCode).find("input[name='isPassword']").val();
-
-  if (password != data.ifPassword) {
-
-    var passwordInput = $(fieldCode).find("input[name='fieldData']");
-    $(passwordInput).hide();
-    var old_id = $(passwordInput).attr("id");
-    $(passwordInput).attr("id", "Password_hidden");
-    var new_input = document.createElement("input");
-    new_input.setAttribute("id", old_id); // Assign old hidden input ID to
-    // new input
-    new_input.setAttribute("name", "fieldData");
-    if (data.ifPassword) {
-      new_input.setAttribute("type", "password"); // Set proper type
-    } else {
-      new_input.setAttribute("type", "text"); // Set proper type
-    }
-
-    new_input.value = data.defaultStringValue; // Transfer the value to new input
-    $("#Password_hidden").after(new_input);
-    $("#Password_hidden").remove();
-
-  }
   $(fieldCode).find("input[name='fieldData']").val(data.defaultStringValue);
-  $(fieldCode).find("input[name='isPassword']").val(data.ifPassword);
 }
 
 function saveEditedStringField(fieldId) {

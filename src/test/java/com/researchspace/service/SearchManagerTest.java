@@ -2002,7 +2002,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     // Modify the form
     RSForm formToEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
     assertTrue(formToEdit.isTemporary());
-    StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<>("New String Field", "no", "abc");
+    StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<>("New String Field", "abc");
     formMgr.createFieldForm(dto, formToEdit.getId(), user);
 
     // Update the form

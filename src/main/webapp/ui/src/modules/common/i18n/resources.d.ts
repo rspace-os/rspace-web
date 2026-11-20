@@ -10253,7 +10253,6 @@ export default interface Resources {
         "deleteOption": "(Delete)",
         "displayAsPicklist": "Display as a picklist?",
         "dragToSortHint": "(Or drag to sort by hand)",
-        "isPassword": "Is Password",
         "maxValue": "Max Value",
         "minValue": "Min Value",
         "multiple": "Multiple",

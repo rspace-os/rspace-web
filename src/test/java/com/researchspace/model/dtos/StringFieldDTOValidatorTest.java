@@ -23,12 +23,12 @@ public class StringFieldDTOValidatorTest {
   }
 
   private static StringFieldDTO<StringFieldForm> createValid() {
-    StringFieldDTO<StringFieldForm> nfdto = new StringFieldDTO<>("name", "true", "");
+    StringFieldDTO<StringFieldForm> nfdto = new StringFieldDTO<>("name", "");
     return nfdto;
   }
 
   private static StringFieldDTO<StringFieldForm> createNoName() {
-    StringFieldDTO<StringFieldForm> nfdto = new StringFieldDTO<>("", "true", "default value");
+    StringFieldDTO<StringFieldForm> nfdto = new StringFieldDTO<>("", "default value");
     return nfdto;
   }
 
