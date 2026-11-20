@@ -6031,7 +6031,8 @@ components:
             String sources: `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `HAS_VALUE`, `HAS_NO_VALUE`. Text is
             compared after trimming leading and trailing white space (the characters JavaScript's
             `String.prototype.trim()` removes), Unicode NFC normalisation and lowercasing (not case
-            folding, so `STRASSE` does not equal `straße`).
+            folding, so `STRASSE` does not equal `straße`). After that, Greek final sigma (ς) is
+            treated as sigma (σ).
 
             Number sources: `EQUALS`, `NOT_EQUALS`, `LESS_THAN`, `AT_MOST` (less than or equal),
             `GREATER_THAN`, `AT_LEAST` (greater than or equal), `HAS_VALUE`, `HAS_NO_VALUE`. Numbers
@@ -6059,7 +6060,9 @@ components:
             as written, with no surrounding spaces (`422`,
             `validation.fieldDisplayRule.valueNotANumber`): ASCII digits with an optional sign,
             decimal point and exponent, such as `5`, `-2.5`, `+5`, `.5`, `5.`, `05` or `1e3`, at most
-            1000 characters, with at most nine exponent digits and a magnitude within 10^±2000.
+            1000 characters, with at most nine written exponent digits. For a nonzero value, the
+            exponent in normalised scientific notation must be between -2000 and 2000 inclusive, so
+            `9e2000` is accepted and `1e2001` is not; zero is exempt.
             Commas, `0x` and other prefixes, `Infinity` and `NaN` are not numbers.
 
             At most 1000 values, and the stored rule at most 32768 characters; a template request

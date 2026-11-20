@@ -367,8 +367,11 @@ summaries or API responses, as with password fields, must stay `NONE`.
   `isFieldHidden(field)`, built with `hiddenFieldsOf` in [fieldVisibility.ts].
   [TemplateModel] overrides `hiddenFields` to show every field, because the
   template editor always shows all fields.
-- The record forms render template fields through [useShownTemplateFields], which
-  filters out hidden fields and returns an `announcer`, a polite live region
+- The record forms render template fields through [useShownTemplateFields]. It
+  returns `renderedFields`, the shown fields plus any hidden field whose `error` is
+  set, and `wrapField`, which keeps such a hidden field mounted under `hidden` so
+  the text typed into it survives. Always render each field through `wrapField`.
+  It also returns an `announcer`, a polite live region
   ([RevealedFieldsAnnouncer]) that names the fields an answer shows or hides. Render
   it next to the fields. Do not move focus when fields appear or disappear.
 - [useShownTemplateFields] applies an option change at once, but a typed change to
@@ -379,8 +382,11 @@ summaries or API responses, as with password fields, must stay `NONE`.
   always read current values. A field that contains focus is not hidden until
   focus leaves it.
 - `FieldModel.validate()` returns valid for a hidden field unless the field holds
-  a value with an error (`fields.hiddenFieldInvalid`, naming the field), so a
-  hidden mandatory field never blocks Save but a hidden invalid value does.
+  a value with an error, so a
+  hidden mandatory field never blocks Save but a hidden invalid value does. The
+  message is `fields.hiddenFieldInvalidWithSource`, naming the field and,
+  usually, the field whose answer shows it, or `fields.hiddenFieldInvalid`, naming only
+  the field, when no such source can be named.
   `InstrumentModel.validate()` validates its template fields as `SampleModel`
   does. The server makes the same decision for create,
   update, CSV import and the operations wizard.

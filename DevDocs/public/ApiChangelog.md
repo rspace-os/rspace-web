@@ -45,8 +45,11 @@ String fields only when they are not password fields; Inventory string fields). 
 
   `values` is required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`. For `HAS_VALUE` and
   `HAS_NO_VALUE`, omit `values` or send `[]`; the server also accepts `null`. Every other
-  operator compares with exactly one value. A rule with any other property, or an unknown
-  operator, is rejected with 400.
+  operator compares with exactly one value. A malformed rule is rejected with 400: one with any
+  other property, an unknown operator, values that are not strings, or values that do not suit
+  `IS_ANY_OF`, `IS_NONE_OF`, `HAS_VALUE` or `HAS_NO_VALUE` (such as empty `values` for
+  `IS_ANY_OF`, or any values for `HAS_VALUE`). A known operator that does not suit the source
+  field is rejected with 422 (see [Writing rules](#writing-rules)).
 - **Compatibility:** the `operator` enum has new members (`EQUALS`, `NOT_EQUALS`, `CONTAINS`,
   `LESS_THAN`, `AT_MOST`, `GREATER_THAN`, `AT_LEAST`). Clients that read rules into a strict
   enum of operators must accept them.
@@ -57,13 +60,16 @@ String fields only when they are not password fields; Inventory string fields). 
 - **Text and number comparisons.** A comparison value is stored as sent, not trimmed. It must
   not be blank after trimming. Against a number source it must be a number as written, with no
   surrounding spaces: ASCII digits with an optional sign, decimal point and exponent, such as
-  `5`, `-2.5`, `+5`, `.5`, `5.`, `05` or `1e3`, at most 1,000 characters. Commas, `0x`,
-  `Infinity` and `NaN` are not numbers. When evaluating:
+  `5`, `-2.5`, `+5`, `.5`, `5.`, `05` or `1e3`. It may be at most 1,000 characters, with at
+  most nine written exponent digits. For a nonzero value, the exponent in normalised scientific
+  notation must be between -2000 and 2000 inclusive, so `9e2000` is accepted and `1e2001` is
+  not; zero is exempt. Commas, `0x`, `Infinity` and `NaN` are not numbers. When evaluating:
   - Field values and rule values are trimmed of leading and trailing white space (the
     characters JavaScript's `String.prototype.trim()` removes). A value that is empty after
     trimming is no value.
   - Text is compared after Unicode NFC normalisation and lowercasing. This is not case folding:
-    `STRASSE` does not equal `straße`. The server uses ICU4J 79.1 (Unicode 18).
+    `STRASSE` does not equal `straße`. After trimming, NFC normalisation and lowercasing,
+    Greek final sigma (ς) is treated as sigma (σ). The server uses ICU4J 79.1 (Unicode 18).
   - Numbers are compared as exact decimals: `1.0` equals `1`, and `-0` equals `0`.
   - When the source has no value, or a number source holds a value that is not a number, every
     comparison is false except `NOT_EQUALS`, which is true.
@@ -102,8 +108,9 @@ String fields only when they are not password fields; Inventory string fields). 
   - names an option that the source does not offer (`valueUnknown`);
   - is part of a loop of fields that depend on each other (`cycle`).
 
-  Each code is a message key under `validation.fieldDisplayRule.` and is returned with 422,
-  naming the field. Making an ELN String field that a rule reads into a password field is
+  The API returns 422 with a validation message, in the server's language, naming the field;
+  the identifiers above are the message keys under `validation.fieldDisplayRule.`, not values
+  returned in the response. The Inventory API reports the first problem it finds. Making an ELN String field that a rule reads into a password field is
   therefore rejected with `sourceType`.
 - **Size limits.** A rule may list at most 1,000 values, each at most once, and the rule as
   stored may be at most 32,768 characters. A request that breaks a limit is rejected with 422,
