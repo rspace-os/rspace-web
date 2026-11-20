@@ -93,7 +93,8 @@ export function assertSupportedSpec(document: OpenApiDocument): void {
       if (schema.type && (!Array.isArray(schema.type) || !composition.every((part) => schemaType(part))))
         fail(path, "Union type siblings must be redundant typed branches");
     }
-    if (schema.allOf) {
+    // A lone allOf member is an alias, such as a documented reference to a shared enum.
+    if (schema.allOf && schema.allOf.length > 1) {
       for (const part of schema.allOf) {
         const target = isReference(part) ? components[refName(part.$ref, path)] : part;
         const type = schemaType(target);

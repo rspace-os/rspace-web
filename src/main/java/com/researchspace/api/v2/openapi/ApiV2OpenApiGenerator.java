@@ -98,6 +98,7 @@ public final class ApiV2OpenApiGenerator {
                     exposedOperations.getOrDefault(description.resourceName(), Set.of()),
                     text));
     ApiV2OpenApiDeclaredRows.share(schemas, catalog.allSchemas(), componentNames);
+    ApiV2OpenApiSharedRelationships.share(schemas, catalog.allSchemas(), componentNames);
     catalog
         .routableResources()
         .forEach(
@@ -107,7 +108,8 @@ public final class ApiV2OpenApiGenerator {
     catalog
         .routableResources()
         .forEach(
-            resource -> addPaths(paths, resource, componentNames, resourceSchemas, referenced));
+            resource ->
+                addPaths(paths, resource, componentNames, resourceSchemas, schemas, referenced));
 
     ApiV2OpenApiSchemas.requireResponseOnlyRequired(paths, schemas);
     schemas.replaceAll(
@@ -130,21 +132,12 @@ public final class ApiV2OpenApiGenerator {
         .extensions(Map.of("x-rspace-rate-limits", rateLimitsExtension(text)));
   }
 
-  private Map<String, Object> privateNoStoreHeaders() {
-    return ordered(
-        "Cache-Control",
-        ordered(
-            "description",
-            text.get(Key.HEADER_PRIVATE_NO_STORE),
-            "schema",
-            ordered("type", "string", "const", "private, no-store")));
-  }
-
   private void addPaths(
       Map<String, Object> paths,
       ApiV2ResourceRegistration<?, ?> resource,
       Map<String, String> componentNames,
       Map<String, ResourceSchema> resourceSchemas,
+      Map<String, Object> schemas,
       ApiV2OpenApiComponents referenced) {
     String collectionPath = "/api/v2/" + resource.resourceName();
     String itemPath = collectionPath + "/{id}";
@@ -167,7 +160,8 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(
           method,
-          operations.operation(resource, operation, component, resourceSchemas, referenced));
+          operations.operation(
+              resource, operation, component, resourceSchemas, schemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
     ApiV2OpenApiAuditDocs.addAuditPaths(paths, resource, component, text, referenced);

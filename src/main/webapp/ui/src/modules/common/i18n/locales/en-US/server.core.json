@@ -125,6 +125,74 @@
             "tooWide": "The audit search range must not exceed {0} days.",
             "tooWideTitle": "The audit search range is too wide."
           }
+        },
+        "bookingConfiguration": {
+          "lifecycleConflict": "Restore the archived booking configuration before changing it.",
+          "stale": "The booking settings changed after this page was loaded. Reload and try again.",
+          "granularity": {
+            "invalid": "The time increment must be a whole number of minutes from 1 to 527,040, and a day increment must be a whole number of days. Day increments require the item to be open 24 hours a day, seven days a week. Other increments must fit within a continuous opening period."
+          },
+          "openingHours": {
+            "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+          },
+          "buffer": {
+            "invalid": "Booking buffers must be between 0 and 10,080 minutes."
+          },
+          "maximumDuration": {
+            "invalid": "Maximum booking duration must be 0, or from one time increment up to 527,040 elapsed minutes. For minute and hour increments it must be a multiple of the increment. For day increments it must be at least the increment's nominal length of 1,440 minutes per day."
+          },
+          "target": {
+            "invalid": "The selected target is not available for booking.",
+            "conflict": "The selected target already has a booking configuration."
+          },
+          "concurrentModification": "The booking configuration changed. Reload it and try again.",
+          "create": "The booking configuration is invalid.",
+          "patch": "The booking configuration patch is invalid.",
+          "ifMatchRequired": "The current booking configuration version is required.",
+          "timeZone": {
+            "required": "A time zone is required.",
+            "invalid": "The time zone must be a valid IANA time zone."
+          },
+          "defaultSharing": {
+            "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
+          }
+        },
+        "bookingDisplayPreferences": {
+          "availabilityWindow": {
+            "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."
+          },
+          "timeZone": {
+            "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
+          }
+        },
+        "booking": {
+          "window": "Start time must be in the future and end time must be after start time.",
+          "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
+          "target": {
+            "unavailable": "The selected target is not available for booking."
+          },
+          "overlap": "The selected time overlaps another booking.",
+          "buffer": "The selected time is too close to another booking (buffer).",
+          "state": {
+            "transition": "The requested booking state transition is not permitted."
+          },
+          "idempotencyKey": {
+            "invalid": "Idempotency-Key must contain 1 to 64 ASCII letters, digits, dots, underscores, colons or hyphens.",
+            "conflict": "This Idempotency-Key was already used for a different booking request."
+          },
+          "concurrentModification": "The event changed while it was being edited.",
+          "ifMatchRequired": "The current booking version is required.",
+          "create": "The booking is invalid.",
+          "patch": "The booking patch is invalid.",
+          "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
+          "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
+          "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
+          "openingHours": "The booking must remain within this bookable item's opening hours.",
+          "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
+          "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
+          "purpose": {
+            "length": "Purpose must not exceed 1,000 characters."
+          }
         }
       },
       "pagination": {
@@ -553,5 +621,10 @@
       "titleRequired": "Title is a required field.",
       "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
     }
+  },
+  "duration": {
+    "days": "{0, plural, one {# day} other {# days}}",
+    "hours": "{0, plural, one {# hour} other {# hours}}",
+    "minutes": "{0, plural, one {# minute} other {# minutes}}"
   }
 }

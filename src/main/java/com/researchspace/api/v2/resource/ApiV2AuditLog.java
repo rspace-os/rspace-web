@@ -168,7 +168,8 @@ public final class ApiV2AuditLog {
               query.getQ(),
               searchableAuditFields(
                   resource.description(), target.readableFields(), resource.relatedAuditFields()),
-              resource.relatedAuditIdentifierFields()),
+              resource.relatedAuditIdentifierFields(),
+              target.requiredFields()),
           target.readableFields(),
           result ->
               event(
@@ -237,7 +238,13 @@ public final class ApiV2AuditLog {
     return metadata
         .computeIfAbsent(entityType, ApiV2AuditLog::inspect)
         .identifier(target.entity())
-        .map(identifier -> new AuditTarget(valueDomain(entityType), identifier, target.fields()));
+        .map(
+            identifier ->
+                new AuditTarget(
+                    valueDomain(entityType),
+                    identifier,
+                    target.fields(),
+                    resource.requiredAuditFields(target.entity())));
   }
 
   private static Set<String> searchableAuditFields(
@@ -390,7 +397,10 @@ public final class ApiV2AuditLog {
   }
 
   private record AuditTarget(
-      AuditDomain domain, String identifier, FieldSelection readableFields) {}
+      AuditDomain domain,
+      String identifier,
+      FieldSelection readableFields,
+      Map<String, String> requiredFields) {}
 
   private record SearchWindow(Instant fromInclusive, Instant toExclusive) {}
 }
