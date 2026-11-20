@@ -65,7 +65,7 @@ export class BookableItemPage {
   }
 
   get cancel(): Locator {
-    return page.getByRole("button", { name: "Cancel" });
+    return this.detailsPanel.getByRole("button", { name: "Cancel" });
   }
 
   get maximumDuration(): Locator {

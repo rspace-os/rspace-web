@@ -1,5 +1,5 @@
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import {
   getGetBookingCalendarSubscriptionQueryKey,
   getGetBookingConfigurationAccessQueryKey,
   getGetBookingConfigurationQueryKey,
+  getGetMyBookingNotificationSubscriptionQueryKey,
   getListBookingConfigurationAuditEventsQueryKey,
   getListBookingConfigurationsQueryKey,
   getSearchBookingConfigurationAccessGranteesQueryKey,
@@ -292,6 +293,7 @@ async function invalidateBookableItemRecords(
             queryClient.invalidateQueries({ queryKey: getGetBookingConfigurationAccessQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getListBookingConfigurationAuditEventsQueryKey(id) }),
             queryClient.invalidateQueries({ queryKey: getGetBookingCalendarSubscriptionQueryKey(id) }),
+            queryClient.invalidateQueries({ queryKey: getGetMyBookingNotificationSubscriptionQueryKey(id) }),
           ],
     ),
     ...(action === "archive"

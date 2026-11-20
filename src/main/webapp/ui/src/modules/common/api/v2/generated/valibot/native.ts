@@ -429,6 +429,7 @@ export const BookingConfigurationCapabilities = v.object({
   canLeaveConfiguration: v.boolean(),
   canManageAllEvents: v.boolean(),
   canManageAssignments: v.boolean(),
+  canManageNotificationSubscription: v.boolean(),
   canManageOwnBookings: v.boolean(),
   canManageOwners: v.boolean(),
   canSubscribeCalendar: v.boolean(),
@@ -787,6 +788,40 @@ export const BookingDisplayPreferencesReplacement = v.object({
     ),
   ),
   timezoneMode: BookingTimezoneMode,
+});
+
+export const BookingNotificationPreferenceReplacement = v.object({
+  autoSubscribeOwnedItems: v.boolean(),
+  notifyOwnActions: v.boolean(),
+});
+
+export const BookingNotificationPreferences = v.object({
+  autoSubscribeOwnedItems: v.boolean(),
+  notifyOwnActions: v.boolean(),
+});
+
+export const BookingNotificationSubscriptionLookup = v.object({
+  configurationIds: v.pipe(v.array(v.pipe(v.number(), v.integer(), v.gtValue(0))), v.minLength(1), v.maxLength(100)),
+});
+
+export const BookingNotificationSubscriptionReplacement = v.object({
+  enabled: v.boolean(),
+});
+
+export const BookingNotificationSubscriptionStatus = v.object({
+  cancelledEnabled: v.boolean(),
+  configurationId: v.pipe(v.number(), v.integer()),
+  createdEnabled: v.boolean(),
+  emailEnabled: v.boolean(),
+  enabled: v.boolean(),
+});
+
+export const BookingNotificationSubscriptionStatusList = v.object({
+  docs: v.array(BookingNotificationSubscriptionStatus),
+});
+
+export const BookingNotificationUnsubscribeResult = v.object({
+  updatedCount: v.pipe(v.number(), v.integer()),
 });
 
 export const BookingSettingsDocument = v.object({
@@ -1683,6 +1718,34 @@ export const ListBookingConfigurationAuditEventsResponse = v.object({
   start: v.pipe(v.string(), v.isoTimestamp()),
   truncated: v.boolean(),
 });
+
+/**
+ * @summary Get the caller's personal subscription and effective event delivery
+ */
+export const GetMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer()),
+});
+
+export const GetMyBookingNotificationSubscriptionResponse = BookingNotificationSubscriptionStatus;
+
+/**
+ * @summary Update the caller's personal subscription with optimistic concurrency
+ */
+export const ReplaceMyBookingNotificationSubscriptionParams = v.object({
+  id: v.pipe(v.number(), v.integer()),
+});
+
+export const ReplaceMyBookingNotificationSubscriptionHeader = v.object({
+  "If-Match": v.pipe(
+    v.string(),
+    v.regex(/^"[!#-~]+"$/),
+    v.description("Strong entity tag containing the current resource version."),
+  ),
+});
+
+export const ReplaceMyBookingNotificationSubscriptionBody = BookingNotificationSubscriptionReplacement;
+
+export const ReplaceMyBookingNotificationSubscriptionResponse = BookingNotificationSubscriptionStatus;
 
 /**
  * Returns scheduling defaults for future bookable items and account display fallbacks.
@@ -3101,6 +3164,30 @@ export const RotateUserBookingCalendarSubscriptionHeader = v.object({
 });
 
 export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
+
+/**
+ * @summary Get the caller's booking notification preferences
+ */
+export const GetMyBookingNotificationPreferencesResponse = BookingNotificationPreferences;
+
+/**
+ * @summary Change personal notification preferences without changing existing subscriptions
+ */
+export const ReplaceMyBookingNotificationPreferencesBody = BookingNotificationPreferenceReplacement;
+
+export const ReplaceMyBookingNotificationPreferencesResponse = BookingNotificationPreferences;
+
+/**
+ * @summary Unsubscribe from all instruments without changing the automatic subscription default
+ */
+export const UnsubscribeMyBookingNotificationsResponse = BookingNotificationUnsubscribeResult;
+
+/**
+ * @summary Read personal subscriptions for up to 100 readable instruments
+ */
+export const LookupMyBookingNotificationSubscriptionsBody = BookingNotificationSubscriptionLookup;
+
+export const LookupMyBookingNotificationSubscriptionsResponse = BookingNotificationSubscriptionStatusList;
 
 /**
  * Returns the current user's complete override or the current global defaults. Browser mode is resolved by the client; institutionTimezone is the JVM default zone.

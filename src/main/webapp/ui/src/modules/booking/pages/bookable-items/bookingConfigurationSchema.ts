@@ -16,6 +16,7 @@ const NO_BOOKING_CAPABILITIES = {
   canCreateBlockout: false,
   canSubscribeCalendar: false,
   canLeaveConfiguration: false,
+  canManageNotificationSubscription: false,
 };
 
 function mapConfigurationFields(input: BookingConfigurationsRead) {
