@@ -45,6 +45,7 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
@@ -67,6 +68,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -1198,6 +1200,66 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     Folder galleryUserFolder =
         findDeletedUsersSubfolder(galleryImagesFolder, userToDelete, sysadmin);
     assertThat(folderMgr.getFolderChildrenIds(galleryUserFolder)).contains(image.getId());
+  }
+
+  @Test
+  public void deletingImageOwnerPreservesImageInsertedFromUnsharedSnippet() throws Exception {
+    TestGroup group = createTestGroup(1);
+    User imageOwner = group.u1();
+    User recipient = group.getPi();
+
+    logoutAndLoginAs(imageOwner);
+    Field source = createBasicDocumentInRootFolderWithText(imageOwner, "Source").getFields().get(0);
+    EcatImage image = addImageToField(source, imageOwner);
+    EcatImage unusedImage = addImageToGallery(imageOwner);
+    Snippet snippet = recordMgr.createSnippet("Shared image", source.getFieldData(), imageOwner);
+    sharingMgr.shareRecord(
+        imageOwner,
+        snippet.getId(),
+        new ShareConfigElement[] {new ShareConfigElement(group.getGroup().getId(), "read")});
+
+    logoutAndLoginAs(recipient);
+    Field destination =
+        createBasicDocumentInRootFolderWithText(recipient, "Recipient").getFields().get(0);
+    String insertedContent =
+        recordMgr.copySnippetIntoField(snippet.getId(), destination.getId(), recipient);
+    appendContentToField(destination, insertedContent, recipient);
+
+    logoutAndLoginAs(imageOwner);
+    unshareRecordORNotebookWithGroup(imageOwner, snippet, group.getGroup(), "read");
+
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    logoutAndLoginAs(sysadmin);
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(imageOwner.getId(), unrestrictedDeletionPolicy(), sysadmin);
+    assertTrue(result.isSucceeded(), result.getMessage());
+    assertUserNotExist(imageOwner);
+    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(unusedImage.getId()));
+
+    assertTrue(
+        userDeletionMgr
+            .deleteRemovedUserFilestoreResources(imageOwner.getId(), true, sysadmin)
+            .isSucceeded());
+    EcatImage transferredImage = recordMgr.getEcatImage(image.getId(), false);
+    assertEquals(sysadmin, transferredImage.getOwner());
+    assertEquals(sysadmin.getUsername(), transferredImage.getFileProperty().getFileOwner());
+    assertThat(new File(new URI(transferredImage.getFileUri()))).exists();
+
+    Folder images =
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, sysadmin);
+    assertThat(
+            folderMgr.getFolderChildrenIds(findDeletedUsersSubfolder(images, imageOwner, sysadmin)))
+        .contains(image.getId());
+
+    logoutAndLoginAs(recipient);
+    assertThat(fieldMgr.get(destination.getId(), recipient).orElseThrow().getFieldData())
+        .contains(insertedContent);
+    assertThat(fieldMgr.getFieldAttachments(destination.getId()))
+        .anyMatch(
+            attachment ->
+                !attachment.isDeleted() && attachment.getMediaFile().getId().equals(image.getId()));
   }
 
   @Test

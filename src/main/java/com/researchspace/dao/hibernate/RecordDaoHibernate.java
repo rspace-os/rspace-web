@@ -863,6 +863,21 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   }
 
   @Override
+  public List<EcatMediaFile> getSnippetImagesUsedInOtherUsersDocuments(User owner) {
+    return getSession()
+        .createQuery(
+            "SELECT image FROM EcatImage image WHERE image.owner = :owner"
+                + " AND EXISTS (SELECT 1 FROM RecordAttachment attachment"
+                + " WHERE attachment.mediaFile = image AND TYPE(attachment.record) = Snippet)"
+                + " AND EXISTS (SELECT 1 FROM FieldAttachment attachment"
+                + " WHERE attachment.mediaFile = image AND attachment.deleted = false"
+                + " AND attachment.field.structuredDocument.owner <> :owner)",
+            EcatMediaFile.class)
+        .setParameter("owner", owner)
+        .list();
+  }
+
+  @Override
   public void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername) {
     getSession()
         .createNativeQuery(

@@ -29,6 +29,7 @@ import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.TemplateAndGalleryTransferService;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
@@ -60,7 +61,7 @@ public class UserDeletionManagerTest {
   private @Mock DeletedUserResourcesListHelper deletedResourcesHelper;
   private @Mock RecordDao recordDao;
   private @Mock TransferService formTransferService;
-  private @Mock TransferService templateTransferService;
+  private @Mock TemplateAndGalleryTransferService templateTransferService;
   private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks UserDeletionManagerImpl userDeletionMgr;

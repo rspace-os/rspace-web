@@ -8,6 +8,7 @@ import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.files.service.FileStore;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
@@ -18,6 +19,7 @@ import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.TemplateAndGalleryTransferService;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 @Service("userDeletionManager")
 public class UserDeletionManagerImpl implements UserDeletionManager {
@@ -52,7 +55,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired DeletedUserResourcesListHelper deletedUserResourcesHelper;
 
   private @Autowired @Qualifier("formTransferService") TransferService formTransferService;
-  private @Autowired @Qualifier("templateTransferService") TransferService templateTransferService;
+  private @Autowired TemplateAndGalleryTransferService templateTransferService;
 
   @Override
   public FormsAndTemplatesUsage getFormsAndTemplatesUsage(Long userToDeleteId) {
@@ -82,10 +85,21 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       formTransferService.transferOwnership(toDelete, subject);
     }
 
+    List<EcatMediaFile> snippetImages =
+        policy.isForceDelete()
+            ? recordDao.getSnippetImagesUsedInOtherUsersDocuments(toDelete)
+            : List.of();
+    if (!snippetImages.isEmpty()) {
+      templateTransferService.transferGalleryItems(toDelete, subject, snippetImages);
+    }
+
     // Collect filestore resources after transfers so that any gallery items whose FileProperty
     // owner was updated to the new owner are excluded from the deletion list.
     Optional<String> saveResourcesListError = saveFilestoreResourcesTempList(toDelete);
     if (saveResourcesListError.isPresent()) {
+      if (!snippetImages.isEmpty()) {
+        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+      }
       return new ServiceOperationResult<>(null, false, saveResourcesListError.get());
     }
 
@@ -93,6 +107,10 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       for (Group group : toDelete.getGroups()) {
         String msg;
         if ((msg = validateGroupMembershipCriteria(toDelete, group, policy)) != null) {
+          if (!snippetImages.isEmpty()) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            deletedUserResourcesHelper.removeResourcesListFile(userId, true);
+          }
           return new ServiceOperationResult<>(null, false, msg);
         }
       }
