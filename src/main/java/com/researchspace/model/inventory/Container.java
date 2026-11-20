@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -305,12 +306,19 @@ public class Container extends MovableInventoryRecord implements Serializable {
   }
 
   public ContainerLocation addToNewLocation(MovableInventoryRecord record) {
+    return addToNewLocation(record, null);
+  }
+
+  ContainerLocation addToNewLocation(MovableInventoryRecord record, BulkMoveChanges changes) {
     if (!isListLayoutContainer() && !isWorkbench()) {
       throw new LocalizedIllegalArgumentException(
           "errors.inventory.container.noCoordinatesRequired", getContainerType());
     }
+    if (changes != null) {
+      changes.renumber(this);
+    }
     ContainerLocation newLocation = createOrRetrieveLocationWithCoords(nextFreeCoordX(), 1);
-    setRecordInLocation(record, newLocation);
+    setRecordInLocation(record, newLocation, changes);
     return newLocation;
   }
 
@@ -340,6 +348,11 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation addToNewLocationWithCoords(
       MovableInventoryRecord record, Integer coordX, Integer coordY) {
+    return addToNewLocationWithCoords(record, coordX, coordY, null);
+  }
+
+  ContainerLocation addToNewLocationWithCoords(
+      MovableInventoryRecord record, Integer coordX, Integer coordY, BulkMoveChanges changes) {
     if (isListLayoutContainer() || isWorkbench()) {
       throw new LocalizedIllegalArgumentException(
           "errors.inventory.container.explicitCoordinatesNotAllowed", getContainerType());
@@ -349,7 +362,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
           "errors.inventory.container.imageContainerLocationRequired");
     }
     ContainerLocation targetLocation = createOrRetrieveLocationWithCoords(coordX, coordY);
-    setRecordInLocation(record, targetLocation);
+    setRecordInLocation(record, targetLocation, changes);
     return targetLocation;
   }
 
@@ -424,6 +437,11 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   @Transient
   public void setRecordInLocation(MovableInventoryRecord record, ContainerLocation location) {
+    setRecordInLocation(record, location, null);
+  }
+
+  void setRecordInLocation(
+      MovableInventoryRecord record, ContainerLocation location, BulkMoveChanges changes) {
     Validate.notNull(record);
     Validate.notNull(location);
 
@@ -440,7 +458,26 @@ public class Container extends MovableInventoryRecord implements Serializable {
     record.setParentLocation(location);
     record.setLastMoveDate(Instant.now());
 
-    resetContentCount();
+    if (changes == null) {
+      resetContentCount();
+    } else {
+      adjustContentCount(record, 1);
+      changes.touched.add(this);
+    }
+  }
+
+  private void adjustContentCount(InventoryRecord record, int difference) {
+    if (record == null) {
+      return;
+    }
+    if (record.isSubSample()) {
+      contentCountSubSamples += difference;
+    } else if (record.isContainer()) {
+      contentCountContainers += difference;
+    } else if (record.isInstrument()) {
+      contentCountInstruments += difference;
+    }
+    contentCount += difference;
   }
 
   private void resetContentCount() {
@@ -448,18 +485,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
     contentCountContainers = 0;
     contentCountInstruments = 0;
     contentCount = 0;
-    for (ContainerLocation loc : locations) {
-      InventoryRecord storedRecord = loc.getStoredRecord();
-      if (storedRecord != null) {
-        if (storedRecord.isSubSample()) {
-          contentCountSubSamples++;
-        } else if (storedRecord.isContainer()) {
-          contentCountContainers++;
-        } else if (storedRecord.isInstrument()) {
-          contentCountInstruments++;
-        }
-        contentCount++;
-      }
+    for (ContainerLocation location : locations) {
+      adjustContentCount(location.getStoredRecord(), 1);
     }
   }
 
@@ -508,20 +535,55 @@ public class Container extends MovableInventoryRecord implements Serializable {
   }
 
   public void removeStoredRecord(ContainerLocation location) {
-    Validate.notNull(location);
-
-    location.removeStoredRecord();
-    resetLocationsAfterRecordRemoval(location);
-    resetContentCount();
+    removeStoredRecord(location, null);
   }
 
-  private void resetLocationsAfterRecordRemoval(ContainerLocation locationToRemove) {
-    if (isImageLayoutContainer()) {
-      return; /* for image container we keep defined locations permanently */
+  void removeStoredRecord(ContainerLocation location, BulkMoveChanges changes) {
+    Validate.notNull(location);
+
+    InventoryRecord removed = changes == null ? null : location.getStoredRecord();
+    location.removeStoredRecord();
+    if (!isImageLayoutContainer()) {
+      locations.removeIf(l -> l.getId() == location.getId() && l.getStoredRecord() == null);
+    }
+    if (changes == null) {
+      resetListLayoutLocationCoords();
+      resetContentCount();
+    } else {
+      adjustContentCount(removed, -1);
+      changes.touched.add(this);
+      if (isListLayoutContainer() || isWorkbench()) {
+        changes.pendingRenumber.add(this);
+      }
+    }
+  }
+
+  /** Tracks deferred container maintenance for one bulk move in its existing transaction. */
+  public static final class BulkMoveChanges {
+    private final Set<Container> touched = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<Container> pendingRenumber =
+        Collections.newSetFromMap(new IdentityHashMap<>());
+
+    private void renumber(Container container) {
+      if (pendingRenumber.remove(container)) {
+        container.resetListLayoutLocationCoords();
+      }
     }
 
-    locations.removeIf(l -> l.getId() == locationToRemove.getId() && l.getStoredRecord() == null);
-    resetListLayoutLocationCoords();
+    /** Renumbers pending lists before the API or an event listener reads their locations. */
+    public void renumberBeforeSnapshot() {
+      pendingRenumber.forEach(Container::resetListLayoutLocationCoords);
+      pendingRenumber.clear();
+    }
+
+    /**
+     * Materialises final coordinates and recomputes the stored counts once per touched container.
+     */
+    public void finish() {
+      renumberBeforeSnapshot();
+      touched.forEach(Container::resetContentCount);
+      touched.clear();
+    }
   }
 
   private void resetListLayoutLocationCoords() {

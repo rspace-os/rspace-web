@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import com.researchspace.model.inventory.Container.BulkMoveChanges;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.OneToOne;
@@ -74,27 +75,45 @@ public abstract class MovableInventoryRecord extends InventoryRecord {
   }
 
   public void moveToNewParent(Container targetParent) {
-    removeFromCurrentParent();
-    targetParent.addToNewLocation(this);
+    moveToNewParent(targetParent, null);
+  }
+
+  public void moveToNewParent(Container targetParent, BulkMoveChanges changes) {
+    removeFromCurrentParent(changes);
+    targetParent.addToNewLocation(this, changes);
   }
 
   public void moveToNewParentWithCoords(Container targetParent, Integer coordX, Integer coordY) {
-    removeFromCurrentParent();
-    targetParent.addToNewLocationWithCoords(this, coordX, coordY);
+    moveToNewParentWithCoords(targetParent, coordX, coordY, null);
+  }
+
+  public void moveToNewParentWithCoords(
+      Container targetParent, Integer coordX, Integer coordY, BulkMoveChanges changes) {
+    removeFromCurrentParent(changes);
+    targetParent.addToNewLocationWithCoords(this, coordX, coordY, changes);
   }
 
   public void moveToNewParentAndLocation(Container targetParent, ContainerLocation targetLocation) {
-    removeFromCurrentParent();
-    targetParent.setRecordInLocation(this, targetLocation);
+    moveToNewParentAndLocation(targetParent, targetLocation, null);
+  }
+
+  public void moveToNewParentAndLocation(
+      Container targetParent, ContainerLocation targetLocation, BulkMoveChanges changes) {
+    removeFromCurrentParent(changes);
+    targetParent.setRecordInLocation(this, targetLocation, changes);
   }
 
   public void removeFromCurrentParent() {
+    removeFromCurrentParent(null);
+  }
+
+  public void removeFromCurrentParent(BulkMoveChanges changes) {
     Container currentParent = getParentContainer();
     if (currentParent != null) {
       if (!currentParent.isWorkbench()) {
         setLastNonWorkbenchParent(currentParent);
       }
-      currentParent.removeStoredRecord(getParentLocation());
+      currentParent.removeStoredRecord(getParentLocation(), changes);
       setParentLocation(null);
     }
   }
