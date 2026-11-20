@@ -399,6 +399,17 @@ function setQueryParam(uri, key, value) {
   return uri;
 }
 
+/*
+ * A single-selection Choice field renders as radios, but legacy data can hold
+ * several values. Recompute the input type before ticking refreshed values so a
+ * radio group never collapses them to one.
+ */
+function syncChoiceInputType(fieldId, selectedValues) {
+  var multiple = $("#field_" + fieldId).data("multipleChoice") === true;
+  var type = multiple || (selectedValues && selectedValues.length > 1) ? "checkbox" : "radio";
+  $("input[name='fieldSelectedChoicesFinal_" + fieldId + "']").prop("type", type);
+}
+
 function disableLastCheckboxField() {
   if (lastCheckboxEdited != -1) {
     var inputName = "fieldSelectedChoicesFinal_" + lastCheckboxEdited;
@@ -523,6 +534,7 @@ function _updateAutosavedFields(data) {
       return;
     }
     if (attr == "choice") {
+      syncChoiceInputType(value.id, value.choiceOptionSelectedAsList);
       var selectedValues = $field.find(
         "input[name='fieldSelectedChoicesFinal_" + value.id + "']:checked");
       $(selectedValues).prop('checked', false);

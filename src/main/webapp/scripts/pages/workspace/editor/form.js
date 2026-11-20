@@ -831,18 +831,24 @@ function fieldFormValidation(field) {
   } else if (field == "Choice") {
     $('.deleteChoice').click(function () {
       $(this).parent().remove();
+      syncChoiceDefaultInputType();
     });
     $("#choiceFields").sortable();
+    $("input[name=fieldMultipleAllowed]").change(syncChoiceDefaultInputType);
+    $("#choiceFields").on("change", "input[name=fieldSelectedChoices]", syncChoiceDefaultInputType);
+    syncChoiceDefaultInputType();
     $('#addChoice').click(function () {
       var choiceName = $("#addChoiceName").val();
       if ("" !== choiceName) {
-        $('#choiceFields').append("<li><input type=\"checkbox\" name=\"fieldSelectedChoices\" value=\"" +
+        $('#choiceFields').append("<li><label style=\"font-weight: normal;\"><input type=\"" + choiceDefaultInputType() +
+          "\" name=\"fieldSelectedChoices\" value=\"" +
           choiceName + "\"> <input type=\"hidden\" name=\"fieldChoices\" value=\"" + RS.escapeHtml(choiceName) + "\"> " +
-          RS.escapeHtml(choiceName) + " <a href=\"#\" style=\"font-weight:bold;\" class=\"deleteChoice\">" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
+          RS.escapeHtml(choiceName) + "</label> <a href=\"#\" style=\"font-weight:bold;\" class=\"deleteChoice\">" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
         $("#addChoiceName").val("");
         $("#addChoiceName").focus();
         $('.deleteChoice').click(function () {
           $(this).parent().remove();
+          syncChoiceDefaultInputType();
         });
         $("#choiceFields").sortable();
       }
@@ -870,6 +876,24 @@ function fieldFormValidation(field) {
       validateNumberField($("#field_defaultvalue"));
     });
   }
+}
+
+function isSingleChoiceSelected() {
+  return $("input[name=fieldMultipleAllowed]:checked").val() !== "yes";
+}
+
+/*
+ * Default selectors are radios for a single-selection Choice field. They stay
+ * checkboxes while more than one default is ticked, so the author chooses which
+ * one to keep instead of the browser dropping one.
+ */
+function choiceDefaultInputType() {
+  var tickedDefaults = $("input[name=fieldSelectedChoices]:checked").length;
+  return isSingleChoiceSelected() && tickedDefaults <= 1 ? "radio" : "checkbox";
+}
+
+function syncChoiceDefaultInputType() {
+  $("input[name=fieldSelectedChoices]").prop("type", choiceDefaultInputType());
 }
 
 function validateNumberField(field) {
@@ -1399,6 +1423,7 @@ function editChoiceCode(data) {
   $(ulChoice).hide();
   $(ulChoice).attr("id", "ulChoice_hidden");
 
+  var inputType = data.multipleChoice || data.defaultChoiceOptionAsList.length > 1 ? "checkbox" : "radio";
   var newCode = "<ul id=\"choiceFieldsFinal\">";
   var isSelected = false;
   $.each(data.choiceOptionAsList, function (i, val) {
@@ -1409,15 +1434,11 @@ function editChoiceCode(data) {
       }
     });
 
-    if (isSelected) {
-      newCode = newCode + "<li><input id=\"" + data.id + "\"   type=\"checkbox\" name=\"fieldSelectedChoicesFinal_" +
-        data.id + "\"  value=\"" + val + "\" checked><input type=\"hidden\" name=\"fieldChoicesFinal_" +
-        data.id + "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    } else {
-      newCode = newCode + "<li><input id=\"" + data.id + "\"  type=\"checkbox\" name=\"fieldSelectedChoicesFinal_" +
-        data.id + "\"  value=\"" + val + "\"><input type=\"hidden\" name=\"fieldChoicesFinal_" + data.id +
-        "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</li>";
-    }
+    var inputId = "choice_" + data.id + "_" + i;
+    newCode = newCode + "<li><label for=\"" + inputId + "\" style=\"font-weight: normal;\"><input id=\"" + inputId +
+      "\" type=\"" + inputType + "\" name=\"fieldSelectedChoicesFinal_" + data.id + "\"  value=\"" + val + "\"" +
+      (isSelected ? " checked" : "") + "><input type=\"hidden\" name=\"fieldChoicesFinal_" + data.id +
+      "\" value=\"" + val + "\">" + RS.escapeHtml(val) + "</label></li>";
   });
 
   newCode = newCode + "<input type=\"hidden\" name=\"wasChanged\" value=\"false\"/> <input type=\"hidden\" name=\"fieldId\" value=\"" + data.id + "\"/> </ul>";
@@ -1655,6 +1676,10 @@ function fieldFormValid(field) {
       if ($("#choiceFields").children().length === 0) {
         isValid = addError("#addChoiceName",
           RS.msg("legacyjs.workspace.form.noChoicesAdded"));
+      }
+      if (isSingleChoiceSelected() && $("input[name=fieldSelectedChoices]:checked").length > 1) {
+        isValid = addError("#choiceFields",
+          RS.msg("legacyjs.workspace.form.singleChoiceMultipleDefaults"));
       }
     }
     if (fieldType == "Radio") {

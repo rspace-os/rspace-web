@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<tr id="field_${field.id}" name="choice" class="field">
+<tr id="field_${field.id}" name="choice" class="field" data-multiple-choice="${field.multipleChoice}">
   <td class="field-value">
     <div id="theChoice" style="position: relative;">
       <table>
@@ -24,8 +24,11 @@
         </tr>
         <tr>
           <td class="field-value-inner">
+            <%-- Single fields that already store several values keep checkboxes so no value is lost --%>
+            <c:set var="choiceInputType"
+              value="${field.multipleChoice or fn:length(field.choiceOptionSelectedAsList) gt 1 ? 'checkbox' : 'radio'}" />
             <ul id="choiceFieldsFinal" class="hideBulletPoint">
-              <c:forEach var="fieldChoice" items="${field.choiceOptionAsList}">
+              <c:forEach var="fieldChoice" items="${field.choiceOptionAsList}" varStatus="choiceStatus">
                 <c:set var="isSelected" value="false" scope="page" />
                 <c:forEach var="fieldSelected" items="${field.choiceOptionSelectedAsList}">
                   <c:if test="${fieldChoice eq fieldSelected}">
@@ -33,14 +36,16 @@
                   </c:if>
                 </c:forEach>
                 <li class='choiceLi ${field.id}'>
-                  <input type="checkbox" class="${field.id}" id="${field.id}"
+                  <label for="choice_${field.id}_${choiceStatus.index}" style="font-weight: normal;">
+                  <input type="${choiceInputType}" class="${field.id}" id="choice_${field.id}_${choiceStatus.index}"
                     name="fieldSelectedChoicesFinal_${field.id}"
-                    value="${fieldChoice}" onchange="checkAndMarkField(this)"
+                    value="${fieldChoice}" onchange="checkAndMarkField(this, ${field.id})"
                     <c:if test="${isSelected eq 'true'}">checked</c:if>>
                   <input
                     type="hidden" name="fieldChoicesFinal_${field.id}"
                     value="${fieldChoice}">
                   ${fieldChoice}
+                  </label>
                 </li>
               </c:forEach>
               <input type="hidden" name="wasChanged" value="false" />

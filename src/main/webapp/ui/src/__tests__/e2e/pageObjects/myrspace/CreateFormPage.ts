@@ -15,6 +15,16 @@ export class CreateFormPage extends BasePage {
     await this.page.getByRole("button", { name: "Save and Close" }).waitFor({ state: "visible" });
   }
 
+  async openExisting(formId: number): Promise<void> {
+    await this.page.goto(`/workspace/editor/form/edit/${formId}`);
+    await this.waitUntilLoaded();
+  }
+
+  /** The preview row of one field. Legacy JSP rows have no accessible name, so match the name cell. */
+  fieldPreview(name: string): Locator {
+    return this.page.locator("tr.field").filter({ has: this.page.locator("td.field-name").filter({ hasText: name }) });
+  }
+
   get statusNew(): Locator {
     return this.page.getByText("Status - NEW", { exact: true });
   }
@@ -58,7 +68,7 @@ export class CreateFormPage extends BasePage {
   }
 
   async openFieldForEditing(name: string): Promise<FieldEditorDialogComponent> {
-    await this.fieldRow(name).getByRole("button", { name: "Edit" }).click();
+    await this.fieldPreview(name).getByRole("button", { name: "Edit" }).click();
     const editor = new FieldEditorDialogComponent(this.page);
     await editor.waitUntilVisible();
     return editor;

@@ -352,6 +352,7 @@ function _updateFields(fields) {
     }
 
     if (field.type == "CHOICE") {
+      syncChoiceInputType(field.id, field.choiceOptionSelectedAsList);
       $("[name=fieldSelectedChoicesFinal_" + field.id + "]").prop(
         "checked",
         false
@@ -793,8 +794,8 @@ function checkNumber(element) {
 }
 
 // marks it as modified for autosaving
-function checkAndMarkField(element) {
-  var currentId = $(element).attr("id");
+function checkAndMarkField(element, fieldId) {
+  var currentId = fieldId !== undefined ? fieldId : $(element).attr("id");
   var $field = $("#field_" + currentId);
   _setWasChangedFlagOnField($field, true);
 }
