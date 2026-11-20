@@ -151,7 +151,7 @@ definitions fail before rendering. Array row bounds come from `minItems` and `ma
 
 A collection config declares a relationship once. If an experiment schema uses an `owner`
 relationship instead of the scalar owner in the example above, the adapter derives one optional
-field for each `<relationship>.<field>` entry in `x-rspace-relationship-fields`, such as `owner.name`,
+field for each `<relationship>.<field>` selector in `x-rspace-filter`, such as `owner.name`,
 labelled "Owner → Name". You need not declare each target field separately. The adapter also
 exposes published relationship fields when their owner is absent from the collection config, such
 as `createdBy.username` and `updatedBy.username`. These fields remain filter-only and serialize the
@@ -173,7 +173,8 @@ The field label combines the translated relationship label and the target field 
 catalog label ahead of the server title, so "Bookable item → Instrument name" becomes
 "Bookable item → Name". Unknown target fields use the server title, then the field name.
 Explicit labels for configured structured child fields are retained. An owner without a configured
-field uses `common:tableList.fields.<owner>`, such as "Created by", then the owner name. A metadata-derived identity field takes its
+field uses `common:tableList.fields.<owner>`, such as "Created by", then the published
+`viaTitle`, then the owner name. A metadata-derived identity field takes its
 label from the same `common:tableList.fields.<selector>` key.
 
 The adapter retains label keys, literal titles and relationship metadata. React resolves them through
