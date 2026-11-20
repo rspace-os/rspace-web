@@ -143,6 +143,8 @@ shown in quotation marks, so spaces and punctuation in it are clear; a number is
 - Shown when Batch code is not “pending”
 - Shown when Weight is greater than 5
 
+![The Supplier lot field in a saved Inventory sample template, showing the summary "Shown when Batch code contains “LOT”" and "Not mandatory" instead of the editor](images/conditional-field-display/template-text-summary.png)
+
 If a field sits above
 the field its rule reads, the summary, and the **Field** choice while editing, suggest moving it
 below, which reads better for the person filling it in. Order is otherwise up to you.
@@ -169,6 +171,8 @@ cannot be renamed anyway, so the message appears only on an option added in the 
 ### ELN Forms: the form editor
 
 Use this part for the ELN Forms article.
+
+![The Overflow plan field's card in the ELN form editor: Display this field when… is set to Only when another field has certain values, with Field "Volume", Condition "is at least" and Value "10"](images/conditional-field-display/form-number-condition.png)
 
 - The field editor is built into the form page. Add fields with **Add field**; reorder them with
   the move buttons on each field. There is no separate "Reorder Fields" dialog any more.
@@ -211,6 +215,8 @@ Use this part for the ELN Forms article.
 ### Inventory: sample and instrument templates
 
 Use this part for the Inventory templates article.
+
+![The Supplier lot field's card in a sample template while editing: Display this field when… is set to Only when another field has certain values, with Field "Batch code", Condition "contains" and Value "LOT"](images/conditional-field-display/template-text-condition.png)
 
 - Each field in the template's fields section has its own **Display this field when…** section,
   in both sample templates and instrument templates.
