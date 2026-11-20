@@ -181,11 +181,9 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
 
   private void updateFieldAttachments(
       final Field persistentField, User subject, FieldContentDelta delta, String newFieldData) {
-    FieldContents addedContent = delta.getAdded();
-    if (addedContent.hasAnyElements()) {
-      for (EcatMediaFile emf : addedContent.getAllMediaFiles().getElements()) {
-        fieldManager.addMediaFileLink(emf.getId(), subject, persistentField.getId(), false);
-      }
+    List<EcatMediaFile> addedMediaFiles = delta.getAdded().getAllMediaFiles().getElements();
+    for (EcatMediaFile emf : addedMediaFiles) {
+      fieldManager.addMediaFileLink(emf.getId(), subject, persistentField.getId(), false);
     }
     FieldContents removedContent = delta.getRemoved();
     if (removedContent.hasAnyElements()) {
@@ -200,6 +198,8 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
       // while iterating over removedemfs. Items remaining in candidatesToRemoveFromDb
       // after examining whole document for links are then mark as deleted or removed from db.
       Set<EcatMediaFile> candidatesToRemoveFromDb = new HashSet<>(removedemfsFromField);
+      // Annotating an image changes its URL while still referencing the same Gallery image.
+      candidatesToRemoveFromDb.removeAll(addedMediaFiles);
 
       String data =
           persistentField.getTempField() != null
