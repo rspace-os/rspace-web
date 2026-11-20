@@ -9,7 +9,8 @@
   <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
   <script defer src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
-  <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
+  <%-- global.js skips its ready-handler setup when currentUser is undefined; this page has always run it. --%>
+  <script>if (typeof window.currentUser === "undefined") { window.currentUser = ""; }</script>
   <rst:bundle bundle="tinymceGalaxy" />
   <link rel="stylesheet" type="text/css" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
 </head>
