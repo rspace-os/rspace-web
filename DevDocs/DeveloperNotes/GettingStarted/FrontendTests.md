@@ -12,6 +12,26 @@ Windows, macOS, and Linux.
 A file-name filter can be appended to run only matching tests. For example,
 `pnpm run test ContainerModel` runs the ContainerModel tests.
 
+### Test environments
+
+`pnpm run test` runs two Vitest projects, configured in
+`src/main/webapp/ui/vite.config.ts`:
+
+- `jsdom` runs every `*.test.*` file in a simulated browser DOM, after
+  `src/__tests__/setup.ts`. That setup starts the MSW server (unhandled
+  requests fail the test), loads the `common` translation catalogue and
+  switches i18n to `cimode`, so components render translation keys.
+- `node` runs the pure utility suites in the `src/util/__tests__/` folders
+  listed in `nodeTestFiles` (`iterators`, `set`, `optional`, `result`,
+  `ArrayUtils`, `Util`, `StringUtils` and `parsers`). These run in plain Node,
+  without `setup.ts`, so they have no DOM, MSW or i18n, and start faster. The
+  `jsdom` project excludes them.
+
+Add a folder to `nodeTestFiles` only when none of its tests need the DOM,
+network mocks or translations; put any test that does in another folder.
+`--project node` or `--project jsdom` runs one project, for example
+`pnpm run test --project node`.
+
 ### Other useful arguments
 
 Appending `--verbose` outputs a detailed listing of each test. pnpm passes

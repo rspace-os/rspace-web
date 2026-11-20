@@ -88,6 +88,7 @@
     <include relativeToChangelogFile="true" file="changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed-edge-cases.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1658.xml"/>
 
     <include relativeToChangelogFile="true" file="changeLog-user-preference-unique.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-notification-message-text.xml"/>

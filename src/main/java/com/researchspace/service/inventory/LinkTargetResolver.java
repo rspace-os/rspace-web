@@ -3,14 +3,16 @@ package com.researchspace.service.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.netfiles.NfsFileStore;
 import java.util.Optional;
 
 /**
  * Resolves an Inventory Link target GlobalID (inventory item or ELN item) to decide whether it
  * points at a record that actually exists and that the supplied user is permitted to read. Used by
  * link validation to reject links to non-existent or unreadable targets, regardless of whether the
- * target lives in the Inventory or in the ELN. Not transactional itself: implementations touch
- * DAOs, so they must be invoked within the transaction of a calling {@code *Manager} service.
+ * target lives in the Inventory or in the ELN, and the filestore a Filestore item target goes
+ * through. Not transactional itself: implementations touch DAOs, so they must be invoked within the
+ * transaction of a calling {@code *Manager} service.
  *
  * <p>Implementations answer false or empty, and must never let an exception leave a transactional
  * {@code *Manager} on the way: that marks the caller's transaction rollback-only even when caught,
@@ -61,4 +63,13 @@ public interface LinkTargetResolver {
    *     prefix is not an Inventory one
    */
   Optional<InventoryRecord> viewableInventoryTarget(GlobalIdentifier target, User user);
+
+  /**
+   * The filestore a link target names, when it belongs to the user: the Gallery shows a user only
+   * their own filestores, and a filestore's name is theirs alone to see (ADR 0016). Returned
+   * whether or not it was removed from the Gallery since; link creation filters removed ones out,
+   * the summary reports them. Empty for a null id, an unknown filestore and another user's, which
+   * are deliberately indistinguishable. Never throws.
+   */
+  Optional<NfsFileStore> ownedFilestore(Long filestoreId, User user);
 }

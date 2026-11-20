@@ -107,6 +107,11 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     Set<String> igsnInventoryLinkedItems =
         processDocsForDocExport(
             ownerOfWork, exportIds, exportTypes, config, exporter, details, tmpExportedFiles);
+    if (tmpExportedFiles.isEmpty()) {
+      postExportFailure(config, exporter, messageSource.getMessage("export.pdf.errors.noContent"));
+      removeTempFiles(details);
+      return new ExportEcatDocumentResult(null, igsnInventoryLinkedItems);
+    }
     FileProperty fp = generateFilePropertyForExportedFile(config, exporter, details);
 
     if (mergeFilesIntoFinalOutputFileAndSaveInFileStore(
@@ -114,6 +119,8 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       exportResult = addPdfToGallery(config, exporter, details, fp);
     } else {
       log.error("Couldn't generate EcatDocumentFile");
+      postExportFailure(
+          config, exporter, messageSource.getMessage("export.pdf.errors.generationFailed"));
       removeTempFiles(details);
     }
     return new ExportEcatDocumentResult(exportResult, igsnInventoryLinkedItems);

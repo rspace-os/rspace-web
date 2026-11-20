@@ -191,9 +191,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       User user,
       boolean omittedLinkPreservesExisting) {
     ApiInventoryLink apiLink = apiField.getLink();
-    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
     InventoryLink existing = field.getLink();
-    if (StringUtils.isBlank(target)) {
+    if (apiLink == null || !apiLink.hasTarget()) {
       if (existing == null) {
         return false;
       }
@@ -203,26 +202,39 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
       return true;
     }
-    Long effectivePin =
-        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
-    // compare on the parsed base id: the row holds the unsuffixed id (the pin lives in versionPin),
-    // so a suffixed "SA2v4" would never compare equal and every save would fire a spurious update
-    GlobalIdentifier incoming = parseTargetOrNull(target);
     if (existing != null
-        && incoming != null
-        && incoming.getPrefix() == existing.getTargetPrefix()
-        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
-        && Objects.equals(effectivePin, existing.getVersionPin())
+        && isSameTarget(apiLink, existing)
         && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
       return false;
     }
     assertRelationAllowed(field, apiLink.getRelationType());
+    if (existing != null && apiLink.hasFilestoreTarget() && isSameTarget(apiLink, existing)) {
+      // only the owner passes the target check, so a colleague, or the owner once the filestore is
+      // removed, could not change the relation of a link they did not repoint (ADR 0016)
+      existing.setRelationType(apiLink.getRelationType());
+      return true;
+    }
     if (existing != null) {
       field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
     } else {
       field.setLink(inventoryLinkManager.createLink(apiLink, user));
     }
     return true;
+  }
+
+  private boolean isSameTarget(ApiInventoryLink apiLink, InventoryLink existing) {
+    if (apiLink.hasFilestoreTarget()) {
+      return InventoryLinkValidator.isSameFilestoreTarget(apiLink, existing);
+    }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    // compare on the parsed base id: the row holds the unsuffixed id (the pin lives in versionPin),
+    // so a suffixed "SA2v4" would never compare equal and every save would fire a spurious update
+    GlobalIdentifier incoming = parseTargetOrNull(apiLink.getTargetGlobalId());
+    return incoming != null
+        && incoming.getPrefix() == existing.getTargetPrefix()
+        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
+        && Objects.equals(effectivePin, existing.getVersionPin());
   }
 
   /**
@@ -266,6 +278,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
                           && Objects.equals(f.getId(), apiField.getId()))
               .findFirst();
       if (dbFieldOpt.isPresent()) {
+        if (isTemplate) {
+          rejectFilestoreTargetOnTemplate(apiField.getLink());
+        }
         rejectSelfLink(apiField.getLink(), dbRecord);
         changed |=
             applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user, isTemplate);
@@ -286,8 +301,16 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       InventoryRecord dbTemplate,
       User user) {
     if (toAdd instanceof InventoryLinkField linkField) {
+      rejectFilestoreTargetOnTemplate(apiField.getLink());
       rejectSelfLink(apiField.getLink(), dbTemplate);
       applyLinkFieldValue(linkField, apiField, user, true);
+    }
+  }
+
+  /** ADR 0016: a default link would stamp one user's personal filestore onto everyone's items. */
+  private void rejectFilestoreTargetOnTemplate(ApiInventoryLink apiLink) {
+    if (apiLink != null && apiLink.hasFilestoreTarget()) {
+      throw new ApiRuntimeException("errors.inventory.field.linkFilestoreTargetOnTemplate");
     }
   }
 

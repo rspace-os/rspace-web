@@ -62,8 +62,8 @@ public class InventoryLinkField extends InventoryEntityField {
 
   /**
    * A mandatory link field requires a populated link target and relation type, not data-column
-   * content. Both are checked with a blank (null/empty/whitespace) test: targetGlobalId because a
-   * blank target is not a real reference, and relationType because it is mapped NOT NULL on {@link
+   * content: a Filestore item target, or a targetGlobalId that is not blank (a blank one is not a
+   * real reference), and a relationType that is not blank because it is mapped NOT NULL on {@link
    * InventoryLink}. Without these checks a blank value passes validation and then fails at flush
    * with a low-level DB constraint violation rather than a clear validation message.
    */
@@ -71,7 +71,7 @@ public class InventoryLinkField extends InventoryEntityField {
   @Transient
   public boolean isValidValueForMandatoryField(String fieldData) {
     return link != null
-        && StringUtils.isNotBlank(link.getTargetGlobalId())
+        && (link.isFilestoreTarget() || StringUtils.isNotBlank(link.getTargetGlobalId()))
         && StringUtils.isNotBlank(link.getRelationType());
   }
 

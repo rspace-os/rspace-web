@@ -58,7 +58,7 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | Command | Purpose |
 |---|---|
 | `pnpm install --frozen-lockfile` | Install frontend dependencies |
-| `pnpm test` | Run Vitest/jsdom unit tests |
+| `pnpm test` | Run Vitest unit tests (jsdom, plus a Node project for pure utilities) |
 | `pnpm test src/components/MyComponent/__tests__/MyComponent.test.tsx` | Run one unit-test file |
 | `pnpm test --verbose <filter>` | Run tests with an option and filter |
 | `pnpm test-browser` | Run Browser Mode tests in Chromium, Firefox, and WebKit |
@@ -74,8 +74,8 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `mvn test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
 | `mvn clean test -Dfast=true` | Run all pure backend unit tests |
 | `mvn test -Dtest=MyClassName` | Run one Spring transactional test class |
-| `mvn clean test` | Run unit and Spring tests; requires a database |
-| `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
+| `mvn clean test` | Run unit and Spring tests; DB-backed tests use a throwaway MariaDB in Docker |
+| `mvn clean verify` | Run verification including `*IT`; DB-backed tests use a throwaway MariaDB in Docker |
 | `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
 
 Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
@@ -86,6 +86,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 - Keep changes scoped; preserve unrelated work.
 - Read nested `AGENTS.md` files before editing.
 - Use `rg` and `rg --files` for searches.
+- Use explicit Java imports, including static imports. Avoid wildcard imports.
 - Only edit vendored code, minified files, build output, `target/`, `dist/`, or `node_modules/` when explicitly targeted.
 - Put plans and scratch notes in gitignored `.claude/`.
 - Add dependencies only when necessary.

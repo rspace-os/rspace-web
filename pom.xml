@@ -1929,6 +1929,12 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
     </dependency>
+    <dependency> <!-- throwaway MariaDB for local DB-backed tests, see TestDatabaseExtension -->
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>2.0.5</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
@@ -2388,6 +2394,32 @@
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <!-- Runs in 'validate', before the drop in 'initialize': refuse to reset a database other
+                 than the one the app/tests will use, e.g. -Djdbc.url on another port while
+                 jdbc.url.maven still points at the default localhost:3306. -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>reset-target-matches-jdbc-url</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <skip>${maven.test.skip}</skip>
+                  <rules>
+                    <requireProperty>
+                      <property>jdbc.url</property>
+                      <regex>\Q${jdbc.url.maven}/${jdbc.db.maven}\E(\?.*)?</regex>
+                      <regexMessage>drop-recreate-db would reset ${jdbc.db.maven} on ${jdbc.url.maven}, but jdbc.url is ${jdbc.url}. Set -Djdbc.url.maven and -Djdbc.db.maven to match -Djdbc.url.</regexMessage>
+                    </requireProperty>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>sql-maven-plugin</artifactId>

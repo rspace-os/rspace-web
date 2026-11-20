@@ -128,11 +128,20 @@ public abstract class InventoryItemCsvExporter {
   /**
    * CSV cell for a link field: {@code "<RelationType> <serverUrl>/globalId/<GID>[vN]"}, or empty
    * when the field holds no link. The version pin travels as the {@code vN} suffix so a single
-   * Global ID URL carries the whole link.
+   * Global ID URL carries the whole link. A Filestore item target is written {@code "<RelationType>
+   * <filestoreId>:<path>"}: it names no Global ID page, so the import refuses it rather than
+   * dropping the link silently.
    */
   protected String csvValueForLink(InventoryLink link) {
     if (link == null) {
       return "";
+    }
+    if (link.isFilestoreTarget()) {
+      return link.getRelationType()
+          + " "
+          + link.getFilestoreId()
+          + ":"
+          + link.getTargetRemotePath();
     }
     String versionSuffix = link.getVersionPin() == null ? "" : "v" + link.getVersionPin();
     return InventoryUrls.globalIdPageUrl(

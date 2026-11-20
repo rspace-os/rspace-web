@@ -28,4 +28,15 @@ class InventoryLinkTargetApiControllerTest {
 
     assertSame(summary, controller.getLinkTargetSummary("SA42", user));
   }
+
+  @Test
+  void returnsTheManagerResolvedSummaryForAFilestoreItem() {
+    User user = new User("any");
+    ApiInventoryLinkTargetSummary summary = new ApiInventoryLinkTargetSummary();
+    summary.setName("My S3");
+    when(inventoryLinkManager.getFilestoreTargetSummary(12L, "/XRD/run.dat", user))
+        .thenReturn(summary);
+
+    assertSame(summary, controller.getFilestoreLinkTargetSummary(12L, "/XRD/run.dat", user));
+  }
 }

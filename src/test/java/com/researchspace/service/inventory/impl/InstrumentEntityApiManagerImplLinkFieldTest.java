@@ -26,6 +26,7 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
@@ -43,6 +44,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -51,12 +53,18 @@ import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -953,5 +961,124 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     assertTrue(manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
     verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  private final NfsFileStore store =
+      GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("owner"));
+
+  private ApiInventoryEntityField apiFilestoreLinkField(String remotePath) {
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setRelationType("References");
+    apiLink.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(12L, remotePath));
+    apiField.setLink(apiLink);
+    return apiField;
+  }
+
+  @Test
+  void anUnchangedFilestoreTargetLeavesTheExistingRowAlone() {
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("XRD/run.dat/");
+
+    assertFalse(manager.applyLinkFieldValue(dbField, apiField, user));
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aRelationOnlyChangeKeepsTheFilestoreTargetWithoutTheLinkManager() {
+    // a colleague editing a shared item, or the owner after removing the filestore
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("XRD/run.dat/");
+    apiField.getLink().setRelationType("IsPartOf");
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+    assertSame(dbLink, dbField.getLink());
+    assertEquals("IsPartOf", dbLink.getRelationType());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aRelationOnlyChangeOnAFilestoreTargetStillHonoursTheWhitelist() {
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    apiField.getLink().setRelationType("Cites");
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    assertEquals("errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
+    assertEquals("References", dbLink.getRelationType());
+  }
+
+  static Stream<Named<Consumer<ApiInventoryLink>>> malformedFilestorePayloads() {
+    return Stream.of(
+        Named.of("without a filestore id", link -> link.getFilestoreTarget().setFilestoreId(null)),
+        Named.of("with a version pin", link -> link.setVersionPin(3L)),
+        Named.of("with a Global ID too", link -> link.setTargetGlobalId("SA7")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("malformedFilestorePayloads")
+  void aMalformedPayloadOverAnUnchangedFilestoreTargetGoesThroughTheLinkManager(
+      Consumer<ApiInventoryLink> malform) {
+    dbLink.setFilestoreTarget(store, "/XRD/run.dat");
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    malform.accept(apiField.getLink());
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  @Test
+  void aFilestoreTargetReplacesAGlobalIdTargetThroughTheLinkManager() {
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  @Test
+  void aFilestoreTargetIsRefusedAsANewTemplateFieldsDefaultLink() {
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default raw data");
+    post.setFields(List.of(apiField));
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.addFieldsToNewInstrumentTemplate(post, dbTemplate, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", refused.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aFilestoreTargetIsRefusedWhenEditingATemplatesDefaultLink() {
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField apiField = apiFilestoreLinkField("/XRD/run.dat");
+    apiField.setId(7L);
+    apiTemplate.setFields(List.of(apiField));
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    dbTemplate.setId(1L);
+    dbField.setId(7L);
+    dbField.setInventoryRecord(dbTemplate);
+    dbTemplate.getFields().add(dbField);
+    dbTemplate.refreshActiveFieldsAndColumnIndex();
+
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
+
+    assertEquals("errors.inventory.field.linkFilestoreTargetOnTemplate", refused.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
   }
 }

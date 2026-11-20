@@ -68,12 +68,13 @@ section of pom.xml are included in the Maven classpath.
 Package (builds web application):
 
 ```bash
-mvn clean package -Denvironment=drop-recreate-db
+mvn clean package
 ```
-Run acceptance tests: 
+Run acceptance tests (DB-backed tests use a throwaway MariaDB in Docker, see
+[GettingStarted.md](GettingStarted.md#run-the-default-test-suite-recommended)):
 
 ```bash
-mvn clean verify -Denvironment=drop-recreate-db
+mvn clean verify
 ```
 
 Launch in jetty:
