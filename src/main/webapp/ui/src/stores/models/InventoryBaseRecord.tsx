@@ -233,6 +233,7 @@ export default class InventoryBaseRecord
   barcodes: Array<BarcodeRecord> = [];
   factory: Factory;
   fetchingAdditionalInfo: Promise<{ data: object }> | null = null;
+  private detailRequests = new Map<string, Promise<void>>();
   // @ts-expect-error sharingMode is initialised by populateFromJson
   sharingMode: SharingMode;
   // @ts-expect-error sharingWith is initialised by populateFromJson
@@ -933,7 +934,7 @@ export default class InventoryBaseRecord
     } = getRootStore();
 
     // `instanceof ContainerModel` would add a cyclical dependency
-    if (!activeResult || !("locations" in activeResult)) return;
+    if (!activeResult || !("locations" in activeResult) || !activeResult.locations) return;
     const locations = activeResult.locations as ReadonlyArray<Location>;
 
     /*
@@ -956,13 +957,22 @@ export default class InventoryBaseRecord
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams(),
   ): Promise<void> {
-    if (this.fetchingAdditionalInfo || !this.id) {
-      if (this.fetchingAdditionalInfo === null) return;
-      await this.fetchingAdditionalInfo;
-      return;
-    }
-    const id = this.id;
+    if (!this.id) return;
+    const params = new URLSearchParams(queryParameters);
+    params.sort();
+    const key = params.toString();
+    const inProgress = this.detailRequests.get(key);
+    if (inProgress) return inProgress;
 
+    const request = this.requestAdditionalInfo(this.id, silent, params).finally(() => {
+      this.detailRequests.delete(key);
+      this.setLoading(this.detailRequests.size > 0);
+    });
+    this.detailRequests.set(key, request);
+    return request;
+  }
+
+  private async requestAdditionalInfo(id: Id, silent: boolean, queryParameters: URLSearchParams): Promise<void> {
     this.setLoading(true);
     try {
       /*
@@ -974,8 +984,7 @@ export default class InventoryBaseRecord
         this.historicalVersion && this.version !== null
           ? `${this.recordType}s/${id}/versions/${this.version}`
           : `${this.recordType}s/${id}`;
-      this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
-      const { data } = await this.fetchingAdditionalInfo;
+      const { data } = await ApiService.query<object>(endpoint, queryParameters);
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -1014,9 +1023,6 @@ export default class InventoryBaseRecord
       }
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
-    } finally {
-      this.fetchingAdditionalInfo = null;
-      this.setLoading(false);
     }
   }
 

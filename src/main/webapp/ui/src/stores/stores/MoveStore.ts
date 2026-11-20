@@ -148,7 +148,7 @@ export default class MoveStore {
   }
 
   clearLocationsWithContentBeingMovedOut(container: Container): void {
-    if (!container.locations) throw new Error("Locations of container must be known.");
+    if (!container.locations) return;
     const locations = container.locations;
     if (this.search) {
       for (const loc of locations) {

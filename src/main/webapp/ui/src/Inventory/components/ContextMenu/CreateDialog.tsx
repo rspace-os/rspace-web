@@ -235,8 +235,13 @@ const LocationPicker = observer(({ id: _id, state }: { id: string; state: { cont
    * empty.
    */
   React.useEffect(() => {
-    if (state.container.locationsCount > 0 && state.container.locations?.length === 0)
+    if (
+      (state.container.cType === "GRID" || state.container.cType === "IMAGE") &&
+      state.container.locationsCount > 0 &&
+      state.container.locations?.length === 0
+    ) {
       void state.container.fetchAdditionalInfo();
+    }
   }, [state.container]);
 
   if (state.container.cType === "LIST") return null;
