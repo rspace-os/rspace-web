@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { BOOKING_READ_FIELDS, mapBookingSummary, type SelectedBooking } from "@/modules/booking/domain/booking";
+import {
+  BOOKING_READ_FIELDS,
+  BookingUnavailableError,
+  mapBookingSummary,
+  retryBookingRead,
+  type SelectedBooking,
+} from "@/modules/booking/domain/booking";
+import {
+  ApiV2NetworkError,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+} from "@/modules/common/api/v2/ApiV2ProblemError";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 
 describe("booking response intervals", () => {
@@ -50,4 +62,22 @@ it("requests the booking read fields in a fixed order", () => {
   expect(apiV2Fields(BOOKING_READ_FIELDS)).toBe(
     "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
+});
+
+describe("booking read retries", () => {
+  it.each([
+    ["a 403 problem", new ApiV2ProblemError(403, undefined, "Forbidden")],
+    ["an undeclared 404", new ApiV2UnexpectedResponseError("undeclared", { status: 404, media: "text/html" })],
+    ["an ended session on the login page", new ApiV2SessionEndedError(200, undefined)],
+    ["an unavailable booking", new BookingUnavailableError("busy")],
+  ])("does not retry %s", (_, error) => {
+    expect(retryBookingRead(0, error)).toBe(false);
+  });
+
+  it.each([
+    ["a network failure", new ApiV2NetworkError(new TypeError("offline"))],
+    ["a 503 problem", new ApiV2ProblemError(503, undefined, "Unavailable")],
+  ])("retries %s twice", (_, error) => {
+    expect([0, 1, 2].map((count) => retryBookingRead(count, error))).toEqual([true, true, false]);
+  });
 });

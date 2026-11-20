@@ -1,5 +1,7 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import * as React from "react";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import {
   bookingCatalogueQuery,
   catalogueItemAsConfiguration,
@@ -29,6 +31,8 @@ export function useCalendarContentData() {
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
   const preferences = useBookingDisplayPreferences();
+  const beginCreation = useBookingCreationStore((state) => state.beginCreation);
+  const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
   const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const dates = calendarDates(selectedDate, view);
   const resourceTable = useTableList<BookingConfiguration>({
@@ -64,6 +68,15 @@ export function useCalendarContentData() {
     features: { sorting: false, columns: false },
     queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
   });
+  const resourceConfigurations = React.useMemo(
+    () =>
+      resourceTable.tableProps.rows.flatMap((row) => {
+        if (!row.capabilities.canCreateBooking) return [];
+        const option = bookableItemOption(row);
+        return option ? [option] : [];
+      }),
+    [resourceTable.tableProps.rows],
+  );
   const resourceTargetIds = React.useMemo(
     () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target.globalId] : [])),
     [resourceTable.tableProps.rows],
@@ -80,11 +93,14 @@ export function useCalendarContentData() {
   );
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
   return {
+    beginCreation,
+    creationActive,
     currentUser,
     events,
     layout,
     navigate,
     preferences,
+    resourceConfigurations,
     resourceTable,
     resourceTargets,
     selectedDate,
