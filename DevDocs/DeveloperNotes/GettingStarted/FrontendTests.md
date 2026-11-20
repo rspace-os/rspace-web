@@ -206,3 +206,17 @@ will leave HEAD pointing to the HEAD of the branch as it was before squashing
 and merging. You can now perform the same bisect steps as above, with the known
 good commit being the merge base of HEAD and the branch into which the PR was
 merged (this can either be found manually or using `git merge-base`).
+
+### New UI font loading
+
+The new UI stylesheet imports local Fontsource variable fonts in
+`modules/common/styles/fonts.css`. The browser uses `unicode-range` to request
+only slices matching visible text, including text entered into inputs. English
+UI pages can therefore render CJK content without downloading every CJK font.
+Untagged CJK content defaults to Traditional Chinese; document language rules
+choose the regional family for Chinese, Japanese, and Korean locales. Legacy
+MUI pages keep their existing typography because they do not import this stylesheet.
+
+Run `pnpm test-browser src/modules/common/ui/fonts.spec.tsx` to check English,
+CJK content, and typed input in Chromium, Firefox, and WebKit. Font assets use
+hashed, CSS-relative URLs so they resolve beneath a servlet context prefix.
