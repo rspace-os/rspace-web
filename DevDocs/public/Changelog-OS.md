@@ -6,7 +6,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 # Unreleased
 
-- RSPAC-624 removes the ELN String field password option. Existing fields and older archive imports retain their values and defaults and display them as ordinary text.
+- RSDEV-1734 removes the ELN String field password option. Existing fields and older archive imports retain their values and defaults and display them as ordinary text.
 
 # 2.28.0 2026-11-06
 
