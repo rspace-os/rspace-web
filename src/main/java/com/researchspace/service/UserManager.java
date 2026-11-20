@@ -119,6 +119,7 @@ public interface UserManager extends GenericManager<User, Long> {
    *
    * @param user the user's information
    * @throws UserExistsException thrown when user already exists (either by username or by email)
+   * @throws IllegalArgumentException if the user already has an id
    * @return user the updated user object
    */
   User saveNewUser(User user) throws UserExistsException;

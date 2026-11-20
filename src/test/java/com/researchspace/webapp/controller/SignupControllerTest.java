@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,9 +17,11 @@ import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.Constants;
 import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.NewPasswordEncodeGate;
+import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.RoleManager;
@@ -26,6 +29,8 @@ import com.researchspace.service.SignupCaptchaVerifier;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.SAMLRemoteUserPolicy;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -118,6 +123,32 @@ public class SignupControllerTest {
     assertEquals(SignupController.ACCOUNT_CREATED_LOGIN_BUSY_VIEW, view);
     verify(manualSignupPolicy).saveUser(eq(user), any());
     verify(postSignup, never()).getRedirect(user);
+  }
+
+  @Test
+  public void blockedUserFieldsAreLoggedByNameWithoutTheUsername() {
+    User user = createAnyUser("stray1");
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(user, "user");
+    errors.recordSuppressedField("id");
+    errors.recordSuppressedField("usernameAlias");
+    errors.recordSuppressedField("notAUserField");
+    Logger securityLog = (Logger) LogManager.getLogger(SecurityLogger.class);
+    StringAppenderForTestLogging capture = new StringAppenderForTestLogging();
+    capture.start();
+    securityLog.addAppender(capture);
+    try {
+      assertEquals("signup", signupCtrller.onSubmit(user, errors, mockRequest));
+    } finally {
+      securityLog.removeAppender(capture);
+      capture.stop();
+    }
+
+    assertEquals("errors.signup.invalidFields", errors.getGlobalError().getCode());
+    assertThat(capture.logContents)
+        .contains("not bound: ", "id", "usernameAlias")
+        .doesNotContain("notAUserField")
+        .doesNotContain(user.getUsername());
+    verify(userValidator, never()).validate(user, errors);
   }
 
   @Test

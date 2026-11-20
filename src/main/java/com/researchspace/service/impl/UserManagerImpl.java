@@ -130,7 +130,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   /** {@inheritDoc} */
   public User saveNewUser(User user) throws UserExistsException {
-
+    if (user.getId() != null) {
+      throw new IllegalArgumentException("A new user must not have an id");
+    }
     checkEmailUnique(user.getEmail());
     checkUsernameAndAliasUnique(user.getUsername(), user.getUsernameAlias());
     encryptPasswordIfRequired(user);

@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -171,6 +172,16 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     assertThrows(UserExistsException.class, () -> userManager.saveNewUser(user));
 
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
+  }
+
+  @Test
+  public void saveNewUserRejectsUserThatAlreadyHasAnId() {
+    User user = createAnyUser("any");
+    user.setId(1L);
+
+    assertThrows(IllegalArgumentException.class, () -> userManager.saveNewUser(user));
+
+    verifyNoInteractions(userDao, analyticsManager);
   }
 
   @Test

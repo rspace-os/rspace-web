@@ -191,7 +191,8 @@
       "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
     },
     "signup": {
-      "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
+      "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment.",
+      "invalidFields": "Your sign-up could not be processed. Please sign up using the form."
     },
     "composedId": {
       "missing": "No id to retrieve",
