@@ -1,8 +1,7 @@
 package com.researchspace.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.FileStoreRoot;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -27,13 +26,7 @@ public class FileStoreRootDetectorTest extends SpringTransactionalTest {
             .createQuery("from FileStoreRoot where current=:curr", FileStoreRoot.class)
             .setParameter("curr", true)
             .list();
-    if (rc.size() == 1) {
-      assertFalse(rc.get(0).isExternal());
-    } else if (rc.size() == 2) {
-      assertThat(rc.stream().filter(fsr -> fsr.isExternal()).findFirst()).isPresent();
-      assertThat(rc.stream().filter(fsr -> !fsr.isExternal()).findFirst()).isPresent();
-    } else {
-      fail(" There are " + rc.size() + "file stores");
-    }
+    assertEquals(1, rc.size());
+    assertFalse(rc.get(0).isExternal());
   }
 }

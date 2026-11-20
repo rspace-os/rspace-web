@@ -1,0 +1,80 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="remove-egnyte-a" context="run" author="tchoi">
+        <comment>Remove Egnyte integration data: Egnyte file store access tokens in UserConnection</comment>
+        <sql>
+            delete from UserConnection where providerId = 'EGNYTE';
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-egnyte-b" context="run" author="tchoi">
+        <comment>Remove Egnyte integration data: AppConfigElement, AppConfigElementSet, AppConfigElementDescriptor and UserAppConfig</comment>
+        <sql>
+            delete from AppConfigElement where appConfigElementDescriptor_id in (
+                select id from AppConfigElementDescriptor where app_id = (
+                    select id from App where name = 'app.egnyte'));
+
+            delete from AppConfigElementSet where userAppConfig_id in (
+                select id from UserAppConfig where app_id = (
+                    select id from App where name = 'app.egnyte'));
+
+            delete from AppConfigElementDescriptor where app_id = (
+                select id from App where name = 'app.egnyte');
+
+            delete from UserAppConfig where app_id = (
+                select id from App where name = 'app.egnyte');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-egnyte-c" context="run" author="tchoi">
+        <comment>Remove Egnyte integration data: SystemPropertyValue and SystemProperty for egnyte.available, and the egnyte.available and EGNYTE_DOMAIN PropertyDescriptors</comment>
+        <sql>
+            delete from SystemPropertyValue where property_id = (
+                select sp.id from SystemProperty sp
+                inner join PropertyDescriptor pd on sp.descriptor_id = pd.id
+                where pd.name = 'egnyte.available');
+
+            delete from SystemProperty where descriptor_id = (
+                select id from PropertyDescriptor where name = 'egnyte.available');
+
+            delete from PropertyDescriptor where name in ('egnyte.available', 'EGNYTE_DOMAIN');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-egnyte-d" context="run" author="tchoi">
+        <comment>Remove Egnyte integration data: App</comment>
+        <sql>
+            delete from App where name = 'app.egnyte';
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-egnyte-e" context="run" author="tchoi">
+        <comment>Point files saved through the Egnyte file store back at the current local file
+            store root. Those files are marked external and point at the Egnyte root, which the local
+            store cannot resolve. Their local copy was never deleted (InternalFileStoreImpl.removeFile
+            does nothing), and relPath is the path under both roots, so they resolve to that copy
+            again. The upload overwrote each file's original local root_id, so this runs only when
+            the database has exactly one local root, and it is current: then that is where every copy
+            was saved. Otherwise it changes nothing (and never leaves no current root); see the
+            RSDEV-1735 upgrade notes. The Egnyte FileStoreRoot row is kept, no longer current, as a
+            record of where the files were in Egnyte.</comment>
+        <sql>
+            update FileProperty fp
+            join (select max(id) as id from FileStoreRoot where external = 0
+                  having count(*) = 1 and sum(current = 1) = 1) localRoot
+            set fp.external = 0, fp.root_id = localRoot.id
+            where fp.external = 1;
+
+            update FileStoreRoot r
+            join (select max(id) as id from FileStoreRoot where external = 0
+                  having count(*) = 1 and sum(current = 1) = 1) localRoot
+            set r.current = 0
+            where r.external = 1;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

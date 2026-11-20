@@ -87,10 +87,8 @@ public class SanityChecker extends AbstractAppInitializor {
     try {
       // this just triggers initialisation if need be.
       fileIndexer.init(false); // don't delete index if there already is one
-      if (searchStrategy.isLocal()) {
-        searchStrategy.searchFiles("a search string", null);
-        log.info("Search index folder set as [" + searcher.getIndexFolderPath() + "]");
-      }
+      searchStrategy.searchFiles("a search string", null);
+      log.info("Search index folder set as [" + searcher.getIndexFolderPath() + "]");
       rc = true;
     } catch (IOException ie) {
       fatalStartUpLog(" IO error initialising   attachment search.. " + ie.getMessage());

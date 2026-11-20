@@ -1777,21 +1777,6 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-egnyte</artifactId>
-      <version>2.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>jakarta.el</groupId>
-          <artifactId>jakarta.el-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-rest-api-utils</artifactId>
       <version>2.0.0</version>
       <exclusions>
@@ -2817,7 +2802,7 @@
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
-    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>
+    <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**</sonar.coverage.exclusions>
     <sonar.projectKey>ResearchSpace-ELN_rspace-web</sonar.projectKey>
   </properties>
 

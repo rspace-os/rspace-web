@@ -23,13 +23,4 @@ public interface FileSearchStrategy {
    * @param nbrDocs
    */
   void setDefaultReturnDocs(int nbrDocs);
-
-  /**
-   * Boolean test as to whether search is local to the RSpace server, or is an external search (e.g
-   * with Egnyte)
-   *
-   * @return <code>true</code> if the search is local (i.e. standard default filestore) or <code>
-   *     false</code> otherwise.
-   */
-  boolean isLocal();
 }

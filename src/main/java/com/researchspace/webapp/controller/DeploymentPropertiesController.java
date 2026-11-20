@@ -58,10 +58,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${box.client.id}")
   private String boxClientId;
 
-  @ClientReadable
-  @Value("${egnyte.client.id}")
-  private String egnyteClientId;
-
   @Value("${pyrat.server.config}")
   private String pyratServerConfig;
 
@@ -211,7 +207,6 @@ public class DeploymentPropertiesController extends BaseController {
             "googledrive.linking.enabled",
             "onedrive.available",
             "onedrive.linking.enabled",
-            "egnyte.available",
             SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName(),
             SystemPropertyName.SNAPGENE_AVAILABLE.getPropertyName())) {
       properties.put(name, rc.get(name).getValue());

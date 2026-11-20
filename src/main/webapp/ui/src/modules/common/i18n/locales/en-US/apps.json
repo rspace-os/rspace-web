@@ -344,20 +344,6 @@
       },
       "usage": "You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
     },
-    "egnyte": {
-      "description": "Collaborate, sync and share your files with a security-focused enterprise solution.",
-      "fields": {
-        "domainUrl": "Egnyte Domain URL"
-      },
-      "helpLink": "Cloud Storage integrations docs",
-      "name": "Egnyte",
-      "setup": {
-        "instructions": "<ol><li>Provide your Egnyte domain URL and Save.</li><li>Enable the integration.</li><li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li></ol>",
-        "provideDomain": "Provide your Egnyte domain URL and Save.",
-        "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
-      },
-      "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
-    },
     "fieldmark": {
       "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
       "fields": {

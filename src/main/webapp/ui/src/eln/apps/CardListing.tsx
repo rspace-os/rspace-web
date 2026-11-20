@@ -19,7 +19,6 @@ import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
 import Dryad from "./integrations/Dryad";
-import Egnyte from "./integrations/Egnyte";
 import Fieldmark from "./integrations/Fieldmark";
 import Figshare from "./integrations/Figshare";
 import Galaxy from "./integrations/Galaxy";
@@ -162,15 +161,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       });
     },
     [update, integrationStates.DSW],
-  );
-
-  const egnyteUpdate = React.useCallback(
-    (newState: IntegrationStates["EGNYTE"]) => {
-      void runInAction(async () => {
-        integrationStates.EGNYTE = await update("EGNYTE", newState);
-      });
-    },
-    [update, integrationStates.EGNYTE],
   );
 
   // returns the save so the card can clear its typed key only once the save succeeded
@@ -358,7 +348,6 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       {isShownHere("DROPBOX") && <Dropbox integrationState={integrationStates.DROPBOX} update={dropboxUpdate} />}
       {isShownHere("DRYAD") && <Dryad integrationState={integrationStates.DRYAD} update={dryadUpdate} />}
       {isShownHere("DSW") && <DSW integrationState={integrationStates.DSW} update={dswUpdate} />}
-      {isShownHere("EGNYTE") && <Egnyte integrationState={integrationStates.EGNYTE} update={egnyteUpdate} />}
       {isShownHere("FIELDMARK") && (
         <Fieldmark integrationState={integrationStates.FIELDMARK} update={fieldmarkUpdate} />
       )}

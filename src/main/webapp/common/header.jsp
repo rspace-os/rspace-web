@@ -169,10 +169,6 @@
       <div class="messageList"></div>
     </div>
 
-    <rst:hasDeploymentProperty name="fileStoreType" value="EGNYTE">
-      <jsp:include page="/WEB-INF/pages/connect/egnyte/egnyteHeader.jsp" />
-    </rst:hasDeploymentProperty>
-
     <rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="true">
       <script>
         RS.netFileStoresExportEnabled = true;

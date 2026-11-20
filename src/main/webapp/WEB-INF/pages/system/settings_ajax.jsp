@@ -62,7 +62,6 @@
         <div id="googledrive.available.description"><spring:message code="system.property.description.googleDriveAvailable" /></div>
         <div id="onedrive.available.description"><spring:message code="system.property.description.oneDriveAvailable" /></div>
         <div id="onedrive.linking.enabled.description"><spring:message code="system.property.description.oneDriveLinkingEnabled" /></div>
-        <div id="egnyte.available.description"><spring:message code="system.property.description.egnyteAvailable" /></div>
         <div id="owncloud.available.description"><spring:message code="system.property.description.owncloudAvailable" /></div>
         <div id="nextcloud.available.description"><spring:message code="system.property.description.nextcloudAvailable" /></div>
         <div id="chemistry.available.description"><spring:message code="system.property.description.chemistryAvailable" /></div>

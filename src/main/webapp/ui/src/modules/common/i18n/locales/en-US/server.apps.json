@@ -78,14 +78,6 @@
       "requestSupport": "There is a problem with your request, please contact support.",
       "updateConfigSetNotPermitted": "Not permitted to update this AppConfig set"
     },
-    "egnyte": {
-      "errors": {
-        "authenticationFailed": "Couldn't authenticate with provided credentials.",
-        "credentialsRequired": "Egnyte username and password must be provided.",
-        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials.",
-        "invalidDomainUrl": "Egnyte Domain URL must be an http:// or https:// address."
-      }
-    },
     "fieldmark": {
       "errors": {
         "createIgsnCandidateFields": "Error creating IGSN candidate fields for notebook \"{0}\"",
@@ -188,15 +180,6 @@
       "closeWindowNotice": "You may now close this window.",
       "defaultTitle": "RSpace connection result",
       "title": "Connected"
-    },
-    "egnyte": {
-      "connectionSetup": {
-        "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
-        "passwordPlaceholder": "Egnyte Password",
-        "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
-        "title": "Connect to Egnyte",
-        "usernamePlaceholder": "Egnyte Username"
-      }
     },
     "msoffice": {
       "officeView": {

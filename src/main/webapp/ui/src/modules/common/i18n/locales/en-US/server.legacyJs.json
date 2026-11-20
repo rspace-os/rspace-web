@@ -226,15 +226,6 @@
       "showingForSearchTerm": "Showing {0} for search term ''{1}''.",
       "userSearchPlaceholder": "Type a user's name, email or username"
     },
-    "egnyte": {
-      "authenticationAction": "Egnyte authentication",
-      "connectedSuccessfully": "Egnyte connected successfully",
-      "connectingToFilestore": "Connecting to Egnyte filestore...",
-      "connectionSavedOpeningWorkspace": "Egnyte connection details saved. Opening the Workspace...",
-      "notConfiguredToast": "Connection to your Egnyte account is not configured correctly, please fix it on <a href=\"/egnyte/egnyteConnectionSetup\">connection setup page</a>",
-      "skipConfirm": "Are you sure you want to skip Egnyte account configuration? The files uploaded to RSpace will not be saved in Egnyte.",
-      "skipConfirmOk": "Skip"
-    },
     "errors": {
       "required": "{0} is a required field."
     },
@@ -584,11 +575,6 @@
         "confirmYes": "Yes, cancel",
         "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
       },
-      "egnyte": {
-        "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
-        "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
-        "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
-      },
       "googleDrive": {
         "authorizationIncomplete": "Google Drive authorization was not completed. Try again, keep the Google sign-in window open, and approve access when prompted.",
         "pickerTitle": "Select a file from Google Drive",
@@ -687,7 +673,6 @@
       "actionChangeVerificationPasswordProcess": "Change verification password process",
       "actionCreatingApiKey": "Creating a new API key",
       "actionEditProfileProcess": "Edit profile process",
-      "actionRemovingEgnyteToken": "Removing Egnyte token",
       "actionSetVerificationPasswordProcess": "Set verification password process",
       "apiKeyDeleted": "Key deleted",
       "apiKeyNotDeleted": "Key was not deleted, please try again or ask support",

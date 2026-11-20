@@ -106,9 +106,6 @@ export type IntegrationStates = {
       }>
     >
   >;
-  EGNYTE: IntegrationState<{
-    EGNYTE_DOMAIN: Optional<string>;
-  }>;
   FIELDMARK: IntegrationState<{
     FIELDMARK_USER_TOKEN: Optional<Secret>;
   }>;
@@ -221,17 +218,6 @@ function parseState({ enabled, available }: FetchedState): IntegrationState<unkn
   return "ENABLED";
 }
 
-/**
- * Checks that `options` has a key-value pair with the key `key`, and if it
- * does that that value is a string. If so, then the value is returned wrapped
- * in Optional.present, otherwise Optional.empty is returned.
- */
-function parseCredentialString<K extends string>(options: Record<K, unknown>, key: K): Optional<string> {
-  return getByKey(key, options).flatMap((cred) =>
-    typeof cred === "string" ? Optional.present(cred) : Optional.empty(),
-  );
-}
-
 function isSecret(value: unknown): value is Secret {
   return value === null || typeof value === "string";
 }
@@ -240,7 +226,12 @@ function parseSecret(value: unknown): Result<Secret> {
   return isSecret(value) ? Result.Ok(value) : Result.Error([new Error("Expected a secret: a string or null")]);
 }
 
-/** Like parseCredentialString, but a null value (a stored secret) is present, not missing. */
+/**
+ * Checks that `options` has a key-value pair with the key `key`, and if it
+ * does that that value is a string or null (a stored secret). If so, then the
+ * value is returned wrapped in Optional.present, otherwise Optional.empty is
+ * returned.
+ */
 function parseCredentialSecret<K extends string>(options: Record<K, unknown>, key: K): Optional<Secret> {
   return getByKey(key, options).flatMap((cred) => (isSecret(cred) ? Optional.present(cred) : Optional.empty()));
 }
@@ -416,23 +407,6 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
               : Optional.empty(),
           )
         : [],
-  };
-}
-
-function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
-  return {
-    mode: parseState(data),
-    credentials: {
-      EGNYTE_DOMAIN:
-        Object.values(data.options).length === 1
-          ? ArrayUtils.head(Object.values(data.options))
-              .flatMap(Parsers.isObject)
-              .flatMap(Parsers.isNotNull)
-              .flatMap(Parsers.isRecord)
-              .toOptional()
-              .flatMap((option) => parseCredentialString(option, "EGNYTE_DOMAIN"))
-          : Optional.empty(),
-    },
   };
 }
 
@@ -782,7 +756,6 @@ function decodeIntegrationStates(
     DROPBOX: decodeDropbox(data.DROPBOX),
     DRYAD: decodeDryad(data.DRYAD),
     DSW: decodeDsw(data.DSW),
-    EGNYTE: decodeEgnyte(data.EGNYTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
     GALAXY: decodeGalaxy(data.GALAXY),
@@ -996,20 +969,6 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           creds,
         ),
       ),
-    };
-  }
-  if (integration === "EGNYTE") {
-    // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["EGNYTE"]["credentials"] = data.credentials;
-    return {
-      name: "EGNYTE",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {
-        ...creds.EGNYTE_DOMAIN.map((token) => ({
-          EGNYTE_DOMAIN: token,
-        })).orElse({}),
-      },
     };
   }
   if (integration === "FIELDMARK") {
@@ -1384,8 +1343,6 @@ export function useIntegrationsEndpoint(): {
               return decodeDryad(responseData.data) as IntegrationStates[I];
             case "DSW":
               return decodeDsw(responseData.data) as IntegrationStates[I];
-            case "EGNYTE":
-              return decodeEgnyte(responseData.data) as IntegrationStates[I];
             case "FIELDMARK":
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
@@ -1484,8 +1441,6 @@ export function useIntegrationsEndpoint(): {
           return decodeDryad(response.data.data) as IntegrationStates[I];
         case "DSW":
           return decodeDsw(response.data.data) as IntegrationStates[I];
-        case "EGNYTE":
-          return decodeEgnyte(response.data.data) as IntegrationStates[I];
         case "FIELDMARK":
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":

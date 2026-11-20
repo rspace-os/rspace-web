@@ -90,14 +90,6 @@
       "oauthConnected": false,
       "options": {}
     },
-    "EGNYTE": {
-      "name": "EGNYTE",
-      "displayName": "Egnyte",
-      "available": false,
-      "enabled": false,
-      "oauthConnected": false,
-      "options": {}
-    },
     "GALAXY": {
       "name": "GALAXY",
       "displayName": "Galaxy",
