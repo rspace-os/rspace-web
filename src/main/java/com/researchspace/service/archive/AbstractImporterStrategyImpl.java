@@ -8,6 +8,7 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
+import static com.researchspace.core.util.imageutils.ImageUtils.isTiff;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -80,6 +81,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -580,11 +582,41 @@ abstract class AbstractImporterStrategyImpl {
         if (image == null) {
           ImportOverride importOverride = getGalleryMetaImportOverride(agm);
           Optional<File> linkedFile = recordFolder.file(agm.getLinkFile());
-          if (linkedFile.isPresent()) {
-            try (FileInputStream fis = new FileInputStream(linkedFile.get())) {
-              String newName =
-                  StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
-              image = mediaManager.saveNewImage(newName, fis, user, null, importOverride);
+          String displayName = StringUtils.defaultIfBlank(agm.getName(), agm.getFileName());
+          String originalLink = agm.getLinkToOriginalFile();
+          Optional<File> archivedTiff =
+              isTiff(FilenameUtils.getExtension(originalLink))
+                      && originalLink.equals(FilenameUtils.getName(originalLink))
+                  ? recordFolder.file(originalLink)
+                  : Optional.empty();
+          boolean isTiffPreview =
+              archivedTiff.isEmpty()
+                  && linkedFile.isPresent()
+                  && isTiff(FilenameUtils.getExtension(displayName))
+                  && "png".equalsIgnoreCase(FilenameUtils.getExtension(linkedFile.get().getName()));
+          if (isTiffPreview) {
+            displayName = linkedFile.get().getName();
+          }
+          Optional<File> fileToImport = archivedTiff.isPresent() ? archivedTiff : linkedFile;
+          if (fileToImport.isPresent()) {
+            File fx = fileToImport.get();
+            try (FileInputStream fis = new FileInputStream(fx)) {
+              if (archivedTiff.isPresent() || isTiffPreview) {
+                image =
+                    (EcatImage)
+                        mediaManager.saveMediaFile(
+                            fis,
+                            null,
+                            displayName,
+                            fx.getName(),
+                            null,
+                            null,
+                            null,
+                            user,
+                            importOverride);
+              } else {
+                image = mediaManager.saveNewImage(displayName, fis, user, null, importOverride);
+              }
               putIntoIdToMediaFileMap(
                   oldIdToNewGalleryItem, agm.getId(), agm.getModificationDate(), image);
             }

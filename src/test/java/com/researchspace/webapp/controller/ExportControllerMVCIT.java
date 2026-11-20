@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static com.researchspace.webapp.controller.ExportController.IMPORT_FORM_ERROR_ATTR_NAME;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportArchiveConfig;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportArchiveConfigForUser;
@@ -7,8 +8,12 @@ import static com.researchspace.webapp.controller.ExportControllerTest.createExp
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportConfigForUser;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportRaidAndElnArchiveConfigSelectionForProjectGroup;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,8 +25,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
+import com.researchspace.archive.ArchivalImportConfig;
+import com.researchspace.archive.ArchiveManifest;
+import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.export.pdf.ExportToFileConfig;
+import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
@@ -29,6 +38,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData;
+import com.researchspace.model.core.RecordType;
+import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.Folder;
@@ -36,27 +47,55 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.RaIDServiceManager;
+import com.researchspace.service.archive.ExportImport;
+import com.researchspace.service.archive.ImportArchiveReport;
+import com.researchspace.service.archive.ImportStrategy;
+import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.testutils.RSpaceTestUtils;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class ExportControllerMVCIT extends MVCTestBase {
 
   @Autowired private RaIDServiceManager raIDServiceManager;
   @Autowired private IMutablePropertyHolder propertyHolder;
+  @Autowired private ExportImport exportImportManager;
+
+  @Autowired
+  @Qualifier("importUsersAndRecords")
+  private ImportStrategy importStrategy;
+
+  @Autowired
+  @Qualifier("standardPostExportCompletionImpl")
+  private PostArchiveCompletion postExport;
 
   @BeforeEach
   public void setup() throws Exception {
@@ -71,6 +110,236 @@ public class ExportControllerMVCIT extends MVCTestBase {
             get("/export/ajax/downloadArchive/{zipname}", "nonexistent.zip")
                 .principal(() -> SYS_ADMIN_UNAME))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void documentXmlRoundTripImportsNineTiffs(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Nine TIFFs");
+    List<Long> sourceIds = new ArrayList<>();
+    for (int i = 0; i < 9; i++) {
+      sourceIds.add(addTiff(source, user, "image-" + i + ".tiff").getId());
+    }
+
+    Elements images = documentImages(importedDocument(roundTrip(user, workDir, source)));
+    assertThat(images).hasSize(9);
+    assertThat(images.stream().map(this::imageId))
+        .doesNotHaveDuplicates()
+        .doesNotContainAnyElementsOf(sourceIds);
+    for (int i = 0; i < images.size(); i++) {
+      assertTiffImage(images.get(i), "image-" + i + ".tiff", user);
+    }
+  }
+
+  @Test
+  void documentXmlRoundTripReusesRepeatedTiff(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Repeated TIFF");
+    EcatImage tiff = addTiff(source, user, "repeated.tiff");
+    addImageToField(source.getFields().get(0), user, tiff);
+    long imageCount = getImageCount();
+
+    Elements images = documentImages(importedDocument(roundTrip(user, workDir, source)));
+    assertThat(images).hasSize(2);
+    assertEquals(imageId(images.get(0)), imageId(images.get(1)));
+    assertEquals(imageCount + 1, getImageCount());
+    assertTiffImage(images.get(0), tiff.getName(), user);
+  }
+
+  @Test
+  void documentXmlRoundTripPreservesPngAlongsideTiff(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "PNG and TIFF");
+    EcatImage png = addImageToField(source.getFields().get(0), user);
+    EcatImage tiff = addTiff(source, user, "original.tiff");
+
+    Elements images = documentImages(importedDocument(roundTrip(user, workDir, source)));
+    assertThat(images).hasSize(2);
+    EcatImage importedPng = mediaMgr.getImage(imageId(images.get(0)), user, false);
+    assertEquals(png.getName(), importedPng.getName());
+    assertEquals("png", importedPng.getExtension());
+    assertArrayEquals(downloadGalleryFile(png.getId()), downloadGalleryFile(importedPng.getId()));
+    assertTiffImage(images.get(1), tiff.getName(), user);
+  }
+
+  @Test
+  void documentXmlImportsPngWithExtensionlessLinkFile(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Extensionless link");
+    EcatImage png = addImageToField(source.getFields().get(0), user);
+    ExportSelection selection =
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {source.getId()}, new String[] {RecordType.NORMAL.toString()});
+    File archive = exportSelection(user, workDir, selection);
+
+    String archivedName = FilenameUtils.getName(png.getFileUri());
+    try (var zip = FileSystems.newFileSystem(archive.toPath())) {
+      Path archivedPng;
+      try (var entries = Files.walk(zip.getPath("/"))) {
+        archivedPng = entries.filter(path -> path.endsWith(archivedName)).findFirst().orElseThrow();
+      }
+      Files.move(archivedPng, archivedPng.resolveSibling("payload"));
+      Path recordFolder = archivedPng.getParent();
+      Path documentXml = recordFolder.resolve(recordFolder.getFileName() + ".xml");
+      String xml = Files.readString(documentXml);
+      assertThat(xml).contains("<linkFile>" + archivedName + "</linkFile>");
+      Files.writeString(documentXml, xml.replace(archivedName, "payload"));
+
+      // The edited fixture needs its own archive ID for checksum validation.
+      Path manifest = recordFolder.resolveSibling(ExportImport.EXPORT_MANIFEST);
+      String idKey = ArchiveManifest.ARCHIVE_ID + ":";
+      Files.writeString(
+          manifest,
+          Files.readString(manifest)
+              .replaceFirst("(?m)^" + idKey + ".*", idKey + UUID.randomUUID()));
+    }
+
+    Elements images = documentImages(importedDocument(importSelection(user, workDir, archive)));
+    assertThat(images).hasSize(1);
+    Element image = images.get(0);
+    EcatImage imported = mediaMgr.getImage(imageId(image), user, false);
+    assertEquals(png.getName(), imported.getName());
+    assertThat(imported.getFileName()).matches("Picture1_\\d+\\.png");
+    assertPngRenders(image, user);
+  }
+
+  @Test
+  void documentXmlRoundTripPreservesTiffOnSecondImport(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Re-exported TIFF");
+    EcatImage tiff = addTiff(source, user, "re-exported.tiff");
+
+    StructuredDocument firstImport = importedDocument(roundTrip(user, workDir, source));
+    Elements images = documentImages(importedDocument(roundTrip(user, workDir, firstImport)));
+    assertThat(images).hasSize(1);
+    assertNotEquals(imageId(documentImages(firstImport).get(0)), imageId(images.get(0)));
+    assertTiffImage(images.get(0), tiff.getName(), user);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"scan.png", "Microscope slide"})
+  void documentXmlRoundTripPreservesRenamedTiff(String displayName, @TempDir Path workDir)
+      throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Renamed TIFF");
+    EcatImage tiff = addTiff(source, user, "original.tiff");
+    assertTrue(recordMgr.renameRecord(displayName, tiff.getId(), user));
+
+    Elements images = documentImages(importedDocument(roundTrip(user, workDir, source)));
+    assertThat(images).hasSize(1);
+    Element image = images.get(0);
+    assertTiffImage(image, displayName, user);
+    assertArrayEquals(downloadGalleryFile(tiff.getId()), downloadGalleryFile(imageId(image)));
+  }
+
+  @Test
+  void mixedXmlSelectionReusesSelectedTiff(@TempDir Path workDir) throws Exception {
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, "Selected TIFF");
+    EcatImage tiff = addTiff(source, user, "selected.tiff");
+    long imageCount = getImageCount();
+
+    ExportSelection selection =
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {source.getId(), tiff.getId()},
+            new String[] {RecordType.NORMAL.toString(), RecordType.MEDIA_FILE.toString()});
+    ImportArchiveReport report = roundTrip(user, workDir, selection);
+    Elements images = documentImages(importedDocument(report));
+    assertThat(images).hasSize(1);
+    assertEquals(imageCount + 1, getImageCount());
+    assertNotEquals(tiff.getId().longValue(), imageId(images.get(0)));
+    assertTiffImage(images.get(0), tiff.getName(), user);
+  }
+
+  private EcatImage addTiff(StructuredDocument document, User user, String name)
+      throws IOException {
+    try (var input = getTestResourceFileStream("Picture1.tiff")) {
+      EcatImage image = mediaMgr.saveNewImage(name, input, user, null);
+      return addImageToField(document.getFields().get(0), user, image);
+    }
+  }
+
+  private ImportArchiveReport roundTrip(User user, Path workDir, StructuredDocument document)
+      throws Exception {
+    return roundTrip(
+        user,
+        workDir,
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {document.getId()}, new String[] {RecordType.NORMAL.toString()}));
+  }
+
+  private ImportArchiveReport roundTrip(User user, Path workDir, ExportSelection selection)
+      throws Exception {
+    return importSelection(user, workDir, exportSelection(user, workDir, selection));
+  }
+
+  private File exportSelection(User user, Path workDir, ExportSelection selection)
+      throws Exception {
+    ArchiveExportConfig config =
+        createDefaultArchiveConfig(user, Files.createTempDirectory(workDir, "export").toFile());
+    config.setArchiveType(ArchiveExportConfig.XML);
+    return exportImportManager
+        .asyncExportSelectionToArchive(
+            selection, config, user, URI.create("http://localhost"), postExport)
+        .get()
+        .getExportFile();
+  }
+
+  private ImportArchiveReport importSelection(User user, Path workDir, File archive)
+      throws Exception {
+    ArchivalImportConfig importConfig =
+        createDefaultArchiveImportConfig(
+            user, Files.createTempDirectory(workDir, "import").toFile());
+    ImportArchiveReport report =
+        exportImportManager.importArchive(
+            fileToMultipartfile(archive.getName(), archive),
+            user.getUsername(),
+            importConfig,
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful(), () -> report.getErrorList().getErrorMessages().toString());
+    return report;
+  }
+
+  private StructuredDocument importedDocument(ImportArchiveReport report) {
+    assertThat(report.getImportedRecords()).hasSize(1);
+    return report.getImportedRecords().iterator().next().asStrucDoc();
+  }
+
+  private Elements documentImages(StructuredDocument document) {
+    return Jsoup.parse(document.getFields().get(0).getFieldData()).select("img");
+  }
+
+  private long imageId(Element image) {
+    return Long.parseLong(image.id().split("-")[1]);
+  }
+
+  private byte[] downloadGalleryFile(long id) throws Exception {
+    return mockMvc
+        .perform(get("/Streamfile/{id}", id))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsByteArray();
+  }
+
+  private void assertTiffImage(Element image, String filename, User user) throws Exception {
+    EcatImage imported = mediaMgr.getImage(imageId(image), user, false);
+    assertEquals(filename, imported.getName());
+    assertEquals("tiff", imported.getExtension());
+    assertPngRenders(image, user);
+  }
+
+  private void assertPngRenders(Element image, User user) throws Exception {
+    byte[] bytes =
+        mockMvc
+            .perform(get(image.attr("src")).principal(() -> user.getUsername()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("image/png"))
+            .andReturn()
+            .getResponse()
+            .getContentAsByteArray();
+    assertNotNull(ImageIO.read(new ByteArrayInputStream(bytes)));
   }
 
   @Test
