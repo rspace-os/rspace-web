@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiContainerLocationWithContent;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -295,5 +296,34 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
     Mockito.verifyNoMoreInteractions(mockPublisher);
+  }
+
+  @Test
+  public void bulkMoveCannotRemoveReadOnlyContainerFromParent() {
+    ApiContainer container = createBasicContainerForUser(testUser);
+    ApiContainerInfo originalParent = container.getParentContainer();
+    User sysadmin = createAndSaveSysadminUser();
+    initialiseContentWithEmptyContent(sysadmin);
+    ApiContainer containerAsSysadmin =
+        containerApiMgr.getApiContainerById(container.getId(), sysadmin);
+    assertThat(containerAsSysadmin.getPermittedActions())
+        .containsExactly(ApiInventoryRecordPermittedAction.READ);
+
+    ApiContainer removeFromParentRequest = new ApiContainer();
+    removeFromParentRequest.setId(container.getId());
+    removeFromParentRequest.setRemoveFromParentContainerRequest(true);
+    InventoryBulkOperationConfig bulkOpConfig =
+        new InventoryBulkOperationConfig(
+            BulkApiOperationType.MOVE, List.of(removeFromParentRequest), true, sysadmin);
+
+    InventoryBulkOperationException exception =
+        assertThrows(
+            InventoryBulkOperationException.class,
+            () -> inventoryBulkOpApiMgr.runBulkOperation(bulkOpConfig));
+
+    assertThat(exception.getMessage()).endsWith("cannot be edited by current User");
+    ApiContainer unchangedContainer =
+        containerApiMgr.getApiContainerById(container.getId(), testUser);
+    assertEquals(originalParent.getId(), unchangedContainer.getParentContainer().getId());
   }
 }
