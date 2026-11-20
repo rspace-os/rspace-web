@@ -1269,6 +1269,17 @@ RS.tinymceInsertContent = function (html, ed) {
   }
 };
 
+/**
+ * Renders a field template (see TemplateController) with the given data, without inserting it.
+ *
+ * @returns a jQuery promise of the rendered HTML
+ */
+RS.renderFieldTemplate = function (templateId, json) {
+  return $.get("/fieldTemplates/ajax/" + templateId.replace(/^#/, "")).then(function (elementTemplate) {
+    return Mustache.render(elementTemplate, json);
+  });
+};
+
 RS.tinymceInsertInternalLink = function (id, globalId, name, ed, callback) {
   var data = {
     id: id,
