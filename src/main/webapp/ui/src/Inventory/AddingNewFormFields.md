@@ -246,8 +246,10 @@ Examples of this approach include [Tags], [Expiry], and [Subsample's Quantity].
 
 The "varying" fields above include the custom fields that a sample or instrument
 template defines and that every sample or instrument made from it copies. These
-fields can carry a display rule (RPD-339): show this field only when a radio or
-choice field of the same template has, or lacks, certain options. A hidden field
+fields can carry a display rule (RPD-339): show this field only when another
+field of the same template, its source, has or lacks a certain answer. Radio,
+choice, plain text (`string`) and `number` fields can be sources; formatted text
+(`text`) and every other type cannot. A hidden field
 keeps its value and is skipped by mandatory checks. The user-facing behaviour is
 described in [ConditionalFieldDisplay.md]. Extra fields have no template
 definition and cannot have rules.
@@ -295,9 +297,65 @@ Each template field ([FieldModel]) has two properties for this:
   "remove".
 - When copying fields between models (for example
   `InstrumentModel.overrideFields`), copy the key and the rule.
-- A new field type can be a rule's source only if the shared rule core treats it
-  as one (radio and choice today, `canBeSource` in [fieldVisibility.ts]). Any
-  type can be a rule's target.
+- A new field type is not a source unless you make it one. Any type can be a
+  rule's target. See [Source kinds](#source-kinds) below.
+
+### Source kinds
+
+Every field the rule core sees is a `FieldSnapshot` (`displayRule.ts` in
+[field-rules]; `FieldSnapshot` in Java). Besides the key, rule and options, a
+snapshot carries:
+
+<dl>
+
+  <dt>`sourceKind`</dt>
+  <dd>
+    What the field offers to rules that read it: `OPTIONS` (radio, choice),
+    `TEXT` (one-line text that is not a password field), `NUMBER`, or `NONE`
+    (everything else, which cannot be a source). Eligibility in the editor, the
+    operator list (`OPERATORS_BY_SOURCE_KIND`), draft clean-up, the type-change
+    confirmation, validation and evaluation all decide from this one value.
+    Always read it through `sourceKindOf`: when `sourceKind` is absent it
+    falls back to `canBeSource` (`OPTIONS` or `NONE`), so older snapshot
+    builders keep working.
+  </dd>
+
+  <dt>`value`</dt>
+  <dd>
+    The raw stored string of a `TEXT` or `NUMBER` source, untrimmed; `""` for
+    other kinds and for an empty field. The rule core trims, normalises and
+    parses it ([ruleValues.ts] and `RuleValues.java`), so pass the string
+    as held, not a cleaned-up copy. Inventory builds it with
+    `ruleSourceValue` in [fieldVisibility.ts]: while editing, a number field
+    holds the typed string, but content loaded from the server went through
+    `parseFloat`, so it is compared as `String(content)` and can round
+    beyond about 15 significant digits. The server is authoritative.
+  </dd>
+
+</dl>
+
+In Inventory, `sourceKindOfType` in [fieldVisibility.ts] maps a field type to its
+kind, and the server's `InventoryFieldDisplayRules.sourceKind` must give the
+same answer. ELN uses `elnSourceKind` in `eln/form-field-editor/editorModel.ts`
+and `ElnFieldRules.sourceKind` in Java, which also take the String field's
+password flag.
+
+To make a new field type a source:
+
+1. Map it to `TEXT` or `NUMBER` (or `OPTIONS`, if it holds selected options) in
+   both the TypeScript and Java mappings above, and supply its value in the
+   snapshot. Do not add a new kind for it: a new kind needs operators,
+   evaluation, validation codes and shared vectors in both the Java and
+   TypeScript rule cores.
+2. Make sure every page that evaluates rules can read its current value,
+   including the legacy ELN pages (`data-field-source-kind` and
+   `data-field-value`), and that typing in it triggers the live update.
+3. Add the type to the user guide's table of sources in
+   [ConditionalFieldDisplay.md].
+
+To keep a new type out, map it to `NONE` on both sides, which is what the
+`default` branches already do. A type whose value must not appear in rule
+summaries or API responses, as with password fields, must stay `NONE`.
 
 ### Showing and hiding fields
 
@@ -313,8 +371,18 @@ Each template field ([FieldModel]) has two properties for this:
   filters out hidden fields and returns an `announcer`, a polite live region
   ([RevealedFieldsAnnouncer]) that names the fields an answer shows or hides. Render
   it next to the fields. Do not move focus when fields appear or disappear.
-- `FieldModel.validate()` returns valid for a hidden field, so a hidden mandatory
-  field never blocks Save. The server makes the same decision for create,
+- [useShownTemplateFields] applies an option change at once, but a typed change to
+  a text or number source only after typing pauses for `SETTLE_DELAY_MS`
+  (300 ms), using `scalarSourceValues` and `hiddenFieldsReading` from
+  [fieldVisibility.ts]. The pause is for rendering and announcements only: the
+  model is updated on every keystroke, and `hiddenFields`, `validate()` and Save
+  always read current values. A field that contains focus is not hidden until
+  focus leaves it.
+- `FieldModel.validate()` returns valid for a hidden field unless the field holds
+  a value with an error (`fields.hiddenFieldInvalid`, naming the field), so a
+  hidden mandatory field never blocks Save but a hidden invalid value does.
+  `InstrumentModel.validate()` validates its template fields as `SampleModel`
+  does. The server makes the same decision for create,
   update, CSV import and the operations wizard.
 - The operations wizard ignores mandatory fields hidden by the template's
   defaults ([templateResolution.ts]).
@@ -330,8 +398,11 @@ also uses: `FieldCard`, `FieldTypeSelect`, `OptionsEditor`, `MoveButtons`,
 renders `DisplayConditionsNote` once above the fields while editing.
 
 - `FieldDisplayCondition` is the "Display this field when…" section of one
-  field. In edit mode it offers "Always" or a condition on another radio or
-  choice field; read-only, it shows the "Shown when…" summary. It also lists
+  field. In edit mode it offers "Always" or a condition on another field that
+  can be a source, with the operators of that source's kind and, for a text or
+  number comparison, a `type="text"` Value box (no `inputMode`: the iOS decimal
+  keypad has no minus key); read-only, it shows the "Shown when…" summary,
+  with text values quoted. It also lists
   the fields that depend on this one. The "Only when…" radio is always
   enabled: with no field the condition could read, the Field list shows a
   disabled "No other fields" item and the same text as its helper.
@@ -357,7 +428,9 @@ Any new action that can break a rule must confirm first, naming the dependent
 fields, and then prune the dependent rules in the same model change. Today
 these are: deleting a field that rules read (`FieldModel.dependentFields`),
 removing an option that a rule uses, and changing an unsaved source field to a
-type that cannot be a source. An option that a rule uses cannot be renamed: the
+type of another source kind (`FieldModel.changeType` compares
+`sourceKindOfType` before and after; radio and choice are both `OPTIONS`, so
+changing between them keeps the rules). An option that a rule uses cannot be renamed: the
 `OptionsEditor` row is locked with the `template.displayRules.optionInUse`
 reason, which only new options show, because saved options cannot be renamed
 anyway. The server validates every rule of the template
@@ -400,3 +473,4 @@ together after a save, so a save that leaves a dangling rule is rejected.
 [templateRuleFields]: /src/main/webapp/ui/src/Inventory/Template/Fields/templateRuleFields.ts
 [templateResolution.ts]: /src/main/webapp/ui/src/Inventory/components/Operations/templateResolution.ts
 [useShownTemplateFields]: /src/main/webapp/ui/src/Inventory/components/Fields/useShownTemplateFields.tsx
+[ruleValues.ts]: /src/main/webapp/ui/src/modules/common/field-rules/ruleValues.ts

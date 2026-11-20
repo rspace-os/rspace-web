@@ -3915,8 +3915,10 @@ components:
           $ref: "#/components/schemas/ListOfMaterialsList"
     FieldDisplayRule:
       description: >
-        Shows a field only when another field of the same form, a Radio or Choice field
-        named by its key, meets a condition; null when the field is always shown. A
+        Shows a field only when another field of the same form, named by its key, meets
+        a condition; null when the field is always shown. The source must be a Radio,
+        Choice, Number or String field, and a String field must not be a password field
+        (`ifPassword`); Text (rich text) and other field types cannot be sources. A
         field whose source is hidden is hidden too. Hiding is a presentation choice
         only: a hidden field keeps its value, which the API still returns, and a
         mandatory field is only required while it is shown. The API reports each
@@ -3930,28 +3932,75 @@ components:
       properties:
         sourceFieldKey:
           type: string
-          description: The fieldKey of the Radio or Choice field the condition reads.
+          description: The fieldKey of the Radio, Choice, Number or one-line String
+            (not password) field the condition reads.
         operator:
           type: string
-          description: How the source field's selected options are compared.
-            IS_ANY_OF is true when at least one selected option is listed in values;
-            IS_NONE_OF when none is (including when nothing is selected); HAS_VALUE
-            when any option is selected; HAS_NO_VALUE when none is.
+          description: |
+            How the source field's value is compared. Each operator suits only some
+            kinds of source; any other combination is rejected with 422
+            (`validation.fieldDisplayRule.operatorNotForSource`).
+
+            Radio and Choice sources: IS_ANY_OF is true when at least one selected
+            option is listed in values; IS_NONE_OF when none is (including when
+            nothing is selected); HAS_VALUE when any option is selected; HAS_NO_VALUE
+            when none is.
+
+            String sources: EQUALS, NOT_EQUALS, CONTAINS, HAS_VALUE, HAS_NO_VALUE.
+            Text is compared after trimming leading and trailing white space (the
+            characters JavaScript's `String.prototype.trim()` removes), Unicode NFC
+            normalisation and lowercasing (not case folding, so `STRASSE` does not
+            equal `straße`).
+
+            Number sources: EQUALS, NOT_EQUALS, LESS_THAN, AT_MOST (less than or
+            equal), GREATER_THAN, AT_LEAST (greater than or equal), HAS_VALUE,
+            HAS_NO_VALUE. Numbers are compared as exact decimals, so `1.0` equals `1`.
+
+            For String and Number sources, HAS_VALUE is true when the trimmed value is
+            not empty. When the source has no value, or a Number source holds a value
+            that is not a number, every comparison is false except NOT_EQUALS, which
+            is true.
+
+            Clients that validate this property against a fixed list must accept the
+            members added in this release: EQUALS, NOT_EQUALS, CONTAINS, LESS_THAN,
+            AT_MOST, GREATER_THAN and AT_LEAST.
           enum:
             - IS_ANY_OF
             - IS_NONE_OF
             - HAS_VALUE
             - HAS_NO_VALUE
+            - EQUALS
+            - NOT_EQUALS
+            - CONTAINS
+            - LESS_THAN
+            - AT_MOST
+            - GREATER_THAN
+            - AT_LEAST
         values:
           type: array
           nullable: true
-          description: Options of the source field, each listed once and as the raw
-            option text, so a comma in an option is written as a comma, not as the
-            `&#44;` escape of Choice field content. Required and non-empty for IS_ANY_OF
-            and IS_NONE_OF. For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send
-            an empty array or null; responses return an empty array. At most 1000 values,
-            and the stored rule at most 32768 characters; a form request with a rule over
-            either limit, or with a value listed twice, is rejected with 422.
+          description: |
+            For IS_ANY_OF and IS_NONE_OF, options of the source field, each listed once
+            and as the raw option text, so a comma in an option is written as a comma,
+            not as the `&#44;` escape of Choice field content; required and non-empty.
+            For HAS_VALUE and HAS_NO_VALUE, a request may omit it or send an empty array
+            or null; responses return an empty array.
+
+            For EQUALS, NOT_EQUALS, CONTAINS, LESS_THAN, AT_MOST, GREATER_THAN and
+            AT_LEAST, exactly one value (otherwise 422,
+            `validation.fieldDisplayRule.valueCount`). It is stored as sent, not
+            trimmed, and must not be blank after trimming (422,
+            `validation.fieldDisplayRule.valueBlank`). Against a Number source it must
+            be a number as written, with no surrounding spaces (422,
+            `validation.fieldDisplayRule.valueNotANumber`): ASCII digits with an
+            optional sign, decimal point and exponent, such as `5`, `-2.5`, `+5`, `.5`,
+            `5.`, `05` or `1e3`, at most 1000 characters, with at most nine exponent
+            digits and a magnitude within 10^±2000. Commas, `0x` and other prefixes,
+            `Infinity` and `NaN` are not numbers.
+
+            At most 1000 values, and the stored rule at most 32768 characters; a form
+            request with a rule over either limit, or with an option listed twice, is
+            rejected with 422.
           items:
             type: string
       example:
@@ -4406,9 +4455,14 @@ components:
           description: Show this field only when the rule holds. On PUT, omitting
             displayRule keeps a saved field's current rule, and null removes it. The
             rules of the whole form are validated together after the request is
-            applied; a rule whose source is missing, is not a Radio or Choice field, or
-            names an option that the source does not offer, or rules that depend on each
-            other in a loop, reject the whole request. Radio and Choice options that a
+            applied, and any problem rejects the whole request with 422. The
+            message codes (each under `validation.fieldDisplayRule.`) are
+            sourceMissing, sourceSelf, sourceType (the source is not a Radio,
+            Choice, Number or String field, or is a password String field),
+            operatorNotForSource (the operator does not suit the source's kind),
+            valueCount, valueBlank, valueNotANumber, valueUnknown (an option the
+            source does not offer), valueDuplicate, valueTooMany, ruleTooLong and
+            cycle (rules that depend on each other in a loop). Radio and Choice options that a
             request adds or changes must not be blank or contain '=' or '&'.
           allOf:
             - $ref: "#/components/schemas/FieldDisplayRule"

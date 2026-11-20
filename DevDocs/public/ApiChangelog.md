@@ -10,9 +10,10 @@ Copy each release's section there when the release ships. The OpenAPI descriptio
 ### Display rules (conditional field display)
 
 Fields of ELN Forms and of Inventory sample and instrument templates can now carry a display
-rule: show this field only when a radio or choice field of the same form or template has (or
-lacks) certain options. See [ConditionalFieldDisplay.md](ConditionalFieldDisplay.md) for the
-behaviour in the product.
+rule: show this field only when another field of the same form or template, its source, has (or
+lacks) a certain answer. Radio, choice, number and one-line text fields can be sources (ELN
+String fields only when they are not password fields; Inventory string fields). See
+[ConditionalFieldDisplay.md](ConditionalFieldDisplay.md) for the behaviour in the product.
 
 #### New properties
 
@@ -34,13 +35,41 @@ behaviour in the product.
   { "sourceFieldKey": "6f1c2e0a-9b7d-4c1e-8f3a-2d5b6c7e8f90", "operator": "IS_ANY_OF", "values": ["Yes"] }
   ```
 
-  `operator` is `IS_ANY_OF`, `IS_NONE_OF`, `HAS_VALUE` or `HAS_NO_VALUE`. `values` is required
-  and non-empty for the first two. For `HAS_VALUE` and `HAS_NO_VALUE`, omit `values` or send
-  `[]`; the server also accepts `null`. A rule with any other property is rejected with 400.
-- `values` hold the raw option text. A comma that is part of an option is written as a comma,
+  The operators that a rule can use depend on its source:
+
+  | Source | Operators |
+  |---|---|
+  | Radio, choice | `IS_ANY_OF`, `IS_NONE_OF`, `HAS_VALUE`, `HAS_NO_VALUE` |
+  | One-line text (ELN String, not password; Inventory string) | `EQUALS`, `NOT_EQUALS`, `CONTAINS`, `HAS_VALUE`, `HAS_NO_VALUE` |
+  | Number | `EQUALS`, `NOT_EQUALS`, `LESS_THAN`, `AT_MOST`, `GREATER_THAN`, `AT_LEAST`, `HAS_VALUE`, `HAS_NO_VALUE` |
+
+  `values` is required and non-empty for `IS_ANY_OF` and `IS_NONE_OF`. For `HAS_VALUE` and
+  `HAS_NO_VALUE`, omit `values` or send `[]`; the server also accepts `null`. Every other
+  operator compares with exactly one value. A rule with any other property, or an unknown
+  operator, is rejected with 400.
+- **Compatibility:** the `operator` enum has new members (`EQUALS`, `NOT_EQUALS`, `CONTAINS`,
+  `LESS_THAN`, `AT_MOST`, `GREATER_THAN`, `AT_LEAST`). Clients that read rules into a strict
+  enum of operators must accept them.
+- For option operators, `values` hold the raw option text. A comma that is part of an option is written as a comma,
   not as the `&#44;` escape used in ELN choice field content.
 - The two APIs write an empty `values` differently. The Inventory API omits it; the ELN forms
   and documents API always returns `"values": []`. Treat a missing `values` as an empty list.
+- **Text and number comparisons.** A comparison value is stored as sent, not trimmed. It must
+  not be blank after trimming. Against a number source it must be a number as written, with no
+  surrounding spaces: ASCII digits with an optional sign, decimal point and exponent, such as
+  `5`, `-2.5`, `+5`, `.5`, `5.`, `05` or `1e3`, at most 1,000 characters. Commas, `0x`,
+  `Infinity` and `NaN` are not numbers. When evaluating:
+  - Field values and rule values are trimmed of leading and trailing white space (the
+    characters JavaScript's `String.prototype.trim()` removes). A value that is empty after
+    trimming is no value.
+  - Text is compared after Unicode NFC normalisation and lowercasing. This is not case folding:
+    `STRASSE` does not equal `straße`. The server uses ICU4J 79.1 (Unicode 18).
+  - Numbers are compared as exact decimals: `1.0` equals `1`, and `-0` equals `0`.
+  - When the source has no value, or a number source holds a value that is not a number, every
+    comparison is false except `NOT_EQUALS`, which is true.
+  - A stored rule that cannot apply (an operator that does not suit its source, the wrong
+    number of values, a blank value, or a number comparison whose value is not a number) is
+    ignored, so the field is shown, as for a missing source.
 - The API does not compute visibility. Every field and value is returned whether or not the field
   is currently shown. A client can evaluate visibility from the keys, rules and values:
   - a field whose source field is hidden is hidden too, whatever the operator;
@@ -63,9 +92,19 @@ behaviour in the product.
   after every change in the request has been applied. One request can therefore add a source
   field and a rule that uses it, or delete a source field and clear the rules that read it. The
   whole request is rejected, and nothing changes, if any rule:
-  - names a source that does not exist, is the field itself, or is not a radio or choice field;
-  - names an option that the source does not offer;
-  - is part of a loop of fields that depend on each other.
+  - names a source that does not exist (`sourceMissing`) or is the field itself (`sourceSelf`);
+  - names a source that cannot be read, because it is not a radio, choice, number or one-line
+    text field, or is an ELN String field marked as a password field (`sourceType`);
+  - uses an operator that does not suit its source (`operatorNotForSource`);
+  - for a text or number comparison, does not have exactly one value (`valueCount`), has a value
+    that is blank after trimming (`valueBlank`), or, against a number source, has a value that
+    is not a number (`valueNotANumber`);
+  - names an option that the source does not offer (`valueUnknown`);
+  - is part of a loop of fields that depend on each other (`cycle`).
+
+  Each code is a message key under `validation.fieldDisplayRule.` and is returned with 422,
+  naming the field. Making an ELN String field that a rule reads into a password field is
+  therefore rejected with `sourceType`.
 - **Size limits.** A rule may list at most 1,000 values, each at most once, and the rule as
   stored may be at most 32,768 characters. A request that breaks a limit is rejected with 422,
   naming the field, and nothing changes. The messages are
@@ -104,6 +143,12 @@ behaviour in the product.
   accepts a time field without `defaultValue`, maps a published form's field ids to its draft
   by the stored link rather than by position, and rejects unknown or repeated field ids. Forms
   no longer list deleted fields.
+- **Blank over blank is no change (Inventory).** On an Inventory update, such as a sample or
+  instrument PUT, a non-option field sent with blank `content` when its stored content is also
+  blank is treated as unchanged and is not written. Before, an
+  instrument with a blank mandatory Landing page could not be updated, because the client sends
+  `""` for it and that was checked as a new, empty value. Clearing a filled mandatory field is
+  still rejected.
 - **Instrument Landing page.** On POST `/api/inventory/v1/instruments`, a blank Landing page
   field is accepted even when the template marks it mandatory, as the UI already did. On update,
   blanking a shown, mandatory Landing page is still rejected.
