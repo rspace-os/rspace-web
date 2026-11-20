@@ -2,6 +2,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
+import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -33,6 +34,7 @@ import {
   ruleFromDraft,
   ruleGraphFor,
   ruleIsInvalid,
+  type SourceCandidate,
   sanitiseCondition,
 } from "./ruleEditing";
 
@@ -115,15 +117,17 @@ function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKi
  * When one field is shown. Read-only, it is the "Shown when..." summary. In
  * edit mode the author picks "Always" or a condition on another field that a
  * rule can read: options, one-line text or a number, each with its own
- * conditions and value control. Only fields that would not end up depending
- * on this one are offered; with none, the field menu says so. A condition is applied once it is
+ * conditions and value control. The field menu lists every other field, but
+ * only fields a rule can read and that would not end up depending on this one
+ * can be chosen; the others are listed disabled, with the reason, and with no
+ * field to choose the menu says so. A condition is applied once it is
  * complete and the shared validator accepts it. Until then it is a draft in
  * this field only, the field keeps the rule it had, the controls show what is
  * missing, and `onIncompleteChange` tells the host to refuse saving. Either
  * mode notes which fields depend on this one.
  *
  * Names are read only for the fields on screen: the chosen source, the
- * dependents, and the candidates while the menu is open. A MobX host can wrap
+ * dependents, and every other field while the menu is open. A MobX host can wrap
  * the component in `observer` so that only those names re-render it.
  *
  * Choosing "Always" clears the rule, but the condition is remembered: going
@@ -192,6 +196,28 @@ export default function FieldDisplayCondition({
       draft: rememberedDraftRetyped ? null : remembered.draft,
     });
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
+  const unavailableText = ({ field, unavailable }: SourceCandidate) => {
+    const name = nameOf(field);
+    switch (unavailable) {
+      case "hidesValue":
+        return t("fieldEditor.condition.unavailable.hidesValue", {
+          field: name,
+        });
+      case "dependsOnField":
+        return t("fieldEditor.condition.unavailable.dependsOnField", {
+          field: name,
+        });
+      default:
+        return field.typeLabel === undefined
+          ? t("fieldEditor.condition.unavailable.unsupportedKind", {
+              field: name,
+            })
+          : t("fieldEditor.condition.unavailable.unsupportedType", {
+              field: name,
+              type: field.typeLabel,
+            });
+    }
+  };
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
   const dependents = graph.dependentsOf(fieldKey);
   const shown = draft?.condition ?? rule;
@@ -233,6 +259,11 @@ export default function FieldDisplayCondition({
 
   const sources = graph.sourcesFor(fieldKey);
   const source = condition?.sourceFieldKey ? (graph.byKey.get(condition.sourceFieldKey) ?? null) : null;
+  const listed: ReadonlyArray<SourceCandidate> = sourceMenuOpen
+    ? graph.candidatesFor(fieldKey)
+    : source
+      ? [{ field: source, unavailable: null }]
+      : [];
   const sourceDropped = shown?.sourceFieldKey != null && source === null;
   // complete, but the shared validator refused it: too many options, not a number, or too long to store
   const rejected = draft?.rejected ?? false;
@@ -342,6 +373,8 @@ export default function FieldDisplayCondition({
                   : undefined
             }
             onChange={({ target: { value } }) => {
+              // an unavailable field is never chosen, even if its disabled item somehow reports a click
+              if (!sources.some((candidate) => candidate.key === value)) return;
               const chosen = graph.byKey.get(value);
               const kind = chosen ? sourceKindOf(chosen) : null;
               // another kind of field takes other conditions, so the condition starts again
@@ -357,19 +390,37 @@ export default function FieldDisplayCondition({
                 open: sourceMenuOpen,
                 onOpen: () => setSourceMenuOpen(true),
                 onClose: () => setSourceMenuOpen(false),
+                MenuProps: { slotProps: { paper: { sx: { maxWidth: "min(400px, calc(100vw - 32px))" } } } },
               },
             }}
             sx={{ flex: "1 1 200px" }}
           >
-            {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
-            {(sourceMenuOpen ? sources : source ? [source] : []).map((candidate) => (
-              <MenuItem key={candidate.key} value={candidate.key}>
-                {nameOf(candidate)}
-              </MenuItem>
-            ))}
             {/* no value, so the select does not take it for the chosen field */}
             {sourceMenuOpen && sources.length === 0 && (
               <MenuItem disabled>{t("fieldEditor.condition.noOtherFields")}</MenuItem>
+            )}
+            {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
+            {listed.map((candidate) =>
+              candidate.unavailable === null ? (
+                <MenuItem key={candidate.field.key} value={candidate.field.key}>
+                  {nameOf(candidate.field)}
+                </MenuItem>
+              ) : (
+                // no value, as above; the reason is part of the option's name, so it is announced
+                <MenuItem
+                  key={candidate.field.key}
+                  disabled
+                  // full opacity with secondary text, since the default disabled opacity makes the reason too faint to read
+                  sx={{ whiteSpace: "normal", "&.Mui-disabled": { opacity: 1 } }}
+                >
+                  <ListItemText
+                    primary={nameOf(candidate.field)}
+                    secondary={unavailableText(candidate)}
+                    slotProps={{ primary: { color: "text.secondary" }, secondary: { color: "text.secondary" } }}
+                    sx={{ my: 0 }}
+                  />
+                </MenuItem>
+              ),
             )}
           </TextField>
           <TextField
