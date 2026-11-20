@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import BookingSettingsPage from "@/modules/booking/pages/bookable-items/BookingSettingsPage";
+import BookingSettingsRoutePage from "@/modules/booking/pages/bookable-items/BookingSettingsRoutePage";
 
 export const Route = createFileRoute("/booking/config/settings/")({
-  component: BookingSettingsPage,
+  // Permission guards live in the component because the router has no current-user context.
+  component: BookingSettingsRoutePage,
 });

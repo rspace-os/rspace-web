@@ -1,9 +1,14 @@
 import { createElement } from "react";
+import { useTranslation } from "react-i18next";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
-import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingTimeZoneOptions,
+  browserTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import { INCREMENT_UNITS } from "@/modules/booking/domain/bookingIncrement";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import i18n from "@/modules/common/i18n";
@@ -82,11 +87,12 @@ export const bookingConfigurationConfig = {
       list: {
         dependencies: ["enabled"],
         // One status column: an archived item is Archived; an active one is Enabled or Disabled.
-        renderHeader: () => i18n.t("booking:allBookableItems.fields.status"),
         renderCell: ({ row }) =>
           row.state === "ARCHIVED"
             ? i18n.t("booking:bookableItemDetails.archived")
-            : i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
+            : row.enabled
+              ? i18n.t("booking:bookableItemDetails.enabled")
+              : i18n.t("booking:bookableItemDetails.disabled"),
       },
     },
     {
@@ -107,20 +113,13 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:allBookableItems.fields.updatedAt" satisfies CollectionTranslationKey,
       form: false,
       list: {
-        renderCell: ({ row }) =>
-          row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, {
-                dateStyle: "medium",
-                timeStyle: "short",
-                hourCycle: bookingHourCycle(),
-              }).format(new Date(row.updatedAt))
-            : i18n.t("booking:bookableItemDetails.notAvailable"),
+        renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),
       },
     },
     {
       name: "slotGranularityMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.granularity",
+      labelKey: "booking:settings.fields.granularity" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
@@ -135,7 +134,7 @@ export const bookingConfigurationConfig = {
     {
       name: "openingHours",
       type: "array",
-      labelKey: "booking:bookableItemDetails.fields.openingHours",
+      labelKey: "booking:bookableItemDetails.fields.openingHours" satisfies CollectionTranslationKey,
       minRows: 1,
       maxRows: 7,
       list: false,
@@ -144,21 +143,21 @@ export const bookingConfigurationConfig = {
         {
           name: "dayOfWeek",
           type: "number",
-          labelKey: "booking:settings.openingHours.dayOfWeek",
+          labelKey: "booking:settings.openingHours.dayOfWeek" satisfies CollectionTranslationKey,
           required: true,
           writeConstraints: { integer: true, minimum: 1, maximum: 7 },
         },
         {
           name: "start",
           type: "text",
-          labelKey: "booking:settings.fields.openingStart",
+          labelKey: "booking:settings.fields.openingStart" satisfies CollectionTranslationKey,
           required: true,
           writeConstraints: { format: "time" },
         },
         {
           name: "end",
           type: "text",
-          labelKey: "booking:settings.fields.openingEnd",
+          labelKey: "booking:settings.fields.openingEnd" satisfies CollectionTranslationKey,
           required: true,
           writeConstraints: { format: "time", allow24HourEnd: true },
         },
@@ -167,28 +166,28 @@ export const bookingConfigurationConfig = {
     {
       name: "bufferBeforeMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.bufferBefore",
+      labelKey: "booking:settings.fields.bufferBefore" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
     {
       name: "bufferAfterMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.bufferAfter",
+      labelKey: "booking:settings.fields.bufferAfter" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
     {
       name: "allowDoubleBooking",
       type: "boolean",
-      labelKey: "booking:settings.fields.allowDoubleBooking",
+      labelKey: "booking:settings.fields.allowDoubleBooking" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
     {
       name: "maxBookingDurationMinutes",
       type: "number",
-      labelKey: "booking:settings.fields.maximumDuration",
+      labelKey: "booking:settings.fields.maximumDuration" satisfies CollectionTranslationKey,
       list: false,
       form: false,
     },
@@ -199,3 +198,11 @@ export const bookingConfigurationConfig = {
 export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
 
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
+
+function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+  const { i18n, t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  return value
+    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", i18n.language, timeFormat)
+    : t("bookableItemDetails.notAvailable");
+}

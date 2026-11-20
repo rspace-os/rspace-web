@@ -88,13 +88,14 @@ describe("API v2 filter expansion", () => {
     await view.addFilter();
     await view.addFilter();
     await view.addFilter();
-    await view.chooseField(1, "State");
+    // The lifecycle state is labelled Status, as its column header is.
+    await view.chooseField(1, "Status");
     await view.chooseField(2, "Bookable item");
     await view.chooseField(3, "Bookable item → Name");
 
     await expect.element(view.operator(1)).toHaveValue("equals");
     await userEvent.click(view.value(1));
-    await userEvent.click(page.getByRole("option", { name: "ACTIVE" }));
+    await userEvent.click(page.getByRole("option", { name: "Active" }));
 
     await view.selectRelationshipOptionWithKeyboard("Narrow asset 1", 2);
 
