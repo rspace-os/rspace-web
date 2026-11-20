@@ -309,6 +309,24 @@ export default class FieldModel implements Field {
     return fields.filter((field) => field !== this && !field.deleteFieldRequest);
   }
 
+  /**
+   * The first field up the chain of display-rule sources that is shown, as
+   * this field, its source and so on may all be hidden; undefined when every
+   * source is hidden, missing, or the chain loops.
+   */
+  private get nearestShownSource(): FieldModel | undefined {
+    const visited = new Set<FieldModel>([this]);
+    let current: FieldModel = this;
+    for (;;) {
+      const key = current.displayRule?.sourceFieldKey;
+      const source = key ? this.liveSiblings.find((field) => field.fieldKey === key) : undefined;
+      if (!source || visited.has(source)) return undefined;
+      if (!this.owner.isFieldHidden?.(source)) return source;
+      visited.add(source);
+      current = source;
+    }
+  }
+
   /** Fields whose display rule reads this field. */
   get dependentFields(): Array<FieldModel> {
     const key = this.fieldKey;
@@ -391,8 +409,7 @@ export default class FieldModel implements Field {
     // a hidden field keeps its value, and the server still checks a changed value's format (RPD-339)
     if (this.owner.isFieldHidden?.(this)) {
       if (!this.error) return IsValid();
-      const sourceKey = this.displayRule?.sourceFieldKey;
-      const source = sourceKey ? this.liveSiblings.find((field) => field.fieldKey === sourceKey) : undefined;
+      const source = this.nearestShownSource;
       return IsInvalid(
         source
           ? i18n.t("inventory:fields.hiddenFieldInvalidWithSource", { field: this.name, source: source.name })
