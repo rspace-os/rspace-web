@@ -9,7 +9,7 @@ import type { FieldTypeOption } from "@/modules/common/field-editor/FieldTypeSel
 import OptionsEditor from "@/modules/common/field-editor/OptionsEditor";
 import { type RuleEditorField, ruleGraphFor } from "@/modules/common/field-editor/ruleEditing";
 import type { FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
-import ElnFieldSettings from "./ElnFieldSettings";
+import ElnFieldSettings, { ElnFieldSwitches } from "./ElnFieldSettings";
 import {
   type EditorField,
   type FieldChecks,
@@ -98,6 +98,14 @@ function ElnFieldCard({
         canChangeType={field.id === null}
         mandatory={field.mandatory}
         onMandatoryChange={(mandatory) => actions.setMandatory(key, mandatory)}
+        switches={
+          <ElnFieldSwitches
+            field={field}
+            onChange={(settings) => actions.changeSettings(key, settings)}
+            editable={editable}
+            readByRule={dependents.length > 0}
+          />
+        }
         position={position}
         count={count}
         onMove={(newPosition) => actions.move(key, newPosition)}
@@ -119,7 +127,7 @@ function ElnFieldCard({
         }
       >
         {/* the host looks here, after the name, for the first problem to focus */}
-        <Stack spacing={2} data-field-settings>
+        <Stack spacing={1.5} data-field-settings>
           {hasOptions(field) && (
             <Box>
               <OptionsEditor
@@ -148,7 +156,6 @@ function ElnFieldCard({
             onChange={(settings) => actions.changeSettings(key, settings)}
             problems={problems}
             editable={editable}
-            readByRule={dependents.length > 0}
           />
         </Stack>
       </FieldCard>

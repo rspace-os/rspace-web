@@ -29,7 +29,6 @@ import {
   adoptSavedIds,
   CREATABLE_TYPES,
   type CreatableType,
-  canBeSource,
   changesSourceKind,
   changeType,
   checksFor,
@@ -438,13 +437,14 @@ export default function FormFieldEditor({
   namesRef.current = new Map(fields.map((field) => [field.key, field.name]));
   const nameByKey = useCallback((key: string) => namesRef.current.get(key) ?? "", []);
   const ruleFieldsRef = useRef<ReadonlyArray<RuleEditorField>>([]);
-  ruleFieldsRef.current = elnRuleFields(fields, nameByKey, ruleFieldsRef.current);
+  const typeLabelOf = (type: ElnFieldType) => allTypeOptions.find(({ value }) => value === type)?.label ?? type;
+  ruleFieldsRef.current = elnRuleFields(fields, nameByKey, typeLabelOf, ruleFieldsRef.current);
   const ruleFields = ruleFieldsRef.current;
   const graph = ruleGraphFor(ruleFields);
   // A card's condition shows the field its rule reads and the fields that read it; while it has a
-  // draft or its field menu open, also any field it can read, so only those cards render again
-  // when a field they could read is renamed.
-  const sourceNames = fields.filter(canBeSource).map((field) => field.name);
+  // draft or its field menu open, also every other field, some listed as unavailable, so only
+  // those cards render again when another field is renamed.
+  const sourceNames = fields.map((field) => field.name);
   /** The names a field's card shows besides its own. */
   const shownNames = (field: EditorField) =>
     [field.rule?.sourceFieldKey, ...graph.dependentsOf(field.key).map(({ key }) => key)]
