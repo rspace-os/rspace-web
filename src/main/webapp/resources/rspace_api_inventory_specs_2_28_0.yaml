@@ -5989,7 +5989,8 @@ components:
         `displayRule` to keep the current rule, or send `null` to remove it. The template's rules
         are validated together after every change in the request is applied, so a request may add
         a source field and a rule that uses it, or delete a source and clear the rules that use it.
-        Any problem rejects the whole request with a `422`. The message codes, each under
+        Any problem rejects the whole request with a `422`, whose body carries the translated
+        message, not a key. The message keys, each under
         `validation.fieldDisplayRule.`, are `sourceMissing`, `sourceSelf`, `sourceType` (the
         source is not a radio, choice, string or number field), `operatorNotForSource` (the
         operator does not suit the source's kind), `valueCount`, `valueBlank`,

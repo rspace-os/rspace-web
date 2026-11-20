@@ -382,11 +382,11 @@ summaries or API responses, as with password fields, must stay `NONE`.
   always read current values. A field that contains focus is not hidden until
   focus leaves it.
 - `FieldModel.validate()` returns valid for a hidden field unless the field holds
-  a value with an error, so a
-  hidden mandatory field never blocks Save but a hidden invalid value does. The
-  message is `fields.hiddenFieldInvalidWithSource`, naming the field and,
-  usually, the field whose answer shows it, or `fields.hiddenFieldInvalid`, naming only
-  the field, when no such source can be named.
+  a value with an error, so a hidden mandatory field never blocks Save but a
+  hidden invalid value does. The message is `fields.hiddenFieldInvalidWithSource`,
+  naming the field and, usually, the field whose answer shows it, or
+  `fields.hiddenFieldInvalid`, naming only the field, when no such source can be
+  named.
   `InstrumentModel.validate()` validates its template fields as `SampleModel`
   does. The server makes the same decision for create,
   update, CSV import and the operations wizard.

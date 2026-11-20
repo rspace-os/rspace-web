@@ -252,8 +252,8 @@ Use this part for the Inventory templates article.
     sending anything, as sample Save already did, with the same checks the server makes:
     mandatory fields that are shown, and the format of dates, URIs and other values. Before,
     the server found these problems only after Save.
-  - Samples and instruments: a hidden field that holds a value the server would reject, such
-    as an impossible date, stops **Save**. The message names the field and, usually, the field
+  - Samples and instruments: **Save** stays disabled while a hidden field's input has an
+    error, such as an unfinished number or an impossible date. The message names the field and, usually, the field
     whose answer shows it: 'The field "{field}" is hidden but holds a value that cannot be
     saved. Change "{source}" to show it, then correct or clear it.' When no such field can be
     named, the message is: "{field} is hidden but holds a value that cannot be saved. Show it
@@ -261,7 +261,8 @@ Use this part for the Inventory templates article.
     kept, so it is there to correct when the field is shown again.
   - ELN: a hidden mandatory field does not stop the document from being signed and does not
     raise the workspace warning. A shown, empty mandatory field still makes **Sign**
-    unavailable (the button is not shown), as before. Saving a document is never blocked by mandatory fields.
+    unavailable (the button is not shown), as before. Saving a document is never blocked by
+    mandatory fields.
 - In view mode, hidden fields are not shown. This applies to ELN document view, notebooks and
   public (published) documents and notebooks, and to Inventory sample, subsample and instrument
   views. A subsample shows its sample's template fields read-only, with the same rules applied.

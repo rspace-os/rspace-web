@@ -4458,7 +4458,8 @@ components:
             displayRule keeps a saved field's current rule, and null removes it. The
             rules of the whole form are validated together after the request is
             applied, and any problem rejects the whole request with 422. The
-            message codes (each under `validation.fieldDisplayRule.`) are
+            response carries the translated message, not a key. The message
+            keys (each under `validation.fieldDisplayRule.`) are
             sourceMissing, sourceSelf, sourceType (the source is not a Radio,
             Choice, Number or String field, or is a password String field),
             operatorNotForSource (the operator does not suit the source's kind),

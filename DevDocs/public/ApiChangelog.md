@@ -110,8 +110,9 @@ String fields only when they are not password fields; Inventory string fields). 
 
   The API returns 422 with a validation message, in the server's language, naming the field;
   the identifiers above are the message keys under `validation.fieldDisplayRule.`, not values
-  returned in the response. The Inventory API reports the first problem it finds. Making an ELN String field that a rule reads into a password field is
-  therefore rejected with `sourceType`.
+  returned in the response. The Inventory API reports the first problem it finds. Making an
+  ELN String field that a rule reads into a password field is therefore rejected with
+  `sourceType`.
 - **Size limits.** A rule may list at most 1,000 values, each at most once, and the rule as
   stored may be at most 32,768 characters. A request that breaks a limit is rejected with 422,
   naming the field, and nothing changes. The messages are
