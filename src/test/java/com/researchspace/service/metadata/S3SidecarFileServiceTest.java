@@ -208,6 +208,16 @@ class S3SidecarFileServiceTest {
   }
 
   @Test
+  void slashRootFolderAsksForTheEmptyPathAndItsFiles() {
+    when(s3Utilities.listFolderContents(""))
+        .thenReturn(List.of(file("top.dat", 10L, "\"e\"", "STANDARD")));
+
+    service.preview(1L, "/", user);
+
+    verify(nfsFieldLinkManager).getLinkedDocuments(filesystem, List.of("", "top.dat"), user);
+  }
+
+  @Test
   void previewComposesFromListingWithoutWriting() throws Exception {
     when(s3Utilities.listFolderContents("XRD-Experiments"))
         .thenReturn(List.of(file("xrd_run_041.dat", 2202009L, "\"b2c3\"", "STANDARD")));
