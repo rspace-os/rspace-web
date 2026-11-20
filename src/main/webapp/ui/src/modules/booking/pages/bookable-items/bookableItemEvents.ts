@@ -34,7 +34,7 @@ function parameters(input: BookableItemEventsInput) {
 }
 function mapEvents(result: ListBookings200, input: BookableItemEventsInput) {
   const mapped = { ...result, docs: mapSelectedBookings(result.docs) };
-  if (mapped.docs.some((booking) => booking.target.globalId !== input.globalId)) {
+  if (mapped.docs.some((booking) => booking.target !== null && booking.target.globalId !== input.globalId)) {
     throw new Error(`Booking response contained an event for another target`);
   }
   return mapped;

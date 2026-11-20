@@ -15,6 +15,7 @@ import { countBookings, getCountBookingsQueryOptions } from "@/modules/common/ap
 import type { ApiV2CountResult } from "@/modules/common/api/v2/generated/models/apiV2CountResult";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/types";
@@ -103,6 +104,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
@@ -143,12 +145,13 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   );
   const request = useMemo(
     () => ({
+      authScope: currentUser.id,
       depth: 1,
       projection,
       baseFilter,
       validateRows: BookingListDocumentTableValidation.validateRows,
     }),
-    [baseFilter],
+    [baseFilter, currentUser.id],
   );
   const table = useApiV2TableList({
     resource: bookingListResource,

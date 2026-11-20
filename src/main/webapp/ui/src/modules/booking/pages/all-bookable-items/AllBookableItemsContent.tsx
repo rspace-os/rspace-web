@@ -110,10 +110,11 @@ export function AllBookableItemsContent() {
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
   const request = useMemo(
     () => ({
+      authScope: currentUser.id,
       depth: 1,
       projection: bookableItemsProjection,
     }),
-    [],
+    [currentUser.id],
   );
   const table = useApiV2TableList({
     resource: apiV2Resources["booking-configurations"],
@@ -140,10 +141,19 @@ export function AllBookableItemsContent() {
     },
     [queryClient],
   );
+  const onCatalogueChanged = useCallback(
+    async (configurationId: number) => {
+      await Promise.all([
+        onChanged(configurationId),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }),
+      ]);
+    },
+    [onChanged, queryClient],
+  );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration)),
-    onSuccess: (_data, configuration) => onChanged(configuration.id),
+    onSuccess: (_data, configuration) => onCatalogueChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -195,7 +205,12 @@ export function AllBookableItemsContent() {
       ),
       renderInteraction: ({ actionId, row, close }) =>
         actionId === "archive" ? (
-          <ArchiveBookableItemDialog configuration={row} close={close} onArchive={onArchive} onArchived={onChanged} />
+          <ArchiveBookableItemDialog
+            configuration={row}
+            close={close}
+            onArchive={onArchive}
+            onArchived={onCatalogueChanged}
+          />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
@@ -205,7 +220,7 @@ export function AllBookableItemsContent() {
           />
         ) : null,
     }),
-    [directSysadmin, onArchive, onChanged, onPermanentDelete, onRestore, t],
+    [directSysadmin, onArchive, onCatalogueChanged, onChanged, onPermanentDelete, onRestore, t],
   );
 
   return (
