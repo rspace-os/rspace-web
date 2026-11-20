@@ -18,15 +18,26 @@ const initialFields: ReadonlyArray<RuleEditorField> = [
   },
 ];
 
-/** GMO permit's condition, which reads Is this a GMO?; Notes, below it in the Field menu, is unavailable. */
+/** Only Notes besides GMO permit, so the Field menu has nothing to choose. */
+export const noAvailableFields: ReadonlyArray<RuleEditorField> = [
+  initialFields[1],
+  { ...initialFields[2], rule: null },
+];
+
+/**
+ * GMO permit's condition, which reads Is this a GMO?; Notes, below it in the
+ * Field menu, is unavailable. Styled in cascade layers, as the app is.
+ */
 export function FieldDisplayConditionStory({
   onChange,
+  fields: startingFields = initialFields,
 }: {
   onChange: (rule: FieldDisplayRule | null) => void;
+  fields?: ReadonlyArray<RuleEditorField>;
 }): React.ReactNode {
-  const [fields, setFields] = useState(initialFields);
+  const [fields, setFields] = useState(startingFields);
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <FieldDisplayCondition
           fieldKey="permit"
