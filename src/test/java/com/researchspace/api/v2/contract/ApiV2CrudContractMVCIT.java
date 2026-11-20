@@ -118,8 +118,9 @@ class ApiV2CrudContractMVCIT {
       mockMvc
           .perform(get(MAINTENANCES + "/" + id).header("apiKey", sysadminKey))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.*", Matchers.hasSize(6)))
+          .andExpect(jsonPath("$.*", Matchers.hasSize(7)))
           .andExpect(jsonPath("$.id").exists())
+          .andExpect(jsonPath("$.version").isNumber())
           .andExpect(jsonPath("$.startDate").exists())
           .andExpect(jsonPath("$.endDate").exists())
           .andExpect(jsonPath("$.stopUserLoginDate").exists())
@@ -189,7 +190,7 @@ class ApiV2CrudContractMVCIT {
           .andExpect(jsonPath("$.stopUserLoginDate").value(Matchers.nullValue()))
           // Present-with-null rather than omitted: ResourceRenderer puts every selected field, so
           // the field count is unchanged by clearing one.
-          .andExpect(jsonPath("$.*", Matchers.hasSize(6)));
+          .andExpect(jsonPath("$.*", Matchers.hasSize(7)));
     }
 
     @Test
@@ -215,7 +216,7 @@ class ApiV2CrudContractMVCIT {
 
       mockMvc
           .perform(delete(MAINTENANCES + "/" + id).header("apiKey", sysadminKey))
-          .andExpect(status().isOk());
+          .andExpect(status().isNoContent());
       mockMvc
           .perform(get(MAINTENANCES + "/" + id).header("apiKey", sysadminKey))
           .andExpect(status().isNotFound());
@@ -237,9 +238,8 @@ class ApiV2CrudContractMVCIT {
                   .content("{\"startDate\":"))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON))
-          .andExpect(jsonPath("$.detail").isString())
-          .andExpect(
-              jsonPath("$.detail").value(Matchers.not(Matchers.containsString("com.fasterxml"))));
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"))
+          .andExpect(content().string(Matchers.not(Matchers.containsString("com.fasterxml"))));
     }
 
     @Test

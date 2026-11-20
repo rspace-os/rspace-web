@@ -245,12 +245,13 @@ class ApiV2DeclaredArrayContractMVCIT extends MVCTestBase {
         List.of("ContractArraysRead", "ContractArraysCreate", "ContractArraysUpdate")) {
       JsonNode rows = schema.path(component).at("/properties/rows");
       assertEquals("array", rows.path("type").asText());
-      JsonNode item = rows.path("items");
+      JsonNode item = resolve(schema, rows.path("items"));
       assertEquals(Set.of("name", "detail", "nested", "restricted"), keys(item.path("properties")));
       assertFalse(item.path("additionalProperties").asBoolean(true));
-      JsonNode detail = item.at("/properties/detail");
+      JsonNode detail = resolve(schema, item.at("/properties/detail"));
       assertEquals(Set.of("name", "number"), keys(detail.path("properties")));
-      assertEquals("object", item.at("/properties/nested/items/type").asText());
+      assertEquals(
+          "object", resolve(schema, item.at("/properties/nested/items")).path("type").asText());
       if (!component.equals("ContractArraysRead")) {
         assertEquals(2, detail.at("/properties/number/default").asInt());
         assertEquals(Set.of("name", "detail"), JSON.convertValue(item.get("required"), Set.class));
@@ -296,6 +297,13 @@ class ApiV2DeclaredArrayContractMVCIT extends MVCTestBase {
   private MockHttpServletRequestBuilder write(
       MockHttpServletRequestBuilder request, String body, String key) {
     return request.header("apiKey", key).contentType(MediaType.APPLICATION_JSON).content(body);
+  }
+
+  /** Follows a component reference; the generator shares read-side row schemas by reference. */
+  private static JsonNode resolve(JsonNode schemas, JsonNode schema) {
+    String ref = schema.path("$ref").asText("");
+    String prefix = "#/components/schemas/";
+    return ref.startsWith(prefix) ? schemas.path(ref.substring(prefix.length())) : schema;
   }
 
   private JsonNode response(MockHttpServletRequestBuilder request, int expectedStatus)
@@ -380,6 +388,7 @@ class ApiV2DeclaredArrayContractMVCIT extends MVCTestBase {
               DESCRIPTION.accessPolicy());
       return ApiV2ResourceSpec.readOnly(scalarDescription, operations, Long::valueOf)
           .scalarReader(operations)
+          .tagDocumentation("Declared-array contract test collection.", "Tests")
           .build();
     }
 
@@ -395,6 +404,7 @@ class ApiV2DeclaredArrayContractMVCIT extends MVCTestBase {
                   ResourceOperation.CREATE,
                   ResourceOperation.BULK_CREATE,
                   ResourceOperation.UPDATE))
+          .tagDocumentation("Declared-array contract test collection.", "Tests")
           .build();
     }
   }
