@@ -47,7 +47,7 @@ jobs:
         with:
           problem-matcher: true
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: maven
 
       - name: Initialize CodeQL

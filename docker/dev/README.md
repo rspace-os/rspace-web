@@ -237,7 +237,7 @@ Going further (rarely needed):
 
 ```bash
 # Remove the locally-built dev images too (next up rebuilds them):
-docker image rm rspace-dev-app:local rspace-dev-frontend:local
+docker image rm rspace-dev-app:jbr21 rspace-dev-frontend:local
 
 # Remove the SHARED caches — affects EVERY worktree (they will re-download
 # Maven/npm deps on next up). Only do this to reclaim disk or force a clean cache:
@@ -395,7 +395,7 @@ HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
 > - HotswapAgent's **Spring, Hibernate, and Proxy plugins are disabled** (see
 >   `hotswap-agent.properties`). On RSpace's large XML/AOP context they break:
 >   the Hibernate plugin breaks transaction binding at startup, the Spring plugin
->   throws mid-reload, and the Proxy plugin hits a Java 17 module error. So
+>   throws mid-reload, and the Proxy plugin hits a JDK module-access error. So
 >   **code** in existing beans reloads, but **bean definitions/wiring** do not.
 > - There is **no in-container "recompile" command**: Maven's incremental build
 >   does not work over the bind mount (a one-line edit recompiles ~2000 classes),
@@ -480,8 +480,8 @@ is the quick lookup.
   MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
   (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
   generous memory limit.
-- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
-  `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Image/tool overrides**: `DB_IMAGE`, `NODE_IMAGE`, and `MAVEN_OPTS` can be
+  set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
   `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
   so concurrent localhost logins don't evict each other. Override with
