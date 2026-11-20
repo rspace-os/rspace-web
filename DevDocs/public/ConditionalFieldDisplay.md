@@ -104,6 +104,8 @@ To give a field a rule:
    - Unavailable - CL3 approval depends on this field, so reading it would make a loop: the
      field's own rule already reads this field, directly or through other fields.
 
+   ![The Field list of the Overflow plan field in the ELN form editor: Sample ID and Volume can be chosen, and Secret and Description are greyed out with the reasons "Unavailable - Secret hides its value, like a password" and "Unavailable - Description has unsupported type "Text (formatted text)""](images/conditional-field-display/form-unavailable-fields.png)
+
    The first field that can be chosen is chosen for you.
 3. Choose the **Condition**. The list shows only the conditions that suit the chosen field. If
    you choose a field of another kind and the current condition does not suit it, the condition
