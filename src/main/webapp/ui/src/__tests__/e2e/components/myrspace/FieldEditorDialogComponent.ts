@@ -1,11 +1,11 @@
-import type { Locator, Page } from "@playwright/test";
+import type { FrameLocator, Locator, Page } from "@playwright/test";
 
 export type FormFieldType = "Number" | "String" | "Text" | "Radio" | "Choice" | "Date" | "Time";
 
 export class FieldEditorDialogComponent {
   readonly root: Locator;
 
-  constructor(page: Page) {
+  constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Field Editor" });
   }
 
@@ -42,8 +42,39 @@ export class FieldEditorDialogComponent {
     }
   }
 
+  /** TinyMCE titles its iframe with the Default Value label. */
+  private get textDefaultEditor(): FrameLocator {
+    return this.fieldGroup.getByTitle("Default Value", { exact: true }).contentFrame();
+  }
+
   async fillTextDefault(value: string): Promise<void> {
-    await this.fieldGroup.getByRole("textbox", { name: "Default Value" }).fill(value);
+    await this.textDefaultEditor.locator("body").fill(value);
+  }
+
+  async insertTextDefaultTable(cellText: string): Promise<void> {
+    await this.fieldGroup.getByRole("button", { name: "Insert Table", exact: true }).click();
+    await this.page.getByRole("menuitem", { name: "Insert Table", exact: true }).hover();
+    // The picker's cells share one "0x0" label until hovered; the first cell inserts a 1x1 table.
+    await this.page.locator(".tox-insert-table-picker").getByRole("button").first().click();
+    await this.textDefaultEditor.getByRole("cell").click();
+    await this.page.keyboard.insertText(cellText);
+  }
+
+  textDefaultCell(text: string): Locator {
+    return this.textDefaultEditor.getByRole("cell", { name: text, exact: true });
+  }
+
+  async appendToTextDefaultCell(cellText: string, suffix: string): Promise<void> {
+    await this.textDefaultCell(cellText).click();
+    await this.page.keyboard.press("End");
+    await this.page.keyboard.insertText(suffix);
+  }
+
+  async hasTextDefaultEditorInstance(): Promise<boolean> {
+    return this.page.evaluate(() => {
+      const { tinymce } = window as unknown as { tinymce: { get: (id: string) => unknown } };
+      return tinymce.get("field_defaultvaluestring") !== null;
+    });
   }
 
   async addOption(option: string): Promise<void> {

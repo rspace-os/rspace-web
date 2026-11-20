@@ -14,6 +14,7 @@
 				</td> 
 			<tr>
 				<td class="field-value-inner">
+					<%-- EscapeXmlELResolver already escapes this value for the textarea. --%>
 					<textarea id="${field.id}" name="fieldRtfData" class="tinymce">${field.defaultValue}</textarea>
 					<input type="hidden" name="fieldId" value="${field.id}"/>
 	      		</td>
