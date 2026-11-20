@@ -6130,6 +6130,7 @@ export default interface Resources {
         "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signup": {
+        "invalidFields": "Your sign-up could not be processed. Please sign up using the form.",
         "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
       },
       "signupCode": {

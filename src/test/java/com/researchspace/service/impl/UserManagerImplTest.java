@@ -177,6 +177,16 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   }
 
   @Test
+  public void saveNewUserRejectsUserThatAlreadyHasAnId() {
+    User user = createAnyUser("any");
+    user.setId(1L);
+
+    assertThrows(IllegalArgumentException.class, () -> userManager.saveNewUser(user));
+
+    verifyNoInteractions(userDao, analyticsManager);
+  }
+
+  @Test
   public void checkAnalyticsNotCalledForTemporaryUser() throws UserExistsException {
 
     final User testData = new User("1");
