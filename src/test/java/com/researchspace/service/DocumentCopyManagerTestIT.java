@@ -287,6 +287,18 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   }
 
   @Test
+  public void templateFromADocumentHasNoRowsForTheFieldsItLeavesOut() throws Exception {
+    NfsFileStore store = savedS3Store(user);
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(user, nfsLink(store, "/run.dat"));
+
+    StructuredDocument template =
+        recordMgr.createTemplateFromDocument(doc.getId(), List.of(), user, "template");
+
+    assertThat(nfsDao.getFieldLinks(template.getTextFields().get(0).getId())).isEmpty();
+  }
+
+  @Test
   public void pastingIntoAFieldKeepsTheFieldsFilestoreLinkRows() throws Exception {
     NfsFileStore store = savedS3Store(user);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "text");
