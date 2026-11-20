@@ -4,6 +4,7 @@ import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "./generatedFeatureFlags";
 import { getFeatureFlags } from "./queries";
+import { disabledFeatureFlags } from "./schema";
 
 const validFlagResponse = {
   ...v2ListEnvelope([
@@ -30,6 +31,7 @@ describe("feature flag queries", () => {
 
     await expect(getFeatureFlags()).resolves.toEqual({
       flags: {
+        ...disabledFeatureFlags().flags,
         [FEATURE_FLAGS.bookingEnabled]: {
           value: true,
           baselineValue: false,
@@ -88,6 +90,7 @@ describe("feature flag queries", () => {
 
     await expect(getFeatureFlags()).resolves.toEqual({
       flags: {
+        ...disabledFeatureFlags().flags,
         [FEATURE_FLAGS.bookingEnabled]: {
           value: false,
           baselineValue: false,
