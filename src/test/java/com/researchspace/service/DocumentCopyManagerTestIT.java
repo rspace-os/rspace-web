@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.FormDao;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.dao.RSMathDao;
 import com.researchspace.linkedelements.RichTextUpdater;
@@ -22,6 +23,9 @@ import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.NfsFieldLink;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
@@ -29,6 +33,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.archive.export.StoichiometryReader;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +57,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Autowired private DocumentCopyManager documentCopyManager;
   @Autowired private StoichiometryManager stoichiometryMgr;
   @Autowired private StoichiometryService stoichiometryService;
+  @Autowired private NfsDao nfsDao;
 
   @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
@@ -262,6 +268,45 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     Stoichiometry copiedStoichiometry = stoichiometryMgr.get(copiedRefs.get(0).getId());
     assertEquals(copy.getId(), copiedStoichiometry.getRecord().getId());
     assertNull(copiedStoichiometry.getParentReaction());
+  }
+
+  @Test
+  public void copyingADocumentIndexesTheCopysFilestoreLinks() throws Exception {
+    NfsFileStore store = savedS3Store(user);
+    StructuredDocument original =
+        createBasicDocumentInRootFolderWithText(user, nfsLink(store, "/XRD/run.dat"));
+    // the original was written directly, so only the copy hook can produce a row
+    assertThat(nfsDao.getFieldLinks(original.getFields().get(0).getId())).isEmpty();
+
+    RecordCopyResult result = recordMgr.copy(original.getId(), "copy", user, null);
+    StructuredDocument copy = (StructuredDocument) result.getCopy(original);
+
+    List<NfsFieldLink> rows = nfsDao.getFieldLinks(copy.getTextFields().get(0).getId());
+    assertThat(rows).hasSize(1);
+    assertEquals("data/XRD/run.dat", rows.get(0).getAbsolutePath());
+  }
+
+  @Test
+  public void pastingIntoAFieldKeepsTheFieldsFilestoreLinkRows() throws Exception {
+    NfsFileStore store = savedS3Store(user);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "text");
+    Long fieldId = doc.getFields().get(0).getId();
+    recordMgr.saveTemporaryDocument(fieldId, user, nfsLink(store, "/run.dat"));
+    assertThat(nfsDao.getFieldLinks(fieldId)).hasSize(1);
+
+    recordMgr.copyRSpaceContentIntoField("<p>pasted</p>", fieldId, user);
+
+    assertThat(nfsDao.getFieldLinks(fieldId)).hasSize(1);
+  }
+
+  private NfsFileStore savedS3Store(User owner) {
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsMgr.saveNfsFileSystem(fileSystem);
+    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
+  }
+
+  private String nfsLink(NfsFileStore store, String path) {
+    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   private RSChemElement addChemElementToField(StructuredDocument record, Field field, String mol) {

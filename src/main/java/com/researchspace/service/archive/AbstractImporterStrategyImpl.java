@@ -58,6 +58,7 @@ import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -110,6 +111,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired FormImporter formImporter;
   @Autowired FieldParser fieldParser;
   @Autowired IPropertyHolder properties;
+  @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   @Value("${import.allowCreationDateAfterModificationDate}")
   private boolean allowCreationDateAfterModificationDate;
@@ -363,6 +365,7 @@ abstract class AbstractImporterStrategyImpl {
         linkRecord.addMap(dnm, Long.toString(newDoc.getId()));
       }
       setUpFieldAttachmentLinks(newDoc, importingUser, report);
+      setUpNfsLinks(newDoc);
       importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem);
       report.addImportedRecord(newDoc);
     } else {
@@ -380,6 +383,10 @@ abstract class AbstractImporterStrategyImpl {
       Map<String, EcatMediaFile> oldIdToNewGalleryItem) {
     new ExternalWorkFlowsImporter()
         .importExternalWorkFlows(newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
+  }
+
+  private void setUpNfsLinks(StructuredDocument newDoc) {
+    newDoc.getTextFields().forEach(f -> nfsFieldLinkManager.reindex(f, f.getFieldData()));
   }
 
   private void setUpFieldAttachmentLinks(
