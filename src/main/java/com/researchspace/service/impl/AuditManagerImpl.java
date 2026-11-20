@@ -31,6 +31,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.sort.DeletedRecordSort;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.RestoreDeletedItemResult;
 import com.researchspace.service.UserManager;
 import java.time.Instant;
@@ -59,6 +60,7 @@ public class AuditManagerImpl implements AuditManager {
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired MessageSourceUtils messageSourceUtils;
+  private @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -269,7 +271,9 @@ public class AuditManagerImpl implements AuditManager {
     }
 
     // now replace current with revision;
-    return (StructuredDocument) recordDao.save(toRestore);
+    StructuredDocument restoredDoc = (StructuredDocument) recordDao.save(toRestore);
+    restoredDoc.getTextFields().forEach(f -> nfsFieldLinkManager.reindex(f, f.getFieldData()));
+    return restoredDoc;
   }
 
   @Override
