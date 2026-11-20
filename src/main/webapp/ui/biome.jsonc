@@ -53,6 +53,7 @@
   "overrides": [
     {
       // Orval types bodiless responses, such as 304 Not Modified, as `void` in error unions.
+      // Remove this override once https://github.com/orval-labs/orval/issues/4568 is resolved.
       "includes": ["src/modules/common/api/v2/generated/**"],
       "linter": {
         "rules": {
