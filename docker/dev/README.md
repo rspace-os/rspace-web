@@ -196,7 +196,8 @@ docker build -t rspace-chemistry:bond-strength-poc .
 docker build -t rspace-bond-strength:0.0.1 bond-strength
 ```
 
-Then turn on the `bondStrengthsEnabled` [feature flag](../../DevDocs/DeveloperNotes/FeatureFlags.md).
+The `bondStrengthsEnabled` [feature flag](../../DevDocs/DeveloperNotes/FeatureFlags.md)
+is on by default on this branch.
 `up --no-bond-strength` turns the model service off again; `up --no-chemistry` turns
 off both. Override the images with `CHEMISTRY_IMAGE` and `BOND_STRENGTH_IMAGE` in `.env`.
 

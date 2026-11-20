@@ -8,7 +8,7 @@
       "description": "Enables the bond strength calculation in the chemistry info panel. Needs a chemistry service with the bond strength model service.",
       "owner": "RSpace",
       "expires": "2027-06-30",
-      "default": false
+      "default": true
     },
     {
       "name": "bookingEnabled",
