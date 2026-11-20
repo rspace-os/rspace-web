@@ -168,6 +168,24 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
+  public List<String> getCommunalFolderOwnerUsernames(User user) {
+    return getSession()
+        .createQuery(
+            """
+            select distinct f.owner.username
+            from Folder f
+            where f.deleted = false and f.id in (
+              select ug.group.communalGroupFolderId
+              from UserGroup ug
+              where ug.user.id = :userId
+            )
+            """,
+            String.class)
+        .setParameter("userId", user.getId())
+        .list();
+  }
+
+  @Override
   public Folder getSharedSnippetFolderForGroup(Group group) {
     return get(group.getSharedSnippetGroupFolderId());
   }

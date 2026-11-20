@@ -21,6 +21,7 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.TextSearchDao;
@@ -45,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +69,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired UserManager userMgr;
   private @Autowired RecordManager recordManager;
   private @Autowired FolderManager folderMgr;
+  private @Autowired FolderDao folderDao;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
@@ -110,10 +113,16 @@ public class SearchManagerImpl implements SearchManager {
     if (user.hasRole(Role.SYSTEM_ROLE)) {
       configureForSysAdminSearch(searchConfig, userFilter);
     }
-    List<String> usernameFilter =
-        userFilter.stream().map(User::getUsername).collect(Collectors.toList());
+    Set<String> usernameFilter =
+        userFilter.stream()
+            .map(User::getUsername)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    if (searchConfig.isRestrictByUser()) {
+      // A communal folder's ACL can grant access without an explicit sharing record.
+      usernameFilter.addAll(folderDao.getCommunalFolderOwnerUsernames(user));
+    }
     usernameFilter.add(Constants.SYSADMIN_UNAME); // Sysadmin1 added to see public folders
-    searchConfig.setUsernameFilter(usernameFilter);
+    searchConfig.setUsernameFilter(new ArrayList<>(usernameFilter));
     return searchConfig;
   }
 

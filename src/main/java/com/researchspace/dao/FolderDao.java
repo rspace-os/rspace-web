@@ -78,6 +78,9 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getSharedFolderForGroup(Group group);
 
+  /** Returns the owners' usernames for communal folders of groups the user belongs to. */
+  List<String> getCommunalFolderOwnerUsernames(User user);
+
   Folder getSharedSnippetFolderForGroup(Group group);
 
   /**

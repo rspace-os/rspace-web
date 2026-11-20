@@ -121,6 +121,40 @@ public class SearchManagerTest extends SearchSpringTestBase {
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
+  @Test
+  void labGroupMemberCanFindSharedFolderButNotPrivatePiDocument() throws IOException {
+    User pi = createAndSaveUserIfNotExists(getRandomName(8), Constants.PI_ROLE);
+    User member = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, member);
+
+    Group group = createGroup("Shared folder search", pi);
+    group.setSelfService(true);
+    addUsersToGroup(pi, group, member);
+    Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
+    assertEquals(pi, sharedFolder.getOwner());
+
+    logoutAndLoginAs(pi);
+    StructuredDocument privateDocument = createBasicDocumentInRootFolderWithText(pi, "Private");
+    assertTrue(recordMgr.renameRecord(sharedFolder.getName(), privateDocument.getId(), pi));
+    flushToSearchIndices();
+
+    assertThat(
+            searchMgr
+                .searchWorkspaceRecords(createSimpleGeneralSearchCfg(sharedFolder.getName()), pi)
+                .getResults())
+        .contains(sharedFolder, privateDocument);
+
+    logoutAndLoginAs(member);
+    assertTrue(permissionUtils.isPermitted(sharedFolder, PermissionType.READ, member));
+    assertFalse(permissionUtils.isPermitted(privateDocument, PermissionType.READ, member));
+    assertThat(
+            searchMgr
+                .searchWorkspaceRecords(
+                    createSimpleGeneralSearchCfg(sharedFolder.getName()), member)
+                .getResults())
+        .containsExactly(sharedFolder);
+  }
+
   /** Check if we can search documents created from templates by the template name */
   @Test
   public void testSDqueryByTemplate() throws DocumentAlreadyEditedException, IOException {
