@@ -30,6 +30,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    the API additionally reports the unreadable ones as owner-only placeholders, like the Gallery's
    linked-documents list. A sidecar is written into a bucket, so a private document's Global ID must
    not leave RSpace through it.
+   *Amended 2026-11-20:* "can read" is the generating user's whole read right, including what a PI
+   or admin may read in their group or community, shared or not, so a sidecar they save can name a
+   member's unshared document. That is intended: the sidecar carries only the Global ID page URL,
+   never the name, and opening it goes through the usual document permission check.
 
 ## Consequences
 
