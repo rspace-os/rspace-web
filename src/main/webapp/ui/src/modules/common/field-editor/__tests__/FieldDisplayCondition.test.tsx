@@ -235,24 +235,67 @@ describe("FieldDisplayCondition", () => {
     expect(card("GMO permit").getByRole("button", { name: "Yes" })).toBeInTheDocument();
   });
 
-  it("does not offer the field itself, or a field that depends on it, as the field to read", async () => {
+  it("leaves out the field itself, and lists a field that depends on it as unavailable, saying why", async () => {
     const user = userEvent.setup();
     const colour: RuleEditorField = { key: "colour", name: "Colour", canBeSource: true, options: ["Red"], rule: null };
-    await renderConditions([gmo, level, colour, permit]);
+    await renderConditions([gmo, level, colour]);
 
     // level reads gmo, so gmo reading level would be a cycle
     await user.click(conditional("Is this a GMO?"));
     await user.click(card("Is this a GMO?").getByRole("combobox", { name: "Field" }));
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Colour"]);
-    await user.keyboard("{Escape}");
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Containment levelUnavailable - Containment level depends on this field, so reading it would make a loop",
+      "Colour",
+    ]);
+    expect(
+      screen.getByRole("option", {
+        name: "Containment level Unavailable - Containment level depends on this field, so reading it would make a loop",
+      }),
+    ).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("lists fields no rule can read as unavailable, in their place, with the host's type label or a hidden value", async () => {
+    const user = userEvent.setup();
+    const notes: RuleEditorField = { ...permit, key: "notes", name: "Notes", typeLabel: "Formatted text" };
+    const secret: RuleEditorField = { ...permit, key: "secret", name: "Secret", hidesValue: true };
+    await renderConditions([notes, gmo, secret, permit]);
 
     await user.click(conditional("GMO permit"));
     await user.click(card("GMO permit").getByRole("combobox", { name: "Field" }));
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Is this a GMO?",
-      "Containment level",
-      "Colour",
+    expect(screen.getAllByRole("option").map((option) => option.getAttribute("aria-disabled"))).toEqual([
+      "true",
+      null,
+      "true",
     ]);
+    expect(
+      screen.getByRole("option", { name: 'Notes Unavailable - Notes has unsupported type "Formatted text"' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Secret Unavailable - Secret hides its value, like a password" }),
+    ).toBeInTheDocument();
+  });
+
+  it("cannot choose an unavailable field with the mouse or the keyboard", async () => {
+    const user = userEvent.setup();
+    const notes: RuleEditorField = { ...permit, key: "notes", name: "Notes", typeLabel: "Formatted text" };
+    const { onChange } = await renderConditions([gmo, notes, permit]);
+    await user.click(conditional("GMO permit"));
+    const field = card("GMO permit").getByRole("combobox", { name: "Field" });
+
+    await user.click(field);
+    // a disabled item takes no pointer events, so the click is forced past that check
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(screen.getByRole("option", { name: /^Notes/ }));
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(field).toHaveTextContent("Is this a GMO?");
+
+    await user.click(field);
+    // focus starts on the chosen field, and the arrows skip the unavailable one below it
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", { name: "Is this a GMO?" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(field).toHaveTextContent("Is this a GMO?");
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("offers the condition when no other field can be read, with a field menu that says so", async () => {
@@ -261,14 +304,17 @@ describe("FieldDisplayCondition", () => {
 
     await user.click(conditional("Is this a GMO?"));
     const field = card("Is this a GMO?").getByRole("combobox", { name: "Field" });
-    // the menu skips its disabled item, so the description is what says there is nothing to choose
+    // the menu skips its disabled items, so the description is what says there is nothing to choose
     expect(field).toHaveAccessibleDescription("No other fields");
     expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("gmo", true);
 
     await user.click(field);
-    const option = screen.getByRole("option", { name: "No other fields" });
-    expect(screen.getAllByRole("option")).toEqual([option]);
-    expect(option).toHaveAttribute("aria-disabled", "true");
+    const options = screen.getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual([
+      "No other fields",
+      "GMO permitUnavailable - GMO permit has an unsupported type",
+    ]);
+    for (const option of options) expect(option).toHaveAttribute("aria-disabled", "true");
   });
 
   it("says why a complete condition that cannot be stored is not applied", async () => {
@@ -514,11 +560,12 @@ describe("FieldDisplayCondition with text and number sources", () => {
     await user.click(conditional("Notes"));
     await user.click(card("Notes").getByRole("combobox", { name: "Field" }));
 
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Is this a GMO?",
-      "Batch code",
-      "Weight",
-    ]);
+    expect(
+      screen
+        .getAllByRole("option")
+        .filter((option) => !option.hasAttribute("aria-disabled"))
+        .map((option) => option.textContent),
+    ).toEqual(["Is this a GMO?", "Batch code", "Weight"]);
   });
 
   it("lists the conditions of a number field and applies a trimmed number, explaining one that is not a number", async () => {
