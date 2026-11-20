@@ -3,6 +3,10 @@ import { TriangleAlertIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import {
+  BOOKING_ERROR_CLASS_NAME,
+  BOOKING_WARNING_CLASS_NAME,
+} from "@/modules/booking/components/bookingWarningStyles";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
@@ -42,7 +46,9 @@ export function BookingFormAlerts({
               : t("bookings.errors.overlapBooking", { id: booking.id }));
         return (
           <li key={booking.id}>
-            <span className="font-medium">{label}</span>
+            <span className="font-medium">
+              {booking.kind === "MAINTENANCE" ? t("bookings.errors.maintenanceConflict", { label }) : label}
+            </span>
             {" · "}
             <BookingInstrumentTimeTooltip
               start={booking.start}
@@ -79,10 +85,7 @@ export function BookingFormAlerts({
   return (
     <div className="space-y-2">
       {warning ? (
-        <Alert
-          role="status"
-          className="border-amber-600 bg-amber-100 text-amber-950 *:data-[slot=alert-description]:text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:*:data-[slot=alert-description]:text-amber-200"
-        >
+        <Alert role="status" className={BOOKING_WARNING_CLASS_NAME}>
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>{warning}</AlertDescription>
         </Alert>
@@ -91,11 +94,7 @@ export function BookingFormAlerts({
         <Alert
           variant={conflictSeverity === "warning" ? "default" : "destructive"}
           role={conflictSeverity === "warning" ? "status" : "alert"}
-          className={
-            conflictSeverity === "warning"
-              ? "border-amber-600 bg-amber-100 text-amber-950 *:data-[slot=alert-description]:text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:*:data-[slot=alert-description]:text-amber-200"
-              : "border-red-700 bg-red-100 text-red-950 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
-          }
+          className={conflictSeverity === "warning" ? BOOKING_WARNING_CLASS_NAME : BOOKING_ERROR_CLASS_NAME}
         >
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>

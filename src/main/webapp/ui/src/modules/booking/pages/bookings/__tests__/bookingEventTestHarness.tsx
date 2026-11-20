@@ -49,7 +49,7 @@ export const bookingEventFixture = {
   cancellationReason: null,
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace",
-  createdBy: "Grace Hopper",
+  createdBy: "Grace Hopper (grace)",
   canEdit: true,
   canCancel: true,
   createdAt: "2026-08-01T09:00:00Z",

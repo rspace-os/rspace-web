@@ -17,12 +17,15 @@ import {
   Outlet,
   RouterContextProvider,
 } from "@tanstack/react-router";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { renderInRouter } from "@/__tests__/helpers/renderInRouter";
 import type { AvailabilitySource } from "@/modules/booking/domain/availability";
+import * as availabilityDomain from "@/modules/booking/domain/availability";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 
 vi.unmock("react-i18next");
@@ -78,26 +81,117 @@ async function renderRoutedAvailabilityBar(props: Partial<React.ComponentProps<t
 }
 
 describe("AvailabilityBar", () => {
-  it("describes unbuffered source times, overlap intersections, and visible gaps", async () => {
-    await renderAvailabilityBar({
-      periodStart: new Date("2026-08-12T08:00:00Z"),
-      periodEnd: new Date("2026-08-12T12:00:00Z"),
-      intervals: [
-        sourced(
-          "buffered",
-          "2026-08-12T08:45:00Z",
-          "2026-08-12T10:15:00Z",
-          "booking",
-          "2026-08-12T09:00:00Z",
-          "2026-08-12T10:00:00Z",
-        ),
-        sourced("blockout", "2026-08-12T09:30:00Z", "2026-08-12T11:00:00Z", "blockout"),
-      ],
+  it("skips unchanged bar work with fresh equivalent dates and item objects, and updates changed input", async () => {
+    const { createRealI18nWrapper } = await import("@/__tests__/helpers/realI18n");
+    const wrapper = await createRealI18nWrapper({ resources, defaultNS: "booking" });
+    const intervals = [sourced("booking", "2026-08-12T09:00:00Z", "2026-08-12T10:00:00Z")];
+    const buildSlices = vi.spyOn(availabilityDomain, "buildAvailabilitySlices");
+    try {
+      const { rerender } = render(availabilityBar({ intervals }), { wrapper });
+      buildSlices.mockClear();
+      rerender(
+        availabilityBar({
+          intervals,
+          periodStart: new Date(periodStart),
+          item: { ...item, location: { ...item.location } },
+        }),
+      );
+      expect(buildSlices).not.toHaveBeenCalled();
+      rerender(availabilityBar({ intervals, now: new Date("2026-08-12T11:00:00Z") }));
+      expect(buildSlices).toHaveBeenCalled();
+    } finally {
+      buildSlices.mockRestore();
+    }
+  });
+
+  it("refreshes semantic output for intervals, zones, item context and language", async () => {
+    const i18n = await createTestI18n(resources, "booking");
+    await i18n.init({ ...i18n.options, supportedLngs: ["en-US", "de"] });
+    i18n.addResourceBundle("de", "booking", {
+      availabilityBar: { label: "Verfügbarkeit von {itemName}" },
     });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+    );
+    const intervals = [sourced("booking", "2026-08-12T09:00:00Z", "2026-08-12T10:00:00Z")];
+    const { rerender } = render(availabilityBar({ intervals }), { wrapper });
+    expect(
+      screen.getByRole("button", { name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event" }),
+    ).toBeInTheDocument();
+    const changed = [sourced("booking", "2026-08-12T11:00:00Z", "2026-08-12T12:00:00Z")];
+    rerender(availabilityBar({ intervals: changed }));
+    expect(
+      screen.getByRole("button", { name: "Confocal microscope, Booked, Aug 12, 2026, 11:00–12:00, 1 event" }),
+    ).toBeInTheDocument();
+    rerender(availabilityBar({ intervals: changed, timeZone: "Europe/Berlin" }));
+    expect(
+      screen.getByRole("button", { name: "Confocal microscope, Booked, Aug 12, 2026, 13:00–14:00, 1 event" }),
+    ).toBeInTheDocument();
+    const renamed = { name: "New microscope", globalId: "IN999", location: { name: "New lab", globalId: "IC999" } };
+    rerender(availabilityBar({ intervals: changed, timeZone: "Europe/Berlin", item: renamed }));
+    expect(screen.getByRole("img", { name: "New microscope availability" })).toHaveAccessibleDescription(
+      expect.stringContaining("13:00–14:00"),
+    );
+    await act(() => i18n.changeLanguage("de"));
+    expect(await screen.findByRole("img", { name: "Verfügbarkeit von New microscope" })).toBeInTheDocument();
+  });
+
+  it("refreshes item and location links when only their identities change", async () => {
+    const user = userEvent.setup();
+    const router = createRouter({ routeTree: createRootRoute(), history: createMemoryHistory() });
+    const { createRealI18nWrapper } = await import("@/__tests__/helpers/realI18n");
+    const I18nWrapper = await createRealI18nWrapper({ resources, defaultNS: "booking" });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <I18nWrapper>
+        <RouterContextProvider router={router}>{children}</RouterContextProvider>
+      </I18nWrapper>
+    );
+    const intervals = [
+      sourced("booking", "2026-08-12T09:00:00Z", "2026-08-12T10:00:00Z", "booking", undefined, undefined, {
+        id: 41,
+        kind: "BOOKING",
+        privacy: "full",
+        canViewConfiguration: true,
+        purpose: null,
+        bookedBy: "Ada",
+      }),
+    ];
+    const { rerender } = render(availabilityBar({ intervals }), { wrapper });
+    await user.click(
+      screen.getByRole("button", { name: "Confocal microscope, Booked, Aug 12, 2026, 09:00–10:00, 1 event" }),
+    );
+    await user.click(await screen.findByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+    expect(screen.getByRole("link", { name: "Imaging suite" })).toHaveAttribute("href", "/globalId/IC456");
+    rerender(
+      availabilityBar({
+        intervals,
+        item: { ...item, globalId: "IN999", location: { name: "New lab", globalId: "IC999" } },
+      }),
+    );
+    expect(screen.getByRole("link", { name: "New lab" })).toHaveAttribute("href", "/globalId/IC999");
+    expect(screen.getByRole("link", { name: "Open inventory record IN999" })).toHaveAttribute(
+      "href",
+      "/globalId/IN999",
+    );
+    expect(screen.queryByRole("link", { name: "Imaging suite" })).not.toBeInTheDocument();
+  });
+
+  it("keeps clock-change offsets in a same-day accessible range", async () => {
+    await renderAvailabilityBar({
+      timeZone: "Europe/London",
+      periodStart: new Date("2026-10-25T00:00:00Z"),
+      intervals: [sourced("clock-change", "2026-10-25T00:30:00Z", "2026-10-25T01:30:00Z")],
+    });
+    expect(
+      screen.getByRole("button", {
+        name: "Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 08:00–12:00. Available: Aug 12, 2026, 08:00–08:45 and Aug 12, 2026, 11:00–12:00. Booked: Aug 12, 2026, 09:00–10:00. Unavailable: Aug 12, 2026, 09:30–11:00. Booked and unavailable: Aug 12, 2026, 09:30–10:15. Gap before or after a booking: Aug 12, 2026, 08:45–09:00.",
+      expect.stringContaining("Booked: Oct 25, 2026, 01:30 +01:00–01:30 +00:00."),
     );
   });
+
   it.each([
     {
       name: "overnight",
@@ -134,19 +228,6 @@ describe("AvailabilityBar", () => {
     },
   );
 
-  it("keeps clock-change offsets in a same-day accessible range", async () => {
-    await renderAvailabilityBar({
-      timeZone: "Europe/London",
-      periodStart: new Date("2026-10-25T00:00:00Z"),
-      intervals: [sourced("clock-change", "2026-10-25T00:30:00Z", "2026-10-25T01:30:00Z")],
-    });
-    expect(
-      screen.getByRole("button", {
-        name: "Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event",
-      }),
-    ).toHaveAccessibleName("Confocal microscope, Booked, Oct 25, 2026, 01:30 +01:00–01:30 +00:00, 1 event");
-  });
-
   it.each([true, false, undefined])(
     "gates summary item links on configuration access (%s)",
     async (canViewConfiguration) => {
@@ -179,6 +260,28 @@ describe("AvailabilityBar", () => {
       }
     },
   );
+
+  it("labels and describes a buffered booking with its own interval", async () => {
+    await renderRoutedAvailabilityBar({
+      periodStart: new Date("2026-08-12T08:00:00Z"),
+      periodEnd: new Date("2026-08-12T18:00:00Z"),
+      intervals: [
+        sourced(
+          "booking:1",
+          "2026-08-12T08:45:00Z",
+          "2026-08-12T10:15:00Z",
+          "booking",
+          "2026-08-12T09:00:00Z",
+          "2026-08-12T10:00:00Z",
+        ),
+      ],
+    });
+    expect(await screen.findByRole("button", { name: /Booked.*09:00.*10:00/ })).toBeVisible();
+    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
+      "Availability period: Aug 12, 2026, 08:00–18:00. Available: Aug 12, 2026, 08:00–08:45 and Aug 12, 2026, 10:15–18:00. Booked: Aug 12, 2026, 09:00–10:00. Gap before or after a booking: Aug 12, 2026, 08:45–09:00 and Aug 12, 2026, 10:00–10:15.",
+    );
+    expect(screen.queryByRole("button", { name: /08:45/ })).not.toBeInTheDocument();
+  });
 
   it("renders a booking summary without availability-bar context", async () => {
     const user = userEvent.setup();
@@ -283,10 +386,10 @@ describe("AvailabilityBar", () => {
     });
 
     const leftSlice = screen.getByRole("button", {
-      name: "Confocal microscope, Booked, Aug 12, 2026, 00:00–01:00, 1 event",
+      name: "Confocal microscope, Booked, Aug 11, 2026, 23:00–Aug 12, 2026, 01:00, 1 event",
     });
     const rightSlice = screen.getByRole("button", {
-      name: "Confocal microscope, Booked, Aug 12, 2026, 23:00–Aug 13, 2026, 00:00, 1 event",
+      name: "Confocal microscope, Booked, Aug 12, 2026, 23:00–Aug 13, 2026, 01:00, 1 event",
     });
     await user.click(leftSlice);
     expect(leftSlice).toHaveAttribute("data-popup-open");
@@ -364,7 +467,7 @@ describe("AvailabilityBar", () => {
 
       await user.hover(
         await screen.findByRole("button", {
-          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Unavailable"}, Aug 12, 2026, 09:00–10:00, 1 event`,
+          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Maintenance"}, Aug 12, 2026, 09:00–10:00, 1 event`,
         }),
       );
       const dialog = await screen.findByRole("dialog");
@@ -526,10 +629,10 @@ describe("AvailabilityBar", () => {
       timeZone: "Europe/Berlin",
     });
 
-    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 GMT+2.");
+    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00.");
     expect(marker).toHaveStyle({ left: "50%" });
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period. Current time: Aug 12, 2026, 12:00 GMT+2.",
+      "Availability period: Aug 12, 2026, 00:00–Aug 13, 2026, 00:00. Available for the full period. Current time: Aug 12, 2026, 12:00.",
     );
     expect(screen.queryByText("Time zone: Europe/Berlin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Available/)).not.toBeInTheDocument();
@@ -581,7 +684,7 @@ describe("AvailabilityBar", () => {
       timeZone: "Asia/Singapore",
     });
 
-    expect(screen.getByTitle("Current time Aug 13, 2026, 14:00 GMT+8 is after the displayed window.")).toHaveStyle({
+    expect(screen.getByTitle("Current time Aug 13, 2026, 14:00 is after the displayed window.")).toHaveStyle({
       left: "100%",
     });
   });
@@ -594,7 +697,7 @@ describe("AvailabilityBar", () => {
       timeZone: "Asia/Singapore",
     });
 
-    expect(screen.getByTitle("Current time Aug 11, 2026, 14:00 GMT+8 is before the displayed window.")).toHaveStyle({
+    expect(screen.getByTitle("Current time Aug 11, 2026, 14:00 is before the displayed window.")).toHaveStyle({
       left: "0%",
     });
   });

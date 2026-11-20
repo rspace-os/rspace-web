@@ -75,7 +75,7 @@ describe("Booking display preferences", () => {
     await expect
       .element(preferences.end)
       .toHaveAccessibleDescription(
-        "12:00 AM means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "12:00 AM means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA time zone.",
       );
     await expect.element(preferences.save).toBeDisabled();
     await preferences.end.fill("00:00");
@@ -86,19 +86,19 @@ describe("Booking display preferences", () => {
     await expect.element(preferences.start).toHaveAttribute("aria-invalid", "true");
     await expect
       .element(preferences.start)
-      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA time zone.");
     await preferences.start.fill("09:00");
     await preferences.custom.click();
     await preferences.customTimezone.fill("Not/A-Timezone");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "true");
     await expect
       .element(preferences.customTimezone)
-      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA time zone.");
     await expect.element(preferences.save).toBeDisabled();
     await preferences.customTimezone.fill("Europe/Berlin");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "false");
     await expect
-      .element(page.getByText("Choose a valid same-day window and, for Custom, a valid IANA timezone."))
+      .element(page.getByText("Choose a valid same-day window and, for Custom, a valid IANA time zone."))
       .not.toBeInTheDocument();
     await expect.element(preferences.save).toBeEnabled();
     // Let the disabled-opacity transition finish before measuring contrast.

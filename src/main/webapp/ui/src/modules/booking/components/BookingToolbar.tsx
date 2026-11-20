@@ -3,6 +3,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingDateTimeLocale } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Calendar } from "@/modules/common/ui/calendar";
@@ -38,7 +39,7 @@ export function BookingDateControls({
   onDateChange: (date: string) => void;
   className?: string;
 }) {
-  const { i18n, t } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const selectedDate = dateInTimeZone(date, timeZone);
 
@@ -65,7 +66,7 @@ export function BookingDateControls({
               className="shrink-0"
               aria-label={t("toolbar.jumpToDateAccessible", {
                 label: jumpToDateLabel,
-                date: new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+                date: new Intl.DateTimeFormat(bookingDateTimeLocale(), {
                   dateStyle: "medium",
                   timeZone,
                 }).format(selectedDate),
@@ -73,7 +74,7 @@ export function BookingDateControls({
             >
               <CalendarDaysIcon aria-hidden="true" />
               <time dateTime={date}>
-                {new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+                {new Intl.DateTimeFormat(bookingDateTimeLocale(), {
                   dateStyle: "medium",
                   timeZone,
                 }).format(selectedDate)}

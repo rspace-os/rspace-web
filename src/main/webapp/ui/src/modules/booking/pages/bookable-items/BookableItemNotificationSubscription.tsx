@@ -111,6 +111,7 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -150,6 +151,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -216,6 +218,8 @@ function ItemNotificationSubscription({
   globalId: string;
   subjectId: number;
 }) {
+  const { t } = useTranslation("booking");
+
   const [feedback, setFeedback] = useState<"saved" | "conflict" | "saveError" | null>(null);
   const _queryKey = getGetMyBookingNotificationSubscriptionQueryKey(configurationId);
   const subscription = useSuspenseQuery(bookingNotificationSubscriptionQuery(subjectId, configurationId));
@@ -225,14 +229,19 @@ function ItemNotificationSubscription({
   }
 
   return (
-    <ItemNotificationEditor
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }
 

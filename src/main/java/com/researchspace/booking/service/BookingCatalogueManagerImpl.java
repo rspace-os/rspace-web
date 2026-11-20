@@ -403,9 +403,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         found.stream()
             .mapToLong(
                 configuration ->
-                    Math.max(
-                        configuration.getBufferBeforeMinutes(),
-                        configuration.getBufferAfterMinutes()))
+                    configuration.getBufferBeforeMinutes() + configuration.getBufferAfterMinutes())
             .max()
             .orElse(0);
     return bookings

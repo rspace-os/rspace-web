@@ -137,7 +137,7 @@ function TimeRange({
 
 /** Seven independent weekday intervals. Closing a day retains its hours for this edit session. */
 export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore; disabled: boolean; layout: Layout }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const id = useId();
   const field = useField(form, { path: ["openingHours"] });
   const entries = Array.isArray(field.input) ? (field.input as OpeningHoursEntry[]) : [];
@@ -170,7 +170,7 @@ export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore
       >
         {ALL_ISO_WEEKDAYS.map((day) => {
           const entry = entries.find((candidate) => candidate.dayOfWeek === day);
-          const dayName = formatIsoWeekday(day, "long", i18n.language === "cimode" ? "en-US" : i18n.language);
+          const dayName = formatIsoWeekday(day);
           return (
             <li key={day} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3">
               <div className="flex min-h-9 w-28 shrink-0 items-center gap-2">

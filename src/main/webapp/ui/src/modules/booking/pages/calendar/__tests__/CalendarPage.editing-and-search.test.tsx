@@ -55,9 +55,7 @@ describe("CalendarPage", () => {
       const patches: unknown[] = [];
       const booking = {
         ...ownBooking,
-        ...(rule === "increment"
-          ? { start: ownBooking.start.replace(":00:00Z", ":02:00Z"), end: ownBooking.end.replace(":00:00Z", ":02:00Z") }
-          : {}),
+        ...(rule === "increment" ? { start: ownBooking.start.replace(":00:00Z", ":02:00Z") } : {}),
       };
       const configuration = {
         ...bookableItemFixtures[0],
@@ -90,11 +88,11 @@ describe("CalendarPage", () => {
       ).toHaveAttribute("role", "status");
       await user.clear(purpose);
       await user.type(purpose, "Updated purpose");
-      const end = within(card).getByLabelText("End time");
+      const end = within(card).getByLabelText(rule === "increment" ? "Start time" : "End time");
       const originalTime = end.getAttribute("value");
       await user.clear(end);
       await user.type(end, "12:45");
-      await user.tab();
+      if (rule !== "increment") await user.tab();
       await user.click(screen.getByRole("button", { name: "Save changes" }));
       expect(patches).toEqual([]);
       expect(
@@ -102,7 +100,7 @@ describe("CalendarPage", () => {
           "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
         ),
       ).not.toBeInTheDocument();
-      expect(end).toHaveAttribute("aria-invalid", "true");
+      expect(within(card).getByLabelText("End time")).toHaveAttribute("aria-invalid", "true");
       await user.clear(end);
       await user.type(end, originalTime ?? "");
       await user.tab();
@@ -376,7 +374,11 @@ describe("CalendarPage", () => {
     await user.click(save);
 
     const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
-    await waitFor(() => expect(alert).toMatchTextContent("Too close to another booking"));
+    await waitFor(() =>
+      expect(alert).toMatchTextContent(
+        "Too close to another event. This item needs 0 minutes before and 30 minutes after each booking. Gaps between bookings add up.",
+      ),
+    );
     expect(alert).not.toMatchTextContent("private server detail");
     expect(within(alert).getByRole("listitem")).toMatchTextContent("Booking #59");
     expect(save).toBeDisabled();
@@ -557,6 +559,7 @@ describe("CalendarPage", () => {
   });
 
   it("keeps resource pagination when a search matches more than one page", async () => {
+    const catalogueRequests: { q: string | null; page: number }[] = [];
     const catalogueItems = Array.from({ length: 21 }, (_, index) => {
       const fixture = bookableItemFixtures[index % bookableItemFixtures.length];
       return {
@@ -568,6 +571,7 @@ describe("CalendarPage", () => {
         name: `No-event microscope ${index + 1}`,
         timezone: fixture.timezone,
         slotGranularityMinutes: fixture.slotGranularityMinutes,
+        incrementUnit: "MINUTES" as const,
         openingHours: fixture.openingHours,
         bufferBeforeMinutes: fixture.bufferBeforeMinutes,
         bufferAfterMinutes: fixture.bufferAfterMinutes,
@@ -578,14 +582,14 @@ describe("CalendarPage", () => {
         location: null,
       };
     });
-    const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const url = new URL(request.url);
+        const query = url.searchParams.get("q");
         const page = Number(url.searchParams.get("page") ?? "1");
-        catalogueRequests.push({ q: url.searchParams.get("q"), page });
         const pageSize = Number(url.searchParams.get("limit") ?? "20");
+        catalogueRequests.push({ q: query, page });
         const start = (page - 1) * pageSize;
         return HttpResponse.json({
           items: catalogueItems.slice(start, start + pageSize),
@@ -610,6 +614,7 @@ describe("CalendarPage", () => {
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
+    await waitFor(() => expect(catalogueRequests).toContainEqual({ q: "No-event", page: 2 }));
     await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
     expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
   });

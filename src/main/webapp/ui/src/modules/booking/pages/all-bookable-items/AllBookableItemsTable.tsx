@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarPlusIcon, EyeIcon, PackageCheckIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import type { RefObject } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { hasPreset, togglePreset } from "@/modules/common/table-list/presets";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import {
@@ -16,6 +18,7 @@ import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "../bookable-items/BookableItemActionTriggers";
+import { bookableItemLifecycleNotice } from "../bookable-items/bookableItemFeedback";
 import type { BookingConfigurationRow as AllBookableItem } from "../bookable-items/bookingConfiguration";
 import {
   archiveBookingConfiguration,
@@ -33,12 +36,10 @@ type AllBookableItemsTableProps = {
   tableProps: TableListProps<AllBookableItem>;
   resetView: () => void;
   setFilters: (next: FilterState<AllBookableItem>) => void;
-  onLifecycleChanged: (
-    ids: readonly number[],
-    permanent?: boolean,
-    options?: import("@tanstack/react-query").InvalidateOptions,
-  ) => Promise<void>;
+  onLifecycleChanged: (ids: readonly number[]) => Promise<void>;
   onRestore: (row: AllBookableItem) => Promise<void>;
+  alertsRef: RefObject<TableListAlertsApi | null>;
+  attachAlerts: (api: TableListAlertsApi | null) => void;
 };
 
 export function AllBookableItemsTable({
@@ -51,6 +52,9 @@ export function AllBookableItemsTable({
   resetView,
   setFilters,
   onLifecycleChanged,
+
+  alertsRef,
+  attachAlerts,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
   const rowActions = useMemo<TableListRowActions<AllBookableItem>>(
@@ -123,7 +127,8 @@ export function AllBookableItemsTable({
             close={close}
             onArchive={(id, version) => archiveBookingConfiguration(id, version)}
             onArchived={async (id) => {
-              await onLifecycleChanged([id], false, { cancelRefetch: false });
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+              await onLifecycleChanged([id]);
             }}
           />
         ) : actionId === "permanent-delete" ? (
@@ -132,7 +137,8 @@ export function AllBookableItemsTable({
             close={close}
             onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version)}
             onDeleted={async () => {
-              await onLifecycleChanged([row.id], true, { cancelRefetch: false });
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+              await onLifecycleChanged([row.id]);
             }}
           />
         ) : null,
@@ -169,6 +175,8 @@ export function AllBookableItemsTable({
       ) : null}
       <TableList
         {...tableProps}
+        alertsRef={attachAlerts}
+        stickyActions="when-fitted"
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         filterButtons={quickFilters}

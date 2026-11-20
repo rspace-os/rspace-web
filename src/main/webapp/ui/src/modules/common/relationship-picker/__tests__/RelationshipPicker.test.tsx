@@ -462,7 +462,7 @@ describe("relationship picker restore", () => {
     );
     renderSelected("FX500", "caller-two");
 
-    expect(await screen.findByText("FX500 — common:relationshipPicker.restoreFailed")).toBeVisible();
+    expect(await screen.findByText("common:relationshipPicker.restoreFailed")).toBeVisible();
     expect(screen.queryByText("private endpoint error")).not.toBeInTheDocument();
   });
 });
