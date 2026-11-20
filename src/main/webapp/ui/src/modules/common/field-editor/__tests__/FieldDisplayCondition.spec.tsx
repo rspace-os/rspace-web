@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import materialTheme from "@/theme";
-import { FieldDisplayConditionStory } from "./FieldDisplayCondition.story";
+import { FieldDisplayConditionStory, noAvailableFields } from "./FieldDisplayCondition.story";
 import { FieldDisplayConditionPage } from "./pageObjects/FieldDisplayConditionPage";
 
 const pageObj = new FieldDisplayConditionPage();
@@ -14,6 +14,17 @@ function computedColour(colour: string): string {
   const computed = getComputedStyle(probe).color;
   probe.remove();
   return computed;
+}
+
+/** The focus outline of a disabled item: solid, 2px, in the text colour, and not faded. */
+function expectReadableFocus(item: Element): void {
+  const style = getComputedStyle(item);
+  expect([style.outlineStyle, style.outlineWidth, style.outlineColor, style.opacity]).toEqual([
+    "solid",
+    "2px",
+    computedColour(materialTheme.palette.text.primary),
+    "1",
+  ]);
 }
 
 afterEach(() => {
@@ -30,14 +41,8 @@ describe("The condition's Field menu", () => {
     await pageObj.press("{ArrowDown}");
     await expect.element(pageObj.notes).toHaveFocus();
     await expect.element(pageObj.notes).toHaveAttribute("aria-disabled", "true");
-    // MUI styles no focus on a disabled item, so the component draws its own, in the text colour
-    // rather than the browser's default ring
-    const focused = getComputedStyle(pageObj.notes.element());
-    expect([focused.outlineStyle, focused.outlineWidth, focused.outlineColor]).toEqual([
-      "solid",
-      "2px",
-      computedColour(materialTheme.palette.text.primary),
-    ]);
+    // the component's own outline, in the text colour rather than the theme's faint primary
+    expectReadableFocus(pageObj.notes.element());
 
     await pageObj.press("{Enter}");
     await pageObj.press(" ");
@@ -47,5 +52,14 @@ describe("The condition's Field menu", () => {
     await expect.element(pageObj.listbox).not.toBeInTheDocument();
     await expect.element(pageObj.field).toHaveTextContent("Is this a GMO?");
     expect(changes).toEqual([]);
+  });
+
+  test("opened from the keyboard with nothing to choose, focuses a readable 'No available fields'", async () => {
+    render(<FieldDisplayConditionStory onChange={() => {}} fields={noAvailableFields} />);
+    await pageObj.chooseConditional();
+    pageObj.field.element().focus();
+    await pageObj.press("{ArrowDown}");
+    await expect.element(pageObj.noAvailableFields).toHaveFocus();
+    expectReadableFocus(pageObj.noAvailableFields.element());
   });
 });
