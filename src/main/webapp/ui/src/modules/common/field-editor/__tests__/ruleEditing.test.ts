@@ -48,6 +48,20 @@ describe("cycle prevention", () => {
     expect(sourcesFor("approval")).toEqual(["gmo", "level"]);
   });
 
+  it("lists every other field in order, with why a rule cannot read it", () => {
+    const withSecret = [...fields, field("secret", { hidesValue: true })];
+    expect(
+      buildRuleGraph(withSecret)
+        .candidatesFor("gmo")
+        .map(({ field: { key }, unavailable }) => [key, unavailable]),
+    ).toEqual([
+      ["level", "dependsOnField"],
+      ["approval", "dependsOnField"],
+      ["notes", "unsupportedType"],
+      ["secret", "hidesValue"],
+    ]);
+  });
+
   it("offers fields below as well as above, but only radio and choice fields", () => {
     expect(sourcesFor("notes")).toEqual(["gmo", "level", "approval"]);
   });

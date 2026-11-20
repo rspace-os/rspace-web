@@ -91,7 +91,7 @@ describe("templateRuleFields", () => {
 });
 
 describe("templateRuleFields source kinds", () => {
-  it("passes the kind each type gives a rule to read", () => {
+  it("passes the kind each type gives a rule to read, and the type menu's label", () => {
     const template = makeMockTemplate({
       fields: (["radio", "string", "number", "text"] as const).map(
         (type, i): FieldModelAttrs => ({
@@ -113,6 +113,12 @@ describe("templateRuleFields source kinds", () => {
       "TEXT",
       "NUMBER",
       "NONE",
+    ]);
+    expect(templateRuleFields(template).map((field) => field.typeLabel)).toEqual([
+      "Radio",
+      "Plain text",
+      "Number",
+      "Formatted text",
     ]);
   });
 });

@@ -12,6 +12,9 @@ import { useTranslation } from "react-i18next";
 import FieldTypeSelect, { type FieldTypeOption } from "./FieldTypeSelect";
 import MoveButtons from "./MoveButtons";
 
+/** Below this card width, in pixels, the actions and type go on a row below the name. */
+const NARROW_CARD = 480;
+
 type FieldCardProps<T extends string> = {
   name: string;
   onNameChange: (name: string) => void;
@@ -26,6 +29,8 @@ type FieldCardProps<T extends string> = {
   canChangeType: boolean;
   mandatory: boolean;
   onMandatoryChange: (mandatory: boolean) => void;
+  /** More switches for the field, shown on one wrapping row with Mandatory. */
+  switches?: ReactNode;
   /** The field's position in the list, from 0, and the number of fields. */
   position: number;
   count: number;
@@ -43,13 +48,15 @@ type FieldCardProps<T extends string> = {
   displayCondition?: ReactNode;
   /** Settings that only some field types or products have. */
   children?: ReactNode;
-  /** Stack the settings in a column, for narrow layouts. */
+  /** Give the type menu a row of its own, for narrow layouts. */
   columnLayout?: boolean;
 };
 
 /**
  * The parts of a field editor that every product shares: name, type,
  * mandatory, move and delete. Products add their own settings as children.
+ * Move and delete are compact icon buttons beside the name, and the switches
+ * share one row, so a simple field takes little height.
  */
 export default function FieldCard<T extends string>({
   name,
@@ -62,6 +69,7 @@ export default function FieldCard<T extends string>({
   canChangeType,
   mandatory,
   onMandatoryChange,
+  switches,
   position,
   count,
   onMove,
@@ -79,15 +87,31 @@ export default function FieldCard<T extends string>({
   const displayName = name === "" ? t("fieldEditor.card.unnamed") : name;
 
   return (
-    <Paper variant="outlined" role="region" aria-labelledby={`${nameId}-region`} sx={{ p: 2 }}>
+    <Paper
+      variant="outlined"
+      role="region"
+      aria-labelledby={`${nameId}-region`}
+      // the header lays itself out by the card's width, which in a side panel is much narrower than the window
+      sx={{ px: 2, py: 1.5, containerType: "inline-size" }}
+    >
       {/* the name input's value cannot label the region, so a hidden copy of the name does */}
       {editable && (
         <span id={`${nameId}-region`} hidden>
           {displayName}
         </span>
       )}
-      <Stack spacing={2}>
-        <Stack direction="row" spacing={1.5} sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+      <Stack spacing={1.5}>
+        {/* on a narrow card the actions go below the name, on one row with the type */}
+        <Stack
+          direction="row"
+          spacing={1.5}
+          useFlexGap
+          sx={(theme) => ({
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            [theme.containerQueries.down(NARROW_CARD)]: { flexDirection: "column", alignItems: "stretch" },
+          })}
+        >
           {editable ? (
             <TextField
               variant="standard"
@@ -103,25 +127,41 @@ export default function FieldCard<T extends string>({
                   ? undefined
                   : t("fieldEditor.card.nameLength", { length: name.length, max: nameMaxLength }))
               }
-              sx={{ flexGrow: 1 }}
+              sx={{ flexGrow: 1, minWidth: 0 }}
             />
           ) : (
             <Typography variant="h6" component="h4" id={`${nameId}-region`} sx={{ overflowWrap: "anywhere" }}>
               {displayName}
             </Typography>
           )}
-          <Stack sx={{ alignItems: "flex-end" }} spacing={0.75}>
-            {editable &&
-              canDelete &&
-              (deleteControl ?? (
-                <IconButton
-                  onClick={onDelete}
-                  aria-label={t("fieldEditor.card.delete", { field: displayName })}
-                  title={t("fieldEditor.card.delete", { field: displayName })}
-                >
-                  <DeleteOutlinedIcon />
-                </IconButton>
-              ))}
+          <Stack
+            spacing={0.5}
+            useFlexGap
+            sx={(theme) => ({
+              alignItems: "flex-end",
+              [theme.containerQueries.down(NARROW_CARD)]: {
+                flexDirection: "row-reverse",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+                alignItems: "center",
+              },
+            })}
+          >
+            {editable && (
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                <MoveButtons position={position} count={count} onMove={onMove} fieldName={displayName} />
+                {canDelete &&
+                  (deleteControl ?? (
+                    <IconButton
+                      onClick={onDelete}
+                      aria-label={t("fieldEditor.card.delete", { field: displayName })}
+                      title={t("fieldEditor.card.delete", { field: displayName })}
+                    >
+                      <DeleteOutlinedIcon />
+                    </IconButton>
+                  ))}
+              </Stack>
+            )}
             {!(editable && canChangeType) && (
               <Typography variant="subtitle1" component="div" sx={{ whiteSpace: "nowrap" }}>
                 {typeLabel}
@@ -130,12 +170,8 @@ export default function FieldCard<T extends string>({
           </Stack>
         </Stack>
         {displayCondition}
-        <Stack
-          direction={columnLayout ? "column" : { xs: "column", lg: "row" }}
-          spacing={2}
-          sx={{ alignItems: columnLayout ? "stretch" : { xs: "stretch", lg: "flex-start" } }}
-        >
-          <Box sx={{ minWidth: 160 }}>
+        <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", columnGap: 2, rowGap: 1, alignItems: "flex-start" }}>
+          <Box>
             {editable ? (
               <FormControlLabel
                 control={
@@ -149,8 +185,9 @@ export default function FieldCard<T extends string>({
               </Typography>
             )}
           </Box>
+          {switches}
           {editable && canChangeType && (
-            <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ flex: columnLayout ? "1 1 100%" : "1 1 240px" }}>
               <Typography variant="subtitle2" component="div" sx={{ mb: 0.5 }}>
                 {t("fieldEditor.card.type")}
               </Typography>
@@ -164,7 +201,6 @@ export default function FieldCard<T extends string>({
           )}
         </Stack>
         {children}
-        {editable && <MoveButtons position={position} count={count} onMove={onMove} fieldName={displayName} />}
       </Stack>
     </Paper>
   );
