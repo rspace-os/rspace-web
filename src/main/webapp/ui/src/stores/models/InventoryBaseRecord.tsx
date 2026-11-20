@@ -234,6 +234,7 @@ export default class InventoryBaseRecord
   factory: Factory;
   fetchingAdditionalInfo: Promise<{ data: object }> | null = null;
   private detailRequests = new Map<string, Promise<void>>();
+  private permalinkDetailKey: string | null = null;
   // @ts-expect-error sharingMode is initialised by populateFromJson
   sharingMode: SharingMode;
   // @ts-expect-error sharingWith is initialised by populateFromJson
@@ -953,6 +954,10 @@ export default class InventoryBaseRecord
     }
   }
 
+  rememberPermalinkDetails(queryParameters = new URLSearchParams()): void {
+    this.permalinkDetailKey = queryParameters.toString();
+  }
+
   async fetchAdditionalInfo(
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams(),
@@ -984,7 +989,9 @@ export default class InventoryBaseRecord
         this.historicalVersion && this.version !== null
           ? `${this.recordType}s/${id}/versions/${this.version}`
           : `${this.recordType}s/${id}`;
-      const { data } = await ApiService.query<object>(endpoint, queryParameters);
+      const reusePermalink = this.permalinkDetailKey === queryParameters.toString();
+      this.permalinkDetailKey = null;
+      const data = reusePermalink ? null : (await ApiService.query<object>(endpoint, queryParameters)).data;
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -998,12 +1005,12 @@ export default class InventoryBaseRecord
        * to false, and Save applies the server's response directly via update(), not through here,
        * so neither legitimate caller is affected by skipping while mid-edit.
        */
-      if (this.editing) {
+      if (data && this.editing) {
         console.warn(
           `Discarding a stale additional-info refresh for ${this.globalId ?? "UNKNOWN"}: ` +
             "the record started being edited while this fetch was in flight.",
         );
-      } else {
+      } else if (data) {
         this.populateFromJson(this.factory.newFactory(), data);
       }
       await this.fetchImage("image");

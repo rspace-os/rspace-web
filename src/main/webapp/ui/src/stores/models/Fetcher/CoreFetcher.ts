@@ -25,6 +25,7 @@ import {
   type ResultType,
 } from "../../definitions/Search";
 import getRootStore from "../../stores/getRootStore";
+import InventoryBaseRecord from "../InventoryBaseRecord";
 
 export const DEFAULT_SEARCH = {
   query: "",
@@ -352,6 +353,9 @@ export default class CoreFetcher {
           this.count = 1;
         });
         const record = this.factory.newFactory().newRecord(data);
+        if ((endpoint === "samples" || endpoint === "subSamples") && record instanceof InventoryBaseRecord) {
+          record.rememberPermalinkDetails();
+        }
         storeResults([record]);
 
         /*

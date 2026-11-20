@@ -244,11 +244,12 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   }
 
   private ApiSample retrieveApiSampleIfExists(Long id, User user) {
-    boolean exists = sampleApiMgr.exists(id);
-    if (!exists) {
-      throw new NotFoundException(createNotFoundMessage("Inventory record", id));
+    try {
+      return sampleApiMgr.getApiSampleById(id, user);
+    } catch (NotFoundException e) {
+      log.warn("Inventory record {} was not found", id, e);
+      throw new NotFoundException(createNotFoundMessage("Inventory record", id), e);
     }
-    return sampleApiMgr.getApiSampleById(id, user);
   }
 
   @Override
