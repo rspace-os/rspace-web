@@ -12,7 +12,7 @@ let domContainer: HTMLElement | null = null;
  * props that have changed
  */
 let prevProps: Omit<StructuredDocumentToolbarProps, "domContainer"> = {
-  conditionalRender: {},
+  conditionalRender: { print: true },
   eventHandlers: {
     onCreateRequest: () => {},
     onExportDocument: () => {},
