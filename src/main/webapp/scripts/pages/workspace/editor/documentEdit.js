@@ -7,6 +7,7 @@ var autoSaveLastErrorStatus = -1;
 var autoSaveFailureCount = 0;
 var autoSaveSkipCount = 0;
 var autosaveRequestTimeout = 30000; // will increase on failed autosaves
+var editSessionExpired = false;
 var chemistryAvailable = false;
 
 var unchangedContentCounter = 0;
@@ -88,29 +89,76 @@ function _removeSelections() {
   }
 }
 
+function handleEditorSessionExpiry(jqxhr, retrying = false) {
+  if (jqxhr.getResponseHeader("X-RSpace-Session") !== "ended") {
+    return false;
+  }
+
+  const showPrompt = !editSessionExpired || retrying;
+  editSessionExpired = true;
+  hasEditLock = false;
+  if (showPrompt) {
+    const title = RS.msg("legacyjs.workspace.documentEdit.sessionExpiredTitle");
+    const previousFocus = $(document.activeElement).is(":focusable")
+      ? document.activeElement
+      : document.getElementById(getTextFieldId(lastTextEdited) + "_ifr");
+    const dialog = RS.apprise(
+      RS.msg("legacyjs.workspace.documentEdit.sessionExpired"),
+      false,
+      undefined,
+      function () {
+        window.open(createURL("/login"), "_blank", "noopener");
+        return true;
+      },
+      {
+        title: title,
+        textOk: RS.msg("legacyjs.workspace.documentEdit.signIn"),
+        close: function () {
+          queueMicrotask(() => this.remove());
+        },
+      }
+    );
+    dialog.find(".modal-title").attr("id", "editor-session-title");
+    dialog.one("shown.bs.modal", function () {
+      // Let the shared modal handler finish setting focus before focusing Sign in.
+      queueMicrotask(() => dialog.find("#bsm-btn-confirm").focus());
+    });
+    dialog.attr({
+      role: "alertdialog",
+      "aria-labelledby": "editor-session-title",
+      "aria-modal": "true",
+      tabindex: "-1",
+    }).modal("show", previousFocus);
+  }
+  return true;
+}
+
 /* returns a promise of edit lock */
-function requestEditStatus(editable, recordId) {
+function requestEditStatus(editable, recordId, recoveringSession = false) {
   var deferred = $.Deferred();
   var promise = deferred.promise();
 
-  if (editable == "EDIT_MODE") {
-    hasEditLock = true;
+  if (editable == "EDIT_MODE" && !recoveringSession) {
+    hasEditLock = !editSessionExpired;
     deferred.resolve();
   } else if (
-    editable == "VIEW_MODE" ||
-    editable == "CANNOT_EDIT_OTHER_EDITING"
+    recoveringSession || editable == "VIEW_MODE" || editable == "CANNOT_EDIT_OTHER_EDITING"
   ) {
     RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.requestingEditLock"));
-    var jqxhr = $.post(
-      createURL("/workspace/editor/structuredDocument/ajax/requestEdit"),
-      { recordId: recordId },
-      function (data) {
-        if (data) {
+    var jqxhr = $.ajax({
+      url: createURL("/workspace/editor/structuredDocument/ajax/requestEdit"),
+      method: "POST",
+      data: { recordId: recordId, expectedUsername: currentUser },
+      dataType: "json",
+      success: function (data) {
+        RS.unblockPage();
+        if (data && !recoveringSession) {
           window.editable = data;
           displayStatus(window.editable);
         }
         if (data == "EDIT_MODE") {
           hasEditLock = true;
+          editSessionExpired = false;
           deferred.resolve();
         } else {
           var cantEditMsg;
@@ -125,12 +173,12 @@ function requestEditStatus(editable, recordId) {
           apprise(cantEditMsg);
           deferred.reject();
         }
-      }
-    );
-    jqxhr.always(function () {
-      RS.unblockPage();
+      },
     });
     jqxhr.fail(function () {
+      RS.unblockPage();
+      deferred.reject();
+      if (handleEditorSessionExpiry(jqxhr, true)) return;
       RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.requestEditLockAction"), false, jqxhr);
     });
   }
@@ -270,7 +318,7 @@ function _updateMenuUponEditStop() {
  */
 function updateFieldsContentFromServer(forceUpdate) {
   // if edit lock is kept and we just switch the fields, then skip the synchronization
-  if (fieldsSynchronized && !forceUpdate) {
+  if (editSessionExpired || _wasAnyFieldChanged() || (fieldsSynchronized && !forceUpdate)) {
     return $.Deferred().resolve().promise();
   }
 
@@ -287,12 +335,21 @@ function updateFieldsContentFromServer(forceUpdate) {
     data
   );
   jqxhr.done(function (data) {
+    if ((editable === "EDIT_MODE" && handleEditorSessionExpiry(jqxhr)) ||
+        !data || editSessionExpired || _wasAnyFieldChanged()) {
+      return;
+    }
     _updateFields(data.data);
     renderToolbar({ canSign: data.data.every(f => f.mandatoryStateSatisfied) && data.data.length > 0 });
 
     /* if user have the lock the content won't be edited by others (RSPAC-418) */
     if (hasEditLock) {
       fieldsSynchronized = true;
+    }
+  });
+  jqxhr.fail(function () {
+    if (editable === "EDIT_MODE") {
+      handleEditorSessionExpiry(jqxhr);
     }
   });
   jqxhr.always(function () {
@@ -461,6 +518,9 @@ function autosave(isPartOfSave) {
     //console.log('not in EDIT_MODE, so skipping the autosave');
     return; // must be periodic autosave, it's fine to return nothing
   }
+  if (editSessionExpired && !isPartOfSave) {
+    return;
+  }
   if (saveInProgress && !isPartOfSave) {
     console.log(
       "save in progress, so skipping autosave request that doesn't come from save"
@@ -574,35 +634,54 @@ function _autosaveFields() {
     wasAutosaved = true;
   }); // end of .field loop
 
-  autosaveInProgressPromise = $.when.apply($, fieldPromises);
-  autosaveInProgressPromise.done(function () {
+  // Wait for every field before allowing a retry, even if one request fails first.
+  let failed = false;
+  const completed = fieldPromises.map(function (request) {
+    const completion = $.Deferred();
+    request.fail(function () {
+      failed = true;
+    }).always(function () {
+      completion.resolve();
+    });
+    return completion;
+  });
+  autosaveInProgressPromise = $.when(...completed).then(function () {
+    if (failed) {
+      return $.Deferred().reject().promise();
+    }
+  });
+  autosaveInProgressPromise.always(function () {
     if (runAnotherAutosave) {
       runAnotherAutosave = false;
-      autosave();
+      if (!failed) autosave();
     }
   });
   return autosaveInProgressPromise;
 }
 
 function _autosaveText($field) {
-  var textArea$ = $field.find("textarea[name='fieldRtfData']");
-  var dataV = textArea$.html();
-  var textFieldId = textArea$.attr("id");
-  if (dirtyFieldsMgr.isDirty(textFieldId)) {
-    dataV = dirtyFieldsMgr.getDataForId(textFieldId);
-  }
-  var jqxhr = _postAutosave(dataV, $field);
+  const textArea = $field.find("textarea[name='fieldRtfData']");
+  const textFieldId = textArea.attr("id");
+  const editor = tinyMCE.get(textFieldId);
+  const cachedEdit = dirtyFieldsMgr.getEdit(textFieldId);
+  const hasActiveEdit = editor?.isDirty();
+  const html = hasActiveEdit ? editor.getContent() : (cachedEdit?.html ?? textArea.val());
+  let editedSinceRequest = false;
+  const editEvents = "input change undo redo SetContent";
+  const markEdited = () => { editedSinceRequest = true; };
+  editor?.on(editEvents, markEdited);
 
-  /* if field is on dirtyFieldsMgr list, then tinymce is not active anymore and we should wait
-   * for successful autosave before clearing the field */
-  jqxhr.done(function (data) {
-    if (data.data === true) {
-      if (dirtyFieldsMgr.isDirty(textFieldId)) {
-        dirtyFieldsMgr.remove(textFieldId);
-      }
+  const request = _postAutosave(html, $field, function () {
+    dirtyFieldsMgr.remove(textFieldId, cachedEdit);
+    if (editor && tinyMCE.get(textFieldId) === editor && !editedSinceRequest &&
+        editor.getContent() === html) {
+      editor.setDirty(false);
     }
   });
-  return jqxhr;
+  request.always(function () {
+    editor?.off(editEvents, markEdited);
+  });
+  return request;
 }
 
 function _autosaveNumber($field) {
@@ -653,11 +732,13 @@ function _autosaveTime($field) {
   return _postAutosave(timeData, $field);
 }
 
-function _postAutosave(dataValue, $field) {
+function _postAutosave(dataValue, $field, clearTextEdit) {
+  const generation = $field.data("editGeneration");
   var fieldId = $field.find("input[name='fieldId']").val();
   var data = {
     dataValue: dataValue,
     fieldId: fieldId,
+    expectedUsername: currentUser,
   };
   var jqxhr = $.ajax({
     type: "POST",
@@ -666,8 +747,12 @@ function _postAutosave(dataValue, $field) {
     dataType: "json",
     timeout: autosaveRequestTimeout,
   });
-  jqxhr.done(function (data) {
-    //console.log('autosave complete');
+  const result = jqxhr.then(function (data) {
+    if (clearTextEdit) {
+      clearTextEdit();
+    } else if ($field.data("editGeneration") === generation) {
+      $field.find("input[name='wasChanged']").val(false);
+    }
     if (data.data !== true) {
       apprise(RS.msg("legacyjs.workspace.documentEdit.autosaveErrors", getValidationErrorString(data.errorMsg, ";", true)));
     }
@@ -678,7 +763,9 @@ function _postAutosave(dataValue, $field) {
     }
   });
   jqxhr.fail(function () {
-    _setWasChangedFlagOnField($field, true); // marking the field for next autosave attempt
+    if (handleEditorSessionExpiry(jqxhr)) {
+      return;
+    }
     var errorStatus = jqxhr.status;
     if (errorStatus !== autoSaveLastErrorStatus) {
       // new problem with autosave, showing apprise to the user
@@ -696,11 +783,7 @@ function _postAutosave(dataValue, $field) {
     autosaveRequestTimeout = Math.min(autosaveRequestTimeout + 15000, 60000); // increasing timeout up to 60s
   });
 
-  /* clearing 'wasChanged' status ('isDirty' for active text fields) immediately rather than in callback,
-   * because callback can be called much later, and user could change value again in the meantime */
-  _setWasChangedFlagOnField($field, false);
-
-  return jqxhr;
+  return result;
 }
 
 /* resets autosave error handling variables, so next incoming autosave error
@@ -713,17 +796,9 @@ function _resetAutosaveErrorHandling(resetErrorStatus) {
   autoSaveSkipCount = 0;
 }
 
-function _setWasChangedFlagOnField($field, flagValue) {
-  if ($field.attr("name") === "text") {
-    var textFieldId = $field.find("textarea[name='fieldRtfData']").attr("id");
-    if (tinyMCE.get(textFieldId)) {
-      setTimeout(function () {
-        tinyMCE.get(textFieldId).setDirty(flagValue);
-      }, 0);
-    }
-  } else {
-    $field.find("input[name='wasChanged']").val(flagValue);
-  }
+function _markFieldChanged($field) {
+  $field.data("editGeneration", ($field.data("editGeneration") || 0) + 1);
+  $field.find("input[name='wasChanged']").val(true);
 }
 
 function _getWasChangedFlagFromField($field) {
@@ -796,7 +871,7 @@ function checkNumber(element) {
 function checkAndMarkField(element) {
   var currentId = $(element).attr("id");
   var $field = $("#field_" + currentId);
-  _setWasChangedFlagOnField($field, true);
+  _markFieldChanged($field);
 }
 
 // checks if it has any error and marks it as modified for autosaving
@@ -808,7 +883,7 @@ function checkAndMarkNumber(element) {
     $field
       .find("input[name='lastValue']")
       .val($field.find("input[name='fieldData']").val());
-    _setWasChangedFlagOnField($field, true);
+    _markFieldChanged($field);
   } else {
     apprise(RS.escapeHtml(error));
     $field
@@ -837,11 +912,13 @@ function cancelAutosavedEdits() {
         ),
         {
           structuredDocumentId: recordId,
+          expectedUsername: currentUser,
         },
         function (success) {
           if (success.data !== null) {
             var url = success.data;
             wasAutosaved = false;
+            hasEditLock = false;
             RS.confirmAndNavigateTo(RS.msg("legacyjs.workspace.documentEdit.editsCancelled"), "success", 1000, url);
           }
         },
@@ -851,10 +928,37 @@ function cancelAutosavedEdits() {
         RS.unblockPage();
       });
       jqxhr.fail(function () {
+        if (handleEditorSessionExpiry(jqxhr, true)) return;
         RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.cancelEditsAction"), false, jqxhr);
       });
     }
   );
+}
+
+function prepareDocumentSave() {
+  saveInProgress = true;
+  const ready = editSessionExpired
+    ? requestEditStatus(editable, recordId, true)
+    : $.Deferred().resolve().promise();
+
+  return ready.then(renameDocumentBeforeSaving).fail(function () {
+    saveInProgress = false;
+  });
+}
+
+function autosaveBeforeDocumentSave() {
+  RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
+  return autosave(true).always(function () {
+    RS.unblockPage();
+  }).fail(function () {
+    saveInProgress = false;
+  });
+}
+
+function reportDocumentSaveFailure(jqxhr) {
+  if (!handleEditorSessionExpiry(jqxhr)) {
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
+  }
 }
 
 function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
@@ -869,26 +973,14 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
     return;
   }
 
-  var renamePromise = renameDocumentBeforeSaving();
-
-  $.when(renamePromise).done(function () {
-    // wait for the renaming promise
-    saveInProgress = true;
-    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
-    var autosavePromise = autosave(true);
-    autosavePromise.always(function () {
-      RS.unblockPage();
-    });
-    autosavePromise.fail(function () {
-      saveInProgress = false;
-    });
-
-    $.when(autosavePromise).done(function () {
+  prepareDocumentSave().done(function () {
+    autosaveBeforeDocumentSave().done(function () {
       RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.saving"));
       var postData = {
         structuredDocumentId: recordId,
         unlock: unlock,
         settingsKey: settingsKey,
+        expectedUsername: currentUser,
       };
       var jqxhr = $.post(
         createURL(
@@ -958,9 +1050,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
           }
         }
       });
-      jqxhr.fail(function () {
-        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
-      });
+      jqxhr.fail(reportDocumentSaveFailure);
       displayStatus(editable);
     });
   });
@@ -978,21 +1068,8 @@ function saveCopyStructuredDocument() {
     return;
   }
 
-  var renamePromise = renameDocumentBeforeSaving();
-
-  $.when(renamePromise).done(function () {
-    // wait for the renaming promise
-    saveInProgress = true;
-    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
-    var autosavePromise = autosave(true);
-    autosavePromise.always(function () {
-      RS.unblockPage();
-    });
-    autosavePromise.fail(function () {
-      saveInProgress = false;
-    });
-
-    $.when(autosavePromise).done(function () {
+  prepareDocumentSave().done(function () {
+    autosaveBeforeDocumentSave().done(function () {
       RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.savingAndCopying"));
       var jqxhr = $.post(
         createURL(
@@ -1001,6 +1078,7 @@ function saveCopyStructuredDocument() {
         {
           structuredDocumentId: recordId,
           recordName: recordName,
+          expectedUsername: currentUser,
         },
         function (success) {
           if (success.data != null) {
@@ -1016,9 +1094,7 @@ function saveCopyStructuredDocument() {
         RS.unblockPage();
         saveInProgress = false;
       });
-      jqxhr.fail(function () {
-        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
-      });
+      jqxhr.fail(reportDocumentSaveFailure);
     });
   });
 }
@@ -1035,27 +1111,14 @@ function saveNewStructuredDocument() {
     return;
   }
 
-  var renamePromise = renameDocumentBeforeSaving();
-
-  $.when(renamePromise).done(function () {
-    // wait for the renaming promise
-    saveInProgress = true;
-    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
-    var autosavePromise = autosave(true);
-    autosavePromise.always(function () {
-      RS.unblockPage();
-    });
-    autosavePromise.fail(function () {
-      saveInProgress = false;
-    });
-
-    $.when(autosavePromise).done(function () {
+  prepareDocumentSave().done(function () {
+    autosaveBeforeDocumentSave().done(function () {
       RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.savingAndCreatingNew"));
       var jqxhr = $.post(
         createURL(
           "/workspace/editor/structuredDocument/ajax/saveNewStructuredDocument"
         ),
-        { structuredDocumentId: recordId },
+        { structuredDocumentId: recordId, expectedUsername: currentUser },
         function (success) {
           if (success.data != null) {
             var url = success.data;
@@ -1072,9 +1135,7 @@ function saveNewStructuredDocument() {
         RS.unblockPage();
         saveInProgress = false;
       });
-      jqxhr.fail(function () {
-        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
-      });
+      jqxhr.fail(reportDocumentSaveFailure);
     });
   });
 }
@@ -1085,7 +1146,7 @@ function unlockRecord() {
     return;
   }
   console.log("unlocking record as window is closing...");
-  var data = { id: recordId };
+  var data = { id: recordId, expectedUsername: currentUser };
   $.post(
     createURL("/workspace/editor/structuredDocument/ajax/unlockrecord"),
     data,
