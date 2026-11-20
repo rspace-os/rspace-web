@@ -11,9 +11,11 @@ import materialTheme from "@/theme";
 import TemplateFields from "../TemplateFields";
 
 /*
- * The picker reports a time it cannot read only in states hard to type in
- * jsdom, so a stub reports one. Like the picker, which holds its sections, the
- * stub holds the typed text itself and publishes no time until it is complete.
+ * Simulates a picker-reported error: the stub calls onChange with valid: false
+ * for an incomplete entry, which the real MUI X picker does not do for hours
+ * typed into an empty field (it keeps the sections and publishes nothing).
+ * These tests pin how Inventory handles an invalid callback, and that a
+ * component holding its own text keeps it while hidden.
  */
 vi.mock("@/components/Inputs/TimeField", async () => {
   const { useState } = await import("react");
@@ -75,11 +77,11 @@ describe("TemplateFields -- time field", () => {
   });
 });
 
-describe("TemplateFields -- a time hidden while it is incomplete", () => {
+describe("TemplateFields -- a time hidden while the picker reports it invalid", () => {
   setupRealAppI18n();
   const SERVICED_KEY = "6f1c2e0a-0000-4000-8000-000000000041";
 
-  it("shows the incomplete time again as typed once the field is shown, and saves once it is cleared", async () => {
+  it("shows the reported-invalid time again as typed once the field is shown, and saves once it is cleared", async () => {
     const user = userEvent.setup();
     const instrument = renderTemplateFields([
       {
