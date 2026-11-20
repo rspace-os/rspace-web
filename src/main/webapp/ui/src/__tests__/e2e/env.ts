@@ -33,6 +33,7 @@ export const env = {
   ci: process.env.CI === "true",
   integrationMode: optional("E2E_INTEGRATION_MODE", "mock") === "real" ? ("real" as const) : ("mock" as const),
   browser: optional("E2E_BROWSER", ""),
+  ssoLogoutUrl: optional("E2E_SSO_LOGOUT_URL", ""),
   cloud: booleanFlag("E2E_CLOUD", false),
   mockPort: optional("E2E_MOCK_PORT", "9099"),
   playwrightLog: optional("PW_LOG", "off") as "trace" | "info" | "off",
