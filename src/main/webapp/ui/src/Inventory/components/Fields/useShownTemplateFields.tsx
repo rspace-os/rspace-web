@@ -28,8 +28,11 @@ type Settled = { session: string; typed: string };
 /**
  * The template fields of a sample or instrument that display rules leave
  * shown, and a live region announcing the ones an answer shows or hides. Hidden
- * fields keep their values but leave the page, so they also stop counting
- * towards the form section's error state.
+ * fields keep their values and stop counting towards the form section's error
+ * state. They leave the page, except that one whose value is invalid stays
+ * mounted but hidden, so the text the user typed, which a number input or a
+ * date or time picker holds only in itself, is there to correct or clear when
+ * the field is shown again; it counts as an error again once shown.
  *
  * Only what is rendered and announced waits: the record's own `isFieldHidden`,
  * which saving and mandatory checks read, always follows the current values.
@@ -43,10 +46,6 @@ type Settled = { session: string; typed: string };
  *    checked again when the window regains focus or focus lands anywhere else.
  *  - Another record, a reload, or leaving edit mode applies the current
  *    visibility at once; the pending update is dropped, as it is on unmount.
- *
- * A hidden field whose value is invalid stays mounted but hidden, so the text
- * the user typed, which a number input or a date or time picker holds only in
- * itself, is there to correct or clear when the field is shown again.
  *
  * Hosts render `renderedFields`, wrapping each with `wrapField`, which tracks
  * focus and hides the fields kept for their invalid text, and report errors
@@ -129,12 +128,19 @@ export default function useShownTemplateFields(
   const renderedFields = fields.filter((field) => !renderedHidden.includes(field) || field.error);
   const hiddenNames = renderedHidden.map((field) => field.name);
   // the values say these are hidden even while they are still on screen, so they no longer count as errors
-  const errorFreeSignature = JSON.stringify([hidden.map((field) => field.name), hiddenNames]);
+  const errorFreeNames = [...new Set([...hidden.map((field) => field.name), ...hiddenNames])];
+  const errorFreeSignature = JSON.stringify(errorFreeNames);
+  const previousErrorFreeNames = useRef<ReadonlyArray<string>>([]);
 
-  // the signature stands for both name lists, which are new arrays on every render
+  // the signature stands for the name list, which is a new array on every render
   useEffect(() => {
-    for (const name of new Set([...hidden.map((field) => field.name), ...hiddenNames]))
-      onErrorStateChange(`template_${name}`, false);
+    for (const name of errorFreeNames) onErrorStateChange(`template_${name}`, false);
+    // a field shown again reports its error only on its next change, so report the error it still has
+    for (const field of fields) {
+      if (field.error && previousErrorFreeNames.current.includes(field.name) && !errorFreeNames.includes(field.name))
+        onErrorStateChange(`template_${field.name}`, true);
+    }
+    previousErrorFreeNames.current = errorFreeNames;
   }, [errorFreeSignature]);
 
   const wrapField = (field: Field, node: ReactNode) => (
