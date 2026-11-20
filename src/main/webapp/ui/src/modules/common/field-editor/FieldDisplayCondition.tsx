@@ -116,12 +116,13 @@ function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKi
 }
 
 /**
- * MUI gives a disabled item no focus styling, even where the arrow keys can
- * reach it, so a focused unavailable item would look like any other. The text
- * colour keeps at least 3:1 on the menu in every theme.
+ * A disabled item gets only the theme's primary-colour focus outline, which is
+ * too faint on the menu, even where the arrow keys can reach it. This outline
+ * uses the text colour, at least 3:1 on the menu in every theme, and lifts the
+ * disabled opacity while focused, since opacity would fade the outline too.
  */
 const showKeyboardFocus = (theme: Theme) => ({
-  "&:focus-visible": { outline: `2px solid ${theme.palette.text.primary}`, outlineOffset: -2 },
+  "&:focus-visible": { outline: `2px solid ${theme.palette.text.primary}`, outlineOffset: -2, opacity: 1 },
 });
 
 /**
