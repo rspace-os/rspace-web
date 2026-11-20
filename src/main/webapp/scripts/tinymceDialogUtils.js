@@ -36,6 +36,32 @@ var tinymceDialogUtils = {
     alert(text);
   },
 
+  openUrlWithCancel: function (editor, spec, onCancelRequest) {
+    const api = editor.windowManager.openUrl(spec);
+    const iframe = Array.from(document.querySelectorAll('.tox-dialog__body-iframe iframe'))
+      .findLast((element) => element.getAttribute('src') === spec.url);
+    const closeButton = iframe?.closest('.tox-dialog')
+      ?.querySelector('.tox-dialog__header button.tox-button--naked');
+
+    if (closeButton) {
+      // TinyMCE 5 closes unconditionally after onCancel. Let the request handler decide when to close.
+      closeButton.addEventListener('click', (event) => {
+        event.stopImmediatePropagation();
+        onCancelRequest();
+      }, true);
+
+      // TinyMCE handles these keys directly, bypassing the click event.
+      closeButton.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (!event.repeat) closeButton.click();
+        }
+      }, true);
+    }
+    return api;
+  },
+
   resizeDialogToContent: function (activeEditor, $content, extraWidth, extraHeight) {
     var extraWidth = extraWidth || 50;
     var extraHeight = extraHeight || 160;
