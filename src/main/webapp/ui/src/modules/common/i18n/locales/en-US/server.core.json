@@ -366,6 +366,22 @@
       "optionsNotAllowed": "Some supplied values are not allowed options",
       "radioSingleOptionOnly": "Only one option can be selected on a radio field"
     },
+    "fieldDisplayRule": {
+      "cycle": "The display rules on field [{0}] and the fields it depends on form a loop",
+      "keyDuplicate": "Field [{0}] has the same field key as another field",
+      "keyInvalid": "Field [{0}] has an invalid field key; keys must be lower-case UUIDs",
+      "operatorNotForSource": "The display rule on field [{0}] uses a condition that its source field does not support",
+      "ruleTooLong": "The display rule on field [{0}] is too long to save; use fewer or shorter values",
+      "sourceMissing": "The display rule on field [{0}] refers to a field that does not exist",
+      "sourceSelf": "The display rule on field [{0}] cannot depend on the field itself",
+      "sourceType": "The display rule on field [{0}] must depend on a radio, choice, number or one-line text field that is not a password field",
+      "valueBlank": "The display rule on field [{0}] needs a value to compare with",
+      "valueCount": "The display rule on field [{0}] must compare with exactly one value",
+      "valueDuplicate": "The display rule on field [{0}] lists the same option more than once",
+      "valueNotANumber": "The display rule on field [{0}] must compare with a number, such as 5, -2 or 2.5",
+      "valueTooMany": "The display rule on field [{0}] lists more than 1000 options",
+      "valueUnknown": "The display rule on field [{0}] uses an option that its source field does not offer"
+    },
     "form": {
       "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
       "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"

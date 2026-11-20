@@ -1,0 +1,4484 @@
+{
+  "description": "Shared vectors for display rules (RPD-339). Run by FieldDisplayRuleVectorsTest (Java) and displayRuleVectors.test.ts (TypeScript); both implementations must agree on every case. Valid rules are compared by JSON value, not by bytes. Keys are UUIDs; K1 is 00000000-0000-4000-8000-000000000001 and so on. A field's sourceKind (OPTIONS, TEXT, NUMBER or NONE) defaults to OPTIONS for RADIO and CHOICE and NONE otherwise; value is the raw text of a TEXT or NUMBER field and defaults to empty.",
+  "rules": {
+    "valid": [
+      {
+        "name": "is any of",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"Yes\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "is none of with several values, properties in another order",
+        "json": "{\"values\":[\"CL2\",\"CL3\"],\"operator\":\"IS_NONE_OF\",\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\"}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_NONE_OF\",\"values\":[\"CL2\",\"CL3\"]}"
+      },
+      {
+        "name": "has value omits values",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "has no value with an empty values array",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_NO_VALUE\",\"values\":[]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"HAS_NO_VALUE\"}"
+      },
+      {
+        "name": "control characters, quotes, backslashes and non-ASCII survive a round trip",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"a\\u001fb\",\"q\\\"uote\",\"back\\\\slash\",\"line\\nbreak\",\"tab\\t\",\"bell\\u0007\",\"é\",\"x y\",\"😀\"]}"
+      },
+      {
+        "name": "a lone surrogate survives a round trip",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\uD800y\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"x\\ud800y\"]}"
+      },
+      {
+        "name": "a repeated property takes its last value, as JSON.parse does",
+        "json": "{\"sourceFieldKey\":\"x\",\"operator\":\"BAD\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"x\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "a vertical tab survives a round trip",
+        "json": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}",
+        "canonical": "{\"sourceFieldKey\":\"00000000-0000-4000-8000-000000000001\",\"operator\":\"IS_ANY_OF\",\"values\":[\"v\\u000bt\"]}"
+      },
+      {
+        "name": "a repeated source key takes its last value",
+        "json": "{\"sourceFieldKey\":7,\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "repeated values take their last value",
+        "json": "{\"values\":[1],\"values\":[],\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "blank source key parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\" \",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "blank value parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\"]}"
+      },
+      {
+        "name": "value that is only a non-breaking space parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\"\\u00a0\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[\" \"]}"
+      },
+      {
+        "name": "source key that is only an ideographic space parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"\\u3000\",\"operator\":\"HAS_VALUE\"}",
+        "canonical": "{\"sourceFieldKey\":\"　\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "text equals",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"EQUALS\",\"values\":[\"Yes\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"EQUALS\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "number at least, stored as sent",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"AT_LEAST\",\"values\":[\"1.00\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"AT_LEAST\",\"values\":[\"1.00\"]}"
+      },
+      {
+        "name": "a comparison with no values parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"CONTAINS\"}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"CONTAINS\"}"
+      },
+      {
+        "name": "a comparison with two values parses (the validator rejects it)",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"LESS_THAN\",\"values\":[\"1\",\"2\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"LESS_THAN\",\"values\":[\"1\",\"2\"]}"
+      },
+      {
+        "name": "a number value is kept as written: '+5' is not rewritten to '5'",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"GREATER_THAN\",\"values\":[\"+5\"]}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"GREATER_THAN\",\"values\":[\"+5\"]}"
+      },
+      {
+        "name": "a comparison with null values parses",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"NOT_EQUALS\",\"values\":null}",
+        "canonical": "{\"sourceFieldKey\":\"k\",\"operator\":\"NOT_EQUALS\"}"
+      }
+    ],
+    "invalid": [
+      {
+        "name": "not JSON",
+        "json": "show when yes"
+      },
+      {
+        "name": "not an object",
+        "json": "[]"
+      },
+      {
+        "name": "trailing tokens",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"} {}"
+      },
+      {
+        "name": "unknown operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"MATCHES\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "missing operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "missing source key",
+        "json": "{\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "unknown property",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"effect\":\"HIDE\"}"
+      },
+      {
+        "name": "is any of without values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\"}"
+      },
+      {
+        "name": "is none of with empty values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_NONE_OF\",\"values\":[]}"
+      },
+      {
+        "name": "has value with values",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"values\":[\"Yes\"]}"
+      },
+      {
+        "name": "non-string value",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[1]}"
+      },
+      {
+        "name": "null value",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":[null]}"
+      },
+      {
+        "name": "numeric operator",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":2}"
+      },
+      {
+        "name": "numeric source key",
+        "json": "{\"sourceFieldKey\":7,\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "JSON null",
+        "json": "null"
+      },
+      {
+        "name": "empty property name",
+        "json": "{\"\":1,\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\"}"
+      },
+      {
+        "name": "operator with surrounding spaces",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\" HAS_VALUE \"}"
+      },
+      {
+        "name": "operator in lower case",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"has_value\"}"
+      },
+      {
+        "name": "a repeated property whose last value is invalid",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"HAS_VALUE\",\"operator\":\"BAD\"}"
+      },
+      {
+        "name": "values that are not an array",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"IS_ANY_OF\",\"values\":\"Yes\"}"
+      },
+      {
+        "name": "empty input",
+        "json": ""
+      },
+      {
+        "name": "comparison values that are not an array",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"EQUALS\",\"values\":\"5\"}"
+      },
+      {
+        "name": "operator name for another kind in lower case",
+        "json": "{\"sourceFieldKey\":\"k\",\"operator\":\"greater_than\",\"values\":[\"5\"]}"
+      }
+    ]
+  },
+  "visibility": [
+    {
+      "name": "field without a rule is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        }
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "keyless field without a rule is shown",
+      "fields": [
+        {
+          "key": null,
+          "type": "STRING"
+        },
+        {
+          "key": null,
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "every operator against a visible source with no value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "every operator against a visible source with a non-matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "is any of with a matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Unsure"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "multi-select choice source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "A",
+            "B",
+            "C"
+          ],
+          "selectedOptions": [
+            "A",
+            "C"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "C"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "B",
+              "C"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "B"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "a hidden source hides its dependents under every operator, even when it holds a matching value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "CL1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_NO_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "chain three deep, all conditions met",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "X",
+            "Y"
+          ],
+          "selectedOptions": [
+            "X"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "X"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "chain three deep, top condition fails",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "CL1",
+            "CL3"
+          ],
+          "selectedOptions": [
+            "CL3"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "X",
+            "Y"
+          ],
+          "selectedOptions": [
+            "X"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "CL3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "X"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "dependent listed before its source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule whose source does not exist leaves the field shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "fields on a cycle and their dependents are hidden; others are not",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING"
+        }
+      ],
+      "expected": [
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "a field that is its own source is hidden",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        false
+      ]
+    },
+    {
+      "name": "when two fields share a key, the first one is the source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "text comparisons trim the shared whitespace set and ignore case",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": " Yes 　"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "YES "
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "E"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "no"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "lower-casing is not case folding: Straße does not equal STRASSE",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "Straße"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "STRASSE"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "STRASSE"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "straße"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "composed and decomposed accents match",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "Café"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "Café"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "é"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a text value that is only a non-breaking space has no value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": " "
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "x"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "x"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "x"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "an empty number has no value and fails every comparison but not equals",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_MOST",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_LEAST",
+            "values": [
+              "1"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "abc in a number field has a value but is not a number",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "abc"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_MOST",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_LEAST",
+            "values": [
+              "1"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "number comparisons at the boundary",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_MOST",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "4.99"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_LEAST",
+            "values": [
+              "5.0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "-5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "1.0 equals 1, and a rule value 1.00 equals 1",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1.0"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1.00"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "-0 equals 0",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "-0"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "-0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "numbers compare exactly beyond double precision",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "12345678901234567890.1"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "12345678901234567890"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "12345678901234567890"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "the number grammar reads '.5' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ".5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0.5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "the number grammar reads '5.' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5."
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "the number grammar reads '+5' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "+5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "the number grammar reads '1e-3' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e-3"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0.001"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "the number grammar reads '2E2' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "2E2"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "199"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "the number grammar reads ' 7 ' as a number field value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": " 7 "
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "AT_LEAST",
+            "values": [
+              "7"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a field value the decimal libraries do not read alike is not a number",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0x1F"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "31"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5L"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1,5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000005",
+            "operator": "EQUALS",
+            "values": [
+              "1.5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e2001"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000007",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "numbers are read by BigDecimal and decimal.js, kept in agreement: only ASCII digits, signs, points and e; at most nine exponent digits; zero or a leading digit within 10^±2000",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "Infinity"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "NaN"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0b1"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000005",
+            "operator": "EQUALS",
+            "values": [
+              "1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0o7"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000007",
+            "operator": "EQUALS",
+            "values": [
+              "7"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1_000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000010",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "EQUALS",
+            "values": [
+              "1000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000011",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "١٢"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000012",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000011",
+            "operator": "EQUALS",
+            "values": [
+              "12"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000013",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "５"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000014",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000013",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000015",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e2001"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000016",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000015",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000017",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "-1e-2001"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000018",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000017",
+            "operator": "LESS_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000019",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e0000000005"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000020",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000019",
+            "operator": "EQUALS",
+            "values": [
+              "100000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000021",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0e9999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000022",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000021",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000023",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e-99999999999999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000024",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000023",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000025",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e1000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000026",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000025",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000027",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e-2000"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000028",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000027",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000029",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1e000000005"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000030",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000029",
+            "operator": "EQUALS",
+            "values": [
+              "100000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000031",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "0e-999999999"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000032",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000031",
+            "operator": "EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: an operator for another kind (text source, less than)",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "9"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: an operator for another kind (number source, contains)",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: an option operator on a text source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "Yes"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_NONE_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a comparison on an option source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "selectedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a source that cannot be a source (a password field)",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "NONE",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a comparison with no value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "x"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": []
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a comparison with two values",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "x"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "a",
+              "b"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a blank text value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "x"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "  "
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule that cannot apply leaves the field shown: a blank number value",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "1"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              ""
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule's number value '+5' is read with the field values' grammar: 5 equals it, so not equals hides the field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "+5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "a rule's number value '.5' is read with the field values' grammar: 5 is not equal to it, so the field is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              ".5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule's number value '5.' is read with the field values' grammar: 5 equals it, so not equals hides the field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "5."
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "a rule's number value '1e0' is read with the field values' grammar: 5 is not equal to it, so the field is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "1e0"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule's number value ' 5' is not trimmed, so the rule does not apply and the field is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              " 5"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a rule's number value '05' is read with the field values' grammar: 5 equals it, so not equals hides the field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "05"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "a rule's number value 'abc' is not a number, so the rule does not apply and the field is shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "5"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "abc"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "an inapplicable rule on a hidden source leaves the field shown; a valid rule on it hides",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ],
+          "selectedOptions": [
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "batch",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "LESS_THAN",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "an inapplicable rule inside what would be a cycle drops its dependency first, so both fields are shown",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "x",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "EQUALS",
+            "values": []
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true
+      ]
+    },
+    {
+      "name": "final sigma is read as sigma, so both sides agree whatever their lower-casing context rules",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "A1Σ"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "a1σ"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "A1ς"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "ΟΔΟΣ"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000004",
+            "operator": "EQUALS",
+            "values": [
+              "οδοσ"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000004",
+            "operator": "CONTAINS",
+            "values": [
+              "ς"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "Vithkuqi capital U+10570 lowers to U+10597 (Unicode 14); on Java 17 this tells ICU4J lowercasing from the JDK's",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "𐕰"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "𐖗"
+            ]
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "the whitespace set trims exactly its members: U+000B, U+FEFF, U+1680, U+2028 and U+202F do; U+001C to U+001F, U+0085, U+200B and U+180E do not",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "\u000b﻿   \t\n\f\r      　x\u000b﻿   \t\n\f\r      　"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "X"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "\u001c"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "\u001d"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000005",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "\u001e"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000007",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "\u001f"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000010",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000011",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000012",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000011",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000013",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "​"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000014",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000013",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000015",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "᠎"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000016",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000015",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "a number value longer than 1000 characters after trimming is not a number",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": " 1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111 "
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "GREATER_THAN",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        true
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "name": "a valid set, including an option that is offered but not selected",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No",
+            "Unsure"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Unsure"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "a forward reference is valid",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "A"
+          ]
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "keyless fields without rules are valid",
+      "fields": [
+        {
+          "key": null,
+          "type": "STRING"
+        },
+        {
+          "key": null,
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "an option the source does not offer",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a duplicated key is reported on every field that has it",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyDuplicate"
+        },
+        {
+          "fieldIndex": 2,
+          "code": "validation.fieldDisplayRule.keyDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "a key that is not a UUID",
+      "fields": [
+        {
+          "key": "permit-number",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        }
+      ]
+    },
+    {
+      "name": "a source that does not exist",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a field that is its own source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceSelf"
+        }
+      ]
+    },
+    {
+      "name": "a source that is not a radio or choice field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.sourceType"
+        }
+      ]
+    },
+    {
+      "name": "a cycle is reported on the fields in it, not on their dependents",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.cycle"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.cycle"
+        }
+      ]
+    },
+    {
+      "name": "a field can have a key problem and a rule problem",
+      "fields": [
+        {
+          "key": "bad",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        },
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a key with upper-case hex digits (keys are compared case-sensitively, so only lower case is allowed)",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-00000000000A",
+          "type": "STRING"
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.keyInvalid"
+        }
+      ]
+    },
+    {
+      "name": "a cycle is reported even when its rules also name unknown options",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ],
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        },
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.cycle"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.cycle"
+        }
+      ]
+    },
+    {
+      "name": "a blank source key names no field",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": " ",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a whitespace-only value that is not an option",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              " "
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a whitespace-only value is valid when the source offers it",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            " "
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              " "
+            ]
+          }
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "a value listed twice",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "a value listed twice among others",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "No",
+              "Yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        }
+      ]
+    },
+    {
+      "name": "values that differ only in case are not duplicates",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Yes",
+              "yes"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "a duplicate unknown value is reported as both",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "RADIO",
+          "allowedOptions": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "Maybe",
+              "Maybe"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueDuplicate"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueUnknown"
+        }
+      ]
+    },
+    {
+      "name": "valid text and number rules, with values stored as sent",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "Yes"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              " LOT "
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "NOT_EQUALS",
+            "values": [
+              "a b"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_NO_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "GREATER_THAN",
+            "values": [
+              "-2.5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "EQUALS",
+            "values": [
+              "1.00"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "AT_MOST",
+            "values": [
+              "-0"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000010",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "an operator that does not suit the source's kind",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "CHOICE",
+          "allowedOptions": [
+            "A"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "LESS_THAN",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "CONTAINS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000003",
+            "operator": "EQUALS",
+            "values": [
+              "A"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "IS_ANY_OF",
+            "values": [
+              "A"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 3,
+          "code": "validation.fieldDisplayRule.operatorNotForSource"
+        },
+        {
+          "fieldIndex": 4,
+          "code": "validation.fieldDisplayRule.operatorNotForSource"
+        },
+        {
+          "fieldIndex": 5,
+          "code": "validation.fieldDisplayRule.operatorNotForSource"
+        },
+        {
+          "fieldIndex": 6,
+          "code": "validation.fieldDisplayRule.operatorNotForSource"
+        }
+      ]
+    },
+    {
+      "name": "a source of kind NONE, such as a password field, keeps the source type error whatever the operator",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "NONE"
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "x"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.sourceType"
+        },
+        {
+          "fieldIndex": 2,
+          "code": "validation.fieldDisplayRule.sourceType"
+        }
+      ]
+    },
+    {
+      "name": "a comparison needs exactly one value; a repeated value is a count error, not a duplicate",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": []
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "a",
+              "b"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "CONTAINS",
+            "values": [
+              "a",
+              "a"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.valueCount"
+        },
+        {
+          "fieldIndex": 2,
+          "code": "validation.fieldDisplayRule.valueCount"
+        },
+        {
+          "fieldIndex": 3,
+          "code": "validation.fieldDisplayRule.valueCount"
+        }
+      ]
+    },
+    {
+      "name": "a blank comparison value, by the shared whitespace set",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              ""
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              " 　"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "EQUALS",
+            "values": [
+              " "
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 2,
+          "code": "validation.fieldDisplayRule.valueBlank"
+        },
+        {
+          "fieldIndex": 3,
+          "code": "validation.fieldDisplayRule.valueBlank"
+        },
+        {
+          "fieldIndex": 4,
+          "code": "validation.fieldDisplayRule.valueBlank"
+        }
+      ]
+    },
+    {
+      "name": "a number rule value must be a number as written, untrimmed, read the same way as field values",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": ""
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "+5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000003",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              ".5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000004",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "5."
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000005",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e-3"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000006",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "abc"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000007",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "05"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000008",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              " 5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000009",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1,5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000010",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "5"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000011",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000012",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000013",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e2001"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000014",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e1000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000015",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e-2000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000016",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e000000005"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000017",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "Infinity"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000018",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "NaN"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000019",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0x1F"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000020",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0b1"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000021",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0o7"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000022",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1_000"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000023",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "١٢"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000024",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "５"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000025",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "1e0000000005"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000026",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "0e9999999999"
+            ]
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000027",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "-1e-2001"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 5,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 7,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 8,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 11,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 12,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 16,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 17,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 18,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 19,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 20,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 21,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 22,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 23,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 24,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 25,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        },
+        {
+          "fieldIndex": 26,
+          "code": "validation.fieldDisplayRule.valueNotANumber"
+        }
+      ]
+    },
+    {
+      "name": "a text rule value is not checked against options",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "allowedOptions": [
+            "only"
+          ]
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "other"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": []
+    },
+    {
+      "name": "a comparison whose source does not exist reports only the missing source",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "STRING",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000009",
+            "operator": "EQUALS",
+            "values": []
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.sourceMissing"
+        }
+      ]
+    },
+    {
+      "name": "a cycle through text and number sources is still a cycle",
+      "fields": [
+        {
+          "key": "00000000-0000-4000-8000-000000000001",
+          "type": "STRING",
+          "sourceKind": "TEXT",
+          "value": "",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000002",
+            "operator": "HAS_VALUE"
+          }
+        },
+        {
+          "key": "00000000-0000-4000-8000-000000000002",
+          "type": "NUMBER",
+          "sourceKind": "NUMBER",
+          "value": "",
+          "rule": {
+            "sourceFieldKey": "00000000-0000-4000-8000-000000000001",
+            "operator": "EQUALS",
+            "values": [
+              "x"
+            ]
+          }
+        }
+      ],
+      "expectedErrors": [
+        {
+          "fieldIndex": 0,
+          "code": "validation.fieldDisplayRule.cycle"
+        },
+        {
+          "fieldIndex": 1,
+          "code": "validation.fieldDisplayRule.cycle"
+        }
+      ]
+    }
+  ],
+  "elnChoice": [
+    {
+      "data": "",
+      "expected": []
+    },
+    {
+      "data": "   ",
+      "expected": []
+    },
+    {
+      "data": "fieldChoices=a",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "fieldChoices=a&fieldChoices=b",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "data": "fieldChoices=val 1&fieldChoices=val 2",
+      "expected": [
+        "val 1",
+        "val 2"
+      ]
+    },
+    {
+      "data": "fieldChoices=x=y",
+      "expected": [
+        "x"
+      ]
+    },
+    {
+      "data": "fieldChoices=a&",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "&fieldChoices=a",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "data": "fieldChoices=",
+      "expected": []
+    },
+    {
+      "data": "no separator",
+      "expected": []
+    }
+  ],
+  "limits": {
+    "description": "Generated rules at the size limits. Field 0 (K1) is a RADIO field offering every value; field 1 (K2) is a STRING field with an IS_ANY_OF rule on K1. Value i (from 0) is pad repeated padCount times followed by i as five zero-padded digits; when tailLength is positive, one more value of that many 'x' characters follows. jsonLength is the length of the rule as Java's toJson() writes it, with every non-ASCII UTF-16 unit escaped.",
+    "maxValues": 1000,
+    "maxJsonLength": 32768,
+    "cases": [
+      {
+        "name": "the most values a rule may list",
+        "valueCount": 1000,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 8091,
+        "expectedErrors": []
+      },
+      {
+        "name": "one value more than the most a rule may list",
+        "valueCount": 1001,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 8099,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.valueTooMany"
+          }
+        ]
+      },
+      {
+        "name": "far too many values is reported as too many, not too long",
+        "valueCount": 20000,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 0,
+        "jsonLength": 160091,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.valueTooMany"
+          }
+        ]
+      },
+      {
+        "name": "exactly the longest a rule may be, counting non-ASCII and control characters as stored escapes",
+        "valueCount": 400,
+        "pad": "é😀\n\"\u0001",
+        "padCount": 2,
+        "tailLength": 7074,
+        "jsonLength": 32768,
+        "expectedErrors": []
+      },
+      {
+        "name": "one character longer than a rule may be",
+        "valueCount": 400,
+        "pad": "é😀\n\"\u0001",
+        "padCount": 2,
+        "tailLength": 7075,
+        "jsonLength": 32769,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
+      },
+      {
+        "name": "one value longer than a whole rule may be",
+        "valueCount": 0,
+        "pad": "",
+        "padCount": 0,
+        "tailLength": 40000,
+        "jsonLength": 40094,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
+      },
+      {
+        "name": "values each within the budget that together are longer than a whole rule may be",
+        "valueCount": 2,
+        "pad": "x",
+        "padCount": 19995,
+        "tailLength": 0,
+        "jsonLength": 40097,
+        "expectedErrors": [
+          {
+            "fieldIndex": 1,
+            "code": "validation.fieldDisplayRule.ruleTooLong"
+          }
+        ]
+      }
+    ]
+  },
+  "canonicalNumbers": {
+    "description": "A number in canonical form, from RuleValues.canonicalNumber (Java) and canonicalRuleNumber (TypeScript): trimmed, plain decimal notation, no trailing zeros, no sign on zero; null when the value is not a number. When the plain form would be longer than the 1000-character limit on values read as numbers, the trimmed value is kept as written, so every canonical value is a number as written and is its own canonical form.",
+    "cases": [
+      {
+        "value": "1.50",
+        "canonical": "1.5"
+      },
+      {
+        "value": "+5",
+        "canonical": "5"
+      },
+      {
+        "value": ".5",
+        "canonical": "0.5"
+      },
+      {
+        "value": "5.",
+        "canonical": "5"
+      },
+      {
+        "value": "05",
+        "canonical": "5"
+      },
+      {
+        "value": "1e3",
+        "canonical": "1000"
+      },
+      {
+        "value": "1E+3",
+        "canonical": "1000"
+      },
+      {
+        "value": "1e-3",
+        "canonical": "0.001"
+      },
+      {
+        "value": "-0",
+        "canonical": "0"
+      },
+      {
+        "value": "-0.0",
+        "canonical": "0"
+      },
+      {
+        "value": "0e-5",
+        "canonical": "0"
+      },
+      {
+        "value": "100",
+        "canonical": "100"
+      },
+      {
+        "value": "-12.3400e2",
+        "canonical": "-1234"
+      },
+      {
+        "value": "1e-7",
+        "canonical": "0.0000001"
+      },
+      {
+        "value": "123456789012345678901234567890.10",
+        "canonical": "123456789012345678901234567890.1"
+      },
+      {
+        "value": " 7 ",
+        "canonical": "7"
+      },
+      {
+        "value": "1e999",
+        "canonical": "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "value": "1e1000",
+        "canonical": "1e1000"
+      },
+      {
+        "value": "-1e999",
+        "canonical": "-1e999"
+      },
+      {
+        "value": "1e-998",
+        "canonical": "0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      },
+      {
+        "value": "1e-999",
+        "canonical": "1e-999"
+      },
+      {
+        "value": " 1E+1000 ",
+        "canonical": "1E+1000"
+      },
+      {
+        "value": "1e2000",
+        "canonical": "1e2000"
+      },
+      {
+        "value": "1e2001",
+        "canonical": null
+      },
+      {
+        "value": "abc",
+        "canonical": null
+      },
+      {
+        "value": " ",
+        "canonical": null
+      },
+      {
+        "value": "Infinity",
+        "canonical": null
+      },
+      {
+        "value": "0x1F",
+        "canonical": null
+      },
+      {
+        "value": "５",
+        "canonical": null
+      }
+    ]
+  }
+}
