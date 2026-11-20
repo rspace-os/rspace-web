@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -574,6 +575,38 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
         updater.changeDataForImportedField(
             field, NEWID, mp, FieldParserConstants.ATTACHMENT_CLASSNAME, 0);
     assertThat(updated.getFieldData()).doesNotContain(OLDID + "");
+  }
+
+  // RSDEV-1456
+  @Test
+  public void changeAttachmentDataSkipsExternalFileStoreLinks() {
+    String dropboxHref = "https://www.dropbox.com/s/abc/x.xlsx?dl=0";
+    String externalDiv =
+        "<div class=\"externalAttachmentDiv mceNonEditable\"><p class=\"attachmentP\">"
+            + "<a id=\"attachOnText_dropbox-x.xlsx-1\" class=\"attachmentLinked\" href=\""
+            + dropboxHref
+            + "\" target=\"_blank\" data-externalfilestore=\"dropbox\">x.xlsx</a></p></div>";
+    String internalDiv =
+        "<div class=\"attachmentDiv\"><p class=\"attachmentP\"><a id=\"attachOnText_45123\""
+            + " class=\"attachmentLinked\" href=\"internal.txt\">internal.txt</a></p></div>";
+
+    for (String html : new String[] {externalDiv + internalDiv, internalDiv + externalDiv}) {
+      Field field = FieldTestUtils.createTextField();
+      field.setData(html);
+      Map<String, String> attrs = new HashMap<>();
+      attrs.put("href", "internal.txt");
+      Field updated =
+          updater.changeDataForImportedField(
+              field, 70123L, attrs, FieldParserConstants.ATTACHMENT_CLASSNAME, 0);
+
+      Document doc = Jsoup.parse(updated.getFieldData());
+      Element external = doc.selectFirst("a[data-externalfilestore]");
+      assertEquals(dropboxHref, external.attr("href"));
+      assertEquals("attachOnText_dropbox-x.xlsx-1", external.id());
+      Element internal = doc.selectFirst("a.attachmentLinked:not([data-externalfilestore])");
+      assertEquals("/Streamfile/70123/internal.txt", internal.attr("href"));
+      assertEquals("attachOnText_70123", internal.id());
+    }
   }
 
   @Test
