@@ -9,12 +9,13 @@ import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/invent
 import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
+import FeatureFlagDevtoolsMount from "./featureFlags/FeatureFlagDevtoolsMount";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
 
 const queryClient = new QueryClient();
 
-export function App(): React.ReactNode {
+export function App({ canUseDevtools = false }: { canUseDevtools?: boolean }): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
   const [loadingDone, setLoadingDone] = useState(false);
 
@@ -55,6 +56,7 @@ export function App(): React.ReactNode {
                   <Analytics>
                     <Router />
                   </Analytics>
+                  <FeatureFlagDevtoolsMount canUseDevtools={canUseDevtools} />
                 </QueryClientProvider>
               </ThemeProvider>
             </StyledEngineProvider>
