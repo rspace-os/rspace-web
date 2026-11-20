@@ -128,6 +128,10 @@ public class LuceneSrchCfg {
     return delegate.getSharedWithFilter();
   }
 
+  public List<Long> getCommunalFolderIds() {
+    return delegate.getCommunalFolderIds();
+  }
+
   public boolean isRestrictByUser() {
     return delegate.isRestrictByUser();
   }

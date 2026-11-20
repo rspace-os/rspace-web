@@ -128,7 +128,6 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(pi, member);
 
     Group group = createGroup("Shared folder search", pi);
-    group.setSelfService(true);
     addUsersToGroup(pi, group, member);
     Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
     assertEquals(pi, sharedFolder.getOwner());
@@ -147,12 +146,11 @@ public class SearchManagerTest extends SearchSpringTestBase {
     logoutAndLoginAs(member);
     assertTrue(permissionUtils.isPermitted(sharedFolder, PermissionType.READ, member));
     assertFalse(permissionUtils.isPermitted(privateDocument, PermissionType.READ, member));
-    assertThat(
-            searchMgr
-                .searchWorkspaceRecords(
-                    createSimpleGeneralSearchCfg(sharedFolder.getName()), member)
-                .getResults())
-        .containsExactly(sharedFolder);
+    ISearchResults<BaseRecord> results =
+        searchMgr.searchWorkspaceRecords(
+            createSimpleGeneralSearchCfg(sharedFolder.getName()), member);
+    assertThat(results.getResults()).containsExactly(sharedFolder);
+    assertEquals(1L, results.getTotalHits().longValue());
   }
 
   /** Check if we can search documents created from templates by the template name */
@@ -1336,8 +1334,12 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertThat(results).contains(docPi);
     assertThat(results).doesNotContain(docUserB);
 
-    // userInGroup can only see their files
+    // The member can read the PI-owned communal folder.
     input = createSimpleOwnerSearchCfg(pi.getUsername() + "," + otherUser.getUsername());
+    results = searchMgr.searchWorkspaceRecords(input, userInGroup).getResults();
+    assertThat(results).containsExactly(folderDao.getSharedFolderForGroup(group));
+
+    input = createSimpleOwnerSearchCfg(otherUser.getUsername());
     results = searchMgr.searchWorkspaceRecords(input, userInGroup).getResults();
     assertThat(results).isEmpty();
   }

@@ -1,13 +1,20 @@
 package com.researchspace.dao.hibernate;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static com.researchspace.testutils.SearchTestUtils.createSimpleGeneralSearchCfg;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.axiope.search.IFullTextSearcher;
 import com.axiope.search.InventorySearchConfig;
 import com.axiope.search.InventorySearchConfig.InventorySearchType;
 import com.axiope.search.SearchConfig;
 import com.axiope.search.SearchConstants;
+import com.axiope.search.SearchManager;
 import com.axiope.search.SearchUtils;
 import com.axiope.search.WorkspaceSearchConfig;
 import com.researchspace.api.v1.model.ApiContainer;
@@ -21,12 +28,16 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.BaseDaoTestCase;
+import com.researchspace.dao.TextSearchDao;
+import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
 import com.researchspace.testutils.SearchTestUtils;
@@ -35,12 +46,50 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class FullTextSearcherTest extends BaseDaoTestCase {
 
   @Autowired private FullTextSearcherImpl fts;
   @Autowired private LuceneSearchTermListFactory termListFactory;
+  @Autowired private SearchManager searchManager;
+  @Autowired private TextSearchDao textSearchDao;
+
+  @Test
+  void communalFolderIsACandidateButMatchingPrivatePiDocumentIsExcluded() throws IOException {
+    User pi = createAndSaveAPi();
+    User member = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, member);
+    Group group = createGroup("Candidate search " + getRandomName(8), pi);
+    addUsersToGroup(pi, group, member);
+    Folder sharedFolder = folderDao.getSharedFolderForGroup(group);
+    String searchTerm = sharedFolder.getName();
+
+    logoutAndLoginAs(pi);
+    StructuredDocument privateDocument = createBasicDocumentInRootFolderWithText(pi, "Private");
+    assertTrue(recordMgr.renameRecord(searchTerm, privateDocument.getId(), pi));
+    logoutAndLoginAs(member);
+    StructuredDocument memberDocument = createBasicDocumentInRootFolderWithText(member, "Mine");
+    assertTrue(recordMgr.renameRecord(searchTerm, memberDocument.getId(), member));
+    flushToSearchIndices();
+
+    SearchManager target = AopTestUtils.getUltimateTargetObject(searchManager);
+    TextSearchDao recordingDao = mock(TextSearchDao.class, delegatesTo(textSearchDao));
+    ReflectionTestUtils.setField(target, "textSearchDao", recordingDao);
+    try {
+      searchManager.searchWorkspaceRecords(createSimpleGeneralSearchCfg(searchTerm), member);
+    } finally {
+      ReflectionTestUtils.setField(target, "textSearchDao", textSearchDao);
+    }
+    ArgumentCaptor<SearchConfig> config = ArgumentCaptor.forClass(SearchConfig.class);
+    verify(recordingDao).getSearchedElnResults(config.capture());
+
+    assertThat(fts.getElnHibernateList(new LuceneSrchCfg(config.getValue(), termListFactory)))
+        .containsExactlyInAnyOrder(sharedFolder, memberDocument);
+  }
 
   @Test
   public void testRepaginationOfResults() {

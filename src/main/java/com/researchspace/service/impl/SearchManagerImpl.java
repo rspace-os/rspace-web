@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -113,16 +112,13 @@ public class SearchManagerImpl implements SearchManager {
     if (user.hasRole(Role.SYSTEM_ROLE)) {
       configureForSysAdminSearch(searchConfig, userFilter);
     }
-    Set<String> usernameFilter =
-        userFilter.stream()
-            .map(User::getUsername)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    if (searchConfig.isRestrictByUser()) {
-      // A communal folder's ACL can grant access without an explicit sharing record.
-      usernameFilter.addAll(folderDao.getCommunalFolderOwnerUsernames(user));
-    }
+    List<String> usernameFilter =
+        userFilter.stream().map(User::getUsername).collect(Collectors.toList());
     usernameFilter.add(Constants.SYSADMIN_UNAME); // Sysadmin1 added to see public folders
-    searchConfig.setUsernameFilter(new ArrayList<>(usernameFilter));
+    searchConfig.setUsernameFilter(usernameFilter);
+    if (searchConfig.isRestrictByUser()) {
+      searchConfig.setCommunalFolderIds(folderDao.getCommunalFolderIds(user));
+    }
     return searchConfig;
   }
 
