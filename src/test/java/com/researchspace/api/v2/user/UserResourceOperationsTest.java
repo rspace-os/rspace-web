@@ -37,7 +37,9 @@ class UserResourceOperationsTest {
   @Test
   void writeOperationsFailClosedAsDefenceInDepth() {
     ApiV2Caller caller = ApiV2Caller.direct(actor);
-    assertThrows(UnsupportedOperationException.class, () -> operations.create(document, caller));
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> operations.create(document, caller, null).resource());
     assertThrows(
         UnsupportedOperationException.class,
         () -> operations.createMany(List.of(document), caller));

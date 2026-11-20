@@ -5697,7 +5697,6 @@ export default interface Resources {
             "authorizedCallers": "Authenticated callers authorized by the registered protected resource.",
             "document": "Current direct assignments and caller capabilities.",
             "grantees": "Eligible users and groups.",
-            "ifMatch": "Strong ETag from the latest access document.",
             "leave": {
               "summary": "Remove the caller's direct assignment"
             },
@@ -5729,7 +5728,8 @@ export default interface Resources {
             "tooManyRequests": "The request was throttled.",
             "unauthenticated": "Authentication is required.",
             "unexpectedError": "An unexpected server error occurred.",
-            "unsupportedMediaType": "The request media type is unsupported."
+            "unsupportedMediaType": "The request media type is unsupported.",
+            "versionChanged": "The resource version changed."
           },
           "runtimeFields": {
             "ids": "Comma-separated field identifiers.",
@@ -6118,6 +6118,16 @@ export default interface Resources {
           },
           "forbidden": "You do not have permission to perform this action.",
           "invalidRequest": "The request contains an invalid value.",
+          "maintenance": {
+            "endDate": {
+              "required": "End date is required."
+            },
+            "patch": "The maintenance patch is invalid.",
+            "startDate": {
+              "required": "Start date is required."
+            },
+            "window": "End date must be after start date."
+          },
           "methodNotAllowed": "This HTTP method is not supported for this resource.",
           "missingParameter": "A required request parameter is missing.",
           "notAcceptable": "The requested response content type is not available.",
