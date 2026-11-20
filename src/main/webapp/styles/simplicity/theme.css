@@ -357,6 +357,12 @@ div.imageDownloadButton, div.imageDownloadButtonSmallMargin, div.tableDownloadBu
   background-image: url(/public/images/download.png);
   cursor: pointer; }
 
+div.tableDownloadButton {
+  position: sticky;
+  right: 5px;
+  flex: 0 0 32px;
+  transform: translateY(-13px); }
+
 div.imageDownloadButtonSmallMargin {
   margin: 0 0 5px -32px; }
 
