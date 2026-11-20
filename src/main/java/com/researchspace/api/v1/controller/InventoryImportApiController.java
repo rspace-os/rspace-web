@@ -135,7 +135,7 @@ public class InventoryImportApiController extends BaseApiInventoryController
                   "errors.inventory.import.unrecognizedFileType", new Object[] {recordType}));
       }
     } catch (Exception e) {
-      throw new IllegalArgumentException("exception: " + e.getMessage(), e);
+      throw new IllegalArgumentException(messages.getExceptionMessage(e), e);
     }
 
     return result;
