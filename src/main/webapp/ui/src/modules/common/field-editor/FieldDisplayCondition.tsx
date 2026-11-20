@@ -36,6 +36,7 @@ import {
   ruleIsInvalid,
   type SourceCandidate,
   sanitiseCondition,
+  type UnavailableReason,
 } from "./ruleEditing";
 
 type FieldDisplayConditionProps = {
@@ -119,9 +120,10 @@ function sourceRetyped(graph: RuleGraph, sourceFieldKey: string | null, sourceKi
  * rule can read: options, one-line text or a number, each with its own
  * conditions and value control. The field menu lists every other field, but
  * only fields a rule can read and that would not end up depending on this one
- * can be chosen; the others are listed disabled, with the reason, and with no
- * field to choose the menu says so. A condition is applied once it is
- * complete and the shared validator accepts it. Until then it is a draft in
+ * can be chosen; the others are listed disabled, with the reason, and the arrow
+ * keys still reach them so the reason is announced. With no field to choose
+ * the menu says so. A condition is applied once it is complete and the shared
+ * validator accepts it. Until then it is a draft in
  * this field only, the field keeps the rule it had, the controls show what is
  * missing, and `onIncompleteChange` tells the host to refuse saving. Either
  * mode notes which fields depend on this one.
@@ -196,26 +198,22 @@ export default function FieldDisplayCondition({
       draft: rememberedDraftRetyped ? null : remembered.draft,
     });
   const nameOf = (field: RuleEditorField) => (field.name === "" ? t("fieldEditor.card.unnamed") : field.name);
-  const unavailableText = ({ field, unavailable }: SourceCandidate) => {
+  const unavailableText = (field: RuleEditorField, reason: UnavailableReason): string => {
     const name = nameOf(field);
-    switch (unavailable) {
+    switch (reason) {
       case "hidesValue":
-        return t("fieldEditor.condition.unavailable.hidesValue", {
-          field: name,
-        });
+        return t("fieldEditor.condition.unavailable.hidesValue", { field: name });
       case "dependsOnField":
-        return t("fieldEditor.condition.unavailable.dependsOnField", {
-          field: name,
-        });
-      default:
+        return t("fieldEditor.condition.unavailable.dependsOnField", { field: name });
+      case "unsupportedType":
         return field.typeLabel === undefined
-          ? t("fieldEditor.condition.unavailable.unsupportedKind", {
-              field: name,
-            })
-          : t("fieldEditor.condition.unavailable.unsupportedType", {
-              field: name,
-              type: field.typeLabel,
-            });
+          ? t("fieldEditor.condition.unavailable.unsupportedKind", { field: name })
+          : t("fieldEditor.condition.unavailable.unsupportedType", { field: name, type: field.typeLabel });
+      default: {
+        // a new reason fails to compile here until it has its own text
+        const unhandled: never = reason;
+        return unhandled;
+      }
     }
   };
   const isBelow = (other: RuleEditorField) => graph.indexOf(other.key) > graph.indexOf(fieldKey);
@@ -362,9 +360,9 @@ export default function FieldDisplayCondition({
             error={source === null}
             helperText={
               source === null
-                ? // MenuList skips a disabled item, so the helper text is what says there is nothing to choose
+                ? // the helper text says there is nothing to choose before the menu is opened
                   sources.length === 0
-                  ? t("fieldEditor.condition.noOtherFields")
+                  ? t("fieldEditor.condition.noAvailableFields")
                   : sourceDropped
                     ? t("fieldEditor.condition.sourceMissing")
                     : t("fieldEditor.condition.sourceRequired")
@@ -373,7 +371,7 @@ export default function FieldDisplayCondition({
                   : undefined
             }
             onChange={({ target: { value } }) => {
-              // an unavailable field is never chosen, even if its disabled item somehow reports a click
+              // MUI drops a click, Enter or Space on a disabled item; this keeps unavailable fields unchosen if that changes
               if (!sources.some((candidate) => candidate.key === value)) return;
               const chosen = graph.byKey.get(value);
               const kind = chosen ? sourceKindOf(chosen) : null;
@@ -390,14 +388,20 @@ export default function FieldDisplayCondition({
                 open: sourceMenuOpen,
                 onOpen: () => setSourceMenuOpen(true),
                 onClose: () => setSourceMenuOpen(false),
-                MenuProps: { slotProps: { paper: { sx: { maxWidth: "min(400px, calc(100vw - 32px))" } } } },
+                MenuProps: {
+                  slotProps: {
+                    paper: { sx: { maxWidth: "min(400px, calc(100vw - 32px))" } },
+                    // the arrows stop on unavailable fields too, so their reasons are announced
+                    list: { disabledItemsFocusable: true },
+                  },
+                },
               },
             }}
             sx={{ flex: "1 1 200px" }}
           >
             {/* no value, so the select does not take it for the chosen field */}
             {sourceMenuOpen && sources.length === 0 && (
-              <MenuItem disabled>{t("fieldEditor.condition.noOtherFields")}</MenuItem>
+              <MenuItem disabled>{t("fieldEditor.condition.noAvailableFields")}</MenuItem>
             )}
             {/* closed, only the chosen field is listed, so renaming another field does not re-render this one */}
             {listed.map((candidate) =>
@@ -415,7 +419,7 @@ export default function FieldDisplayCondition({
                 >
                   <ListItemText
                     primary={nameOf(candidate.field)}
-                    secondary={unavailableText(candidate)}
+                    secondary={unavailableText(candidate.field, candidate.unavailable)}
                     slotProps={{ primary: { color: "text.secondary" }, secondary: { color: "text.secondary" } }}
                     sx={{ my: 0 }}
                   />

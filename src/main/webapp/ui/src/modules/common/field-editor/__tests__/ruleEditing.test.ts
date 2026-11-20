@@ -62,6 +62,19 @@ describe("cycle prevention", () => {
     ]);
   });
 
+  it("offers exactly the fields it lists as available, keeping the offer and building the list afresh", () => {
+    const graph = buildRuleGraph([...fields, field("secret", { hidesValue: true })]);
+    for (const { key } of fields) {
+      const available = graph
+        .candidatesFor(key)
+        .filter(({ unavailable }) => unavailable === null)
+        .map(({ field }) => field);
+      expect(graph.sourcesFor(key)).toEqual(available);
+      expect(graph.sourcesFor(key)).toBe(graph.sourcesFor(key));
+      expect(graph.candidatesFor(key)).not.toBe(graph.candidatesFor(key));
+    }
+  });
+
   it("offers fields below as well as above, but only radio and choice fields", () => {
     expect(sourcesFor("notes")).toEqual(["gmo", "level", "approval"]);
   });

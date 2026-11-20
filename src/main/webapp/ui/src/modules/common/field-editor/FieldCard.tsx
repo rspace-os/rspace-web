@@ -148,7 +148,18 @@ export default function FieldCard<T extends string>({
             })}
           >
             {editable && (
-              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={(theme) => ({
+                  alignItems: "center",
+                  // the move buttons and the delete button, the host's own included, show keyboard focus plainly
+                  "& .MuiButtonBase-root.Mui-focusVisible": {
+                    outline: `2px solid ${theme.palette.primary.main}`,
+                    outlineOffset: -2,
+                  },
+                })}
+              >
                 <MoveButtons position={position} count={count} onMove={onMove} fieldName={displayName} />
                 {canDelete &&
                   (deleteControl ?? (

@@ -275,27 +275,53 @@ describe("FieldDisplayCondition", () => {
     ).toBeInTheDocument();
   });
 
-  it("cannot choose an unavailable field with the mouse or the keyboard", async () => {
-    const user = userEvent.setup();
+  describe("an unavailable field", () => {
     const notes: RuleEditorField = { ...permit, key: "notes", name: "Notes", typeLabel: "Formatted text" };
-    const { onChange } = await renderConditions([gmo, notes, permit]);
-    await user.click(conditional("GMO permit"));
-    const field = card("GMO permit").getByRole("combobox", { name: "Field" });
+    const notesName = 'Notes Unavailable - Notes has unsupported type "Formatted text"';
+    /** Opens GMO permit's Field menu, which has Is this a GMO? chosen and Notes unavailable below it. */
+    const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
+      const rendered = await renderConditions([gmo, notes, permit]);
+      await user.click(conditional("GMO permit"));
+      const field = card("GMO permit").getByRole("combobox", { name: "Field" });
+      await user.click(field);
+      return { ...rendered, field };
+    };
 
-    await user.click(field);
-    // a disabled item takes no pointer events, so the click is forced past that check
-    await userEvent.setup({ pointerEventsCheck: 0 }).click(screen.getByRole("option", { name: /^Notes/ }));
-    expect(screen.getByRole("listbox")).toBeInTheDocument();
-    await user.keyboard("{Escape}");
-    expect(field).toHaveTextContent("Is this a GMO?");
+    it("is reached with the arrow keys, so its reason is announced", async () => {
+      const user = userEvent.setup();
+      await openMenu(user);
 
-    await user.click(field);
-    // focus starts on the chosen field, and the arrows skip the unavailable one below it
-    await user.keyboard("{ArrowDown}");
-    expect(screen.getByRole("option", { name: "Is this a GMO?" })).toHaveFocus();
-    await user.keyboard("{Enter}");
-    expect(field).toHaveTextContent("Is this a GMO?");
-    expect(onChange).not.toHaveBeenCalled();
+      // focus starts on the chosen field
+      await user.keyboard("{ArrowDown}");
+      const option = screen.getByRole("option", { name: notesName });
+      expect(option).toHaveFocus();
+      expect(option).toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("is not chosen with Enter or Space", async () => {
+      const user = userEvent.setup();
+      const { field, onChange } = await openMenu(user);
+
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{Enter}");
+      await user.keyboard(" ");
+      expect(screen.getByRole("option", { name: notesName })).toHaveFocus();
+      await user.keyboard("{Escape}");
+      expect(field).toHaveTextContent("Is this a GMO?");
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("is not chosen with a click", async () => {
+      const user = userEvent.setup();
+      const { field, onChange } = await openMenu(user);
+
+      // a disabled item takes no pointer events, so the click is forced past that check
+      await userEvent.setup({ pointerEventsCheck: 0 }).click(screen.getByRole("option", { name: notesName }));
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+      await user.keyboard("{Escape}");
+      expect(field).toHaveTextContent("Is this a GMO?");
+      expect(onChange).not.toHaveBeenCalled();
+    });
   });
 
   it("offers the condition when no other field can be read, with a field menu that says so", async () => {
@@ -304,14 +330,14 @@ describe("FieldDisplayCondition", () => {
 
     await user.click(conditional("Is this a GMO?"));
     const field = card("Is this a GMO?").getByRole("combobox", { name: "Field" });
-    // the menu skips its disabled items, so the description is what says there is nothing to choose
-    expect(field).toHaveAccessibleDescription("No other fields");
+    // the description says there is nothing to choose before the menu is opened
+    expect(field).toHaveAccessibleDescription("No available fields");
     expect(onIncompleteChange).toHaveBeenCalledExactlyOnceWith("gmo", true);
 
     await user.click(field);
     const options = screen.getAllByRole("option");
     expect(options.map((option) => option.textContent)).toEqual([
-      "No other fields",
+      "No available fields",
       "GMO permitUnavailable - GMO permit has an unsupported type",
     ]);
     for (const option of options) expect(option).toHaveAttribute("aria-disabled", "true");
