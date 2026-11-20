@@ -26,6 +26,7 @@ var sketchDialog = {
     var data = null;
     var url = null;
     var src = null;
+    var loadingAnnotationById = false;
 
     // if sketch was selected it loads sketch
     if ((n.nodeName = "IMG") && ($(n).hasClass("sketch"))) {
@@ -43,17 +44,24 @@ var sketchDialog = {
       var parentId = id.split("-")[0];
       var imageId = id.split("-")[1];
       var revision = n.getAttribute("data-rsrevision");
+      var annotationId = /^\d+$/.test(n.getAttribute("data-id") || "") ? n.getAttribute("data-id") : null;
       $('.sketchId').attr('data-id', imageId);
       $('.dataSize').attr('data-size', n.getAttribute("data-size"));
       $('.typeSketch').attr('data-type', "imageAnnotationType");
+      sketchDialog.selectedImage = n;
+      sketchDialog.annotationId = annotationId;
 
-      data = {
-        parentId: parentId,
-        imageId: imageId,
-        revision: revision
-      };
       src = prefix.concat("/image/getImageToAnnotate/" + id + "/1");
-      url = prefix.concat("/image/ajax/loadImageAnnotations");
+      // each image occurrence has its own annotation; raw thumbnails start with a clean canvas
+      if (annotationId) {
+        loadingAnnotationById = true;
+        data = { sketchId: annotationId, revision: revision, missingAsEmpty: true };
+        url = prefix.concat("/image/ajax/loadSketchImageAnnotations");
+      } else if ((n.getAttribute("src") || "").indexOf("/image/getImage/") !== -1) {
+        // links from before 1.29 identify their annotation by field and image
+        data = { parentId: parentId, imageId: imageId, revision: revision };
+        url = prefix.concat("/image/ajax/loadImageAnnotations");
+      }
     }
 
     if (url != null) {
@@ -62,9 +70,12 @@ var sketchDialog = {
         function (result) {
           if (result != null && result.data != "") {
             listElem = result.data;
+          } else if (loadingAnnotationById && result != null && result.data === "") {
+            sketchDialog.annotationId = null;
           }
         }, "json");
       jxqr.fail(function () {
+        sketchDialog.annotationLoadFailed = loadingAnnotationById;
         tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.loadAnnotationsFailed"));
       });
       jxqr.always(function () {
@@ -453,7 +464,7 @@ var sketchDialog = {
 
   insert: function (ed) {
     // repeated Insert clicks must not save the same sketch more than once
-    if (sketchDialog.insertInProgress) {
+    if (sketchDialog.insertInProgress || sketchDialog.annotationLoadFailed) {
       return;
     }
     sketchDialog.insertInProgress = true;
@@ -499,6 +510,11 @@ var sketchDialog = {
     } else {
       data.parentId = this.fieldId;
       data.imageId = sketchId;
+      var annotationId = sketchDialog.annotationId;
+      // images sharing one annotation keep it; the edited one gets a new annotation
+      if (annotationId && $(ed.getBody()).find('img.imageDropped[data-id="' + annotationId + '"]').length === 1) {
+        data.annotationId = annotationId;
+      }
       compositeId = this.fieldId + "-" + sketchId;
 
       url = prefix.concat("/image/ajax/saveImageAnnotation");
@@ -522,6 +538,10 @@ var sketchDialog = {
         };
         var html = Mustache.render(htmlTemplate, props);
         if (html != "") {
+          var image = sketchDialog.selectedImage;
+          if (image && ed.getBody().contains(image)) {
+            ed.selection.select(image);
+          }
           ed.execCommand('mceInsertContent', false, html);
         }
         // close the front most window (dialog.htm)

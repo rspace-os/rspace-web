@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -35,6 +36,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +68,33 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
+  }
+
+  @Test
+  public void copyKeepsAnnotatedAndRawCopiesOfOneImageSeparate() throws Exception {
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(user, "any");
+    EcatImageAnnotation original =
+        addAnnotatedAndRawCopiesOfImageToField(document.getFields().get(0), user);
+
+    StructuredDocument copy =
+        (StructuredDocument) documentCopyManager.copy(document, "copy", user, null).getUniqueCopy();
+
+    Field copiedField = copy.getFields().get(0);
+    List<EcatImageAnnotation> copiedAnnotations =
+        imageAnnotationDao.getAllImageAnnotationsFromField(copiedField.getId());
+    assertThat(copiedAnnotations).hasSize(1);
+    EcatImageAnnotation copiedAnnotation = copiedAnnotations.get(0);
+    assertNotEquals(original.getId(), copiedAnnotation.getId());
+    assertEquals(original.getAnnotations(), copiedAnnotation.getAnnotations());
+    Elements images = Jsoup.parse(copiedField.getFieldData()).select("img.imageDropped");
+    assertThat(images).hasSize(2);
+    assertEquals(copiedAnnotation.getId() + "", images.get(0).attr("data-id"));
+    assertEquals(images.get(0).id(), images.get(1).id());
+    assertFalse(images.get(1).hasAttr("data-id"));
+    assertThat(images.get(1).attr("src"))
+        .startsWith("/thumbnail/data")
+        .contains("sourceId=" + original.getImageId() + "&")
+        .contains("sourceParentId=" + copiedField.getId() + "&");
   }
 
   @Test

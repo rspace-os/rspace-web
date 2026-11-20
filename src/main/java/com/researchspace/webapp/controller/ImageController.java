@@ -477,18 +477,28 @@ public class ImageController extends BaseController {
    *
    * @param sketchId the id of the sketch.
    * @param revision an optional revision number
+   * @param missingAsEmpty whether to return an empty drawing for a missing Gallery image annotation
    * @return {@link AjaxReturnObject} of type String with annotation data
    */
   @GetMapping("ajax/loadSketchImageAnnotations")
   @ResponseBody
   public AjaxReturnObject<String> loadSketchAnnotations(
       @RequestParam("sketchId") long sketchId,
-      @RequestParam(value = "revision", required = false) Integer revision) {
+      @RequestParam(value = "revision", required = false) Integer revision,
+      @RequestParam(value = "missingAsEmpty", defaultValue = "false") boolean missingAsEmpty) {
 
     User u = userManager.getAuthenticatedUserInSession();
-    EcatImageAnnotation ecatImageAnnotation = null;
+    EcatImageAnnotation ecatImageAnnotation;
     if (revision == null) {
-      ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
+      try {
+        ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
+      } catch (ObjectRetrievalFailureException e) {
+        if (!missingAsEmpty) {
+          throw e;
+        }
+        log.warn("Gallery image annotation {} no longer exists", sketchId);
+        return returnAnnotationData(null, u);
+      }
     } else {
       ecatImageAnnotation =
           auditManager
@@ -515,6 +525,7 @@ public class ImageController extends BaseController {
    * @param imageBase64
    * @param fieldId
    * @param imageId
+   * @param annotationId the annotation to update; omitted when annotating a raw image
    * @return EcatImageAnnotation
    * @throws IOException
    */
@@ -526,6 +537,7 @@ public class ImageController extends BaseController {
       @RequestParam("image") String imageBase64,
       @RequestParam("parentId") long fieldId,
       @RequestParam("imageId") long imageId,
+      @RequestParam(value = "annotationId", required = false) Long annotationId,
       Principal principal)
       throws IOException {
 
@@ -533,7 +545,13 @@ public class ImageController extends BaseController {
     Field field = fieldManager.get(fieldId, subject).get();
     EcatImageAnnotation ecatImageAnnotation =
         mediaManager.saveImageAnnotation(
-            annotations, imageBase64, fieldId, field.getStructuredDocument(), imageId, subject);
+            annotations,
+            imageBase64,
+            fieldId,
+            field.getStructuredDocument(),
+            imageId,
+            annotationId,
+            subject);
     ecatImageAnnotation.setData(null);
     return new AjaxReturnObject<>(ecatImageAnnotation, null);
   }

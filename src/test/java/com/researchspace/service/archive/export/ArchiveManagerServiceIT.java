@@ -5,6 +5,7 @@ import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -545,6 +546,57 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
             .getId()
             .equals(originalAnnotation.getId()),
         "Imageannotation ID in text field was not updated");
+  }
+
+  @Test
+  public void testXMLExportImportKeepsAnnotatedAndRawCopiesOfOneImageSeparate() throws Exception {
+    User exporter = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    logoutAndLoginAs(exporter);
+    initUser(exporter);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(exporter, "any");
+    EcatImageAnnotation original =
+        addAnnotatedAndRawCopiesOfImageToField(doc.getFields().get(0), exporter);
+
+    ArchiveExportConfig expCfg = new ArchiveExportConfig();
+    expCfg.setExporter(exporter);
+    expCfg.setExportScope(ExportScope.SELECTION);
+    expCfg.setTopLevelExportFolder(tempExportFolder);
+    String zipName =
+        archiveService
+            .exportArchive(new ArchiveManifest(), createExportList(doc.getOid(), expCfg), expCfg)
+            .getExportFile()
+            .getName();
+    ImportArchiveReport report =
+        importer.importArchive(
+            new File(tempExportFolder, zipName),
+            createDefaultArchiveImportConfig(exporter, tempImportFolder),
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+
+    Long importedDocId =
+        report.getImportedRecords().stream()
+            .filter(BaseRecord::isStructuredDocument)
+            .findFirst()
+            .get()
+            .getId();
+    doInTransaction(
+        () -> {
+          Field imported = recordMgr.get(importedDocId).asStrucDoc().getFields().get(0);
+          List<EcatImageAnnotation> annotations =
+              fieldParser
+                  .findFieldElementsInContent(imported.getFieldData())
+                  .getImageAnnotations()
+                  .getElements();
+          assertThat(annotations).hasSize(1);
+          assertNotEquals(original.getId(), annotations.get(0).getId());
+          assertEquals(original.getAnnotations(), annotations.get(0).getAnnotations());
+          Elements images = Jsoup.parse(imported.getFieldData()).select("img.imageDropped");
+          assertThat(images).hasSize(2);
+          assertEquals(annotations.get(0).getId() + "", images.get(0).attr("data-id"));
+          assertFalse(images.get(1).hasAttr("data-id"));
+          assertThat(images.get(1).attr("src")).startsWith("/thumbnail/data");
+        });
   }
 
   @Test

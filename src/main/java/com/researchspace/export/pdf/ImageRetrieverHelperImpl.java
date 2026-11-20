@@ -175,11 +175,15 @@ public class ImageRetrieverHelperImpl implements ImageRetrieverHelper {
 
     byte[] result = null;
 
-    EcatImageAnnotation annotation =
-        imgAnnotationManager.getByParentIdAndImageId(
-            imgURL.getParentId(), imgURL.getImageId(), exportConfig.getExporter());
-    if (annotation != null && exportConfig.isAnnotations()) {
-      result = annotation.getData();
+    // a raw thumbnail is always the Gallery image; only legacy getImage links resolve annotations
+    // by field and image
+    if (exportConfig.isAnnotations() && RichTextUpdater.isLegacyImageURL(imgSrcValue)) {
+      EcatImageAnnotation annotation =
+          imgAnnotationManager.getByParentIdAndImageId(
+              imgURL.getParentId(), imgURL.getImageId(), exportConfig.getExporter());
+      if (annotation != null) {
+        result = annotation.getData();
+      }
     }
     // if no annotation, we try to get the image.
     if (result == null) {

@@ -3,6 +3,8 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
@@ -36,8 +39,10 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -47,6 +52,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 public class ImageControllerMVCIT extends MVCTestBase {
 
   private User testUser, other;
+  private @Autowired EcatImageAnnotationDao imageAnnotationDao;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -342,6 +348,110 @@ public class ImageControllerMVCIT extends MVCTestBase {
             .perform(getImageURL(fld, ann).principal(new MockPrincipal(other.getUsername())))
             .andReturn();
     assertAuthorizationException(result);
+  }
+
+  @Test
+  public void saveImageAnnotationKeepsEachImageOccurrenceSeparate() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    String base64 = getBase64Image();
+
+    EcatImageAnnotation first = postSaveImageAnnotation("first", base64, imageId, field.getId());
+    EcatImageAnnotation second = postSaveImageAnnotation("second", base64, imageId, field.getId());
+    assertNotEquals(first.getId(), second.getId());
+
+    EcatImageAnnotation updated =
+        getFromJsonAjaxReturnObject(
+            saveImageAnnotationAs(testUser, field.getId(), imageId, second.getId(), "updated"),
+            EcatImageAnnotation.class);
+    assertEquals(second.getId(), updated.getId());
+    assertEquals("first", getAnnotations(first.getId()));
+    assertEquals("updated", getAnnotations(second.getId()));
+    assertThat(getAnnotationIdsInField(field.getId()))
+        .containsExactlyInAnyOrder(first.getId(), second.getId());
+  }
+
+  @Test
+  public void saveImageAnnotationRejectsMismatchedAnnotationOrMissingWritePermission()
+      throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Field otherField = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    Long otherImageId = addImageToGallery(testUser).getId();
+    Long annotationId =
+        postSaveImageAnnotation("original", getBase64Image(), imageId, field.getId()).getId();
+
+    assertAuthorizationException(
+        saveImageAnnotationAs(testUser, otherField.getId(), imageId, annotationId, "changed"));
+    assertAuthorizationException(
+        saveImageAnnotationAs(testUser, field.getId(), otherImageId, annotationId, "changed"));
+    assertInstanceOf(
+        ObjectRetrievalFailureException.class,
+        saveImageAnnotationAs(testUser, field.getId(), imageId, annotationId + 1000, "changed")
+            .getResolvedException());
+
+    logoutAndLoginAs(other);
+    assertAuthorizationException(
+        saveImageAnnotationAs(other, field.getId(), imageId, null, "changed"));
+    assertAuthorizationException(
+        saveImageAnnotationAs(other, field.getId(), imageId, annotationId, "changed"));
+    logoutAndLoginAs(testUser);
+
+    assertEquals("original", getAnnotations(annotationId));
+    assertThat(getAnnotationIdsInField(field.getId())).containsExactly(annotationId);
+    assertThat(getAnnotationIdsInField(otherField.getId())).isEmpty();
+  }
+
+  @Test
+  public void legacyImageLinkLoadsTheOldestAnnotationForItsFieldAndImage() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    String base64 = getBase64Image();
+
+    assertEquals("", getLegacyLinkAnnotations(field, imageId));
+    postSaveImageAnnotation("oldest", base64, imageId, field.getId());
+    assertEquals("oldest", getLegacyLinkAnnotations(field, imageId));
+    postSaveImageAnnotation("newer", base64, imageId, field.getId());
+    assertEquals("oldest", getLegacyLinkAnnotations(field, imageId));
+  }
+
+  private MvcResult saveImageAnnotationAs(
+      User user, Long fieldId, Long imageId, Long annotationId, String annotations)
+      throws Exception {
+    MockHttpServletRequestBuilder request =
+        getSaveImageAnnotationURL()
+            .param("annotations", annotations)
+            .param("image", getBase64Image())
+            .param("imageId", imageId + "")
+            .param("parentId", fieldId + "")
+            .principal(new MockPrincipal(user.getUsername()));
+    if (annotationId != null) {
+      request.param("annotationId", annotationId + "");
+    }
+    return mockMvc.perform(request).andReturn();
+  }
+
+  private String getAnnotations(Long annotationId) throws Exception {
+    return doInTransaction(() -> imageAnnotationDao.get(annotationId).getAnnotations());
+  }
+
+  private List<Long> getAnnotationIdsInField(Long fieldId) throws Exception {
+    return doInTransaction(
+        () ->
+            imageAnnotationDao.getAllImageAnnotationsFromField(fieldId).stream()
+                .map(EcatImageAnnotation::getId)
+                .toList());
+  }
+
+  private String getLegacyLinkAnnotations(Field field, Long imageId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                getImageAnnotationStringURL(field, imageId)
+                    .principal(new MockPrincipal(testUser.getUsername())))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    return (String) parseJSONObjectFromResponseStream(result).get("data");
   }
 
   MockHttpServletRequestBuilder getImageAnnotationStringURL(Field fld, Long id) {
