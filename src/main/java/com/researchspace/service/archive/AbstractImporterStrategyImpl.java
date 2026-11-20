@@ -8,6 +8,7 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
+import static com.researchspace.core.util.imageutils.ImageUtils.isTiff;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -569,11 +570,39 @@ abstract class AbstractImporterStrategyImpl {
         if (image == null) {
           ImportOverride importOverride = getGalleryMetaImportOverride(agm);
           File fx = new File(recordFolder, agm.getLinkFile());
+          String displayName = StringUtils.defaultIfBlank(agm.getName(), agm.getFileName());
+          String originalLink = agm.getLinkToOriginalFile();
+          boolean hasArchivedTiff =
+              isTiff(FilenameUtils.getExtension(originalLink))
+                  && originalLink.equals(FilenameUtils.getName(originalLink))
+                  && new File(recordFolder, originalLink).isFile();
+          boolean isTiffPreview =
+              !hasArchivedTiff
+                  && isTiff(FilenameUtils.getExtension(displayName))
+                  && "png".equalsIgnoreCase(FilenameUtils.getExtension(fx.getName()));
+          if (hasArchivedTiff) {
+            fx = new File(recordFolder, originalLink);
+          } else if (isTiffPreview) {
+            displayName = fx.getName();
+          }
           if (fx.exists()) {
             try (FileInputStream fis = new FileInputStream(fx)) {
-              String newName =
-                  StringUtils.isBlank(agm.getName()) ? agm.getFileName() : agm.getName();
-              image = mediaManager.saveNewImage(newName, fis, user, null, importOverride);
+              if (hasArchivedTiff || isTiffPreview) {
+                image =
+                    (EcatImage)
+                        mediaManager.saveMediaFile(
+                            fis,
+                            null,
+                            displayName,
+                            fx.getName(),
+                            null,
+                            null,
+                            null,
+                            user,
+                            importOverride);
+              } else {
+                image = mediaManager.saveNewImage(displayName, fis, user, null, importOverride);
+              }
               putIntoIdToMediaFileMap(
                   oldIdToNewGalleryItem, agm.getId(), agm.getModificationDate(), image);
             }
