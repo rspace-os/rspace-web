@@ -455,6 +455,8 @@ abstract class AbstractImporterStrategyImpl {
           linkRecord,
           oldIdToNewGalleryItem);
     }
+    // the sign state was computed from the form's defaults when the document was created
+    strucDoc.setAllFieldsValid(stdFields.stream().allMatch(Field::isMandatoryStateSatisfied));
     // RSPAC-2761 - field data modifications push modification date of a doc to current date, so
     // resetting here
     strucDoc.setModificationDate(archivalDoc.getLastModifiedDate());
