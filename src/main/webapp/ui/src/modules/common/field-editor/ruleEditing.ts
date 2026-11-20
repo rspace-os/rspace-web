@@ -68,7 +68,11 @@ export type RuleGraph = {
    * itself that do not already depend on it, directly or through other rules.
    */
   sourcesFor(key: string): ReadonlyArray<RuleEditorField>;
-  /** Every field other than `key`, in order, each with why a rule on `key` cannot read it. */
+  /**
+   * Every field other than `key`, in order, each with why a rule on `key` cannot
+   * read it. Built afresh on every call, unlike `sourcesFor`, so that only an
+   * open field menu pays for it.
+   */
   candidatesFor(key: string): ReadonlyArray<SourceCandidate>;
   /** The fields whose rule reads `key` directly. */
   dependentsOf(key: string): ReadonlyArray<RuleEditorField>;
@@ -106,43 +110,25 @@ export function buildRuleGraph(fields: ReadonlyArray<RuleEditorField>): RuleGrap
       ancestor = byKey.get(ancestor)?.rule?.sourceFieldKey;
     }
   }
-  const candidates = new Map<string, ReadonlyArray<SourceCandidate>>();
-  const sources = new Map<string, ReadonlyArray<RuleEditorField>>();
-  const candidatesFor = (key: string) => {
-    let result = candidates.get(key);
-    if (!result) {
-      const excluded = descendants.get(key);
-      result = fields
-        .filter((field) => field.key !== key)
-        .map((field) => ({
-          field,
-          unavailable:
-            sourceKindOf(field) === "NONE"
-              ? field.hidesValue
-                ? "hidesValue"
-                : "unsupportedType"
-              : excluded?.has(field.key)
-                ? "dependsOnField"
-                : null,
-        }));
-      candidates.set(key, result);
-    }
-    return result;
+  // sourcesFor and candidatesFor both ask this, so they always agree on which fields are available
+  const unavailableFor = (key: string, field: RuleEditorField): UnavailableReason | null => {
+    if (sourceKindOf(field) === "NONE") return field.hidesValue ? "hidesValue" : "unsupportedType";
+    return descendants.get(key)?.has(field.key) ? "dependsOnField" : null;
   };
+  const sources = new Map<string, ReadonlyArray<RuleEditorField>>();
   return {
     byKey,
     indexOf: (key) => index.get(key) ?? -1,
     sourcesFor: (key) => {
       let result = sources.get(key);
       if (!result) {
-        result = candidatesFor(key)
-          .filter(({ unavailable }) => unavailable === null)
-          .map(({ field }) => field);
+        result = fields.filter((field) => field.key !== key && unavailableFor(key, field) === null);
         sources.set(key, result);
       }
       return result;
     },
-    candidatesFor,
+    candidatesFor: (key) =>
+      fields.filter((field) => field.key !== key).map((field) => ({ field, unavailable: unavailableFor(key, field) })),
     dependentsOf: (key) => dependents.get(key) ?? [],
   };
 }
