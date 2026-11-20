@@ -29,7 +29,7 @@ type FieldsArgs = {
 
 function Fields({ onErrorStateChange: reportErrorState, sample }: FieldsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { shownFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
+  const { renderedFields, announcer, wrapField, hiddenByValues, onErrorStateChange } = useShownTemplateFields(
     sample,
     reportErrorState,
   );
@@ -321,7 +321,7 @@ function Fields({ onErrorStateChange: reportErrorState, sample }: FieldsArgs): R
 
     return <Box key={field.name}>{t("sample.fields.unknownFieldType", { type: field.type })}</Box>;
   };
-  const rendered = shownFields.map((field) => wrapField(field, renderField(field)));
+  const rendered = renderedFields.map((field) => wrapField(field, renderField(field)));
   return (
     <>
       {rendered}
