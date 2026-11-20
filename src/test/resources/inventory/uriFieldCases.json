@@ -1,5 +1,5 @@
 {
-  "description": "Values of an Inventory URI field and whether the server accepts them (InventoryUriField.validate, which parses with new java.net.URI(value)). Run by InventoryUriFieldCorpusTest (Java) and javaUri.test.ts (TypeScript), so the client's check stays in step with Java.",
+  "description": "Values of an Inventory URI field and whether the server accepts them (InventoryUriField.validate, which parses with new java.net.URI(value)). Run by InventoryUriFieldCasesTest (Java) and javaUri.test.ts (TypeScript), so the client's check stays in step with Java.",
   "cases": [
     {
       "value": "",
