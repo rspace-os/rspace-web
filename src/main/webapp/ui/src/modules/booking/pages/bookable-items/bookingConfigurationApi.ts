@@ -1,0 +1,132 @@
+import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
+import {
+  getSearchBookingConfigurationTargetsQueryOptions,
+  getSearchBookingConfigurationTargetsSuspenseQueryOptions,
+} from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
+import {
+  deleteBookingConfiguration as generatedDeleteBookingConfiguration,
+  updateBookingConfiguration as generatedUpdateBookingConfiguration,
+  getListBookingConfigurationsSuspenseQueryOptions,
+  listBookingConfigurations,
+} from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
+import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
+import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
+
+export async function archiveBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` });
+}
+
+export async function restoreBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedUpdateBookingConfiguration(id, { state: "ACTIVE" }, { "If-Match": `"${version}"` });
+}
+
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number): Promise<void> {
+  await generatedDeleteBookingConfiguration(id, { "If-Match": `"${version}"` }, { permanent: true });
+}
+
+export const BOOKING_CONFIGURATION_READ_FIELDS = [
+  "id",
+  "configurationVersion",
+  "target",
+  "enabled",
+  "state",
+  "timezone",
+  "slotGranularityMinutes",
+  "incrementUnit",
+  "openingHours",
+  "bufferBeforeMinutes",
+  "bufferAfterMinutes",
+  "maxBookingDurationMinutes",
+  "allowDoubleBooking",
+  "createdAt",
+  "createdByName",
+  "updatedAt",
+  "effectiveRole",
+  "roleSources",
+  "capabilities",
+  "ownerHealth",
+] as const;
+
+class BookingConfigurationNotFoundError extends Error {
+  readonly status = 404;
+}
+
+function parameters(globalId: string) {
+  return {
+    depth: 2,
+    limit: 2,
+    fields: {
+      instruments: "id,globalId,name,deleted,parentContainer",
+      containers: "id,globalId,name",
+      "booking-configurations": apiV2Fields(BOOKING_CONFIGURATION_READ_FIELDS),
+    },
+    where: { target: globalId },
+  };
+}
+/**
+ * Reads the configuration of one target and asserts the guaranteed fields of every document. The mapper keeps its own
+ * checks, because table-list rows reach it without this assertion.
+ */
+async function listByTarget(globalId: string, signal?: AbortSignal) {
+  const result = await listBookingConfigurations(parameters(globalId), { signal });
+  for (const document of result.docs) {
+    assertApiV2Selected("booking-configurations", document, BOOKING_CONFIGURATION_READ_FIELDS);
+  }
+  return result;
+}
+function oneConfiguration(globalId: string, documents: BookingConfiguration[]): BookingConfiguration {
+  if (documents.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (documents.length === 0 || documents[0].target?.globalId !== globalId)
+    throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
+  return documents[0];
+}
+export async function fetchBookingConfigurationByTarget(
+  globalId: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  return oneConfiguration(globalId, (await listByTarget(globalId, signal)).docs.map(mapBookingConfiguration));
+}
+export function fetchBookingConfigurationDetailsByTarget(
+  globalId: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  return fetchBookingConfigurationByTarget(globalId, signal);
+}
+export async function findBookingConfigurationByTarget(
+  globalId: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration | null> {
+  const documents = (await listByTarget(globalId, signal)).docs.map(mapBookingConfiguration);
+  if (documents.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+  return documents[0] ?? null;
+}
+function matchingConfiguration(globalId: string, documents: BookingConfiguration[]): BookingConfiguration | null {
+  if (documents.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  return documents[0]?.target?.globalId === globalId ? documents[0] : null;
+}
+export function bookingConfigurationTargetQuery(globalId: string) {
+  return getListBookingConfigurationsSuspenseQueryOptions<BookingConfiguration | null>(parameters(globalId), {
+    query: {
+      queryFn: ({ signal }) => listByTarget(globalId, signal),
+      retry: retryUnlessClientError,
+      // No single match reads as null, so the page shows "not found" itself instead of the error boundary.
+      select: (result) => matchingConfiguration(globalId, result.docs.map(mapBookingConfiguration)),
+    },
+  });
+}
+
+export function bookingRouteTargetQuery(globalId: string | undefined) {
+  return getSearchBookingConfigurationTargetsQueryOptions(
+    { q: globalId ?? "", limit: 20 },
+    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
+  );
+}
+
+/** The route-target search for a known target, read with `useSuspenseQuery`; it shares `bookingRouteTargetQuery`'s key. */
+export function bookingRouteTargetSuspenseQuery(globalId: string) {
+  return getSearchBookingConfigurationTargetsSuspenseQueryOptions(
+    { q: globalId, limit: 20 },
+    { query: { select: mapBookingTargetDirectory } },
+  );
+}
