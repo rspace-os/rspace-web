@@ -1,5 +1,4 @@
 import "@/stores/stores/RootStore";
-import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

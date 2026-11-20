@@ -22,12 +22,6 @@ import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSectio
 import InstrumentForm from "../Instrument/Form";
 import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 
-class ResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-
 vi.mock("../Container/Content/Content", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -152,7 +146,6 @@ function renderForm(FormComponent: () => ReactNode, activeResult: InventoryRecor
 }
 
 describe("Instrument Form and historical versions", () => {
-  window.ResizeObserver = ResizeObserver;
   window.scrollTo = vi.fn();
 
   afterEach(cleanup);
@@ -178,7 +171,6 @@ describe("Instrument Form and historical versions", () => {
 });
 
 describe("Instrument Template Form and historical versions", () => {
-  window.ResizeObserver = ResizeObserver;
   window.scrollTo = vi.fn();
 
   afterEach(cleanup);
@@ -204,7 +196,6 @@ describe("Instrument Template Form and historical versions", () => {
 });
 
 describe("Container Form and historical versions", () => {
-  window.ResizeObserver = ResizeObserver;
   window.scrollTo = vi.fn();
 
   afterEach(cleanup);
