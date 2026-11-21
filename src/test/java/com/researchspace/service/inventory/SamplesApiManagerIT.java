@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
+import org.hibernate.Hibernate;
 import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.Test;
 
@@ -55,8 +56,17 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     var parentLocations = dbSubSample.getParentContainer().getLocations();
     assertThrows(LazyInitializationException.class, () -> parentLocations.size());
 
-    // verify subsample can be mapped to ApiSubSample without extra db queries
-    ApiSubSampleInfo infoWithParents = new ApiSubSampleInfo(dbSubSample);
+    // attachments are lazy, so map inside a session; the parent chain must still skip locations
+    ApiSubSampleInfo infoWithParents =
+        doInTransaction(
+            () -> {
+              SubSample sessionSubSample =
+                  sampleApiMgr.getSampleById(sample.getId(), testUser).getSubSamples().get(0);
+              ApiSubSampleInfo info = new ApiSubSampleInfo(sessionSubSample);
+              assertFalse(
+                  Hibernate.isInitialized(sessionSubSample.getParentContainer().getLocations()));
+              return info;
+            });
     assertThat(infoWithParents.getParentContainers()).hasSize(3);
     assertEquals("subContainer", infoWithParents.getParentContainers().get(0).getName());
     assertThat(infoWithParents.getAttachments()).isEmpty();

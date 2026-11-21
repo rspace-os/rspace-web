@@ -299,5 +299,10 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
    */
   ApiSample updateSampleToLatestTemplateVersion(Long sampleId, User user);
 
+  /**
+   * Stores the icon id on a sample or sample template.
+   *
+   * @return the reloaded record, with the collections that API views read already initialised
+   */
   SampleEntity saveIconId(SampleEntity sample, Long iconId);
 }

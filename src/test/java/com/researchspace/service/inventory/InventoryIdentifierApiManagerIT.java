@@ -33,7 +33,7 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
   }
 
   @Test
-  public void retrieveLastPublishedVersionOfItemWithPublicLink() {
+  public void retrieveLastPublishedVersionOfItemWithPublicLink() throws Exception {
 
     User user = createInitAndLoginAnyUser();
 
@@ -53,13 +53,18 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
     assertNotNull(sampleDoi.getUrl());
 
     // verify inventory record can be found by its identifier
-    InventoryRecord sampleFoundByDoiId =
-        inventoryIdentifierApiMgr.getInventoryRecordByIdentifierId(sampleDoi.getId());
-    String publicLink = sampleFoundByDoiId.getActiveIdentifiers().get(0).getPublicLink();
-    assertNotNull(sampleFoundByDoiId);
-    assertEquals(createdSample.getGlobalId(), sampleFoundByDoiId.getOid().getIdString());
-    assertThat(sampleFoundByDoiId.getActiveIdentifiers()).hasSize(1);
-    assertEquals(sampleDoi.getId(), sampleFoundByDoiId.getActiveIdentifiers().get(0).getId());
+    Long sampleDoiId = sampleDoi.getId();
+    String publicLink =
+        doInTransaction(
+            () -> {
+              InventoryRecord sampleFoundByDoiId =
+                  inventoryIdentifierApiMgr.getInventoryRecordByIdentifierId(sampleDoiId);
+              assertNotNull(sampleFoundByDoiId);
+              assertEquals(createdSample.getGlobalId(), sampleFoundByDoiId.getOid().getIdString());
+              assertThat(sampleFoundByDoiId.getActiveIdentifiers()).hasSize(1);
+              assertEquals(sampleDoiId, sampleFoundByDoiId.getActiveIdentifiers().get(0).getId());
+              return sampleFoundByDoiId.getActiveIdentifiers().get(0).getPublicLink();
+            });
     // identifier was not published yet, so inventory record cannot be found by public link
     assertNull(inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink));
 
@@ -131,11 +136,13 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
         inventoryIdentifierApiMgr.publishIdentifier(registered.getOid(), user);
     Long doiId = published.getIdentifiers().get(0).getId();
     String publicLink =
-        inventoryIdentifierApiMgr
-            .getInventoryRecordByIdentifierId(doiId)
-            .getActiveIdentifiers()
-            .get(0)
-            .getPublicLink();
+        doInTransaction(
+            () ->
+                inventoryIdentifierApiMgr
+                    .getInventoryRecordByIdentifierId(doiId)
+                    .getActiveIdentifiers()
+                    .get(0)
+                    .getPublicLink());
 
     ApiInventoryRecordInfo justPublished =
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);

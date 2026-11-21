@@ -933,12 +933,11 @@ export default class SampleModel
           this.createOptionsParametersState.split.copies = 2;
         },
         onSubmit: async () => {
+          // loading the children repopulates the sample, which resets the requested copies
+          const { copies } = this.createOptionsParametersState.split;
           await this.loadChildren();
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
-          return getRootStore().searchStore.search.splitRecord(
-            this.createOptionsParametersState.split.copies,
-            this.subSamples[0],
-          );
+          return getRootStore().searchStore.search.splitRecord(copies, this.subSamples[0]);
         },
       },
       {

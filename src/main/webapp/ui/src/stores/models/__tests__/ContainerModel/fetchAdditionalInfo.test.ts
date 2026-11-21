@@ -107,10 +107,10 @@ test("a restricted response clears previously loaded locations and tree results"
 
   await container.fetchAdditionalInfo();
 
-  expect(container.locations === null).toBe(true);
+  expect(container.locations).toEqual([]);
+  expect(container.hasSelectedLocation).toBe(false);
   expect(container.children.map((child) => child.globalId)).toEqual([]);
   expect(container.contentSearch.cacheFetcher.results.map((child) => child.globalId)).toEqual([]);
-  expect(container.initializedLocations).toBe(false);
 });
 
 test("refreshing an expanded LIST tree removes a child moved out of the container", async () => {

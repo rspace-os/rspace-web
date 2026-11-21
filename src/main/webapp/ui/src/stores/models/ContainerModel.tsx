@@ -286,14 +286,9 @@ export default class ContainerModel
     if (!this.contentSearch) this.contentSearch = new Search(searchParams);
     void this.contentSearch.setSearchView(cTypeToDefaultSearchView(this.cType));
 
-    const receivedLocations = (passedParams as { locations?: ContainerAttrs["locations"] | null }).locations;
-    if (receivedLocations === null && !this.canRead) {
-      this.locations = null;
-      this.contentSearch.cacheFetcher.setContent([]);
-      this.unchangedLocationsIds = Object.freeze([]);
-      this.initializedLocations = false;
-      return;
-    }
+    const passedLocations = (passedParams as { locations?: ContainerAttrs["locations"] | null }).locations;
+    // a restricted view has no readable contents, so it clears any loaded ones, as on main
+    const receivedLocations = passedLocations === null && !this.canRead ? [] : passedLocations;
     if (!Array.isArray(receivedLocations)) return;
 
     const locations: Array<Location> = receivedLocations.map((l: LocationAttrs) => {

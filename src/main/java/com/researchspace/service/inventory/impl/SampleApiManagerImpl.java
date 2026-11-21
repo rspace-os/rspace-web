@@ -1217,6 +1217,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   public SampleEntity saveIconId(SampleEntity sample, Long iconId) {
     // either DAO works here: saveIconId's DML targets SampleEntity, covering both kinds
     sampleDao.saveIconId(sample, iconId);
-    return sample;
+    // reload after the DML and initialise the lazy collections that the API views read
+    SampleEntity saved = getIfExists(sample.getId(), sample.isTemplate(), false);
+    saved.getAttachedFiles();
+    saved.getActiveBarcodes();
+    saved.getActiveIdentifiers();
+    return saved;
   }
 }
