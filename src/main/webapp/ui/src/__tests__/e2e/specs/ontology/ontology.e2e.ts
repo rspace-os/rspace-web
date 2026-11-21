@@ -272,9 +272,7 @@ test.describe("Tagging and Ontology", () => {
     const docName = uniqueName("e2e-tag-doc");
     const tagShared = uniqueName("e2e-tag-shared");
     const tagPicture = uniqueName("e2e-tag-picture");
-    // ContentInitializerForDevRunManager (run/dev profiles only) tags each new user's example
-    // "Full Notebook" with these, so RSpace suggests them.
-    const existingTags = ["defaultFullNotebook", "defaultContent"];
+    const existingTags = [uniqueName("e2e-tag-existing-a"), uniqueName("e2e-tag-existing-b")];
     const sorted = (tags: string[]) => [...tags].sort();
     const expectTags = async (name: string, expected: string[]) => {
       await pageWorkspace.open();
@@ -283,7 +281,8 @@ test.describe("Tagging and Ontology", () => {
       await info.close();
     };
 
-    await test.step("Given a notebook, a folder, and a document exist", async () => {
+    await test.step("Given a notebook, a folder, and a document exist, and my account already uses two tags", async () => {
+      await clientDocuments.create({ name: uniqueName("e2e-tag-source"), tags: existingTags.join(",") });
       await clientFolders.create({ name: notebookName, notebook: true });
       const folder = await clientFolders.create({ name: folderName });
       await clientDocuments.create({ name: docName, parentFolderId: folder.parentFolderId });
