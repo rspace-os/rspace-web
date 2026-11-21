@@ -63,7 +63,6 @@ public class ProductionConfig extends BaseConfig {
   @Value("${license.server.active:true}")
   private boolean licenseServerActive;
 
-  // Optional; when unset, no static Figshare categories or licenses are loaded.
   @Value("${figshare.categories.path:}")
   private String figshareCategoriesPath;
 
