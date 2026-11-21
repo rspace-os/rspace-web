@@ -21,6 +21,7 @@ import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.RemoteLicenseService;
 import com.researchspace.service.impl.CommunicationManagerImpl;
+import com.researchspace.service.impl.DeveloperGroupSetup;
 import com.researchspace.service.impl.EcatMediaFactory;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import com.researchspace.service.impl.LicenseServerChecker;
@@ -35,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,11 +63,11 @@ public class ProductionConfig extends BaseConfig {
   @Value("${license.server.active:true}")
   private boolean licenseServerActive;
 
-  @Value("${figshare.categories.path}")
-  private Path figshareCategoriesPath;
+  @Value("${figshare.categories.path:}")
+  private String figshareCategoriesPath;
 
-  @Value("${figshare.licenses.path}")
-  private Path figshareLicensesPath;
+  @Value("${figshare.licenses.path:}")
+  private String figshareLicensesPath;
 
   private @Autowired TaskExecutorConfig taskExecutorConfig;
 
@@ -161,6 +163,8 @@ public class ProductionConfig extends BaseConfig {
     inits.add(chemistryImageUpdater());
     inits.add(integrationsHandlerInitialisor());
     inits.add(sampleTemplateAppInitialiser());
+    // no-op unless rs.dev.groupcreation=true and the dev-test seed users exist
+    inits.add(devGrpSetup());
     inits.add(customForms());
     // should be last
     inits.add(dBDataIntegrityChecker);
@@ -169,6 +173,11 @@ public class ProductionConfig extends BaseConfig {
     inits.add(sanityChecker());
     mgr.setApplicationInitialisors(inits);
     return mgr;
+  }
+
+  @Bean
+  public IApplicationInitialisor devGrpSetup() {
+    return new DeveloperGroupSetup();
   }
 
   /** Removes sanity checker from test setup */
@@ -197,14 +206,16 @@ public class ProductionConfig extends BaseConfig {
   public IRepository figshareRepository() {
     FigshareRSpaceRepository repo = new FigshareRSpaceRepository();
     try {
-      if (figshareLicensesPath != null && figshareCategoriesPath != null) {
+      if (StringUtils.isNotBlank(figshareLicensesPath)
+          && StringUtils.isNotBlank(figshareCategoriesPath)) {
         log.info(
             "Setting Figshare categories and licenses from static files, "
                 + "Categories: [{}]  Licenses: {}",
             figshareCategoriesPath,
             figshareLicensesPath);
         repo.setStaticFigshareConfig(
-            Files.readString(figshareLicensesPath), Files.readString(figshareCategoriesPath));
+            Files.readString(Path.of(figshareLicensesPath)),
+            Files.readString(Path.of(figshareCategoriesPath)));
         log.info("Licenses are: {}", repo.getFigshareLicenses());
       }
     } catch (Exception e) {

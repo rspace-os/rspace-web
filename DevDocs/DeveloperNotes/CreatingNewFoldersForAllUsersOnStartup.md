@@ -36,13 +36,29 @@ For tests that startup a Spring container, RSDevConfig (dev profile) sets up
 GlobalInitManager.setApplicationInitialisors() AND IT DOES NOT populate with the same list of beans that the real config
 classes do. (It does not add GroupSharedSnippetsFolderAppInitialiser)
 
-There are two automated tests for APP startup (note - these must run in a unique Integration test phase, else we get
-multiple Spring Containers running with bean clashes. See the pom file for how this is done, we exclude tests that use
-the run and prod profiles from the standard test and Integration test runs as these all use the dev profile. Then we
-have a special execution for the run and prod profile tests):
+There are two automated tests for app startup, ProdConfigWiringTest and RunConfigWiringTestIT. Each boots a Spring
+context for its own profile, so each needs its own surefire execution. Otherwise several Spring containers run at once
+and their beans clash. Booting the prod context also seeds built-in forms and other content that nothing removes, so
+ProdConfigWiringTest must not run in default-test: it would break tests such as FormDaoTest that count forms. The pom
+excludes it from default-test and runs it in the unit-tests-production execution, a separate JVM that starts after
+default-test. It excludes RunConfigWiringTestIT from the standard integration run, because the other tests there use the
+dev profile, and runs it in integration-tests-run. The executions look like this:
 
 ```
-<execution> <!-- for 'dev' profile IT tests -->
+<execution> <!-- separate execution for 'prod' profile tests -->
+						<id>unit-tests-production</id>
+						<phase>test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>${skipUnitTests}</skip>
+							<includes>
+								<include>**/ProdConfigWiringTest.java</include>
+							</includes>
+						</configuration>
+					</execution>
+					<execution> <!-- for 'dev' profile IT tests -->
 						<id>integration-tests</id>
 						<phase>integration-test</phase>
 						<goals>
@@ -79,10 +95,17 @@ have a special execution for the run and prod profile tests):
 					</execution>
 ```
 
-RunConfigWiringTestIT and ProdConfigWiringTest. ProdConfigWiringTest does not run as part of the standard test
-executions - see the pom file. These two tests use the 'run' and 'prod' profiles and therefore can be used to test the
-real set of initialiser beans
-(such as GroupSharedSnippetsFolderAppInitialiser) that actually run on a real app startup.
+ProdConfigWiringTest and RunConfigWiringTestIT use the 'prod' and 'run' profiles, so they can test the real set of
+initialiser beans that run on a real app start, such as GroupSharedSnippetsFolderAppInitialiser. `-Dfast=true` skips
+ProdConfigWiringTest.
+
+Both classes need a disposable database. Booting a context runs the startup initialisers and leaves their data behind,
+and RunConfigWiringTestIT also empties every group's shared snippet ACL. A separate execution does not provide that
+database. When -Djdbc.url is set, as in CI and Jenkins, it is used as is and nothing is started for you. Never point it
+at a database you want to keep. Without -Djdbc.url, the tests start a throwaway MariaDB in Docker.
+
+Keep data-changing checks out of ProdConfigWiringTest, because its job is to check the wiring and not to change data.
+GroupManagerTest tests the shared snippet folder migration and rolls back.
 
 GroupSharedSnippetsFolderAppInitialiser is not present in the test context on App startup for the non Integration unit
 tests that use the 'dev' profile - this is compensated by the MockFolderStructure class which actually explicitly
