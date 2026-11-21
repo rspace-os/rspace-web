@@ -448,7 +448,7 @@ class HibernateSandboxTest extends HibernateTest {
           dao.saveTogether(sample, copy, parentContainer);
         });
 
-    Sample reloaded = dao.load(copy.getId(), Sample.class);
+    Sample reloaded = dao.load(copy.getId(), Sample.class, toInit -> toInit.getSubSamples().size());
     assertFalse(reloaded.getId().equals(sample.getId()));
     assertEquals(
         sample.getTotalQuantity().getNumericValue().doubleValue(),
@@ -1193,7 +1193,8 @@ class HibernateSandboxTest extends HibernateTest {
         RecordSharingACL.createACLForUserOrGroup(user.asUser(), PermissionType.WRITE));
     dao.update(sample, Sample.class);
 
-    Sample reloadedSample = dao.load(sample.getId(), Sample.class);
+    Sample reloadedSample =
+        dao.load(sample.getId(), Sample.class, toInit -> toInit.getSubSamples().size());
     assertEquals(InventorySharingMode.WHITELIST, reloadedSample.getSharingMode());
     assertNotNull(reloadedSample.getSharingACL());
     assertEquals(user.getUsername() + "=RECORD:WRITE:", reloadedSample.getSharingACL().getString());
@@ -1209,7 +1210,8 @@ class HibernateSandboxTest extends HibernateTest {
     sample.setSharingMode(InventorySharingMode.OWNER_ONLY);
     sample.setSharingACL(reloadedSample.getSharingACL());
     dao.update(sample, Sample.class);
-    reloadedSample = dao.load(sample.getId(), Sample.class);
+    reloadedSample =
+        dao.load(sample.getId(), Sample.class, toInit -> toInit.getSubSamples().size());
     assertEquals(InventorySharingMode.OWNER_ONLY, reloadedSample.getSharingMode());
     // changing sample permissions is reflected on subsample permissions
     assertEquals(

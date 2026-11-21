@@ -38,9 +38,10 @@ public class DocumentFieldAttachmentInitializationPolicy extends DocumentInitial
           for (MaterialUsage mu : lom.getMaterials()) {
             InventoryRecord invRec = mu.getInventoryRecord();
             if (invRec != null) {
-              invRec.getActiveBarcodes();
-              if (invRec instanceof MovableInventoryRecord) {
-                populateParentChain(((MovableInventoryRecord) invRec));
+              initializeInventoryCollections(invRec);
+              if (invRec instanceof MovableInventoryRecord movable) {
+                populateParentChain(movable.getParentContainer());
+                populateParentChain(movable.getLastNonWorkbenchParent());
               }
               initializeParentSample(invRec); // RSDEV-80
               initializeParentSampleTemplate(invRec); // RSINV-625
@@ -53,10 +54,17 @@ public class DocumentFieldAttachmentInitializationPolicy extends DocumentInitial
 
   private void populateParentChain(MovableInventoryRecord record) {
     if (record != null) {
-      record.getActiveBarcodes();
+      initializeInventoryCollections(record);
       populateParentChain(record.getParentContainer());
       populateParentChain(record.getLastNonWorkbenchParent());
     }
+  }
+
+  private void initializeInventoryCollections(InventoryRecord record) {
+    record.getActiveBarcodes();
+    record.getAttachedFiles();
+    record.getActiveIdentifiers();
+    record.getActiveExtraFields();
   }
 
   private void initializeParentSampleTemplate(InventoryRecord invRec) {
@@ -71,6 +79,7 @@ public class DocumentFieldAttachmentInitializationPolicy extends DocumentInitial
   private void initializeParentSample(InventoryRecord invRec) {
     if (invRec.isSubSample()) {
       SampleEntity parentSample = ((SubSample) invRec).getSample();
+      initializeInventoryCollections(parentSample);
       for (InventoryEntityField sf : parentSample.getActiveFields()) {
         sf.getAttachedFile();
       }

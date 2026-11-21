@@ -24,6 +24,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
+import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
@@ -82,6 +83,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
   private @Autowired SampleTemplateDao sampleTemplateDao;
+  private @Autowired SubSampleDao subSampleDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
@@ -344,7 +346,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             createSubSampleFromIncomingApiSample(subSampleName, apiSubSample, sample, user);
         newSubSamples.add(subSample);
       }
-      sample.setSubSamples(newSubSamples);
+      sample.replaceSubSamples(newSubSamples);
     }
     setWorkbenchAsParentForNewSubSamples(sample, user);
     sample.recalculateTotalQuantity();
@@ -573,17 +575,29 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSample getApiSampleById(Long id, User user) {
-    return doGetSample(id, user, false);
+    return getApiSampleById(id, user, true);
   }
 
-  private ApiSample doGetSample(Long id, User user, boolean asTemplate) {
-    SampleEntity sample = getIfExists(id);
+  @Override
+  public ApiSample getApiSampleById(Long id, User user, boolean includeSubSamples) {
+    return doGetSample(id, user, false, includeSubSamples);
+  }
+
+  private ApiSample doGetSample(Long id, User user, boolean asTemplate, boolean includeSubSamples) {
+    SampleEntity sample = getIfExists(id, false, includeSubSamples);
     if (asTemplate != sample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           String.format("Sample template flag doesn't match the request (id %d)", id));
     }
     publisher.publishEvent(new InventoryAccessEvent(sample, user));
-    return getOutgoingApiSample(sample, user);
+    if (includeSubSamples || asTemplate) {
+      return getOutgoingApiSample(sample, user);
+    }
+    var counts = subSampleDao.getSampleChildCounts(id, sample.isDeleted());
+    ApiSample result =
+        new ApiSample(sample, counts.activeCount().intValue(), counts.storedCount() == 0);
+    populateOutgoingApiSample(result, sample, user);
+    return result;
   }
 
   private ApiSample getOutgoingApiSample(SampleEntity sample, User user) {
@@ -715,6 +729,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   private SampleEntity getIfExists(Long id, boolean onlyIfTemplate) {
+    return getIfExists(id, onlyIfTemplate, true);
+  }
+
+  private SampleEntity getIfExists(Long id, boolean onlyIfTemplate, boolean populateChildParents) {
     SampleEntity s;
     if (sampleDao.exists(id)) {
       s = sampleDao.get(id);
@@ -727,8 +745,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     if (onlyIfTemplate && !s.isTemplate()) {
       throw new NotFoundException("No sample template with id: " + id);
     }
-    for (SubSample ss : s.getSubSamples()) {
-      populateSubSampleParentContainerChain(ss);
+    if (populateChildParents) {
+      for (SubSample ss : s.getSubSamples()) {
+        populateSubSampleParentContainerChain(ss);
+      }
     }
     return s;
   }
@@ -1006,7 +1026,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSampleTemplate getApiSampleTemplateById(Long id, User user) {
-    return (ApiSampleTemplate) doGetSample(id, user, true);
+    return (ApiSampleTemplate) doGetSample(id, user, true, true);
   }
 
   @Override
@@ -1197,6 +1217,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   public SampleEntity saveIconId(SampleEntity sample, Long iconId) {
     // either DAO works here: saveIconId's DML targets SampleEntity, covering both kinds
     sampleDao.saveIconId(sample, iconId);
-    return sample;
+    // reload after the DML and initialise the lazy collections that the API views read
+    SampleEntity saved = getIfExists(sample.getId(), sample.isTemplate(), false);
+    saved.getAttachedFiles();
+    saved.getActiveBarcodes();
+    saved.getActiveIdentifiers();
+    return saved;
   }
 }

@@ -772,7 +772,7 @@ function OperationWizard({
     let created: OperationResult | null;
     try {
       // "fromSample" reads the origin sample's own template, so the parent must be loaded first.
-      if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
+      if (templateSelection.mode === "fromSample") await origin.sample.fetchWithSubSamples();
       const templateId = operation.noOutput
         ? null
         : resolveTemplateId({

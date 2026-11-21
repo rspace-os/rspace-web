@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
@@ -21,12 +22,14 @@ import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -290,6 +293,87 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertNotNull(bulkOpResult.getResults().get(1).getError());
     String templateError = bulkOpResult.getResults().get(1).getError().getErrors().get(0);
     assertThat(templateError).as(templateError).contains("templateId");
+  }
+
+  @Test
+  void bulkMoveSnapshotsIncludeCoordinatesOfAnAncestorsFormerParent() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+    ApiContainer list = createBasicContainerForUser(user, "L");
+    ApiSubSample a = createBasicSampleForUser(user, "A").getSubSamples().get(0);
+    moveSubSampleIntoListContainer(a.getId(), list.getId(), user);
+    ApiContainer d = createBasicContainerForUser(user, "D");
+    moveContainerIntoListContainer(d.getId(), list.getId(), user);
+    ApiContainer b = createBasicContainerForUser(user, "B");
+    moveContainerIntoListContainer(b.getId(), d.getId(), user);
+    ApiContainer q = createBasicContainerForUser(user, "Q");
+    moveContainerIntoListContainer(b.getId(), q.getId(), user);
+    ApiContainer e = createBasicContainerForUser(user, "E");
+    ApiSubSample x = createBasicSampleForUser(user, "X").getSubSamples().get(0);
+    moveSubSampleIntoListContainer(x.getId(), e.getId(), user);
+
+    String request =
+        """
+        {"operationType":"MOVE","records":[
+          {"id":%d,"type":"SUBSAMPLE","parentContainers":[{"id":%d}]},
+          {"id":%d,"type":"SUBSAMPLE","parentContainers":[{"id":%d}]}
+        ]}
+        """
+            .formatted(x.getId(), b.getId(), a.getId(), q.getId());
+    var response =
+        getFromJsonResponseBody(
+            postBulkOperation(user, apiKey, request), ApiInventoryBulkOperationResult.class);
+    assertEquals(2, response.getSuccessCount());
+    var movedX = response.getResults().get(0).getRecord();
+    assertEquals(x.getId(), movedX.getId());
+    var formerParent = movedX.getParentContainer().getLastNonWorkbenchParent();
+    assertEquals(d.getId(), formerParent.getId());
+    assertEquals(1, formerParent.getParentLocation().getCoordX());
+  }
+
+  @Test
+  void bulkListMoveAppendsAfterStagingRemovalAndExchangesWorkbenchOccupants() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+    ApiContainer list = createBasicContainerForUser(user, "List destination");
+    moveContainerToTopLevel(list, user);
+    ApiSubSample a = createBasicSampleForUser(user, "A").getSubSamples().get(0);
+    ApiSubSample b = createBasicSampleForUser(user, "B").getSubSamples().get(0);
+    ApiSubSample c = createBasicSampleForUser(user, "C").getSubSamples().get(0);
+    for (ApiSubSample occupant : List.of(a, b, c)) {
+      moveSubSampleIntoListContainer(occupant.getId(), list.getId(), user);
+    }
+    ApiSubSample x = createBasicSampleForUser(user, "X").getSubSamples().get(0);
+    Long benchId = x.getParentContainer().getId();
+    String request =
+        """
+        {"operationType":"MOVE","records":[
+          {"id":%d,"type":"SUBSAMPLE","parentContainers":[{"id":%d}]},
+          {"id":%d,"type":"SUBSAMPLE","parentContainers":[{"id":%d}]}
+        ]}
+        """
+            .formatted(a.getId(), benchId, x.getId(), list.getId());
+    var response =
+        getFromJsonResponseBody(
+            postBulkOperation(user, apiKey, request), ApiInventoryBulkOperationResult.class);
+    assertEquals(2, response.getSuccessCount());
+    var first = (ApiSubSampleInfo) response.getResults().get(0).getRecord();
+    var second = (ApiSubSampleInfo) response.getResults().get(1).getRecord();
+    assertEquals(a.getId(), first.getId());
+    assertEquals(benchId, first.getParentContainer().getId());
+    assertEquals(x.getId(), second.getId());
+    assertEquals(3, second.getParentLocation().getCoordX());
+    assertEquals(3, second.getParentContainer().getContentSummary().getTotalCount());
+
+    var details =
+        mockMvc
+            .perform(getContainerById(user, apiKey, list.getId(), true))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiContainer current = getFromJsonResponseBody(details, ApiContainer.class);
+    assertEquals(
+        List.of(b.getId(), c.getId(), x.getId()),
+        current.getLocations().stream().map(location -> location.getContent().getId()).toList());
   }
 
   @Test

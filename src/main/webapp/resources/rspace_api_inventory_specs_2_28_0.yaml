@@ -906,11 +906,19 @@ paths:
     get:
       summary: Retrieve a complete Sample by ID
       description: |
-        Gets a complete Sample, including summary information about subSamples.
+        Gets a Sample, with subsample summaries included by default.
+        Set `includeSubSamples=false` to get a null `subSamples` field while retaining
+        the active subsample count and delete eligibility for viewers allowed to see them.
       tags:
         - Samples
       parameters:
         - $ref: "#/components/parameters/sampleIdParam"
+        - in: query
+          name: includeSubSamples
+          description: Include subsample summaries in the response.
+          schema:
+            type: boolean
+            default: true
       responses:
         "200":
           description: A Sample

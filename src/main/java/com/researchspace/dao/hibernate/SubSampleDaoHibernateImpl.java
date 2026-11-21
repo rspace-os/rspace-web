@@ -28,6 +28,26 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
   }
 
   @Override
+  public SampleChildCounts getSampleChildCounts(Long sampleId, boolean sampleDeleted) {
+    return getSession()
+        .createQuery(
+            """
+            select count(child.id),
+              count(case when storage.id is not null and storage.containerType <> 'WORKBENCH'
+                    then 1 else null end)
+            from SubSample child
+            left join child.parentLocation location
+            left join location.container storage
+            where child.sample.id = :sampleId
+              and (child.deleted = false or (:sampleDeleted = true and child.deletedOnSampleDeletion = true))
+            """,
+            SampleChildCounts.class)
+        .setParameter("sampleId", sampleId)
+        .setParameter("sampleDeleted", sampleDeleted)
+        .getSingleResult();
+  }
+
+  @Override
   public ISearchResults<SubSample> getSubSamplesForUser(
       PaginationCriteria<SubSample> pgCrit,
       String ownedBy,

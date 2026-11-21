@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import SampleModel from "../../../stores/models/SampleModel";
 import { match } from "../../../util/Util";
 import NameWithBadge from "../NameWithBadge";
 import NavigateToNode from "./NavigateToNode";
@@ -24,7 +26,10 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
   const theme = useTheme();
 
   useEffect(() => {
-    if (!node.infoLoaded) node.loadChildren();
+    let childrenLoaded = node.infoLoaded;
+    if (node instanceof ContainerModel) childrenLoaded = node.initializedLocations;
+    if (node instanceof SampleModel && node.recordType === "sample") childrenLoaded = node.subSamplesLoaded;
+    if (!childrenLoaded) void node.loadChildren();
   }, []);
 
   const children = () => {

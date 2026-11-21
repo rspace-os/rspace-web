@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiDocument;
@@ -29,6 +30,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSearchQuery;
 import com.researchspace.api.v1.model.ApiSearchTerm;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.DocumentShares;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.MoveRequest;
@@ -41,6 +43,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
@@ -353,6 +356,44 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result2 = this.mockMvc.perform(getDocById(user2, apiKey2, doc.getId())).andReturn();
     apiDoc = getFromJsonResponseBody(result2, ApiDocument.class);
     assertNull(apiDoc.getParentFolderId());
+  }
+
+  @Test
+  void getDocumentSerializesMaterialsAndTheirParentsOutsideTheServiceSession() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+    StructuredDocument document =
+        createBasicDocumentInRootFolderWithText(user, "detached material");
+    ApiContainer parent = createBasicContainerForUser(user);
+    ApiContainer material = createBasicContainerForUser(user);
+    moveContainerIntoListContainer(material.getId(), parent.getId(), user);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    ApiSubSample subSample = sample.getSubSamples().get(0);
+    moveSubSampleIntoListContainer(subSample.getId(), parent.getId(), user);
+    addFileAttachmentToInventoryItem(new GlobalIdentifier(sample.getGlobalId()), user);
+    addFileAttachmentToInventoryItem(new GlobalIdentifier(parent.getGlobalId()), user);
+    createBasicListOfMaterialsForUserAndDocField(
+        user,
+        document.getFields().get(0),
+        List.of(new ApiMaterialUsage(material, null), new ApiMaterialUsage(subSample, null)));
+
+    MvcResult result =
+        mockMvc
+            .perform(getDocById(user, apiKey, document.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    JsonNode materials =
+        new ObjectMapper()
+            .readTree(result.getResponse().getContentAsString())
+            .at("/fields/0/listOfMaterials/0/materials");
+    JsonNode containerRecord = materials.at("/0/invRec");
+    assertEquals(material.getGlobalId(), containerRecord.at("/globalId").asText());
+    assertEquals(parent.getGlobalId(), containerRecord.at("/parentContainers/0/globalId").asText());
+    assertEquals(1, containerRecord.at("/parentContainers/0/attachments").size());
+    JsonNode subSampleRecord = materials.at("/1/invRec");
+    assertEquals(subSample.getGlobalId(), subSampleRecord.at("/globalId").asText());
+    assertEquals(parent.getGlobalId(), subSampleRecord.at("/parentContainers/0/globalId").asText());
+    assertEquals(1, subSampleRecord.at("/sample/attachments").size());
   }
 
   @Test

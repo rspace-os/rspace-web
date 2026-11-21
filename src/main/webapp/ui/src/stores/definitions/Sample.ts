@@ -29,4 +29,6 @@ export interface Sample extends InventoryRecord {
   readonly enforceMandatoryFields: boolean;
 
   subSamplesCount: number;
+  readonly subSamplesLoaded: boolean;
+  fetchWithSubSamples(): Promise<void>;
 }

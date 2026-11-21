@@ -477,7 +477,7 @@ public class TestFactory {
 
   public static Sample createBasicSampleWithSubSamples(User user, int numSubSamples) {
     Sample sample = createBasicSampleInContainer(user);
-    sample.setSubSamples(createBasicSubSamples(user, sample, numSubSamples));
+    sample.replaceSubSamples(createBasicSubSamples(user, sample, numSubSamples));
     return sample;
   }
 
@@ -502,7 +502,7 @@ public class TestFactory {
     sample.setThumbnailFileProperty(f2);
     sample.setStorageTempMax(QuantityInfo.of(BigDecimal.TEN, RSUnitDef.CELSIUS));
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.ONE, RSUnitDef.CELSIUS));
-    sample.setSubSamples(createBasicSubSamples(user, sample, numSubSamples));
+    sample.replaceSubSamples(createBasicSubSamples(user, sample, numSubSamples));
     FileProperty f3 = createAnyTransientFileProperty(user);
     InventoryFile invFile = new InventoryFile("testFileName.txt", f3);
     sample.addAttachedFile(invFile);

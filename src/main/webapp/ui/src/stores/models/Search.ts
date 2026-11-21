@@ -637,7 +637,13 @@ export default class Search implements SearchInterface {
       uiStore.setVisiblePanel("left");
     } else {
       // e.g. sample's quantity may have changed
-      this.refetchActiveResult(deletedGlobalIds);
+      const deletedSampleIds = new Set<GlobalId>();
+      for (const record of deletedRecords) {
+        if (record instanceof SubSampleModel && record.sample.globalId) {
+          deletedSampleIds.add(record.sample.globalId);
+        }
+      }
+      this.refetchActiveResult(deletedGlobalIds, deletedSampleIds);
     }
 
     if (searchStore.activeResult instanceof ContainerModel) {
@@ -1027,7 +1033,7 @@ export default class Search implements SearchInterface {
   async createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void> {
     const { uiStore } = getRootStore();
     try {
-      if (!sample.infoLoaded) await sample.fetchAdditionalInfo();
+      if (!sample.subSamplesLoaded) await sample.fetchWithSubSamples();
       const args = {
         ...(await sample.sampleCreationParams(includeContentForFields)),
         name,
@@ -1323,9 +1329,13 @@ export default class Search implements SearchInterface {
     return this.globalIdsOfSearchResults.has(record.globalId);
   }
 
-  refetchActiveResult(recordIds: Set<GlobalId>): void {
+  refetchActiveResult(recordIds: Set<GlobalId>, deletedSampleIds?: Set<GlobalId>): void {
     const activeResult = getRootStore().searchStore.activeResult;
-    if (activeResult) activeResult.updateBecauseRecordsChanged(recordIds);
+    if (activeResult instanceof SampleModel) {
+      activeResult.updateBecauseRecordsChanged(recordIds, deletedSampleIds);
+    } else {
+      activeResult?.updateBecauseRecordsChanged(recordIds);
+    }
   }
 
   get enableAdvancedOptions(): boolean {

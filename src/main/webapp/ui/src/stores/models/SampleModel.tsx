@@ -172,10 +172,7 @@ export default class SampleModel
   extends HasQuantityMixin(InventoryBaseRecord)
   implements Sample, HasEditableFields<SampleEditableFields>, HasUneditableFields<SampleUneditableFields>
 {
-  // Tracks a full (base info + template) fetchAdditionalInfo() call in progress, distinct from
-  // the base class's own fetchingAdditionalInfo (which only covers the base fetch itself) so a
-  // concurrent caller here waits for the template fetch too, not just the base fetch.
-  fetchingFullAdditionalInfo: Promise<void> | null = null;
+  subSamplesLoaded = false;
   subSamplesCount: number = 0;
   subSamples: Array<SubSampleModel> = [];
   newSampleSubSamplesCount: number | null = 1;
@@ -227,6 +224,7 @@ export default class SampleModel
     makeObservable(this, {
       subSamplesCount: observable,
       subSamples: observable,
+      subSamplesLoaded: observable,
       newSampleSubSamplesCount: observable,
       newSampleSubSampleTargetLocations: observable,
       storageTempMin: observable,
@@ -294,14 +292,15 @@ export default class SampleModel
       ...passedParams,
     } as SampleAttrs & { template: Template | null | false };
     if (typeof params.subSamplesCount === "number") this.subSamplesCount = params.subSamplesCount;
-    this.subSamples = (params.subSamples ?? []).map((s) => {
-      const newRecord = factory.newRecord({
-        ...s,
-        sample: this,
-      }) as SubSampleModel;
-      newRecord.populateFromJson(factory, { ...s, sample: this });
-      return newRecord;
-    });
+    const children = (passedParams as Partial<SampleAttrs>).subSamples;
+    if (Array.isArray(children) || children === null) {
+      this.subSamples = (children ?? []).map((child) => {
+        const newRecord = factory.newRecord({ ...child, sample: this }) as SubSampleModel;
+        newRecord.populateFromJson(factory, { ...child, sample: this });
+        return newRecord;
+      });
+      this.subSamplesLoaded = true;
+    }
     this.storageTempMin = params.storageTempMin;
     this.storageTempMax = params.storageTempMax;
     this.overrideFields(params.fields ?? []);
@@ -347,36 +346,44 @@ export default class SampleModel
     return "sample";
   }
 
-  async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
-    // This used to build its own wrapper Promise around super.fetchAdditionalInfo(), assign it to
-    // this.fetchingAdditionalInfo (the *base class's* field, also used internally by
-    // super.fetchAdditionalInfo() itself), then `return` without ever awaiting it (RSDEV-1309).
-    // Since an async function's returned promise resolves as soon as it hits that bare `return`,
-    // every caller's `await sample.fetchAdditionalInfo()` resolved almost immediately - long
-    // before the real fetch (and the template fetch below) had actually completed - racing ahead
-    // of code that correctly expected the data to be loaded by the time the await returned (e.g.
-    // setEditing(true), which flips `editing` to true right after this resolves).
-    if (this.fetchingFullAdditionalInfo) {
-      await this.fetchingFullAdditionalInfo;
-      return;
+  async fetchAdditionalInfo(silent = false, queryParameters = new URLSearchParams()): Promise<void> {
+    const params = new URLSearchParams(queryParameters);
+    if (
+      !this.historicalVersion &&
+      this.state === "preview" &&
+      !this.subSamplesLoaded &&
+      !params.has("includeSubSamples")
+    ) {
+      params.set("includeSubSamples", "false");
     }
-    this.fetchingFullAdditionalInfo = (async () => {
-      await super.fetchAdditionalInfo(silent);
-      if (this.templateId) {
-        const template = await getRootStore().searchStore.getTemplate(
-          this.templateId,
-          this.templateVersion,
-          this.factory.newFactory(),
-        );
-        runInAction(() => {
-          this.template = template;
-        });
-      }
-    })();
-    try {
-      await this.fetchingFullAdditionalInfo;
-    } finally {
-      this.fetchingFullAdditionalInfo = null;
+    await super.fetchAdditionalInfo(silent, params);
+  }
+
+  fetchWithSubSamples(): Promise<void> {
+    return this.fetchAdditionalInfo(false, new URLSearchParams({ includeSubSamples: "true" }));
+  }
+
+  protected populateAdditionalInfo(data: object, queryParameters: URLSearchParams): void {
+    if (queryParameters.get("includeSubSamples") === "false") {
+      const summary = { ...data };
+      Reflect.deleteProperty(summary, "subSamples");
+      super.populateAdditionalInfo(summary, queryParameters);
+    } else {
+      super.populateAdditionalInfo(data, queryParameters);
+    }
+  }
+
+  protected async finishAdditionalInfo(): Promise<void> {
+    await super.finishAdditionalInfo();
+    if (this.templateId) {
+      const template = await getRootStore().searchStore.getTemplate(
+        this.templateId,
+        this.templateVersion,
+        this.factory.newFactory(),
+      );
+      runInAction(() => {
+        this.template = template;
+      });
     }
   }
 
@@ -423,7 +430,7 @@ export default class SampleModel
     const params = { ...super.paramsForBackend };
     if (this.currentlyEditableFields.has("subSamplesCount"))
       params.newSampleSubSamplesCount = this.newSampleSubSamplesCount;
-    if (this.currentlyEditableFields.has("subsamples"))
+    if (this.currentlyEditableFields.has("subsamples") && this.subSamplesLoaded)
       params.subSamples = this.subSamples.map((s) => ({
         ...s.paramsForBackend,
       }));
@@ -768,8 +775,8 @@ export default class SampleModel
     return this.subSamples;
   }
 
-  loadChildren(): void {
-    void this.fetchAdditionalInfo();
+  loadChildren(): Promise<void> | void {
+    if (!this.subSamplesLoaded) return this.fetchWithSubSamples();
   }
 
   get illustration(): React.ReactNode {
@@ -825,8 +832,11 @@ export default class SampleModel
    * When some subsamples have been deleted, sample should be refetched as its
    * quantity will have changed.
    */
-  updateBecauseRecordsChanged(recordIds: Set<GlobalId>) {
-    if (this.subSamples.some((ss) => recordIds.has(getSavedGlobalId(ss)))) {
+  updateBecauseRecordsChanged(recordIds: Set<GlobalId>, deletedSampleIds?: Set<GlobalId>) {
+    if (
+      (this.globalId && deletedSampleIds?.has(this.globalId)) ||
+      this.subSamples.some((child) => recordIds.has(getSavedGlobalId(child)))
+    ) {
       void this.fetchAdditionalInfo();
     }
   }
@@ -862,7 +872,7 @@ export default class SampleModel
 
   get createOptions(): ReadonlyArray<CreateOption> {
     let splitExplanation: string = i18n.t("inventory:sample.createOptions.split.explanation");
-    if (this.subSamples.length > 1) splitExplanation = i18n.t("inventory:sample.createOptions.split.tooManySubsamples");
+    if (this.subSamplesCount > 1) splitExplanation = i18n.t("inventory:sample.createOptions.split.tooManySubsamples");
     if (!this.canEdit) splitExplanation = i18n.t("inventory:sample.createOptions.noEditPermission");
 
     return [
@@ -908,7 +918,7 @@ export default class SampleModel
       {
         label: i18n.t("inventory:sample.createOptions.split.label"),
         explanation: splitExplanation,
-        disabled: this.subSamples.length > 1 || !this.canEdit,
+        disabled: this.subSamplesCount > 1 || !this.canEdit,
         parameters: [
           {
             label: i18n.t("inventory:sample.createOptions.split.countLabel"),
@@ -922,12 +932,12 @@ export default class SampleModel
         onReset: () => {
           this.createOptionsParametersState.split.copies = 2;
         },
-        onSubmit: () => {
+        onSubmit: async () => {
+          // loading the children repopulates the sample, which resets the requested copies
+          const { copies } = this.createOptionsParametersState.split;
+          await this.loadChildren();
           if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
-          return getRootStore().searchStore.search.splitRecord(
-            this.createOptionsParametersState.split.copies,
-            this.subSamples[0],
-          );
+          return getRootStore().searchStore.search.splitRecord(copies, this.subSamples[0]);
         },
       },
       {

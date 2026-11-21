@@ -164,6 +164,9 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
    */
   ApiSample getApiSampleById(Long id, User user);
 
+  /** Returns a live sample, optionally omitting child detail. */
+  ApiSample getApiSampleById(Long id, User user, boolean includeSubSamples);
+
   /**
    * Returns the sample as it was at the given user-facing version, with outgoing fields (permitted
    * actions etc.) populated against the live sample. The current version is served as a regular
@@ -296,5 +299,10 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
    */
   ApiSample updateSampleToLatestTemplateVersion(Long sampleId, User user);
 
+  /**
+   * Stores the icon id on a sample or sample template.
+   *
+   * @return the reloaded record, with the collections that API views read already initialised
+   */
   SampleEntity saveIconId(SampleEntity sample, Long iconId);
 }

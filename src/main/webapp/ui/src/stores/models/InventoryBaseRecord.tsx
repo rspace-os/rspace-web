@@ -233,6 +233,8 @@ export default class InventoryBaseRecord
   barcodes: Array<BarcodeRecord> = [];
   factory: Factory;
   fetchingAdditionalInfo: Promise<{ data: object }> | null = null;
+  private detailRequests = new Map<string, Promise<void>>();
+  private permalinkDetailKey: string | null = null;
   // @ts-expect-error sharingMode is initialised by populateFromJson
   sharingMode: SharingMode;
   // @ts-expect-error sharingWith is initialised by populateFromJson
@@ -933,7 +935,7 @@ export default class InventoryBaseRecord
     } = getRootStore();
 
     // `instanceof ContainerModel` would add a cyclical dependency
-    if (!activeResult || !("locations" in activeResult)) return;
+    if (!activeResult || !("locations" in activeResult) || !activeResult.locations) return;
     const locations = activeResult.locations as ReadonlyArray<Location>;
 
     /*
@@ -952,17 +954,30 @@ export default class InventoryBaseRecord
     }
   }
 
+  rememberPermalinkDetails(queryParameters = new URLSearchParams()): void {
+    this.permalinkDetailKey = queryParameters.toString();
+  }
+
   async fetchAdditionalInfo(
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams(),
   ): Promise<void> {
-    if (this.fetchingAdditionalInfo || !this.id) {
-      if (this.fetchingAdditionalInfo === null) return;
-      await this.fetchingAdditionalInfo;
-      return;
-    }
-    const id = this.id;
+    if (!this.id) return;
+    const params = new URLSearchParams(queryParameters);
+    params.sort();
+    const key = params.toString();
+    const inProgress = this.detailRequests.get(key);
+    if (inProgress) return inProgress;
 
+    const request = this.requestAdditionalInfo(this.id, silent, params).finally(() => {
+      this.detailRequests.delete(key);
+      this.setLoading(this.detailRequests.size > 0);
+    });
+    this.detailRequests.set(key, request);
+    return request;
+  }
+
+  private async requestAdditionalInfo(id: Id, silent: boolean, queryParameters: URLSearchParams): Promise<void> {
     this.setLoading(true);
     try {
       /*
@@ -974,8 +989,9 @@ export default class InventoryBaseRecord
         this.historicalVersion && this.version !== null
           ? `${this.recordType}s/${id}/versions/${this.version}`
           : `${this.recordType}s/${id}`;
-      this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
-      const { data } = await this.fetchingAdditionalInfo;
+      const reusePermalink = this.permalinkDetailKey === queryParameters.toString();
+      this.permalinkDetailKey = null;
+      const data = reusePermalink ? null : (await ApiService.query<object>(endpoint, queryParameters)).data;
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -989,16 +1005,15 @@ export default class InventoryBaseRecord
        * to false, and Save applies the server's response directly via update(), not through here,
        * so neither legitimate caller is affected by skipping while mid-edit.
        */
-      if (this.editing) {
+      if (data && this.editing) {
         console.warn(
           `Discarding a stale additional-info refresh for ${this.globalId ?? "UNKNOWN"}: ` +
             "the record started being edited while this fetch was in flight.",
         );
-      } else {
-        this.populateFromJson(this.factory.newFactory(), data);
+      } else if (data) {
+        this.populateAdditionalInfo(data, queryParameters);
       }
-      await this.fetchImage("image");
-      await this.fetchImage("thumbnail");
+      await this.finishAdditionalInfo();
       return;
     } catch (error) {
       if (!silent) {
@@ -1014,10 +1029,16 @@ export default class InventoryBaseRecord
       }
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
-    } finally {
-      this.fetchingAdditionalInfo = null;
-      this.setLoading(false);
     }
+  }
+
+  protected populateAdditionalInfo(data: object, _queryParameters: URLSearchParams): void {
+    this.populateFromJson(this.factory.newFactory(), data);
+  }
+
+  protected async finishAdditionalInfo(): Promise<void> {
+    await this.fetchImage("image");
+    await this.fetchImage("thumbnail");
   }
 
   async create(): Promise<void> {
