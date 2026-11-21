@@ -4,7 +4,8 @@ import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
@@ -54,6 +55,7 @@ describe("DMPDialog", () => {
     });
   });
   test("The latest request is always the one that's shown.", async () => {
+    const user = userEvent.setup();
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
       data: {
         items: [{ dmp: { id: 1, title: "mine", description: "very mine" } }],
@@ -83,10 +85,10 @@ describe("DMPDialog", () => {
     );
     // public will take a second to return a listing
 
-    fireEvent.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.public" }));
+    await user.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.public" }));
     // but mine will return immediately
 
-    fireEvent.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.mine" }));
+    await user.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.mine" }));
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });

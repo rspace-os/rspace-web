@@ -452,7 +452,7 @@ describe("ContentGrid", () => {
 
     it("hides after a few seconds", async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
       renderGrid(boxWithA1Taken());
       await user.tab();
       expect(screen.getByRole("note")).toBeInTheDocument();

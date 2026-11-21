@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
@@ -22,6 +23,7 @@ describe("LinkedItems", () => {
     vi.clearAllMocks();
   });
   test("fetches a template's back-references via the generic referencingItems endpoint", async () => {
+    const user = userEvent.setup();
     // there is no typed /sampleTemplates/{id}/referencingItems endpoint, so
     // IT targets use the generic /referencingItems/{globalId} route
     const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
@@ -47,7 +49,7 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="IT5" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
 
     expect(await screen.findByText("A sample")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IT5");
@@ -55,6 +57,7 @@ describe("LinkedItems", () => {
   });
 
   test("fetches instrument-template back-references via the generic referencingItems route", async () => {
+    const user = userEvent.setup();
     // NT has an entry in INVENTORY_PREFIX_TO_API_PATH, but the typed
     // instrumentTemplates/{id}/referencingItems endpoint does not exist on the
     // backend; like IT sample templates, instrument templates must use the
@@ -82,7 +85,7 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="NT5" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
 
     expect(await screen.findByText("A sample")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/NT5");
@@ -90,19 +93,22 @@ describe("LinkedItems", () => {
   });
 
   test("Assert that correct API endpoint is called with Global ID", async () => {
+    const user = userEvent.setup();
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedItems factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
   });
   test("When there is an error loading the data, an alert should be shown.", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedItems factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
   test("Two different documents should render as two table rows", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
@@ -125,7 +131,7 @@ describe("LinkedItems", () => {
         />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
       await findTableCell(screen.getByRole("table"), {
@@ -141,6 +147,7 @@ describe("LinkedItems", () => {
     ).toHaveTextContent("Bar");
   });
   test("Two of the same document should render as one table row", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [
@@ -163,7 +170,7 @@ describe("LinkedItems", () => {
         />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
 
     expect(rows).toHaveLength(2);
@@ -179,6 +186,7 @@ describe("LinkedItems", () => {
     ["IC5", "containers/5/referencingItems"],
     ["IN3", "instruments/3/referencingItems"],
   ])("Maps Global ID %s to %s for the referencingItems endpoint", async (globalId, expectedUrl) => {
+    const user = userEvent.setup();
     const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
       if (typeof url === "string" && url.endsWith("/referencingItems")) {
         return Promise.resolve({
@@ -202,12 +210,13 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId={globalId} />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     await screen.findByRole("button", { name: "common:actions.close" });
     expect(spy).toHaveBeenCalledWith(expectedUrl);
   });
 
   test("Does not call referencingItems for an unknown Global ID prefix", async () => {
+    const user = userEvent.setup();
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [],
@@ -222,13 +231,14 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="ZZ1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     await screen.findByRole("button", { name: "common:actions.close" });
     const calls = spy.mock.calls.map(([url]) => url);
     expect(calls.some((url) => typeof url === "string" && url.endsWith("/referencingItems"))).toBe(false);
   });
 
   test("When no documents link to the item, the empty-state mentions both List of Materials and inventory links", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [],
@@ -244,7 +254,7 @@ describe("LinkedItems", () => {
       </ThemeProvider>,
       { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Items" }));
+    await user.click(screen.getByRole("button", { name: "Show Linked Items" }));
     const listOfMaterialsLink = await screen.findByRole("link", { name: "List of Materials" });
     expect(listOfMaterialsLink).toHaveAttribute("href", expect.stringContaining("list-of-materials"));
     expect(
@@ -254,21 +264,23 @@ describe("LinkedItems", () => {
     ).toBeVisible();
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
+    const user = userEvent.setup();
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.reject(new Error("An error"));
     });
     render(<LinkedItems factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(await screen.findByRole("button", { name: "common:actions.close" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.close" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.close" }));
     await screen.findByRole("button", { name: "inventory:moreInfo.linkedItems.show" });
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(await screen.findByText("An error")).toBeVisible();
     // 2 opens, each open triggers 2 calls (documents + referencing items)
     expect(spy).toHaveBeenCalledTimes(4);
   });
 
   test("Calls the referencingItems endpoint for the matching item kind", async () => {
+    const user = userEvent.setup();
     const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
       if (typeof url === "string" && url.endsWith("/referencingItems")) {
         return Promise.resolve({
@@ -292,13 +304,14 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="SA42" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     // wait for the dialog to settle
     await screen.findByRole("button", { name: "common:actions.close" });
     expect(spy).toHaveBeenCalledWith("samples/42/referencingItems");
   });
 
   test("Renders a row per referencing Inventory item", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation((url) => {
       if (typeof url === "string" && url.endsWith("/referencingItems")) {
         return Promise.resolve({
@@ -341,7 +354,7 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     expect(await screen.findByText("Calibrator A")).toBeVisible();
     expect(screen.getByText("Box 5")).toBeVisible();
     expect(screen.getByText("IsCalibratedBy")).toBeVisible();
@@ -349,6 +362,7 @@ describe("LinkedItems", () => {
   });
 
   test("shows which version of THIS item each referencing item links to, not as a suffix on the source Global ID", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation((url) => {
       if (typeof url === "string" && url.endsWith("/referencingItems")) {
         return Promise.resolve({
@@ -389,7 +403,7 @@ describe("LinkedItems", () => {
         <LinkedItems factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
+    await user.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedItems.show" }));
     // The source's Global ID is shown bare: the version pin is NOT a version of the source.
     expect(await screen.findByText("IC5")).toBeVisible();
     expect(screen.queryByText("IC5v3")).not.toBeInTheDocument();

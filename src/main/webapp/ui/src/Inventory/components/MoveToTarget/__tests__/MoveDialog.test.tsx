@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { action, observable } from "mobx";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -78,11 +78,12 @@ describe("MoveDialog", () => {
     });
     expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), undefined);
   });
-  test("Table hidden in header should list all selectedResults", () => {
-    fc.assert(
-      fc.property(
+  test("Table hidden in header should list all selectedResults", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.array<SubSampleModel>(subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs))),
-        (selectedResults) => {
+        async (selectedResults) => {
+          const user = userEvent.setup();
           // this check prevents the non-unique react key warning
           const globalIds = selectedResults.map((r) => r.globalId);
           fc.pre(new Set(globalIds).size === globalIds.length);
@@ -117,7 +118,7 @@ describe("MoveDialog", () => {
               </storesContext.Provider>
             </ThemeProvider>,
           );
-          fireEvent.click(screen.getByRole("button", { name: "inventory:moveToTarget.showItems" }));
+          await user.click(screen.getByRole("button", { name: "inventory:moveToTarget.showItems" }));
           expect(within(screen.getByRole("table")).getAllByRole("row").length).toBe(selectedResults.length + 1);
           const table = screen.getByRole("table");
 
