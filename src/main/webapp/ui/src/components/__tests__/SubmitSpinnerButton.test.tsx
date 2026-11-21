@@ -20,6 +20,7 @@ describe("SubmitSpinnerButton", () => {
     expect(onClick).toHaveBeenCalled();
   });
   test("When the button is disabled and tapped, onClick should not be called.", async () => {
+    // MUI applies pointer-events: none. Skip that CSS check to exercise native disabled-button behavior.
     const user = userEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never });
     const onClick = vi.fn();
     render(

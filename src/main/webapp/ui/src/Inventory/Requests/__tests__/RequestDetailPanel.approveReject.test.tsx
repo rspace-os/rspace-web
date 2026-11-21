@@ -75,6 +75,7 @@ describe("RequestDetailPanel approve/reject", () => {
     const approveButton = screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" });
     await user.click(approveButton);
     await waitFor(() => expect(approveButton).toBeDisabled());
+    // MUI applies pointer-events: none. Skip that CSS check for the retry so the native disabled state is tested.
     await user.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never }).click(approveButton);
 
     expect(apiUpdate).toHaveBeenCalledTimes(1);

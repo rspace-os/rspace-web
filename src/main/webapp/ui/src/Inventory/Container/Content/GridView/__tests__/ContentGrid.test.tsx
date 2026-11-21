@@ -452,6 +452,7 @@ describe("ContentGrid", () => {
 
     it("hides after a few seconds", async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
+      // Run userEvent's interaction delays on the same fake clock as the tooltip timeout.
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       renderGrid(boxWithA1Taken());
       await user.tab();

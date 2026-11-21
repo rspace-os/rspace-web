@@ -281,6 +281,7 @@ describe("RequestDetailPanel transfer", () => {
       expect(transferButton).toBeEnabled();
       await user.click(transferButton);
       await waitFor(() => expect(transferButton).toBeDisabled());
+      // MUI applies pointer-events: none. Skip that CSS check for the retry so the native disabled state is tested.
       await user.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never }).click(transferButton);
 
       // Exactly the one fulfilByTransfer call - not a second from the blocked click.
