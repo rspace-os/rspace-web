@@ -65,7 +65,7 @@ pipeline {
         // part so the 63-char cap can never cut it, keeping names unique even for branches that sanitise or truncate alike
         HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
-        AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
+        AWS_TOMCAT_AMI = 'ami-0d132f0f6114279eb'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
