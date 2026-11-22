@@ -5,7 +5,8 @@
 // Standalone pnpm needs no Node.js; it downloads the runtime pinned in package.json devEngines.
 def withFrontendTools(Closure body) {
     def pnpmHome = "${env.WORKSPACE}/node/pnpm"
-    withEnv(["PNPM_HOME=${pnpmHome}", "PATH+PNPM=${pnpmHome}/bin"]) {
+    // One store for all branch workspaces; with only PNPM_HOME set, each workspace gets its own full store.
+    withEnv(["PNPM_HOME=${pnpmHome}", "PATH+PNPM=${pnpmHome}/bin", "pnpm_config_store_dir=${env.JENKINS_HOME}/pnpm-store"]) {
         sh '''
             if [ ! -x "$PNPM_HOME/bin/pnpm" ]; then
                 PNPM_VERSION=$(grep -o '"pnpm@[0-9][^"+]*' package.json | cut -d@ -f2)
