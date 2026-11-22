@@ -24,6 +24,9 @@ LEGACY_ASSET_CACHE_BUSTING="${RSPACE_LEGACY_ASSET_CACHE_BUSTING:-true}"
 # Rebuild the Lucene full-text index on startup (default off — it slows boot and
 # is rarely needed in dev). Set RSPACE_INDEX_ON_STARTUP=true to force a reindex.
 INDEX_ON_STARTUP="${RSPACE_INDEX_ON_STARTUP:-false}"
+# Spring profile (default prod, the same wiring customers run). Set
+# RSPACE_SPRING_PROFILE=run to compare against the legacy dev wiring.
+SPRING_PROFILE="${RSPACE_SPRING_PROFILE:-prod}"
 # Browsers scope cookies by host only, so concurrent worktree instances on
 # different localhost ports would overwrite each other's JSESSIONID and log
 # each other out. Each instance therefore gets a session cookie named after
@@ -178,7 +181,7 @@ exec mvn -B jetty:run \
   "${E2E_MOCK_ARGS[@]}" \
   "${MAILPIT_ARGS[@]}" \
   -Denvironment="${DB_MODE}" \
-  -Dspring.profiles.active=run \
+  -Dspring.profiles.active="${SPRING_PROFILE}" \
   -DreactDevMode=true \
   -DviteDevServerOrigin="${VITE_ORIGIN}" \
   -Djdbc.url="${JDBC_URL}" \

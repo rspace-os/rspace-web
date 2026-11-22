@@ -86,13 +86,34 @@ and the tests run properly.
 There are three profiles:
 1. `dev` configuration for running tests. This is set automatically when
    you call `mvn test` or `mvn verify`, or run tests through eclipse.
-2. `run` configuration for running the application on localhost. This is
-   set automatically by default when you run the app through `mvn jetty:run`
-   either from command line or Eclipse.
-3. `prod` configuration for production environment. To switch this on,
-   switch the line `<param-value>run</param-value>` in `web.xml` to
-    `<param-value>prod</param-value>`. Or run from the command line
-    with `-Dspring.profiles.active='prod'` argument.
+2. `run` legacy configuration for running the application on localhost. We
+   are replacing it with `prod` plus dev properties. To use it, pass
+   `-Dspring.profiles.active=run`.
+3. `prod` configuration for production, local runs and e2e runs. It is the
+   default, set by `spring.profiles.default` in `web.xml`, so a server started
+   without `-Dspring.profiles.active` gets the production wiring. The Docker dev
+   stack and e2e CI use it.
+
+When you run `prod` locally, properties set the environment differences, not
+the profile. Examples are `email.enabled`, `license.server.active`,
+`aspose.enabled`, `api.throttling.enabled` and `rs.dev.groupcreation`, which
+creates the dev lab groups when the Liquibase `dev-test` seed users exist.
+Frontend dev mode turns on per-request cache busting and manifest reloads. It is
+on when `reactDevMode=true` or `frontendDevMode=true`.
+
+RSpace picks the profile when the app starts, not when it is built. Passing
+`-Dspring.profiles.active` to `mvn package` does not change the WAR.
+
+`ProdConfigWiringTest` checks the `prod` wiring. It boots the full `prod` Spring
+context and checks the startup initialisers, so a broken prod bean fails the
+Spring test run instead of a deployment. `-Dfast=true` skips it, and it takes
+about a minute. Booting the context runs the prod startup initialisers against
+the configured database, as an app start would. The tests themselves only read
+data:
+
+```bash
+mvn test -Dtest=ProdConfigWiringTest
+```
 
 ##### Further detail
 

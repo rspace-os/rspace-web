@@ -9,10 +9,11 @@
     <distributable/>
 
     <context-param>
-        <!-- will use the "RUN" profile configuration for running test web 
-            app or set to 'prod' for deployment. -->
+        <!-- Fail safe: a server started without -Dspring.profiles.active gets the
+            production wiring. Pass -Dspring.profiles.active=run only to compare against
+            the legacy wiring. -->
         <param-name>spring.profiles.default</param-name>
-        <param-value>run</param-value>
+        <param-value>prod</param-value>
     </context-param>
   
     <!-- Fallback locale if no bundles found for browser's preferred locale -->

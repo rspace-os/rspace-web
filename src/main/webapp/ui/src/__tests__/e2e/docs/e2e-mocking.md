@@ -254,7 +254,7 @@ export E2E_MOCK_PORT="${E2E_MOCK_PORT:-9099}"
 # 2. Start RSpace pointing at the mock server
 ./mvnw jetty:run-war \
   -DskipTests=true -Dmaven.war.skip=true -Dtimestamp=e2e-local \
-  -Denvironment=drop-recreate-db -Dspring.profiles.active=run \
+  -Denvironment=drop-recreate-db -Dspring.profiles.active=prod \
   -DreactDevMode=false \
   -Djdbc.url=jdbc:mysql://localhost:3306/rspace -Djdbc.db.maven=rspace \
   -DRS_FILE_BASE=/tmp/e2e-filestore \

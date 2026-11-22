@@ -122,6 +122,8 @@ same `E2E_CLOUD` value sets the server property and selects the test suite.
 Short suites share a job to save runners: `E2E_BROWSER=mobile,api` runs the
 mobile and API projects together.
 
+The server starts with the `prod` Spring profile, the same wiring customers run.
+
 Accounts created through the signup form and groups created through the UI are
 left behind; only `clientSysadmin.createUser` accounts are disabled at teardown.
 Names are unique, so leftovers don't affect later runs; reset the database to

@@ -493,7 +493,8 @@ is the quick lookup.
 
 The stack reproduces the documented local workflow, just containerized:
 
-- backend: `mvn jetty:run -Dspring.profiles.active=run -DreactDevMode=true`
+- backend: `mvn jetty:run -Dspring.profiles.active=prod -DreactDevMode=true`,
+  or the legacy dev wiring with `RSPACE_SPRING_PROFILE=run`,
   with the DB pointed at the `db` service and the Vite dev-server proxy pointed
   at `localhost:5173`. The app container shares the `frontend` container's
   network namespace, so "localhost" reaches Vite; this is also why Vite accepts

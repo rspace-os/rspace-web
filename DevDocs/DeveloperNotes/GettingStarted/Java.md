@@ -81,7 +81,7 @@ Launch in jetty:
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run -DreactDevMode=true \
+-Dspring.profiles.active=prod -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
 

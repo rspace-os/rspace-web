@@ -676,3 +676,26 @@ resolved during design. This file is a glossary only — no implementation detai
   term length, refuses wildcard terms and returns at most 500 results.
   _Avoid_: sysadmin search, admin search, global search (that is the simple "All" search
   anyone runs)
+
+## Runtime configuration
+
+- **Spring profile**: the named wiring a running RSpace starts with. RSpace picks it at
+  startup, not at build time, so every server gets the same WAR. `prod` is the only profile
+  for a running server, whether at a customer, on Pangolin, on a laptop or in e2e CI. `dev`
+  exists only for the JUnit suite.
+  _Avoid_: compiled with a profile, run build, prod build
+
+- **Deployment property**: a per-server setting that switches a feature on or off, or
+  points it at a fake, for example licence checks, email sending or document conversion. It
+  is the one way an environment may differ from production.
+  _Avoid_: compile flag, profile switch
+
+- **Liquibase context**: a label selecting which database changesets apply (`run`,
+  `dev-test`, `cloud`). Unrelated to the Spring profile, although one context is also named
+  `run`.
+  _Avoid_: run profile (when the context is meant)
+
+- **Example content**: the forms, documents and notebook RSpace creates for each new user on
+  first login, the same built-in set customers get. It is not the test fixtures that the
+  JUnit-only `dev` profile creates, such as "Full Notebook", "Other Data" and example images.
+  _Avoid_: seed data, default content, run content
