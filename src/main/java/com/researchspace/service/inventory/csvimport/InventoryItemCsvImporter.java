@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,7 +77,7 @@ public abstract class InventoryItemCsvImporter {
    */
   private static final Pattern EXPORTED_FIELD_COLUMN_NAME =
       Pattern.compile(
-          "^(.*?)\\s*\\(("
+          "^(.*)\\(("
               + Arrays.stream(FieldType.values()).map(Enum::name).collect(Collectors.joining("|"))
               + ")(,\\s*(IT|NT)\\d+(v\\d+)?)?\\)$",
           Pattern.CASE_INSENSITIVE);
@@ -261,9 +262,6 @@ public abstract class InventoryItemCsvImporter {
         nameMap.put(columnIndex, templateFieldIndex);
       }
     }
-    if (nameMap.isEmpty()) {
-      return positionalMap;
-    }
     Map<Integer, List<String>> columnNamesByTemplateFieldIndex = new LinkedHashMap<>();
     nameMap.forEach(
         (columnIndex, templateFieldIndex) ->
@@ -300,6 +298,27 @@ public abstract class InventoryItemCsvImporter {
     return result;
   }
 
+  /**
+   * Maps each CSV column not mapped to a default field to its template field, as {@link
+   * #getColumnIndexToTemplateFieldIndexMap} does, reporting an invalid mapping as a template error.
+   *
+   * @return the mapping, or null if it was reported as a template error
+   */
+  protected Map<Integer, Integer> mapColumnsToTemplateFieldsOrAddTemplateError(
+      List<String> columnNames,
+      Set<Integer> defaultMappedColumnIndexes,
+      List<ApiInventoryEntityField> templateFields,
+      boolean templateCreatedFromCsv,
+      Consumer<ApiError> addTemplateError) {
+    try {
+      return getColumnIndexToTemplateFieldIndexMap(
+          columnNames, defaultMappedColumnIndexes, templateFields, templateCreatedFromCsv);
+    } catch (IllegalArgumentException e) {
+      addTemplateError.accept(bulkOperationHandler.convertExceptionToApiError(e));
+      return null;
+    }
+  }
+
   /** Columns not mapped to default fields fill the template fields in order. */
   protected Map<Integer, Integer> getPositionalColumnIndexToTemplateFieldIndexMap(
       int columnCount, Set<Integer> defaultMappedColumnIndexes) {
@@ -316,7 +335,7 @@ public abstract class InventoryItemCsvImporter {
       String columnName, List<ApiInventoryEntityField> templateFields) {
     String trimmedName = columnName.trim();
     Integer index = findTemplateFieldIndexForName(trimmedName, templateFields);
-    if (index == null && reservedSampleFieldNames.contains(trimmedName.toLowerCase())) {
+    if (index == null && reservedSampleFieldNames.contains(trimmedName.toLowerCase(Locale.ROOT))) {
       // parsing a CSV into a template names the field for a reserved column name "_<name>"
       index = findTemplateFieldIndexForName("_" + trimmedName, templateFields);
     }

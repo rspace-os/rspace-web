@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.csvimport;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,6 +25,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
@@ -76,7 +78,7 @@ public class CsvImporterTemplateFieldMatchingTest {
   @Test
   void exportedHeadersMatchIgnoringCaseAndTypeSuffix() throws IOException {
     ApiInventoryImportSampleImportResult result =
-        importSamples("Name,\"permit (STRING, IT12)\", Toxic (RADIO) ,gmo\ns1,p-1,No,Yes\n");
+        importSamples("Name,\"permit (STRING, IT12)\",\" Toxic (RADIO) \",gmo\ns1,p-1,No,Yes\n");
 
     List<ApiInventoryEntityField> fields = sampleFields(result, 0);
     assertEquals(List.of("Yes"), fields.get(0).getSelectedOptions());
@@ -153,7 +155,38 @@ public class CsvImporterTemplateFieldMatchingTest {
 
     assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, result.getStatus());
     assertThat(result.getTemplate().getError().getErrors().get(0))
-        .contains("\"GMO\", \"gmo (RADIO, IT1)\" all match the template field \"GMO\"");
+        .contains("\"GMO\", \"gmo (RADIO, IT1)\" match the same template field \"GMO\"");
+  }
+
+  @Test
+  void templateCreatedFromTheCsvIsFilledInColumnOrder() throws IOException {
+    ApiSampleTemplate template = new ApiSampleTemplate();
+    for (String name : List.of("B", "A")) {
+      ApiInventoryEntityField field = new ApiInventoryEntityField();
+      field.setName(name);
+      field.setType(ApiFieldType.STRING);
+      template.getFields().add(field);
+    }
+    ApiInventoryImportSampleImportResult result = new ApiInventoryImportSampleImportResult();
+    result.addCreatedTemplateResult(template);
+    ApiInventoryImportResult importResult = new ApiInventoryImportResult();
+    importResult.setSampleResult(result);
+
+    sampleImporter.readCsvIntoImportResult(
+        IOUtils.toInputStream("Name,A,B\ns1,a,b\n"), Map.of("Name", "name"), importResult, user);
+
+    List<ApiInventoryEntityField> fields = sampleFields(result, 0);
+    assertEquals("a", fields.get(0).getContent());
+    assertEquals("b", fields.get(1).getContent());
+  }
+
+  @Test
+  void longHeaderWithoutATypeSuffixIsMatchedInLinearTime() {
+    String longHeader = "a" + " ".repeat(200_000) + "b";
+
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(5),
+        () -> importSamples("Name,\"" + longHeader + "\",B,C\ns1,Yes,No,p-1\n"));
   }
 
   @Test
@@ -279,6 +312,28 @@ public class CsvImporterTemplateFieldMatchingTest {
         ((ApiInstrument) instrumentResult.getResults().get(0).getRecord()).getFields();
     assertEquals(List.of("Bio"), fields.get(0).getSelectedOptions());
     assertEquals(List.of("B"), fields.get(1).getSelectedOptions());
+  }
+
+  @Test
+  void twoInstrumentHeadersNamingOneTemplateFieldFailPrevalidation() throws IOException {
+    reportErrorsAsTheirMessage(instrumentImporter);
+    ApiInstrumentTemplate template = new ApiInstrumentTemplate();
+    template.getFields().addAll(hazardsAndGradeTemplate().getFields());
+    ApiInventoryImportInstrumentImportResult instrumentResult =
+        new ApiInventoryImportInstrumentImportResult();
+    instrumentResult.addExistingTemplateResult(template);
+    ApiInventoryImportResult importResult = new ApiInventoryImportResult();
+    importResult.setInstrumentResult(instrumentResult);
+
+    instrumentImporter.readCsvIntoImportResult(
+        IOUtils.toInputStream("Name,Grade,\"grade (RADIO, NT5)\"\ni1,A,B\n"),
+        Map.of("Name", "name"),
+        importResult,
+        user);
+
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, instrumentResult.getStatus());
+    assertThat(instrumentResult.getTemplate().getError().getErrors().get(0))
+        .contains("\"Grade\", \"grade (RADIO, NT5)\" match the same template field \"Grade\"");
   }
 
   private ApiInventoryImportSampleImportResult importSamples(String csv) throws IOException {

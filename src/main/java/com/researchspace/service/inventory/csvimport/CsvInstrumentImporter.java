@@ -155,19 +155,15 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       csvProcessingResult.addTemplateError(error);
     }
 
-    Map<Integer, Integer> columnIndexToTemplateFieldIndexMap = null;
-    if (csvProcessingResult.getTemplate().getError() == null) {
-      try {
-        columnIndexToTemplateFieldIndexMap =
-            getColumnIndexToTemplateFieldIndexMap(
+    Map<Integer, Integer> columnIndexToTemplateFieldIndexMap =
+        csvProcessingResult.getTemplate().getError() != null
+            ? null
+            : mapColumnsToTemplateFieldsOrAddTemplateError(
                 columnNames,
                 columnIndexToDefaultFieldMap.keySet(),
                 template.getFields(),
-                csvProcessingResult.isTemplateCreated());
-      } catch (IllegalArgumentException e) {
-        csvProcessingResult.addTemplateError(bulkOperationHandler.convertExceptionToApiError(e));
-      }
-    }
+                csvProcessingResult.isTemplateCreated(),
+                csvProcessingResult::addTemplateError);
 
     if (csvProcessingResult.getTemplate().getError() != null) {
       csvProcessingResult.setErrorStatusAndResetSuccessCount(
