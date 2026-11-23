@@ -44,6 +44,7 @@ import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.hibernate.Session;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -680,7 +681,22 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     session.flush();
     session.clear();
 
-    NotificationStatus status = dao.getNotificationStatus(target);
+    // the login counters must stay scalar count queries, not ID-list loads
+    Statistics stats = sessionFactory.getStatistics();
+    boolean statsWereEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    NotificationStatus status;
+    try {
+      status = dao.getNotificationStatus(target);
+      assertEquals(3, stats.getPrepareStatementCount());
+      assertEquals(3, stats.getQueryExecutionCount());
+      assertThat(stats.getQueries())
+          .isNotEmpty()
+          .allMatch(hql -> hql.startsWith("select count(distinct "));
+    } finally {
+      stats.setStatisticsEnabled(statsWereEnabled);
+    }
 
     assertEquals(3, status.getNotificationCount());
     assertEquals(4, status.getMessageCount());
