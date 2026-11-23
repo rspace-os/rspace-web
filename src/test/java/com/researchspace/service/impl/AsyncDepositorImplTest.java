@@ -497,8 +497,37 @@ public class AsyncDepositorImplTest {
             "Online plan (DMPonline)",
             "RSpace cannot yet update plans on DMPonline.",
             "DMPTool is switched off, so the plan was not updated.",
-            "DMPTool is not connected, so the plan was not updated.")
+            "DMPTool is not connected, so the plan was not updated.",
+            "The DOI link for this deposit is <a href=\"https://doi.org/10.1/x\">"
+                + "https://doi.org/10.1/x</a>. You can add it to a plan by hand.")
         .doesNotContain("Written <plan>");
+  }
+
+  @Test
+  void planNotificationHasNoDoiParagraphWithoutDoi() throws Exception {
+    URL landing = new URL("https://dv.example/ds");
+    when(dmpUpdateHandler.report(
+            new DepositReport("Dataverse", null, landing), anyUser, List.of(1L)))
+        .thenReturn(
+            List.of(
+                reported(
+                    "A plan",
+                    new ValueOutcome(
+                        ReportedValueKind.ACCESS_URL, landing.toString(), true, null))));
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", landing, null),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L));
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    assertThat(messages.getAllValues().get(1))
+        .contains("was added to the plan.")
+        .doesNotContain("The DOI link for this deposit is");
   }
 
   @Test
