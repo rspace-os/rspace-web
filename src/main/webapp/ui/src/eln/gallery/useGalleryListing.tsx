@@ -104,6 +104,39 @@ export class Description {
   }
 }
 
+/*
+ * A file's content as a blob URL, downloaded once and shared between callers,
+ * including those that ask while the download is still in flight, such as a
+ * carousel preview that is unmounted and remounted. A failed download is
+ * forgotten so that it can be retried.
+ */
+class SharedBlobDownload {
+  private readonly download: () => Promise<Blob>;
+  private url?: Promise<UrlType>;
+
+  constructor(download: () => Promise<Blob>) {
+    this.download = download;
+  }
+
+  href(): Promise<UrlType> {
+    if (this.url) return this.url;
+    const url = this.download().then((blob) => URL.createObjectURL(blob));
+    this.url = url;
+    void url.catch(() => {
+      if (this.url === url) this.url = undefined;
+    });
+    return url;
+  }
+
+  // also revokes a URL whose download is still in flight, once it arrives
+  revoke(): void {
+    void this.url?.then(
+      (url) => URL.revokeObjectURL(url),
+      () => {},
+    );
+  }
+}
+
 /**
  * Objects of this shape model files and folders in the Gallery.
  */
@@ -316,7 +349,7 @@ export class LocalGalleryFile implements GalleryFile {
   readonly version: number;
   readonly thumbnailId: number | null;
   downloadHref?: () => Promise<UrlType>;
-  private cachedDownloadHref?: UrlType;
+  private blobDownload?: SharedBlobDownload;
   readonly originalImageId: string | null;
 
   // this will only ever actually be an array of LocalGalleryFile,
@@ -406,18 +439,17 @@ export class LocalGalleryFile implements GalleryFile {
       this.description = newDescription;
     });
     if (!this.isFolder) {
-      this.downloadHref = async () => {
-        if (this.cachedDownloadHref) return this.cachedDownloadHref;
+      const blobDownload = new SharedBlobDownload(async () => {
         const { data: blob } = await axios.get<Blob>(`/api/v1/files/${idToString(this.id).elseThrow()}/file`, {
           responseType: "blob",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const url = URL.createObjectURL(blob);
-        this.cachedDownloadHref = url;
-        return url;
-      };
+        return blob;
+      });
+      this.blobDownload = blobDownload;
+      this.downloadHref = () => blobDownload.href();
     }
     this.originalImageId = originalImageId;
     this.metadata = metadata;
@@ -428,7 +460,7 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   deconstructor() {
-    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
+    this.blobDownload?.revoke();
   }
 
   get isFolder(): boolean {
@@ -717,7 +749,7 @@ export class RemoteFile implements GalleryFile {
   downloadHref?: () => Promise<UrlType>;
   logicPath: string;
   remotePath: string;
-  private cachedDownloadHref?: UrlType;
+  private blobDownload?: SharedBlobDownload;
   readonly extension: string | null;
   readonly metadata: Record<string, string>;
   readonly ownerName: string;
@@ -756,8 +788,7 @@ export class RemoteFile implements GalleryFile {
     this.metadata = {};
     if (!this.isFolder) {
       const filestoreId = path[0].id;
-      this.downloadHref = async () => {
-        if (this.cachedDownloadHref) return this.cachedDownloadHref;
+      const blobDownload = new SharedBlobDownload(async () => {
         const urlSearchParams = new URLSearchParams();
         idToString(this.id).do((id) => {
           urlSearchParams.append("remoteId", id);
@@ -773,10 +804,10 @@ export class RemoteFile implements GalleryFile {
             },
           },
         );
-        const url = URL.createObjectURL(blob);
-        this.cachedDownloadHref = url;
-        return url;
-      };
+        return blob;
+      });
+      this.blobDownload = blobDownload;
+      this.downloadHref = () => blobDownload.href();
       this.extension = justFilenameExtension(this.name);
     } else {
       this.extension = null;
@@ -784,7 +815,7 @@ export class RemoteFile implements GalleryFile {
   }
 
   deconstructor() {
-    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
+    this.blobDownload?.revoke();
   }
 
   get id(): Id {

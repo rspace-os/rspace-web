@@ -389,6 +389,13 @@ type CarouselArgs = {
       };
 };
 
+function indexOfFile(list: ReadonlyArray<GalleryFile>, file: GalleryFile): number {
+  return Math.max(
+    0,
+    list.findIndex(({ id }) => id === file.id),
+  );
+}
+
 /**
  * The carousel view of files allows the user to view files one at a time,
  * using the preview (image or pdf) of the file to identify it. The user can
@@ -396,8 +403,16 @@ type CarouselArgs = {
  * files that vary only in small details.
  */
 export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
-  const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
+  // start on the selected file so that the first previews mounted are the ones shown
+  const [visibleIndex, setVisibleIndex] = React.useState(() =>
+    listing.tag === "list"
+      ? selection
+          .asSet()
+          .only.map((selectedFile) => indexOfFile(listing.list, selectedFile))
+          .orElse(0)
+      : 0,
+  );
   const [zoom, setZoom] = React.useState(1);
   const [asposePdfCache] = React.useState<AsposePdfCache>(() => new Map());
   const { t } = useTranslation(["gallery", "common"]);
@@ -406,12 +421,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
     if (listing.tag !== "list") return;
     // when enter Carousel view, focus on already selected file
     selection.asSet().only.do((selectedFile) => {
-      setVisibleIndex(
-        Math.max(
-          0,
-          listing.list.findIndex(({ id }) => id === selectedFile.id),
-        ),
-      );
+      setVisibleIndex(indexOfFile(listing.list, selectedFile));
     });
     // otherwise select the first file
     if (selection.isEmpty) {

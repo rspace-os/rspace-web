@@ -7,7 +7,7 @@ import { HttpResponse, http } from "msw/http";
 import type React from "react";
 import { server } from "@/__tests__/mswServer";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
-import { OfficeDocumentCarousel, SimpleCarousel } from "./Carousel.story";
+import { CarouselOpenedOnFifthFile, OfficeDocumentCarousel, SimpleCarousel } from "./Carousel.story";
 
 // pdf.js cannot load documents under jsdom; expose the loaded URL instead.
 vi.mock("react-pdf", () => ({
@@ -21,9 +21,16 @@ const PREVIEW = { name: "gallery:carousel.previewAlt" };
 /*
  * Records which files had their content downloaded or were sent for Aspose
  * conversion. aspose.enabled is served asynchronously, so it is still loading
- * when the previews mount.
+ * when the previews mount. Downloads are not answered until
+ * `downloadsHeldUntil` resolves.
  */
-function stubEndpoints({ asposeEnabled = false }: { asposeEnabled?: boolean } = {}) {
+function stubEndpoints({
+  asposeEnabled = false,
+  downloadsHeldUntil = Promise.resolve(),
+}: {
+  asposeEnabled?: boolean;
+  downloadsHeldUntil?: Promise<void>;
+} = {}) {
   const downloads: Array<string> = [];
   const conversions: Array<string> = [];
   server.use(
@@ -32,8 +39,9 @@ function stubEndpoints({ asposeEnabled = false }: { asposeEnabled?: boolean } = 
     ),
     http.get("/collaboraOnline/supportedExts", () => HttpResponse.json({})),
     http.get("/officeOnline/supportedExts", () => HttpResponse.json({})),
-    http.get("/api/v1/files/:id/file", ({ params }) => {
+    http.get("/api/v1/files/:id/file", async ({ params }) => {
       downloads.push(String(params.id));
+      await downloadsHeldUntil;
       return new HttpResponse(new Blob(["image"]), { headers: { "Content-Type": "image/jpeg" } });
     }),
     http.get("/Streamfile/ajax/convert/:id", ({ params }) => {
@@ -46,6 +54,17 @@ function stubEndpoints({ asposeEnabled = false }: { asposeEnabled?: boolean } = 
 
 function renderCarousel(carousel: React.ReactElement) {
   return render(<DeploymentPropertyContext.Provider value={new Map()}>{carousel}</DeploymentPropertyContext.Provider>);
+}
+
+// Waits until the carousel is at `position` and every mounted image preview shows its downloaded content.
+async function waitForPreviewsToLoad(position: string, mountedCount: number) {
+  expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent(position);
+  await waitFor(() => {
+    expect(screen.getByRole("img", PREVIEW)).toHaveAttribute("src", expect.stringMatching(/^blob:/));
+    const previews = screen.getAllByRole("img", { ...PREVIEW, hidden: true });
+    expect(previews).toHaveLength(mountedCount);
+    for (const preview of previews) expect(preview).toHaveAttribute("src", expect.stringMatching(/^blob:/));
+  });
 }
 
 describe("Carousel", () => {
@@ -102,16 +121,46 @@ describe("Carousel", () => {
     const { downloads } = stubEndpoints();
     const user = userEvent.setup();
     renderCarousel(<SimpleCarousel />);
-    await waitFor(() => {
-      expect([...downloads].sort()).toEqual(["1", "2"]);
-    });
+    await waitForPreviewsToLoad("1 / 8", 2);
+    expect([...downloads].sort()).toEqual(["1", "2"]);
 
     await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
     await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
-    await waitFor(() => {
-      expect([...downloads].sort()).toEqual(["1", "2", "3", "4"]);
+    await waitForPreviewsToLoad("3 / 8", 3);
+    expect([...downloads].sort()).toEqual(["1", "2", "3", "4"]);
+  });
+
+  test("Opening on a selected file downloads only that file and its neighbours", async () => {
+    const { downloads } = stubEndpoints();
+    renderCarousel(<CarouselOpenedOnFifthFile />);
+
+    await waitForPreviewsToLoad("5 / 8", 3);
+    expect([...downloads].sort()).toEqual(["4", "5", "6"]);
+  });
+
+  test("A file that is remounted while its download is in flight is downloaded once", async () => {
+    let releaseDownloads = () => {};
+    const { downloads } = stubEndpoints({
+      downloadsHeldUntil: new Promise((resolve) => {
+        releaseDownloads = resolve;
+      }),
     });
+    const user = userEvent.setup();
+    renderCarousel(<SimpleCarousel />);
+    await waitFor(() => {
+      expect(downloads).toContain("1");
+    });
+
+    // two steps forward unmounts file 1, one step back remounts it as a neighbour
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.previous" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.previous" }));
+    releaseDownloads();
+
+    await waitForPreviewsToLoad("1 / 8", 2);
+    expect([...downloads].sort()).toEqual(["1", "2", "3", "4"]);
   });
 
   test("Office documents are converted only when visible, and only once each", async () => {
