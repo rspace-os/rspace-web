@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 
 import com.researchspace.dao.NfsDao;
 import com.researchspace.model.User;
+import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.RecordInformation;
@@ -43,12 +44,11 @@ public class IndexFilestoreLinksInFieldsIT extends RealTransactionSpringTestBase
     NfsFileStore store = committedS3Store(u);
     StructuredDocument known = createDocumentLinking(u, store.getId(), "/run.dat");
     StructuredDocument foreign = createDocumentLinking(u, 999999L, "/run.dat");
+    assertNoLinksIndexed(known.getFields().get(0).getId());
 
     IndexFilestoreLinksInFields task = new IndexFilestoreLinksInFields();
-    openTransaction();
     task.setUp();
     task.execute(null);
-    commitTransaction();
 
     openTransaction();
     assertThat(nfsFieldLinkManager.getLinkedDocuments(store.getId(), "/run.dat", u))
@@ -66,6 +66,7 @@ public class IndexFilestoreLinksInFieldsIT extends RealTransactionSpringTestBase
     StructuredDocument broken = createDocumentLinking(u, store.getId(), "/broken.dat");
     StructuredDocument good = createDocumentLinking(u, store.getId(), "/good.dat");
     Long brokenFieldId = broken.getFields().get(0).getId();
+    assertNoLinksIndexed(good.getFields().get(0).getId());
     // the throw must happen inside the manager's transaction advice, as it would in production
     NfsFieldLinkManager failingOnBroken =
         mock(NfsFieldLinkManager.class, delegatesTo(nfsFieldLinkManager));
@@ -83,6 +84,35 @@ public class IndexFilestoreLinksInFieldsIT extends RealTransactionSpringTestBase
     openTransaction();
     assertThat(nfsDao.getFieldLinks(good.getFields().get(0).getId())).hasSize(1);
     assertThat(nfsDao.getFieldLinks(brokenFieldId)).isEmpty();
+    commitTransaction();
+  }
+
+  @Test
+  public void anAutosaveCopyIsNotIndexed() throws Exception {
+    User u = loggedInUser();
+    NfsFileStore store = committedS3Store(u);
+    StructuredDocument doc = createDocumentLinking(u, store.getId(), "/run.dat");
+    Field field = doc.getFields().get(0);
+    // same link, so the autosave itself does not reindex the field
+    recordMgr.saveTemporaryDocument(field.getId(), u, field.getFieldData() + "<p>pending</p>");
+    openTransaction();
+    Long autosaveCopyId = fieldMgr.get(field.getId(), u).orElseThrow().getTempField().getId();
+    commitTransaction();
+    assertNoLinksIndexed(field.getId());
+
+    IndexFilestoreLinksInFields task = new IndexFilestoreLinksInFields();
+    task.setUp();
+    task.execute(null);
+
+    openTransaction();
+    assertThat(nfsDao.getFieldLinks(field.getId())).hasSize(1);
+    assertThat(nfsDao.getFieldLinks(autosaveCopyId)).isEmpty();
+    commitTransaction();
+  }
+
+  private void assertNoLinksIndexed(Long fieldId) {
+    openTransaction();
+    assertThat(nfsDao.getFieldLinks(fieldId)).isEmpty();
     commitTransaction();
   }
 

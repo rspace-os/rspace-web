@@ -32,27 +32,39 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
 
   @Override
   protected void doExecute(Database database) {
-    List<Field> fields =
-        fMger.findByTextContent(FieldParserConstants.NET_FS_CLASSNAME).stream()
-            .filter(field -> field.getStructuredDocument() != null)
-            .toList();
-    candidates = fields.size();
+    List<Long> fieldIds = candidateFieldIds();
+    candidates = fieldIds.size();
     logger.info("{} fields with filestore links to index", candidates);
     int processed = 0;
-    for (Field field : fields) {
+    for (Long fieldId : fieldIds) {
       try {
         // a throw inside the transactional manager marks the enclosing transaction rollback-only,
         // so each field gets its own and a failing one rolls back alone
         fieldTransaction.executeWithoutResult(
-            status -> nfsFieldLinkManager.reindex(field, field.getFieldData()));
+            status -> {
+              Field field = fMger.get(fieldId, null).orElseThrow();
+              nfsFieldLinkManager.reindex(field, field.getFieldData());
+            });
         indexed++;
       } catch (RuntimeException e) {
-        logger.warn("Filestore links of field {} not indexed: {}", field.getId(), e.getMessage());
+        logger.warn("Filestore links of field {} not indexed", fieldId, e);
       }
       if (++processed % PROGRESS_INTERVAL == 0) {
         logger.info("Filestore links: {}/{} fields processed", processed, candidates);
       }
     }
     logger.info(getConfirmationMessage());
+  }
+
+  /** Ids only, so the run holds no field entities; autosave copies have no document. */
+  List<Long> candidateFieldIds() {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "select f.id from Field f where f.structuredDocument is not null"
+                + " and f.rtfData like :link",
+            Long.class)
+        .setParameter("link", "%" + FieldParserConstants.NET_FS_CLASSNAME + "%")
+        .list();
   }
 }
