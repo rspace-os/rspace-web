@@ -279,11 +279,11 @@ export const ACCENT_COLOR = {
 Once we've implemented the dialog and any UI elements within you may need to
 tweak the saturation and lightness values to ensure there is sufficient contrast
 between all textual elements and the background they are shown on. To find out
-more about accessibility and contrast ratios, see the section titled "Colour
-Contrast" in [./Accessibility.md](./Accessibility.md). Whilst mentioning accessibility, it is worth
-pointing out that by using an accented theme, we automatically get a high
-contrast mode that stips out all of the superfluous colour, should the user wish
-to enable it (this is mentioned in the section titled "Accented Theme").
+more about contrast ratios, see the contrast guidance in
+[Design and implementation](./Accessibility.md#design-and-implementation).
+Using an accented theme also gives a high contrast mode that strips out
+superfluous colour when the user requests it; see the accented theme in
+[RSpace components](./Accessibility.md#rspace-components).
 
 ### Step 2.4: Displaying a dialog
 Now we just need to define `NewPluginDialog`, in
