@@ -774,6 +774,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
         user, optionsId, appName, originalOptions, existingAlias);
   }
 
+  // Slash plus the ASCII whitespace that MariaDB's [:space:] matches in the changelog clean-up.
+  private static final String DSW_URL_TRAILING_CHARS = "/ \t\n\r\f\u000B";
+
   /**
    * DSWClient appends paths that start with a slash, so the stored URL is trimmed and has trailing
    * slashes removed. changeLog-rsdev-1657.xml applies the same clean-up to existing rows.
@@ -783,15 +786,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (url == null) {
       return options;
     }
-    // A loop rather than a regex, which backtracks on long runs of whitespace.
-    String trimmed = url.strip();
-    int end = trimmed.length();
-    while (end > 0
-        && (trimmed.charAt(end - 1) == '/' || Character.isWhitespace(trimmed.charAt(end - 1)))) {
-      end--;
-    }
     Map<String, String> normalised = new HashMap<>(options);
-    normalised.put(DSW_URL, trimmed.substring(0, end));
+    normalised.put(DSW_URL, StringUtils.stripEnd(url.strip(), DSW_URL_TRAILING_CHARS));
     return normalised;
   }
 
