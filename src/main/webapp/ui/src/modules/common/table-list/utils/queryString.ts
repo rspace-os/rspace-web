@@ -1,3 +1,4 @@
+import { hashKey } from "@tanstack/react-query";
 import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
 import type { FilterExpression, FilterState, FilterValue } from "../types";
@@ -28,11 +29,17 @@ function serializeExpression<TDocument>(expression: FilterExpression<TDocument>)
   return { kind: expression.kind, children: expression.children.map(serializeExpression) };
 }
 
+/**
+ * An in-memory equality fingerprint of the filter state, for effect dependencies and refs; not a URL or storage
+ * format. Object keys are sorted, and a `Date` stays distinct from its ISO string.
+ */
 export function serializeFilters<TDocument>(filters: FilterState<TDocument>): string {
-  return JSON.stringify({
-    search: filters.search,
-    expression: filters.expression ? serializeExpression(filters.expression) : null,
-  });
+  return hashKey([
+    {
+      search: filters.search,
+      expression: filters.expression ? serializeExpression(filters.expression) : null,
+    },
+  ]);
 }
 
 export function serializeColumns<TDocument>(columns: readonly FieldName<TDocument>[]): string {

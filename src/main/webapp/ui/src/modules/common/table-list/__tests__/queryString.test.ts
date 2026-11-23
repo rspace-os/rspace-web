@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "../utils/queryString";
+import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
 
 type TestRecord = { id: string; title: string; owner: string; modifiedAt: string };
 const config = resolveCollectionConfig<TestRecord>({
@@ -51,5 +51,18 @@ describe("table-list query string state", () => {
     expect(parseSorting("title,-title", config)).toBeNull();
     expect(parseSorting("unknown", config)).toBeNull();
     expect(parseSorting("owner", nonSortableConfig)).toBeNull();
+  });
+
+  it("fingerprints filters by content, keeping dates distinct from their ISO strings", () => {
+    const at = "2026-11-23T00:00:00.000Z";
+    const comparison = { kind: "comparison", field: "modifiedAt", operator: "equals", value: at } as const;
+    const reordered = { value: at, operator: "equals", field: "modifiedAt", kind: "comparison" } as const;
+
+    expect(serializeFilters<TestRecord>({ search: "", expression: comparison })).toBe(
+      serializeFilters<TestRecord>({ search: "", expression: reordered }),
+    );
+    expect(serializeFilters<TestRecord>({ search: "", expression: { ...comparison, value: new Date(at) } })).not.toBe(
+      serializeFilters<TestRecord>({ search: "", expression: comparison }),
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { isEqual } from "es-toolkit";
 import { createElement, useEffect, useMemo, useState } from "react";
 import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
 import type {
@@ -22,7 +23,7 @@ import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import type { ApiV2DocumentMapping, ApiV2DocumentSchema } from "../api-v2/schema";
 import { parseRsqlExpression } from "../rsql";
 import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../types";
-import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
+import { parseColumns, parseSorting } from "../utils/queryString";
 import { emptySavedTableView, type SavedTableView, SavedTableViewReader } from "./savedView";
 import { type UseTableListOptions, type UseTableListResult, useTableList } from "./state";
 
@@ -157,11 +158,9 @@ export function useApiV2TableList<
   // A new signature must match its saved state before it is acknowledged.
   const [restoredSignature, setRestoredSignature] = useState<string | null>(null);
   const matchesSaved = (state: CollectionQueryState<Row>) =>
-    (table?.features?.filtering === false ||
-      serializeFilters(normalizeState(state).filters) === serializeFilters(restoredFilters)) &&
-    (table?.features?.columns === false ||
-      serializeColumns<Row>(state.visibleFields) === serializeColumns<Row>(restoredState.visibleFields)) &&
-    (table?.features?.sorting === false || serializeSorting(state.sorting) === serializeSorting(restoredState.sorting));
+    (table?.features?.filtering === false || isEqual(normalizeState(state).filters, restoredFilters)) &&
+    (table?.features?.columns === false || isEqual(state.visibleFields, restoredState.visibleFields)) &&
+    (table?.features?.sorting === false || isEqual(state.sorting, restoredState.sorting));
   const ready = (state: CollectionQueryState<Row>) =>
     !blocked && (table?.queryString === false || restoredSignature === saved.signature || matchesSaved(state));
   const totalState = (state: CollectionQueryState<Row>) => ({
@@ -213,8 +212,7 @@ export function useApiV2TableList<
   });
   useEffect(() => {
     const normalized = normalizeState(result.state);
-    if (serializeFilters(normalized.filters) !== serializeFilters(result.state.filters))
-      result.setFilters(normalized.filters);
+    if (!isEqual(normalized.filters, result.state.filters)) result.setFilters(normalized.filters);
   }, [result.state]);
   // Count identity excludes paging and projection. Prefix invalidation after writes
   // refreshes this active query along with the current page.
