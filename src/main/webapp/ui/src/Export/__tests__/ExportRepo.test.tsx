@@ -10,6 +10,7 @@ import repoConfig from "./repoConfig.json";
 import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { DEFAULT_STATE } from "@/Export/constants";
@@ -268,7 +269,7 @@ describe("ExportRepo", () => {
         linkedDMPs,
         repoCfg: -1,
       };
-      await renderWithRealI18n(
+      const { baseElement } = await renderWithRealI18n(
         <ExportRepo
           repoDetails={props.repoDetails}
           repoList={[repo]}
@@ -284,7 +285,7 @@ describe("ExportRepo", () => {
           name: "Associate export with a Data Management Plans (DMPs)",
         }),
       );
-      return { user, table: await screen.findByRole("table") };
+      return { user, baseElement, table: await screen.findByRole("table") };
     };
 
     test("lists a plan on a connected platform without a warning", async () => {
@@ -320,6 +321,44 @@ describe("ExportRepo", () => {
       expect(checkbox).toBeEnabled();
       await user.click(checkbox);
       expect(checkbox).toBeChecked();
+    });
+
+    test("has no accessibility violations when a plan's platform is not connected", async () => {
+      const { baseElement } = await renderDigitalCommonsData([
+        {
+          dmpUserInternalId: 1,
+          dmpTitle: "Soil survey plan",
+          dmpId: "plan-1",
+          platformName: "DMPonline",
+          writeBackStatus: "NOT_CONNECTED",
+        },
+      ]);
+      await expectAccessible(baseElement);
+    });
+
+    test("describes only the checkbox of the plan whose platform is not connected", async () => {
+      const { table } = await renderDigitalCommonsData([
+        {
+          dmpUserInternalId: 1,
+          dmpTitle: "Soil survey plan",
+          dmpId: "plan-1",
+          platformName: "DMPtool",
+          writeBackStatus: "OK",
+        },
+        {
+          dmpUserInternalId: 2,
+          dmpTitle: "River survey plan",
+          dmpId: "plan-2",
+          platformName: "DMPonline",
+          writeBackStatus: "NOT_CONNECTED",
+        },
+      ]);
+      const connected = within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" });
+      const notConnected = within(table).getByRole("checkbox", { name: "Select plan: River survey plan" });
+      expect(connected).not.toHaveAttribute("aria-describedby");
+      expect(notConnected).toHaveAccessibleDescription(
+        "DMPonline is not connected, so this plan will not be updated with the dataset's DOI.",
+      );
     });
   });
 });
