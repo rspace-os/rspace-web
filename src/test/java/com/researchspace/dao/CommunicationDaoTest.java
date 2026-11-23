@@ -6,6 +6,7 @@ import static com.researchspace.testutils.CommsTestUtils.createARequest;
 import static com.researchspace.testutils.CommsTestUtils.createAnyNotification;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -717,15 +718,21 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     }
     flushAndClear();
 
-    assertStatementCountIndependentOfPageSize(
-        this::getDefaultPgCrit,
-        pc -> dao.getActiveRequestsAndMessagesForUser(recipient, pc, MessageTypeFilter.ALL_TYPES));
-    assertStatementCountIndependentOfPageSize(
-        this::getDefaultPgCrit,
-        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc));
-    assertStatementCountIndependentOfPageSize(
-        () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
-        pc -> dao.getSentRequests(sender, pc));
+    assertAll(
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                this::getDefaultPgCrit,
+                pc ->
+                    dao.getActiveRequestsAndMessagesForUser(
+                        recipient, pc, MessageTypeFilter.ALL_TYPES)),
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                this::getDefaultPgCrit,
+                pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc)),
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
+                pc -> dao.getSentRequests(sender, pc)));
   }
 
   private <P> void assertStatementCountIndependentOfPageSize(
