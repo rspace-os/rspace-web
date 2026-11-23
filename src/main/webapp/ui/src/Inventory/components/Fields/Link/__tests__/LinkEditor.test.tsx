@@ -113,8 +113,8 @@ describe("LinkEditor layout", () => {
     const field = within(row(container, "LinkEditor-targetRow"))
       .getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })
       .closest<HTMLElement>(`.${textFieldClasses.root}`);
-    // a Global ID tops out around 20 characters, so the field is sized rather than filling the row
-    expect(window.getComputedStyle(field as HTMLElement).width).toBe("11em");
+    // a Global ID tops out around 20 characters, so the field is sized (11em) rather than filling the row
+    expect(window.getComputedStyle(field as HTMLElement).width).toBe("176px");
   });
 });
 

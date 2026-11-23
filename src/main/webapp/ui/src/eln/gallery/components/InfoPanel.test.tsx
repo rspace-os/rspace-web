@@ -1,5 +1,6 @@
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -26,17 +27,24 @@ describe("InfoPanelForSmallViewports", () => {
     const user = userEvent.setup();
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
+    // jsdom fixes the viewport at 1024px, so raise `md` above it to keep the small-viewport panel displayed
+    const smallViewportTheme = createTheme({
+      breakpoints: { values: { xs: 0, sm: 600, md: 1100, lg: 1200, xl: 1536 } },
+    });
+
     render(
-      <QueryClientProvider client={queryClient}>
-        <CallableSnippetPreview>
-          <InfoPanelForSmallViewports
-            file={galleryFile({
-              name: "Protocol snippet",
-              isSnippet: true,
-            })}
-          />
-        </CallableSnippetPreview>
-      </QueryClientProvider>,
+      <ThemeProvider theme={smallViewportTheme}>
+        <QueryClientProvider client={queryClient}>
+          <CallableSnippetPreview>
+            <InfoPanelForSmallViewports
+              file={galleryFile({
+                name: "Protocol snippet",
+                isSnippet: true,
+              })}
+            />
+          </CallableSnippetPreview>
+        </QueryClientProvider>
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByRole("button", { name: "gallery:actionsMenu.view" }));
