@@ -1,7 +1,7 @@
 import type React from "react";
-import { createRoot } from "react-dom/client";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { createPluginDialog } from "../pluginDialogRoot";
 import StoichiometryDialogRoot from "./StoichiometryDialogRoot";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
@@ -23,6 +23,7 @@ declare global {
 }
 
 interface Editor {
+  on(name: string, callback: () => void): void;
   ui: {
     registry: {
       addButton: (
@@ -93,6 +94,8 @@ const isHTMLElement = (node: unknown): node is HTMLElement => {
 
 class StoichiometryPlugin {
   constructor(editor: Editor) {
+    const dialog = createPluginDialog("tinymce-stoichiometry");
+    editor.on("remove", () => dialog.release());
     const isStoichiometryTableOnlyNode = (node: Node | null): node is HTMLElement => {
       if (!isHTMLElement(node)) {
         return false;
@@ -230,8 +233,7 @@ class StoichiometryPlugin {
       return nodeId;
     };
 
-    const createDialogRenderer = (domContainer: HTMLElement) => {
-      const root = createRoot(domContainer);
+    const createDialogRenderer = () => {
       let props: React.ComponentProps<typeof StoichiometryDialogRoot> = {
         open: false,
         onClose: () => {},
@@ -245,13 +247,16 @@ class StoichiometryPlugin {
         onDelete: () => {},
       };
 
-      return (nextProps: Partial<React.ComponentProps<typeof StoichiometryDialogRoot>> = {}) => {
+      return (
+        nextProps: Partial<React.ComponentProps<typeof StoichiometryDialogRoot>> = {},
+        { claim = false } = {},
+      ) => {
         props = {
           ...props,
           ...nextProps,
         };
 
-        root.render(
+        (claim ? dialog.open : dialog.update)(
           <I18nRoot namespaces={["common"]}>
             <StoichiometryDialogRoot {...props} />
           </I18nRoot>,
@@ -259,21 +264,10 @@ class StoichiometryPlugin {
       };
     };
 
-    if (!document.getElementById("tinymce-stoichiometry")) {
-      const div = document.createElement("div");
-      div.id = "tinymce-stoichiometry";
-      document.body.appendChild(div);
-    }
-    const container = document.getElementById("tinymce-stoichiometry");
-    if (!container) {
-      throw new Error("tinymce-stoichiometry container not found");
-    }
-
     syncExistingStoichiometryTableOnlyPlaceholders();
 
     const recordId = editor.getParam("recordId") as number;
-    const renderDialog = createDialogRenderer(container);
-    renderDialog();
+    const renderDialog = createDialogRenderer();
 
     const resetDialog = () => {
       renderDialog({
@@ -423,41 +417,44 @@ class StoichiometryPlugin {
         resetDialog();
       };
 
-      renderDialog({
-        open: true,
-        onClose: closeDialog,
-        chemId: activeChemId,
-        autoCreateTableOnOpen,
-        stoichiometryId,
-        stoichiometryRevision,
-        onTableCreated: (id: number, revision) => {
-          shouldRemoveAnchorOnClose = false;
-          updateStoichiometryNode(activeNodeId, { id, revision });
-          renderDialog({
-            stoichiometryId: id,
-            stoichiometryRevision: revision,
-          });
+      renderDialog(
+        {
+          open: true,
+          onClose: closeDialog,
+          chemId: activeChemId,
+          autoCreateTableOnOpen,
+          stoichiometryId,
+          stoichiometryRevision,
+          onTableCreated: (id: number, revision) => {
+            shouldRemoveAnchorOnClose = false;
+            updateStoichiometryNode(activeNodeId, { id, revision });
+            renderDialog({
+              stoichiometryId: id,
+              stoichiometryRevision: revision,
+            });
+          },
+          onSave: (id, version) => {
+            shouldRemoveAnchorOnClose = false;
+            updateStoichiometryNode(activeNodeId, {
+              id,
+              revision: version,
+            });
+            renderDialog({
+              stoichiometryId: id,
+              stoichiometryRevision: version,
+            });
+          },
+          onDelete: () => {
+            if (anchorWasInsertedForNewTable || activeNodeType === "tableOnly") {
+              removeStoichiometryNode(activeNodeId);
+            } else {
+              updateStoichiometryNode(activeNodeId, null);
+            }
+            resetDialog();
+          },
         },
-        onSave: (id, version) => {
-          shouldRemoveAnchorOnClose = false;
-          updateStoichiometryNode(activeNodeId, {
-            id,
-            revision: version,
-          });
-          renderDialog({
-            stoichiometryId: id,
-            stoichiometryRevision: version,
-          });
-        },
-        onDelete: () => {
-          if (anchorWasInsertedForNewTable || activeNodeType === "tableOnly") {
-            removeStoichiometryNode(activeNodeId);
-          } else {
-            updateStoichiometryNode(activeNodeId, null);
-          }
-          resetDialog();
-        },
-      });
+        { claim: true },
+      );
     };
 
     const openStoichiometryDialogFromSelection = () => {
