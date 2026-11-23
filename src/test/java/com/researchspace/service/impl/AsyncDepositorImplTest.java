@@ -7,6 +7,7 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -55,7 +56,6 @@ import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
 public class AsyncDepositorImplTest {
-  private static final String DRYAD_BASE = "https://datadryad.org";
   private static final String DRYAD_DOI = "doi%3A10.5061%2Fdryad.abc123";
 
   @Mock CommunicationManager comm;
@@ -100,7 +100,6 @@ public class AsyncDepositorImplTest {
     depositor.setMessages(new MessageSourceUtils(new JsonMessageSource()));
     depositor.setCommMgr(comm);
     depositor.setDmpUpdateHandler(dmpUpdateHandler);
-    depositor.setDryadBaseUrl(DRYAD_BASE);
   }
 
   @Test
@@ -399,37 +398,55 @@ public class AsyncDepositorImplTest {
 
   @ParameterizedTest
   @CsvSource({
-    "https://datadryad.org, /stash/edit/" + DRYAD_DOI + "/editCode, /stash/dataset/" + DRYAD_DOI,
-    "https://datadryad.org, /edit/" + DRYAD_DOI + "/editCode, /dataset/" + DRYAD_DOI,
-    "https://datadryad.org/, /edit/" + DRYAD_DOI + "/editCode, /dataset/" + DRYAD_DOI,
-    "https://datadryad.org, /edit/" + DRYAD_DOI + ", /dataset/" + DRYAD_DOI,
+    "https://datadryad.org/stash/edit/"
+        + DRYAD_DOI
+        + "/editCode, https://datadryad.org/stash/dataset/"
+        + DRYAD_DOI,
+    "https://datadryad.org/stash/edit/"
+        + DRYAD_DOI
+        + ", https://datadryad.org/stash/dataset/"
+        + DRYAD_DOI,
+    "https://datadryad.org/edit/"
+        + DRYAD_DOI
+        + "/editCode, https://datadryad.org/dataset/"
+        + DRYAD_DOI,
+    "https://datadryad.org/edit/" + DRYAD_DOI + ", https://datadryad.org/dataset/" + DRYAD_DOI,
+    "http://localhost:9154/edit/"
+        + DRYAD_DOI
+        + "/editCode, http://localhost:9154/dataset/"
+        + DRYAD_DOI,
+    "https://www.datadryad.org/stash/edit/"
+        + DRYAD_DOI
+        + "/editCode?x=1,"
+        + " https://www.datadryad.org/stash/dataset/"
+        + DRYAD_DOI,
   })
-  void dryadEditLinkBecomesLandingPageWithoutEditCode(String base, String path, String expected)
-      throws Exception {
-    depositor.setDryadBaseUrl(base);
-
+  void dryadEditLinkBecomesLandingPageOnItsOwnHost(String link, String expected) throws Exception {
     assertEquals(
-        new URL(DRYAD_BASE + expected),
-        depositor
-            .buildDepositReport(dryadResult(DRYAD_BASE + path), "Dryad", App.APP_DRYAD)
-            .accessUrl());
+        new URL(expected),
+        depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
   }
 
   @ParameterizedTest
-  @CsvSource(
-      value = {
-        "https://datadryad.org | https://other.example.org/edit/" + DRYAD_DOI + "/editCode",
-        "https://datadryad.org | https://datadryad.org.evil.example/edit/" + DRYAD_DOI + "/code",
-        "'' | https://datadryad.org/edit/" + DRYAD_DOI + "/editCode",
-        "https://datadryad.org | https://datadryad.org/dataset/" + DRYAD_DOI,
-      },
-      delimiter = '|')
-  void dryadLinkIsSentUnchangedWhenItCannotBeRewritten(String base, String link) throws Exception {
-    depositor.setDryadBaseUrl(base);
-
+  @CsvSource({
+    "https://datadryad.org/dataset/" + DRYAD_DOI,
+    "https://datadryad.org/stash/dataset/" + DRYAD_DOI,
+  })
+  void dryadLinkWithoutEditPathIsSentUnchanged(String link) throws Exception {
     assertEquals(
         new URL(link),
         depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://datadryad.org/dryad/edit/" + DRYAD_DOI + "/editCode",
+    "https://datadryad.org/stash/other/edit/" + DRYAD_DOI + "/editCode",
+    "https://datadryad.org/edit/",
+    "https://datadryad.org/stash/edit//editCode",
+  })
+  void unrecognisedDryadEditLinkSendsNothing(String link) throws Exception {
+    assertNull(depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
   }
 
   @Test

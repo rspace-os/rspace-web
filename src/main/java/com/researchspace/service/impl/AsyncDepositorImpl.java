@@ -120,13 +120,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     this.dmpUpdateHandler = dmpUpdateHandler;
   }
 
-  @Value("${dryad.base.url:}")
-  private String dryadBaseUrl;
-
-  void setDryadBaseUrl(String dryadBaseUrl) {
-    this.dryadBaseUrl = dryadBaseUrl;
-  }
-
   private RepositoryOperationResult doDepositArchive(
       User subject,
       IRepository repository,
@@ -281,28 +274,32 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   /**
    * Dryad returns an edit link holding a secret edit code; turns it into the dataset's landing page
-   * with the code removed. Any link that is not a recognised Dryad edit link is returned unchanged.
+   * on the link's own host, with the code removed. A link with no edit segment is returned
+   * unchanged; an edit link that cannot be rewritten gives null, so nothing is sent.
    */
   private URL getDryadPublicUrl(URL repositoryUrl) {
-    String base = StringUtils.removeEnd(dryadBaseUrl, "/");
-    String link = repositoryUrl.toString();
-    if (StringUtils.isBlank(base) || !link.startsWith(base + "/")) {
+    String path = repositoryUrl.getPath();
+    if (!path.contains(DRYAD_EDIT_PATH)) {
       return repositoryUrl;
     }
-    String path = link.substring(base.length());
-    String landingPath;
+    String landing;
     if (path.startsWith(DRYAD_OLD_EDIT_PATH)) {
-      landingPath = "/stash/dataset/" + dryadDoi(path.substring(DRYAD_OLD_EDIT_PATH.length()));
+      landing = landingPath("/stash/dataset/", path.substring(DRYAD_OLD_EDIT_PATH.length()));
     } else if (path.startsWith(DRYAD_EDIT_PATH)) {
-      landingPath = "/dataset/" + dryadDoi(path.substring(DRYAD_EDIT_PATH.length()));
+      landing = landingPath("/dataset/", path.substring(DRYAD_EDIT_PATH.length()));
     } else {
-      return repositoryUrl;
+      return null;
+    }
+    if (landing == null) {
+      return null;
     }
     try {
-      return new URL(base + landingPath);
+      return new URL(
+          repositoryUrl.getProtocol(), repositoryUrl.getHost(), repositoryUrl.getPort(), landing);
     } catch (MalformedURLException e) {
       // the link holds a secret edit code, so it is not logged
-      throw new IllegalArgumentException("Couldn't make a Dryad landing page from its edit link");
+      log.warn("Couldn't make a Dryad landing page from its edit link");
+      return null;
     }
   }
 
@@ -310,8 +307,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   private static final String DRYAD_EDIT_PATH = "/edit/";
 
   // Dryad URL-encodes the DOI into one path segment; what follows it is the edit code
-  private static String dryadDoi(String doiAndEditCode) {
-    return StringUtils.substringBefore(doiAndEditCode, "/");
+  private static String landingPath(String landingPrefix, String doiAndEditCode) {
+    String doi = StringUtils.substringBefore(doiAndEditCode, "/");
+    return doi.isEmpty() ? null : landingPrefix + doi;
   }
 
   private void notifyRepoDepositComplete(
