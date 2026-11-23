@@ -1,11 +1,14 @@
 package com.researchspace.model.apps;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import java.io.Serializable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -33,6 +36,9 @@ public class AppConfigElement implements Serializable {
 
   private Long id;
 
+  // Field access so Hibernate does not run setValue's validation while loading: with batch
+  // fetching the descriptor association may not be set yet when the value is hydrated.
+  @Access(AccessType.FIELD)
   private String value;
 
   private AppConfigElementDescriptor appConfigElementDescriptor;
@@ -67,6 +73,7 @@ public class AppConfigElement implements Serializable {
     this.id = id;
   }
 
+  @Transient
   public String getValue() {
     return value;
   }

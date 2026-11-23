@@ -13,6 +13,7 @@ import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.sort.CommunicationSort;
 import java.util.*;
+import org.apache.commons.collections4.ListUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -34,6 +35,8 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
           CommunicationStatus.CANCELLED,
           CommunicationStatus.REJECTED,
           CommunicationStatus.COMPLETED);
+
+  private static final int RECIPIENT_FETCH_CHUNK_SIZE = 500;
 
   public ISearchResults<MessageOrRequest> getSentRequests(
       User user, PaginationCriteria<MessageOrRequest> pgCrit) {
@@ -373,6 +376,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
+    List<Long> nonGlobalIds = new ArrayList<>();
     for (MessageOrRequest mor : mors) {
       if (mor.getPrevious() != null) {
         mor.getPrevious().getPriority(); // initialize
@@ -380,8 +384,19 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       // RSPAC-1455. global messages have all users as recipients; initializing this collection
       // loads all users, to be avoided!
       if (!MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType())) {
-        mor.getRecipients().size(); // initialize
+        nonGlobalIds.add(mor.getId());
       }
+    }
+    // Fetch by query: with hibernate.default_batch_fetch_size, initialising one recipients
+    // collection would also batch-load the pending ones of global messages in the session.
+    for (List<Long> ids : ListUtils.partition(nonGlobalIds, RECIPIENT_FETCH_CHUNK_SIZE)) {
+      getSession()
+          .createQuery(
+              "select distinct mor from MessageOrRequest mor left join fetch mor.recipients"
+                  + " where mor.id in :ids",
+              MessageOrRequest.class)
+          .setParameterList("ids", ids)
+          .list();
     }
   }
 

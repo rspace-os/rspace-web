@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbstractFormManagerImpl<T extends AbstractForm>
@@ -92,7 +93,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   public <F extends FieldForm, U extends FormFieldSource<F>> F updateFieldForm(
       U dto, Long fieldFormID, User subject) {
     F fieldform = checkedFieldForm(dto, fieldFormDao.get(fieldFormID));
-    T form = formType.cast(fieldform.getForm());
+    T form = formOf(fieldform);
     if (!hasWritePermission(subject, form)) {
       throw new AuthorizationException(
           messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized"));
@@ -117,6 +118,12 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     return (F) stored;
   }
 
+  // FieldForm is L2-cacheable, so with batch fetching its EAGER form can be an AbstractForm proxy,
+  // which cannot be cast to the concrete form type.
+  private T formOf(FieldForm fieldForm) {
+    return formType.cast(Hibernate.unproxy(fieldForm.getForm()));
+  }
+
   protected boolean hasWritePermission(User user, T rc) {
     return permissionUtils.isPermitted(rc, PermissionType.WRITE, user);
   }
@@ -125,7 +132,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   public void deleteFieldFromForm(Long fieldId, User subject) {
 
     FieldForm fieldToRemove = getField(fieldId);
-    T form = formType.cast(fieldToRemove.getForm());
+    T form = formOf(fieldToRemove);
     if (!permissionUtils.isPermitted(form, PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
           messageSourceUtils.getMessage(

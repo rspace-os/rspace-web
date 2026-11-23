@@ -209,6 +209,23 @@ you cannot switch between product configurations within the same test class.
    Yes -> write an MVC test extending `MVCTestBase`.
    No -> What are you testing???
 
+## Hibernate batch fetching
+
+`hibernate.cfg.xml` sets `hibernate.default_batch_fetch_size` to 20, so initialising one lazy
+collection or proxy also loads up to 19 pending ones of the same role or entity. With Hibernate
+6.4 this has some side effects:
+
+- An EAGER to-one owned by an L2-cacheable entity can load as a proxy of the declared type. Call
+  `Hibernate.unproxy` before casting it to a subclass. `BatchFetchSecondLevelCacheTest` lists the
+  associations where that matters and runs with the production L2 cache settings, which the shared
+  test context turns off.
+- Without the L2 cache, a batch-loaded EAGER to-one is set only after the owner's other properties.
+  Do not make an entity setter that Hibernate calls depend on another association; map that
+  property with field access instead (see `AppConfigElement.value`).
+- `@BatchSize(size = 1)` does not opt a collection out and can throw. Load a collection that must
+  not be batched by query instead (see global message recipients in
+  `CommunicationDaoHibernateImpl`).
+
 ## Documentation
 
 We should aim to provide simple Javadoc, at least for:

@@ -27,6 +27,13 @@
         <property name = "hibernate.format_sql">true</property> -->
         <property name = "hibernate.use_sql_comments">${hibernate.showSqlComments}</property>
         <property name = "hibernate.generate_statistics">${hibernate.showStats}</property>
+        <!-- Batch-load lazy collections and proxies: initialising one loads up to 20 pending
+             ones of the same role or entity in a single IN query, instead of one SELECT each.
+             20 covers one default API page. On Hibernate 6.4 @BatchSize(size = 1) does not opt a
+             collection out (its batch loader overflows a one-slot key array), so fetch a
+             collection that must not be batched by query instead (see
+             CommunicationDaoHibernateImpl for global message recipients). -->
+        <property name="hibernate.default_batch_fetch_size">20</property>
         <!--  <property name="hbm2ddl.auto">validate</property>   -->
         
         <mapping class="com.researchspace.model.User"/>
