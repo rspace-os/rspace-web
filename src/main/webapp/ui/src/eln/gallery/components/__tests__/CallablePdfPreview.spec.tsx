@@ -240,6 +240,20 @@ describe("CallablePdfPreview", () => {
       expect(pageCount).toBeGreaterThan(1);
     });
 
+    test("Should only mount the pages near the visible part of the dialog", async () => {
+      render(<CallablePdfPreviewStory />);
+      await preview.clickOpenMultiPagePdf();
+      await preview.waitForDocument();
+      await preview.waitForFirstPage();
+
+      expect(preview.renderedPageNumbers()).not.toContain(5);
+
+      preview.scrollToLastPage();
+
+      await expect.poll(() => preview.renderedPageNumbers()).toContain(5);
+      expect(preview.renderedPageNumbers()).not.toContain(1);
+    });
+
     test("Should open dialog for single page PDF", async () => {
       render(<CallablePdfPreviewStory />);
       await preview.clickOpenSinglePagePdf();

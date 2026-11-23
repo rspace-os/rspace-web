@@ -161,6 +161,18 @@ export class CallablePdfPreviewPage {
     );
   }
 
+  /** Page numbers of the react-pdf pages currently mounted, in document order. */
+  renderedPageNumbers(): Array<number> {
+    return Array.from(document.querySelectorAll<HTMLElement>(".react-pdf__Page")).map((pageElement) =>
+      Number(pageElement.dataset.pageNumber),
+    );
+  }
+
+  /** Scrolls the dialog until the last page's slot is in view. */
+  scrollToLastPage(): void {
+    document.querySelector(".react-pdf__Document > div > div:last-child")?.scrollIntoView();
+  }
+
   /**
    * Waits for more than one PDF page canvas to appear (multi-page PDFs).
    * Returns the count of rendered pages.

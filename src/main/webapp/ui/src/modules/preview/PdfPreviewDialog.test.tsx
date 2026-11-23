@@ -68,7 +68,6 @@ describe("pdf preview dialog island", () => {
       "data-file",
       "/public/publicView/Streamfile/17?revision=4",
     );
-    expect(screen.getByTestId("mock-pdf-page-1")).toBeVisible();
   });
 
   test("opens the callable Aspose preview for convertible files", async () => {

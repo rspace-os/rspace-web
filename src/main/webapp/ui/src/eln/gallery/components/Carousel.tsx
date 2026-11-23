@@ -8,8 +8,6 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Document, Page } from "react-pdf";
-import { incrementForever, take } from "../../../util/iterators";
 import type { Optional } from "../../../util/optional";
 import usePrimaryAction, {
   useAsposePreviewOfGalleryFile,
@@ -35,6 +33,7 @@ import * as Parsers from "../../../util/parsers";
 import type { URL as Url } from "../../../util/types";
 import { useFolderOpen } from "./OpenFolderProvider";
 import ResetZoomIcon from "./ResetZoomIcon";
+import WindowedPdfDocument from "./WindowedPdfDocument";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -209,7 +208,6 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
-  const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
@@ -298,10 +296,6 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
       });
   }, []);
 
-  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
-    setNumPages(nextNumPages);
-  }
-
   let loadingLabel = null;
   if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = t("carousel.loadingImage");
   if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = t("carousel.loadingPdf");
@@ -351,11 +345,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
             },
           }}
         >
-          <Document file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
-            {[...take(incrementForever(), numPages)].map((index) => (
-              <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={zoom} />
-            ))}
-          </Document>
+          <WindowedPdfDocument file={pdfSrc} scale={zoom} />
         </Box>
       </PreviewWrapper>
     );
