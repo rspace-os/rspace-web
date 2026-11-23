@@ -83,13 +83,20 @@ class DmpToolReporterTest {
   @Test
   void failedSendGivesFailedOutcomeWithProviderMessage() throws Exception {
     when(provider.addRelatedIdentifierToDMP("123", "doi", DOI, user))
-        .thenReturn(ServiceOperationResult.fromOptionalError(Optional.of("not authorised")));
+        .thenReturn(
+            ServiceOperationResult.fromOptionalError(
+                Optional.of("DMPTool refused the update (error 403)")));
 
     PlanReportResult result =
         reporter.report(plan, new DepositReport("Repo", new URL(DOI), null), user);
 
     assertEquals(
-        List.of(new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, "not authorised")),
+        List.of(
+            new ValueOutcome(
+                ReportedValueKind.IDENTIFIER,
+                DOI,
+                false,
+                "DMPTool refused the update (error 403)")),
         result.values());
   }
 

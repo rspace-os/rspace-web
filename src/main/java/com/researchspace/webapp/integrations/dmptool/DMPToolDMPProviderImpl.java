@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -77,13 +78,25 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     var relatedIdentifier = new RelatedIdentifier("documents", "dataset", type, identifier);
     try {
       this.dmpToolClient.postRelatedIdentifiers(dmpId, relatedIdentifier, accessToken);
+    } catch (HttpStatusCodeException e) {
+      // the response body may echo the identifier (e.g. a Dryad edit link), so only the status
+      int status = e.getStatusCode().value();
+      log.warn("DMPtool refused related identifier for plan {}: HTTP {}", dmpId, status);
+      return ServiceOperationResult.fromOptionalError(
+          Optional.of(
+              messages.getMessage(
+                  "apps.dmpTool.errors.relatedIdentifierRefused",
+                  new Object[] {String.valueOf(status)})));
     } catch (RestClientException
         | MalformedURLException
         | URISyntaxException
         | JsonProcessingException e) {
+      log.warn(
+          "Couldn't send related identifier to DMPtool plan {}: {}",
+          dmpId,
+          e.getClass().getSimpleName());
       return ServiceOperationResult.fromOptionalError(
-          Optional.of(
-              messages.getMessage("apps.dmpTool.errors.updateDoi", new Object[] {e.getMessage()})));
+          Optional.of(messages.getMessage("apps.dmpTool.errors.relatedIdentifierUnreachable")));
     }
 
     return new ServiceOperationResult<>(messages.getMessage("apps.dmpTool.update.success"), true);
