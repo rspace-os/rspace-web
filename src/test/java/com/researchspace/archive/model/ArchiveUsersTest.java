@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Community;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.testutils.ArchiveTestUtils;
 import java.util.Iterator;
 import org.junit.jupiter.api.Test;
@@ -19,7 +21,7 @@ public class ArchiveUsersTest {
 
     ArchiveUsers fromXml = ArchiveTestUtils.writeToXMLAndReadFromXML(testData.getArchiveInfo());
     Iterator<User> it = fromXml.getUsers().iterator();
-    assertThat(fromXml.getUserGroups()).hasSize(2);
+    assertThat(fromXml.getUserGroups()).hasSize(3);
     assertThat(fromXml.getGroups()).hasSize(1);
     assertThat(fromXml.getCommunities()).hasSize(1);
     User userRead = it.next();
@@ -33,5 +35,12 @@ public class ArchiveUsersTest {
     assertEquals(testData.getAdmin(), inCommunity.getAdmins().iterator().next());
     // profiles
     assertThat(fromXml.getProfiles()).hasSize(1);
+    UserGroup labAdminMembership =
+        fromXml.getUserGroups().stream()
+            .filter(ug -> ug.getUser().equals(testData.getLabAdmin()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(RoleInGroup.RS_LAB_ADMIN, labAdminMembership.getRoleInGroup());
+    assertTrue(labAdminMembership.isAdminViewDocsEnabled());
   }
 }
