@@ -5627,6 +5627,13 @@ export default interface Resources {
           "import": "Couldn't import DMP",
           "invalidLicenseUrl": "{0} is not a valid URL",
           "list": "Couldn't list DMPs"
+        },
+        "platformName": {
+          "argos": "Argos",
+          "dmpAssistant": "DMP Assistant",
+          "dmpOnline": "DMPonline",
+          "dmpTool": "DMPTool",
+          "dsw": "DSW"
         }
       },
       "dmpAssistant": {
@@ -5651,7 +5658,8 @@ export default interface Resources {
           "getDetails": "Couldn''t get details of DMP with id: {0}",
           "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
           "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-          "updateDoi": "Couldn''t update DMP with DOI: {0}"
+          "relatedIdentifierRefused": "DMPTool refused the update (error {0})",
+          "relatedIdentifierUnreachable": "DMPTool could not be reached"
         },
         "update": {
           "success": "DMP updated"
@@ -6712,6 +6720,20 @@ export default interface Resources {
   "server.email.notifications": {
     "email": {
       "notification": {
+        "dmpUpdateCompleteNotification": {
+          "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>. You can add it to a plan by hand.",
+          "failedNoValue": "The plan could not be updated: {0}.",
+          "intro": "RSpace tried to add your deposit on \"{0}\" to the plans you selected.",
+          "morePlans": "And {0, plural, one {# more plan} other {# more plans}} not listed here.",
+          "notConnected": "{0} is not connected, so the plan was not updated.",
+          "notSupported": "RSpace cannot yet update plans on {0}.",
+          "nothingToSend": "{0} returned no DOI and no link, so nothing was added.",
+          "planHeading": "{0} ({1})",
+          "platformOff": "{0} is switched off, so the plan was not updated.",
+          "unexpectedError": "an unexpected error occurred; you can add the link to the plan by hand",
+          "valueFailed": "<a href=\"{0}\">{0}</a> could not be added: {1}.",
+          "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."
+        },
         "exportCompleteNotification": {
           "archiveSummary": "{0, plural, =0 {No records were exported.} one {The archive includes # record.} other {The archive includes # records.}}",
           "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
