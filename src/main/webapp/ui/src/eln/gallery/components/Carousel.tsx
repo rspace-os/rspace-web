@@ -204,11 +204,51 @@ const PreviewWrapper = ({
   );
 };
 
-const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; visible: boolean }) => {
+/*
+ * Converted Aspose PDFs, keyed by file id and version, so that a file which is
+ * unmounted as the user moves away and remounted as they move back does not
+ * request another conversion.
+ */
+type AsposePdfCache = Map<string, Promise<Url>>;
+
+function convertWithAspose(file: GalleryFile, cache: AsposePdfCache): Promise<Url> {
+  const id = idToString(file.id).elseThrow();
+  const cacheKey = `${id}@${file.version ?? ""}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const conversion = (async () => {
+    const { data } = await axios.get<unknown>(`/Streamfile/ajax/convert/${id}?outputFormat=pdf`);
+    const fileName = Parsers.isObject(data)
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.getValueWithKey("data"))
+      .flatMap(Parsers.isString)
+      .orElse(null);
+    if (!fileName) throw new Error("Aspose did not return a converted file");
+    return `/Streamfile/direct/${id}?fileName=${fileName}`;
+  })();
+  cache.set(cacheKey, conversion);
+  void conversion.catch(() => cache.delete(cacheKey));
+  return conversion;
+}
+
+const Preview = React.memo(function Preview({
+  file,
+  zoom,
+  visible,
+  asposePdfCache,
+}: {
+  file: GalleryFile;
+  zoom: number;
+  visible: boolean;
+  asposePdfCache: AsposePdfCache;
+}) {
   const { t } = useTranslation("gallery");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  // aspose.enabled may still be loading on the first render
+  const asposeAvailable = canPreviewWithAspose(file).isOk;
+  const loadStarted = React.useRef(false);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
@@ -221,6 +261,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   >(null);
 
   React.useEffect(() => {
+    if (loadStarted.current) return;
     canPreviewAsImage(file)
       .map((getDownloadHref) => ({ key: "image", getDownloadHref }))
       .orElseTry(() =>
@@ -239,6 +280,9 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
         })),
       )
       .do((preview) => {
+        // conversion is expensive, so neighbours only preload images and PDFs
+        if (preview.key === "aspose" && !visible) return;
+        loadStarted.current = true;
         void (async () => {
           if (preview.key === "image") {
             setImageUrl({ tag: "loading" });
@@ -259,44 +303,14 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
           } else {
             setAsposePdfUrl({ tag: "loading" });
             try {
-              const { data } = await axios.get<unknown>(
-                `/Streamfile/ajax/convert/${idToString(file.id).elseThrow()}?outputFormat=pdf`,
-              );
-              const fileName = Parsers.isObject(data)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("data"))
-                .flatMap(Parsers.isString)
-                .orElse(null);
-              if (fileName) {
-                setAsposePdfUrl({
-                  tag: "loaded",
-                  url: `/Streamfile/direct/${idToString(file.id).elseThrow()}?fileName=${fileName}`,
-                });
-              } else {
-                Parsers.isObject(data)
-                  .flatMap(Parsers.isNotNull)
-                  .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-                  .flatMap(Parsers.isString)
-                  .do((msg) => {
-                    throw new Error(msg);
-                  });
-                Parsers.objectPath(["error", "errorMessages"], data)
-                  .flatMap(Parsers.isArray)
-                  .flatMap((array) => Parsers.isNotBottom(array.at(0)))
-                  .flatMap(Parsers.isString)
-                  .do((msg) => {
-                    throw new Error(msg);
-                  });
-              }
+              setAsposePdfUrl({ tag: "loaded", url: await convertWithAspose(file, asposePdfCache) });
             } catch {
-              setAsposePdfUrl({
-                tag: "error",
-              });
+              setAsposePdfUrl({ tag: "error" });
             }
           }
         })();
       });
-  }, []);
+  }, [visible, asposeAvailable]);
 
   function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
@@ -361,7 +375,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
     );
 
   return null;
-};
+});
 
 type CarouselArgs = {
   listing:
@@ -385,6 +399,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
   const [zoom, setZoom] = React.useState(1);
+  const [asposePdfCache] = React.useState<AsposePdfCache>(() => new Map());
   const { t } = useTranslation(["gallery", "common"]);
 
   React.useEffect(() => {
@@ -567,9 +582,18 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
           minHeight: "0",
         }}
       >
-        {listing.list.map((f, i) => (
-          <Preview file={f} zoom={zoom} visible={i === visibleIndex} key={f.key} />
-        ))}
+        {/* Only the visible file and its neighbours are mounted, so the rest are not downloaded */}
+        {listing.list.map((f, i) =>
+          Math.abs(i - visibleIndex) <= 1 ? (
+            <Preview
+              file={f}
+              zoom={i === visibleIndex ? zoom : 1}
+              visible={i === visibleIndex}
+              asposePdfCache={asposePdfCache}
+              key={f.key}
+            />
+          ) : null,
+        )}
       </Box>
     </Stack>
   );

@@ -1,38 +1,58 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import "@/__tests__/__mocks__/matchMedia";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
-import { SimpleCarousel } from "./Carousel.story";
+import { HttpResponse, http } from "msw/http";
+import type React from "react";
+import { server } from "@/__tests__/mswServer";
+import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { OfficeDocumentCarousel, SimpleCarousel } from "./Carousel.story";
 
-const mockAxios = new MockAdapter(axios);
+// pdf.js cannot load documents under jsdom; expose the loaded URL instead.
+vi.mock("react-pdf", () => ({
+  pdfjs: { GlobalWorkerOptions: {} },
+  Document: ({ file }: { file: string }) => <div role="document" aria-label={file} />,
+  Page: () => null,
+}));
 
-beforeEach(() => {
-  mockAxios.reset();
-  /*
-   * On mount the carousel's preview hooks fire bootstrap requests that are not
-   * relevant to the behaviour under test. `/ln` and the deployment-property
-   * lookup need specific (non-empty) shapes; the office-suite `supportedExts`
-   * calls and anything else are absorbed by the `onAny` catch-all below, which
-   * returns the same empty object those endpoints expect.
-   */
-  mockAxios.onGet("/ln").reply(200, { data: false });
-  mockAxios.onGet(/\/deploymentproperties\/ajax\/property.*/).reply(200, false);
-  mockAxios.onAny().reply(200, {});
-});
+const PREVIEW = { name: "gallery:carousel.previewAlt" };
 
-async function waitForPreviewImages() {
-  await waitFor(() => {
-    expect(screen.getAllByRole("img", { name: "gallery:carousel.previewAlt", hidden: true })).toHaveLength(8);
-  });
+/*
+ * Records which files had their content downloaded or were sent for Aspose
+ * conversion. aspose.enabled is served asynchronously, so it is still loading
+ * when the previews mount.
+ */
+function stubEndpoints({ asposeEnabled = false }: { asposeEnabled?: boolean } = {}) {
+  const downloads: Array<string> = [];
+  const conversions: Array<string> = [];
+  server.use(
+    http.get("/deploymentproperties/ajax/property", ({ request }) =>
+      HttpResponse.json(asposeEnabled && new URL(request.url).searchParams.get("name") === "aspose.enabled"),
+    ),
+    http.get("/collaboraOnline/supportedExts", () => HttpResponse.json({})),
+    http.get("/officeOnline/supportedExts", () => HttpResponse.json({})),
+    http.get("/api/v1/files/:id/file", ({ params }) => {
+      downloads.push(String(params.id));
+      return new HttpResponse(new Blob(["image"]), { headers: { "Content-Type": "image/jpeg" } });
+    }),
+    http.get("/Streamfile/ajax/convert/:id", ({ params }) => {
+      conversions.push(String(params.id));
+      return HttpResponse.json({ data: `converted${String(params.id)}.pdf` });
+    }),
+  );
+  return { downloads, conversions };
+}
+
+function renderCarousel(carousel: React.ReactElement) {
+  return render(<DeploymentPropertyContext.Provider value={new Map()}>{carousel}</DeploymentPropertyContext.Provider>);
 }
 
 describe("Carousel", () => {
   test("Should have no axe violations", async () => {
-    const { baseElement } = render(<SimpleCarousel />);
-    await waitForPreviewImages();
+    stubEndpoints();
+    const { baseElement } = renderCarousel(<SimpleCarousel />);
+    await screen.findByRole("img", PREVIEW);
 
     /*
      * The original Playwright spec filtered out the `landmark-one-main`,
@@ -45,9 +65,10 @@ describe("Carousel", () => {
   });
 
   test("Should show an indicator of progress through listing.", async () => {
+    stubEndpoints();
     const user = userEvent.setup();
-    render(<SimpleCarousel />);
-    await waitForPreviewImages();
+    renderCarousel(<SimpleCarousel />);
+    await screen.findByRole("img", PREVIEW);
 
     expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("1 / 8");
 
@@ -57,13 +78,56 @@ describe("Carousel", () => {
   });
 
   test("Moving to a different file resets the zoom level", async () => {
+    stubEndpoints();
     const user = userEvent.setup();
-    render(<SimpleCarousel />);
-    await waitForPreviewImages();
+    renderCarousel(<SimpleCarousel />);
+    await screen.findByRole("img", PREVIEW);
 
     await user.click(screen.getByRole("button", { name: "common:actions.zoomIn" }));
     await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
     expect(screen.getByRole("button", { name: "common:actions.resetZoom" })).toBeDisabled();
+  });
+
+  test("Only the visible file and its neighbour are rendered when the carousel opens", async () => {
+    stubEndpoints();
+    renderCarousel(<SimpleCarousel />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("img", { ...PREVIEW, hidden: true })).toHaveLength(2);
+    });
+  });
+
+  test("Only the visible file and its neighbours download their content", async () => {
+    const { downloads } = stubEndpoints();
+    const user = userEvent.setup();
+    renderCarousel(<SimpleCarousel />);
+    await waitFor(() => {
+      expect([...downloads].sort()).toEqual(["1", "2"]);
+    });
+
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+
+    await waitFor(() => {
+      expect([...downloads].sort()).toEqual(["1", "2", "3", "4"]);
+    });
+  });
+
+  test("Office documents are converted only when visible, and only once each", async () => {
+    const { conversions } = stubEndpoints({ asposeEnabled: true });
+    const user = userEvent.setup();
+    renderCarousel(<OfficeDocumentCarousel />);
+    await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
+
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await screen.findByRole("document", { name: "/Streamfile/direct/2?fileName=converted2.pdf" });
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await screen.findByRole("document", { name: "/Streamfile/direct/3?fileName=converted3.pdf" });
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.previous" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.previous" }));
+    await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
+
+    expect(conversions).toEqual(["1", "2", "3"]);
   });
 });
