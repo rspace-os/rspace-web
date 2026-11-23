@@ -2,12 +2,12 @@ import type {
   CollectionConfig,
   FieldConfig,
   FieldName,
-  FilterOperator,
   ResolvedCollectionConfig,
   ResolvedFieldCapabilities,
   ResolvedFieldConfig,
   SearchSelector,
 } from "./config";
+import type { FilterOperator } from "./schema";
 
 const commonOperators = ["equals", "notEquals", "in", "notIn", "exists"] as const;
 
@@ -94,6 +94,9 @@ export function resolveCollectionConfig<
   const resolvedFieldsByName = new Map<FieldName<TDocument>, ResolvedFieldConfig<TDocument>>();
   for (const field of config.fields) {
     if (resolvedFieldsByName.has(field.name)) throw new Error(`Duplicate field: ${field.name}`);
+    if (field.labelKey === undefined && field.label === undefined && field.derivedLabel === undefined) {
+      throw new Error(`Field needs a labelKey, label or derivedLabel: ${field.name}`);
+    }
     const defaults = defaultCapabilities[field.type];
     const capabilities = {
       sortable: field.capabilities?.sortable ?? defaults.sortable,

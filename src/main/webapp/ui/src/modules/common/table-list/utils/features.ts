@@ -14,20 +14,20 @@ import {
 } from "@tanstack/react-table";
 import { isNil } from "es-toolkit";
 import type { ReactNode } from "react";
-import type { FieldOrigin, LabelText } from "@/modules/common/collection/config";
+import type { CollectionTranslationKey, FieldOrigin, LabelText } from "@/modules/common/collection/config";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import type { TableListCardFieldLayout } from "../types";
 
 export type ColumnMeta = {
-  labelKey: string;
+  labelKey?: CollectionTranslationKey;
   label?: string;
   derivedLabel?: LabelText;
   origin?: Pick<FieldOrigin, "sourceLabel" | "via">;
   cardLabel?: ReactNode;
   card?: TableListCardFieldLayout;
-  descriptionKey?: string;
+  descriptionKey?: CollectionTranslationKey;
   description?: string;
 };
 

@@ -1,8 +1,10 @@
 import { parse } from "@rsql/parser";
 import { and, cmp, eq, escapeValue, inList, ne, Operation, or, outList } from "rsql-builder";
 import * as v from "valibot";
-import type { FilterOperator, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
-import { filterOperatorsByToken, filterOperatorTokens as tokens } from "@/modules/common/collection/schema";
+import { apiV2WhereOperators as tokens } from "@/modules/common/api/v2/apiV2Where";
+import type { ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
+import { filterOperatorsByToken } from "@/modules/common/collection/schema";
 import { booleanScalar, dateTimeScalar, numberScalar } from "./schema";
 import type { FilterExpression, FilterValue } from "./types";
 

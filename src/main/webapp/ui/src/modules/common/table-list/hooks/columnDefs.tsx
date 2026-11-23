@@ -137,8 +137,6 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
           minSize: column.minWidth,
           enableSorting: false,
           meta: {
-            labelKey: column.id,
-            // A column id is not a catalog key; `actions` would resolve to the common actions object.
             label: typeof column.label === "string" ? column.label : column.id,
             cardLabel: column.label,
             card: column.card,

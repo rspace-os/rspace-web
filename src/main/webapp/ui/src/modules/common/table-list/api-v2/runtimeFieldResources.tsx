@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext } from "react";
 import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
-import type { ApiV2RuntimeFieldNamespace } from "./metadata";
 import { runtimeFieldCatalogResource } from "./runtimeFieldCatalog";
+import type { ApiV2RuntimeFieldNamespace } from "./schema";
 
 type RuntimeFieldResource = ApiV2ResourceEntry<string, { runtimeFields: ApiV2ReadOperation }>;
 const RuntimeFieldResources = createContext<Readonly<Record<string, RuntimeFieldResource>>>({});

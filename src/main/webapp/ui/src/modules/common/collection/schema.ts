@@ -1,14 +1,12 @@
 import * as v from "valibot";
 import { apiV2WhereOperators } from "@/modules/common/api/v2/apiV2Where";
 
-/** RSQL token for each filter operator; typed REST API v2 `where` objects use the same names. */
-export const filterOperatorTokens = apiV2WhereOperators;
-
-export type FilterOperator = keyof typeof filterOperatorTokens;
-export type FilterOperatorToken = (typeof filterOperatorTokens)[FilterOperator];
+/** Filter operators are the typed REST API v2 `where` operator names; each maps to its RSQL token. */
+export type FilterOperator = keyof typeof apiV2WhereOperators;
+export type FilterOperatorToken = (typeof apiV2WhereOperators)[FilterOperator];
 
 export const filterOperatorsByToken = Object.fromEntries(
-  Object.entries(filterOperatorTokens).map(([operator, token]) => [token, operator]),
+  Object.entries(apiV2WhereOperators).map(([operator, token]) => [token, operator]),
 ) as Record<FilterOperatorToken, FilterOperator>;
 
 export const relationshipFilterPickerSchema = v.object({

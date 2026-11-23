@@ -44,14 +44,20 @@ describe("resolveCollectionConfig", () => {
   const relationshipConfig = {
     slug: "relatedRecords",
     idField: "id",
-    labels: { singularKey: "record", pluralKey: "records" },
+    labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
     useAsTitle: "title",
     defaultColumns: ["title", "target"],
     listSearchableFields: ["target.name"],
     fields: [
-      { name: "id", type: "text", labelKey: "id", list: false },
-      { name: "title", type: "text", labelKey: "title" },
-      { name: "target", type: "relationship", relationTo: "targets", hasMany: false, labelKey: "target" },
+      { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+      { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+      {
+        name: "target",
+        type: "relationship",
+        relationTo: "targets",
+        hasMany: false,
+        labelKey: "tableList.examples.fields.owner",
+      },
     ],
   } as const satisfies CollectionConfig<{
     id: string;

@@ -18,8 +18,6 @@ import type { ApiV2CollectionMetadata } from "./metadata";
 import { collectionQueryParams, selectedFields } from "./queryParams";
 import { type ApiV2DocumentMapping, type ApiV2DocumentSchema, createApiV2ResponseSchema, objectInput } from "./schema";
 
-export type { ApiV2DocumentMapping, ApiV2DocumentSchema } from "./schema";
-
 export type ApiV2CollectionAdapter<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
   metadata: ApiV2CollectionMetadata<TDocument>;

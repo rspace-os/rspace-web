@@ -45,7 +45,7 @@ const config: CollectionConfig<Document, "id", "name"> = {
     { name: "name", labelKey: "tableList.examples.fields.title", type: "text" },
     ...["target", "room"].map((name) => ({
       name,
-      labelKey: "tableList.examples.fields.owner",
+      labelKey: "tableList.examples.fields.owner" as const,
       type: "relationship" as const,
       relationTo: "instruments",
       hasMany: false,

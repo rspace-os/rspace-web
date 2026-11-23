@@ -4,11 +4,6 @@ import type { AlertEntry, TableListAlert, TableListAlertsApi } from "../componen
 
 const focusableSelector = "a[href], button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex='-1'])";
 
-/** Quotes a value for an attribute selector. */
-function attributeValue(value: string): string {
-  return `"${value.replace(/["\\]/g, "\\$&")}"`;
-}
-
 /**
  * The first candidate the page shows; the table and card presentations both render, one hidden by CSS.
  * Without a layout engine (jsdom) nothing has client rects, so the first candidate stands in.
@@ -21,9 +16,9 @@ function firstShown<TElement extends Element>(candidates: readonly TElement[]): 
 /** The first visible control in a row's actions; the table and card presentations both render, one hidden by CSS. */
 function rowActionsFocusTarget(root: Element, rowId: string): HTMLElement | undefined {
   return firstShown(
-    [...root.querySelectorAll(`[data-table-list-row-actions=${attributeValue(rowId)}]`)].flatMap((actions) => [
-      ...actions.querySelectorAll<HTMLElement>(focusableSelector),
-    ]),
+    [...root.querySelectorAll<HTMLElement>("[data-table-list-row-actions]")]
+      .filter((actions) => actions.dataset.tableListRowActions === rowId)
+      .flatMap((actions) => [...actions.querySelectorAll<HTMLElement>(focusableSelector)]),
   );
 }
 
@@ -126,7 +121,9 @@ export function useTableListAlertsState({
       firstShown([...container.querySelectorAll<HTMLElement>("[data-table-list-filters]")]) ??
       firstShown([...container.querySelectorAll<HTMLElement>("input")]);
     const focusAlert = (id: string) =>
-      container.querySelector<HTMLElement>(`[data-table-list-alert=${attributeValue(id)}]`)?.focus();
+      [...container.querySelectorAll<HTMLElement>("[data-table-list-alert]")]
+        .find((alert) => alert.dataset.tableListAlert === id)
+        ?.focus();
     if (focusRequest.kind === "alert") {
       setFocusRequest(null);
       focusAlert(focusRequest.id);

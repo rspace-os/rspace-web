@@ -1,10 +1,6 @@
 import { format } from "date-fns";
-import type {
-  FilterOperator,
-  ResolvedCollectionConfig,
-  ResolvedFieldConfig,
-  SearchSelector,
-} from "@/modules/common/collection/config";
+import type { ResolvedCollectionConfig, ResolvedFieldConfig, SearchSelector } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
 import type { FilterExpression, FilterValue } from "../types";
 
 export type DraftRule<TDocument> = {

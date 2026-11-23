@@ -18,20 +18,16 @@ type RawView = {
   columns: string | null;
   sort: string | null;
 };
-const rawViewSchema = v.omit(tableViewStateSchema, ["defaults"]);
+const storedRawViewSchema = v.pipe(v.string(), v.parseJson(), v.omit(tableViewStateSchema, ["defaults"]));
 const emptyView: RawView = { search: null, where: null, columns: null, sort: null };
 
 function storedView(key: string): RawView & { malformed?: boolean } {
   const serialized = readStoredTableView(key);
   if (serialized === null) return emptyView;
-  try {
-    const result = v.safeParse(rawViewSchema, JSON.parse(serialized));
-    if (!result.success) return { ...emptyView, malformed: true };
-    const { search, where, columns, sort } = result.output;
-    return { search, where, columns, sort };
-  } catch {
-    return { ...emptyView, malformed: true };
-  }
+  const result = v.safeParse(storedRawViewSchema, serialized);
+  if (!result.success) return { ...emptyView, malformed: true };
+  const { search, where, columns, sort } = result.output;
+  return { search, where, columns, sort };
 }
 
 /** Read encoded state before parsing so unresolved fields never silently erase saved rules. */

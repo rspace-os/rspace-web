@@ -1,19 +1,13 @@
 import * as v from "valibot";
+import { apiV2WhereOperators } from "@/modules/common/api/v2/apiV2Where";
 import {
   ApiV2RuntimeFieldCatalogEntrySchema,
   ApiV2RuntimeFieldCatalogSchema,
 } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { FieldConfig } from "@/modules/common/collection/config";
-import {
-  type FilterOperatorToken,
-  filterOperatorTokens,
-  relationshipFilterPickerSchema,
-  runtimeFieldValueTypes,
-} from "@/modules/common/collection/schema";
+import { relationshipFilterPickerSchema, runtimeFieldValueTypes } from "@/modules/common/collection/schema";
 
-export type ApiV2FilterOperator = FilterOperatorToken;
-
-const filterOperator = v.picklist(Object.values(filterOperatorTokens));
+const filterOperator = v.picklist(Object.values(apiV2WhereOperators));
 
 const positiveInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(1));
 const nonNegativeInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(0));

@@ -18,9 +18,9 @@ const identityField = resolveCollectionConfig<{ target: string }>({
   slug: "metadata-picker",
   idField: "target",
   useAsTitle: "target",
-  labels: { singularKey: "item", pluralKey: "items" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
   defaultColumns: ["target"],
-  fields: [{ name: "target", labelKey: "target", type: "text" }],
+  fields: [{ name: "target", labelKey: "tableList.examples.fields.owner", type: "text" }],
 }).fields[0];
 
 describe("metadata-selected relationship filter controls", () => {
@@ -33,11 +33,17 @@ describe("metadata-selected relationship filter controls", () => {
       slug: "related-scalars",
       idField: "target",
       useAsTitle: "target",
-      labels: { singularKey: "item", pluralKey: "items" },
+      labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
       defaultColumns: ["target"],
       fields: [
-        { name: "target", labelKey: "target", type: "relationship", relationTo: "instruments", hasMany: false },
-        { name: "target.name", labelKey: "name", type },
+        {
+          name: "target",
+          labelKey: "tableList.examples.fields.owner",
+          type: "relationship",
+          relationTo: "instruments",
+          hasMany: false,
+        },
+        { name: "target.name", labelKey: "tableList.examples.fields.targetName", type },
       ],
     });
     render(

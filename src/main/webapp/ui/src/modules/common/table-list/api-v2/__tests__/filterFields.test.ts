@@ -21,21 +21,26 @@ type Booking = v.InferOutput<typeof documentSchema>;
 const config = {
   slug: "bookingConfigurations",
   idField: "id" as const,
-  labels: { singularKey: "a", pluralKey: "b" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" } as const,
   useAsTitle: "target" as const,
   defaultColumns: ["target" as const, "room" as const],
   fields: [
-    { name: "id" as const, labelKey: "id", type: "text" as const, list: false as const },
+    {
+      name: "id" as const,
+      labelKey: "tableList.examples.fields.id" as const,
+      type: "text" as const,
+      list: false as const,
+    },
     {
       name: "target" as const,
-      labelKey: "target",
+      labelKey: "tableList.examples.fields.owner" as const,
       type: "relationship" as const,
       relationTo: "instruments",
       hasMany: false,
     },
     {
       name: "room" as const,
-      labelKey: "room",
+      labelKey: "tableList.examples.fields.collaborators" as const,
       type: "relationship" as const,
       relationTo: "instruments",
       hasMany: false,
@@ -119,11 +124,11 @@ describe("filter selectors derived from published relationship targets", () => {
       { text: "floor" },
     ]);
     expect(derived.map((field) => field.origin?.via)).toEqual([
-      { name: "target", label: { key: "target" } },
-      { name: "target", label: { key: "target" } },
-      { name: "target", label: { key: "target" } },
-      { name: "room", label: { key: "room" } },
-      { name: "room", label: { key: "room" } },
+      { name: "target", label: { key: "tableList.examples.fields.owner" } },
+      { name: "target", label: { key: "tableList.examples.fields.owner" } },
+      { name: "target", label: { key: "tableList.examples.fields.owner" } },
+      { name: "room", label: { key: "tableList.examples.fields.collaborators" } },
+      { name: "room", label: { key: "tableList.examples.fields.collaborators" } },
     ]);
   });
 
@@ -197,12 +202,17 @@ describe("filter selectors derived from published relationship targets", () => {
     const ownerlessConfig = {
       slug: "ownerless-records",
       idField: "id" as const,
-      labels: { singularKey: "record", pluralKey: "records" },
+      labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" } as const,
       useAsTitle: "title" as const,
       defaultColumns: ["title" as const],
       fields: [
-        { name: "id" as const, labelKey: "id", type: "text" as const, list: false as const },
-        { name: "title" as const, labelKey: "title", type: "text" as const },
+        {
+          name: "id" as const,
+          labelKey: "tableList.examples.fields.id" as const,
+          type: "text" as const,
+          list: false as const,
+        },
+        { name: "title" as const, labelKey: "tableList.examples.fields.title" as const, type: "text" as const },
       ],
     };
     const ownerlessMetadata: ApiV2CollectionMetadata<OwnerlessRecord> = {
@@ -332,10 +342,10 @@ describe("filter selectors derived from published relationship targets", () => {
       config: {
         slug: "audited-records",
         idField: "id",
-        labels: { singularKey: "a", pluralKey: "b" },
+        labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
         useAsTitle: "id",
         defaultColumns: ["id"],
-        fields: [{ name: "id", labelKey: "id", type: "text" }],
+        fields: [{ name: "id", labelKey: "tableList.examples.fields.id", type: "text" }],
       },
       metadata: auditedMetadata,
     });

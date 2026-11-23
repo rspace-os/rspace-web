@@ -6,14 +6,14 @@ import { describe, expect, it } from "vitest";
 import { useFieldLabels } from "../useFieldLabels";
 
 const ownerField = {
-  labelKey: "name",
-  derivedLabel: { key: "common:targetFields.name" },
-  origin: { via: { name: "owner", label: { key: "common:owners.instrument" } } },
+  labelKey: "tableList.targetFields.name" as const,
+  derivedLabel: { key: "common:tableList.targetFields.name" as const },
+  origin: { via: { name: "owner", label: { key: "common:tableList.fields.location" as const } } },
 };
 
 const emptyOwnerField = {
-  labelKey: "name",
-  derivedLabel: { key: "common:targetFields.name" },
+  labelKey: "tableList.targetFields.name" as const,
+  derivedLabel: { key: "common:tableList.targetFields.name" as const },
   origin: { via: { name: "owner", label: { text: "" } } },
 };
 
@@ -25,15 +25,17 @@ function LabelHarness() {
       <dt>{"qualified"}</dt>
       <dd>{fieldLabel(ownerField)}</dd>
       <dt>{"qualified other namespace"}</dt>
-      <dd>{fieldLabel({ labelKey: "admin:fields.title" })}</dd>
+      <dd>{fieldLabel({ labelKey: "about:copyright" })}</dd>
       <dt>{"empty owner"}</dt>
       <dd>{fieldLabel(emptyOwnerField)}</dd>
       <dt>{"source"}</dt>
       <dd>{fieldOptionLabel({ ...ownerField, origin: { ...ownerField.origin, sourceLabel: "Template" } })}</dd>
       <dt>{"literal"}</dt>
-      <dd>{fieldLabel({ labelKey: "targetFields.name", derivedLabel: { text: "targetFields.name" } })}</dd>
+      <dd>{fieldLabel({ labelKey: "tableList.targetFields.name", derivedLabel: { text: "targetFields.name" } })}</dd>
       <dt>{"empty override"}</dt>
-      <dd>{fieldLabel({ labelKey: "fields.title", label: "", derivedLabel: { text: "Ignored" } })}</dd>
+      <dd>
+        {fieldLabel({ labelKey: "tableList.examples.fields.title", label: "", derivedLabel: { text: "Ignored" } })}
+      </dd>
     </dl>
   );
 }
@@ -47,24 +49,34 @@ async function createI18n() {
       lng: "en-US",
       fallbackLng: false,
       defaultNS: "common",
-      ns: ["common", "admin"],
+      ns: ["common", "about"],
       interpolation: { escapeValue: false },
       resources: {
         "en-US": {
           common: {
-            tableList: { fields: { hierarchicalLabel: "{owner} → {field}", labelWithSource: "{label} ({source})" } },
-            targetFields: { name: "Name" },
-            owners: { instrument: "Instrument" },
+            tableList: {
+              fields: {
+                hierarchicalLabel: "{owner} → {field}",
+                labelWithSource: "{label} ({source})",
+                location: "Instrument",
+              },
+              targetFields: { name: "Name" },
+            },
           },
-          admin: { fields: { title: "Page title" } },
+          about: { copyright: "Page title" },
         },
         "fr-FR": {
           common: {
-            tableList: { fields: { hierarchicalLabel: "{owner} → {field}", labelWithSource: "{label} ({source})" } },
-            targetFields: { name: "Nom" },
-            owners: { instrument: "Instrument de réservation" },
+            tableList: {
+              fields: {
+                hierarchicalLabel: "{owner} → {field}",
+                labelWithSource: "{label} ({source})",
+                location: "Instrument de réservation",
+              },
+              targetFields: { name: "Nom" },
+            },
           },
-          admin: { fields: { title: "Titre de page" } },
+          about: { copyright: "Titre de page" },
         },
       },
     });

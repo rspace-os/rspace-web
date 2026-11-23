@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import type { FilterOperator, ResolvedFieldConfig } from "@/modules/common/collection/config";
+import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
 import { selectOptionText } from "@/modules/common/collection/utils";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
 import { type RelationshipSource, relationshipSourceForPicker } from "@/modules/common/relationship-picker/sources";

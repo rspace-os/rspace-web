@@ -122,7 +122,6 @@ export function CustomFieldPicker({
       : typeLabels[definition.type];
   const optionLabel = ({ definition }: RuntimeFieldOption) =>
     fieldOptionLabel({
-      labelKey: definition.label,
       label: definition.label,
       origin: { sourceLabel: sourceLabel(definition) },
     });

@@ -1,3 +1,4 @@
+import { uniqBy } from "es-toolkit";
 import { type FocusEventHandler, type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/types";
@@ -31,19 +32,14 @@ const compactChipsClasses =
   "min-h-8 max-h-24 w-full overflow-y-auto py-1 text-xs [&_input]:h-6 [&_input]:py-0 [&_input]:text-xs";
 
 function splitValue(value: string, sources: readonly RelationshipSource[]): readonly string[] {
-  const seen = new Set<string>();
-  return value
+  const items = value
     .split(",")
     .map((item) => item.trim())
-    .filter(Boolean)
-    .filter((item) => {
-      const owner = sources.find((candidate) => candidate.ownsValue(item));
-      const canonical = owner?.normalizeValue?.(item) ?? item;
-      const key = JSON.stringify([owner?.id ?? "unknown", canonical]);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    .filter(Boolean);
+  return uniqBy(items, (item) => {
+    const owner = sources.find((candidate) => candidate.ownsValue(item));
+    return JSON.stringify([owner?.id ?? "unknown", owner?.normalizeValue?.(item) ?? item]);
+  });
 }
 
 function sameOption(option: RelationshipOptionWithSource, other: RelationshipOptionWithSource) {
@@ -131,15 +127,12 @@ export function RelationshipPicker({
   const hasSearchTerm = trimmedTerm !== "";
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && trimmedTerm.length < minimumSearchLength;
   const showsOptions = hasSearchTerm || browseWhenEmpty;
-  const labels = useMemo(
-    () => ({
-      idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
-      unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
-      failedLabel: () => t("relationshipPicker.restoreFailed"),
-      compact,
-    }),
-    [t, compact],
-  );
+  const labels = {
+    idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }),
+    unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
+    failedLabel: (value: string) => t("relationshipPicker.restoreFailed", { value }),
+    compact,
+  };
 
   const selected = useSelectedRelationshipOptions({
     sources: pickerSources,

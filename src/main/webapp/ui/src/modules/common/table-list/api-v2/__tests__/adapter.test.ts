@@ -19,12 +19,17 @@ type Instrument = Required<Pick<InstrumentsRead, "id" | "name">> & {
 const config = {
   slug: "instruments",
   idField: "id" as const,
-  labels: { singularKey: "instrument", pluralKey: "instruments" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" } as const,
   useAsTitle: "name" as const,
   defaultColumns: ["name" as const],
   fields: [
-    { name: "id" as const, labelKey: "id", type: "number" as const, list: false as const },
-    { name: "name" as const, labelKey: "name", type: "text" as const },
+    {
+      name: "id" as const,
+      labelKey: "tableList.examples.fields.id" as const,
+      type: "number" as const,
+      list: false as const,
+    },
+    { name: "name" as const, labelKey: "tableList.examples.fields.title" as const, type: "text" as const },
   ],
 };
 
@@ -125,7 +130,6 @@ describe("runtime custom fields", () => {
     );
 
     expect(fields.map((field) => field.derivedLabel)).toEqual([{ text: "Hazard class" }, { text: "Hazard class" }]);
-    expect(fields.map((field) => field.labelKey)).toEqual(["customFields.SF104", "customFields.SF204"]);
     expect(fields.map((field) => field.origin?.sourceLabel)).toEqual(["Cell line template", "Bacterial template"]);
     expect(fields.map((field) => field.origin?.runtimeValueType)).toEqual(["text", "text"]);
   });
@@ -404,10 +408,10 @@ it("validates sparse wire fields before mapping them to domain rows", () => {
       idField: "id",
       useAsTitle: "title",
       defaultColumns: ["title"],
-      labels: { singularKey: "record", pluralKey: "records" },
+      labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
       fields: [
-        { name: "id", type: "text", labelKey: "id" },
-        { name: "title", type: "text", labelKey: "title" },
+        { name: "id", type: "text", labelKey: "tableList.examples.fields.id" },
+        { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
       ],
     },
     documentSchema: schema,

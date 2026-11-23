@@ -7,8 +7,7 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/config";
-import type { ApiV2DocumentMapping } from "../api-v2/adapter";
-import { type ApiV2CollectionAdapter, type ApiV2DocumentSchema, createApiV2CollectionAdapter } from "../api-v2/adapter";
+import { type ApiV2CollectionAdapter, createApiV2CollectionAdapter } from "../api-v2/adapter";
 import {
   type ApiV2CollectionFetchOptions,
   apiV2CollectionParameters,
@@ -20,6 +19,7 @@ import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
 import { useApiV2RuntimeFields } from "../api-v2/queries";
 import { isPickerExpressionValid } from "../api-v2/queryParams";
 import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
+import type { ApiV2DocumentMapping, ApiV2DocumentSchema } from "../api-v2/schema";
 import { parseRsqlExpression } from "../rsql";
 import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../types";
 import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";

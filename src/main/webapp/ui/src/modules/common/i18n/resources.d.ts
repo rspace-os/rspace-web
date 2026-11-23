@@ -1468,7 +1468,7 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
-      "restoreFailed": "Could not restore this saved selection. Try again.",
+      "restoreFailed": "{value} — Could not restore this saved selection. Try again.",
       "search": "Search by name or global ID",
       "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
       "unavailable": "{value} (unavailable)"

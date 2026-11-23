@@ -65,7 +65,7 @@ describe("TableList filters", () => {
               origin: {
                 kind: "relationshipTarget" as const,
                 via: { name: "target", label: { text: "Bookable item" } },
-                groupLabelKey: "tableList.fieldGroups.relationshipFields",
+                groupLabelKey: "tableList.fieldGroups.relationshipFields" as const,
               },
             }
           : field,

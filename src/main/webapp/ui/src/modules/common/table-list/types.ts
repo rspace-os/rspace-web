@@ -1,11 +1,6 @@
 import type { ReactNode, Ref } from "react";
-import type {
-  FieldName,
-  FilterOperator,
-  ResolvedCollectionConfig,
-  SearchSelector,
-  SortRule,
-} from "@/modules/common/collection/config";
+import type { FieldName, ResolvedCollectionConfig, SearchSelector, SortRule } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
 import type { RuntimeFieldDefinition } from "./api-v2/runtimeFieldCatalog";
 import type { TableListAlertsApi } from "./components/TableListAlerts";
 

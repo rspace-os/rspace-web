@@ -3,7 +3,7 @@ import type * as v from "valibot";
 import type { ApiV2ReadOperation, ApiV2ResourceEntry } from "@/modules/common/api/v2/apiV2Resources";
 import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import type { ApiV2RuntimeFieldNamespace } from "./metadata";
+import type { ApiV2RuntimeFieldNamespace } from "./schema";
 import { catalogSchema, type runtimeFieldSchema } from "./schema";
 
 export type RuntimeFieldDefinition = v.InferOutput<typeof runtimeFieldSchema>;

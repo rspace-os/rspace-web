@@ -20,8 +20,6 @@ export type SortRule<TDocument> = {
   direction: SortDirection;
 };
 
-export type { FilterOperator } from "./schema";
-
 export type HeaderRendererContext<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
   field: ResolvedFieldConfig<TDocument>;
@@ -48,7 +46,7 @@ export type FieldListConfig<TDocument> = {
   width?: number;
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
-  descriptionKey?: string;
+  descriptionKey?: CollectionTranslationKey;
   description?: string;
   renderHeader?: HeaderRenderer<TDocument>;
   renderCell?: CellRenderer<TDocument>;
@@ -68,7 +66,7 @@ export type FieldConditionContext<TDocument> = {
 };
 
 export type FieldFormConfig<TDocument, TWidget extends string> = {
-  descriptionKey?: string;
+  descriptionKey?: CollectionTranslationKey;
   description?: string;
   widget?: TWidget;
   width?: CSSProperties["width"];
@@ -94,7 +92,7 @@ export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "selec
 
 export type RuntimeFieldValueType = (typeof runtimeFieldValueTypes)[number];
 
-export type LabelText = { text: string } | { key: string };
+export type LabelText = { text: string } | { key: CollectionTranslationKey };
 
 export type RelationshipLabel = { name: string; label: LabelText };
 
@@ -104,21 +102,20 @@ export type FieldValueSource<TDocument> =
 
 export type FieldOrigin = {
   kind: "relationshipTarget" | "runtimeField";
-  groupLabelKey: string;
+  groupLabelKey: CollectionTranslationKey;
   sourceLabel?: string;
   namespace?: string;
   via?: RelationshipLabel;
   runtimeValueType?: RuntimeFieldValueType;
 };
 
-export type { RelationshipFilterPicker } from "./schema";
-
 type BaseFieldConfig<
   TDocument,
   TFormConfig extends FieldFormConfig<TDocument, string> = FieldFormConfig<TDocument, never>,
 > = {
   name: FieldName<TDocument>;
-  labelKey: string;
+  /** Translated label; derived API fields use `derivedLabel` instead. */
+  labelKey?: CollectionTranslationKey;
   label?: string;
   derivedLabel?: LabelText;
   required?: boolean;
@@ -181,9 +178,9 @@ export type CollectionConfig<
     limits: readonly number[];
   };
   labels: {
-    singularKey: string;
-    pluralKey: string;
-    descriptionKey?: string;
+    singularKey: CollectionTranslationKey;
+    pluralKey: CollectionTranslationKey;
+    descriptionKey?: CollectionTranslationKey;
   };
   relationshipSources?: Readonly<Record<string, RelationshipSource>>;
   runtimeNamespaces?: readonly string[];

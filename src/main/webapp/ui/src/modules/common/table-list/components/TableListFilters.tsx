@@ -19,12 +19,8 @@ import type { Namespace } from "i18next";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  CollectionTranslationKey,
-  FilterOperator,
-  ResolvedCollectionConfig,
-  SearchSelector,
-} from "@/modules/common/collection/config";
+import type { ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
@@ -115,9 +111,7 @@ export function TableListFilters<TDocument>({
     .filter((candidate) => candidate.origin?.namespace === undefined)
     .map((candidate) => {
       const via = candidate.origin?.via;
-      const groupLabelKey = via
-        ? null
-        : ((candidate.origin?.groupLabelKey as CollectionTranslationKey | undefined) ?? null);
+      const groupLabelKey = via ? null : (candidate.origin?.groupLabelKey ?? null);
       return {
         value: candidate.name,
         label: fieldOptionLabel(candidate),

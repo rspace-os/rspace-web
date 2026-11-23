@@ -1,10 +1,10 @@
 import type { Namespace } from "i18next";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { FieldOrigin, LabelText, RelationshipLabel } from "./config";
+import type { CollectionTranslationKey, FieldOrigin, LabelText, RelationshipLabel } from "./config";
 
 type FieldLabelInput = {
-  labelKey: string;
+  labelKey?: CollectionTranslationKey;
   label?: string;
   derivedLabel?: LabelText;
   origin?: Pick<FieldOrigin, "sourceLabel" | "via">;
@@ -15,10 +15,7 @@ export function useFieldLabels() {
 
   const text = useCallback(
     (label: LabelText): string => {
-      if ("text" in label) return label.text;
-      const key = label.key as never;
-      const options = { defaultValue: label.key };
-      return t(key, options);
+      return "text" in label ? label.text : t(label.key);
     },
     [t],
   );
@@ -39,7 +36,11 @@ export function useFieldLabels() {
     (field: FieldLabelInput): string => {
       if (field.label !== undefined) return field.label;
 
-      const ownLabel = text(field.derivedLabel ?? { key: field.labelKey });
+      const ownLabel = field.derivedLabel
+        ? text(field.derivedLabel)
+        : field.labelKey === undefined
+          ? ""
+          : t(field.labelKey);
       const via = field.origin?.via;
       return via ? relationshipLabel(via, ownLabel) : ownLabel;
     },

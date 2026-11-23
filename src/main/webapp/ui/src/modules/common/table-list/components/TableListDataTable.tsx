@@ -25,6 +25,22 @@ import { TableListEmptyState, TableListErrorState } from "./TableListStates";
 
 const noUiColumns = [] as const;
 const StableTableBody = memo(TableBody);
+const loadingCardItems: readonly TableListCardItem[] = Array.from({ length: 4 }, (_, index) => ({
+  id: `loading-${index}`,
+  title: <Skeleton className="h-5 w-2/3 rounded-sm" />,
+  fields: [
+    {
+      id: "first",
+      label: <Skeleton className="h-3 w-16 rounded-sm" />,
+      value: <Skeleton className="h-5 w-full rounded-sm" />,
+    },
+    {
+      id: "second",
+      label: <Skeleton className="h-3 w-16 rounded-sm" />,
+      value: <Skeleton className="h-5 w-full rounded-sm" />,
+    },
+  ],
+}));
 
 function presentationClass(visibility: Exclude<TableListPresentationVisibility, false>): string | undefined {
   if (visibility === "narrow") return "@3xl/table-list:hidden";
@@ -160,8 +176,8 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   });
 
   const rowModel = table.getRowModel();
-  const visibleRows = useMemo(() => rowModel.rows.map((row) => row.original), [rowModel]);
-  const visibleRowIds = useMemo(() => rowModel.rows.map((row) => row.id), [rowModel]);
+  const visibleRows = rowModel.rows.map((row) => row.original);
+  const visibleRowIds = rowModel.rows.map((row) => row.id);
   const selectedVisibleCount = selection ? visibleRowIds.filter((rowId) => selection.value.has(rowId)).length : 0;
   const allVisibleSelected = visibleRowIds.length > 0 && selectedVisibleCount === visibleRowIds.length;
   const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
@@ -309,26 +325,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     t,
     uiColumns,
   ]);
-  const loadingCardItems = useMemo<readonly TableListCardItem[]>(
-    () =>
-      Array.from({ length: 4 }, (_, index) => ({
-        id: `loading-${index}`,
-        title: <Skeleton className="h-5 w-2/3 rounded-sm" />,
-        fields: [
-          {
-            id: "first",
-            label: <Skeleton className="h-3 w-16 rounded-sm" />,
-            value: <Skeleton className="h-5 w-full rounded-sm" />,
-          },
-          {
-            id: "second",
-            label: <Skeleton className="h-3 w-16 rounded-sm" />,
-            value: <Skeleton className="h-5 w-full rounded-sm" />,
-          },
-        ],
-      })),
-    [],
-  );
   const visibleColumns = table.getVisibleLeafColumns();
   const colSpan = Math.max(visibleColumns.length, 1);
   const columnResizing = table.atoms.columnResizing.get();

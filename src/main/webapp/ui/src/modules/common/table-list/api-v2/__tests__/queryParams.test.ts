@@ -31,17 +31,17 @@ const metadata: ApiV2CollectionMetadata<TestRecord> = {
 const collectionConfig: CollectionConfig<TestRecord> = {
   slug: "records",
   idField: "id",
-  labels: { singularKey: "record", pluralKey: "records" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
   useAsTitle: "title",
   defaultColumns: ["title", "owner"],
   listSearchableFields: ["title", "owner"],
   fields: [
-    { name: "id", type: "text", labelKey: "id" },
-    { name: "title", type: "text", labelKey: "title" },
-    { name: "owner", type: "text", labelKey: "owner", list: { dependencies: ["enabled"] } },
-    { name: "score", type: "number", labelKey: "score" },
-    { name: "enabled", type: "boolean", labelKey: "enabled" },
-    { name: "modifiedAt", type: "dateTime", labelKey: "modifiedAt" },
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id" },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
+    { name: "owner", type: "text", labelKey: "tableList.examples.fields.owner", list: { dependencies: ["enabled"] } },
+    { name: "score", type: "number", labelKey: "tableList.examples.fields.score" },
+    { name: "enabled", type: "boolean", labelKey: "tableList.examples.fields.enabled" },
+    { name: "modifiedAt", type: "dateTime", labelKey: "tableList.examples.fields.modified" },
   ],
 };
 

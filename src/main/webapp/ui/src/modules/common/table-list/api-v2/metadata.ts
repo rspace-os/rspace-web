@@ -20,12 +20,6 @@ import {
   metadataWhereSchema,
 } from "./schema";
 
-export type {
-  ApiV2FilterOperator,
-  ApiV2PrimitiveFieldType,
-  ApiV2RuntimeFieldNamespace,
-} from "./schema";
-
 export type ApiV2FilterLimits = Omit<ApiV2ParsedFilterMetadata, "selectors"> & {
   maximumWhereLength: InferOutput<typeof metadataWhereSchema>["maxLength"];
 };

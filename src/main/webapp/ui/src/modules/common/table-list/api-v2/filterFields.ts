@@ -9,14 +9,11 @@ import type {
   RuntimeNamespaceSummary,
 } from "@/modules/common/collection/config";
 import { isFilterOperatorCompatible, resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import type { FilterOperatorToken } from "@/modules/common/collection/schema";
 import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/schema";
-import type {
-  ApiV2CollectionMetadata,
-  ApiV2FilterOperator,
-  ApiV2PrimitiveFieldType,
-  ApiV2RuntimeFieldNamespace,
-} from "./metadata";
+import type { ApiV2CollectionMetadata } from "./metadata";
 import type { RuntimeFieldDefinition } from "./runtimeFieldCatalog";
+import type { ApiV2PrimitiveFieldType, ApiV2RuntimeFieldNamespace } from "./schema";
 
 export type RuntimeFieldCatalogForNamespace = {
   namespace: string;
@@ -42,7 +39,7 @@ export type ApiV2RuntimeFilterField<TDocument> = {
   namespace: ApiV2RuntimeFieldNamespace;
   responseField: FieldName<TDocument>;
   definition: RuntimeFieldDefinition;
-  wireOperators: readonly ApiV2FilterOperator[];
+  wireOperators: readonly FilterOperatorToken[];
 };
 
 export type ApiV2FilterFields<TDocument> = {
@@ -65,7 +62,7 @@ function capabilitiesForSelector<TDocument>(
   metadata: ApiV2CollectionMetadata<TDocument>,
   selector:
     | {
-        operators: readonly ApiV2FilterOperator[];
+        operators: readonly FilterOperatorToken[];
         wildcards: boolean;
       }
     | undefined,
@@ -85,19 +82,23 @@ export function isRelationshipWireSelector(selector: string): boolean {
   return /^[^.]+\.(?:value|relationTo)$/.test(selector);
 }
 
+const relationshipFieldsGroup: CollectionTranslationKey = "tableList.fieldGroups.relationshipFields";
+const customFieldsGroup: CollectionTranslationKey = "tableList.fieldGroups.customFields";
+
 /** Unknown metadata names stay display data rather than catalog paths. */
 function ownerLabel(ownerName: string, viaTitle: string | undefined): LabelText {
-  const labels = {
+  const labels: Record<string, CollectionTranslationKey> = {
     createdBy: "common:tableList.fields.createdBy",
     updatedBy: "common:tableList.fields.updatedBy",
     location: "common:tableList.fields.location",
   };
-  if (Object.hasOwn(labels, ownerName)) return { key: labels[ownerName as keyof typeof labels] };
+  const key = Object.hasOwn(labels, ownerName) ? labels[ownerName] : undefined;
+  if (key !== undefined) return { key };
   return { text: viaTitle?.trim() ? viaTitle : ownerName };
 }
 
 function targetFieldLabel(targetField: string, title: string | undefined): LabelText {
-  const labels = {
+  const labels: Record<string, CollectionTranslationKey> = {
     createdAt: "common:tableList.targetFields.createdAt",
     deleted: "common:tableList.targetFields.deleted",
     email: "common:tableList.targetFields.email",
@@ -109,14 +110,18 @@ function targetFieldLabel(targetField: string, title: string | undefined): Label
     username: "common:tableList.targetFields.username",
     updatedAt: "common:tableList.targetFields.updatedAt",
   };
-  if (Object.hasOwn(labels, targetField)) return { key: labels[targetField as keyof typeof labels] };
+  const key = Object.hasOwn(labels, targetField) ? labels[targetField] : undefined;
+  if (key !== undefined) return { key };
   return { text: title ?? targetField };
 }
 
 type RelationshipField<TDocument> = Extract<FieldConfig<TDocument>, { type: "relationship" }>;
 
 function configuredRelationshipLabel<TDocument>(field: RelationshipField<TDocument>): RelationshipLabel {
-  const label = field.label !== undefined ? { text: field.label } : (field.derivedLabel ?? { key: field.labelKey });
+  const label: LabelText =
+    field.label !== undefined
+      ? { text: field.label }
+      : (field.derivedLabel ?? (field.labelKey === undefined ? { text: String(field.name) } : { key: field.labelKey }));
   return { name: String(field.name), label };
 }
 
@@ -166,7 +171,6 @@ function derivedIdentityFields<TDocument>(
     const name = selector as FieldName<TDocument>;
     const base: FieldConfig<TDocument> = {
       name,
-      labelKey: selector,
       derivedLabel: ownerLabel(selector, published.title),
       type: "relationship",
       relationTo: picker.resource,
@@ -198,11 +202,10 @@ function derivedTargetFields<TDocument>(
     const via = relationship?.via ?? { name: ownerName, label: ownerLabel(ownerName, published.viaTitle) };
     const common = {
       name,
-      labelKey: selector,
       derivedLabel: targetFieldLabel(targetField, published.title),
       origin: {
         kind: "relationshipTarget" as const,
-        groupLabelKey: "tableList.fieldGroups.relationshipFields" satisfies CollectionTranslationKey,
+        groupLabelKey: relationshipFieldsGroup,
         via,
       },
       list: false as const,
@@ -231,11 +234,10 @@ function derivedRuntimeFields<TDocument>(
       const via = runtimeVia(relationships, namespace.via);
       const common = {
         name,
-        labelKey: definition.selector,
         derivedLabel: { text: definition.label },
         origin: {
           kind: "runtimeField" as const,
-          groupLabelKey: "tableList.fieldGroups.customFields" satisfies CollectionTranslationKey,
+          groupLabelKey: customFieldsGroup,
           sourceLabel: definition.source.label,
           namespace: namespace.namespace,
           ...(via === undefined ? {} : { via }),

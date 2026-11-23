@@ -1,4 +1,5 @@
-import type { FieldName, RelationshipFilterPicker, ResolvedCollectionConfig } from "@/modules/common/collection/config";
+import type { FieldName, ResolvedCollectionConfig } from "@/modules/common/collection/config";
+import type { RelationshipFilterPicker } from "@/modules/common/collection/schema";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { type RelationshipSource, relationshipSourceForPicker } from "@/modules/common/relationship-picker/sources";
 import { tableListRelationshipSources } from "../relationshipSources";

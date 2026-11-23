@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { FilterOperator } from "@/modules/common/collection/config";
+import type { FilterOperator } from "@/modules/common/collection/schema";
 import type { FilterExpression } from "../../types";
 import { serializeRsql } from "../serializeRsql";
 

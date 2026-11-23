@@ -4,8 +4,16 @@ import type { FilterExpression, FilterState, FilterValue } from "../types";
 
 type SerializedDate = { readonly $date: string };
 
-const columnSelectorsSchema = v.union([v.array(v.unknown()), v.object({ fields: v.array(v.unknown()) })]);
-const columnsSchema = v.union([v.array(v.string()), v.object({ fields: v.array(v.string()) })]);
+const columnSelectorsSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.union([v.array(v.unknown()), v.object({ fields: v.array(v.unknown()) })]),
+);
+const columnsSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.union([v.array(v.string()), v.object({ fields: v.array(v.string()) })]),
+);
 
 function serializeValue(value: FilterValue): unknown {
   if (value instanceof Date) return { $date: value.toISOString() } satisfies SerializedDate;
@@ -38,32 +46,27 @@ export function parseColumns<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
   stale?: { isStale: (name: string) => boolean; onDropped?: (name: string) => void },
 ): readonly FieldName<TDocument>[] | null {
-  try {
-    const serializedValue: unknown = JSON.parse(serialized);
-    const result = v.safeParse(columnsSchema, serializedValue);
-    if (!result.success) return null;
-    const raw = Array.isArray(result.output) ? result.output : result.output.fields;
-    const listableFields = new Set(config.fields.filter((field) => field.list !== false).map((field) => field.name));
-    let dropped = false;
-    const value = stale
-      ? raw.filter((field) => {
-          if (listableFields.has(field as FieldName<TDocument>) || !stale.isStale(field)) return true;
-          stale.onDropped?.(field);
-          dropped = true;
-          return false;
-        })
-      : raw;
-    if (dropped && value.length === 0) return null;
-    if (
-      new Set(value).size !== value.length ||
-      !value.every((field) => listableFields.has(field as FieldName<TDocument>))
-    ) {
-      return null;
-    }
-    return value as FieldName<TDocument>[];
-  } catch {
+  const result = v.safeParse(columnsSchema, serialized);
+  if (!result.success) return null;
+  const raw = Array.isArray(result.output) ? result.output : result.output.fields;
+  const listableFields = new Set(config.fields.filter((field) => field.list !== false).map((field) => field.name));
+  let dropped = false;
+  const value = stale
+    ? raw.filter((field) => {
+        if (listableFields.has(field as FieldName<TDocument>) || !stale.isStale(field)) return true;
+        stale.onDropped?.(field);
+        dropped = true;
+        return false;
+      })
+    : raw;
+  if (dropped && value.length === 0) return null;
+  if (
+    new Set(value).size !== value.length ||
+    !value.every((field) => listableFields.has(field as FieldName<TDocument>))
+  ) {
     return null;
   }
+  return value as FieldName<TDocument>[];
 }
 
 export function serializeSorting<TDocument>(sorting: readonly SortRule<TDocument>[]): string {
@@ -97,15 +100,10 @@ export function sortRuleFromToken<TDocument>(value: string): SortRule<TDocument>
 }
 
 export function columnSelectors(serialized: string): readonly string[] {
-  try {
-    const value: unknown = JSON.parse(serialized);
-    const result = v.safeParse(columnSelectorsSchema, value);
-    if (!result.success) return [];
-    const raw = Array.isArray(result.output) ? result.output : result.output.fields;
-    return raw.filter((name): name is string => typeof name === "string");
-  } catch {
-    return [];
-  }
+  const result = v.safeParse(columnSelectorsSchema, serialized);
+  if (!result.success) return [];
+  const raw = Array.isArray(result.output) ? result.output : result.output.fields;
+  return raw.filter((name): name is string => typeof name === "string");
 }
 
 export function nonDefaultColumns<TDocument>(

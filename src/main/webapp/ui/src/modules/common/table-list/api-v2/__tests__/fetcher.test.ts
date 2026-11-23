@@ -104,14 +104,14 @@ describe("createApiV2CollectionFetcher", () => {
       config: {
         slug: "bookings",
         idField: "id",
-        labels: { singularKey: "booking", pluralKey: "bookings" },
+        labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
         useAsTitle: "target",
         defaultColumns: ["target"],
         fields: [
-          { name: "id", labelKey: "id", type: "text", list: false },
+          { name: "id", labelKey: "tableList.examples.fields.id", type: "text", list: false },
           {
             name: "target",
-            labelKey: "target",
+            labelKey: "tableList.examples.fields.owner",
             type: "relationship",
             relationTo: "instruments",
             hasMany: false,

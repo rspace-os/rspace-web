@@ -1,4 +1,6 @@
 import { FlexRender, type Header } from "@tanstack/react-table";
+import { clamp } from "es-toolkit";
+import type { Namespace } from "i18next";
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, CircleHelpIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,13 +30,12 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
   selectAllControl: ReactNode;
   onResize: (columnId: string, size: number) => void;
 }) {
-  const { i18n, t } = useTranslation("common");
+  const { t } = useTranslation<Namespace>("common");
   const { fieldLabel } = useFieldLabels();
-  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
   const direction = header.column.getIsSorted();
   const meta = header.column.columnDef.meta;
   const label = meta ? fieldLabel(meta) : header.column.id;
-  const description = meta?.description ?? (meta?.descriptionKey ? translate(meta.descriptionKey) : null);
+  const description = meta?.description ?? (meta?.descriptionKey ? t(meta.descriptionKey) : null);
   const headerLabelId = `${resizeId}-${header.id}-label`;
   const resizeLabelId = `${resizeId}-${header.id}-resize`;
   return (
@@ -113,7 +114,7 @@ export function TableListHeaderCell<TDocument extends Record<string, unknown>>({
             const minimum = header.column.columnDef.minSize ?? 20;
             const maximum = header.column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
             const delta = event.key === "ArrowLeft" ? -16 : 16;
-            const size = Math.min(maximum, Math.max(minimum, header.column.getSize() + delta));
+            const size = clamp(header.column.getSize() + delta, minimum, maximum);
             onResize(header.column.id, size);
           }}
         >

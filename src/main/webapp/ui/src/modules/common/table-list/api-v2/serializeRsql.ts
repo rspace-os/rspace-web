@@ -1,10 +1,11 @@
-import { filterOperatorTokens } from "@/modules/common/collection/schema";
+import { apiV2WhereOperators } from "@/modules/common/api/v2/apiV2Where";
+import type { FilterOperatorToken } from "@/modules/common/collection/schema";
 import { normalizeRsqlList, normalizeRsqlScalar, type RsqlValue, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
-import type { ApiV2FilterLimits, ApiV2FilterOperator } from "./metadata";
+import type { ApiV2FilterLimits } from "./metadata";
 
 type SelectorContract = Readonly<
-  Record<string, { operators: readonly ApiV2FilterOperator[]; wildcards: boolean } | undefined>
+  Record<string, { operators: readonly FilterOperatorToken[]; wildcards: boolean } | undefined>
 >;
 
 type Counts = { comparisons: number; likeComparisons: number; arguments: number };
@@ -22,7 +23,7 @@ function validateComparison<TDocument>(
 ): void {
   const selector = selectors[node.field];
   if (!selector) throw new Error(`Field is not filterable: ${node.field}`);
-  const token: ApiV2FilterOperator = filterOperatorTokens[node.operator];
+  const token: FilterOperatorToken = apiV2WhereOperators[node.operator];
   if (!selector.operators.includes(token))
     throw new Error(`Operator ${token} is not supported for field ${node.field}`);
 

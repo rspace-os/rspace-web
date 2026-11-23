@@ -21,6 +21,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { isEqual } from "es-toolkit";
 import type { Namespace } from "i18next";
 import { GripVerticalIcon, XIcon } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
@@ -50,10 +51,6 @@ function sectionOf<TDocument>(layout: Layout<TDocument>, id: UniqueIdentifier): 
 function dropSection<TDocument>(layout: Layout<TDocument>, over: DragOverEvent["over"]): Section | null {
   const section = over?.data.current?.section;
   return section === "shown" || section === "hidden" ? section : over ? sectionOf(layout, over.id) : null;
-}
-
-function sameFields<TDocument>(left: readonly FieldName<TDocument>[], right: readonly FieldName<TDocument>[]) {
-  return left.length === right.length && left.every((field, index) => field === right[index]);
 }
 
 function ColumnSection<TDocument>({
@@ -243,7 +240,7 @@ export function TableListColumns<TDocument>({
       }
     }
     endDrag();
-    if (sameFields(next.shown, drag.origin.shown)) setDraft(drag.origin);
+    if (isEqual(next.shown, drag.origin.shown)) setDraft(drag.origin);
     else {
       setDraft(next);
       onChange(next.shown);

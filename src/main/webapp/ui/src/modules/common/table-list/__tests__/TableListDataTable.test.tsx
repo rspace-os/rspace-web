@@ -299,19 +299,19 @@ describe("TableList data table", () => {
     const relationshipConfig = resolveCollectionConfig<RelatedRecord>({
       slug: "relatedRecords",
       idField: "id",
-      labels: { singularKey: "record", pluralKey: "records" },
+      labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
       useAsTitle: "title",
       defaultColumns: ["title"],
       listSearchableFields: ["targets.name"],
       fields: [
-        { name: "id", type: "text", labelKey: "id", list: false },
-        { name: "title", type: "text", labelKey: "title" },
+        { name: "id", type: "text", labelKey: "tableList.examples.fields.id", list: false },
+        { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
         {
           name: "targets",
           type: "relationship",
           relationTo: "people",
           hasMany: true,
-          labelKey: "targets",
+          labelKey: "tableList.examples.fields.collaborators",
           list: false,
         },
       ],

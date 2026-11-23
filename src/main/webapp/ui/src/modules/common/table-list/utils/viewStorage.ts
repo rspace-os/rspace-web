@@ -26,6 +26,8 @@ export const tableViewStateSchema = v.object({
 
 type TableViewState = v.InferOutput<typeof tableViewStateSchema>;
 
+const storedTableViewStateSchema = v.pipe(v.string(), v.parseJson(), tableViewStateSchema);
+
 export type TableViewValues<TDocument> = {
   search: string | null;
   where: FilterExpression<TDocument> | null;
@@ -57,7 +59,7 @@ export function parseTableViewState<TDocument>(
   stale?: StaleFieldPolicy,
 ): TableViewValues<TDocument> | null {
   try {
-    const result = v.safeParse(tableViewStateSchema, JSON.parse(serialized));
+    const result = v.safeParse(storedTableViewStateSchema, serialized);
     if (!result.success) return null;
     const state = result.output;
     let columns = config.defaultColumns;

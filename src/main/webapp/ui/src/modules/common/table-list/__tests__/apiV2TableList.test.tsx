@@ -30,13 +30,18 @@ type Instrument = {
 const config = {
   slug: "instruments",
   idField: "id" as const,
-  labels: { singularKey: "instrument", pluralKey: "instruments" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" } as const,
   useAsTitle: "name" as const,
   defaultColumns: ["name" as const],
   fields: [
-    { name: "id" as const, labelKey: "id", type: "number" as const, list: false as const },
-    { name: "name" as const, labelKey: "name", type: "text" as const },
-    { name: "target" as const, labelKey: "target", type: "text" as const },
+    {
+      name: "id" as const,
+      labelKey: "tableList.examples.fields.id" as const,
+      type: "number" as const,
+      list: false as const,
+    },
+    { name: "name" as const, labelKey: "tableList.examples.fields.title" as const, type: "text" as const },
+    { name: "target" as const, labelKey: "tableList.examples.fields.owner" as const, type: "text" as const },
   ],
 };
 

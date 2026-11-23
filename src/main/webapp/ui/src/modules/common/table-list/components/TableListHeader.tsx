@@ -1,3 +1,4 @@
+import type { Namespace } from "i18next";
 import { PlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,15 +23,14 @@ export function TableListHeader<TDocument>({
   headingClassName?: string;
   divided: boolean;
 }) {
-  const { t } = useTranslation("common");
-  const translate = (key: string) => t(key as never);
+  const { t } = useTranslation<Namespace>("common");
 
   return (
     <header className={cn("flex flex-col justify-between gap-5 sm:flex-row sm:items-end", divided && "border-b pb-5")}>
       <div>
         <h1 className={cn("font-heading text-3xl font-bold tracking-tight", headingClassName)}>{collectionLabel}</h1>
         {config.labels.descriptionKey ? (
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{translate(config.labels.descriptionKey)}</p>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t(config.labels.descriptionKey)}</p>
         ) : null}
       </div>
       {createAction ??
