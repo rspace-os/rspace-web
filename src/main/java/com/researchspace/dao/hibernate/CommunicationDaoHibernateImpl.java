@@ -373,8 +373,8 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   /**
-   * Initialises recipients and previous messages of already loaded messages in one query, instead
-   * of one select per message. No chunking: callers load the messages with the same ID list.
+   * Initialises the recipients and previous message of already loaded messages with one query each,
+   * relying on the first-level cache to attach the fetched state to the loaded instances.
    */
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
     // RSPAC-1455. global messages have all users as recipients; initializing this collection
@@ -387,18 +387,28 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     if (!nonGlobalIds.isEmpty()) {
       getSession()
           .createQuery(
-              "select distinct mor from MessageOrRequest mor"
+              "select mor from MessageOrRequest mor"
                   + " left join fetch mor.recipients ct left join fetch ct.recipient"
-                  + " left join fetch mor.previous where mor.id in :ids",
+                  + " where mor.id in :ids",
               MessageOrRequest.class)
           .setParameterList("ids", nonGlobalIds)
           .list();
     }
-    // resolves fetched previous messages from the session; selects only for global messages
-    mors.stream()
-        .map(MessageOrRequest::getPrevious)
-        .filter(Objects::nonNull)
-        .forEach(Hibernate::initialize);
+
+    // reading the id of an uninitialised proxy does not initialise it
+    List<Long> previousIds =
+        mors.stream()
+            .map(MessageOrRequest::getPrevious)
+            .filter(previous -> previous != null && !Hibernate.isInitialized(previous))
+            .map(MessageOrRequest::getId)
+            .distinct()
+            .toList();
+    if (!previousIds.isEmpty()) {
+      getSession()
+          .createQuery("from MessageOrRequest where id in :previousIds", MessageOrRequest.class)
+          .setParameterList("previousIds", previousIds)
+          .list();
+    }
   }
 
   private static final String NEW_NOTIFICATION_FROM_WHERE =

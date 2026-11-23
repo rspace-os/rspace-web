@@ -684,32 +684,71 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void listingMessagesDoesNotQueryPerMessage() {
+  public void listingResolvesAGlobalPreviousMessageWithoutItsRecipients() {
     User sender = createAndSaveRandomUser();
     User recipient = createAndSaveRandomUser();
-    saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, null);
-    for (int i = 0; i < 6; i++) {
-      MessageOrRequest original =
-          saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, recipient, sender, null);
-      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, original);
+    // sent by the listing user, so the global message itself is not listed
+    MessageOrRequest global =
+        saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, recipient, sender, null);
+    MessageOrRequest reply =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, global);
+    flushAndClear();
+
+    List<MessageOrRequest> listed = listMessagesFor(recipient, 10);
+
+    assertEquals(List.of(reply.getId()), listed.stream().map(MessageOrRequest::getId).toList());
+    MessageOrRequest previous = listed.get(0).getPrevious();
+    assertTrue(Hibernate.isInitialized(previous));
+    assertFalse(Hibernate.isInitialized(previous.getRecipients()));
+  }
+
+  @Test
+  public void listingsDoNotQueryPerMessage() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    User bystander = createAndSaveRandomUser();
+    // each listed message has a previous message outside every listing, left as a proxy
+    Supplier<MessageOrRequest> unlisted =
+        () -> saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, bystander, bystander, null);
+    saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, unlisted.get());
+    for (int i = 0; i < 7; i++) {
+      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, unlisted.get());
+      saveMessageWithPrevious(MessageType.REQUEST_RECORD_REVIEW, sender, recipient, unlisted.get());
     }
     flushAndClear();
 
-    long twoPerPage = countStatementsListingMessages(recipient, 2);
-    long sevenPerPage = countStatementsListingMessages(recipient, 7);
+    assertStatementCountIndependentOfPageSize(
+        this::getDefaultPgCrit,
+        pc -> dao.getActiveRequestsAndMessagesForUser(recipient, pc, MessageTypeFilter.ALL_TYPES));
+    assertStatementCountIndependentOfPageSize(
+        this::getDefaultPgCrit,
+        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc));
+    assertStatementCountIndependentOfPageSize(
+        () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
+        pc -> dao.getSentRequests(sender, pc));
+  }
 
+  private <P> void assertStatementCountIndependentOfPageSize(
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<MessageOrRequest>> listing) {
+    long twoPerPage = countStatementsListing(2, pgCritFactory, listing);
+    long sevenPerPage = countStatementsListing(7, pgCritFactory, listing);
     assertEquals(twoPerPage, sevenPerPage, "statement count must not grow with page size");
   }
 
-  private long countStatementsListingMessages(User user, int pageSize) {
+  private <P> long countStatementsListing(
+      int pageSize,
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<MessageOrRequest>> listing) {
+    PaginationCriteria<P> pc = pgCritFactory.get();
+    pc.setResultsPerPage(pageSize);
     Statistics stats = sessionFactory.getStatistics();
     boolean wasEnabled = stats.isStatisticsEnabled();
     stats.setStatisticsEnabled(true);
     try {
       sessionFactory.getCurrentSession().clear();
       stats.clear();
-      List<MessageOrRequest> listed = listMessagesFor(user, pageSize);
-      assertEquals(pageSize, listed.size());
+      assertThat(listing.apply(pc).getResults()).hasSize(pageSize);
       return stats.getPrepareStatementCount();
     } finally {
       stats.setStatisticsEnabled(wasEnabled);
