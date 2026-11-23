@@ -3,7 +3,8 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
@@ -157,7 +158,8 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     ).toBeVisible();
   });
 
-  it("only toggles when the checkbox is clicked", () => {
+  it("only toggles when the checkbox is clicked", async () => {
+    const user = userEvent.setup();
     const onToggle = vi.fn();
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -190,10 +192,10 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("Ethanol"));
+    await user.click(screen.getByText("Ethanol"));
     expect(onToggle).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "Ethanol" }));
+    await user.click(screen.getByRole("checkbox", { name: "Ethanol" }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 

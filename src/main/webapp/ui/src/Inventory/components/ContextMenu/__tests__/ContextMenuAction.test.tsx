@@ -1,5 +1,6 @@
 import MenuList from "@mui/material/MenuList";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -14,6 +15,7 @@ function InnerComponent() {
 }
 describe("ContextMenuAction", () => {
   test("When as a menuitem, keyDown events should not propagated through ContextMenuAction", async () => {
+    const user = userEvent.setup();
     const onKeyDown = vi.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
@@ -27,7 +29,8 @@ describe("ContextMenuAction", () => {
     );
     const input = await screen.findByRole("textbox");
 
-    fireEvent.keyDown(input, {});
+    await user.type(input, "a");
+    expect(input).toHaveValue("a");
     expect(onKeyDown).not.toHaveBeenCalled();
   });
   describe("Disabled state", () => {

@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -59,12 +60,11 @@ describe("DryadRepo", () => {
     },
   });
   test("Upon editing, title should be set to the entered value.", async () => {
+    const user = userEvent.setup();
     const handleChange = vi.fn();
 
     await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), {
-      target: { value: "foo" },
-    });
+    await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "foo");
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -75,12 +75,11 @@ describe("DryadRepo", () => {
     );
   });
   test("Upon editing, description should be set to the entered value.", async () => {
+    const user = userEvent.setup();
     const handleChange = vi.fn();
 
     await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: "workspace:export.repositories.dryad.abstract" }), {
-      target: { value: "foo" },
-    });
+    await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.dryad.abstract" }), "foo");
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({

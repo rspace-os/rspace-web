@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -15,6 +16,7 @@ describe("EditAction", () => {
      * form visible.
      */
     test("call uiStore's setVisiblePanel", async () => {
+      const user = userEvent.setup();
       const rootStore = makeMockRootStore({
         uiStore: {
           setVisiblePanel: vi.fn(() => {}),
@@ -43,7 +45,7 @@ describe("EditAction", () => {
         expect(screen.getByRole("button", { name: "common:actions.edit" })).toBeEnabled();
       });
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.edit" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.edit" }));
       await waitFor(() => {
         expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");
       });

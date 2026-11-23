@@ -11,7 +11,7 @@ import "@/__tests__/__mocks__/muiTransitions";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -250,8 +250,8 @@ describe("FieldmarkImportDialog", () => {
       const identifierSelect = await screen.findByRole("combobox", {
         name: "inventory:fieldmarkImport.igsnField.label",
       });
-      fireEvent.mouseDown(identifierSelect);
-      fireEvent.click(await screen.findByRole("option", { name: "sample_id" }));
+      await user.click(identifierSelect);
+      await user.click(await screen.findByRole("option", { name: "sample_id" }));
       await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       await waitFor(() => {
