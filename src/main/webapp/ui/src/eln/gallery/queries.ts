@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import axios from "@/common/axios";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 import i18n from "@/modules/common/i18n";
@@ -7,6 +8,7 @@ import type { PrivateLinkedRecordsByOwner } from "@/modules/workspace/schema";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import type { URL as Url } from "../../util/types";
 import { type GalleryFile, idToString } from "./useGalleryListing";
 
 /**
@@ -14,6 +16,9 @@ import { type GalleryFile, idToString } from "./useGalleryListing";
  * completed request fresh while the second observer and React Strict Mode attach.
  */
 const INFO_PANEL_STALE_TIME = 5_000;
+
+/** Converted PDFs stay cached long enough to cover a Gallery session's back and forth. */
+const ASPOSE_PDF_GC_TIME = 30 * 60_000;
 
 export type Document = {
   id: number;
@@ -49,6 +54,8 @@ export const galleryQueryKeys = {
   linkedDocuments: (fileId: string) => [...galleryQueryKeys.all, "linkedDocuments", fileId] as const,
   referencingInventoryItems: (globalId: string | null) =>
     [...galleryQueryKeys.all, "referencingInventoryItems", globalId] as const,
+  asposePdf: (fileId: string, version: number | null) =>
+    [...galleryQueryKeys.all, "asposePdf", fileId, version] as const,
 };
 
 class LinkableDocument implements LinkableRecord {
@@ -116,6 +123,40 @@ export function useLinkedDocumentsQuery(file: GalleryFile) {
     enabled: fileId !== null && isLinkableMediaFile(file),
     retry: false,
     staleTime: INFO_PANEL_STALE_TIME,
+  });
+}
+
+async function convertToPdfWithAspose(fileId: string, signal: AbortSignal): Promise<Url> {
+  const { data } = await axios.get<unknown>(`/Streamfile/ajax/convert/${fileId}?outputFormat=pdf`, { signal });
+  const fileName = Parsers.isObject(data)
+    .flatMap(Parsers.isNotNull)
+    .flatMap(Parsers.getValueWithKey("data"))
+    .flatMap(Parsers.isString)
+    .orElse(null);
+  if (!fileName) throw new Error("Aspose did not return a converted file");
+  return `/Streamfile/direct/${fileId}?fileName=${fileName}`;
+}
+
+/**
+ * The URL of a PDF that Aspose converts the file into. Each version is converted at most once
+ * per QueryClient, as the server keeps the converted file. A conversion still in flight when
+ * the query is disabled is aborted, so that stepping past a file does not wait on it.
+ */
+export function useAsposePdfQuery(file: GalleryFile, { enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
+  const fileId = idToString(file.id).orElse("");
+  const version = file.version ?? null;
+  React.useEffect(() => {
+    if (!enabled)
+      void queryClient.cancelQueries({ queryKey: galleryQueryKeys.asposePdf(fileId, version), exact: true });
+  }, [enabled, queryClient, fileId, version]);
+  return useQuery({
+    queryKey: galleryQueryKeys.asposePdf(fileId, version),
+    queryFn: ({ signal }) => convertToPdfWithAspose(fileId, signal),
+    enabled: enabled && fileId !== "",
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: ASPOSE_PDF_GC_TIME,
   });
 }
 

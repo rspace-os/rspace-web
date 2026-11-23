@@ -3,6 +3,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw/http";
@@ -37,12 +38,15 @@ const PREVIEW = { name: "gallery:carousel.previewAlt" };
 function stubEndpoints({
   asposeEnabled = false,
   downloadsHeldUntil = Promise.resolve(),
+  conversionsHeldUntil = Promise.resolve(),
 }: {
   asposeEnabled?: boolean;
   downloadsHeldUntil?: Promise<void>;
+  conversionsHeldUntil?: Promise<void>;
 } = {}) {
   const downloads: Array<string> = [];
   const conversions: Array<string> = [];
+  const abortedConversions: Array<string> = [];
   server.use(
     http.get("/deploymentproperties/ajax/property", ({ request }) =>
       HttpResponse.json(asposeEnabled && new URL(request.url).searchParams.get("name") === "aspose.enabled"),
@@ -54,12 +58,14 @@ function stubEndpoints({
       await downloadsHeldUntil;
       return new HttpResponse(new Blob(["image"]), { headers: { "Content-Type": "image/jpeg" } });
     }),
-    http.get("/Streamfile/ajax/convert/:id", ({ params }) => {
+    http.get("/Streamfile/ajax/convert/:id", async ({ params, request }) => {
       conversions.push(String(params.id));
+      request.signal.addEventListener("abort", () => abortedConversions.push(String(params.id)));
+      await conversionsHeldUntil;
       return HttpResponse.json({ data: `converted${String(params.id)}.pdf` });
     }),
   );
-  return { downloads, conversions };
+  return { downloads, conversions, abortedConversions };
 }
 
 /*
@@ -126,8 +132,21 @@ function RefreshableCarousel() {
   );
 }
 
+function withProviders(carousel: React.ReactNode, queryClient: QueryClient) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <DeploymentPropertyContext.Provider value={new Map()}>{carousel}</DeploymentPropertyContext.Provider>
+    </QueryClientProvider>
+  );
+}
+
 function renderCarousel(carousel: React.ReactElement) {
-  return render(<DeploymentPropertyContext.Provider value={new Map()}>{carousel}</DeploymentPropertyContext.Provider>);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const result = render(withProviders(carousel, queryClient));
+  return {
+    ...result,
+    rerender: (nextCarousel: React.ReactNode) => result.rerender(withProviders(nextCarousel, queryClient)),
+  };
 }
 
 // Waits until the carousel is at `position` and every mounted image preview shows its downloaded content.
@@ -258,6 +277,44 @@ describe("Carousel", () => {
     expect(conversions).toEqual(["1", "2", "3"]);
   });
 
+  test("Stepping past an Office document before it is converted aborts its conversion", async () => {
+    let releaseConversions = () => {};
+    const { conversions, abortedConversions } = stubEndpoints({
+      asposeEnabled: true,
+      conversionsHeldUntil: new Promise((resolve) => {
+        releaseConversions = resolve;
+      }),
+    });
+    const user = userEvent.setup();
+    renderCarousel(<OfficeDocumentCarousel />);
+    await screen.findByText("gallery:carousel.generatingPdf");
+
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
+    await waitFor(() => {
+      expect(abortedConversions).toEqual(["1"]);
+    });
+    releaseConversions();
+
+    await screen.findByRole("document", { name: "/Streamfile/direct/2?fileName=converted2.pdf" });
+    expect(conversions).toEqual(["1", "2"]);
+    expect(
+      screen.queryByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf", hidden: true }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("Reopening the carousel does not convert an Office document again", async () => {
+    const { conversions } = stubEndpoints({ asposeEnabled: true });
+    const { rerender } = renderCarousel(<OfficeDocumentCarousel />);
+    await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
+
+    rerender(null);
+    expect(screen.queryByRole("region", { name: "gallery:carousel.label" })).not.toBeInTheDocument();
+    rerender(<OfficeDocumentCarousel />);
+
+    await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
+    expect(conversions).toEqual(["1"]);
+  });
+
   test("Refreshing the listing while a preview downloads leaves it showing a live URL, downloaded once", async () => {
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
     let releaseDownloads = () => {};
@@ -337,9 +394,7 @@ describe("Carousel", () => {
     const next = remoteImage("2026-02-01T00:00:00Z");
     expect(next.takeOverDownloadOf(previous)).toBe(false);
     previous.deconstructor();
-    rerender(
-      <DeploymentPropertyContext.Provider value={new Map()}>{carouselOf(next)}</DeploymentPropertyContext.Provider>,
-    );
+    rerender(carouselOf(next));
 
     await waitFor(() => {
       expect(screen.getByRole("img", PREVIEW)).not.toHaveAttribute("src", firstSrc);
