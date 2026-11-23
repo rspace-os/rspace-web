@@ -14,6 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.HashMap;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +47,20 @@ class DmpPlatformStatusResolverTest {
 
     stub(DMPTOOL_APP_NAME, info(true, true, true));
     assertEquals(OK, resolver.resolve(DMPSource.UNKNOWN, user));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "UNKNOWN, DMPTool",
+    "DMP_TOOL, DMPTool",
+    "DMP_ONLINE, DMPonline",
+    "ARGOS, Argos",
+    "DSW, DSW",
+    "DMP_ASSISTANT, DMP Assistant"
+  })
+  void platformNameKeyResolvesToCatalogName(DMPSource source, String name) {
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
+    assertEquals(name, messages.getMessage(DmpPlatformStatusResolver.platformNameKey(source)));
   }
 
   @ParameterizedTest

@@ -607,6 +607,22 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
+  void noPlanNotificationWhenNoTickedPlanIsReported() throws Exception {
+    when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L))))
+        .thenReturn(List.of());
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", null, new URL("https://doi.org/1/x")),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L));
+
+    Mockito.verify(comm)
+        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
+  }
+
+  @Test
   void noPlanNotificationWhenNoPlanIsTicked() throws Exception {
     depositor.postDeposit(
         new RepositoryOperationResult(true, "done", new URL("https://dv.example/ds"), null),
