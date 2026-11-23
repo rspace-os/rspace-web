@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
@@ -14,20 +15,16 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Barcode;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.service.AuditManager;
-import com.researchspace.service.inventory.impl.InventoryAuditApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.util.AopTestUtils;
-import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * This class extends RealTransactionSpringTestBase as auditing only happens after a transaction is
@@ -36,7 +33,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
-  private @Autowired AuditManager auditManager;
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -152,38 +149,32 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void revisionEntityActiveListsReadableAfterCommit() throws Exception {
+  public void sampleRevisionIncludesBarcodesIdentifiersAndAttachments() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("barcoded sample");
     newSample.getBarcodes().add(new ApiBarcode("revision-barcode"));
-    Long sampleId = sampleApiMgr.createNewApiSample(newSample, anyUser).getId();
-    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(sampleId, anyUser);
-    long revisionId =
-        inventoryAuditMgr
-            .getInventoryRecordRevisions(dbSample)
-            .getRevisions()
-            .get(0)
-            .getRevisionId();
-    InventoryAuditApiManagerImpl auditMgrImpl = AopTestUtils.getTargetObject(inventoryAuditMgr);
+    ApiSampleWithFullSubSamples sample = sampleApiMgr.createNewApiSample(newSample, anyUser);
+    inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
+    inventoryIdentifierApiMgr.registerNewIdentifier(sample.getOid(), anyUser);
+    addFileAttachmentToInventoryItem(sample.getOid(), anyUser);
+    ApiSample nameUpdate = new ApiSample();
+    nameUpdate.setId(sample.getId());
+    nameUpdate.setName("renamed barcoded sample");
+    sampleApiMgr.updateApiSample(nameUpdate, anyUser);
 
-    // Envers runs no @PostLoad, so the active lists are only readable after commit if the audit
-    // manager built them while the revision's session was open
-    SampleEntity revision =
-        doInTransaction(
-            () -> {
-              SampleEntity rev =
-                  auditManager
-                      .getObjectForRevision(SampleEntity.class, sampleId, revisionId)
-                      .getEntity();
-              ReflectionTestUtils.invokeMethod(
-                  auditMgrImpl, "initialiseInventoryRecordRelationships", rev);
-              return rev;
-            });
+    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(sample.getId(), anyUser);
+    List<ApiInventoryRecordRevision> revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbSample).getRevisions();
+    long latestRevisionId = revisions.get(revisions.size() - 1).getRevisionId();
 
-    assertThat(revision.getActiveBarcodes())
-        .extracting(Barcode::getBarcodeData)
+    ApiSample revision = inventoryAuditMgr.getApiSampleRevision(sample.getId(), latestRevisionId);
+    assertEquals("renamed barcoded sample", revision.getName());
+    assertThat(revision.getBarcodes())
+        .extracting(ApiBarcode::getData)
         .containsExactly("revision-barcode");
-    assertThat(revision.getActiveIdentifiers()).isEmpty();
-    assertThat(revision.getAttachedFiles()).isEmpty();
+    assertThat(revision.getIdentifiers()).hasSize(1);
+    assertThat(revision.getAttachments())
+        .extracting(ApiInventoryFile::getName)
+        .containsExactly("Picture1.png");
   }
 }
