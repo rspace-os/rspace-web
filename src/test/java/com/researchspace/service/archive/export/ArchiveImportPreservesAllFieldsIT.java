@@ -14,21 +14,27 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.AttachmentFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.ReferenceFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.dtos.UriFieldDTO;
+import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.ReferenceFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.URIFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
@@ -185,6 +191,113 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     assertTrue(importedRadio.isShowAsPickList(), "imported radio field remains a pick-list");
     assertTrue(
         importedRadio.isSortAlphabetic(), "imported radio field remains sorted alphabetically");
+  }
+
+  @Test
+  public void uriReferenceAndAttachmentFieldsKeepTypeAndContentThroughXmlExportAndImport()
+      throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+
+    String run = getRandomName(6);
+    List<FieldDefinition> fieldDefinitions =
+        List.of(
+            new FieldDefinition(
+                "Uri_" + run, true, FieldType.URI, new UriFieldDTO("Uri_" + run, true)),
+            new FieldDefinition(
+                "Reference_" + run,
+                false,
+                FieldType.REFERENCE,
+                new ReferenceFieldDTO("Reference_" + run, false)),
+            new FieldDefinition(
+                "Attachment_" + run,
+                true,
+                FieldType.ATTACHMENT,
+                new AttachmentFieldDTO("Attachment_" + run, true)),
+            new FieldDefinition(
+                "Text_" + run,
+                false,
+                FieldType.TEXT,
+                new TextFieldDTO<TextFieldForm>("Text_" + run, false, "")));
+    Map<String, String> contentByField =
+        Map.of(
+            "Uri_" + run, "https://example.org/" + run,
+            "Reference_" + run, "SD123",
+            "Attachment_" + run, "attachment_" + run + ".txt",
+            "Text_" + run, "<p>text " + run + "</p>");
+
+    RSForm form = formMgr.create(user);
+    for (FieldDefinition fieldDefinition : fieldDefinitions) {
+      formMgr.createFieldForm(fieldDefinition.source(), form.getId(), user);
+    }
+    formMgr.publish(form.getId(), true, null, user);
+
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    String docName = "Doc_with_uri_reference_attachment_" + run;
+    doc.setName(docName);
+    for (Field field : doc.getFields()) {
+      field.setFieldData(contentByField.get(field.getName()));
+      fieldMgr.save(field, user);
+    }
+    recordMgr.save(doc, user);
+
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(doc.getOid());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile =
+        archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
+
+    ArchivalImportConfig importConfig =
+        createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
+    ImportArchiveReport report =
+        importer.importArchive(zipFile, importConfig, NULL_MONITOR, importStrategy::doImport);
+
+    assertTrue(
+        report.isSuccessful(), report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy("; "));
+    StructuredDocument importedDoc = findImportedDoc(report, docName, user);
+    RSForm importedForm = formMgr.getWithPopulatedFieldForms(importedDoc.getForm().getId(), user);
+    List<FieldForm> importedFieldForms =
+        importedForm.getFieldForms().stream()
+            .sorted(Comparator.comparingInt(FieldForm::getColumnIndex))
+            .collect(Collectors.toList());
+
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getName)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::name).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getType)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::type).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::isMandatory)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::mandatory).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getClass)
+        .containsExactly(
+            URIFieldForm.class,
+            ReferenceFieldForm.class,
+            AttachmentFieldForm.class,
+            TextFieldForm.class);
+
+    List<Field> importedFields =
+        importedDoc.getFields().stream()
+            .sorted(Comparator.comparingInt(Field::getColumnIndex))
+            .collect(Collectors.toList());
+    assertThat(importedFields)
+        .extracting(Field::getType)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::type).collect(Collectors.toList()));
+    for (Field field : importedFields) {
+      assertEquals(
+          contentByField.get(field.getName()),
+          field.getFieldData(),
+          field.getType() + " field content");
+    }
   }
 
   @Test

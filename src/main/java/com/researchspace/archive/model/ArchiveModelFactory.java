@@ -23,7 +23,6 @@ import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
-import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
@@ -84,7 +83,7 @@ public class ArchiveModelFactory {
     rc.setModificationDate(fm.getModificationDate());
     rc.setType(fm.getType().getType());
     rc.setSummary(fm.getSummary());
-    switch (FieldType.getFieldTypeForString(rc.getType())) {
+    switch (fm.getType()) {
       case NUMBER: // "Number"
         NumberFieldForm nfm = (NumberFieldForm) fm;
         rc.setMin((nfm.getMinNumberValue() != null) ? nfm.getMinNumberValue() + "" : "");
@@ -137,9 +136,20 @@ public class ArchiveModelFactory {
         rc.setDefaultValue(mfm.getDefaultTimeAsString());
         rc.setDateFormat(mfm.getTimeFormat());
         break;
-      default: // Text
+      case TEXT:
         TextFieldForm tfm = (TextFieldForm) fm;
         rc.setDefaultValue(tfm.getDefaultValue());
+        break;
+      case URI:
+      case REFERENCE:
+      case ATTACHMENT:
+        // no type-specific settings beyond the common ones set above
+        break;
+      default: // e.g. inventory-only types; exporting them as Text would re-import wrongly
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot export field form '%s' (id %d): unsupported field type %s",
+                fm.getName(), fm.getId(), fm.getType()));
     }
     return rc;
   }
