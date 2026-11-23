@@ -50,6 +50,7 @@ import org.hibernate.Session;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class CommunicationDaoTest extends BaseDaoTestCase {
 
@@ -553,7 +554,8 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     return rc;
   }
 
-  private void saveNMessages(int n, User from, MessageType type, User... to) {
+  private List<MessageOrRequest> saveNMessages(int n, User from, MessageType type, User... to) {
+    List<MessageOrRequest> saved = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       MessageOrRequest mor;
       mor = createRequestOfType(from, type);
@@ -567,10 +569,14 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
       mor.setRecipients(cts);
       mor.setMessage(getRandomAlphabeticString("any"));
       dao.save(mor);
+      saved.add(mor);
     }
+    return saved;
   }
 
-  private void saveNNotifications(int n, User from, User... to) throws InterruptedException {
+  private List<Notification> saveNNotifications(int n, User from, User... to)
+      throws InterruptedException {
+    List<Notification> saved = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       Thread.sleep(1); // ensure all are distinct by equals()
       Notification not = createAnyNotification(from);
@@ -583,7 +589,9 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
       }
       not.setRecipients(cts);
       dao.save(not);
+      saved.add(not);
     }
+    return saved;
   }
 
   private long getCommTargetCount() {
@@ -756,31 +764,47 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
   @Test
   public void listingPagesAreSlicesOfTheFullListingForEverySort() throws InterruptedException {
-    User senderA = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderA"));
-    User senderB = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderB"));
-    User target = createAndSaveUserIfNotExists(getRandomAlphabeticString("recipient"));
-    saveNNotifications(3, senderA, target);
-    saveNNotifications(2, senderB, target);
-    saveNMessages(3, senderA, MessageType.REQUEST_RECORD_REVIEW, target);
-    saveNMessages(2, senderA, MessageType.REQUEST_RECORD_REVIEW, senderB);
-    saveNMessages(3, senderB, MessageType.SIMPLE_MESSAGE, target);
-    // two recipients, so the id queries join two target rows per message
-    saveNMessages(2, target, MessageType.SIMPLE_MESSAGE, senderA, senderB);
+    ListingFixture fx = saveListingFixture();
+    EnumSet<CommunicationSort> allSorts = EnumSet.allOf(CommunicationSort.class);
 
     assertPagesAreSlicesOfFullListing(
-        5, this::getDefaultPgCrit, pc -> dao.getNewNotificationsForUser(target, pc));
+        5, allSorts, this::getDefaultPgCrit, pc -> dao.getNewNotificationsForUser(fx.target(), pc));
     assertPagesAreSlicesOfFullListing(
         6,
+        allSorts,
         this::getDefaultPgCrit,
-        pc -> dao.getActiveRequestsAndMessagesForUser(target, pc, MessageTypeFilter.ALL_TYPES));
+        pc ->
+            dao.getActiveRequestsAndMessagesForUser(fx.target(), pc, MessageTypeFilter.ALL_TYPES));
+    // a sent message has one target row per recipient, so its lastStatusUpdate order is undefined;
+    // production only sorts this listing by creationTime
     assertPagesAreSlicesOfFullListing(
         5,
+        EnumSet.complementOf(EnumSet.of(CommunicationSort.LAST_STATUS_UPDATE)),
         this::getDefaultPgCrit,
-        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(target, pc));
+        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(fx.target(), pc));
     assertPagesAreSlicesOfFullListing(
         5,
+        allSorts,
         () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
-        pc -> dao.getSentRequests(senderA, pc));
+        pc -> dao.getSentRequests(fx.senderA(), pc));
+  }
+
+  @Test
+  public void listingsCountInTheDatabaseAndFetchOnlyOnePageOfIds() throws InterruptedException {
+    ListingFixture fx = saveListingFixture();
+
+    assertCountsAndFetchesOnePage(
+        this::getDefaultPgCrit, pc -> dao.getNewNotificationsForUser(fx.target(), pc));
+    assertCountsAndFetchesOnePage(
+        this::getDefaultPgCrit,
+        pc ->
+            dao.getActiveRequestsAndMessagesForUser(fx.target(), pc, MessageTypeFilter.ALL_TYPES));
+    assertCountsAndFetchesOnePage(
+        this::getDefaultPgCrit,
+        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(fx.target(), pc));
+    assertCountsAndFetchesOnePage(
+        () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
+        pc -> dao.getSentRequests(fx.senderA(), pc));
   }
 
   @Test
@@ -800,20 +824,55 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertThat(all.getResults()).hasSize(numRequests);
     assertEquals(numRequests, all.getTotalHits().intValue());
 
-    // the first index of page 1 is past Integer.MAX_VALUE
-    pc.setPageNumber(1L);
-    ISearchResults<MessageOrRequest> secondPage =
+    // page 2 starts at index 2 * Integer.MAX_VALUE, which wraps to -2 if computed as an int
+    pc.setPageNumber(2L);
+    ISearchResults<MessageOrRequest> pastTheEnd =
         dao.getActiveRequestsAndMessagesForUser(oldPi, pc, witnessRequests);
-    assertThat(secondPage.getResults()).isEmpty();
-    assertEquals(numRequests, secondPage.getTotalHits().intValue());
+    assertThat(pastTheEnd.getResults()).isEmpty();
+    assertEquals(numRequests, pastTheEnd.getTotalHits().intValue());
+  }
+
+  private record ListingFixture(User senderA, User target) {}
+
+  /**
+   * Saves communications matching each listing more than one page of 2 deep, with creation times,
+   * requested completion dates (some null) and status update times that do not follow id order.
+   */
+  private ListingFixture saveListingFixture() throws InterruptedException {
+    User senderA = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderA"));
+    User senderB = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderB"));
+    User target = createAndSaveUserIfNotExists(getRandomAlphabeticString("recipient"));
+    List<Communication> saved = new ArrayList<>();
+    saved.addAll(saveNNotifications(3, senderA, target));
+    saved.addAll(saveNNotifications(2, senderB, target));
+    saved.addAll(saveNMessages(3, senderA, MessageType.REQUEST_RECORD_REVIEW, target));
+    saved.addAll(saveNMessages(2, senderA, MessageType.REQUEST_RECORD_REVIEW, senderB));
+    saved.addAll(saveNMessages(3, senderB, MessageType.SIMPLE_MESSAGE, target));
+    // two recipients, so the id queries join two target rows per message
+    saved.addAll(saveNMessages(2, target, MessageType.SIMPLE_MESSAGE, senderA, senderB));
+
+    Date base = getDateFor("2024-01-01");
+    for (int i = 0; i < saved.size(); i++) {
+      Communication comm = saved.get(i);
+      ReflectionTestUtils.setField(comm, "creationTime", DateUtils.addDays(base, (i * 5) % 7));
+      if (comm instanceof MessageOrRequest mor) {
+        mor.setRequestedCompletionDate(
+            i % 3 == 0 ? null : DateUtils.addDays(base, 30 + (i * 4) % 5));
+      }
+      Date lastStatusUpdate = DateUtils.addDays(base, 60 + (i * 3) % 5);
+      comm.getRecipients().forEach(ct -> ct.setLastStatusUpdate(lastStatusUpdate));
+    }
+    sessionFactory.getCurrentSession().flush();
+    return new ListingFixture(senderA, target);
   }
 
   private <P> void assertPagesAreSlicesOfFullListing(
       int expectedTotal,
+      Set<CommunicationSort> sorts,
       Supplier<PaginationCriteria<P>> pgCritFactory,
       Function<PaginationCriteria<P>, ISearchResults<? extends Communication>> listing) {
     final int pageSize = 2;
-    for (CommunicationSort sort : CommunicationSort.values()) {
+    for (CommunicationSort sort : sorts) {
       for (SortOrder order : SortOrder.values()) {
         String context = sort.key() + " " + order;
         PaginationCriteria<P> pc = pgCritFactory.get();
@@ -835,6 +894,36 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
           assertEquals(expectedTotal, results.getTotalHits().intValue(), context + " page " + page);
         }
       }
+    }
+  }
+
+  /**
+   * Runs one page-of-2 request with Hibernate statistics and asserts that the total comes from a
+   * count query and that no query returned more rows than the page holds.
+   */
+  private <P> void assertCountsAndFetchesOnePage(
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<? extends Communication>> listing) {
+    final int pageSize = 2;
+    PaginationCriteria<P> pc = pgCritFactory.get();
+    pc.setResultsPerPage(pageSize);
+    sessionFactory.getCurrentSession().clear();
+    Statistics stats = sessionFactory.getStatistics();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      assertThat(listing.apply(pc).getResults()).hasSize(pageSize);
+      List<String> queries = List.of(stats.getQueries());
+      assertThat(queries).anyMatch(hql -> hql.toLowerCase().contains("count(distinct"));
+      for (String hql : queries) {
+        assertThat(stats.getQueryStatistics(hql).getExecutionRowCount())
+            .as(hql)
+            .isLessThanOrEqualTo(pageSize);
+      }
+    } finally {
+      stats.clear();
+      stats.setStatisticsEnabled(wasEnabled);
     }
   }
 

@@ -107,16 +107,10 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public ISearchResults<Notification> getNewNotificationsForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
-    String fromWhere =
-        "from Notification n "
-            + "join n.recipients ct "
-            + "join ct.recipient recipient "
-            + "join n.originator originator "
-            + "where ct.status = :status and recipient.id = :userId";
     IdPage ids =
         findPageOfIds(
             "n.id",
-            fromWhere,
+            NEW_NOTIFICATION_FROM_WHERE,
             buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
             pgCrit,
             query ->
@@ -142,12 +136,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public int getUnreadNotificationCount(Long userId) {
     return Math.toIntExact(
         getSession()
-            .createQuery(
-                "select count(distinct n.id) from Notification n "
-                    + "join n.recipients ct join ct.recipient recipient "
-                    + "join n.originator originator "
-                    + "where ct.status = :status and recipient.id = :userId",
-                Long.class)
+            .createQuery("select count(distinct n.id) " + NEW_NOTIFICATION_FROM_WHERE, Long.class)
             .setParameter("status", CommunicationStatus.NEW)
             .setParameter("userId", userId)
             .uniqueResult());
@@ -412,6 +401,13 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     activeMessageOrRequestParams(user, filter).accept(query);
     return query.list();
   }
+
+  private static final String NEW_NOTIFICATION_FROM_WHERE =
+      "from Notification n "
+          + "join n.recipients ct "
+          + "join ct.recipient recipient "
+          + "join n.originator originator "
+          + "where ct.status = :status and recipient.id = :userId";
 
   private static String activeMessageOrRequestFromWhere(MessageTypeFilter filter) {
     String fromWhere =
