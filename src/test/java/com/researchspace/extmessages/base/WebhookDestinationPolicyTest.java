@@ -12,7 +12,7 @@ class WebhookDestinationPolicyTest {
       WebhookDestinationPolicy.parse(
           "test.allowed.origins",
           "https://hooks.slack.com, https://*.environment.api.powerplatform.com,"
-              + "https://*.logic.azure.com,,http://localhost:9099");
+              + "https://*.logic.azure.com,,http://localhost:9099/");
 
   @ParameterizedTest
   @ValueSource(
@@ -52,7 +52,11 @@ class WebhookDestinationPolicyTest {
         "https://",
         "https://*.0.0.1",
         "https://*.[::1]",
-        "https://*.azurewebsites.net"
+        "https://*.azurewebsites.net",
+        "https://hooks.slack.com/services/T",
+        "https://hooks.slack.com?team=T",
+        "https://hooks.slack.com#x",
+        "https://user@hooks.slack.com"
       })
   void malformedEntryStopsStartup(String entry) {
     assertThrows(

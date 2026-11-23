@@ -41,8 +41,9 @@ public final class WebhookDestinationPolicy {
    *
    * @param propertyName the deployment property the value came from, named in errors
    * @param allowedOrigins comma-separated {@code scheme://host[:port]} entries; blank allows none
-   * @throws IllegalStateException if an entry has no host, or a wildcard covers a public suffix or
-   *     an IP address, so the configuration stops startup
+   * @throws IllegalStateException if an entry has no host, has more than an origin (a path, query
+   *     or user info), or a wildcard covers a public suffix or an IP address, so the configuration
+   *     stops startup
    */
   public static WebhookDestinationPolicy parse(String propertyName, String allowedOrigins) {
     List<Origin> origins = new ArrayList<>();
@@ -75,6 +76,14 @@ public final class WebhookDestinationPolicy {
       throw invalid;
     }
     if (uri.getHost() == null) {
+      throw invalid;
+    }
+    // a path, query or user info would read as a narrower rule than the origin that is enforced
+    String path = uri.getRawPath();
+    if (uri.getRawUserInfo() != null
+        || uri.getRawQuery() != null
+        || uri.getRawFragment() != null
+        || !(path == null || path.isEmpty() || "/".equals(path))) {
       throw invalid;
     }
     // anything else malformed (scheme, port, host name) can never match a real URL: it fails closed
