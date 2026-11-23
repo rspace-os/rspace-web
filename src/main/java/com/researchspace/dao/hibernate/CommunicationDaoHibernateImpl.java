@@ -144,14 +144,28 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public NotificationStatus getNotificationStatus(User user) {
     int notificationCount = getUnreadNotificationCount(user.getId());
     int messageCount =
-        getActiveMessageOrRequestDistinctCTIds(
-                user, MessageTypeFilter.DEFAULT_MESSAGE_LISTING, null)
-            .size();
+        countActiveMessageOrRequests(user, MessageTypeFilter.DEFAULT_MESSAGE_LISTING);
     int specialMessageCount =
-        getActiveMessageOrRequestDistinctCTIds(
-                user, MessageTypeFilter.SPECIAL_MESSAGE_LISTING, null)
-            .size();
+        countActiveMessageOrRequests(user, MessageTypeFilter.SPECIAL_MESSAGE_LISTING);
     return new NotificationStatus(notificationCount, messageCount, specialMessageCount);
+  }
+
+  /** Counts the rows {@link #getActiveMessageOrRequestDistinctCTIds} would return. */
+  private int countActiveMessageOrRequests(User user, MessageTypeFilter filter) {
+    return Math.toIntExact(
+        getSession()
+            .createQuery(
+                "select count(distinct mor.id) from MessageOrRequest mor "
+                    + "join mor.recipients ct join ct.recipient recipient "
+                    + "join mor.originator originator "
+                    + "where ct.status not in :terminatedStates "
+                    + "and recipient.id = :userId "
+                    + "and mor.messageType in :messageTypes",
+                Long.class)
+            .setParameterList("terminatedStates", TERMINATED_STATES)
+            .setParameter("userId", user.getId())
+            .setParameterList("messageTypes", filter.getWantedTypes())
+            .uniqueResult());
   }
 
   @Override
