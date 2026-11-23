@@ -41,11 +41,14 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
@@ -660,6 +663,60 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void listingMessagesDoesNotLoadGlobalMessageRecipients() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    MessageOrRequest global =
+        saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, null);
+    MessageOrRequest original =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, recipient, sender, null);
+    MessageOrRequest reply =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, original);
+    flushAndClear();
+
+    Map<Long, MessageOrRequest> listed =
+        listMessagesFor(recipient, 10).stream()
+            .collect(Collectors.toMap(MessageOrRequest::getId, Function.identity()));
+
+    assertTrue(Hibernate.isInitialized(listed.get(reply.getId()).getRecipients()));
+    assertTrue(Hibernate.isInitialized(listed.get(reply.getId()).getPrevious()));
+    assertFalse(Hibernate.isInitialized(listed.get(global.getId()).getRecipients()));
+  }
+
+  @Test
+  public void listingMessagesDoesNotQueryPerMessage() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, null);
+    for (int i = 0; i < 6; i++) {
+      MessageOrRequest original =
+          saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, recipient, sender, null);
+      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, original);
+    }
+    flushAndClear();
+
+    long twoPerPage = countStatementsListingMessages(recipient, 2);
+    long sevenPerPage = countStatementsListingMessages(recipient, 7);
+
+    assertEquals(twoPerPage, sevenPerPage, "statement count must not grow with page size");
+  }
+
+  private long countStatementsListingMessages(User user, int pageSize) {
+    Statistics stats = sessionFactory.getStatistics();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    try {
+      sessionFactory.getCurrentSession().clear();
+      stats.clear();
+      List<MessageOrRequest> listed = listMessagesFor(user, pageSize);
+      assertEquals(pageSize, listed.size());
+      return stats.getPrepareStatementCount();
+    } finally {
+      stats.setStatisticsEnabled(wasEnabled);
+    }
+  }
+
+  @Test
   public void listingPagesAreSlicesOfTheFullListingForEverySort() throws InterruptedException {
     ListingFixture fx = saveListingFixture();
     EnumSet<CommunicationSort> allSorts = EnumSet.allOf(CommunicationSort.class);
@@ -822,6 +879,26 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
       stats.clear();
       stats.setStatisticsEnabled(wasEnabled);
     }
+  }
+
+  private List<MessageOrRequest> listMessagesFor(User user, int pageSize) {
+    PaginationCriteria<CommunicationTarget> pgCrit = getDefaultPgCrit();
+    pgCrit.setResultsPerPage(pageSize);
+    return dao.getActiveRequestsAndMessagesForUser(user, pgCrit, MessageTypeFilter.ALL_TYPES)
+        .getResults();
+  }
+
+  private MessageOrRequest saveMessageWithPrevious(
+      MessageType type, User sender, User recipient, MessageOrRequest previous) {
+    MessageOrRequest message = createRequestOfType(sender, type);
+    message.setPreviousMessage(previous);
+    message.setRecipients(toSet(createCommTarget(recipient, message)));
+    return (MessageOrRequest) dao.save(message);
+  }
+
+  private void flushAndClear() {
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
   }
 
   private static List<Long> idsOf(ISearchResults<? extends Communication> results) {

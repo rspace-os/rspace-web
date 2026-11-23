@@ -14,6 +14,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.sort.CommunicationSort;
 import java.util.*;
 import java.util.function.Consumer;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -371,17 +372,33 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return new UnanimousVotingRequestCompletionUpdatePolicy(); // default
   }
 
+  /**
+   * Initialises recipients and previous messages of already loaded messages in one query, instead
+   * of one select per message. No chunking: callers load the messages with the same ID list.
+   */
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
-    for (MessageOrRequest mor : mors) {
-      if (mor.getPrevious() != null) {
-        mor.getPrevious().getPriority(); // initialize
-      }
-      // RSPAC-1455. global messages have all users as recipients; initializing this collection
-      // loads all users, to be avoided!
-      if (!MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType())) {
-        mor.getRecipients().size(); // initialize
-      }
+    // RSPAC-1455. global messages have all users as recipients; initializing this collection
+    // loads all users, to be avoided!
+    List<Long> nonGlobalIds =
+        mors.stream()
+            .filter(mor -> !MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType()))
+            .map(MessageOrRequest::getId)
+            .toList();
+    if (!nonGlobalIds.isEmpty()) {
+      getSession()
+          .createQuery(
+              "select distinct mor from MessageOrRequest mor"
+                  + " left join fetch mor.recipients ct left join fetch ct.recipient"
+                  + " left join fetch mor.previous where mor.id in :ids",
+              MessageOrRequest.class)
+          .setParameterList("ids", nonGlobalIds)
+          .list();
     }
+    // resolves fetched previous messages from the session; selects only for global messages
+    mors.stream()
+        .map(MessageOrRequest::getPrevious)
+        .filter(Objects::nonNull)
+        .forEach(Hibernate::initialize);
   }
 
   private static final String NEW_NOTIFICATION_FROM_WHERE =
