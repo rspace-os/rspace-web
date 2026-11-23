@@ -11,17 +11,16 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import type { Optional } from "../../../util/optional";
-import * as Parsers from "../../../util/parsers";
 import type { URL as Url } from "../../../util/types";
 import usePrimaryAction, {
   useAsposePreviewOfGalleryFile,
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
 } from "../primaryActionHooks";
-import { type GalleryFile, idToString } from "../useGalleryListing";
+import { useAsposePdfQuery } from "../queries";
+import type { GalleryFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
@@ -201,57 +200,23 @@ const PreviewWrapper = ({
   );
 };
 
-/*
- * Converted Aspose PDFs, keyed by file id and version, so that a file which is
- * unmounted as the user moves away and remounted as they move back does not
- * request another conversion.
- */
-type AsposePdfCache = Map<string, Promise<Url>>;
-
-function convertWithAspose(file: GalleryFile, cache: AsposePdfCache): Promise<Url> {
-  const id = idToString(file.id).elseThrow();
-  const cacheKey = `${id}@${file.version ?? ""}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return cached;
-  const conversion = (async () => {
-    const { data } = await axios.get<unknown>(`/Streamfile/ajax/convert/${id}?outputFormat=pdf`);
-    const fileName = Parsers.isObject(data)
-      .flatMap(Parsers.isNotNull)
-      .flatMap(Parsers.getValueWithKey("data"))
-      .flatMap(Parsers.isString)
-      .orElse(null);
-    if (!fileName) throw new Error("Aspose did not return a converted file");
-    return `/Streamfile/direct/${id}?fileName=${fileName}`;
-  })();
-  cache.set(cacheKey, conversion);
-  void conversion.catch(() => cache.delete(cacheKey));
-  return conversion;
-}
-
 const Preview = React.memo(function Preview({
   file,
   zoom,
   visible,
-  asposePdfCache,
 }: {
   file: GalleryFile;
   zoom: number;
   visible: boolean;
-  asposePdfCache: AsposePdfCache;
 }) {
   const { t } = useTranslation("gallery");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
-  // aspose.enabled may still be loading on the first render
-  const asposeAvailable = canPreviewWithAspose(file).isOk;
   // a new version of the file is loaded afresh; an unchanged file from a refreshed listing keeps its preview
   // filestore files have no version, so their size and modification date stand in for one
   const fileVersion = `${file.key}@${file.version ?? `${file.size}@${file.modificationDate?.getTime() ?? ""}`}`;
   const loadedVersion = React.useRef<string | null>(null);
-  const [asposePdfUrl, setAsposePdfUrl] = React.useState<
-    { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
-  >(null);
   const [imageUrl, setImageUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
@@ -269,18 +234,7 @@ const Preview = React.memo(function Preview({
           getDownloadHref,
         })),
       )
-      .orElseTry<
-        | { key: "image"; getDownloadHref: () => Promise<Url> }
-        | { key: "pdf"; getDownloadHref: () => Promise<Url> }
-        | { key: "aspose" }
-      >(() =>
-        canPreviewWithAspose(file).map(() => ({
-          key: "aspose",
-        })),
-      )
       .do((preview) => {
-        // conversion is expensive, so neighbours only preload images and PDFs
-        if (preview.key === "aspose" && !visible) return;
         loadedVersion.current = fileVersion;
         // drops the result of loading a version that has since been replaced
         const ifStillCurrent = (update: () => void) => {
@@ -295,7 +249,7 @@ const Preview = React.memo(function Preview({
             } catch {
               ifStillCurrent(() => setImageUrl({ tag: "error" }));
             }
-          } else if (preview.key === "pdf") {
+          } else {
             setPdfUrl({ tag: "loading" });
             try {
               const downloadHref = await preview.getDownloadHref();
@@ -303,23 +257,21 @@ const Preview = React.memo(function Preview({
             } catch {
               ifStillCurrent(() => setPdfUrl({ tag: "error" }));
             }
-          } else {
-            setAsposePdfUrl({ tag: "loading" });
-            try {
-              const url = await convertWithAspose(file, asposePdfCache);
-              ifStillCurrent(() => setAsposePdfUrl({ tag: "loaded", url }));
-            } catch {
-              ifStillCurrent(() => setAsposePdfUrl({ tag: "error" }));
-            }
           }
         })();
       });
-  }, [visible, asposeAvailable, fileVersion]);
+  }, [fileVersion]);
+
+  // conversion is expensive, so only the visible file is converted; aspose.enabled may load late
+  const asposePdf = useAsposePdfQuery(file, {
+    enabled:
+      visible && canPreviewAsImage(file).isError && canPreviewAsPdf(file).isError && canPreviewWithAspose(file).isOk,
+  });
 
   let loadingLabel = null;
   if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = t("carousel.loadingImage");
   if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = t("carousel.loadingPdf");
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = t("carousel.generatingPdf");
+  if (asposePdf.isLoading) loadingLabel = t("carousel.generatingPdf");
   if (loadingLabel !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -328,11 +280,10 @@ const Preview = React.memo(function Preview({
     );
 
   let imageSrc = null;
-  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null) imageSrc = file.thumbnailUrl;
+  if (imageUrl === null && pdfUrl === null && asposePdf.data === undefined) imageSrc = file.thumbnailUrl;
   if (imageUrl !== null && imageUrl.tag === "loaded") imageSrc = imageUrl.url;
   if (imageUrl !== null && imageUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (pdfUrl !== null && pdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
@@ -354,7 +305,7 @@ const Preview = React.memo(function Preview({
 
   let pdfSrc = null;
   if (pdfUrl !== null && pdfUrl.tag === "loaded") pdfSrc = pdfUrl.url;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded") pdfSrc = asposePdfUrl.url;
+  if (asposePdf.data !== undefined) pdfSrc = asposePdf.data;
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -410,7 +361,6 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       : 0,
   );
   const [zoom, setZoom] = React.useState(1);
-  const [asposePdfCache] = React.useState<AsposePdfCache>(() => new Map());
   const { t } = useTranslation(["gallery", "common"]);
 
   React.useEffect(() => {
@@ -591,13 +541,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         {/* Only the visible file and its neighbours are mounted, so the rest are not downloaded */}
         {listing.list.map((f, i) =>
           Math.abs(i - visibleIndex) <= 1 ? (
-            <Preview
-              file={f}
-              zoom={i === visibleIndex ? zoom : 1}
-              visible={i === visibleIndex}
-              asposePdfCache={asposePdfCache}
-              key={f.key}
-            />
+            <Preview file={f} zoom={i === visibleIndex ? zoom : 1} visible={i === visibleIndex} key={f.key} />
           ) : null,
         )}
       </Box>

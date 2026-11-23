@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientContext, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
@@ -26,6 +27,14 @@ const PDF: FileKind = { extension: "pdf", type: "Document", gallerySection: "Doc
 
 function repeat(kind: FileKind, count: number): ReadonlyArray<FileKind> {
   return Array.from({ length: count }, () => kind);
+}
+
+// Mounted on its own, a story gets a fresh client; inside a test's provider it shares that client.
+function WithQueryClient({ children }: { children: React.ReactNode }) {
+  const outerClient = React.useContext(QueryClientContext);
+  const [ownClient] = React.useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }));
+  if (outerClient) return children;
+  return <QueryClientProvider client={ownClient}>{children}</QueryClientProvider>;
 }
 
 function CarouselOfFiles({ files, selectedIndex }: { files: ReadonlyArray<FileKind>; selectedIndex?: number }) {
@@ -59,23 +68,25 @@ function CarouselOfFiles({ files, selectedIndex }: { files: ReadonlyArray<FileKi
     ),
   );
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <LandmarksProvider>
-        <GallerySelection>
-          <WithSelectedFile file={selectedIndex === undefined ? undefined : list[selectedIndex]}>
-            <Carousel
-              listing={{
-                tag: "list",
-                list,
-                totalHits: files.length,
-                loadMore: Optional.empty<() => Promise<void>>(),
-                refreshing: false,
-              }}
-            />
-          </WithSelectedFile>
-        </GallerySelection>
-      </LandmarksProvider>
-    </ThemeProvider>
+    <WithQueryClient>
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <LandmarksProvider>
+          <GallerySelection>
+            <WithSelectedFile file={selectedIndex === undefined ? undefined : list[selectedIndex]}>
+              <Carousel
+                listing={{
+                  tag: "list",
+                  list,
+                  totalHits: files.length,
+                  loadMore: Optional.empty<() => Promise<void>>(),
+                  refreshing: false,
+                }}
+              />
+            </WithSelectedFile>
+          </GallerySelection>
+        </LandmarksProvider>
+      </ThemeProvider>
+    </WithQueryClient>
   );
 }
 
