@@ -3,6 +3,9 @@ package com.researchspace.model.field;
 public class AttachmentFieldBehaviour {
 
   public static AttachmentFieldForm realOrProxy(IFieldForm ft) {
+    if (ft == null) {
+      return null;
+    }
     if (ft instanceof AttachmentFieldForm) {
       return (AttachmentFieldForm) ft;
     } else if (AbstractField.isAuditingProxy(ft)) {

@@ -219,9 +219,10 @@ collection or proxy also loads up to 19 pending ones of the same role or entity.
   `Hibernate.unproxy` before casting it to a subclass. `BatchFetchSecondLevelCacheTest` lists the
   associations where that matters and runs with the production L2 cache settings, which the shared
   test context turns off.
-- Without the L2 cache, a batch-loaded EAGER to-one is set only after the owner's other properties.
-  Do not make an entity setter that Hibernate calls depend on another association; map that
-  property with field access instead (see `AppConfigElement.value`).
+- Without the L2 cache, a batch-loaded EAGER to-one is set to null while the owner's properties
+  are loaded and to the real instance afterwards. An entity setter that Hibernate calls must accept
+  null for an association and must not read another association; otherwise map that property with
+  field access (see `AppConfigElement.value` and `UserProfile.owner`).
 - `@BatchSize(size = 1)` does not opt a collection out and can throw. Load a collection that must
   not be batched by query instead (see global message recipients in
   `CommunicationDaoHibernateImpl`).

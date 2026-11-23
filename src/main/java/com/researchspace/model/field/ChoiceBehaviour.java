@@ -52,6 +52,9 @@ public class ChoiceBehaviour {
   }
 
   public static ChoiceFieldForm realOrProxy(IFieldForm ft) {
+    if (ft == null) {
+      return null;
+    }
     if (ft instanceof ChoiceFieldForm) {
       return (ChoiceFieldForm) ft;
     } else if (AbstractField.isAuditingProxy(ft)) {

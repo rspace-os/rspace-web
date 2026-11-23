@@ -3,6 +3,9 @@ package com.researchspace.model.field;
 public class DateFieldBehaviour {
 
   public static DateFieldForm realOrProxy(IFieldForm ft) {
+    if (ft == null) {
+      return null;
+    }
     if (ft instanceof DateFieldForm) {
       return (DateFieldForm) ft;
     } else if (AbstractField.isAuditingProxy(ft)) {

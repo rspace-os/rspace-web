@@ -7,6 +7,9 @@ import org.apache.commons.lang3.StringUtils;
 public class RadioBehaviour {
 
   public static RadioFieldForm realOrProxy(IFieldForm ft) {
+    if (ft == null) {
+      return null;
+    }
     if (ft instanceof RadioFieldForm) {
       return (RadioFieldForm) ft;
     } else if (AbstractField.isAuditingProxy(ft)) {

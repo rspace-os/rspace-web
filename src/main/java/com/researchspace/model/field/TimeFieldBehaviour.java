@@ -3,6 +3,9 @@ package com.researchspace.model.field;
 public class TimeFieldBehaviour {
 
   public static TimeFieldForm realOrProxy(IFieldForm ft) {
+    if (ft == null) {
+      return null;
+    }
     if (ft instanceof TimeFieldForm) {
       return (TimeFieldForm) ft;
     } else if (AbstractField.isAuditingProxy(ft)) {

@@ -2,16 +2,19 @@ package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.UserProfile;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.MessageTypeFilter;
+import com.researchspace.model.field.Field;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,23 @@ public class BatchFetchTest extends SpringTransactionalTest {
     Hibernate.initialize(users.get(first.getId()).getUserPreferences());
 
     assertTrue(Hibernate.isInitialized(users.get(second.getId()).getUserPreferences()));
+  }
+
+  // A batch-loaded EAGER to-one is null while the owner's properties are set, and is set after.
+  @Test
+  public void queriesLoadEntitiesWhoseSettersCheckABatchLoadedAssociation() {
+    User user = createInitAndLoginAnyUser();
+    Long profileId = userDao.saveUserProfile(new UserProfile(user)).getId();
+    Field field = createBasicDocumentInRootFolderWithText(user, "text").getFields().get(0);
+    flushAndClear();
+
+    assertEquals(user.getId(), userDao.getUserProfileById(profileId).getOwner().getId());
+    Field loaded =
+        session()
+            .createQuery("from Field where id = :id", Field.class)
+            .setParameter("id", field.getId())
+            .uniqueResult();
+    assertEquals(field.getFieldForm().getId(), loaded.getFieldForm().getId());
   }
 
   @Test

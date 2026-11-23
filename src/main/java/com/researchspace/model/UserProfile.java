@@ -1,6 +1,8 @@
 package com.researchspace.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -53,9 +56,13 @@ public class UserProfile implements Serializable, Comparable<UserProfile> {
   /** Default constructor */
   public UserProfile() {}
 
+  // Field access so Hibernate does not call setOwner with null: with batch fetching the owner
+  // may be set after the other properties have been loaded.
+  @Access(AccessType.FIELD)
+  @OneToOne(optional = false)
   private User owner;
 
-  @OneToOne(optional = false)
+  @Transient
   @XmlElement
   @XmlIDREF
   @JsonIgnore
