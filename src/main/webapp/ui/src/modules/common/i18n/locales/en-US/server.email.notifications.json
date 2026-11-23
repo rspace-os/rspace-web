@@ -5,6 +5,7 @@
         "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>. You can add it to a plan by hand.",
         "failedNoValue": "The plan could not be updated: {0}.",
         "intro": "RSpace tried to add your deposit on \"{0}\" to the plans you selected.",
+        "morePlans": "And {0, plural, one {# more plan} other {# more plans}} not listed here.",
         "notConnected": "{0} is not connected, so the plan was not updated.",
         "notSupported": "RSpace cannot yet update plans on {0}.",
         "nothingToSend": "{0} returned no DOI and no link, so nothing was added.",

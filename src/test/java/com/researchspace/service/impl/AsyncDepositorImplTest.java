@@ -37,10 +37,12 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -522,6 +524,57 @@ public class AsyncDepositorImplTest {
     assertThat(messages.getAllValues().get(1))
         .contains("The plan could not be updated: it failed.")
         .doesNotContain("href=\"\"");
+  }
+
+  @Test
+  void manyPlansAreSummarisedSoTheNotificationFits() throws Exception {
+    List<PlanReportResult> results = new ArrayList<>();
+    for (int i = 0; i < 12; i++) {
+      results.add(
+          reported(
+              StringUtils.leftPad("plan " + i, 100, 'x'),
+              new ValueOutcome(IDENTIFIER, "https://doi.org/10.1/x", true, null)));
+    }
+
+    String planMessage = planNotificationFor(results);
+
+    assertThat(planMessage.length()).isLessThan(2000);
+    assertThat(planMessage)
+        .contains("not listed here")
+        .containsPattern("And \\d+ more plans not listed here")
+        .contains("xplan 0")
+        .doesNotContain("xplan 11");
+    assertThat(planMessage.trim()).endsWith("</p>");
+  }
+
+  @Test
+  void fewPlansAreAllListed() throws Exception {
+    String planMessage =
+        planNotificationFor(
+            List.of(
+                withStatus("Plan A", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED),
+                withStatus("Plan B", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED),
+                withStatus("Plan C", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED)));
+
+    assertThat(planMessage).contains("Plan A", "Plan B", "Plan C").doesNotContain("not listed");
+  }
+
+  private String planNotificationFor(List<PlanReportResult> results) throws Exception {
+    URL doi = new URL("https://doi.org/10.1/x");
+    when(dmpUpdateHandler.report(new DepositReport("Dataverse", doi, null), anyUser, List.of(1L)))
+        .thenReturn(results);
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", null, doi),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L));
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    return messages.getAllValues().get(1);
   }
 
   @Test

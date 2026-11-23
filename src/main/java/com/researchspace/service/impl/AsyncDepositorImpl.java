@@ -368,15 +368,29 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     }
     Map<String, Object> config = new HashMap<>();
     config.put("repo", escapeHtml(deposit.repositoryApp()));
-    config.put("plans", plans);
     config.put(
         "doi", deposit.identifier() == null ? null : escapeHtml4(deposit.identifier().toString()));
     config.put("msg", messages);
 
-    String msg =
-        VelocityEngineUtils.mergeTemplateIntoString(
-            velocity, "dmpUpdateCompleteNotification.vm", "UTF-8", config);
+    // drop trailing plans until the message fits, so it is never cut off mid-tag
+    int shown = plans.size();
+    String msg = mergeDmpNotification(config, plans, shown);
+    while (msg.length() > DMP_NOTIFICATION_BUDGET && shown > 0) {
+      shown--;
+      msg = mergeDmpNotification(config, plans, shown);
+    }
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+  }
+
+  // Notification cuts messages at 2,000 characters; this keeps a margin below that
+  private static final int DMP_NOTIFICATION_BUDGET = 1700;
+
+  private String mergeDmpNotification(
+      Map<String, Object> config, List<Map<String, String>> plans, int shown) {
+    config.put("plans", plans.subList(0, shown));
+    config.put("morePlans", plans.size() - shown);
+    return VelocityEngineUtils.mergeTemplateIntoString(
+        velocity, "dmpUpdateCompleteNotification.vm", "UTF-8", config);
   }
 
   private static final String DMP_NOTIFICATION_KEY =
