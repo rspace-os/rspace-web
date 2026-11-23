@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.DmpReporter;
 import com.researchspace.service.dmp.PlanReportResult;
@@ -19,9 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 public class DmpToolReporter implements DmpReporter {
 
   private final DMPToolDMPProvider provider;
+  private final MessageSourceUtils messages;
 
-  public DmpToolReporter(DMPToolDMPProvider provider) {
+  public DmpToolReporter(DMPToolDMPProvider provider, MessageSourceUtils messages) {
     this.provider = provider;
+    this.messages = messages;
   }
 
   @Override
@@ -46,10 +49,7 @@ public class DmpToolReporter implements DmpReporter {
       log.warn("Couldn't add the deposit's {} to DMPtool plan {}", kind, plan.getDmpId(), e);
       outcome =
           new ValueOutcome(
-              kind,
-              value,
-              false,
-              StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+              kind, value, false, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));
     }
     return new PlanReportResult(
         plan.getTitle(),

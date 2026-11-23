@@ -402,6 +402,10 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   private String valueOutcomeLine(ValueOutcome outcome) {
+    if (outcome.value() == null) {
+      return messages.format(
+          DMP_NOTIFICATION_KEY + "failedNoValue", List.of(escapeHtml(outcome.error())));
+    }
     String value = escapeHtml(outcome.value());
     return outcome.written()
         ? messages.format(DMP_NOTIFICATION_KEY + "valueWritten", List.of(value))

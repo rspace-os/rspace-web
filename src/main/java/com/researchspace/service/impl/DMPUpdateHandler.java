@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.DmpPlatformStatusResolver;
 import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
@@ -23,14 +24,17 @@ public class DMPUpdateHandler {
   private final DMPManager dmpManager;
   private final DmpPlatformStatusResolver statusResolver;
   private final List<DmpReporter> reporters;
+  private final MessageSourceUtils messages;
 
   public DMPUpdateHandler(
       DMPManager dmpManager,
       DmpPlatformStatusResolver statusResolver,
-      List<DmpReporter> reporters) {
+      List<DmpReporter> reporters,
+      MessageSourceUtils messages) {
     this.dmpManager = dmpManager;
     this.statusResolver = statusResolver;
     this.reporters = reporters;
+    this.messages = messages;
   }
 
   /**
@@ -82,13 +86,14 @@ public class DMPUpdateHandler {
       return reporter.get().report(plan, deposit, subject);
     } catch (RuntimeException e) {
       log.warn("Write-back to plan {} on {} failed", plan.getDmpId(), platform, e);
-      String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
       return new PlanReportResult(
           plan.getTitle(),
           plan.getDmpId(),
           platform,
           PlanReportStatus.REPORTED,
-          List.of(ValueOutcome.failed(deposit, reason)));
+          List.of(
+              ValueOutcome.failed(
+                  deposit, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY))));
     }
   }
 

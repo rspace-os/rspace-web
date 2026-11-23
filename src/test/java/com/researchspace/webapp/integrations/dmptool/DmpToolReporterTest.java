@@ -10,6 +10,8 @@ import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
@@ -38,7 +40,7 @@ class DmpToolReporterTest {
 
   @BeforeEach
   void setUp() {
-    reporter = new DmpToolReporter(provider);
+    reporter = new DmpToolReporter(provider, new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("any");
     plan = new DMPUser(user, new DmpDto("123", "My plan", DMPSource.DMP_TOOL, null, null));
   }
@@ -110,7 +112,12 @@ class DmpToolReporterTest {
 
     assertEquals(PlanReportStatus.REPORTED, result.status());
     assertEquals(
-        List.of(new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, "boom")),
+        List.of(
+            new ValueOutcome(
+                ReportedValueKind.IDENTIFIER,
+                DOI,
+                false,
+                "an unexpected error occurred; you can add the link to the plan by hand")),
         result.values());
   }
 }

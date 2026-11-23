@@ -15,6 +15,8 @@ import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.DmpPlatformStatusResolver;
 import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
@@ -40,6 +42,8 @@ class DMPUpdateHandlerTest {
 
   private static final String DOI = "https://doi.org/10.1234/abc";
   private static final String LANDING = "https://repo.example.org/dataset/1";
+  private static final String UNEXPECTED_ERROR =
+      "an unexpected error occurred; you can add the link to the plan by hand";
 
   private @Mock DMPManager dmpManager;
   private @Mock DmpPlatformStatusResolver statusResolver;
@@ -50,7 +54,12 @@ class DMPUpdateHandlerTest {
 
   @BeforeEach
   void setUp() {
-    handler = new DMPUpdateHandler(dmpManager, statusResolver, List.of(dmpToolReporter));
+    handler =
+        new DMPUpdateHandler(
+            dmpManager,
+            statusResolver,
+            List.of(dmpToolReporter),
+            new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("any");
   }
 
@@ -153,7 +162,7 @@ class DMPUpdateHandlerTest {
     assertThat(results).hasSize(2);
     assertEquals(PlanReportStatus.REPORTED, results.get(0).status());
     assertEquals(
-        new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, "boom"),
+        new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, UNEXPECTED_ERROR),
         results.get(0).values().get(0));
     assertEquals(secondReported, results.get(1));
   }

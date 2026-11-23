@@ -26,6 +26,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
+import com.researchspace.service.dmp.ReportedValueKind;
 import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
@@ -496,6 +497,31 @@ public class AsyncDepositorImplTest {
             "DMPtool is switched off, so the plan was not updated.",
             "DMPtool is not connected, so the plan was not updated.")
         .doesNotContain("Written <plan>");
+  }
+
+  @Test
+  void failedOutcomeWithoutValueRendersNoEmptyLink() throws Exception {
+    RepoDepositConfig cfg = configWithPlans(App.APP_DATAVERSE, 1L);
+    when(dmpUpdateHandler.report(new DepositReport("Dataverse", null, null), anyUser, List.of(1L)))
+        .thenReturn(
+            List.of(
+                reported(
+                    "A plan",
+                    new ValueOutcome(ReportedValueKind.ACCESS_URL, null, false, "it failed"))));
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", null, null),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        cfg);
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    assertThat(messages.getAllValues().get(1))
+        .contains("The plan could not be updated: it failed.")
+        .doesNotContain("href=\"\"");
   }
 
   @Test

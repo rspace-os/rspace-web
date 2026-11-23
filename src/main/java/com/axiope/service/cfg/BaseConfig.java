@@ -97,6 +97,7 @@ import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
@@ -1029,8 +1030,10 @@ public abstract class BaseConfig {
   DMPUpdateHandler dmpUpdateHandler(
       DMPManager dmpManager,
       DmpPlatformStatusResolver dmpPlatformStatusResolver,
-      List<DmpReporter> dmpReporters) {
-    return new DMPUpdateHandler(dmpManager, dmpPlatformStatusResolver, dmpReporters);
+      List<DmpReporter> dmpReporters,
+      MessageSourceUtils messageSourceUtils) {
+    return new DMPUpdateHandler(
+        dmpManager, dmpPlatformStatusResolver, dmpReporters, messageSourceUtils);
   }
 
   @Bean
@@ -1289,8 +1292,9 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public DmpReporter dmpToolReporter(DMPToolDMPProvider dmpClient) {
-    return new DmpToolReporter(dmpClient);
+  public DmpReporter dmpToolReporter(
+      DMPToolDMPProvider dmpClient, MessageSourceUtils messageSourceUtils) {
+    return new DmpToolReporter(dmpClient, messageSourceUtils);
   }
 
   @Bean
