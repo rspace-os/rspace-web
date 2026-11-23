@@ -429,7 +429,8 @@ public abstract class InventoryRecord {
   /**
    * Rebuilds the cached active attached files. A collection Hibernate has not loaded yet is left to
    * {@link #initializeActiveListsAfterLoad()}, so the attached files of records loaded together
-   * load in batches.
+   * load in batches. Envers revision entities never run that hook and their collections report as
+   * not loaded, so on them the list is built on first read.
    */
   public void refreshActiveAttachedFiles() {
     attachedFiles = null;
@@ -467,7 +468,8 @@ public abstract class InventoryRecord {
   /**
    * Rebuilds the cached active barcodes. A collection Hibernate has not loaded yet is left to
    * {@link #initializeActiveListsAfterLoad()}, so the barcodes of records loaded together load in
-   * batches.
+   * batches. Envers revision entities never run that hook and their collections report as not
+   * loaded, so on them the list is built on first read.
    */
   public void refreshActiveBarcodes() {
     activeBarcodes = null;
@@ -505,7 +507,8 @@ public abstract class InventoryRecord {
   /**
    * Rebuilds the cached active identifiers. A collection Hibernate has not loaded yet is left to
    * {@link #initializeActiveListsAfterLoad()}, so the identifiers of records loaded together load
-   * in batches.
+   * in batches. Envers revision entities never run that hook and their collections report as not
+   * loaded, so on them the list is built on first read.
    */
   public void refreshActiveIdentifiers() {
     activeIdentifiers = null;

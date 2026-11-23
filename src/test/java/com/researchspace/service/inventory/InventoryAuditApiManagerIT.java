@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
@@ -13,15 +14,20 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.Barcode;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.service.AuditManager;
+import com.researchspace.service.inventory.impl.InventoryAuditApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * This class extends RealTransactionSpringTestBase as auditing only happens after a transaction is
@@ -30,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
+  private @Autowired AuditManager auditManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -142,5 +149,41 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals("updated instrument", apiInstrumentRev2.getName());
     assertEquals(secondRevisionId, apiInstrumentRev2.getRevisionId());
     assertNotNull(apiInstrumentRev2.getGlobalId());
+  }
+
+  @Test
+  public void revisionEntityActiveListsReadableAfterCommit() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("barcoded sample");
+    newSample.getBarcodes().add(new ApiBarcode("revision-barcode"));
+    Long sampleId = sampleApiMgr.createNewApiSample(newSample, anyUser).getId();
+    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(sampleId, anyUser);
+    long revisionId =
+        inventoryAuditMgr
+            .getInventoryRecordRevisions(dbSample)
+            .getRevisions()
+            .get(0)
+            .getRevisionId();
+    InventoryAuditApiManagerImpl auditMgrImpl = AopTestUtils.getTargetObject(inventoryAuditMgr);
+
+    // Envers runs no @PostLoad, so the active lists are only readable after commit if the audit
+    // manager built them while the revision's session was open
+    SampleEntity revision =
+        doInTransaction(
+            () -> {
+              SampleEntity rev =
+                  auditManager
+                      .getObjectForRevision(SampleEntity.class, sampleId, revisionId)
+                      .getEntity();
+              ReflectionTestUtils.invokeMethod(
+                  auditMgrImpl, "initialiseInventoryRecordRelationships", rev);
+              return rev;
+            });
+
+    assertThat(revision.getActiveBarcodes())
+        .extracting(Barcode::getBarcodeData)
+        .containsExactly("revision-barcode");
+    assertThat(revision.getActiveIdentifiers()).isEmpty();
+    assertThat(revision.getAttachedFiles()).isEmpty();
   }
 }

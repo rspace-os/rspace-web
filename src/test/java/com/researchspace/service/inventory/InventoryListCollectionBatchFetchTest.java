@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.model.ApiBarcode;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 import org.hibernate.stat.Statistics;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,9 @@ import org.junit.jupiter.api.Test;
  */
 class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
 
-  private static final int RECORD_COUNT = 12;
+  /** More than the batch size of 20, so each list role needs two batches. */
+  private static final int RECORD_COUNT = 25;
+
   private static final List<String> LIST_COLLECTIONS = List.of("barcodes", "identifiers", "files");
 
   private User testUser;
@@ -51,12 +53,6 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
   void createUserAndStatistics() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("batch"));
     stats = sessionFactory.getStatistics();
-  }
-
-  @AfterEach
-  void disableStatistics() {
-    stats.setStatisticsEnabled(false);
-    stats.clear();
   }
 
   @Test
@@ -77,7 +73,7 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
     assertThat(result.getRecords()).hasSize(RECORD_COUNT);
     assertThat(result.getRecords()).allSatisfy(r -> assertThat(r.getBarcodes()).hasSize(1));
     // the workbench loads before its contents, so it takes a batch of its own
-    assertListCollectionsBatched(Container.class, 2);
+    assertListCollectionsBatched(Container.class, 3);
   }
 
   @Test
@@ -105,7 +101,7 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
 
     assertThat(result.getRecords()).hasSize(RECORD_COUNT);
     assertThat(result.getRecords()).allSatisfy(r -> assertThat(r.getBarcodes()).hasSize(1));
-    assertListCollectionsBatched(SubSample.class, 1);
+    assertListCollectionsBatched(SubSample.class, 2);
   }
 
   @Test
@@ -126,7 +122,7 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
 
     assertThat(result.getSamples()).hasSize(RECORD_COUNT);
     assertThat(result.getSamples()).allSatisfy(r -> assertThat(r.getBarcodes()).hasSize(1));
-    assertListCollectionsBatched(SampleEntity.class, 1);
+    assertListCollectionsBatched(SampleEntity.class, 2);
   }
 
   @Test
@@ -151,7 +147,7 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
     assertThat(result.getRecords())
         .extracting(ApiInventoryRecordInfo::getBarcodes)
         .allSatisfy(barcodes -> assertThat(barcodes).hasSize(1));
-    assertListCollectionsBatched(InstrumentEntity.class, 1);
+    assertListCollectionsBatched(InstrumentEntity.class, 2);
   }
 
   private PaginationCriteria<InventoryRecord> inventoryPage() {
@@ -165,22 +161,24 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
   private <T> T countingCollectionLoads(Supplier<T> listing) {
     sessionFactory.getCurrentSession().flush();
     clearSessionAndEvictAll();
+    boolean statisticsWereEnabled = stats.isStatisticsEnabled();
     stats.clear();
     stats.setStatisticsEnabled(true);
     try {
       return listing.get();
     } finally {
-      stats.setStatisticsEnabled(false);
+      stats.setStatisticsEnabled(statisticsWereEnabled);
     }
   }
 
   private void assertListCollectionsBatched(Class<?> owner, long expectedFetchesPerRole) {
+    Map<String, Long> expected = new TreeMap<>();
     Map<String, Long> fetchesByRole = new TreeMap<>();
     for (String collection : LIST_COLLECTIONS) {
       String role = owner.getName() + "." + collection;
+      expected.put(role, expectedFetchesPerRole);
       fetchesByRole.put(role, stats.getCollectionStatistics(role).getFetchCount());
     }
-    assertThat(fetchesByRole)
-        .allSatisfy((role, fetches) -> assertThat(fetches).isEqualTo(expectedFetchesPerRole));
+    assertEquals(expected, fetchesByRole);
   }
 }

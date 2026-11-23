@@ -286,11 +286,16 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
    * Hibernate envers lazily loads all entity relationships regardless of the fetch type defined
    * in the entity mappings. Therefore, these FileProperty fields need to be explicitly initialised to
    * avoid lazy initialisation issues when attempting to access the file properties.
-   * Subsamples in particular need to have the FileProperty fields of a connected sample initialised
+   * Subsamples in particular need to have the FileProperty fields of a connected sample initialised.
+   * Envers does not run @PostLoad, so the active attachment, barcode and identifier lists are built
+   * here too.
    */
   private void initialiseInventoryRecordRelationships(InventoryRecord record) {
     Hibernate.initialize(record.getImageFileProperty());
     Hibernate.initialize(record.getThumbnailFileProperty());
+    record.getAttachedFiles();
+    record.getActiveBarcodes();
+    record.getActiveIdentifiers();
     if (record instanceof Container) {
       Hibernate.initialize(((Container) record).getLocationsImageFileProperty());
     }
