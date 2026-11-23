@@ -520,6 +520,8 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
+    // Unlike Container, SubSample and InstrumentEntity, don't refresh here: that would load the bag
+    // per sample during hydration, before the subsample list's batch prefetch can run.
     clearActiveExtraFieldsCache();
   }
 

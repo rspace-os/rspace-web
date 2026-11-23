@@ -41,15 +41,23 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
 import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
+import com.researchspace.model.inventory.ContainerLocation;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
@@ -59,7 +67,11 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,10 +157,33 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void subSampleListLoadsParentSampleFieldsInFixedNumberOfQueries() {
-    int sampleCount = 5;
-    for (int i = 0; i < sampleCount; i++) {
-      createComplexSampleForUser(testUser);
+  public void subSampleListStatementCountDoesNotGrowWithParentSampleCount() {
+    ListingCounts fiveSamples = listSubSamplesAfterAddingComplexSamples(5, 5);
+    ListingCounts tenSamples = listSubSamplesAfterAddingComplexSamples(5, 10);
+
+    for (ListingCounts counts : List.of(fiveSamples, tenSamples)) {
+      assertEquals(0, counts.fetches(SampleEntity.class, "fields"));
+      assertEquals(0, counts.fetches(SampleEntity.class, "extraFields"));
+      assertEquals(0, counts.fetches(InventoryAttachmentField.class, "files"));
+      // the fields' eager to-ones come in with the field queries, not one select each
+      assertEquals(0, counts.fetches(InventoryEntityField.class));
+      assertEquals(0, counts.fetches(InventoryLink.class));
+      assertEquals(0, counts.fetches(InventoryChoiceFieldDef.class));
+      assertEquals(0, counts.fetches(InventoryRadioFieldDef.class));
+    }
+    // Other per-sample loads are left to RSDEV-1754 and RSDEV-1752, so only they may grow.
+    assertThat(tenSamples.statements() - fiveSamples.statements())
+        .isLessThanOrEqualTo(tenSamples.outOfScopeFetches() - fiveSamples.outOfScopeFetches());
+  }
+
+  /**
+   * Adds complex samples (one subsample each, with a link field and a link extra field) until the
+   * user has {@code totalSamples}, then lists the subsamples with Hibernate statistics on.
+   */
+  private ListingCounts listSubSamplesAfterAddingComplexSamples(int toAdd, int totalSamples) {
+    int fieldCount = findComplexSampleTemplate(testUser).getActiveFields().size() + 1;
+    for (int i = 0; i < toAdd; i++) {
+      addLinkFields(createComplexSampleForUser(testUser).getId());
     }
     sessionFactory.getCurrentSession().flush();
     clearSessionAndEvictAll();
@@ -161,29 +196,84 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
       ApiSubSampleSearchResult result =
           subSampleApiMgr.getSubSamplesForUser(null, null, null, testUser);
 
-      assertThat(result.getSubSamples()).hasSize(sampleCount);
+      assertThat(result.getSubSamples()).hasSize(totalSamples);
       assertThat(result.getSubSamples())
           .extracting(ss -> ss.getSampleInfo().getId())
           .doesNotHaveDuplicates();
       assertThat(result.getSubSamples())
           .allSatisfy(
               ss -> {
-                assertThat(ss.getSampleInfo().getFields()).isNotEmpty();
-                assertThat(ss.getSampleInfo().getExtraFields()).hasSize(1);
+                ApiSampleWithoutSubSamples sample = ss.getSampleInfo();
+                assertThat(sample.getFields())
+                    .hasSize(fieldCount)
+                    .anySatisfy(f -> assertNotNull(f.getLink()))
+                    .anySatisfy(f -> assertNotNull(f.getDefinition()));
+                assertThat(sample.getExtraFields())
+                    .hasSize(2)
+                    .anySatisfy(f -> assertNotNull(f.getLink()));
               });
-      assertEquals(0, collectionFetches(stats, SampleEntity.class, "fields"));
-      assertEquals(0, collectionFetches(stats, SampleEntity.class, "extraFields"));
-      assertEquals(0, collectionFetches(stats, InventoryAttachmentField.class, "files"));
-      // template fields come in with the sample fields, not one select each
-      assertEquals(
-          0, stats.getEntityStatistics(InventoryEntityField.class.getName()).getFetchCount());
+      return new ListingCounts(stats);
     } finally {
       stats.setStatisticsEnabled(statsWereEnabled);
     }
   }
 
-  private long collectionFetches(Statistics stats, Class<?> owner, String property) {
-    return stats.getCollectionStatistics(owner.getName() + "." + property).getFetchCount();
+  private void addLinkFields(Long sampleId) {
+    Sample sample = sessionFactory.getCurrentSession().get(Sample.class, sampleId);
+    InventoryLinkField linkField = new InventoryLinkField("linkField");
+    linkField.setLink(newLink());
+    sample.addSampleField(linkField);
+    ExtraLinkField extraLinkField = new ExtraLinkField();
+    extraLinkField.setCreatedBy(testUser.getUsername());
+    extraLinkField.setModifiedBy(testUser.getUsername());
+    extraLinkField.setLink(newLink());
+    sample.addExtraField(extraLinkField);
+  }
+
+  private InventoryLink newLink() {
+    InventoryLink link = new InventoryLink();
+    link.setGlobalIdTarget(new GlobalIdentifier("SA1"));
+    link.setRelationType("References");
+    return link;
+  }
+
+  /** A snapshot of the statement count and the non-zero lazy collection and entity fetches. */
+  private record ListingCounts(
+      long statements, Map<String, Long> collectionFetches, Map<String, Long> entityFetches) {
+    ListingCounts(Statistics stats) {
+      this(
+          stats.getPrepareStatementCount(),
+          nonZero(
+              stats.getCollectionRoleNames(),
+              role -> stats.getCollectionStatistics(role).getFetchCount()),
+          nonZero(stats.getEntityNames(), e -> stats.getEntityStatistics(e).getFetchCount()));
+    }
+
+    private static Map<String, Long> nonZero(String[] names, ToLongFunction<String> count) {
+      return Arrays.stream(names)
+          .filter(name -> count.applyAsLong(name) > 0)
+          .collect(Collectors.toMap(name -> name, count::applyAsLong));
+    }
+
+    /** Per-sample loads that RSDEV-1754 (files, barcodes, identifiers) and RSDEV-1752 cover. */
+    long outOfScopeFetches() {
+      long collections =
+          Stream.of("files", "barcodes", "identifiers", "subSamples")
+                  .mapToLong(role -> fetches(SampleEntity.class, role))
+                  .sum()
+              + Stream.of("files", "barcodes", "identifiers", "extraFields")
+                  .mapToLong(role -> fetches(SubSample.class, role))
+                  .sum();
+      return collections + fetches(ContainerLocation.class);
+    }
+
+    long fetches(Class<?> owner, String collection) {
+      return collectionFetches.getOrDefault(owner.getName() + "." + collection, 0L);
+    }
+
+    long fetches(Class<?> entity) {
+      return entityFetches.getOrDefault(entity.getName(), 0L);
+    }
   }
 
   @Test

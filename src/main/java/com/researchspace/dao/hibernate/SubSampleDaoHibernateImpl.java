@@ -110,8 +110,10 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
    * The API listing serialises every parent sample's fields and extra fields, which would otherwise
    * load lazily one sample at a time. This loads them for the whole page in a fixed number of
    * queries. Both collections are bags, so they need separate queries (fetching two bags at once
-   * throws MultipleBagFetchException). Each field's eager template field is joined in, as the lazy
-   * collection load would, and attachment fields' file lists are loaded the same way.
+   * throws MultipleBagFetchException). A query fetch, unlike the lazy collection load, does not
+   * join a field's eager to-one associations, so each query joins them itself (template field,
+   * choice and radio definitions, link); otherwise each would cost one select. Attachment fields'
+   * file lists are loaded in a third query.
    */
   private void prefetchParentSampleFields(List<SubSample> subSamples) {
     List<Long> sampleIds =
@@ -123,13 +125,18 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
     session
         .createQuery(
             "select s from SampleEntity s left join fetch s.fields f"
-                + " left join fetch f.templateField where s.id in :ids",
+                + " left join fetch f.templateField"
+                + " left join fetch f.choiceDef"
+                + " left join fetch f.radioDef"
+                + " left join fetch f.link"
+                + " where s.id in :ids",
             SampleEntity.class)
         .setParameter("ids", sampleIds)
         .list();
     session
         .createQuery(
-            "select s from SampleEntity s left join fetch s.extraFields where s.id in :ids",
+            "select s from SampleEntity s left join fetch s.extraFields ef"
+                + " left join fetch ef.link where s.id in :ids",
             SampleEntity.class)
         .setParameter("ids", sampleIds)
         .list();
