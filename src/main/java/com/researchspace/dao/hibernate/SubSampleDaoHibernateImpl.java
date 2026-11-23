@@ -113,7 +113,10 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
    * throws MultipleBagFetchException). A query fetch, unlike the lazy collection load, does not
    * join a field's eager to-one associations, so each query joins them itself (template field,
    * choice and radio definitions, link); otherwise each would cost one select. Attachment fields'
-   * file lists are loaded in a third query.
+   * file lists are loaded in a third query, joining each file's Gallery media file and its file
+   * properties (the image ones are EcatImage's) for the same reason. The template fields' own eager
+   * to-ones (the template field's sample, and choice or radio definitions once the template has
+   * moved on) still cost one select per distinct template, not per sample.
    */
   private void prefetchParentSampleFields(List<SubSample> subSamples) {
     List<Long> sampleIds =
@@ -142,7 +145,11 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
         .list();
     session
         .createQuery(
-            "select f from InventoryAttachmentField f left join fetch f.files"
+            "select f from InventoryAttachmentField f left join fetch f.files file"
+                + " left join fetch file.mediaFile m"
+                + " left join fetch m.fileProperty"
+                + " left join fetch m.workingImageFP"
+                + " left join fetch m.thumbnailImageFP"
                 + " where f.sample.id in :ids",
             InventoryAttachmentField.class)
         .setParameter("ids", sampleIds)

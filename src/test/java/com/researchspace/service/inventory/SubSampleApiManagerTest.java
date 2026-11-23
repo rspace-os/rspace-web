@@ -38,6 +38,7 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.Community;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -63,6 +64,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,7 +159,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void subSampleListStatementCountDoesNotGrowWithParentSampleCount() {
+  public void subSampleListLoadsParentSampleFieldsInFixedStatements() throws IOException {
     ListingCounts fiveSamples = listSubSamplesAfterAddingComplexSamples(5, 5);
     ListingCounts tenSamples = listSubSamplesAfterAddingComplexSamples(5, 10);
 
@@ -170,6 +172,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
       assertEquals(0, counts.fetches(InventoryLink.class));
       assertEquals(0, counts.fetches(InventoryChoiceFieldDef.class));
       assertEquals(0, counts.fetches(InventoryRadioFieldDef.class));
+      assertEquals(0, counts.fetchesOfSubtypes(EcatMediaFile.class));
     }
     // Other per-sample loads are left to RSDEV-1754 and RSDEV-1752, so only they may grow.
     assertThat(tenSamples.statements() - fiveSamples.statements())
@@ -177,13 +180,17 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   }
 
   /**
-   * Adds complex samples (one subsample each, with a link field and a link extra field) until the
-   * user has {@code totalSamples}, then lists the subsamples with Hibernate statistics on.
+   * Adds complex samples (one subsample each, with a link field, a link extra field and a Gallery
+   * file in the attachment field) until the user has {@code totalSamples}, then lists the
+   * subsamples with Hibernate statistics on.
    */
-  private ListingCounts listSubSamplesAfterAddingComplexSamples(int toAdd, int totalSamples) {
+  private ListingCounts listSubSamplesAfterAddingComplexSamples(int toAdd, int totalSamples)
+      throws IOException {
     int fieldCount = findComplexSampleTemplate(testUser).getActiveFields().size() + 1;
     for (int i = 0; i < toAdd; i++) {
-      addLinkFields(createComplexSampleForUser(testUser).getId());
+      Long sampleId = createComplexSampleForUser(testUser).getId();
+      addLinkFields(sampleId);
+      attachGalleryFile(sampleId);
     }
     sessionFactory.getCurrentSession().flush();
     clearSessionAndEvictAll();
@@ -207,7 +214,12 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
                 assertThat(sample.getFields())
                     .hasSize(fieldCount)
                     .anySatisfy(f -> assertNotNull(f.getLink()))
-                    .anySatisfy(f -> assertNotNull(f.getDefinition()));
+                    .anySatisfy(f -> assertNotNull(f.getDefinition()))
+                    .anySatisfy(
+                        f -> {
+                          assertNotNull(f.getAttachment());
+                          assertNotNull(f.getAttachment().getMediaFileGlobalId());
+                        });
                 assertThat(sample.getExtraFields())
                     .hasSize(2)
                     .anySatisfy(f -> assertNotNull(f.getLink()));
@@ -228,6 +240,16 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     extraLinkField.setModifiedBy(testUser.getUsername());
     extraLinkField.setLink(newLink());
     sample.addExtraField(extraLinkField);
+  }
+
+  private void attachGalleryFile(Long sampleId) throws IOException {
+    Sample sample = sessionFactory.getCurrentSession().get(Sample.class, sampleId);
+    InventoryEntityField attachmentField =
+        sample.getActiveFields().stream()
+            .filter(InventoryAttachmentField.class::isInstance)
+            .findFirst()
+            .orElseThrow();
+    addGalleryFileToInventoryItem(attachmentField.getOid(), testUser);
   }
 
   private InventoryLink newLink() {
@@ -273,6 +295,21 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     long fetches(Class<?> entity) {
       return entityFetches.getOrDefault(entity.getName(), 0L);
+    }
+
+    long fetchesOfSubtypes(Class<?> type) {
+      return entityFetches.entrySet().stream()
+          .filter(e -> isSubtype(e.getKey(), type))
+          .mapToLong(Map.Entry::getValue)
+          .sum();
+    }
+
+    private static boolean isSubtype(String entityName, Class<?> type) {
+      try {
+        return type.isAssignableFrom(Class.forName(entityName));
+      } catch (ClassNotFoundException e) {
+        return false;
+      }
     }
   }
 
