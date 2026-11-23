@@ -7,6 +7,7 @@ import galleryEn from "@/modules/common/i18n/locales/en-US/gallery.json";
 import WindowedPdfDocument from "../WindowedPdfDocument";
 
 const PAGE_COUNT = 200;
+const documentRenders = vi.hoisted(() => ({ count: 0 }));
 
 /*
  * react-pdf cannot rasterise in jsdom, so the mock Document reports a long
@@ -26,6 +27,7 @@ vi.mock("react-pdf", async () => {
   };
   return {
     Document: ({ onLoadSuccess, onItemClick, children }: DocumentProps) => {
+      documentRenders.count++;
       useEffect(() => {
         onLoadSuccess({ numPages: PAGE_COUNT });
       }, []);
@@ -121,6 +123,18 @@ describe("WindowedPdfDocument", () => {
     expect(renderedPages()).toHaveLength(2);
     expect(screen.getByText("page 150")).toBeInTheDocument();
     expect(screen.queryByText("page 1")).not.toBeInTheDocument();
+  });
+
+  test("does not re-render when the observer reports no change in which pages are nearby", async () => {
+    render(<WindowedPdfDocument file="/long.pdf" scale={1} />);
+    const observer = await observerForAllPages();
+    observer.report([1, 2], true);
+    const rendersBefore = documentRenders.count;
+
+    observer.report([2], true);
+    observer.report([3], false);
+
+    expect(documentRenders.count).toBe(rendersBefore);
   });
 
   test("measures nearness against the closest scrollable ancestor", async () => {

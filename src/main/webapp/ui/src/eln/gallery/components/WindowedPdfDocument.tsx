@@ -59,6 +59,8 @@ function WindowedPages({ file, scale, width }: WindowedPdfDocumentProps): React.
             if (entry.isIntersecting) next.add(pageNumber);
             else next.delete(pageNumber);
           }
+          // keeps the same set when membership is unchanged, so the slots do not re-render
+          if (next.size === previous.size && [...next].every((pageNumber) => previous.has(pageNumber))) return previous;
           return next;
         });
       },

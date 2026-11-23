@@ -1,3 +1,5 @@
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import Box from "@mui/material/Box";
@@ -6,9 +8,14 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import axios from "@/common/axios";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import type { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import type { URL as Url } from "../../../util/types";
 import usePrimaryAction, {
   useAsposePreviewOfGalleryFile,
   useImagePreviewOfGalleryFile,
@@ -21,17 +28,8 @@ import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
-import PlaceholderLabel from "./PlaceholderLabel";
-import "react-pdf/dist/Page/TextLayer.css";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import Typography from "@mui/material/Typography";
-import axios from "@/common/axios";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import * as Parsers from "../../../util/parsers";
-import type { URL as Url } from "../../../util/types";
 import { useFolderOpen } from "./OpenFolderProvider";
+import PlaceholderLabel from "./PlaceholderLabel";
 import ResetZoomIcon from "./ResetZoomIcon";
 import WindowedPdfDocument from "./WindowedPdfDocument";
 
