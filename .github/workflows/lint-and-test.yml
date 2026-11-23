@@ -22,14 +22,6 @@ on:
         description: 'Run build'
         type: boolean
         default: false
-      stack_verification:
-        description: 'Run and audit all required coverage for a stack update'
-        type: boolean
-        default: false
-      bundle_baseline_sha:
-        description: 'Full commit SHA used as the immutable bundle comparison baseline'
-        type: string
-        default: ''
       java_vendor:
         description: 'JDK distribution for setup-java'
         type: string
@@ -80,21 +72,9 @@ jobs:
               - 'scripts/run-chemistry-tests.sh'
               - '.github/workflows/**'
 
-  stack-verification-inputs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.0
-        with:
-          persist-credentials: false
-      - name: Validate stack verification inputs
-        env:
-          STACK_VERIFICATION: ${{ inputs.stack_verification }}
-          BUNDLE_BASELINE_SHA: ${{ inputs.bundle_baseline_sha }}
-        run: node scripts/aggregate-ci.ts validate-baseline "$STACK_VERIFICATION" "$BUNDLE_BASELINE_SHA"
-
   fast-junit-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -105,7 +85,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.fast_java_tests ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.java == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -148,23 +127,13 @@ jobs:
           comment_mode: off
           files: target/surefire-reports/*.xml
 
-      - name: Upload fast Java test reports
-        if: ${{ inputs.stack_verification && !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: fast-test-reports-${{ matrix.java-version }}
-          path: target/surefire-reports/*.xml
-          if-no-files-found: error
-          retention-days: 14
-
   frontend-checks:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -186,9 +155,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: CI aggregation script tests
-        run: node --test scripts/aggregate-ci.test.ts
 
       # Biome lint + format check over the changed JS/TS/CSS frontend, run
       # before tsc. lint:ci uses --error-on-warnings --diagnostic-level=info, so
@@ -217,7 +183,7 @@ jobs:
 
   backend-checks:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
     strategy:
@@ -227,7 +193,6 @@ jobs:
       (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.java == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -255,7 +220,7 @@ jobs:
 
   vitest-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -271,7 +236,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.frontend_tests ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -336,13 +300,12 @@ jobs:
   # (see the vitest-tests job above).
   vitest-coverage-report:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs, vitest-tests]
+    needs: [changed-files, vitest-tests]
     if: |
       !cancelled() &&
       (
         (github.event_name == 'push' && github.ref_name == 'main') ||
         inputs.frontend_tests ||
-        inputs.stack_verification ||
         needs.changed-files.outputs.frontend == 'true'
       )
     steps:
@@ -388,7 +351,7 @@ jobs:
   # resources (running all three in one process is contention-prone).
   browser-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -400,7 +363,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.frontend_tests ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -452,15 +414,6 @@ jobs:
           comment_mode: off
           files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
 
-      - name: Upload browser test report
-        if: ${{ inputs.stack_verification && !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: browser-test-report-${{ matrix.browser }}
-          path: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
-          if-no-files-found: error
-          retention-days: 14
-
   # Bundle-size comparison: build the PR's frontend, get the base commit's
   # stats.json (restored from the cache that main's build job saves, or built
   # when there is no cache entry), then diff the two files and post the result
@@ -472,16 +425,13 @@ jobs:
   bundle-size-pr:
     name: Bundle size (PR)
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
     if: |
-      inputs.stack_verification ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        needs.changed-files.outputs.frontend == 'true'
-      )
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -516,30 +466,18 @@ jobs:
   bundle-size-base:
     name: Bundle size (base)
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
     if: |
-      inputs.stack_verification ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        needs.changed-files.outputs.frontend == 'true'
-      )
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ inputs.stack_verification && inputs.bundle_baseline_sha || github.event.pull_request.base.sha }}
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
-
-      - name: Validate pinned baseline checkout
-        if: ${{ inputs.stack_verification }}
-        env:
-          BUNDLE_BASELINE_SHA: ${{ inputs.bundle_baseline_sha }}
-        run: |
-          test "$(git rev-parse HEAD)" = "$BUNDLE_BASELINE_SHA"
-          git cat-file -e "${BUNDLE_BASELINE_SHA}^{commit}"
 
       # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
       # build:stats script). There is nothing to build in that case, so detect it
@@ -548,14 +486,9 @@ jobs:
       # this guard becomes a no-op and the comparison runs normally.
       - name: Check base branch supports bundle stats
         id: base-support
-        env:
-          STACK_VERIFICATION: ${{ inputs.stack_verification }}
         run: |
           if [ -f pnpm-lock.yaml ] && [ -f package.json ] && grep -q '"build:stats"' package.json; then
             echo "supported=true" >> "$GITHUB_OUTPUT"
-          elif [ "$STACK_VERIFICATION" = "true" ]; then
-            echo "::error::Pinned bundle baseline lacks the package and build:stats tooling required for comparison."
-            exit 1
           else
             echo "supported=false" >> "$GITHUB_OUTPUT"
             echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
@@ -567,7 +500,7 @@ jobs:
         uses: actions/cache/restore@v6.1.0
         with:
           path: src/main/webapp/ui/dist/stats.json
-          key: bundle-stats-v1-${{ runner.os }}-${{ inputs.stack_verification && inputs.bundle_baseline_sha || github.event.pull_request.base.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.event.pull_request.base.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
 
       - name: Setup pnpm
         if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
@@ -604,7 +537,6 @@ jobs:
     name: Bundle size report
     runs-on: ubuntu-latest
     needs: [bundle-size-pr, bundle-size-base]
-    if: ${{ !inputs.stack_verification }}
     permissions:
       contents: read
       pull-requests: write
@@ -637,42 +569,6 @@ jobs:
           # changed (added/removed/bigger/smaller) and omit the unchanged list.
           describe-assets: changed-only
 
-  bundle-size-stack-report:
-    name: Bundle size comparison (stack verification)
-    runs-on: ubuntu-latest
-    needs: [bundle-size-pr, bundle-size-base, stack-verification-inputs]
-    if: ${{ always() && inputs.stack_verification && needs.stack-verification-inputs.result == 'success' }}
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: Download current bundle stats
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: bundle-stats-pr
-          path: current
-
-      - name: Download pinned baseline bundle stats
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: bundle-stats-base
-          path: baseline
-
-      - name: Compare bundle stats and write summary
-        run: node scripts/aggregate-ci.ts compare current/stats.json baseline/stats.json comparison
-
-      - name: Upload complete bundle comparison
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: bundle-comparison
-          path: comparison/
-          if-no-files-found: error
-          retention-days: 14
-
   # The slow DB-backed suite is split into two jobs that run on parallel runners:
   # - spring-tests: runs the `test` phase (pure-unit + Spring-transactional tests)
   # - integration-tests: runs only the `integration-test` phase via -DskipUnitTests=true
@@ -682,7 +578,7 @@ jobs:
 
   spring-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -695,7 +591,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
-      inputs.stack_verification ||
       inputs.full_java_tests
     services:
       db:
@@ -777,18 +672,9 @@ jobs:
           comment_mode: off
           files: target/surefire-reports/*.xml
 
-      - name: Upload Spring test reports
-        if: ${{ inputs.stack_verification && !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: spring-test-reports-${{ matrix.mariadb-version }}
-          path: target/surefire-reports/*.xml
-          if-no-files-found: error
-          retention-days: 14
-
   integration-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -801,7 +687,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
-      inputs.stack_verification ||
       inputs.full_java_tests
     services:
       db:
@@ -880,18 +765,9 @@ jobs:
           comment_mode: off
           files: target/surefire-reports/*.xml
 
-      - name: Upload integration test reports
-        if: ${{ inputs.stack_verification && !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: integration-test-reports-${{ matrix.mariadb-version }}
-          path: target/surefire-reports/*.xml
-          if-no-files-found: error
-          retention-days: 14
-
   chemistry-tests:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     permissions:
       contents: read
       checks: write
@@ -899,7 +775,6 @@ jobs:
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
-      inputs.stack_verification ||
       inputs.full_java_tests
     services:
       db:
@@ -974,25 +849,15 @@ jobs:
           comment_mode: off
           files: target/surefire-reports/*.xml
 
-      - name: Upload chemistry test reports
-        if: ${{ inputs.stack_verification && !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: chemistry-test-reports
-          path: target/surefire-reports/*.xml
-          if-no-files-found: error
-          retention-days: 14
-
   # WAR build with the production frontend bundle, tests skipped. Replaces the
   # Jenkins "Build feature branch" stage. Needs both the JDK and Node/pnpm
   # because -DgenerateReactDist runs the Vite production build into the WAR.
   build:
     runs-on: ubuntu-latest
-    needs: [changed-files, stack-verification-inputs]
+    needs: changed-files
     if: |
       github.event_name == 'pull_request' ||
       inputs.run_build ||
-      inputs.stack_verification ||
       needs.changed-files.outputs.frontend == 'true' ||
       needs.changed-files.outputs.java == 'true'
     strategy:
@@ -1049,66 +914,3 @@ jobs:
         with:
           path: src/main/webapp/ui/dist/stats.json
           key: bundle-stats-v1-${{ runner.os }}-${{ github.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
-
-  mocked-e2e:
-    name: Full mocked E2E
-    needs: stack-verification-inputs
-    if: ${{ inputs.stack_verification }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/e2e.yml
-    with:
-      mode: mock
-      java_vendor: ${{ inputs.java_vendor || 'temurin' }}
-
-  codeql:
-    name: CodeQL
-    needs: stack-verification-inputs
-    if: ${{ inputs.stack_verification }}
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-    uses: ./.github/workflows/codeql.yml
-
-  coverage-audit:
-    name: Required coverage audit
-    needs:
-      - stack-verification-inputs
-      - changed-files
-      - fast-junit-tests
-      - frontend-checks
-      - backend-checks
-      - vitest-tests
-      - vitest-coverage-report
-      - browser-tests
-      - bundle-size-pr
-      - bundle-size-base
-      - bundle-size-stack-report
-      - spring-tests
-      - integration-tests
-      - chemistry-tests
-      - build
-      - mocked-e2e
-      - codeql
-    if: ${{ always() && inputs.stack_verification }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: Download all run artifacts
-        if: ${{ always() }}
-        uses: actions/download-artifact@v8.0.1
-        with:
-          pattern: '*'
-          path: artifacts
-
-      - name: Require every coverage job and artifact
-        if: ${{ always() }}
-        env:
-          NEEDS_JSON: ${{ toJSON(needs) }}
-        run: node scripts/aggregate-ci.ts audit artifacts
