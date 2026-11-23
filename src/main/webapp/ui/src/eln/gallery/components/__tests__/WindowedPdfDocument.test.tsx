@@ -1,17 +1,23 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import galleryEn from "@/modules/common/i18n/locales/en-US/gallery.json";
 import WindowedPdfDocument from "../WindowedPdfDocument";
 
 const PAGE_COUNT = 200;
 
 /*
  * react-pdf cannot rasterise in jsdom, so the mock Document reports a long
- * document and each mock Page reports a 600x800pt size once mounted.
+ * document and each mock Page reports a 600x800pt size once mounted. The mock
+ * Document also offers a button that follows an internal link to page 150.
  */
 vi.mock("react-pdf", async () => {
   const { useEffect } = await import("react");
   type DocumentProps = {
     onLoadSuccess: (pdf: { numPages: number }) => void;
+    onItemClick: (item: { pageIndex: number; pageNumber: number }) => void;
     children: React.ReactNode;
   };
   type PageProps = {
@@ -19,11 +25,20 @@ vi.mock("react-pdf", async () => {
     onLoadSuccess: (page: { pageNumber: number; originalWidth: number; originalHeight: number }) => void;
   };
   return {
-    Document: ({ onLoadSuccess, children }: DocumentProps) => {
+    Document: ({ onLoadSuccess, onItemClick, children }: DocumentProps) => {
       useEffect(() => {
         onLoadSuccess({ numPages: PAGE_COUNT });
       }, []);
-      return <div>{children}</div>;
+      return (
+        <div>
+          <button
+            type="button"
+            aria-label="link to page 150"
+            onClick={() => onItemClick({ pageIndex: 149, pageNumber: 150 })}
+          />
+          {children}
+        </div>
+      );
     },
     Page: ({ pageNumber, onLoadSuccess }: PageProps) => {
       useEffect(() => {
@@ -139,5 +154,36 @@ describe("WindowedPdfDocument", () => {
     observer.report([1], true);
 
     await waitFor(() => expect(lastPagePlaceholder).toHaveStyle({ minWidth: "600px", minHeight: "800px" }));
+  });
+
+  test("follows an internal link to a page that is not mounted by scrolling its slot into view", async () => {
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    onTestFinished(() => {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    });
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const user = userEvent.setup();
+    render(<WindowedPdfDocument file="/long.pdf" scale={1} />);
+    const observer = await observerForAllPages();
+    observer.report([1, 2], true);
+
+    await user.click(screen.getByRole("button", { name: "link to page 150" }));
+
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollIntoView.mock.contexts[0]).toBe(observer.targets[149]);
+  });
+
+  test("labels each page slot with its position in the document", async () => {
+    const { container } = await renderWithRealI18n(<WindowedPdfDocument file="/long.pdf" scale={1} />, {
+      resources: { gallery: galleryEn },
+      defaultNS: "gallery",
+    });
+    const observer = await observerForAllPages();
+    observer.report([1], true);
+
+    expect(screen.getByRole("group", { name: "Page 1 of 200" })).toHaveTextContent("page 1");
+    expect(screen.getByRole("group", { name: "Page 150 of 200" })).toBeEmptyDOMElement();
+    await expectAccessible(container);
   });
 });

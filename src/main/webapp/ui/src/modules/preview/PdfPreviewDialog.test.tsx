@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { OPEN_PDF_PREVIEW_DIALOG, PdfPreviewDialogWrapper } from "./PdfPreviewDialog";
 
@@ -41,9 +41,37 @@ vi.mock("@/common/axios", () => ({
   },
 }));
 
+/*
+ * jsdom has no IntersectionObserver, so this one reports every observed page
+ * slot as visible, letting the windowed document mount its pages.
+ */
+class AlwaysIntersectingObserver {
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+
+  observe(target: Element): void {
+    this.callback(
+      [{ target, isIntersecting: true } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    );
+  }
+
+  unobserve(): void {}
+
+  disconnect(): void {}
+
+  takeRecords(): Array<IntersectionObserverEntry> {
+    return [];
+  }
+}
+
 describe("pdf preview dialog island", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("IntersectionObserver", AlwaysIntersectingObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   test("opens the callable PDF preview for PDF files", async () => {
@@ -68,6 +96,7 @@ describe("pdf preview dialog island", () => {
       "data-file",
       "/public/publicView/Streamfile/17?revision=4",
     );
+    expect(await screen.findByTestId("mock-pdf-page-1")).toBeVisible();
   });
 
   test("opens the callable Aspose preview for convertible files", async () => {

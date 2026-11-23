@@ -1,5 +1,6 @@
 import React from "react";
-import { Document, Page, type PageProps } from "react-pdf";
+import { useTranslation } from "react-i18next";
+import { Document, type DocumentProps, Page, type PageProps } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -13,10 +14,10 @@ type PageSize = { width: number; height: number };
 const FALLBACK_PAGE_SIZE: PageSize = { width: 612, height: 792 };
 
 /*
- * Pages within half a viewport of the scroll container's visible area are
- * mounted, so the next page is usually painted before it scrolls into view.
+ * Pages within a viewport of the scroll container's visible area are mounted,
+ * so the next page is usually painted before it scrolls into view.
  */
-const ROOT_MARGIN = "50% 0px";
+const ROOT_MARGIN = "100% 0px";
 
 function findScrollContainer(element: HTMLElement): HTMLElement | null {
   for (let node = element.parentElement; node; node = node.parentElement) {
@@ -38,6 +39,7 @@ type WindowedPdfDocumentProps = {
 };
 
 function WindowedPages({ file, scale, width }: WindowedPdfDocumentProps): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const [numPages, setNumPages] = React.useState(0);
   const [pageSizes, setPageSizes] = React.useState<ReadonlyMap<number, PageSize>>(new Map());
   const [nearbyPages, setNearbyPages] = React.useState<ReadonlySet<number>>(new Set());
@@ -78,6 +80,15 @@ function WindowedPages({ file, scale, width }: WindowedPdfDocumentProps): React.
   };
 
   /*
+   * react-pdf follows internal links by scrolling to the target Page, which
+   * only works for mounted pages. Scrolling the target's slot into view mounts
+   * it instead.
+   */
+  const scrollToLinkTarget: DocumentProps["onItemClick"] = ({ pageIndex }) => {
+    pagesRef.current?.children.item(pageIndex)?.scrollIntoView();
+  };
+
+  /*
    * Mirrors react-pdf's own sizing: a fixed width overrides the page's natural
    * width, and scale applies on top of that.
    */
@@ -93,13 +104,24 @@ function WindowedPages({ file, scale, width }: WindowedPdfDocumentProps): React.
   const estimatedSize = pageSizes.get(1) ?? FALLBACK_PAGE_SIZE;
 
   return (
-    <Document file={file} onLoadSuccess={({ numPages: loadedNumPages }) => setNumPages(loadedNumPages)}>
+    <Document
+      file={file}
+      onItemClick={scrollToLinkTarget}
+      onLoadSuccess={({ numPages: loadedNumPages }) => setNumPages(loadedNumPages)}
+    >
       <div ref={pagesRef}>
         {[...take(incrementForever(), numPages)].map((index) => {
           const pageNumber = index + 1;
           const { width: minWidth, height: minHeight } = renderedSize(pageSizes.get(pageNumber) ?? estimatedSize);
           return (
-            <div key={pageNumber} style={{ minWidth, minHeight }}>
+            // biome-ignore lint/a11y/useSemanticElements: a page is not a set of form controls, so <fieldset> does not fit
+            <div
+              key={pageNumber}
+              data-page-slot={pageNumber}
+              role="group"
+              aria-label={t("windowedPdfDocument.pageLabel", { pageNumber, pageCount: numPages })}
+              style={{ minWidth, minHeight, backgroundColor: "white" }}
+            >
               {nearbyPages.has(pageNumber) && (
                 <Page pageNumber={pageNumber} width={width} scale={scale} onLoadSuccess={recordPageSize} />
               )}
@@ -117,6 +139,10 @@ function WindowedPages({ file, scale, width }: WindowedPdfDocumentProps): React.
  * other page is an empty placeholder of the same size, so the scroll height
  * matches the full document and scrolling does not jump as pages mount and
  * unmount.
+ *
+ * The closest scrollable ancestor must have a constrained height. If it grows
+ * to fit its content instead, every page counts as visible and all of them
+ * mount, losing the windowing.
  */
 export default function WindowedPdfDocument(props: WindowedPdfDocumentProps): React.ReactNode {
   // Remount on a new file so page sizes and visibility do not carry over.

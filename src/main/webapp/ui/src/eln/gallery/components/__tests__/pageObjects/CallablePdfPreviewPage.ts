@@ -170,7 +170,7 @@ export class CallablePdfPreviewPage {
 
   /** Scrolls the dialog until the last page's slot is in view. */
   scrollToLastPage(): void {
-    document.querySelector(".react-pdf__Document > div > div:last-child")?.scrollIntoView();
+    Array.from(document.querySelectorAll("[data-page-slot]")).at(-1)?.scrollIntoView();
   }
 
   /**
