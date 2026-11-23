@@ -489,15 +489,15 @@ public class AsyncDepositorImplTest {
     String planMessage = messages.getAllValues().get(1);
     assertThat(planMessage)
         .contains(
-            "Written &lt;plan&gt; (DMPtool)",
+            "Written &lt;plan&gt; (DMPTool)",
             "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> was added to the plan.",
             "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> could not be added:"
                 + " denied.",
             "Dataverse returned no DOI and no link, so nothing was added.",
             "Online plan (DMPonline)",
             "RSpace cannot yet update plans on DMPonline.",
-            "DMPtool is switched off, so the plan was not updated.",
-            "DMPtool is not connected, so the plan was not updated.")
+            "DMPTool is switched off, so the plan was not updated.",
+            "DMPTool is not connected, so the plan was not updated.")
         .doesNotContain("Written <plan>");
   }
 

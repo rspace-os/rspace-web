@@ -288,8 +288,8 @@ class RepositoryConfigurationControllerTest {
     assertThat(activeRepos).hasSize(1);
     assertThat(activeRepos.get(0).getLinkedDMPs())
         .containsExactly(
-            new LinkedDMP(1L, "title1", "id1", "DMPtool", "OK"),
-            new LinkedDMP(2L, "title2", "id2", "DMPtool", "OK"),
+            new LinkedDMP(1L, "title1", "id1", "DMPTool", "OK"),
+            new LinkedDMP(2L, "title2", "id2", "DMPTool", "OK"),
             new LinkedDMP(5L, "title5", "id5", "DMP Assistant", "OK"));
   }
 
@@ -305,7 +305,7 @@ class RepositoryConfigurationControllerTest {
         repositoryConfigurationController.getAllActiveRepositories();
 
     assertThat(activeRepos.get(0).getLinkedDMPs())
-        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPtool", "NOT_CONNECTED"));
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "NOT_CONNECTED"));
   }
 
   @Test
