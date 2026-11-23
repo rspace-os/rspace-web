@@ -78,6 +78,7 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.Broadcaster;
+import com.researchspace.service.DMPManager;
 import com.researchspace.service.DeletionExecutor;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
@@ -161,6 +162,8 @@ import com.researchspace.service.cloud.impl.CommunityManualUserSignupPolicy;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.service.cloud.impl.CreateLabGroupRequestHandler;
 import com.researchspace.service.cloud.impl.ShareRecordRequestHandler;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver;
+import com.researchspace.service.dmp.DmpReporter;
 import com.researchspace.service.impl.ApiAvailabilityHandlerImpl;
 import com.researchspace.service.impl.AsyncDepositorImpl;
 import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
@@ -240,6 +243,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorImpl;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProvider;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProviderImpl;
+import com.researchspace.webapp.integrations.dmptool.DmpToolReporter;
 import com.researchspace.webapp.integrations.dsw.DSWClient;
 import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnector;
 import com.researchspace.webapp.integrations.egnyte.EgnyteAuthConnectorImpl;
@@ -1017,8 +1021,16 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  DMPUpdateHandler dmpUpdateHandler() {
-    return new DMPUpdateHandler();
+  DmpPlatformStatusResolver dmpPlatformStatusResolver(IntegrationsHandler integrationsHandler) {
+    return new DmpPlatformStatusResolver(integrationsHandler);
+  }
+
+  @Bean
+  DMPUpdateHandler dmpUpdateHandler(
+      DMPManager dmpManager,
+      DmpPlatformStatusResolver dmpPlatformStatusResolver,
+      List<DmpReporter> dmpReporters) {
+    return new DMPUpdateHandler(dmpManager, dmpPlatformStatusResolver, dmpReporters);
   }
 
   @Bean
@@ -1274,6 +1286,11 @@ public abstract class BaseConfig {
   @Bean
   public DMPToolDMPProvider dmpClient() {
     return new DMPToolDMPProviderImpl(dmpbaseUrl);
+  }
+
+  @Bean
+  public DmpReporter dmpToolReporter(DMPToolDMPProvider dmpClient) {
+    return new DmpToolReporter(dmpClient);
   }
 
   @Bean

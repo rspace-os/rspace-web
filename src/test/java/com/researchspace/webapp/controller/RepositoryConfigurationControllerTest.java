@@ -2,8 +2,10 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
+import static com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus.OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -23,11 +25,13 @@ import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementDescriptor;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.properties.RepoProperty;
@@ -39,6 +43,9 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
+import com.researchspace.service.impl.DMPUpdateHandler;
 import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -54,6 +61,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class RepositoryConfigurationControllerTest {
@@ -64,6 +72,8 @@ class RepositoryConfigurationControllerTest {
   @Mock private UserManager userManager;
   @Mock private DMPManager dmpManager;
   @Mock private IPermissionUtils permissionUtils;
+  @Mock private DmpPlatformStatusResolver dmpPlatformStatusResolver;
+  @Mock private DMPUpdateHandler dmpUpdateHandler;
 
   @InjectMocks private RepositoryConfigurationController repositoryConfigurationController;
 
@@ -253,24 +263,82 @@ class RepositoryConfigurationControllerTest {
   }
 
   @Test
-  void getDMPs() throws MalformedURLException {
-    IntegrationInfo dfinf = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
-    // Dataverse has to have options otherwise it's filtered out as unconfigured
-    Map<String, Object> options = new HashMap<>();
-    options.put("op", "value");
-    dfinf.setOptions(options);
-    IntegrationInfo dmpInf = createEnabledAvailableInfo(DMPTOOL_APP_NAME);
-    when(integrationsHandler.getIntegration(eq(exporter), anyString()))
-        .thenReturn(dfinf, new IntegrationInfo(), new IntegrationInfo(), dmpInf);
+  void getDMPsListsOnlyPlansWhosePlatformIsOn() throws MalformedURLException {
+    givenDataverseActiveAndDmpIntegrations(
+        createEnabledAvailableInfo(DMPTOOL_APP_NAME),
+        createEnabledAvailableInfo(DMPASSISTANT_APP_NAME));
     when(dmpManager.findDMPsForUser(exporter))
-        .thenReturn(List.of(new DMPUser(exporter, new DmpDto("id", "title"))));
-    setupApp();
-    mockUICfgInfo();
+        .thenReturn(
+            List.of(
+                plan(1L, DMPSource.UNKNOWN),
+                plan(2L, DMPSource.DMP_TOOL),
+                plan(3L, DMPSource.DMP_ONLINE),
+                plan(4L, DMPSource.DSW),
+                plan(5L, DMPSource.DMP_ASSISTANT)));
+    when(dmpPlatformStatusResolver.resolve(DMPSource.DMP_TOOL, exporter)).thenReturn(OK);
+    when(dmpPlatformStatusResolver.resolve(DMPSource.DMP_ONLINE, exporter))
+        .thenReturn(PlatformStatus.PLATFORM_OFF);
+    when(dmpPlatformStatusResolver.resolve(DMPSource.DMP_ASSISTANT, exporter))
+        .thenReturn(PlatformStatus.NOT_CONNECTED);
+    when(dmpUpdateHandler.supportsWriteBack(DMPSource.DMP_ASSISTANT)).thenReturn(false);
+
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
+
     assertThat(activeRepos).hasSize(1);
-    assertThat(activeRepos.get(0).getLinkedDMPs()).hasSize(1);
-    assertEquals("title", activeRepos.get(0).getLinkedDMPs().get(0).getDmpTitle());
+    assertThat(activeRepos.get(0).getLinkedDMPs())
+        .containsExactly(
+            new LinkedDMP(1L, "title1", "id1", "DMPtool", "OK"),
+            new LinkedDMP(2L, "title2", "id2", "DMPtool", "OK"),
+            new LinkedDMP(5L, "title5", "id5", "DMP Assistant", "OK"));
+  }
+
+  @Test
+  void getDMPsMarksPlanNotConnectedWhenItsPlatformHasWriteBack() throws MalformedURLException {
+    givenDataverseActiveAndDmpIntegrations(createEnabledAvailableInfo(DMPTOOL_APP_NAME));
+    when(dmpManager.findDMPsForUser(exporter)).thenReturn(List.of(plan(1L, DMPSource.DMP_TOOL)));
+    when(dmpPlatformStatusResolver.resolve(DMPSource.DMP_TOOL, exporter))
+        .thenReturn(PlatformStatus.NOT_CONNECTED);
+    when(dmpUpdateHandler.supportsWriteBack(DMPSource.DMP_TOOL)).thenReturn(true);
+
+    List<RepoUIConfigInfo> activeRepos =
+        repositoryConfigurationController.getAllActiveRepositories();
+
+    assertThat(activeRepos.get(0).getLinkedDMPs())
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPtool", "NOT_CONNECTED"));
+  }
+
+  @Test
+  void getDMPsLeavesOutUnknownPlanWhenDmpToolIsOff() throws MalformedURLException {
+    givenDataverseActiveAndDmpIntegrations(createEnabledAvailableInfo(DMPASSISTANT_APP_NAME));
+    when(dmpManager.findDMPsForUser(exporter)).thenReturn(List.of(plan(1L, DMPSource.UNKNOWN)));
+    when(dmpPlatformStatusResolver.resolve(DMPSource.DMP_TOOL, exporter))
+        .thenReturn(PlatformStatus.PLATFORM_OFF);
+
+    List<RepoUIConfigInfo> activeRepos =
+        repositoryConfigurationController.getAllActiveRepositories();
+
+    assertThat(activeRepos.get(0).getLinkedDMPs()).isNullOrEmpty();
+  }
+
+  private void givenDataverseActiveAndDmpIntegrations(IntegrationInfo... dmpInfos)
+      throws MalformedURLException {
+    IntegrationInfo dataverse = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
+    dataverse.setOptions(new HashMap<>(Map.of("op", "value")));
+    Map<String, IntegrationInfo> infos = new HashMap<>(Map.of(DATAVERSE_APP_NAME, dataverse));
+    for (IntegrationInfo info : dmpInfos) {
+      infos.put(info.getName(), info);
+    }
+    when(integrationsHandler.getIntegration(eq(exporter), anyString()))
+        .thenAnswer(invocation -> infos.get(invocation.<String>getArgument(1)));
+    setupApp();
+    mockUICfgInfo();
+  }
+
+  private DMPUser plan(long id, DMPSource source) {
+    DMPUser plan = new DMPUser(exporter, new DmpDto("id" + id, "title" + id, source, null, null));
+    ReflectionTestUtils.setField(plan, "id", id);
+    return plan;
   }
 
   private IntegrationInfo createEnabledAvailableInfo(String name) {

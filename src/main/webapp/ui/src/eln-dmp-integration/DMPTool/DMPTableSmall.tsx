@@ -8,6 +8,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 type DMPId = number | string;
@@ -17,6 +18,8 @@ type Plan = {
   dmpId: DMPId;
   dmpTitle: string;
   dmpUserInternalId: DMPUserInternalId;
+  platformName: string;
+  writeBackStatus: "OK" | "NOT_CONNECTED";
 };
 
 const tableRowSx = { width: "100%", display: "flex", flexDirection: "row" };
@@ -44,7 +47,8 @@ export default function DMPTableSmall({
   addSelectedPlan,
   removeSelectedPlan,
 }: TableArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "workspace"]);
+  const warningIdPrefix = useId();
   return (
     <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
@@ -67,6 +71,7 @@ export default function DMPTableSmall({
           {plans.map((plan, i) => {
             const id = plan.dmpUserInternalId;
             const isSelected = selectedPlans.includes(id);
+            const warningId = plan.writeBackStatus === "NOT_CONNECTED" ? `${warningIdPrefix}-${i}` : undefined;
             return (
               <TableRow
                 key={i}
@@ -95,7 +100,10 @@ export default function DMPTableSmall({
                       value={"dmpUserInternalId"}
                       checked={isSelected}
                       slotProps={{
-                        input: { "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: plan.dmpTitle }) },
+                        input: {
+                          "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: plan.dmpTitle }),
+                          "aria-describedby": warningId,
+                        },
                       }}
                     />
                   </Box>
@@ -107,6 +115,17 @@ export default function DMPTableSmall({
                     })}
                   >
                     {plan.dmpTitle}
+                    {warningId && (
+                      <Box
+                        component="span"
+                        id={warningId}
+                        sx={{ display: "block", typography: "body2", color: "warning.dark" }}
+                      >
+                        {t("workspace:export.repositories.dmp.warning.notConnected", {
+                          platform: plan.platformName,
+                        })}
+                      </Box>
+                    )}
                   </Box>
                   <Box
                     component="span"

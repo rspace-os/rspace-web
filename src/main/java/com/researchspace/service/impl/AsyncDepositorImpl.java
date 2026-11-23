@@ -5,6 +5,8 @@ import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepositor
 import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository.RAID_METADATA_PROPERTY;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
+import static com.researchspace.service.dmp.DmpPlatformStatusResolver.platformNameKey;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +29,6 @@ import com.researchspace.repository.spi.IRepository;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.repository.spi.LicenseDefs;
 import com.researchspace.repository.spi.RepositoryConfig;
-import com.researchspace.repository.spi.RepositoryDepositException;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.SubmissionMetadata;
 import com.researchspace.service.CommunicationManager;
@@ -39,6 +40,9 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFileResult;
+import com.researchspace.service.dmp.DepositReport;
+import com.researchspace.service.dmp.PlanReportResult;
+import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
@@ -64,6 +68,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
@@ -110,6 +115,17 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   private @Autowired DMPUpdateHandler dmpUpdateHandler;
+
+  void setDmpUpdateHandler(DMPUpdateHandler dmpUpdateHandler) {
+    this.dmpUpdateHandler = dmpUpdateHandler;
+  }
+
+  @Value("${dryad.base.url:}")
+  private String dryadBaseUrl;
+
+  void setDryadBaseUrl(String dryadBaseUrl) {
+    this.dryadBaseUrl = dryadBaseUrl;
+  }
 
   private RepositoryOperationResult doDepositArchive(
       User subject,
@@ -162,7 +178,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       File archive,
       RepoDepositConfig repoDepositConfig) {
     notifyRepoDepositComplete(depositResult, app, subject, archive);
-    updateDMPS(depositResult, subject, repoDepositConfig);
+    updateDMPS(depositResult, app, subject, repoDepositConfig);
   }
 
   private RaidUpdateResult reportDoiToRaid(
@@ -223,39 +239,79 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   /**
-   * Updates the DMPs after a deposit has been made.
+   * Writes the deposit's link onto each ticked plan, then notifies the user of each plan's outcome.
+   * Never throws, so write-back cannot fail the deposit.
    *
    * @param result the result of the deposit to the repository
+   * @param app the repository app deposited to
    * @param subject the user who made the deposit
    * @param repoDepositConfig the configuration of the deposit
    */
   void updateDMPS(
-      RepositoryOperationResult result, User subject, RepoDepositConfig repoDepositConfig) {
-    if (result.isSucceeded() && repoDepositConfig.hasDMPs()) {
-      // Dryad exports return an in progress dataset edit link, so we create the future public link
-      // here to send to DMP
-      if (repoDepositConfig.getAppName().equals(App.APP_DRYAD)) {
-        RepositoryOperationResult newResultWithPublicLink =
-            new RepositoryOperationResult(
-                true, result.getMessage(), getDryadPublicUrl(result), result.getDoiUrl());
-        dmpUpdateHandler.updateDMPS(
-            newResultWithPublicLink::getUrl, subject, repoDepositConfig.getSelectedDMPs());
-      } else {
-        dmpUpdateHandler.updateDMPS(result::getUrl, subject, repoDepositConfig.getSelectedDMPs());
-      }
+      RepositoryOperationResult result,
+      App app,
+      User subject,
+      RepoDepositConfig repoDepositConfig) {
+    if (!result.isSucceeded() || !repoDepositConfig.hasDMPs()) {
+      return;
+    }
+    try {
+      DepositReport deposit =
+          buildDepositReport(result, app.getLabel(), repoDepositConfig.getAppName());
+      List<PlanReportResult> planResults =
+          dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
+      notifyDmpUpdateComplete(planResults, deposit, subject);
+    } catch (RuntimeException e) {
+      log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
     }
   }
 
-  private URL getDryadPublicUrl(RepositoryOperationResult result) {
-    String baseUrl = result.getUrl().toString();
-    URL publicUrl = null;
-    try {
-      publicUrl = new URL(baseUrl.replace("/stash/edit/", "/stash/dataset/"));
-    } catch (MalformedURLException e) {
-      log.error("Failed to create public URL for Dryad", e);
-      throw new RepositoryDepositException("Failed to create public URL for Dryad DMP Update");
+  /** The DOI link if there is one, otherwise the repository link (Dryad's made public). */
+  DepositReport buildDepositReport(
+      RepositoryOperationResult result, String repositoryName, String appName) {
+    if (result.getDoiUrl() != null) {
+      return new DepositReport(repositoryName, result.getDoiUrl(), null);
     }
-    return publicUrl;
+    URL accessUrl = result.getUrl();
+    if (accessUrl != null && App.APP_DRYAD.equals(appName)) {
+      accessUrl = getDryadPublicUrl(accessUrl);
+    }
+    return new DepositReport(repositoryName, null, accessUrl);
+  }
+
+  /**
+   * Dryad returns an edit link holding a secret edit code; turns it into the dataset's landing page
+   * with the code removed. Any link that is not a recognised Dryad edit link is returned unchanged.
+   */
+  private URL getDryadPublicUrl(URL repositoryUrl) {
+    String base = StringUtils.removeEnd(dryadBaseUrl, "/");
+    String link = repositoryUrl.toString();
+    if (StringUtils.isBlank(base) || !link.startsWith(base + "/")) {
+      return repositoryUrl;
+    }
+    String path = link.substring(base.length());
+    String landingPath;
+    if (path.startsWith(DRYAD_OLD_EDIT_PATH)) {
+      landingPath = "/stash/dataset/" + dryadDoi(path.substring(DRYAD_OLD_EDIT_PATH.length()));
+    } else if (path.startsWith(DRYAD_EDIT_PATH)) {
+      landingPath = "/dataset/" + dryadDoi(path.substring(DRYAD_EDIT_PATH.length()));
+    } else {
+      return repositoryUrl;
+    }
+    try {
+      return new URL(base + landingPath);
+    } catch (MalformedURLException e) {
+      // the link holds a secret edit code, so it is not logged
+      throw new IllegalArgumentException("Couldn't make a Dryad landing page from its edit link");
+    }
+  }
+
+  private static final String DRYAD_OLD_EDIT_PATH = "/stash/edit/";
+  private static final String DRYAD_EDIT_PATH = "/edit/";
+
+  // Dryad URL-encodes the DOI into one path segment; what follows it is the edit code
+  private static String dryadDoi(String doiAndEditCode) {
+    return StringUtils.substringBefore(doiAndEditCode, "/");
   }
 
   private void notifyRepoDepositComplete(
@@ -293,6 +349,70 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "raidUpdateCompleteNotification.vm", "UTF-8", config);
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+  }
+
+  private void notifyDmpUpdateComplete(
+      List<PlanReportResult> planResults, DepositReport deposit, User subject) {
+    if (planResults.isEmpty()) {
+      return;
+    }
+    List<Map<String, String>> plans = new ArrayList<>();
+    for (PlanReportResult planResult : planResults) {
+      String platformName = messages.getMessage(platformNameKey(planResult.platform()));
+      plans.add(
+          Map.of(
+              "heading",
+              messages.format(
+                  DMP_NOTIFICATION_KEY + "planHeading",
+                  List.of(escapeHtml(planResult.planTitle()), platformName)),
+              "outcome",
+              planOutcomeLines(planResult, platformName, deposit)));
+    }
+    Map<String, Object> config = new HashMap<>();
+    config.put("repo", escapeHtml(deposit.repositoryApp()));
+    config.put("plans", plans);
+    config.put(
+        "doi", deposit.identifier() == null ? null : escapeHtml4(deposit.identifier().toString()));
+    config.put("msg", messages);
+
+    String msg =
+        VelocityEngineUtils.mergeTemplateIntoString(
+            velocity, "dmpUpdateCompleteNotification.vm", "UTF-8", config);
+    commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+  }
+
+  private static final String DMP_NOTIFICATION_KEY =
+      "email.notification.dmpUpdateCompleteNotification.";
+
+  private String planOutcomeLines(
+      PlanReportResult planResult, String platformName, DepositReport deposit) {
+    return switch (planResult.status()) {
+      case REPORTED ->
+          planResult.values().stream()
+              .map(this::valueOutcomeLine)
+              .collect(Collectors.joining("<br/>"));
+      case NOTHING_TO_SEND ->
+          messages.format(
+              DMP_NOTIFICATION_KEY + "nothingToSend", List.of(escapeHtml(deposit.repositoryApp())));
+      case NOT_SUPPORTED ->
+          messages.format(DMP_NOTIFICATION_KEY + "notSupported", List.of(platformName));
+      case PLATFORM_OFF ->
+          messages.format(DMP_NOTIFICATION_KEY + "platformOff", List.of(platformName));
+      case NOT_CONNECTED ->
+          messages.format(DMP_NOTIFICATION_KEY + "notConnected", List.of(platformName));
+    };
+  }
+
+  private String valueOutcomeLine(ValueOutcome outcome) {
+    String value = escapeHtml(outcome.value());
+    return outcome.written()
+        ? messages.format(DMP_NOTIFICATION_KEY + "valueWritten", List.of(value))
+        : messages.format(
+            DMP_NOTIFICATION_KEY + "valueFailed", List.of(value, escapeHtml(outcome.error())));
+  }
+
+  private static String escapeHtml(String text) {
+    return escapeHtml4(StringUtils.defaultString(text));
   }
 
   @Override

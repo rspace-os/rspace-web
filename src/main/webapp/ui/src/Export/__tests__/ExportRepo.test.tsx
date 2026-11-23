@@ -11,15 +11,13 @@ import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
 import { server } from "@/__tests__/mswServer";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { DEFAULT_STATE } from "@/Export/constants";
-import { DEFAULT_REPO_CONFIG, type RepoDetails } from "../repositories/common";
+import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
+import { DEFAULT_REPO_CONFIG, type Plan, type RepoDetails } from "../repositories/common";
 import type { Tag } from "../repositories/Tags";
-
-type DMP = {
-  dmpUserInternalId: number;
-  dmpTitle: string;
-  dmpId: string;
-};
 
 window.fetch = vi.fn(() =>
   Promise.resolve({
@@ -64,12 +62,14 @@ describe("ExportRepo", () => {
     const repo1RadioButton = screen.getByTestId<HTMLInputElement>("radio-button-app.repo1");
     expect(repo1RadioButton).toBeChecked();
   });
-  const arbListOfDMPs = (n: number): Arbitrary<Array<DMP>> =>
+  const arbListOfDMPs = (n: number): Arbitrary<Array<Plan>> =>
     fc.array(
-      fc.record<DMP>({
+      fc.record<Plan>({
         dmpUserInternalId: fc.nat(),
         dmpTitle: fc.string(),
         dmpId: fc.string(),
+        platformName: fc.string(),
+        writeBackStatus: fc.constantFrom("OK", "NOT_CONNECTED"),
       }),
       { maxLength: n, minLength: n },
     );
@@ -87,7 +87,7 @@ describe("ExportRepo", () => {
             // limit of 10 DMPs is set to cap memory usage
             fc
               .integer({ min: 2, max: 10 })
-              .chain((n) => fc.tuple<[Set<number>, Array<DMP>]>(arbSetOfIndexes(2, n), arbListOfDMPs(n)))
+              .chain((n) => fc.tuple<[Set<number>, Array<Plan>]>(arbSetOfIndexes(2, n), arbListOfDMPs(n)))
               .filter(([, linkedDMPs]) => {
                 const ids = new Set(linkedDMPs.map((dmp) => dmp.dmpUserInternalId));
                 return ids.size === linkedDMPs.length;
@@ -193,5 +193,70 @@ describe("ExportRepo", () => {
     if (!config) throw new Error("ExportRepo did not report its config");
     renderRepo(config);
     await switchFromZenodoToDataverse();
+  });
+
+  describe("Digital Commons Data", () => {
+    const renderDigitalCommonsData = async (linkedDMPs: Array<Plan>) => {
+      const user = userEvent.setup();
+      const repo = {
+        ...zenodoRepoList[0],
+        repoName: "app.digitalCommonsData",
+        displayName: "Digital Commons Data",
+        linkedDMPs,
+        repoCfg: -1,
+      };
+      await renderWithRealI18n(
+        <ExportRepo
+          repoDetails={props.repoDetails}
+          repoList={[repo]}
+          state={DEFAULT_STATE}
+          updateRepoConfig={() => {}}
+          validator={mkValidator()}
+          fetchTags={props.fetchTags}
+        />,
+        { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
+      );
+      await user.click(
+        await screen.findByRole("checkbox", {
+          name: "Associate export with a Data Management Plans (DMPs)",
+        }),
+      );
+      return { user, table: await screen.findByRole("table") };
+    };
+
+    test("lists a plan on a connected platform without a warning", async () => {
+      const { table } = await renderDigitalCommonsData([
+        {
+          dmpUserInternalId: 1,
+          dmpTitle: "Soil survey plan",
+          dmpId: "plan-1",
+          platformName: "DMPtool",
+          writeBackStatus: "OK",
+        },
+      ]);
+      expect(
+        within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" }),
+      ).not.toHaveAccessibleDescription();
+      expect(within(table).queryByText(/is not connected/)).not.toBeInTheDocument();
+    });
+
+    test("warns that a plan on a platform the user has not connected will not get the DOI, and still lets it be ticked", async () => {
+      const { user, table } = await renderDigitalCommonsData([
+        {
+          dmpUserInternalId: 1,
+          dmpTitle: "Soil survey plan",
+          dmpId: "plan-1",
+          platformName: "DMPonline",
+          writeBackStatus: "NOT_CONNECTED",
+        },
+      ]);
+      const checkbox = within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" });
+      expect(checkbox).toHaveAccessibleDescription(
+        "DMPonline is not connected, so this plan will not be updated with the dataset's DOI.",
+      );
+      expect(checkbox).toBeEnabled();
+      await user.click(checkbox);
+      expect(checkbox).toBeChecked();
+    });
   });
 });

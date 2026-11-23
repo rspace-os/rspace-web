@@ -97,6 +97,7 @@ public class ArgosDMPProvider {
     DmpDto dmpDto = new DmpDto(id, dmpDetails.getLabel(), DMPSource.ARGOS, null, null);
     DMPUser dmpUser =
         dmpManager.findByDmpId(dmpDto.getDmpId(), user).orElse(new DMPUser(user, dmpDto));
+    dmpUser.adoptSourceIfUnknown(DMPSource.ARGOS);
     if (file != null) {
       dmpUser.setDmpDownloadFile(file);
     } else {

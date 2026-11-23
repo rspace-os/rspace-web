@@ -18,6 +18,13 @@
         "import": "Couldn't import DMP",
         "invalidLicenseUrl": "{0} is not a valid URL",
         "list": "Couldn't list DMPs"
+      },
+      "platformName": {
+        "argos": "Argos",
+        "dmpAssistant": "DMP Assistant",
+        "dmpOnline": "DMPonline",
+        "dmpTool": "DMPtool",
+        "dsw": "DSW"
       }
     },
     "dmpAssistant": {

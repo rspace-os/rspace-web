@@ -62,7 +62,19 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   @Override
   public ServiceOperationResult<String> addDoiIdentifierToDMP(
       String dmpId, String doiIdentifier, String accessToken) {
-    var relatedIdentifier = new RelatedIdentifier("documents", "dataset", "doi", doiIdentifier);
+    return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, accessToken);
+  }
+
+  @Override
+  public ServiceOperationResult<String> addDoiIdentifierToDMP(
+      String dmpId, String doiIdentifier, User user) {
+    return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, user);
+  }
+
+  @Override
+  public ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, String accessToken) {
+    var relatedIdentifier = new RelatedIdentifier("documents", "dataset", type, identifier);
     try {
       this.dmpToolClient.postRelatedIdentifiers(dmpId, relatedIdentifier, accessToken);
     } catch (RestClientException
@@ -78,14 +90,13 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   @Override
-  public ServiceOperationResult<String> addDoiIdentifierToDMP(
-      String dmpId, String doiIdentifier, User user) {
+  public ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, User user) {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return ServiceOperationResult.fromOptionalError(Optional.of(noAccessTokenMsg()));
     }
-    String accessToken = optConn.get().getAccessToken();
-    var result = addDoiIdentifierToDMP(dmpId, doiIdentifier, accessToken);
+    var result = addRelatedIdentifierToDMP(dmpId, type, identifier, optConn.get().getAccessToken());
     analyticsManager.dmpsViewed(user);
     return result;
   }

@@ -9,14 +9,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
+import com.researchspace.model.dmps.DMPSource;
+import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.rda.model.extras.DMPList;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -44,6 +51,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.support.BindingAwareModelMap;
@@ -266,6 +274,61 @@ public class DMPOnlineControllerTest extends SpringTransactionalTest {
     assertThat(result.getError().getErrorMessages())
         .containsExactly("The plan identifier is not a DMPonline plan URL.");
     assertThat(dmpManager.findDMPsForUser(testUser)).isEmpty();
+  }
+
+  @Test
+  public void reimportSetsSourceOfUnknownPlanAndKeepsKnownSource() throws Exception {
+    String unknownPlanUrl = "https://dmponline.dmptest.dcc.ac.uk/api/v2/plans/101";
+    String knownPlanUrl = "https://dmponline.dmptest.dcc.ac.uk/api/v2/plans/102";
+    DMPUser unknownPlan = savePlan(unknownPlanUrl, DMPSource.UNKNOWN);
+    DMPUser knownPlan = savePlan(knownPlanUrl, DMPSource.DMP_TOOL);
+    createExistingUserConnection();
+    AccessToken connectionInfo = new AccessToken();
+    connectionInfo.setExpiresIn(299L);
+    when(restTemplate.exchange(
+            eq("https://dmponline.dmptest.dcc.ac.uk/oauth/token/info"),
+            eq(HttpMethod.GET),
+            any(),
+            ArgumentMatchers.<Class<String>>any()))
+        .thenReturn(new ResponseEntity(connectionInfo, HttpStatus.OK));
+    DMPOnlineProvider realProvider =
+        (DMPOnlineProvider) ReflectionTestUtils.getField(dmpOnlineController, "dmpOnlineProvider");
+    DMPOnlineProvider provider = mock(DMPOnlineProvider.class);
+    when(provider.getPlanByUrlId(eq(unknownPlanUrl), anyString()))
+        .thenReturn(planList(unknownPlanUrl));
+    when(provider.getPlanByUrlId(eq(knownPlanUrl), anyString())).thenReturn(planList(knownPlanUrl));
+    ReflectionTestUtils.setField(dmpOnlineController, "dmpOnlineProvider", provider);
+    try {
+      dmpOnlineController.importDmp(
+          unknownPlanUrl, "plan.json", new BindingAwareModelMap(), principal);
+      dmpOnlineController.importDmp(
+          knownPlanUrl, "plan.json", new BindingAwareModelMap(), principal);
+    } finally {
+      ReflectionTestUtils.setField(dmpOnlineController, "dmpOnlineProvider", realProvider);
+    }
+
+    assertEquals(
+        DMPSource.DMP_ONLINE, dmpManager.findByDmpId(unknownPlanUrl, testUser).get().getSource());
+    assertEquals(
+        DMPSource.DMP_TOOL, dmpManager.findByDmpId(knownPlanUrl, testUser).get().getSource());
+    assertEquals(
+        unknownPlan.getId(), dmpManager.findByDmpId(unknownPlanUrl, testUser).get().getId());
+    assertEquals(knownPlan.getId(), dmpManager.findByDmpId(knownPlanUrl, testUser).get().getId());
+  }
+
+  private DMPUser savePlan(String planUrl, DMPSource source) {
+    return dmpManager.save(
+        new DMPUser(testUser, new DmpDto(planUrl, "Existing plan", source, null, null)));
+  }
+
+  private DMPList planList(String planUrl) throws IOException {
+    return new ObjectMapper()
+        .readValue(
+            "{\"items\":[{\"dmp\":{\"title\":\"Existing plan\",\"dmp_id\":{\"type\":\"url\","
+                + "\"identifier\":\""
+                + planUrl
+                + "\"}}}]}",
+            DMPList.class);
   }
 
   @Test

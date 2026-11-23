@@ -36,6 +36,31 @@ public interface DMPToolDMPProvider {
       String dmpId, String doiIdentifier, User user);
 
   /**
+   * Attaches a related identifier (a deposit's DOI link or landing page) to the DMP
+   *
+   * @param dmpId the plan's id on DMPtool
+   * @param type the identifier's type, e.g. {@code doi} or {@code url}
+   * @param identifier the value to attach
+   * @param accessToken a DMPtool access token with permission to edit the plan
+   * @return success, or failure with a message
+   */
+  ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, String accessToken);
+
+  /**
+   * Attaches a related identifier (a deposit's DOI link or landing page) to the DMP
+   *
+   * @param dmpId the plan's id on DMPtool
+   * @param type the identifier's type, e.g. {@code doi} or {@code url}
+   * @param identifier the value to attach
+   * @param user Assumes this user has performed OAuth flow and can retrieve an accessToken from
+   *     UserConnection table
+   * @return success, or failure with a message
+   */
+  ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, User user);
+
+  /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
    *
    * @param dmp the DMP

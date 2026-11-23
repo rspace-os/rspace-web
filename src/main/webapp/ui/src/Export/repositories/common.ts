@@ -35,6 +35,8 @@ export type Plan = {
   dmpId: DMPId;
   dmpTitle: string;
   dmpUserInternalId: DMPUserInternalId;
+  platformName: string;
+  writeBackStatus: "OK" | "NOT_CONNECTED";
 };
 
 /**

@@ -1,167 +1,227 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
-import com.researchspace.model.dto.IntegrationInfo;
-import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.DMPManager;
-import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.dmp.DepositReport;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
+import com.researchspace.service.dmp.DmpReporter;
+import com.researchspace.service.dmp.PlanReportResult;
+import com.researchspace.service.dmp.PlanReportStatus;
+import com.researchspace.service.dmp.ReportedValueKind;
+import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.testutils.TestFactory;
-import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProviderImpl;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-public class DMPUpdateHandlerTest {
+class DMPUpdateHandlerTest {
+
+  private static final String DOI = "https://doi.org/10.1234/abc";
+  private static final String LANDING = "https://repo.example.org/dataset/1";
 
   private @Mock DMPManager dmpManager;
-  private @Mock DMPToolDMPProviderImpl dmpClient;
-  private @Mock IntegrationsHandler integrationsHandler;
-  @InjectMocks DMPUpdateHandler dmpUpdateHandler;
+  private @Mock DmpPlatformStatusResolver statusResolver;
+  private @Mock DmpReporter dmpToolReporter;
 
-  User anyUser;
+  private DMPUpdateHandler handler;
+  private User user;
 
   @BeforeEach
-  void setUp() throws Exception {
-    anyUser = TestFactory.createAnyUser("any");
+  void setUp() {
+    handler = new DMPUpdateHandler(dmpManager, statusResolver, List.of(dmpToolReporter));
+    user = TestFactory.createAnyUser("any");
   }
 
   @Test
-  void updateDMPSNotAttemptedIdNoDOI() {
-    Supplier<URL> nullURLSupplier = () -> null;
-    dmpUpdateHandler.updateDMPS(nullURLSupplier, anyUser, List.of(1L));
-    verifyNoAttemptToAddDoi();
+  void dmpToolPlanGoesToDmpToolReporter() throws Exception {
+    DMPUser plan = plan(1L, DMPSource.DMP_TOOL);
+    DepositReport deposit = deposit(DOI, null);
+    PlanReportResult reported = reported(plan);
+    givenPlans(plan);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported);
+
+    assertThat(handler.report(deposit, user, List.of(1L))).containsExactly(reported);
   }
 
   @Test
-  void updateDMPSNotAttemptedIfNoPlans() {
-    mockIntegrationsHandler(usableInfo());
-    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(Collections.emptyList());
-    dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(1L));
-    verifyNoAttemptToAddDoi();
+  void unknownPlanGoesToDmpToolReporter() throws Exception {
+    DMPUser plan = plan(1L, DMPSource.UNKNOWN);
+    DepositReport deposit = deposit(DOI, null);
+    PlanReportResult reported = reported(plan);
+    givenPlans(plan);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported);
+
+    assertThat(handler.report(deposit, user, List.of(1L))).containsExactly(reported);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = DMPSource.class,
+      names = {"DMP_ONLINE", "ARGOS", "DMP_ASSISTANT", "DSW"})
+  void otherPlatformsAreNotSupported(DMPSource source) throws Exception {
+    givenPlans(plan(1L, source));
+    when(dmpToolReporter.supports(source)).thenReturn(false);
+
+    List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
+
+    assertEquals(PlanReportStatus.NOT_SUPPORTED, results.get(0).status());
+    assertEquals(source, results.get(0).platform());
+    verify(dmpToolReporter, never()).report(any(), any(), any());
+    verifyNoInteractions(statusResolver);
   }
 
   @Test
-  void updateDMPSNotAttemptedIfIntegrationNotEnabled() {
-    IntegrationInfo usableInfo = usableInfo();
-    usableInfo.setEnabled(false);
-    mockIntegrationsHandler(usableInfo);
-    dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(1L));
-    verifyNoAttemptToAddDoi();
+  void nothingToSendWithoutDoiOrLandingPage() throws Exception {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+
+    List<PlanReportResult> results = handler.report(deposit(null, null), user, List.of(1L));
+
+    assertEquals(PlanReportStatus.NOTHING_TO_SEND, results.get(0).status());
+    verify(dmpToolReporter, never()).report(any(), any(), any());
   }
 
   @Test
-  void updateDMPSAttempted() {
-    final long dmpUserId = -1;
-    IntegrationInfo usableInfo = usableInfo();
-    DMPUser dmpUser = createMultipleDMPusers(List.of(dmpUserId)).get(0);
-    dmpUser.setDoiLink("https://doi.org/ORIGINAL");
-    mockIntegrationsHandler(usableInfo);
-    mockSuccessfulDMPAPIcall();
-    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
-    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(dmpUser));
-    dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(dmpUserId));
-    assertFalse(urlSupplier().get().toString().equals(dmpUser.getDoiLink().toString()));
-    verifyAttemptToAddDoi();
+  void landingPageWithoutDoiGoesToReporter() throws Exception {
+    DMPUser plan = plan(1L, DMPSource.DMP_TOOL);
+    DepositReport deposit = deposit(null, LANDING);
+    PlanReportResult reported = reported(plan);
+    givenPlans(plan);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported);
+
+    assertThat(handler.report(deposit, user, List.of(1L))).containsExactly(reported);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = PlatformStatus.class,
+      names = {"PLATFORM_OFF", "NOT_CONNECTED"})
+  void platformOffOrNotConnectedSkipsReporter(PlatformStatus status) throws Exception {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(status);
+
+    List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
+
+    assertEquals(PlanReportStatus.valueOf(status.name()), results.get(0).status());
+    verify(dmpToolReporter, never()).report(any(), any(), any());
   }
 
   @Test
-  @DisplayName("update both selected DMPs")
-  void updateMultipleDMPS() {
-    final long dmpUserId1 = 1;
-    final long dmpUserId2 = 2;
-    IntegrationInfo usableInfo = usableInfo();
-    var dmpUsers = createMultipleDMPusers(List.of(dmpUserId1, dmpUserId2));
-    mockIntegrationsHandler(usableInfo);
-    mockSuccessfulDMPAPIcall();
-    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(dmpUsers);
-    dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(dmpUserId1, dmpUserId2));
-    verify(dmpClient, Mockito.times(2))
-        .addDoiIdentifierToDMP(any(String.class), anyString(), eq(anyUser));
+  void oneFailingPlanDoesNotStopTheNext() throws Exception {
+    DMPUser first = plan(1L, DMPSource.DMP_TOOL);
+    DMPUser second = plan(2L, DMPSource.DMP_TOOL);
+    DepositReport deposit = deposit(DOI, null);
+    PlanReportResult secondReported = reported(second);
+    givenPlans(first, second);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(first, deposit, user)).thenThrow(new IllegalStateException("boom"));
+    when(dmpToolReporter.report(second, deposit, user)).thenReturn(secondReported);
+
+    List<PlanReportResult> results = handler.report(deposit, user, List.of(1L, 2L));
+
+    assertThat(results).hasSize(2);
+    assertEquals(PlanReportStatus.REPORTED, results.get(0).status());
+    assertEquals(
+        new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, "boom"),
+        results.get(0).values().get(0));
+    assertEquals(secondReported, results.get(1));
   }
 
   @Test
-  @DisplayName("Don't attempt to update non-existent DMPs")
-  void filterNonExistentRequestedDMPs() {
-    final long dmpUserId1 = 1;
-    final long UNKNOWN_DMP_USER = -100;
-    IntegrationInfo usableInfo = usableInfo();
-    var dmpUser = createMultipleDMPusers(List.of(dmpUserId1)).get(0);
-    mockIntegrationsHandler(usableInfo);
-    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(dmpUser));
-    dmpUpdateHandler.updateDMPS(urlSupplier(), anyUser, List.of(UNKNOWN_DMP_USER));
-    verifyNoAttemptToAddDoi();
+  void idThatIsNotOneOfTheUsersPlansIsIgnored() throws Exception {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+
+    assertThat(handler.report(deposit(DOI, null), user, List.of(-100L))).isEmpty();
+    verifyNoInteractions(dmpToolReporter, statusResolver);
   }
 
-  private void mockIntegrationsHandler(IntegrationInfo usableInfo) {
-    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.DMPTOOL_APP_NAME))
-        .thenReturn(usableInfo);
+  @Test
+  void noTickedPlansDoesNoLookup() throws Exception {
+    assertThat(handler.report(deposit(DOI, null), user, List.of())).isEmpty();
+    verifyNoInteractions(dmpManager, dmpToolReporter, statusResolver);
   }
 
-  private void mockSuccessfulDMPAPIcall() {
-    when(dmpClient.addDoiIdentifierToDMP(any(String.class), anyString(), eq(anyUser)))
-        .thenReturn(successResult());
+  @Test
+  void storedPlanRowIsNotChanged() throws Exception {
+    DMPUser plan = plan(1L, DMPSource.DMP_TOOL);
+    plan.setDoiLink("https://doi.org/ORIGINAL");
+    DepositReport deposit = deposit(DOI, null);
+    givenPlans(plan);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported(plan));
+
+    handler.report(deposit, user, List.of(1L));
+
+    assertEquals("https://doi.org/ORIGINAL", plan.getDoiLink());
+    verify(dmpManager, never()).save(any());
   }
 
-  List<DMPUser> createMultipleDMPusers(List<Long> ids) {
-    List<DMPUser> rc = new ArrayList<>();
-    for (Long id : ids) {
-      DMPUser dmpUser = new DMPUser(anyUser, new DmpDto("id" + id, "title" + id));
-      ReflectionTestUtils.setField(dmpUser, "id", id);
-      rc.add(dmpUser);
-    }
-    return rc;
+  @Test
+  void writeBackIsSupportedOnlyWhereAReporterExists() {
+    givenDmpToolSupported();
+    when(dmpToolReporter.supports(DMPSource.DMP_ONLINE)).thenReturn(false);
+
+    assertTrue(handler.supportsWriteBack(DMPSource.UNKNOWN));
+    assertFalse(handler.supportsWriteBack(DMPSource.DMP_ONLINE));
   }
 
-  private ServiceOperationResult<String> successResult() {
-    return new ServiceOperationResult<String>("OK", true);
+  private void givenPlans(DMPUser... plans) {
+    when(dmpManager.findDMPsForUser(user)).thenReturn(List.of(plans));
   }
 
-  private IntegrationInfo usableInfo() {
-    var integrationInfo = new IntegrationInfo();
-    integrationInfo.setEnabled(true);
-    integrationInfo.setOauthConnected(true);
-    integrationInfo.setAvailable(true);
-    return integrationInfo;
+  private void givenDmpToolSupported() {
+    when(dmpToolReporter.supports(DMPSource.DMP_TOOL)).thenReturn(true);
   }
 
-  private Supplier<URL> urlSupplier() {
-    try {
-      URL url = new URL("https://doi.org/1234");
-      return () -> url;
-    } catch (MalformedURLException e) {
-      e.printStackTrace();
-      return null;
-    }
+  private DMPUser plan(long id, DMPSource source) {
+    DMPUser plan = new DMPUser(user, new DmpDto("id" + id, "title" + id, source, null, null));
+    ReflectionTestUtils.setField(plan, "id", id);
+    return plan;
   }
 
-  private void verifyNoAttemptToAddDoi() {
-    verify(dmpClient, never()).addDoiIdentifierToDMP(any(String.class), anyString(), eq(anyUser));
+  private DepositReport deposit(String doi, String landing) throws Exception {
+    return new DepositReport(
+        "Repo", doi == null ? null : new URL(doi), landing == null ? null : new URL(landing));
   }
 
-  private void verifyAttemptToAddDoi() {
-    verify(dmpClient).addDoiIdentifierToDMP(any(String.class), anyString(), eq(anyUser));
+  private PlanReportResult reported(DMPUser plan) {
+    return new PlanReportResult(
+        plan.getTitle(),
+        plan.getDmpId(),
+        DMPSource.DMP_TOOL,
+        PlanReportStatus.REPORTED,
+        List.of(new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, true, null)));
   }
 }

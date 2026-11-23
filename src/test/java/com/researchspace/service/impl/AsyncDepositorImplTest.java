@@ -2,7 +2,10 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
+import static com.researchspace.service.dmp.ReportedValueKind.IDENTIFIER;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -11,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
@@ -18,6 +22,10 @@ import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.dmp.DepositReport;
+import com.researchspace.service.dmp.PlanReportResult;
+import com.researchspace.service.dmp.PlanReportStatus;
+import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SystemPropertyTestFactory;
@@ -27,6 +35,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -34,6 +43,10 @@ import org.apache.velocity.app.VelocityEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -42,8 +55,13 @@ import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
 public class AsyncDepositorImplTest {
+  private static final String DRYAD_BASE = "https://datadryad.org";
+  private static final String DRYAD_DOI = "doi%3A10.5061%2Fdryad.abc123";
+
   @Mock CommunicationManager comm;
   private @Mock RaIDServiceClientAdapter mockRaidServiceClientAdapter;
+  private @Mock DMPUpdateHandler dmpUpdateHandler;
+  AsyncDepositorImpl depositor;
 
   VelocityEngine engine;
   AsyncDepositorImplTSS underTest;
@@ -54,8 +72,12 @@ public class AsyncDepositorImplTest {
 
     boolean updateDMPsCalled = false;
 
+    @Override
     void updateDMPS(
-        RepositoryOperationResult result, User subject, RepoDepositConfig repoDepositConfig) {
+        RepositoryOperationResult result,
+        App app,
+        User subject,
+        RepoDepositConfig repoDepositConfig) {
       this.updateDMPsCalled = true;
     }
   }
@@ -72,6 +94,13 @@ public class AsyncDepositorImplTest {
     underTest.setRaIDServiceClientAdapter(mockRaidServiceClientAdapter);
     anyUser = createAnyUser("any");
     testFile = File.createTempFile("test", ".txt");
+
+    depositor = new AsyncDepositorImpl();
+    depositor.setVelocity(engine);
+    depositor.setMessages(new MessageSourceUtils(new JsonMessageSource()));
+    depositor.setCommMgr(comm);
+    depositor.setDmpUpdateHandler(dmpUpdateHandler);
+    depositor.setDryadBaseUrl(DRYAD_BASE);
   }
 
   @Test
@@ -335,5 +364,185 @@ public class AsyncDepositorImplTest {
             Mockito.eq(true));
     RaidUpdateResult actualRaidUpdateResult = futureRaidUpdateResult.get();
     assertEquals(expectedRaidUpdateResult, actualRaidUpdateResult);
+  }
+
+  @Test
+  void depositReportUsesDoiLinkOnlyWhenThereIsOne() throws Exception {
+    RepositoryOperationResult result =
+        new RepositoryOperationResult(
+            true, "", new URL("https://figshare.com/s/abc"), new URL("https://doi.org/10.1/x"));
+
+    DepositReport report = depositor.buildDepositReport(result, "Figshare", App.APP_FIGSHARE);
+
+    assertEquals(new DepositReport("Figshare", new URL("https://doi.org/10.1/x"), null), report);
+  }
+
+  @Test
+  void depositReportUsesRepositoryLinkWithoutDoi() throws Exception {
+    RepositoryOperationResult result =
+        new RepositoryOperationResult(true, "", new URL("https://figshare.com/s/abc"), null);
+
+    DepositReport report = depositor.buildDepositReport(result, "Figshare", App.APP_FIGSHARE);
+
+    assertEquals(
+        new DepositReport("Figshare", null, new URL("https://figshare.com/s/abc")), report);
+  }
+
+  @Test
+  void depositReportIsEmptyWithoutDoiOrRepositoryLink() {
+    RepositoryOperationResult result = new RepositoryOperationResult(true, "", null, null);
+
+    assertEquals(
+        new DepositReport("Figshare", null, null),
+        depositor.buildDepositReport(result, "Figshare", App.APP_FIGSHARE));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://datadryad.org, /stash/edit/" + DRYAD_DOI + "/editCode, /stash/dataset/" + DRYAD_DOI,
+    "https://datadryad.org, /edit/" + DRYAD_DOI + "/editCode, /dataset/" + DRYAD_DOI,
+    "https://datadryad.org/, /edit/" + DRYAD_DOI + "/editCode, /dataset/" + DRYAD_DOI,
+    "https://datadryad.org, /edit/" + DRYAD_DOI + ", /dataset/" + DRYAD_DOI,
+  })
+  void dryadEditLinkBecomesLandingPageWithoutEditCode(String base, String path, String expected)
+      throws Exception {
+    depositor.setDryadBaseUrl(base);
+
+    assertEquals(
+        new URL(DRYAD_BASE + expected),
+        depositor
+            .buildDepositReport(dryadResult(DRYAD_BASE + path), "Dryad", App.APP_DRYAD)
+            .accessUrl());
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "https://datadryad.org | https://other.example.org/edit/" + DRYAD_DOI + "/editCode",
+        "https://datadryad.org | https://datadryad.org.evil.example/edit/" + DRYAD_DOI + "/code",
+        "'' | https://datadryad.org/edit/" + DRYAD_DOI + "/editCode",
+        "https://datadryad.org | https://datadryad.org/dataset/" + DRYAD_DOI,
+      },
+      delimiter = '|')
+  void dryadLinkIsSentUnchangedWhenItCannotBeRewritten(String base, String link) throws Exception {
+    depositor.setDryadBaseUrl(base);
+
+    assertEquals(
+        new URL(link),
+        depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
+  }
+
+  @Test
+  void planNotificationFollowsDepositNotificationWithOneLinePerOutcome() throws Exception {
+    URL doi = new URL("https://doi.org/10.1/x");
+    RepoDepositConfig cfg = configWithPlans(App.APP_DATAVERSE, 1L);
+    when(dmpUpdateHandler.report(new DepositReport("Dataverse", doi, null), anyUser, List.of(1L)))
+        .thenReturn(
+            List.of(
+                reported(
+                    "Written <plan>", new ValueOutcome(IDENTIFIER, doi.toString(), true, null)),
+                reported(
+                    "Failed plan", new ValueOutcome(IDENTIFIER, doi.toString(), false, "denied")),
+                withStatus("Empty plan", DMPSource.DMP_TOOL, PlanReportStatus.NOTHING_TO_SEND),
+                withStatus("Online plan", DMPSource.DMP_ONLINE, PlanReportStatus.NOT_SUPPORTED),
+                withStatus("Off plan", DMPSource.DMP_TOOL, PlanReportStatus.PLATFORM_OFF),
+                withStatus(
+                    "Unconnected plan", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED)));
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", new URL("https://dv.example/ds"), doi),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        cfg);
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    InOrder inOrder = Mockito.inOrder(comm);
+    inOrder
+        .verify(comm, Mockito.times(2))
+        .systemNotify(
+            Mockito.eq(NotificationType.PROCESS_COMPLETED),
+            messages.capture(),
+            Mockito.eq(anyUser.getUsername()),
+            Mockito.eq(true));
+    assertThat(messages.getAllValues().get(0)).contains("Your deposit to repository Dataverse");
+    String planMessage = messages.getAllValues().get(1);
+    assertThat(planMessage)
+        .contains(
+            "Written &lt;plan&gt; (DMPtool)",
+            "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> was added to the plan.",
+            "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> could not be added:"
+                + " denied.",
+            "Dataverse returned no DOI and no link, so nothing was added.",
+            "Online plan (DMPonline)",
+            "RSpace cannot yet update plans on DMPonline.",
+            "DMPtool is switched off, so the plan was not updated.",
+            "DMPtool is not connected, so the plan was not updated.")
+        .doesNotContain("Written <plan>");
+  }
+
+  @Test
+  void noPlanNotificationWhenNoPlanIsTicked() throws Exception {
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", new URL("https://dv.example/ds"), null),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        new RepoDepositConfig());
+
+    Mockito.verify(comm)
+        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
+    Mockito.verifyNoInteractions(dmpUpdateHandler);
+  }
+
+  @Test
+  void noPlanNotificationWhenDepositFailed() throws Exception {
+    depositor.postDeposit(
+        new RepositoryOperationResult(false, "failed", null, null),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L));
+
+    Mockito.verify(comm)
+        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
+    Mockito.verifyNoInteractions(dmpUpdateHandler);
+  }
+
+  @Test
+  void writeBackErrorDoesNotEscapePostDeposit() throws Exception {
+    when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L))))
+        .thenThrow(new IllegalStateException("boom"));
+
+    assertDoesNotThrow(
+        () ->
+            depositor.postDeposit(
+                new RepositoryOperationResult(true, "done", null, new URL("https://doi.org/1/x")),
+                new App(APP_DATAVERSE, "Dataverse", true),
+                anyUser,
+                null,
+                configWithPlans(App.APP_DATAVERSE, 1L)));
+    Mockito.verify(comm)
+        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
+  }
+
+  private RepositoryOperationResult dryadResult(String link) throws MalformedURLException {
+    return new RepositoryOperationResult(true, "", new URL(link), null);
+  }
+
+  private RepoDepositConfig configWithPlans(String appName, Long... planIds) {
+    RepoDepositConfig cfg = new RepoDepositConfig();
+    cfg.setAppName(appName);
+    cfg.setSelectedDMPs(List.of(planIds));
+    return cfg;
+  }
+
+  private PlanReportResult reported(String title, ValueOutcome outcome) {
+    return new PlanReportResult(
+        title, "id", DMPSource.DMP_TOOL, PlanReportStatus.REPORTED, List.of(outcome));
+  }
+
+  private PlanReportResult withStatus(String title, DMPSource platform, PlanReportStatus status) {
+    return PlanReportResult.withStatus(title, "id", platform, status);
   }
 }

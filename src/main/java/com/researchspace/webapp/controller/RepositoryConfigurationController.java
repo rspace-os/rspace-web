@@ -4,7 +4,6 @@ import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrat
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 
@@ -13,6 +12,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.PermissionType;
@@ -22,8 +22,12 @@ import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver;
+import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
+import com.researchspace.service.impl.DMPUpdateHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +57,8 @@ public class RepositoryConfigurationController extends BaseController {
   private @Autowired RepositoryDepositHandler depositHandler;
   private @Autowired UserAppConfigManager userAppConfigMgr;
   private @Autowired DMPManager dmpManager;
+  private @Autowired DmpPlatformStatusResolver dmpPlatformStatusResolver;
+  private @Autowired DMPUpdateHandler dmpUpdateHandler;
 
   /**
    * Gets information on active repositories
@@ -80,26 +86,44 @@ public class RepositoryConfigurationController extends BaseController {
       uiConfigs.add(info);
     }
     if (isDMPEnabled(user)) {
-      List<DMPUser> dmpUsers = dmpManager.findDMPsForUser(user);
-      // Filter out DMPs that belong to DSW, since that integration is not yet
-      // enabled for callbacks during save to repository.
-      // TODO:  This fix is purely for DSW DMPs for the first release of the DSW
-      // integration.  This should be revisted during work on RPD-276.
-      dmpUsers =
-          dmpUsers.stream()
-              .filter(d -> !d.getSource().name().equals(DSW_APP_NAME))
-              .collect(Collectors.toList());
-      if (!dmpUsers.isEmpty()) {
-        List<LinkedDMP> linkedDMPdt =
-            dmpUsers.stream()
-                .map(dmpu -> new LinkedDMP(dmpu.getId(), dmpu.getTitle(), dmpu.getDmpId()))
-                .collect(Collectors.toList());
+      List<LinkedDMP> linkedDMPs = getLinkedDMPs(user);
+      if (!linkedDMPs.isEmpty()) {
         for (RepoUIConfigInfo info : uiConfigs) {
-          info.setLinkedDMPs(linkedDMPdt);
+          info.setLinkedDMPs(linkedDMPs);
         }
       }
     }
     return uiConfigs;
+  }
+
+  /**
+   * Plans the user can tick: those whose own platform is on (DSW plans are not offered, RPD-276).
+   */
+  private List<LinkedDMP> getLinkedDMPs(User user) {
+    Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
+    List<LinkedDMP> linkedDMPs = new ArrayList<>();
+    for (DMPUser plan : dmpManager.findDMPsForUser(user)) {
+      if (plan.getSource() == DMPSource.DSW) {
+        continue;
+      }
+      DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
+      PlatformStatus status =
+          statusByPlatform.computeIfAbsent(
+              platform, source -> dmpPlatformStatusResolver.resolve(source, user));
+      if (status == PlatformStatus.PLATFORM_OFF) {
+        continue;
+      }
+      boolean warnNotConnected =
+          status == PlatformStatus.NOT_CONNECTED && dmpUpdateHandler.supportsWriteBack(platform);
+      linkedDMPs.add(
+          new LinkedDMP(
+              plan.getId(),
+              plan.getTitle(),
+              plan.getDmpId(),
+              getText(DmpPlatformStatusResolver.platformNameKey(platform)),
+              warnNotConnected ? PlatformStatus.NOT_CONNECTED.name() : PlatformStatus.OK.name()));
+    }
+    return linkedDMPs;
   }
 
   @Value("${dataverse.metadataLanguages:}")

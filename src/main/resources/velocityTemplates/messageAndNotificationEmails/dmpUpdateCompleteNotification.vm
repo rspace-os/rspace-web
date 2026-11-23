@@ -1,0 +1,14 @@
+$msg.format("email.notification.dmpUpdateCompleteNotification.intro", [$repo])
+<ul>
+#foreach($plan in $plans)
+<li>$plan.heading<br/>$plan.outcome</li>
+#end
+</ul>
+#if($doi)
+<p>
+$msg.format("email.notification.dmpUpdateCompleteNotification.doiLink", [$doi])
+</p>
+#end
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

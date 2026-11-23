@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +15,7 @@ import com.researchspace.dmptool.model.DMPTooItem;
 import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.rda.model.DmpId;
 import com.researchspace.rda.model.DmpId.DmpIdType;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -44,6 +46,9 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
   // this is created in dev@r.c. test-DMP account but could be any public DMP ID
   private static final Long PUBLIC_DMP_ID = 69563L;
   public static final String PUBLIC_DMP_TITLE = "Testing DMP integration";
+  // the same value every night: DMPtool skips a value the plan already holds
+  private static final String NIGHTLY_RELATED_IDENTIFIER =
+      "https://doi.org/10.5072/rspace-nightly-write-back";
 
   @Value("${dmptool.realConnectionTest.base.url}")
   private URL testBaseUrl;
@@ -193,6 +198,11 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
 
   DMPToolOAuthController.AccessToken getClientCredentialToken()
       throws URISyntaxException, MalformedURLException {
+    return getClientCredentialToken("read_dmps");
+  }
+
+  DMPToolOAuthController.AccessToken getClientCredentialToken(String scope)
+      throws URISyntaxException, MalformedURLException {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -203,7 +213,7 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
 
     /* with grant_type=client_credentials we can only read or create dmps, but not edit them
      * see: https://github.com/CDLUC3/dmptool/wiki/API-Authentication */
-    formData.add("scope", "read_dmps"); //
+    formData.add("scope", scope);
 
     HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
 
@@ -242,6 +252,22 @@ public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
     assertEquals("Testing DMP integration", testDmp.getTitle());
     assertNotNull(testDmp.getDescription());
     assertEquals("eng", testDmp.getLanguage());
+  }
+
+  @Test
+  public void addRelatedIdentifierToOwnedPlan() throws Exception {
+    // a related identifier cannot be removed, so never write to a server other than the test one
+    assertEquals(testBaseUrl.getHost(), realBaseUrl.getHost());
+    String accessToken = getClientCredentialToken("read_dmps edit_dmps").getAccessToken();
+    DMPToolList plansList = dmpToolProvider.listPlans(DMPPlanScope.MINE, accessToken);
+    assertThat(plansList.getItems()).isNotEmpty();
+    DMPToolDMP ownedPlan = plansList.getItems().get(0).getDmp();
+
+    ServiceOperationResult<String> result =
+        dmpToolProvider.addRelatedIdentifierToDMP(
+            ownedPlan.getId() + "", "doi", NIGHTLY_RELATED_IDENTIFIER, accessToken);
+
+    assertTrue(result.isSucceeded(), result.getEntity());
   }
 
   @Test

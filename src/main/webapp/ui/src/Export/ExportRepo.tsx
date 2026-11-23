@@ -425,16 +425,19 @@ function ExportRepo({
           </>
         )}
         {repo.repoName === "app.digitalCommonsData" && (
-          <DigitalCommonsDataRepo
-            handleChange={handleChange}
-            inputValidations={state.inputValidations}
-            submitAttempt={state.submitAttempt}
-            title={state.title}
-            description={state.description}
-            tags={state.tags}
-            fetchingTags={fetchingTags}
-            onTagsChange={() => {}}
-          />
+          <>
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DigitalCommonsDataRepo
+              handleChange={handleChange}
+              inputValidations={state.inputValidations}
+              submitAttempt={state.submitAttempt}
+              title={state.title}
+              description={state.description}
+              tags={state.tags}
+              fetchingTags={fetchingTags}
+              onTagsChange={() => {}}
+            />
+          </>
         )}
       </Grid>
     </Grid>
