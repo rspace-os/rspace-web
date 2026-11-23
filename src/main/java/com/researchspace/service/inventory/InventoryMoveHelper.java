@@ -93,11 +93,11 @@ public class InventoryMoveHelper {
       ApiContainerLocation targetLocation,
       User user) {
 
+    invPermissions.assertUserCanEditInventoryRecord(dbRecord, user);
     if (targetParent == null && targetLocation == null) {
       return null;
     }
 
-    invPermissions.assertUserCanEditInventoryRecord(dbRecord, user);
     Container targetContainer =
         getTargetContainerFromTargetParentAndLocation(targetParent, targetLocation, user);
 
