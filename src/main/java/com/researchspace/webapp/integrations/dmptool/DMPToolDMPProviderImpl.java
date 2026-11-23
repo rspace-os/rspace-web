@@ -210,7 +210,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
-    if (!assertIsNewDMP(dmp, user)) {
+    if (!isNewDmpElseAdoptSource(dmp, user)) {
       return null;
     }
     return saveJsonDMP(dmp, title, user, getJson(dmp, accessToken));
