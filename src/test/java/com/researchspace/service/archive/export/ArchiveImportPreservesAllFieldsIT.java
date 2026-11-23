@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
@@ -308,6 +309,64 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
                 FIELDS_PER_FORM,
                 String.join("\n", failures)))
         .isEmpty();
+  }
+
+  @Test
+  public void signStateReflectsImportedFieldValues() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+    String run = getRandomName(6);
+
+    // a document created from each form starts with the opposite sign state to its saved content
+    StructuredDocument filledDoc =
+        createSingleMandatoryTextFieldDoc(user, "Filled_" + run, "", "imported value");
+    StructuredDocument clearedDoc =
+        createSingleMandatoryTextFieldDoc(user, "Cleared_" + run, "default value", "");
+
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(filledDoc.getOid());
+    exportList.add(clearedDoc.getOid());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    expCfg.setExportScope(ExportScope.SELECTION);
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile =
+        archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
+
+    ImportArchiveReport report =
+        importer.importArchive(
+            zipFile,
+            createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "sign-state")),
+            NULL_MONITOR,
+            importStrategy::doImport);
+
+    assertTrue(report.isSuccessful());
+    assertTrue(
+        findImportedDoc(report, filledDoc.getName(), user).isAllFieldsValid(),
+        "imported document with its mandatory field filled is signable");
+    assertFalse(
+        findImportedDoc(report, clearedDoc.getName(), user).isAllFieldsValid(),
+        "imported document with its mandatory field empty is not signable");
+  }
+
+  private StructuredDocument createSingleMandatoryTextFieldDoc(
+      User user, String docName, String defaultValue, String content) {
+    RSForm form = formMgr.create(user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>("Mandatory_" + docName, true, defaultValue),
+        form.getId(),
+        user);
+    formMgr.publish(form.getId(), true, null, user);
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    assertEquals(defaultValue.isEmpty(), !doc.isAllFieldsValid(), "sign state on creation");
+    doc.setName(docName);
+    Field field = doc.getFields().get(0);
+    field.setFieldData(content);
+    fieldMgr.save(field, user);
+    doc.setAllFieldsValid(!content.isEmpty());
+    recordMgr.save(doc, user);
+    return doc;
   }
 
   private StructuredDocument findImportedDoc(ImportArchiveReport report, String name, User user) {
