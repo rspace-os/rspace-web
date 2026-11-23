@@ -80,3 +80,27 @@ describe("importMatchesExistingTemplate", () => {
     });
   });
 });
+
+describe("ColumnFieldMap.isCompatibleWithField", () => {
+  test("offers Source for a plain text column only when every value is a sample source", () => {
+    const sourceColumnWith = (options: Array<string>) =>
+      new ColumnFieldMap({
+        recordType: "SAMPLES",
+        selected: true,
+        columnName: "Source",
+        field: Fields.custom,
+        fieldName: "Source",
+        fieldType: FieldTypes.plain_text,
+        quantityUnitId: null,
+        options,
+        fieldChangeCallback: () => {},
+        isNameUnique: () => true,
+        columnsWithoutBlankValue: [],
+        blankColumns: [],
+      });
+    expect(sourceColumnWith(["LAB_CREATED", "OTHER", "VENDOR_SUPPLIED"]).isCompatibleWithField(Fields.source)).toBe(
+      true,
+    );
+    expect(sourceColumnWith(["LAB_CREATED", "Purchased"]).isCompatibleWithField(Fields.source)).toBe(false);
+  });
+});
