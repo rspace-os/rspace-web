@@ -13,7 +13,8 @@ import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import * as FetchingData from "@/util/fetchingData";
-import { useGalleryListing } from "../useGalleryListing";
+import { Optional } from "@/util/optional";
+import { Filestore, RemoteFile, useGalleryListing } from "../useGalleryListing";
 import { GallerySelection } from "../useGallerySelection";
 import Carousel from "./Carousel";
 import { CarouselOpenedOnFifthFile, OfficeDocumentCarousel, SimpleCarousel } from "./Carousel.story";
@@ -283,11 +284,68 @@ describe("Carousel", () => {
     releaseDownloads();
 
     await waitForPreviewsToLoad("1 / 1", 1);
-    const src = screen.getByRole("img", PREVIEW).getAttribute("src");
-    await waitFor(() => {
-      expect(revokeObjectURL).not.toHaveBeenCalledWith(src);
-    });
+    expect(revokeObjectURL).not.toHaveBeenCalledWith(screen.getByRole("img", PREVIEW).getAttribute("src"));
     expect(downloads).toEqual(["1"]);
+  });
+
+  test("Replacing a filestore file that changed outside RSpace reloads its preview", async () => {
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
+    stubEndpoints();
+    server.use(
+      http.get(
+        "/api/v1/gallery/filestores/:id/download",
+        () => new HttpResponse(new Blob(["image"]), { headers: { "Content-Type": "image/jpeg" } }),
+      ),
+    );
+    const filestore = new Filestore({
+      id: 42,
+      name: "Filestore",
+      filesystemId: 10,
+      filesystemName: "S3",
+      filesystemType: "S3",
+      canWrite: true,
+      ownerName: "gallery:unknownOwner",
+    });
+    const remoteImage = (modifiedAt: string) =>
+      new RemoteFile({
+        nfsId: 7,
+        name: "image.jpg",
+        folder: false,
+        fileSize: 5,
+        modificationDate: new Date(modifiedAt),
+        path: [filestore],
+        logicPath: "42:/image.jpg",
+        token: "",
+        ownerName: "gallery:unknownOwner",
+      });
+    const carouselOf = (file: RemoteFile) => (
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <LandmarksProvider>
+          <GallerySelection>
+            <Carousel
+              listing={{ tag: "list", list: [file], totalHits: 1, loadMore: Optional.empty(), refreshing: false }}
+            />
+          </GallerySelection>
+        </LandmarksProvider>
+      </ThemeProvider>
+    );
+    const previous = remoteImage("2026-01-01T00:00:00Z");
+    const { rerender } = renderCarousel(carouselOf(previous));
+    await waitForPreviewsToLoad("1 / 1", 1);
+    const firstSrc = screen.getByRole("img", PREVIEW).getAttribute("src");
+
+    const next = remoteImage("2026-02-01T00:00:00Z");
+    expect(next.takeOverDownloadOf(previous)).toBe(false);
+    previous.deconstructor();
+    rerender(
+      <DeploymentPropertyContext.Provider value={new Map()}>{carouselOf(next)}</DeploymentPropertyContext.Provider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("img", PREVIEW)).not.toHaveAttribute("src", firstSrc);
+    });
+    await waitForPreviewsToLoad("1 / 1", 1);
+    expect(revokeObjectURL).toHaveBeenCalledWith(firstSrc);
   });
 
   test("Refreshing the listing onto a new version of the file reloads its preview", async () => {

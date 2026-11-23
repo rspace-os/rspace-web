@@ -857,10 +857,16 @@ export class RemoteFile implements GalleryFile {
   /*
    * Shares the download of `previous`, an older object for the same remote file,
    * as LocalGalleryFile.takeOverDownloadOf does. Filestores do not report a
-   * version, so the path alone identifies the file.
+   * version, so an unchanged size and modification date stand in for one.
    */
   takeOverDownloadOf(previous: GalleryFile): boolean {
-    if (!(previous instanceof RemoteFile) || previous.key !== this.key) return false;
+    if (
+      !(previous instanceof RemoteFile) ||
+      previous.key !== this.key ||
+      previous.size !== this.size ||
+      previous.modificationDate?.getTime() !== this.modificationDate?.getTime()
+    )
+      return false;
     if (!previous.blobDownload || !this.blobDownload) return false;
     const shared = previous.blobDownload.sharedWith(this.blobDownload);
     this.blobDownload = shared;

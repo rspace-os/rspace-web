@@ -249,7 +249,8 @@ const Preview = React.memo(function Preview({
   // aspose.enabled may still be loading on the first render
   const asposeAvailable = canPreviewWithAspose(file).isOk;
   // a new version of the file is loaded afresh; an unchanged file from a refreshed listing keeps its preview
-  const fileVersion = `${file.key}@${file.version ?? ""}`;
+  // filestore files have no version, so their size and modification date stand in for one
+  const fileVersion = `${file.key}@${file.version ?? `${file.size}@${file.modificationDate?.getTime() ?? ""}`}`;
   const loadedVersion = React.useRef<string | null>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
