@@ -13,6 +13,7 @@ import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.sort.CommunicationSort;
 import java.util.*;
+import java.util.function.Consumer;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -38,24 +39,23 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public ISearchResults<MessageOrRequest> getSentRequests(
       User user, PaginationCriteria<MessageOrRequest> pgCrit) {
 
-    // 1st query - retrieve ids, correct ordered
-    Session session = getSession();
-    String orderBy = buildOrderBy(pgCrit, "mor");
-    String hql =
-        "select distinct mor.id from MessageOrRequest mor "
+    String fromWhere =
+        "from MessageOrRequest mor "
             + "join mor.originator originator "
             + "where mor.status not in :terminatedStates "
             + "and mor.messageType <> :simpleMessage "
-            + "and originator.id = :originatorId"
-            + orderBy;
-    List<Long> ids =
-        session
-            .createQuery(hql, Long.class)
-            .setParameterList("terminatedStates", TERMINATED_STATES)
-            .setParameter("simpleMessage", MessageType.SIMPLE_MESSAGE)
-            .setParameter("originatorId", user.getId())
-            .list();
-
+            + "and originator.id = :originatorId";
+    IdPage ids =
+        findPageOfIds(
+            "mor.id",
+            fromWhere,
+            buildOrderBy(pgCrit, "mor"),
+            pgCrit,
+            query ->
+                query
+                    .setParameterList("terminatedStates", TERMINATED_STATES)
+                    .setParameter("simpleMessage", MessageType.SIMPLE_MESSAGE)
+                    .setParameter("originatorId", user.getId()));
     return findPageOfMessageOrRequestForIds(ids, pgCrit);
   }
 
@@ -67,21 +67,23 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       filter = MessageTypeFilter.ALL_TYPES;
     }
 
-    // 1st query (applies order criteria)
-    List<Long> ids = getActiveMessageOrRequestDistinctCTIds(user, filter, pgCrit);
+    IdPage ids =
+        findPageOfIds(
+            "mor.id",
+            activeMessageOrRequestFromWhere(filter),
+            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            pgCrit,
+            activeMessageOrRequestParams(user, filter));
     return findPageOfMessageOrRequestForIds(ids, pgCrit);
   }
 
   private ISearchResults<MessageOrRequest> findPageOfMessageOrRequestForIds(
-      List<Long> ids, PaginationCriteria<?> pgCrit) {
-
-    // no need to search if there are no results
-    if (ids.isEmpty()) {
-      return createEmptyResults(pgCrit);
+      IdPage ids, PaginationCriteria<?> pgCrit) {
+    List<Long> pageOfIds = ids.pageOfIds();
+    if (pageOfIds.isEmpty()) {
+      return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, ids.total());
     }
 
-    // retrieve page of requests
-    List<Long> pageOfIds = getPageFromIdList(ids, pgCrit);
     List<MessageOrRequest> pageOfMessageOrRequests =
         getSession()
             .createQuery("from MessageOrRequest where id in :ids", MessageOrRequest.class)
@@ -91,7 +93,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     pageOfMessageOrRequests.sort(Comparator.comparing(mor -> pageOfIds.indexOf(mor.getId())));
     initMessageOrRequestProperties(pageOfMessageOrRequests);
 
-    return new SearchResultsImpl<>(pageOfMessageOrRequests, pgCrit, ids.size());
+    return new SearchResultsImpl<>(pageOfMessageOrRequests, pgCrit, ids.total());
   }
 
   @Override
@@ -105,16 +107,27 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public ISearchResults<Notification> getNewNotificationsForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
-    // 1st query (applies order criteria)
-    List<Long> ids = getNewNotificationDistinctCTIds(user, pgCrit);
-
-    // No need to retrieve results if there are no results
-    if (ids.isEmpty()) {
-      return createEmptyResults(pgCrit);
+    String fromWhere =
+        "from Notification n "
+            + "join n.recipients ct "
+            + "join ct.recipient recipient "
+            + "join n.originator originator "
+            + "where ct.status = :status and recipient.id = :userId";
+    IdPage ids =
+        findPageOfIds(
+            "n.id",
+            fromWhere,
+            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            pgCrit,
+            query ->
+                query
+                    .setParameter("status", CommunicationStatus.NEW)
+                    .setParameter("userId", user.getId()));
+    List<Long> pageOfIds = ids.pageOfIds();
+    if (pageOfIds.isEmpty()) {
+      return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, ids.total());
     }
 
-    // 2nd query, retrieve the notifications
-    List<Long> pageOfIds = getPageFromIdList(ids, pgCrit);
     List<Notification> notifications =
         getSession()
             .createQuery("from Notification where id in :ids", Notification.class)
@@ -122,7 +135,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
             .list();
     // re-apply ids ordering
     notifications.sort(Comparator.comparing(n -> pageOfIds.indexOf(n.getId())));
-    return new SearchResultsImpl<>(notifications, pgCrit, ids.size());
+    return new SearchResultsImpl<>(notifications, pgCrit, ids.total());
   }
 
   @Override
@@ -306,43 +319,24 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public ISearchResults<MessageOrRequest> getAllSentAndReceivedSimpleMessagesForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
-    // 1st query - retrieve ids, correctly ordered
-    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
-    String hql =
-        "select distinct mor.id from MessageOrRequest mor "
+    String fromWhere =
+        "from MessageOrRequest mor "
             + "join mor.recipients ct "
             + "join ct.recipient recipient "
             + "join mor.originator originator "
             + "where (recipient.id = :userId or originator.id = :userId) "
-            + "and mor.messageType = :messageType"
-            + orderBy;
-    List<Long> ids =
-        getSession()
-            .createQuery(hql, Long.class)
-            .setParameter("userId", user.getId())
-            .setParameter("messageType", MessageType.SIMPLE_MESSAGE)
-            .list();
-
-    // no need to retrieve results if there are no results
-    if (ids.isEmpty()) {
-      return createEmptyResults(pgCrit);
-    }
-
-    // 2nd query
-    List<Long> pageIds = getPageFromIdList(ids, pgCrit);
-    List<MessageOrRequest> allSimpleMessages =
-        getSession()
-            .createQuery(
-                "from MessageOrRequest where messageType = :messageType and id in :ids",
-                MessageOrRequest.class)
-            .setParameter("messageType", MessageType.SIMPLE_MESSAGE)
-            .setParameterList("ids", pageIds)
-            .list();
-    // re-apply ordering from ids page
-    allSimpleMessages.sort(Comparator.comparing(mor -> pageIds.indexOf(mor.getId())));
-    initMessageOrRequestProperties(allSimpleMessages);
-
-    return new SearchResultsImpl<>(allSimpleMessages, pgCrit, ids.size());
+            + "and mor.messageType = :messageType";
+    IdPage ids =
+        findPageOfIds(
+            "mor.id",
+            fromWhere,
+            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            pgCrit,
+            query ->
+                query
+                    .setParameter("userId", user.getId())
+                    .setParameter("messageType", MessageType.SIMPLE_MESSAGE));
+    return findPageOfMessageOrRequestForIds(ids, pgCrit);
   }
 
   @Override
@@ -393,11 +387,6 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return new UnanimousVotingRequestCompletionUpdatePolicy(); // default
   }
 
-  // Returns empty list so generics not needed
-  private static <T> ISearchResults<T> createEmptyResults(PaginationCriteria<?> pgCrit) {
-    return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, 0);
-  }
-
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
     for (MessageOrRequest mor : mors) {
       if (mor.getPrevious() != null) {
@@ -411,49 +400,73 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     }
   }
 
-  private List<Long> getNewNotificationDistinctCTIds(
-      User user, PaginationCriteria<CommunicationTarget> pgCrit) {
-
-    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
-    String hql =
-        "select distinct n.id from Notification n "
-            + "join n.recipients ct "
-            + "join ct.recipient recipient "
-            + "join n.originator originator "
-            + "where ct.status = :status and recipient.id = :userId"
-            + orderBy;
-    return getSession()
-        .createQuery(hql, Long.class)
-        .setParameter("status", CommunicationStatus.NEW)
-        .setParameter("userId", user.getId())
-        .list();
-  }
-
   private List<Long> getActiveMessageOrRequestDistinctCTIds(
       User user, MessageTypeFilter filter, PaginationCriteria<CommunicationTarget> pgCrit) {
-
-    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
-    StringBuilder hql =
-        new StringBuilder(
-            "select distinct mor.id from MessageOrRequest mor "
-                + "join mor.recipients ct "
-                + "join ct.recipient recipient "
-                + "join mor.originator originator "
-                + "where ct.status not in :terminatedStates "
-                + "and recipient.id = :userId");
-    if (filter != null) {
-      hql.append(" and mor.messageType in :messageTypes");
-    }
-    hql.append(orderBy);
     Query<Long> query =
         getSession()
-            .createQuery(hql.toString(), Long.class)
-            .setParameterList("terminatedStates", TERMINATED_STATES)
-            .setParameter("userId", user.getId());
-    if (filter != null) {
-      query.setParameterList("messageTypes", filter.getWantedTypes());
-    }
+            .createQuery(
+                "select distinct mor.id "
+                    + activeMessageOrRequestFromWhere(filter)
+                    + buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+                Long.class);
+    activeMessageOrRequestParams(user, filter).accept(query);
     return query.list();
+  }
+
+  private static String activeMessageOrRequestFromWhere(MessageTypeFilter filter) {
+    String fromWhere =
+        "from MessageOrRequest mor "
+            + "join mor.recipients ct "
+            + "join ct.recipient recipient "
+            + "join mor.originator originator "
+            + "where ct.status not in :terminatedStates "
+            + "and recipient.id = :userId";
+    return filter == null ? fromWhere : fromWhere + " and mor.messageType in :messageTypes";
+  }
+
+  private static Consumer<Query<Long>> activeMessageOrRequestParams(
+      User user, MessageTypeFilter filter) {
+    return query -> {
+      query
+          .setParameterList("terminatedStates", TERMINATED_STATES)
+          .setParameter("userId", user.getId());
+      if (filter != null) {
+        query.setParameterList("messageTypes", filter.getWantedTypes());
+      }
+    };
+  }
+
+  /** One page of ordered communication ids and the total number of matching communications. */
+  private record IdPage(List<Long> pageOfIds, long total) {}
+
+  /**
+   * Counts the distinct ids matching {@code fromWhere}, then fetches only the requested page of
+   * them in {@code orderBy} order. The page query is skipped when the page starts past the last
+   * match, which also covers callers asking for every result with an {@code Integer.MAX_VALUE} page
+   * size.
+   */
+  private IdPage findPageOfIds(
+      String idPath,
+      String fromWhere,
+      String orderBy,
+      PaginationCriteria<?> pgCrit,
+      Consumer<Query<Long>> bindParameters) {
+    Query<Long> countQuery =
+        getSession().createQuery("select count(distinct " + idPath + ") " + fromWhere, Long.class);
+    bindParameters.accept(countQuery);
+    long total = countQuery.uniqueResult();
+
+    long firstResult = pgCrit.getPageNumber() * (long) pgCrit.getResultsPerPage();
+    if (firstResult >= total) {
+      return new IdPage(Collections.emptyList(), total);
+    }
+    Query<Long> pageQuery =
+        getSession()
+            .createQuery("select distinct " + idPath + " " + fromWhere + orderBy, Long.class)
+            .setFirstResult((int) firstResult)
+            .setMaxResults(pgCrit.getResultsPerPage());
+    bindParameters.accept(pageQuery);
+    return new IdPage(pageQuery.list(), total);
   }
 
   /**
@@ -485,14 +498,5 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     }
     String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
     return " order by " + path + " " + direction + ", " + messagePath + ".id " + direction;
-  }
-
-  private List<Long> getPageFromIdList(List<Long> ids, PaginationCriteria<?> pgCrit) {
-    int pageSize = pgCrit.getResultsPerPage();
-    int fromIndex = (int) (pgCrit.getPageNumber() * pageSize);
-    if (fromIndex >= ids.size()) {
-      return Collections.emptyList();
-    }
-    return ids.subList(fromIndex, Math.min(fromIndex + pageSize, ids.size()));
   }
 }

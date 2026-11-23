@@ -30,6 +30,7 @@ import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
+import com.researchspace.model.sort.CommunicationSort;
 import jakarta.persistence.PersistenceException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,8 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.hibernate.Session;
@@ -749,6 +752,94 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     ct.setRecipient(to);
     ct.setStatus(status);
     sessionFactory.getCurrentSession().persist(ct);
+  }
+
+  @Test
+  public void listingPagesAreSlicesOfTheFullListingForEverySort() throws InterruptedException {
+    User senderA = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderA"));
+    User senderB = createAndSaveUserIfNotExists(getRandomAlphabeticString("senderB"));
+    User target = createAndSaveUserIfNotExists(getRandomAlphabeticString("recipient"));
+    saveNNotifications(3, senderA, target);
+    saveNNotifications(2, senderB, target);
+    saveNMessages(3, senderA, MessageType.REQUEST_RECORD_REVIEW, target);
+    saveNMessages(2, senderA, MessageType.REQUEST_RECORD_REVIEW, senderB);
+    saveNMessages(3, senderB, MessageType.SIMPLE_MESSAGE, target);
+    // two recipients, so the id queries join two target rows per message
+    saveNMessages(2, target, MessageType.SIMPLE_MESSAGE, senderA, senderB);
+
+    assertPagesAreSlicesOfFullListing(
+        5, this::getDefaultPgCrit, pc -> dao.getNewNotificationsForUser(target, pc));
+    assertPagesAreSlicesOfFullListing(
+        6,
+        this::getDefaultPgCrit,
+        pc -> dao.getActiveRequestsAndMessagesForUser(target, pc, MessageTypeFilter.ALL_TYPES));
+    assertPagesAreSlicesOfFullListing(
+        5,
+        this::getDefaultPgCrit,
+        pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(target, pc));
+    assertPagesAreSlicesOfFullListing(
+        5,
+        () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
+        pc -> dao.getSentRequests(senderA, pc));
+  }
+
+  @Test
+  public void maxValuePageSizeReturnsEveryActiveRequest() {
+    User oldPi = createAndSaveUserIfNotExists(getRandomAlphabeticString("oldPi"));
+    User requester = createAndSaveUserIfNotExists(getRandomAlphabeticString("requester"));
+    int numRequests = IPagination.DEFAULT_RESULTS_PERPAGE + 3;
+    saveNMessages(numRequests, requester, MessageType.REQUEST_RECORD_WITNESS, oldPi);
+    MessageTypeFilter witnessRequests =
+        new MessageTypeFilter(EnumSet.of(MessageType.REQUEST_RECORD_WITNESS));
+    // as requested by PiChangeHandlerImpl when transferring witness requests
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setResultsPerPage(Integer.MAX_VALUE);
+
+    ISearchResults<MessageOrRequest> all =
+        dao.getActiveRequestsAndMessagesForUser(oldPi, pc, witnessRequests);
+    assertThat(all.getResults()).hasSize(numRequests);
+    assertEquals(numRequests, all.getTotalHits().intValue());
+
+    // the first index of page 1 is past Integer.MAX_VALUE
+    pc.setPageNumber(1L);
+    ISearchResults<MessageOrRequest> secondPage =
+        dao.getActiveRequestsAndMessagesForUser(oldPi, pc, witnessRequests);
+    assertThat(secondPage.getResults()).isEmpty();
+    assertEquals(numRequests, secondPage.getTotalHits().intValue());
+  }
+
+  private <P> void assertPagesAreSlicesOfFullListing(
+      int expectedTotal,
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<? extends Communication>> listing) {
+    final int pageSize = 2;
+    for (CommunicationSort sort : CommunicationSort.values()) {
+      for (SortOrder order : SortOrder.values()) {
+        String context = sort.key() + " " + order;
+        PaginationCriteria<P> pc = pgCritFactory.get();
+        pc.setOrderBy(sort.key());
+        pc.setSortOrder(order);
+        pc.setGetAllResults();
+        List<Long> fullListing = idsOf(listing.apply(pc));
+        assertEquals(expectedTotal, fullListing.size(), context);
+        assertEquals(expectedTotal, new HashSet<>(fullListing).size(), context);
+
+        pc.setResultsPerPage(pageSize);
+        long pageCount = (expectedTotal + pageSize - 1) / pageSize;
+        for (long page = 0; page <= pageCount; page++) {
+          pc.setPageNumber(page);
+          ISearchResults<? extends Communication> results = listing.apply(pc);
+          int from = (int) Math.min(page * pageSize, expectedTotal);
+          int to = Math.min(from + pageSize, expectedTotal);
+          assertEquals(fullListing.subList(from, to), idsOf(results), context + " page " + page);
+          assertEquals(expectedTotal, results.getTotalHits().intValue(), context + " page " + page);
+        }
+      }
+    }
+  }
+
+  private static List<Long> idsOf(ISearchResults<? extends Communication> results) {
+    return results.getResults().stream().map(Communication::getId).toList();
   }
 
   private PaginationCriteria<CommunicationTarget> getDefaultPgCrit() {
