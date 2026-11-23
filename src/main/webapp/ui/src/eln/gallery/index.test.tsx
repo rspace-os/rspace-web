@@ -571,8 +571,10 @@ describe("Gallery", () => {
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
-      // the item named in the URL is selected automatically
-      await user.click(await screen.findByRole("button", { name: "gallery:actionsMenu.actions" }));
+      // the item named in the URL is selected automatically, which enables the menu
+      const actions = await screen.findByRole("button", { name: "gallery:actionsMenu.actions" });
+      await waitFor(() => expect(actions).toBeEnabled());
+      await user.click(actions);
 
       /*
        * The decoration happens in the listing, so the Actions menu sees the
