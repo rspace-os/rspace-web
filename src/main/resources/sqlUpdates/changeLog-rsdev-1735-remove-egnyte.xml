@@ -52,4 +52,36 @@
         </sql>
     </changeSet>
 
+    <changeSet id="remove-egnyte-e" context="run" author="tchoi">
+        <preConditions onFail="CONTINUE"
+                       onFailMessage="RSDEV-1735: files saved through the Egnyte file store were not repointed, because the database does not have exactly one local FileStoreRoot that is current. Retrying on the next startup.">
+            <or>
+                <and>
+                    <sqlCheck expectedResult="0">select count(*) from FileProperty where external = 1</sqlCheck>
+                    <sqlCheck expectedResult="0">select count(*) from FileStoreRoot where external = 1 and current = 1</sqlCheck>
+                </and>
+                <and>
+                    <sqlCheck expectedResult="1">select count(*) from FileStoreRoot where external = 0</sqlCheck>
+                    <sqlCheck expectedResult="1">select count(*) from FileStoreRoot where external = 0 and current = 1</sqlCheck>
+                </and>
+            </or>
+        </preConditions>
+        <comment>Point files saved through the Egnyte file store back at the local file store root,
+            and retire the Egnyte FileStoreRoot (the row is kept, no longer current, as a record of
+            where the files were in Egnyte). Their local copy was never deleted
+            (InternalFileStoreImpl.removeFile does nothing), and relPath is the path under both
+            roots. The upload overwrote each file's original local root_id, so the repoint is only
+            safe when the database has exactly one local root, and it is current. In any other
+            state that still has Egnyte rows, the precondition skips this change set without
+            recording it, so it is retried on every startup until an administrator fixes the roots.</comment>
+        <sql>
+            update FileProperty
+            set external = 0,
+                root_id = (select max(id) from FileStoreRoot where external = 0 and current = 1)
+            where external = 1;
+
+            update FileStoreRoot set current = 0 where external = 1;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
