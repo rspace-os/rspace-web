@@ -31,8 +31,8 @@ function resolvedFields(fields: readonly FieldConfig<RenderedData>[]) {
     idField: "id",
     useAsTitle: "id",
     defaultColumns: ["id"],
-    labels: { singularKey: "item", pluralKey: "items" },
-    fields: [{ name: "id", type: "text", labelKey: "id", form: false }, ...fields],
+    labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
+    fields: [{ name: "id", type: "text", labelKey: "tableList.examples.fields.id", form: false }, ...fields],
   }).fields;
 }
 
@@ -42,12 +42,12 @@ function ConditionalTextHarness({ evaluations }: { evaluations: { count: number 
     initialInput: { id: "1", status: "show", notes: "", conditional: "", selection: "", enabled: true },
   });
   const fields = resolvedFields([
-    { name: "status", type: "text", labelKey: "status" },
-    { name: "notes", type: "text", labelKey: "notes" },
+    { name: "status", type: "text", labelKey: "tableList.examples.fields.status" },
+    { name: "notes", type: "text", labelKey: "tableList.examples.fields.notes" },
     {
       name: "conditional",
       type: "text",
-      labelKey: "conditional",
+      labelKey: "tableList.examples.fields.draft",
       form: {
         condition: ({ data }) => {
           evaluations.count++;
@@ -65,9 +65,9 @@ function ConditionalRowHarness({ evaluations }: { evaluations: { count: number }
     initialInput: { id: "1", status: "show", notes: "", conditional: "", selection: "", enabled: true },
   });
   const fields = resolvedFields([
-    { name: "status", type: "text", labelKey: "status" },
-    { name: "notes", type: "text", labelKey: "notes" },
-    { name: "conditional", type: "text", labelKey: "conditional" },
+    { name: "status", type: "text", labelKey: "tableList.examples.fields.status" },
+    { name: "notes", type: "text", labelKey: "tableList.examples.fields.notes" },
+    { name: "conditional", type: "text", labelKey: "tableList.examples.fields.draft" },
   ]);
   const row = {
     type: "row" as const,
@@ -86,8 +86,13 @@ function SelectWithoutDisabledHarness({ optionReads }: { optionReads: { count: n
     initialInput: { id: "1", status: "", notes: "", conditional: "", selection: "", enabled: true },
   });
   const fields = resolvedFields([
-    { name: "notes", type: "text", labelKey: "notes" },
-    { name: "selection", type: "select", labelKey: "selection", options: ["First", "Second"] },
+    { name: "notes", type: "text", labelKey: "tableList.examples.fields.notes" },
+    {
+      name: "selection",
+      type: "select",
+      labelKey: "tableList.examples.fields.published",
+      options: ["First", "Second"],
+    },
   ]);
   const selectionField = fields.find((field) => field.name === "selection");
   if (selectionField?.type !== "select") throw new Error("Expected a select field");
@@ -109,11 +114,11 @@ function SelectWithDisabledOptionHarness({ widget }: { widget: SelectWidget }) {
     initialInput: { id: "1", status: "", notes: "", conditional: "", selection: "", enabled: true },
   });
   const fields = resolvedFields([
-    { name: "enabled", type: "boolean", labelKey: "enabled" },
+    { name: "enabled", type: "boolean", labelKey: "tableList.examples.fields.enabled" },
     {
       name: "selection",
       type: "select",
-      labelKey: "selection",
+      labelKey: "tableList.examples.fields.published",
       options: ["Available", "Locked"],
       form: {
         widget,
@@ -131,17 +136,17 @@ describe("RenderFields form data reactivity", () => {
     const evaluations = { count: 0 };
     render(<ConditionalTextHarness evaluations={evaluations} />);
 
-    const conditional = screen.getByRole("textbox", { name: "common:conditional" });
+    const conditional = screen.getByRole("textbox", { name: "common:tableList.examples.fields.draft" });
     const before = evaluations.count;
-    await user.type(screen.getByRole("textbox", { name: "common:notes" }), "hello");
+    await user.type(screen.getByRole("textbox", { name: "common:tableList.examples.fields.notes" }), "hello");
     expect(evaluations.count - before).toBe(0);
     expect(conditional).toBeInTheDocument();
 
-    const status = screen.getByRole("textbox", { name: "common:status" });
+    const status = screen.getByRole("textbox", { name: "common:tableList.examples.fields.status" });
     await user.clear(status);
-    expect(screen.queryByRole("textbox", { name: "common:conditional" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "common:tableList.examples.fields.draft" })).not.toBeInTheDocument();
     await user.type(status, "show");
-    expect(screen.getByRole("textbox", { name: "common:conditional" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "common:tableList.examples.fields.draft" })).toBeInTheDocument();
   });
 
   it("keeps a conditional row quiet for unrelated edits and follows its dependency", async () => {
@@ -150,12 +155,12 @@ describe("RenderFields form data reactivity", () => {
     render(<ConditionalRowHarness evaluations={evaluations} />);
 
     const before = evaluations.count;
-    await user.type(screen.getByRole("textbox", { name: "common:notes" }), "hello");
+    await user.type(screen.getByRole("textbox", { name: "common:tableList.examples.fields.notes" }), "hello");
     expect(evaluations.count - before).toBe(0);
-    expect(screen.getByRole("textbox", { name: "common:conditional" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "common:tableList.examples.fields.draft" })).toBeInTheDocument();
 
-    await user.clear(screen.getByRole("textbox", { name: "common:status" }));
-    expect(screen.queryByRole("textbox", { name: "common:conditional" })).not.toBeInTheDocument();
+    await user.clear(screen.getByRole("textbox", { name: "common:tableList.examples.fields.status" }));
+    expect(screen.queryByRole("textbox", { name: "common:tableList.examples.fields.draft" })).not.toBeInTheDocument();
   });
 
   it("does not re-render a select without option disabling when an unrelated field changes", async () => {
@@ -165,7 +170,7 @@ describe("RenderFields form data reactivity", () => {
 
     const before = optionReads.count;
     expect(before).toBeGreaterThan(0);
-    await user.type(screen.getByRole("textbox", { name: "common:notes" }), "hello");
+    await user.type(screen.getByRole("textbox", { name: "common:tableList.examples.fields.notes" }), "hello");
     expect(optionReads.count - before).toBe(0);
   });
 
@@ -175,11 +180,11 @@ describe("RenderFields form data reactivity", () => {
       const user = userEvent.setup();
       render(<SelectWithDisabledOptionHarness widget={widget} />);
 
-      const enabled = screen.getByRole("checkbox", { name: "common:enabled" });
+      const enabled = screen.getByRole("checkbox", { name: "common:tableList.examples.fields.enabled" });
       const optionRole = widget === "select" ? "option" : "radio";
       const openOptions = async () => {
         if (widget === "select" && !screen.queryByRole("option", { name: "Locked" })) {
-          await user.click(screen.getByRole("combobox", { name: "common:selection" }));
+          await user.click(screen.getByRole("combobox", { name: "common:tableList.examples.fields.published" }));
         }
       };
 

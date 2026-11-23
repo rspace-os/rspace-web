@@ -88,7 +88,6 @@ function declaredChildren(
     if (ancestors.has(value)) throw new Error(`OpenAPI ${path} has cyclic child fields`);
     const common = {
       name,
-      labelKey: name,
       label: openApi.title ?? name,
       required: child.requiredOnCreate,
       nullable: child.nullable,

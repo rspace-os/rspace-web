@@ -39,20 +39,24 @@ function Example({ disabled = false, readOnly = false, show = true }) {
     idField: "id",
     useAsTitle: "id",
     defaultColumns: ["id"],
-    labels: { singularKey: "example", pluralKey: "examples" },
+    labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
     fields: [
-      { name: "id", type: "text", labelKey: "id", form: false },
+      { name: "id", type: "text", labelKey: "tableList.examples.fields.id", form: false },
       {
         name: "rows",
         type: "array",
-        labelKey: "rows",
+        labelKey: "tableList.examples.fields.score",
         readOnly,
-        form: { component: RowEditor, descriptionKey: "rowsDescription", condition: () => show },
+        form: {
+          component: RowEditor,
+          descriptionKey: "tableList.examples.fields.titleDescription",
+          condition: () => show,
+        },
         fields: [
           {
             name: "quantity",
             type: "number",
-            labelKey: "quantity",
+            labelKey: "tableList.examples.fields.modified",
             required: true,
             writeConstraints: { minimum: 1, maximum: 100 },
           },
@@ -72,7 +76,7 @@ function Example({ disabled = false, readOnly = false, show = true }) {
 
 it("passes child constraints and disabled state to the custom array editor", () => {
   render(<Example disabled />);
-  const quantity = screen.getByRole("spinbutton", { name: "common:rows" });
+  const quantity = screen.getByRole("spinbutton", { name: "common:tableList.examples.fields.score" });
   expect(quantity).toHaveAttribute("min", "1");
   expect(quantity).toHaveAttribute("max", "100");
   expect(quantity).toBeRequired();
@@ -81,19 +85,19 @@ it("passes child constraints and disabled state to the custom array editor", () 
 
 it("disables read-only array fields and respects their visibility condition", () => {
   const { rerender } = render(<Example readOnly />);
-  expect(screen.getByRole("spinbutton", { name: "common:rows" })).toBeDisabled();
+  expect(screen.getByRole("spinbutton", { name: "common:tableList.examples.fields.score" })).toBeDisabled();
   rerender(<Example show={false} />);
-  expect(screen.queryByRole("spinbutton", { name: "common:rows" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("spinbutton", { name: "common:tableList.examples.fields.score" })).not.toBeInTheDocument();
 });
 
 it("associates the custom control with its label, description and validation error", async () => {
   const user = userEvent.setup();
   const { container } = render(<Example />);
-  const quantity = screen.getByRole("spinbutton", { name: "common:rows" });
-  expect(quantity).toHaveAccessibleDescription("common:rowsDescription");
+  const quantity = screen.getByRole("spinbutton", { name: "common:tableList.examples.fields.score" });
+  expect(quantity).toHaveAccessibleDescription("common:tableList.examples.fields.titleDescription");
   await user.click(screen.getByRole("button", { name: "Validate" }));
   expect(await screen.findByText("Add another row")).toBeInTheDocument();
   expect(quantity).toBeInvalid();
-  expect(quantity).toHaveAccessibleDescription("common:rowsDescription Add another row");
+  expect(quantity).toHaveAccessibleDescription("common:tableList.examples.fields.titleDescription Add another row");
   await expectAccessible(container);
 });

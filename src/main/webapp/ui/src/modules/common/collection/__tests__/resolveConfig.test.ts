@@ -96,20 +96,28 @@ describe("declared array metadata", () => {
     {
       name: "quantity",
       type: "number",
-      labelKey: "quantity",
+      labelKey: "tableList.examples.fields.score",
       required: true,
       writeConstraints: { minimum: 1, maximum: 100 },
     },
     {
       name: "details",
       type: "object",
-      labelKey: "details",
+      labelKey: "tableList.examples.fields.notes",
       fields: [
         {
           name: "notes",
           type: "array",
-          labelKey: "notes",
-          fields: [{ name: "text", type: "text", labelKey: "text", required: true, defaultValue: "Draft" }],
+          labelKey: "tableList.examples.fields.draft",
+          fields: [
+            {
+              name: "text",
+              type: "text",
+              labelKey: "tableList.examples.fields.title",
+              required: true,
+              defaultValue: "Draft",
+            },
+          ],
         },
       ],
     },
@@ -117,7 +125,7 @@ describe("declared array metadata", () => {
   const array = (): Extract<FieldConfig<TestRecord>, { type: "array" | "object" }> => ({
     name: "title",
     type: "array",
-    labelKey: "rows",
+    labelKey: "tableList.examples.fields.score",
     form: false,
     fields,
   });
@@ -147,7 +155,7 @@ describe("declared array metadata", () => {
     const nested: FieldConfig<Record<string, unknown>> = {
       name: "cycle",
       type: "object",
-      labelKey: "cycle",
+      labelKey: "tableList.examples.fields.status",
       form: false,
       fields: cycle,
     };
@@ -156,7 +164,15 @@ describe("declared array metadata", () => {
     expect(() =>
       resolve({
         ...array(),
-        fields: [{ name: "target", type: "relationship", relationTo: "items", hasMany: false, labelKey: "target" }],
+        fields: [
+          {
+            name: "target",
+            type: "relationship",
+            relationTo: "items",
+            hasMany: false,
+            labelKey: "tableList.examples.fields.owner",
+          },
+        ],
       }),
     ).toThrow("Embedded relationship");
   });
@@ -172,7 +188,12 @@ describe("declared array metadata", () => {
 
   it("requires nested arrays and objects to declare non-empty named children", () => {
     for (const type of ["array", "object"] as const) {
-      const nested: FieldConfig<Record<string, unknown>> = { name: "details", type, labelKey: "details", fields: [] };
+      const nested: FieldConfig<Record<string, unknown>> = {
+        name: "details",
+        type,
+        labelKey: "tableList.examples.fields.notes",
+        fields: [],
+      };
       expect(() => resolve({ ...array(), fields: [nested] })).toThrow("non-empty child fields");
       Reflect.deleteProperty(nested, "fields");
       expect(() => resolve({ ...array(), fields: [nested] })).toThrow("non-empty child fields");

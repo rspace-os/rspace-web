@@ -302,7 +302,7 @@ export function createApiV2FilterFields<TDocument>({
           return configured &&
             (configured.label !== undefined ||
               configured.derivedLabel !== undefined ||
-              configured.labelKey.includes(":"))
+              configured.labelKey !== undefined)
             ? {
                 ...child,
                 labelKey: configured.labelKey,

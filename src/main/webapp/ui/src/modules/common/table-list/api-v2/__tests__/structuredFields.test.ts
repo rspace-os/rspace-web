@@ -16,18 +16,24 @@ const config = {
   idField: "id",
   useAsTitle: "title",
   defaultColumns: ["title", "rows", "owners"],
-  labels: { singularKey: "record", pluralKey: "records" },
+  labels: { singularKey: "tableList.examples.record", pluralKey: "tableList.examples.records" },
   fields: [
-    { name: "id", type: "text", labelKey: "id" },
-    { name: "title", type: "text", labelKey: "title" },
+    { name: "id", type: "text", labelKey: "tableList.examples.fields.id" },
+    { name: "title", type: "text", labelKey: "tableList.examples.fields.title" },
     {
       name: "rows",
       type: "array",
-      labelKey: "rows",
-      fields: [{ name: "dayOfWeek", type: "number", labelKey: "day" }],
+      labelKey: "tableList.examples.fields.score",
+      fields: [{ name: "dayOfWeek", type: "number" }],
       form: { component: () => null },
     },
-    { name: "owners", type: "relationship", labelKey: "owners", relationTo: "users", hasMany: true },
+    {
+      name: "owners",
+      type: "relationship",
+      labelKey: "tableList.examples.fields.collaborators",
+      relationTo: "users",
+      hasMany: true,
+    },
   ],
 } satisfies CollectionConfig<RecordDocument>;
 
