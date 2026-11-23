@@ -104,6 +104,60 @@ export class Description {
   }
 }
 
+/*
+ * A file's content as a blob URL, downloaded once and shared between callers,
+ * including those that ask while the download is still in flight, such as a
+ * carousel preview that is unmounted and remounted. A failed download is
+ * forgotten so that it can be retried.
+ */
+export class SharedBlobDownload {
+  private download: () => Promise<Blob>;
+  private url?: Promise<UrlType>;
+
+  constructor(download: () => Promise<Blob>) {
+    this.download = download;
+  }
+
+  href(): Promise<UrlType> {
+    if (this.url) return this.url;
+    const url = this.download().then((blob) => URL.createObjectURL(blob));
+    this.url = url;
+    void url.catch(() => {
+      if (this.url === url) this.url = undefined;
+    });
+    return url;
+  }
+
+  /*
+   * Hands this download, finished or in flight, to `next`'s owner so that it is
+   * neither downloaded again nor revoked while callers of the older owner still
+   * wait on it. A retry after a failure then uses `next`'s request.
+   */
+  sharedWith(next: SharedBlobDownload): SharedBlobDownload {
+    this.download = next.download;
+    return this;
+  }
+
+  // also revokes a URL whose download is still in flight, once it arrives
+  revoke(): void {
+    const url = this.url;
+    this.url = undefined;
+    void url?.then(
+      (u) => URL.revokeObjectURL(u),
+      () => {},
+    );
+  }
+}
+
+/*
+ * Lets `next`, from a newer listing, take over the download of `previous` when
+ * both are the same version of the same file. Returns whether it did, in which
+ * case `previous` must not be deconstructed.
+ */
+function takeOverDownload(next: GalleryFile, previous: GalleryFile): boolean {
+  return (next instanceof LocalGalleryFile || next instanceof RemoteFile) && next.takeOverDownloadOf(previous);
+}
+
 /**
  * Objects of this shape model files and folders in the Gallery.
  */
@@ -316,7 +370,7 @@ export class LocalGalleryFile implements GalleryFile {
   readonly version: number;
   readonly thumbnailId: number | null;
   downloadHref?: () => Promise<UrlType>;
-  private cachedDownloadHref?: UrlType;
+  private blobDownload?: SharedBlobDownload;
   readonly originalImageId: string | null;
 
   // this will only ever actually be an array of LocalGalleryFile,
@@ -406,18 +460,17 @@ export class LocalGalleryFile implements GalleryFile {
       this.description = newDescription;
     });
     if (!this.isFolder) {
-      this.downloadHref = async () => {
-        if (this.cachedDownloadHref) return this.cachedDownloadHref;
+      const blobDownload = new SharedBlobDownload(async () => {
         const { data: blob } = await axios.get<Blob>(`/api/v1/files/${idToString(this.id).elseThrow()}/file`, {
           responseType: "blob",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const url = URL.createObjectURL(blob);
-        this.cachedDownloadHref = url;
-        return url;
-      };
+        return blob;
+      });
+      this.blobDownload = blobDownload;
+      this.downloadHref = () => blobDownload.href();
     }
     this.originalImageId = originalImageId;
     this.metadata = metadata;
@@ -428,7 +481,22 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   deconstructor() {
-    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
+    this.blobDownload?.revoke();
+  }
+
+  /*
+   * Shares the download of `previous`, an older object for the same version of
+   * this file, so that a refreshed listing neither downloads the file again nor
+   * revokes a URL that a preview is still waiting on. Returns whether it did.
+   */
+  takeOverDownloadOf(previous: GalleryFile): boolean {
+    if (!(previous instanceof LocalGalleryFile) || previous.key !== this.key || previous.version !== this.version)
+      return false;
+    if (!previous.blobDownload || !this.blobDownload) return false;
+    const shared = previous.blobDownload.sharedWith(this.blobDownload);
+    this.blobDownload = shared;
+    this.downloadHref = () => shared.href();
+    return true;
   }
 
   get isFolder(): boolean {
@@ -717,7 +785,7 @@ export class RemoteFile implements GalleryFile {
   downloadHref?: () => Promise<UrlType>;
   logicPath: string;
   remotePath: string;
-  private cachedDownloadHref?: UrlType;
+  private blobDownload?: SharedBlobDownload;
   readonly extension: string | null;
   readonly metadata: Record<string, string>;
   readonly ownerName: string;
@@ -756,8 +824,7 @@ export class RemoteFile implements GalleryFile {
     this.metadata = {};
     if (!this.isFolder) {
       const filestoreId = path[0].id;
-      this.downloadHref = async () => {
-        if (this.cachedDownloadHref) return this.cachedDownloadHref;
+      const blobDownload = new SharedBlobDownload(async () => {
         const urlSearchParams = new URLSearchParams();
         idToString(this.id).do((id) => {
           urlSearchParams.append("remoteId", id);
@@ -773,10 +840,10 @@ export class RemoteFile implements GalleryFile {
             },
           },
         );
-        const url = URL.createObjectURL(blob);
-        this.cachedDownloadHref = url;
-        return url;
-      };
+        return blob;
+      });
+      this.blobDownload = blobDownload;
+      this.downloadHref = () => blobDownload.href();
       this.extension = justFilenameExtension(this.name);
     } else {
       this.extension = null;
@@ -784,7 +851,27 @@ export class RemoteFile implements GalleryFile {
   }
 
   deconstructor() {
-    if (this.cachedDownloadHref) URL.revokeObjectURL(this.cachedDownloadHref);
+    this.blobDownload?.revoke();
+  }
+
+  /*
+   * Shares the download of `previous`, an older object for the same remote file,
+   * as LocalGalleryFile.takeOverDownloadOf does. Filestores do not report a
+   * version, so an unchanged size and modification date stand in for one.
+   */
+  takeOverDownloadOf(previous: GalleryFile): boolean {
+    if (
+      !(previous instanceof RemoteFile) ||
+      previous.key !== this.key ||
+      previous.size !== this.size ||
+      previous.modificationDate?.getTime() !== this.modificationDate?.getTime()
+    )
+      return false;
+    if (!previous.blobDownload || !this.blobDownload) return false;
+    const shared = previous.blobDownload.sharedWith(this.blobDownload);
+    this.blobDownload = shared;
+    this.downloadHref = () => shared.href();
+    return true;
   }
 
   get id(): Id {
@@ -1208,7 +1295,12 @@ export function useGalleryListing({
   }
 
   function clearAndSetGalleryListing(list: ReadonlyArray<GalleryFile>) {
+    const replacements = new Map(list.map((file) => [file.key, file]));
     galleryListing.forEach((file) => {
+      const replacement = replacements.get(file.key);
+      if (replacement === file) return;
+      // a file that is still listed at the same version keeps its download
+      if (replacement && takeOverDownload(replacement, file)) return;
       file.deconstructor();
     });
     setGalleryListing(list);
