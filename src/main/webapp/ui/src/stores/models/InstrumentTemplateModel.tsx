@@ -1,11 +1,13 @@
 import { action, computed, makeObservable, observable, override } from "mobx";
 import type React from "react";
+import { newFieldKey } from "@/modules/common/field-rules/newFieldKey";
 import i18n from "@/modules/common/i18n";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import type { _LINK } from "@/util/types";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { allAreValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
 import { mkAlert } from "../contexts/Alert";
@@ -23,7 +25,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import FieldModel, { assertDisplayConditionsComplete, clearRulesReading, type FieldModelAttrs } from "./FieldModel";
 import InventoryBaseRecord, {
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
@@ -91,6 +93,7 @@ export default class InstrumentTemplateModel
       addField: action,
       removeCustomField: action,
       moveField: action,
+      create: override,
       update: override,
       updateInstrumentsToLatest: action,
       paramsForBackend: override,
@@ -162,13 +165,16 @@ export default class InstrumentTemplateModel
     this.instrumentsToUpdateCount = params.instrumentsToUpdateCount ?? 0;
   }
 
+  /** Adds a field with a new key, so display rules can use it before the template is saved. */
   addField(fieldParams: FieldModelAttrs): void {
     this.setAttributesDirty({
-      fields: [...this.fields, new FieldModel(fieldParams, this)],
+      fields: [...this.fields, new FieldModel({ ...fieldParams, fieldKey: newFieldKey() }, this)],
     });
   }
 
+  /** Removes a field, clearing the display rules that read it in the same change. */
   removeCustomField(id: Id, index: number, deleteFromInstruments = false): void {
+    clearRulesReading(this.fields[index]);
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {
@@ -224,6 +230,11 @@ export default class InstrumentTemplateModel
     return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
   }
 
+  /** Instrument template fields are not validated client-side, apart from an unfinished display condition. */
+  validate(): ValidationResult {
+    return super.validate().flatMap(() => allAreValid(this.fields.map((field) => field.validateDisplayCondition())));
+  }
+
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
     await super.fetchAdditionalInfo(silent);
     getRootStore().trackingStore.trackEvent("InventoryRecordAccessed", {
@@ -270,7 +281,13 @@ export default class InstrumentTemplateModel
     return latest;
   }
 
+  async create(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
+    await super.create();
+  }
+
   async update(): Promise<void> {
+    assertDisplayConditionsComplete(this.fields);
     const oldVersion = this.version;
     await super.update(false);
     const latest = await this.setActiveResultToLatest();

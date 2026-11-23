@@ -1,3 +1,4 @@
+import type { FieldDisplayRule } from "@/modules/common/field-rules/displayRule";
 import type { ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import type { Attachment } from "./Attachment";
@@ -26,6 +27,8 @@ export type FieldLink = {
   relationType: string;
   targetGlobalId: string;
   versionPin: number | null;
+  /** Present only on a link to a Filestore item, which has no Global ID. */
+  filestoreTarget?: { filestoreId: number; remotePath: string } | null;
 };
 
 export type Option = {
@@ -65,7 +68,19 @@ export interface Field extends BaseRecord {
   /** For link fields: the single link value, or null when unset. */
   link: FieldLink | null;
 
+  /**
+   * Identifies the field within its template and the records made from it, so
+   * display rules can name it. Null for record fields created before keys existed.
+   */
+  fieldKey: string | null;
+
+  /** Shows the field only when another field meets a condition; null when always shown. */
+  displayRule: FieldDisplayRule | null;
+
+  /** The field for saving its own record. */
   readonly paramsForBackend: object;
+  /** The field for a new record built from its record, such as a template made from a sample. */
+  readonly paramsForNewRecord: object;
   readonly hasContent: boolean;
   readonly renderContentAsString: string;
 
@@ -74,4 +89,6 @@ export interface Field extends BaseRecord {
   setAttachment(file: File | GalleryFile): void;
   setError(error: boolean): void;
   setLinkEditInProgress(value: boolean): void;
+  /** Invalid while the template editor holds a display condition that cannot be applied yet. */
+  validateDisplayCondition(): ValidationResult;
 }

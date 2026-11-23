@@ -1,8 +1,9 @@
-import { action, makeObservable, observable, override, runInAction } from "mobx";
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
 import type { _LINK } from "@/util/types";
 import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
+import { allAreValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import RsSet from "../../util/set";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -24,6 +25,7 @@ import type { AttachmentJson } from "./AttachmentModel";
 import type { ContainerAttrs, ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { hiddenFieldsOf } from "./fieldVisibility";
 import { HasLocationMixin } from "./HasLocation";
 import type InstrumentTemplateModel from "./InstrumentTemplateModel";
 import InventoryBaseRecord, {
@@ -103,6 +105,14 @@ export default class InstrumentModel
 
   templateVersion: number | null = null;
 
+  /**
+   * Whether each field held a value and was shown when the instrument was
+   * loaded, as the server's `InventoryFieldDisplayRules.beforeUpdate` records
+   * them before an update. Taken again on every load, so a save that
+   * refetches the instrument moves the baseline.
+   */
+  private loadedFields: ReadonlyMap<Field, { filled: boolean; shown: boolean }> = new Map();
+
   // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
   createOptionsParametersState: {
     name: { key: "name"; value: string };
@@ -122,7 +132,7 @@ export default class InstrumentModel
     super(factory, params);
     // the explicit key list is what lets a private member be annotated (MobX types the plain
     // overload against the public shape only)
-    makeObservable<this, "blankLandingPageField">(this, {
+    makeObservable<this, "blankLandingPageField" | "loadedFields">(this, {
       parentContainers: observable,
       immediateParentContainer: observable,
       createOptionsParametersState: observable,
@@ -130,6 +140,7 @@ export default class InstrumentModel
       template: observable,
       templateId: observable,
       templateVersion: observable,
+      loadedFields: observable.ref,
       setTemplate: action,
       overrideFields: action,
       blankLandingPageField: action,
@@ -145,6 +156,8 @@ export default class InstrumentModel
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
+      hiddenFields: computed,
+      landingPageField: computed,
     });
 
     if (this.recordType === "instrument") {
@@ -208,6 +221,8 @@ export default class InstrumentModel
       : null;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
+    const hidden = hiddenFieldsOf(this.fields);
+    this.loadedFields = new Map(this.fields.map((f) => [f, { filled: f.hasContent, shown: !hidden.has(f) }]));
     if (typeof params.templateId !== "undefined") {
       this.templateId = params.templateId ?? null;
     }
@@ -294,6 +309,60 @@ export default class InstrumentModel
     return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
   }
 
+  /** Fields that display rules hide given the current values; they keep their values. */
+  get hiddenFields(): ReadonlySet<Field> {
+    return hiddenFieldsOf(this.fields);
+  }
+
+  isFieldHidden(field: Field): boolean {
+    return this.hiddenFields.has(field);
+  }
+
+  /** A shown mandatory template field needs a value, as a sample's does. */
+  get enforceMandatoryFields(): boolean {
+    return true;
+  }
+
+  /** The field holding the instrument's public landing page: the first that matches, as the backend resolves it. */
+  get landingPageField(): Field | undefined {
+    return this.fields.find(isLandingPageField);
+  }
+
+  /**
+   * Whether a shown, mandatory field needs a value, as the server decides.
+   *
+   * On create, every one except the Landing page, which a new instrument starts
+   * with blank (see `blankLandingPageField`; server: `isLandingPageOf`).
+   *
+   * On update, a field that was empty when loaded may stay empty, so a field a
+   * template update added does not block an unrelated edit. Refused are a field
+   * this edit empties, and a field with a display rule that this edit reveals
+   * (`InventoryFieldDisplayRules.RecordBeforeUpdate`); a Landing page blank when
+   * loaded is exempt either way (`isBlankLandingPageNotBlankedByUser`). A field
+   * without a rule is checked only if its value changed
+   * (`ApiInventoryEntityField.applyContentChangesToDbField`). The client sends
+   * `""` for empty, which differs from a stored `null`, so a Landing page or
+   * other field stored as `null` may stay empty only because the server treats
+   * blank over blank as no change (#1486).
+   *
+   * Known gap: the server also exempts a Landing page that this update clears
+   * with the identifier that wrote it (`clearedWithIdentifier`). The client has
+   * no counterpart, so it is stricter there, never looser.
+   */
+  requiresValue(field: Field): boolean {
+    if (!field.mandatory) return false;
+    if (!this.id) return field !== this.landingPageField;
+    const loaded = this.loadedFields.get(field);
+    if (!loaded || loaded.filled) return true;
+    if (field === this.landingPageField || !field.displayRule) return false;
+    return !loaded.shown;
+  }
+
+  /** Also checks the template fields against the current values, so Save reads what was just typed. */
+  validate(): ValidationResult {
+    return allAreValid([super.validate(), ...this.fields.map((field) => field.validate())]);
+  }
+
   overrideFields(fields: Array<Field>): void {
     this.setAttributes({
       fields: fields.map((f) => {
@@ -318,6 +387,8 @@ export default class InstrumentModel
             attachment: null,
             mandatory: fm.mandatory,
             allowedRelationTypes: [...(fm.allowedRelationTypes ?? [])],
+            fieldKey: fm.fieldKey,
+            displayRule: fm.displayRule,
           },
           this,
         );
@@ -339,18 +410,13 @@ export default class InstrumentModel
    * Only the first matching field is blanked, mirroring the backend, which resolves a single
    * Landing page.
    *
-   * Note that this deliberately blanks a field the template may mark mandatory. That is safe only
-   * because instrument structured fields are not validated client-side: `InventoryBaseRecord`
-   * validates `extraFields` only, and `FieldModel`'s mandatory branch reads
-   * `owner.enforceMandatoryFields`, which `InstrumentModel` does not define. If either changes,
-   * this needs revisiting — the backend routes the same case around `setFieldData` for exactly
-   * this reason.
+   * Note that this deliberately blanks a field the template may mark mandatory. `requiresValue`
+   * exempts it from the mandatory check for that reason, as the backend does by routing the same
+   * case around `setFieldData`.
    */
   private blankLandingPageField(): void {
-    const landingPage = this.fields.find(isLandingPageField);
-    if (landingPage) {
-      (landingPage as FieldModel).setAttributes({ content: "" });
-    }
+    const landingPage = this.landingPageField;
+    if (landingPage) (landingPage as FieldModel).setAttributes({ content: "" });
   }
 
   async setTemplate(template: InstrumentTemplateModel | null): Promise<void> {

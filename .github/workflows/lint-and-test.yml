@@ -58,6 +58,7 @@ jobs:
             frontend:
               - 'src/main/webapp/ui/**/*.{js,jsx,ts,tsx}'
               - 'src/main/webapp/ui/**/*.{css,json}'
+              - 'src/test/resources/inventory/uriFieldCases.json'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
