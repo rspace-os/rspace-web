@@ -34,33 +34,8 @@
 </head>
 
 <div class="page">
-  <spring:message code="signup.browserWarning.iconAlt" var="signupBrowserIconAlt"/>
-  <div id="browser-warning" class="bootstrap-custom-flat">
-      <h4><spring:message code="signup.browserWarning.heading"/></h4>
-      <p><spring:message code="signup.browserWarning.notice1"/></p>
-      <p><spring:message code="signup.browserWarning.notice2"/></p>
-      <div class="row">
-        <a rel="noreferrer" href="https://www.google.co.uk/chrome/" target="_blank">
-          <div class="col-md-4 browser-container">
-            <img src="/images/icons/chrome-icon.png" alt="${signupBrowserIconAlt}"><br />
-            <spring:message code="signup.browserWarning.chrome"/>
-          </div>
-        </a>
-        <a rel="noreferrer" href="https://www.mozilla.org/en-GB/firefox/" target="_blank">
-          <div class="col-md-4 browser-container">
-            <img src="/images/icons/firefox-icon.png" alt="${signupBrowserIconAlt}"><br />
-            <spring:message code="signup.browserWarning.firefox"/>
-          </div>
-        </a>
-        <a rel="noreferrer" href="https://www.apple.com/uk/safari/" target="_blank">
-          <div class="col-md-4 browser-container">
-            <img src="/images/icons/safari-icon.png" alt="${signupBrowserIconAlt}"><br />
-            <spring:message code="signup.browserWarning.safari"/>
-          </div>
-        </a>
-      </div>
-    </div>
-    
+  <%@ include file="/common/browserWarning.jspf" %>
+
   <jsp:include page="/common/externalPagesNavbar.jsp" />
 
   <!-- BEGIN: sign up form -->
