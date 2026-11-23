@@ -43,6 +43,8 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules.RecordBeforeUpdate;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
@@ -54,16 +56,16 @@ import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SampleRequestApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.operations.InheritedFieldMerge;
 import com.researchspace.service.inventory.operations.OperationFieldNames;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -348,6 +350,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     }
     setWorkbenchAsParentForNewSubSamples(sample, user);
     sample.recalculateTotalQuantity();
+    InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(
+        sample.getActiveFields(), field -> false);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sample);
     Sample savedSample = sampleDao.persistNewSample(sample);
@@ -429,9 +433,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * its template, instead of adding a second field with that name and failing {@link
    * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames}.
    *
-   * <p>Only fields carrying an {@code operationFieldKey} are merged; a user's own extra field on
-   * POST /samples has none and keeps the normal duplicate-name rejection. Link fields are never
-   * merged, since a link holds a structured {@code InventoryLink} rather than text.
+   * <p>{@link InheritedFieldMerge#plan} decides which fields merge; the request validator reads the
+   * same plan, so its mandatory checks see the values written here.
    */
   static void mergeOperationFieldsIntoInheritedTemplateFields(
       ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
@@ -442,40 +445,18 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         || inheritedFields.isEmpty()) {
       return;
     }
-    Map<String, InventoryEntityField> mergeTargets = new HashMap<>();
-    for (InventoryEntityField inherited : inheritedFields) {
-      if (inherited instanceof InventoryLinkField || inherited.isOptionsStoringField()) {
-        continue;
+    List<InheritedFieldMerge.Merge> merges =
+        InheritedFieldMerge.plan(apiSample.getExtraFields(), inheritedFields);
+    if (!merges.isEmpty()) {
+      Set<ApiExtraField> absorbed = Collections.newSetFromMap(new IdentityHashMap<>());
+      for (InheritedFieldMerge.Merge merge : merges) {
+        merge.target().setFieldData(merge.generated().getContent());
+        absorbed.add(merge.generated());
       }
-      String name = inherited.getName();
-      if (StringUtils.isNotBlank(name)) {
-        mergeTargets.putIfAbsent(name.trim().toLowerCase(Locale.ROOT), inherited);
-      }
-    }
-    // getExtraFields() is caller-owned and may be immutable (List.of on the creation paths), so
-    // filter a copy and set it back rather than removing in place.
-    List<ApiExtraField> retained = new ArrayList<>(apiSample.getExtraFields());
-    retained.removeIf(
-        field -> {
-          if (field == null
-              || StringUtils.isBlank(field.getOperationFieldKey())
-              || ExtraFieldTypeEnum.LINK.equals(field.getType())
-              || StringUtils.isBlank(field.getName())) {
-            return false;
-          }
-          InventoryEntityField target =
-              mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
-          // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER
-          // template field vs. a generated text value). setFieldData throws on a mismatch, so
-          // validate first and leave an incompatible field in extraFields to fall back to the
-          // ordinary duplicate-name rejection instead of failing the request unpredictably.
-          if (target == null || target.validate(field.getContent()).hasErrorMessages()) {
-            return false;
-          }
-          target.setFieldData(field.getContent());
-          return true;
-        });
-    if (retained.size() != apiSample.getExtraFields().size()) {
+      // getExtraFields() is caller-owned and may be immutable (List.of on the creation paths), so
+      // filter a copy and set it back rather than removing in place.
+      List<ApiExtraField> retained = new ArrayList<>(apiSample.getExtraFields());
+      retained.removeIf(absorbed::contains);
       apiSample.setExtraFields(retained);
     }
     renameGeneratedLinksCollidingWithInheritedFields(apiSample, inheritedFields);
@@ -833,6 +814,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       boolean alreadyChanged,
       User user) {
     assertAccessPermissionsChangeAllowed(dbSample, apiSample, user);
+    // templates are not records: their rules are validated instead of their mandatory fields
+    RecordBeforeUpdate fieldsBeforeUpdate =
+        dbSample.isTemplate()
+            ? null
+            : InventoryFieldDisplayRules.beforeUpdate(dbSample.getActiveFields());
     boolean contentChanged = alreadyChanged;
     contentChanged |=
         extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSample(
@@ -849,6 +835,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
     if (dbSample.isTemplate()) {
       assertDefaultLinksMatchWhitelists(dbSample.getActiveFields());
+      dbSample.assertFieldDisplayRulesValid();
+    } else {
+      fieldsBeforeUpdate.assertShownMandatoryFieldsFilled(
+          dbSample.getActiveFields(), field -> false);
     }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
@@ -1083,6 +1073,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     setBasicFieldsFromNewIncomingApiInventoryRecord(sampleTemplate, apiSample, user);
     setSampleCoreProperties(apiSample, sampleTemplate);
     createFields(apiSample, sampleTemplate, user);
+    sampleTemplate.assertFieldDisplayRulesValid();
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
     SampleTemplate savedSampleTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);

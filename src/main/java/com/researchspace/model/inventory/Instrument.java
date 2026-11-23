@@ -3,13 +3,16 @@ package com.researchspace.model.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -128,9 +131,14 @@ public class Instrument extends InstrumentEntity {
     boolean instrumentUpdated = false;
 
     // 1. for existing instrument fields - ask field to update to latest definition
+    List<InventoryEntityField> becameMandatory = new ArrayList<>();
     for (InventoryEntityField inventoryEntityField : getActiveFields()) {
       if (inventoryEntityField.getTemplateField() != null) {
+        boolean wasMandatory = inventoryEntityField.isMandatory();
         boolean fieldUpdated = inventoryEntityField.updateToLatestTemplateDefinition();
+        if (!wasMandatory && inventoryEntityField.isMandatory()) {
+          becameMandatory.add(inventoryEntityField);
+        }
         if (fieldUpdated) {
           inventoryEntityField.setModificationDate(new Date().getTime());
           instrumentUpdated = true;
@@ -151,6 +159,8 @@ public class Instrument extends InstrumentEntity {
     if (instrumentUpdated) {
       refreshActiveFieldsAndColumnIndex();
     }
+    InventoryFieldDisplayRules.assertMandatoryInLatestTemplateFilled(
+        getActiveFields(), becameMandatory);
     setTemplateLinkedVersion(latestTemplateVersion);
     return instrumentUpdated;
   }

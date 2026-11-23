@@ -3,14 +3,17 @@ package com.researchspace.model.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -178,9 +181,14 @@ public class Sample extends SampleEntity {
     }
 
     // 2. for existing sample fields - ask field to update to latest definition
+    List<InventoryEntityField> becameMandatory = new ArrayList<>();
     for (InventoryEntityField inventoryEntityField : getActiveFields()) {
       if (inventoryEntityField.getTemplateField() != null) {
+        boolean wasMandatory = inventoryEntityField.isMandatory();
         boolean fieldUpdated = inventoryEntityField.updateToLatestTemplateDefinition();
+        if (!wasMandatory && inventoryEntityField.isMandatory()) {
+          becameMandatory.add(inventoryEntityField);
+        }
         if (fieldUpdated) {
           inventoryEntityField.setModificationDate(new Date().getTime());
           sampleUpdated = true;
@@ -208,6 +216,8 @@ public class Sample extends SampleEntity {
     if (sampleUpdated) {
       refreshActiveFieldsAndColumnIndex();
     }
+    InventoryFieldDisplayRules.assertMandatoryInLatestTemplateFilled(
+        getActiveFields(), becameMandatory);
     setSTemplateLinkedVersion(latestTemplateVersion);
     return sampleUpdated;
   }

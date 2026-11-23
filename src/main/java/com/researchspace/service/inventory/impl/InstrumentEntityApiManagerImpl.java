@@ -34,6 +34,8 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules;
+import com.researchspace.model.inventory.field.InventoryFieldDisplayRules.RecordBeforeUpdate;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
@@ -50,6 +52,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -141,6 +144,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       assertDefaultFieldsValid(instrumentToSave);
     }
     setLocationForNewInstrument(apiInstrument, instrumentToSave, user);
+    InventoryFieldDisplayRules.assertShownMandatoryFieldsFilled(
+        instrumentToSave.getActiveFields(), isLandingPageOf(instrumentToSave));
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
@@ -160,6 +165,29 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   private static Optional<InventoryEntityField> landingPageField(InstrumentEntity record) {
     return PidinstFields.landingPage(record);
+  }
+
+  /**
+   * A blank Landing page is a new instrument's resting state rather than missing input (see {@link
+   * #assertDefaultFieldsValid}), so on create it is exempt from the mandatory check for fields with
+   * a display rule too.
+   */
+  private static Predicate<InventoryEntityField> isLandingPageOf(InstrumentEntity record) {
+    InventoryEntityField landingPage = landingPageField(record).orElse(null);
+    return field -> field == landingPage;
+  }
+
+  /**
+   * On update, a blank Landing page is exempt only when the user did not blank it: it was already
+   * blank before the update, or {@link #clearLandingPageOfDeletedIdentifier} cleared it. A request
+   * that blanks a shown, mandatory Landing page is rejected, as it is for a field without a rule.
+   *
+   * @param landingPage the instrument's Landing page field, resolved before the update
+   */
+  private static Predicate<InventoryEntityField> isBlankLandingPageNotBlankedByUser(
+      InventoryEntityField landingPage, boolean wasBlank, boolean clearedWithIdentifier) {
+    boolean exempt = landingPage != null && (wasBlank || clearedWithIdentifier);
+    return field -> exempt && field == landingPage;
   }
 
   /**
@@ -414,6 +442,11 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       assertAccessPermissionsChangeAllowed(dbInstrument, apiInstrument, user);
+      RecordBeforeUpdate fieldsBeforeUpdate =
+          InventoryFieldDisplayRules.beforeUpdate(dbInstrument.getActiveFields());
+      InventoryEntityField landingPage = landingPageField(dbInstrument).orElse(null);
+      boolean landingPageWasBlank =
+          landingPage != null && StringUtils.isBlank(landingPage.getFieldData());
       Container orgParent = dbInstrument.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
@@ -425,13 +458,17 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createDeleteRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       // after the deletion above, which is what makes the identifier's suffix findable as deleted
-      contentChanged |=
+      boolean landingPageCleared =
           clearLandingPageOfDeletedIdentifier(apiInstrument.getIdentifiers(), dbInstrument);
+      contentChanged |= landingPageCleared;
       contentChanged |=
           identifiersHelper.createAssignRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
       contentChanged |= applyLinkFieldValuesOnUpdate(apiInstrument, dbInstrument, user);
+      fieldsBeforeUpdate.assertShownMandatoryFieldsFilled(
+          dbInstrument.getActiveFields(),
+          isBlankLandingPageNotBlankedByUser(landingPage, landingPageWasBlank, landingPageCleared));
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);
@@ -678,6 +715,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     template.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
     setBasicFieldsFromNewIncomingApiInventoryRecord(template, post, user);
     addFieldsToNewInstrumentTemplate(post, template, user);
+    InventoryFieldDisplayRules.assertTemplateRulesValid(template.getFields());
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(template);
     InstrumentTemplate savedTemplate = instrumentTemplateDao.persistInstrumentTemplate(template);
     saveIncomingInstrumentImage(savedTemplate, post, user);
@@ -746,6 +784,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       // the same write path as a concrete instrument
       contentChanged |= applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user);
       assertDefaultLinksMatchWhitelists(dbTemplate.getActiveFields());
+      InventoryFieldDisplayRules.assertTemplateRulesValid(dbTemplate.getFields());
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbTemplate, apiTemplate);
       contentChanged |= saveIncomingInstrumentImage(dbTemplate, apiTemplate, user);
       if (contentChanged) {

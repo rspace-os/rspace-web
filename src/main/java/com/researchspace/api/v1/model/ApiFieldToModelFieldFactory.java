@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.rule.FieldKeys;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -75,6 +76,10 @@ public class ApiFieldToModelFieldFactory {
     if (field.getMandatory() != null) {
       toAdd.setMandatory(field.getMandatory());
     }
+    // set before the field is persisted, so the template's rules can be validated against the
+    // keys of fields created in the same request; a client key is checked with the whole template
+    toAdd.setFieldKey(field.getFieldKey() != null ? field.getFieldKey() : FieldKeys.newFieldKey());
+    toAdd.setDisplayRule(field.getDisplayRule());
     return toAdd;
   }
 
