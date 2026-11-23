@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
@@ -130,6 +131,7 @@ public abstract class InstrumentEntity extends MovableInventoryRecord
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   public List<Barcode> getBarcodes() {
     return barcodes;
   }
@@ -151,12 +153,14 @@ public abstract class InstrumentEntity extends MovableInventoryRecord
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   public List<InventoryFile> getFiles() {
     return files;
   }
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   @Override
   public List<DigitalObjectIdentifier> getIdentifiers() {
     return identifiers;
