@@ -68,12 +68,13 @@ section of pom.xml are included in the Maven classpath.
 Package (builds web application):
 
 ```bash
-mvn clean package -Denvironment=drop-recreate-db
+mvn clean package
 ```
-Run acceptance tests: 
+Run acceptance tests (DB-backed tests use a throwaway MariaDB in Docker, see
+[GettingStarted.md](GettingStarted.md#run-the-default-test-suite-recommended)):
 
 ```bash
-mvn clean verify -Denvironment=drop-recreate-db
+mvn clean verify
 ```
 
 Launch in jetty:
@@ -152,8 +153,8 @@ All the static and UI content is stored `src/main/webapp` and includes JSP
 pages, Javascript files and CSS stylesheets. We use Sitemesh
 (http://wiki.sitemesh.org/display/sitemesh/Home) to provide a consistent
 page structure and header/footer structure across the application. This
-is a special JSP page in `/decorators/default.jsp` and configured via
-`WEB-INF/decorators.xml`.
+is a special JSP page in `WEB-INF/decorators/default.jsp` and configured via
+`WEB-INF/sitemesh3.xml`.
 
 We are now using client side templates such as Mustache wherever
 possible, Boostrap for CSS. We also make extensive use of JQuery,

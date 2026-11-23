@@ -3,6 +3,7 @@ package com.researchspace.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.linkedelements.FieldParserImpl;
@@ -19,6 +21,8 @@ import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
+import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -40,10 +44,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class RSChemElementMgrTest {
 
+  @Mock FieldDao fieldDao;
   @Mock FieldManager mockFieldMgr;
   @Mock IPermissionUtils mockPermissionUtils;
   @Mock RSChemElementDao chemDao;
@@ -68,6 +74,53 @@ public class RSChemElementMgrTest {
     chemElementManager.setRecordAdapter(recordAdapter);
     chemElementManager.setChemistryProvider(chemistryProvider);
     chemElementManager.setFileStore(filestore);
+  }
+
+  @Test
+  public void savingKetcherPreviewDoesNotIndexStructureAgain() throws Exception {
+    StructuredDocument document = TestFactory.createAnySD();
+    Field field = document.getFields().get(0);
+    field.setId(10L);
+    String png =
+        "data:image/png;base64,"
+            + "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1sAAAAASUVORK5CYII=";
+    ReflectionTestUtils.setField(chemElementManager, "fieldDao", fieldDao);
+    ReflectionTestUtils.setField(chemElementManager, "permUtils", mockPermissionUtils);
+    when(fieldDao.get(10L)).thenReturn(field);
+    when(mockPermissionUtils.isPermitted(document, PermissionType.WRITE, user)).thenReturn(true);
+    when(chemistryProvider.graphicFormat()).thenReturn(ChemElementsFormat.MOL);
+    when(chemistryProvider.convert("CC", "smiles", "smiles")).thenReturn("CC");
+    when(chemDao.save(any(RSChemElement.class)))
+        .thenAnswer(
+            invocation -> {
+              RSChemElement element = invocation.getArgument(0);
+              element.setId(1L);
+              return element;
+            });
+    when(chemistryProvider.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    RSChemElement saved =
+        chemElementManager.saveChemElement(
+            ChemicalDataDTO.builder()
+                .fieldId(10L)
+                .chemElements("CC")
+                .chemElementsFormat("smiles")
+                .imageBase64(png)
+                .build(),
+            user);
+    when(chemDao.get(1L)).thenReturn(saved);
+    when(recordAdapter.getAsBaseRecord(saved)).thenReturn(Optional.of(document));
+    when(mockPermissionUtils.isPermitted(document, PermissionType.READ, user)).thenReturn(true);
+    FileProperty image = new FileProperty();
+    when(filestore.createAndSaveFileProperty(any(), any(), anyString(), any())).thenReturn(image);
+
+    RSChemElement withPreview =
+        chemElementManager.saveChemImage(
+            ChemicalImageDTO.builder().chemId(1L).imageBase64(png).build(), user);
+
+    assertSame(image, withPreview.getImageFileProperty());
+    verify(chemistryProvider, times(1)).save(saved);
+    verify(chemDao, times(3)).save(saved);
   }
 
   @Test

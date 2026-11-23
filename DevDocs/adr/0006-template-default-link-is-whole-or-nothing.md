@@ -107,3 +107,8 @@ Neutral:
 - Archive export/import does not carry `InventoryLink` at all today, so a
   default link does not survive export. Pre-existing gap, unchanged by this
   decision.
+
+*Amended 2026-11-10 (ADR 0016):* `InventoryLink` now holds a second target kind, a
+Filestore item, in columns of its own, so the Global ID columns are nullable and a
+CHECK constraint keeps every row to one complete kind. A template's default link is
+still a Global ID target only, and still whole or nothing.

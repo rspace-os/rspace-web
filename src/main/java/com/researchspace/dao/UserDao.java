@@ -5,8 +5,10 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import java.util.Collection;
@@ -45,10 +47,17 @@ public interface UserDao extends GenericDao<User, Long> {
   /**
    * Saves a user's information.
    *
+   * <p>If {@code user} is detached, the returned object is a different, managed copy. The
+   * argument's {@code version} and {@code roles} are still updated to match the saved row, so it
+   * can be saved again. Callers should prefer the returned object.
+   *
    * @param user the object to be saved
-   * @return the persisted User object
+   * @return the persisted User object, which may not be the argument
    */
   User saveUser(User user);
+
+  /** Atomically inserts or updates the unique preference and returns its persisted value. */
+  UserPreference upsertPreference(User user, Preference preference, String value);
 
   String getUserPassword(String username);
 

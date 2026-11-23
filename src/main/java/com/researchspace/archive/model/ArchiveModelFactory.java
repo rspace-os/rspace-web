@@ -78,6 +78,7 @@ public class ArchiveModelFactory {
   ArchivalFieldForm createArchivalFieldForm(FieldForm fm) {
     ArchivalFieldForm rc = new ArchivalFieldForm();
     rc.setFormFieldId(fm.getId());
+    rc.setMandatory(fm.isMandatory());
     rc.setName(fm.getName());
     rc.setColumnIndex(fm.getColumnIndex());
     rc.setModificationDate(fm.getModificationDate());
@@ -108,6 +109,8 @@ public class ArchiveModelFactory {
         RadioFieldForm radfm = (RadioFieldForm) fm;
         rc.setOptions(radfm.getRadioOption());
         rc.setSelection(radfm.getDefaultRadioOption());
+        rc.setDisplayAsPickList(radfm.isShowAsPickList());
+        rc.setSortAlphabetic(radfm.isSortAlphabetic());
         break;
       case CHOICE: // "Choice")
         // <summary>Type: [CHOICE], Choices: [[a, b, c]], Default selection:
@@ -115,7 +118,7 @@ public class ArchiveModelFactory {
         ChoiceFieldForm cfm = (ChoiceFieldForm) fm;
         rc.setOptions(cfm.getChoiceOptions());
         rc.setSelection(cfm.getDefaultChoiceOption());
-        rc.setMultipleChoice("no"); // why din't cfm set.
+        rc.setMultipleChoice(cfm.isMultipleChoice() ? "yes" : "no");
         break;
       case DATE: // Date
         // <summary>Type: [DATE], Min date: [Unspecified], Max date:

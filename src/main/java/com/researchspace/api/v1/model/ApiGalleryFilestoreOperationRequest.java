@@ -1,11 +1,11 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.netfiles.ApiNfsCredentials;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/uploadFromGallery}. The

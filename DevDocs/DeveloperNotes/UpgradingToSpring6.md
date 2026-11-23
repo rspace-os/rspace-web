@@ -89,7 +89,9 @@ Until the reindex finishes, search results will be missing or incomplete.
 - **`Session.saveOrUpdate` is deprecated** (removed in Hibernate 7).
   `GenericDaoHibernate.save()` now branches between `persist` and `merge`; for entities
   with assigned (non-generated) ids, use the instance returned by `save()`, as its
-  javadoc explains.
+  javadoc explains. No RSpace code calls `saveOrUpdate` any more. `UserDao.saveUser`
+  copies the new version and roles back onto the object passed in, so the `User` cached
+  in the Shiro session can be saved again.
 - **HQL is parsed strictly.** Hibernate 6 rejects paths Hibernate 5 tolerated:
   transient properties (use the persistent path, e.g. `editInfo.name`, not the
   `@Transient` delegate) and raw discriminator columns (use `type(alias) = EntityName`,
@@ -106,4 +108,11 @@ Until the reindex finishes, search results will be missing or incomplete.
   `web.xml`.
 - **SiteMesh 3 decorators** use bare file names because `/WEB-INF/decorators/` is added
   automatically. Included fragments must not contain `<head>` because SiteMesh keeps
-  only the first one.
+  only the first one. The filter is mapped to REQUEST and ERROR, never FORWARD: SiteMesh 3
+  does not mark an excluded request as handled, so on the rewrite filter's forward to
+  `/app/*` it would decide again, on a path that misses exact excludes.
+  `SiteMeshDecorationTest` fails if FORWARD is added back. Container error pages are
+  matched by the error page's path (`/404.jsp`, `/error.jsp`), not the failed URL:
+  Tomcat sets forward attributes on the error dispatch and Jetty does not, so
+  `ErrorPageSiteMeshFilter` hides `forward.servlet_path`, the attribute SiteMesh
+  reads, to get the same result on both.

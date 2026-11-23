@@ -9,8 +9,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -23,6 +25,11 @@ import lombok.Setter;
 
 /** Persists user preferences. */
 @Entity
+@Table(
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_user_preference",
+            columnNames = {"user_id", "preference"}))
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
 @NoArgsConstructor

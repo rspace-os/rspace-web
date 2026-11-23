@@ -74,7 +74,7 @@ public class FieldDaoHibernate extends GenericDaoHibernate<Field, Long> implemen
 
   @Override
   public void deleteFieldAttachment(FieldAttachment removed) {
-    getSession().delete(removed);
+    getSession().remove(removed);
   }
 
   @Override

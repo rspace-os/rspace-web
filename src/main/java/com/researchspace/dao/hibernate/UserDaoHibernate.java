@@ -21,9 +21,11 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.sort.UserSort;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
@@ -42,6 +44,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,6 +55,7 @@ import java.util.TreeSet;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
@@ -86,6 +90,45 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private static final String LOCK_KEY_COLLATION = "utf8mb4_unicode_ci";
 
   private volatile boolean collationChecked;
+
+  @Override
+  public UserPreference upsertPreference(User user, Preference preference, String value) {
+    Session session = getSession();
+    UserPreference candidate = new UserPreference(preference, user, value);
+    session.flush();
+    // Share Hibernate's pooled table generator with cascaded preference inserts.
+    SessionImplementor implementation = session.unwrap(SessionImplementor.class);
+    Long id =
+        (Long)
+            implementation
+                .getEntityPersister(null, candidate)
+                .getIdentifierGenerator()
+                .generate(implementation, candidate);
+    session
+        .createNativeQuery(
+            "INSERT INTO UserPreference (id, user_id, preference, value) "
+                + "VALUES (:id, :userId, :preference, :value) "
+                + "ON DUPLICATE KEY UPDATE value = VALUES(value)")
+        .addSynchronizedEntityClass(UserPreference.class)
+        .setParameter("id", id)
+        .setParameter("userId", user.getId())
+        .setParameter("preference", preference.ordinal())
+        .setParameter("value", value)
+        .executeUpdate();
+    Long storedId =
+        session
+            .createNativeQuery(
+                "SELECT id FROM UserPreference WHERE user_id = :userId AND preference ="
+                    + " :preference",
+                Long.class)
+            .setParameter("userId", user.getId())
+            .setParameter("preference", preference.ordinal())
+            .getSingleResult();
+    UserPreference stored = session.get(UserPreference.class, storedId);
+    session.refresh(stored);
+    user.setPreference(stored);
+    return stored;
+  }
 
   @Override
   public String usernameLockKey(String name) {
@@ -149,12 +192,18 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   /** {@inheritDoc} */
   public User saveUser(User user) {
     log.debug("user's id: {}", user.getId());
-    Session s = sessionFactory.getCurrentSession();
-    s.saveOrUpdate(user);
+    User saved = persistOrMerge(user);
     // this will force the throwing of a constraint violation exception
     // now, if there is one, so that it can be handled in the service layer.
-    s.flush();
-    return user;
+    sessionFactory.getCurrentSession().flush();
+    if (saved != user) {
+      // callers often pass the User cached in the Shiro session, which must stay saveable. A
+      // plain copy of the roles drops the old snapshot, which would make a later merge re-insert
+      // added roles and keep removed ones.
+      user.setVersion(saved.getVersion());
+      user.setRoles(new HashSet<>(saved.getRoles()));
+    }
+    return saved;
   }
 
   /**

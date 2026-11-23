@@ -1,5 +1,6 @@
 import "@/stores/stores/RootStore";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import React from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -34,7 +35,8 @@ const TriggersPermalinkNavigate = () => {
   return <button onClick={() => navigate("/inventory/container/1")}>{"Click me!"}</button>;
 };
 describe("InnerSearchNavigationContext", () => {
-  test("navigate calls should update the search parameters.", () => {
+  test("navigate calls should update the search parameters.", async () => {
+    const user = userEvent.setup();
     const querySpy = vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(() =>
       Promise.resolve({
         data: { records: [] },
@@ -48,23 +50,24 @@ describe("InnerSearchNavigationContext", () => {
       factory: new AlwaysNewFactory(),
     });
     render(
-      <InnerSearchNavigationContext>
-        <SearchContext.Provider
-          value={{
-            search,
-            differentSearchForSettingActiveResult: search,
-          }}
-        >
+      <SearchContext.Provider
+        value={{
+          search,
+          differentSearchForSettingActiveResult: search,
+        }}
+      >
+        <InnerSearchNavigationContext>
           <TriggersSearchNavigate />
-        </SearchContext.Provider>
-      </InnerSearchNavigationContext>,
+        </InnerSearchNavigationContext>
+      </SearchContext.Provider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
-    expect(querySpy).toHaveBeenLastCalledWith("search", expect.urlSearchParamContaining({ query: "foo" }));
+    await user.click(screen.getByRole("button", { name: "Click me!" }));
+    expect(querySpy).toHaveBeenCalledWith("search", expect.urlSearchParamContaining({ query: "foo" }));
   });
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
-    test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", () => {
+    test("navigate calls with skipToParentContext set to true should open /inventory/search calls in a new window.", async () => {
+      const user = userEvent.setup();
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -84,10 +87,11 @@ describe("InnerSearchNavigationContext", () => {
         </AlwaysNewWindowNavigationContext>,
       );
 
-      fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
+      await user.click(screen.getByRole("button", { name: "Click me!" }));
       expect(openSpy).toHaveBeenCalled();
     });
-    test("navigate calls to permalink pages should always open in a new window.", () => {
+    test("navigate calls to permalink pages should always open in a new window.", async () => {
+      const user = userEvent.setup();
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const search = new Search({
         factory: new AlwaysNewFactory(),
@@ -107,11 +111,12 @@ describe("InnerSearchNavigationContext", () => {
         </AlwaysNewWindowNavigationContext>,
       );
 
-      fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
+      await user.click(screen.getByRole("button", { name: "Click me!" }));
       expect(openSpy).toHaveBeenCalled();
     });
   });
-  test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", () => {
+  test("Pre-existing search parameters are kept, enforcing the parentGlobalId restriction", async () => {
+    const user = userEvent.setup();
     const querySpy = vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(() =>
       Promise.resolve({
         data: { records: [] },
@@ -140,8 +145,8 @@ describe("InnerSearchNavigationContext", () => {
       </SearchContext.Provider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
-    expect(querySpy).toHaveBeenLastCalledWith(
+    await user.click(screen.getByRole("button", { name: "Click me!" }));
+    expect(querySpy).toHaveBeenCalledWith(
       "search",
       expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" }),
     );

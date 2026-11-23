@@ -39,6 +39,7 @@ import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiSubSampleInfoWithSampleInfo;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
@@ -2927,5 +2928,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
         piSubSampleInfoAsSeenByU1.getPermittedActions());
     assertNotNull(result.getRecords().get(0).getBarcodes()); // not-null in limited view
     assertNull(piSubSampleInfoAsSeenByU1.getModifiedBy()); // null in limited view
+    assertTrue(
+        ((ApiSubSampleInfoWithSampleInfo) piSubSampleInfoAsSeenByU1)
+            .getSampleInfo()
+            .isClearedForLimitedView());
   }
 }

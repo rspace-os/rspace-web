@@ -9,6 +9,7 @@ import jakarta.servlet.ServletContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.core.env.Environment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -43,5 +44,37 @@ public class FrontendCacheVersionTest {
 
     assertFalse(FrontendCacheVersion.isReactDevMode(servletContext));
     Mockito.verifyNoInteractions(applicationContext, environment);
+  }
+
+  @Test
+  public void devModeFallsBackToSystemPropertyWithoutSpringContext() {
+    ServletContext servletContext = new MockServletContext();
+    assertFalse(FrontendCacheVersion.isDevMode(servletContext));
+
+    System.setProperty(FrontendCacheVersion.FRONTEND_DEV_MODE_PROPERTY, "true");
+    try {
+      assertTrue(FrontendCacheVersion.isDevMode(servletContext));
+    } finally {
+      System.clearProperty(FrontendCacheVersion.FRONTEND_DEV_MODE_PROPERTY);
+    }
+  }
+
+  @Test
+  public void devModeFollowsPropertiesNotJustRunProfile() {
+    MockEnvironment prod = new MockEnvironment();
+    prod.setActiveProfiles("prod");
+    assertFalse(FrontendCacheVersion.isDevMode(prod));
+
+    prod.setProperty(FrontendCacheVersion.FRONTEND_DEV_MODE_PROPERTY, "true");
+    assertTrue(FrontendCacheVersion.isDevMode(prod));
+
+    MockEnvironment prodWithHmr = new MockEnvironment();
+    prodWithHmr.setActiveProfiles("prod");
+    prodWithHmr.setProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY, "true");
+    assertTrue(FrontendCacheVersion.isDevMode(prodWithHmr));
+
+    MockEnvironment run = new MockEnvironment();
+    run.setActiveProfiles("run");
+    assertTrue(FrontendCacheVersion.isDevMode(run));
   }
 }

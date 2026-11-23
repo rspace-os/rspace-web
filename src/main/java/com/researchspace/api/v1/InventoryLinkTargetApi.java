@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RequestMapping("/api/inventory/v1")
 public interface InventoryLinkTargetApi {
@@ -20,4 +21,12 @@ public interface InventoryLinkTargetApi {
    */
   @GetMapping("/linkTargets/{globalId}/summary")
   ApiInventoryLinkTargetSummary getLinkTargetSummary(@PathVariable String globalId, User user);
+
+  /**
+   * The same summary for a link target that is a file or folder inside a filestore. Readable only
+   * to the filestore's owner; anyone else, and an unknown filestore, get the same redacted summary.
+   */
+  @GetMapping("/linkTargets/filestores/{filestoreId}/summary")
+  ApiInventoryLinkTargetSummary getFilestoreLinkTargetSummary(
+      @PathVariable Long filestoreId, @RequestParam("remotePath") String remotePath, User user);
 }

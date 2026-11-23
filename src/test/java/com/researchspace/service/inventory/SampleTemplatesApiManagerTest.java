@@ -37,6 +37,7 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -168,7 +169,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkTemplatePermissionsAndLimitedView() {
+  public void checkTemplatePermissionsAndLimitedView() throws Exception {
 
     // create a pi and other user
     User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
@@ -219,6 +220,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), otherUser);
     assertFalse(templateRetrievedByOtherUser.isClearedForPublicView());
     assertTrue(templateRetrievedByOtherUser.isClearedForLimitedView());
+
+    Long templateId = createdTemplate.getId();
+    Long templateCount = getCountOfEntityTable("SampleTemplate");
+    assertThrows(
+        NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(templateId, otherUser));
+    assertEquals(templateCount, getCountOfEntityTable("SampleTemplate"));
+
+    ApiSampleWithFullSubSamples fromLimitedReadTemplate =
+        new ApiSampleWithFullSubSamples("sample from limited-read template");
+    fromLimitedReadTemplate.setTemplateId(templateId);
+    Long sampleCount = getCountOfEntityTable("Sample");
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleApiMgr.createNewApiSample(fromLimitedReadTemplate, otherUser));
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
   }
 
   @Test
@@ -1051,5 +1067,52 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals("Sample is not based on any template", iae.getMessage());
+  }
+
+  @Test
+  public void groupmateWithFullReadCanDuplicateSampleTemplate() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User groupmate = createAndSaveUserIfNotExists(getRandomAlphabeticString("mate"));
+    initialiseContentWithEmptyContent(pi, owner, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, owner, groupmate);
+    ApiSampleTemplate template = createBasicSampleTemplate(owner);
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(template.getId(), groupmate);
+
+    assertEquals(groupmate.getUsername(), duplicate.getOwner().getUsername());
+  }
+
+  @Test
+  public void duplicateRejectsAnIdOfTheOtherKind() throws Exception {
+    ApiSampleWithFullSubSamples sample = createBasicSampleTemplateAndSample(testUser);
+    Long sampleId = sample.getId();
+    Long templateId = sample.getTemplateId();
+    Long sampleCount = getCountOfEntityTable("Sample");
+    Long templateCount = getCountOfEntityTable("SampleTemplate");
+
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicateTemplate(sampleId, testUser));
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(templateId, testUser));
+
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
+    assertEquals(templateCount, getCountOfEntityTable("SampleTemplate"));
+  }
+
+  @Test
+  public void nonOwnerCanDuplicateDefaultSampleTemplate() {
+    User nonOwner = createInitAndLoginAnyUser();
+    SampleTemplate defaultTemplate =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("from SampleTemplate order by id asc", SampleTemplate.class)
+            .setMaxResults(1)
+            .getSingleResult();
+    assertEquals(
+        sampleTemplateDao.getDefaultTemplatesOwner(), defaultTemplate.getOwner().getUsername());
+
+    ApiSampleTemplate duplicate = sampleApiMgr.duplicateTemplate(defaultTemplate.getId(), nonOwner);
+
+    assertEquals(nonOwner.getUsername(), duplicate.getOwner().getUsername());
   }
 }

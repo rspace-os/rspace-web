@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       java_version:
-        description: 'Java version for the build and the app'
+        description: 'JVM the app runs on'
         type: choice
         options: ['17', '21']
-        default: '17'
+        default: '21'
 
 # A new push to a pull request cancels that PR's running e2e jobs. Other events get
 # a group per run, so runs on main are never queued behind or cancelled by each other.
@@ -26,5 +26,6 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     with:
       mode: mock
-      java_version: ${{ inputs.java_version || '17' }}
+      # Pull requests run on 21. Pushes to main run on 17, the oldest JVM we support.
+      java_version: ${{ inputs.java_version || (github.event_name == 'push' && '17' || '21') }}
     secrets: inherit

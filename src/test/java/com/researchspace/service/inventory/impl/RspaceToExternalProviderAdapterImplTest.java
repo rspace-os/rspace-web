@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,6 +34,7 @@ import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -997,5 +1000,23 @@ class RspaceToExternalProviderAdapterImplTest {
         linksGenuinelyCleared.has("relatedIdentifiers"),
         "a real clear must still reach DataCite, or withdrawn entries stay registered");
     assertEquals(0, linksGenuinelyCleared.get("relatedIdentifiers").size());
+  }
+
+  @Test
+  void aFilestoreItemLinkIsNotRegisteredAsARelatedIdentifier() {
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField field = new InventoryLinkField();
+    field.setName("Measurement technique");
+    InventoryLink link = new InventoryLink();
+    link.setRelationType("IsDocumentedBy");
+    link.setFilestoreTarget(
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(12L, "My S3", new User("o")),
+        "/XRD/protocol.pdf");
+    field.setLink(link);
+    addField(instrument, field);
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+    verify(linkTargetResolver, never()).targetIsLiveAndReadable(any(), any());
   }
 }

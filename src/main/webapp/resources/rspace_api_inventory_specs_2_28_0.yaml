@@ -108,7 +108,7 @@ paths:
                  - `name` is the only required property.
                  - `fields` array contains values for fields coming from the instrument template. The ordering is important as the content is assigned to subsequent template fields.
                  - All fields except Choice and Radio fields are defined as `{"content": <value>}` objects, where `<value>` is appropriate for the field type. Radio and Choice fields are defined as `"selectedOptions": ["<option1>", "<option2>"...]`
-                 - If `templateId` is set, `fields` can be omitted, in which case the instrument will be created using default values supplied by the instrument template (if any).
+                 - If `templateId` is set, `fields` can be omitted, in which case the instrument will be created using default values supplied by the instrument template (if any). The caller needs full read access to the template.
                  - For Attachment fields, the `content` field is used to describe the attached file, and it is not possible to attach the actual file in this request. To attach the file, use `/files POST` setting `parentGlobalId` to the Id of the field once this instrument is created.
                  - `extraFields` array contains values for additional fields that can be added independently from template fields. The order of the fields in array is not important, but each field need to specify `type` and `name`.
 
@@ -403,7 +403,7 @@ paths:
       description: |
         Generates a copy of the instrument, including fields, extra fields and images.
 
-        This action requires `UPDATE` permission to the Instrument.
+        This action requires full read access to the Instrument (limited read, e.g. through a shared container, is not enough).
       tags:
         - Instruments
       parameters:
@@ -831,7 +831,7 @@ paths:
          - `name` is the only required property.
          - `fields` array contains values for fields coming from the sample template. The ordering is important as the content is assigned to  subsequent template fields.
          - All fields except Choice and Radio fields, fields are defined as `{"content": <value>}`objects, where `<value>` is appropriate for the field type.  Radio and Choice fields are defined as `"selectedOptions": ["<option1>", "<option2>"...]`
-         - If `templateId` is set, `fields` can be omitted, in which case the sample will be created using default values supplied by the template (if any).
+         - If `templateId` is set, `fields` can be omitted, in which case the sample will be created using default values supplied by the template (if any). The caller needs full read access to the template.
          - For Attachment fields, the `content` field is used to describe the attached file, and it is not possible to attach the actual file in this request. To attach the file, use `/files POST` setting `parentGlobalId` to the Id of the field once this sample is created.
          - `extraFields` array contains values for additional fields that can be added independently from template fields. The order of the fields in array is not important, but each field need to specify `type` and `name`.
 
@@ -1107,7 +1107,7 @@ paths:
         E.g. original sample S has 10 subsamples of 5ml. After duplication, S-copy will have 1 subsample of 50ml. You can then use `subSample/{id}/actions/duplicate` or  `subSample/{id}/actions/split` to edit the new subsample amounts.
 
 
-        This action requires `UPDATE` permission to the Sample.
+        This action requires full read access to the Sample (limited read, e.g. through a shared container, is not enough).
       tags:
         - Samples
       parameters:
@@ -2668,7 +2668,7 @@ paths:
       description: |
         Generates a deep copy of the container.
 
-        This action requires `UPDATE` permission to the container.
+        This action requires full read access to the container (limited read, e.g. through a shared container, is not enough).
       tags:
         - Containers
       parameters:

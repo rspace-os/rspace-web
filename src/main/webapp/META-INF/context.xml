@@ -1,2 +1,4 @@
 <!-- Provides context path for a tomcat application -->
-<Context path="${context.path}"/>
+<!-- suspendWrappedResponseAfterForward defaults to true on Tomcat 11, which makes it drop
+     the page SiteMesh writes after forwarding to a decorator, so every page is blank. -->
+<Context path="${context.path}" suspendWrappedResponseAfterForward="false"/>

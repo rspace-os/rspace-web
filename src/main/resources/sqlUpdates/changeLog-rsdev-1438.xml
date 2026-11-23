@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-15-restore-delete-on-rspac2559-media-acls" context="run"
+    author="tchoi">
+    <comment>Give owners back DELETE on Gallery files repaired by UpdateEmptyACLsForMediaFiles_RSPAC2559
+      (RSDEV-1438). That updater wrote seven owner permissions but not DELETE, so the owners
+      could not delete those files. Matches only the exact ACL string the updater wrote for
+      the file's creator (byte-for-byte), so files that were later shared or had their
+      permissions changed are left alone. Appends one element; no other ACL is touched.</comment>
+    <sql>
+      UPDATE BaseRecord
+      SET acl = CONCAT(acl, '&amp;', createdBy, '=RECORD:DELETE:')
+      WHERE type = 'MEDIA_FILE'
+        AND BINARY acl = BINARY CONCAT(
+          createdBy, '=RECORD:WRITE:&amp;',
+          createdBy, '=RECORD:CREATE:&amp;',
+          createdBy, '=RECORD:CREATE_FOLDER:&amp;',
+          createdBy, '=RECORD:SEND:&amp;',
+          createdBy, '=RECORD:FOLDER_RECEIVE:&amp;',
+          createdBy, '=RECORD:RENAME:&amp;',
+          createdBy, '=RECORD:COPY:')
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>

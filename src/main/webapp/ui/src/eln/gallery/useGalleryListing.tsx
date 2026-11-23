@@ -466,7 +466,7 @@ export class LocalGalleryFile implements GalleryFile {
   }
 
   transformFilename(f: (filename: string) => string): string {
-    if (this.isFolder) return f(this.name);
+    if (this.isFolder || this.isSnippet || filenameExceptExtension(this.name) === this.name) return f(this.name);
     return `${f(filenameExceptExtension(this.name))}.${justFilenameExtension(this.name)}`;
   }
 

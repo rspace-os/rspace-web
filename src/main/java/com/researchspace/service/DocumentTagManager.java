@@ -48,6 +48,16 @@ public interface DocumentTagManager {
   MessagedServiceOperationResult<BaseRecord> apiSaveTagForDocument(
       Long strucDocId, String tagtext, User user);
 
+  /**
+   * Checks API tag values for a new document before it is created.
+   *
+   * @param tagtext tag values from an ELN API create request; {@code null} means no tags
+   * @param user user creating the document
+   * @throws IllegalArgumentException if the tags would be rejected by {@link
+   *     #apiSaveTagForDocument} for a document with no existing tags
+   */
+  void validateApiTagsForNewDocument(String tagtext, User user);
+
   void updateUserOntologyDocument(User user);
 
   /**

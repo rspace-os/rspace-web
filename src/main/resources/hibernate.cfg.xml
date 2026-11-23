@@ -105,6 +105,7 @@
         <mapping class="com.researchspace.model.RecordAttachment"/>
         <mapping class="com.researchspace.model.Organisation"/>
         <mapping class="com.researchspace.model.netfiles.NfsFileStore"/>
+        <mapping class="com.researchspace.model.netfiles.NfsFieldLink"/>
         <mapping class="com.researchspace.model.netfiles.NfsFileSystem"/>
         <mapping class="com.researchspace.model.externalWorkflows.ExternalWorkFlowData"/>
         <mapping class="com.researchspace.model.externalWorkflows.ExternalWorkFlow"/>

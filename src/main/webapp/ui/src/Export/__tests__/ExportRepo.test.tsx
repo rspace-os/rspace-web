@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc, { type Arbitrary } from "fast-check";
 import { describe, expect, test, vi } from "vitest";
 import { mkValidator } from "../../util/Validator";
@@ -89,6 +90,7 @@ describe("ExportRepo", () => {
                 return ids.size === linkedDMPs.length;
               }),
             async ([indexes, linkedDMPs]) => {
+              const user = userEvent.setup();
               const generatedRepoList = [{ ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 }];
               render(
                 <ExportRepo
@@ -111,20 +113,19 @@ describe("ExportRepo", () => {
                   name: "Zenodo",
                 }),
               ).toBeChecked();
-              fireEvent.click(
+              await user.click(
                 await screen.findByRole("checkbox", {
                   name: "workspace:export.repositories.dmp.associateLabel",
                 }),
               );
 
               const dmpTable = await screen.findByRole("table");
-              (
-                await within(dmpTable).findAllByRole("checkbox", {
-                  name: "apps:dmpIntegrations.dialog.selectPlanLabel",
-                })
-              ).forEach((c, i) => {
-                if (indexes.has(i)) fireEvent.click(c);
+              const checkboxes = await within(dmpTable).findAllByRole("checkbox", {
+                name: "apps:dmpIntegrations.dialog.selectPlanLabel",
               });
+              for (const [index, checkbox] of checkboxes.entries()) {
+                if (indexes.has(index)) await user.click(checkbox);
+              }
               expect(await screen.findByRole("alert")).toHaveTextContent(
                 "workspace:export.repositories.dmp.zenodoLimit",
               );

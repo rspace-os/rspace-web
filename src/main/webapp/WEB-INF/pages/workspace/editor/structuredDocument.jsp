@@ -100,7 +100,7 @@
               data-cloud="${isCloud}"
               data-can-share="${canShare}"
               data-docrevision-empty="${not empty docRevision}"
-              data-is-template="${isTemplate}"
+              data-is-template="${fn:contains(structuredDocument.type, 'TEMPLATE')}"
               data-version="${structuredDocument.userVersion.version}"
       ></div>
       <div id="tinymce-ketcher"></div>

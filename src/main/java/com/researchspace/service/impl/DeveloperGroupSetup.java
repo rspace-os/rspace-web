@@ -30,7 +30,7 @@ public class DeveloperGroupSetup extends AbstractAppInitializor {
   }
 
   // if not null, will create developer groups
-  @Value("${rs.dev.groupcreation}")
+  @Value("${rs.dev.groupcreation:false}")
   private String createTestGroups;
 
   private IContentInitializer contentInitializor;

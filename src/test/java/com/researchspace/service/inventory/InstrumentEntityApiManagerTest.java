@@ -29,6 +29,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
+import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
@@ -48,9 +49,13 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.field.InventoryChoiceField;
+import com.researchspace.model.inventory.field.InventoryRadioField;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -80,6 +85,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired DigitalObjectIdentifierDao doiDao;
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
 
   /** Restored after any test that swaps in a mock, so the shared context is left as it was. */
@@ -1286,15 +1292,37 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     def.setOptions(List.of("Active", "Inactive", "Maintenance"));
     radioField.setDefinition(def);
     templatePost.getFields().add(radioField);
+    ApiInventoryEntityField choiceField =
+        createBasicApiSampleOptionsField("Kind", ApiFieldType.CHOICE, List.of("a"));
+    choiceField.setDefinition(
+        new ApiInventoryEntityField.ApiInventoryFieldDef(List.of("a", "b"), true));
+    templatePost.getFields().add(choiceField);
 
     ApiInstrumentTemplate created =
         instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
 
     assertNotNull(created.getId());
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
-    assertThat(created.getFields()).hasSize(1);
+    assertThat(created.getFields()).hasSize(2);
     assertEquals("Status", created.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
+
+    InstrumentTemplate saved =
+        sessionFactory.getCurrentSession().get(InstrumentTemplate.class, created.getId());
+    InventoryRadioField savedRadio =
+        saved.getActiveFields().stream()
+            .filter(InventoryRadioField.class::isInstance)
+            .map(InventoryRadioField.class::cast)
+            .findFirst()
+            .orElseThrow();
+    InventoryChoiceField savedChoice =
+        saved.getActiveFields().stream()
+            .filter(InventoryChoiceField.class::isInstance)
+            .map(InventoryChoiceField.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertNotNull(savedRadio.getRadioDef().getId());
+    assertNotNull(savedChoice.getChoiceDef().getId());
   }
 
   // --- link field persistence (create / update / clear paths) ---
@@ -1446,5 +1474,71 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () -> instrumentApiMgr.updateApiInstrumentTemplate(restrict, groupmate));
     assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+  }
+
+  @Test
+  public void copyingInstrumentOrTemplateNeedsFullRead() throws Exception {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    initialiseContentWithEmptyContent(pi);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser);
+
+    ApiInstrument instrument = createBasicInstrumentForUser(pi, "limited-read");
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(pi);
+
+    // a groupmate has full read through the default group sharing, so can duplicate
+    assertEquals(
+        testUser.getUsername(),
+        instrumentApiMgr
+            .duplicateInstrument(instrument.getId(), testUser)
+            .getOwner()
+            .getUsername());
+    assertEquals(
+        testUser.getUsername(),
+        instrumentApiMgr
+            .duplicateInstrumentTemplate(template.getId(), testUser)
+            .getOwner()
+            .getUsername());
+
+    ApiInstrument restrictInstrument = new ApiInstrument();
+    restrictInstrument.setId(instrument.getId());
+    restrictInstrument.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    instrumentApiMgr.updateApiInstrument(restrictInstrument, pi);
+    ApiInstrumentTemplate restrictTemplate = new ApiInstrumentTemplate();
+    restrictTemplate.setId(template.getId());
+    restrictTemplate.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    instrumentApiMgr.updateApiInstrumentTemplate(restrictTemplate, pi);
+
+    // listing both in a document shared with the group gives testUser limited read
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "lom doc");
+    createBasicListOfMaterialsForUserAndDocField(
+        pi,
+        doc.getFields().get(0),
+        List.of(new ApiMaterialUsage(instrument, null), new ApiMaterialUsage(template, null)));
+    logoutAndLoginAs(pi);
+    shareRecordWithGroup(pi, group, doc);
+    assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(instrument.getOid(), testUser));
+    assertFalse(invPermissionUtils.canUserReadInventoryRecord(instrument.getOid(), testUser));
+    assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(template.getOid(), testUser));
+    assertFalse(invPermissionUtils.canUserReadInventoryRecord(template.getOid(), testUser));
+
+    Long instrumentCount = getCountOfEntityTable("Instrument");
+    Long templateCount = getCountOfEntityTable("InstrumentTemplate");
+    Long instrumentId = instrument.getId();
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.duplicateInstrument(instrumentId, testUser));
+    Long templateId = template.getId();
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.duplicateInstrumentTemplate(templateId, testUser));
+    ApiInstrument fromLimitedReadTemplate = new ApiInstrument();
+    fromLimitedReadTemplate.setName("from limited-read template");
+    fromLimitedReadTemplate.setTemplateId(templateId);
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.createNewApiInstrument(fromLimitedReadTemplate, testUser));
+    assertEquals(instrumentCount, getCountOfEntityTable("Instrument"));
+    assertEquals(templateCount, getCountOfEntityTable("InstrumentTemplate"));
   }
 }

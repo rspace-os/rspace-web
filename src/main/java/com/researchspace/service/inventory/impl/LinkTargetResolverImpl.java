@@ -4,10 +4,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.NfsManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import jakarta.ws.rs.NotFoundException;
@@ -21,10 +23,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resolves a link target across modules: Inventory items via {@link InventoryPermissionUtils}, ELN
- * items (documents, notebooks, gallery files) via {@link BaseRecordManager}. The supported prefixes
- * mirror {@link com.researchspace.service.inventory.InventoryLinkValidator}'s allowed target kinds.
- * Any failure to resolve a record (not found, not readable, unsupported prefix) is reported as "not
- * readable" rather than propagated, so the caller can reject the link uniformly.
+ * items (documents, notebooks, gallery files) via {@link BaseRecordManager}, filestores via {@link
+ * NfsManager}. The supported prefixes mirror {@link
+ * com.researchspace.service.inventory.InventoryLinkValidator}'s allowed target kinds. Any failure
+ * to resolve a record (not found, not readable, unsupported prefix) is reported as "not readable"
+ * rather than propagated, so the caller can reject the link uniformly.
  */
 @Component("linkTargetResolver")
 public class LinkTargetResolverImpl implements LinkTargetResolver {
@@ -44,6 +47,7 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
   @Autowired private InventoryPermissionUtils inventoryPermissionUtils;
   @Autowired private BaseRecordManager baseRecordManager;
   @Autowired private IPermissionUtils permissionUtils;
+  @Autowired private NfsManager nfsManager;
 
   @Override
   public boolean targetExistsAndIsReadable(GlobalIdentifier target, User user) {
@@ -165,5 +169,14 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     return folder.isDeleted()
         || folder.isDeletedForUser(folder.getOwner())
         || folder.isDeletedForUser(user);
+  }
+
+  @Override
+  public Optional<NfsFileStore> ownedFilestore(Long filestoreId, User user) {
+    if (filestoreId == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(nfsManager.getNfsFileStore(filestoreId))
+        .filter(store -> user.getUsername().equals(store.getUser().getUsername()));
   }
 }

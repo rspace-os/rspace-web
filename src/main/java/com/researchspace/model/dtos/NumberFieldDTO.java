@@ -51,7 +51,18 @@ public class NumberFieldDTO<T> extends AbstractFormFieldDTO<NumberFieldForm> {
       String defaultNumberValue,
       FieldType type,
       String name) {
-    super(name, false);
+    this(minNumberValue, maxNumberValue, decimalPlaces, defaultNumberValue, type, name, false);
+  }
+
+  public NumberFieldDTO(
+      String minNumberValue,
+      String maxNumberValue,
+      String decimalPlaces,
+      String defaultNumberValue,
+      FieldType type,
+      String name,
+      boolean isMandatory) {
+    super(name, isMandatory);
     this.minNumberValue = minNumberValue;
     this.maxNumberValue = maxNumberValue;
     this.decimalPlaces = decimalPlaces;

@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -41,67 +42,71 @@ describe("Name", () => {
     expect(container).not.toMatchTextContent("fields.name.nonWhitespace");
     expect(container).toMatchTextContent("0 / 255");
   });
-  test("Should enter an error state when value is only a single character.", () => {
-    fc.assert(
-      fc.property(
+  test("Should enter an error state when value is only a single character.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 1 }).filter((name) => /\S/.test(name)),
-        (name) => {
+        async (name) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
 
           const { container } = renderNameField("", onErrorStateChange);
-          fireEvent.input(screen.getByRole("textbox"), {
-            target: { value: name },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(name);
           expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
     );
   });
-  test("Should not enter an error state when value is longer than 1 character but shorter than 256.", () => {
-    fc.assert(
-      fc.property(fc.string({ minLength: 3, maxLength: 255 }), (generatedName) => {
+  test("Should not enter an error state when value is longer than 1 character but shorter than 256.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ minLength: 3, maxLength: 255 }), async (generatedName) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderNameField("", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: generatedName },
-        });
+        const input = screen.getByRole("textbox");
+        await user.click(input);
+        await user.paste(generatedName);
         expect(container).not.toMatchTextContent("fields.name.minLength");
         expect(container).not.toMatchTextContent("fields.name.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       }),
     );
   });
-  test("Should enter an error state when value is longer than 255 characters.", () => {
-    fc.assert(
-      fc.property(fc.string({ minLength: 256 }), (name) => {
+  test("Should enter an error state when value is longer than 255 characters.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ minLength: 256 }), async (name) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderNameField("", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: name },
-        });
+        const input = screen.getByRole("textbox");
+        await user.click(input);
+        await user.paste(name);
         expect(container).toMatchTextContent("fields.name.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       }),
     );
   });
-  test("Should enter an error state when value is just whitespace.", () => {
-    fc.assert(
-      fc.property(
+  test("Should enter an error state when value is just whitespace.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 2, maxLength: 255 }).filter((name) => /^\s+$/.test(name)),
-        (name) => {
+        async (name) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
 
           const { container } = renderNameField("", onErrorStateChange);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: name },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(name);
           expect(container).toMatchTextContent("fields.name.nonWhitespace");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
@@ -109,43 +114,44 @@ describe("Name", () => {
       { numRuns: 10 },
     );
   });
-  test("Entering fewer than 2 characters, after having entered something valid, should error.", () => {
-    fc.assert(
-      fc.property(
+  test("Entering fewer than 2 characters, after having entered something valid, should error.", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.tuple(
           fc.string({ minLength: 3, maxLength: 255 }).filter((firstValidValue) => /\S+/.test(firstValidValue)),
           fc.string({ minLength: 0, maxLength: 1 }).filter((secondInvalidValue) => /\S+/.test(secondInvalidValue)),
         ),
-        ([firstValidValue, secondInvalidValue]) => {
+        async ([firstValidValue, secondInvalidValue]) => {
+          const user = userEvent.setup();
           cleanup();
           const onErrorStateChange = vi.fn();
 
           const { container } = renderNameField("", onErrorStateChange);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: firstValidValue },
-          });
+          const input = screen.getByRole("textbox");
+          await user.click(input);
+          await user.paste(firstValidValue);
           expect(container).not.toMatchTextContent("fields.name.minLength");
 
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
-          fireEvent.change(screen.getByRole("textbox"), {
-            target: { value: secondInvalidValue },
-          });
+          await user.clear(input);
+          await user.paste(secondInvalidValue);
           expect(container).toMatchTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
     );
   });
-  test("When the entered text is of a valid length, there should be character count shown.", () => {
-    fc.assert(
-      fc.property(fc.string({ minLength: 3, maxLength: 255 }), (generatedName) => {
+  test("When the entered text is of a valid length, there should be character count shown.", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ minLength: 3, maxLength: 255 }), async (generatedName) => {
+        const user = userEvent.setup();
         cleanup();
         const onErrorStateChange = vi.fn();
 
         const { container } = renderNameField("", onErrorStateChange);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: generatedName },
-        });
+        const input = screen.getByRole("textbox");
+        await user.click(input);
+        await user.paste(generatedName);
         expect(container).toMatchTextContent(`${generatedName.length} / 255`);
       }),
     );

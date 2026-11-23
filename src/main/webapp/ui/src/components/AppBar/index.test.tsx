@@ -9,6 +9,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
+import useWebSocketNotifications from "@/hooks/websockets/useWebSocketNotifications";
 import { SimplePageWithAppBar } from "./index.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -83,6 +84,27 @@ describe("App Bar", () => {
        * The app bar should have a visually hidden heading that is accessible to
        * screen readers when we don't show the heading to all users.
        */
+    });
+  });
+
+  describe("Notification badge", () => {
+    const hook = vi.mocked(useWebSocketNotifications);
+
+    afterEach(() => {
+      hook.mockReset();
+    });
+
+    test("Counts notifications and messages but not special messages", async () => {
+      hook.mockReturnValue({
+        notificationCount: 2,
+        messageCount: 1,
+        specialMessageCount: 1,
+        connectionStatus: "connected",
+      });
+      render(<SimplePageWithAppBar variant="page" currentPage="Test Page" />);
+      const counter = await screen.findByRole("status", { name: "common:appBar.notificationsAndMessages" });
+      expect(counter).toHaveTextContent("3");
+      expect(counter).not.toHaveTextContent("4");
     });
   });
 

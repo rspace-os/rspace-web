@@ -19,7 +19,8 @@ resolved during design. This file is a glossary only — no implementation detai
   For samples the equivalents are the seeded standard templates (Antibody,
   Bacteria, etc.).
 - **Default templates owner** — the single account that owns the default templates.
-  All users may read (and therefore duplicate) any template owned by this account.
+  All users have full read of (and therefore may duplicate) any template owned by
+  this account.
   For samples this account is resolved as the owner of the oldest template row,
   which is safe only because samples are seeded before any user can create one.
   For instruments the account is resolved explicitly as the sysadmin, because
@@ -64,6 +65,18 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Explicit access list** — the access permission that names the groups, any in
   the system, whose members have full access.
   _Avoid_: whitelist
+- **Full read** — read access to the whole of an inventory item. Held by its
+  owner, by users its access permissions cover, by a PI or admin over the owner,
+  and by every user for a default template. A user with access to an item stored
+  in a container also has full read of that container.
+- **Limited read** — a cut-down view of an inventory item the user has no full
+  read of: a few basic details and none of its contents. It comes from reading
+  something that points at the item: a container holding it, an ELN document whose
+  List of Materials lists it, for a sample, one of its subsamples, or, for a
+  template, a sample made from it. It opens the item but is not enough to link to
+  it, duplicate it, transfer it or create a new item from it.
+  _Avoid_: "read" on its own when the difference matters; say full read or
+  limited read
 - **Only the Owner** — the access permission that restricts the item to its owner;
   the PI of a group the owner belongs to keeps read access.
   _Avoid_: private, owner only
@@ -406,6 +419,44 @@ resolved during design. This file is a glossary only — no implementation detai
   references shown beside a pinned version view are the item's, not that
   version's, and must be worded so no one reads them as the latter.
   _Avoid_: backlink to a version, version reference
+
+## Filestore links
+
+- **Filestore link** — a reference from the text of an ELN document to a
+  Filestore item, a file or a folder. A document may hold several, and one item
+  may be linked from many documents. An Inventory item refers to a Filestore
+  item differently: through a Link field whose Link target is that item.
+  _Avoid_: nfs link, remote file link, netfiles link
+- **Linked document** — an ELN document whose current, non-deleted content holds
+  a Filestore link to a given item. The Gallery already lists "Linked Documents"
+  for local Gallery items; for a Filestore item the metadata sidecar and the
+  filestores API report the same thing.
+  _Avoid_: linking document, referencing document
+- **Filestore link index** — RSpace's own record of every Filestore link in
+  current document content, kept in step with the documents so that the Linked
+  documents of a Filestore item can be answered without reading every document.
+  _Avoid_: link table, nfs link table
+- **Metadata sidecar** — the DataCite-style YAML record RSpace composes for the
+  files of an S3 folder and can save next to them; the Gallery action that
+  creates it is labelled "Generate Data Record". It names the folder's Linked
+  documents by their Global ID page.
+  _Avoid_: data record (outside the UI label), sidecar file
+
+## Inventory links
+
+- **Link field** — a field of an Inventory item, either a Custom field of its
+  template or an Extra field, that holds one link: a relation type from the
+  DataCite vocabulary and a Link target. A template's Link field may restrict
+  the relation types and carry a default link for the items created from it.
+  _Avoid_: reference field, relation field
+- **Link target** — what a Link field points at. Either an RSpace record named
+  by its Global ID (an Inventory item or template, an ELN document, a notebook
+  or a Local Gallery item), optionally pinned to one of its versions, or a
+  Filestore item named by the filestore it is reached through and its path
+  there. A Filestore item has no version to pin and cannot be a template's
+  default link; only the owner of that filestore can choose it as a target or
+  be told its name, while a copy or a transfer of the item keeps the link.
+  _Avoid_: linked record (a Filestore item is not a record), link destination
 
 ## Internationalization (i18n)
 

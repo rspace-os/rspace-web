@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -181,9 +182,9 @@ const setUpProjectsAsData = async () => {
   await setUpComponent();
 };
 
-const fetchDetailsFor = async (type: string, typeID: number) => {
+const fetchDetailsFor = async (user: ReturnType<typeof userEvent.setup>, type: string, typeID: number) => {
   const fetchDetails = getFirstByTestId(`${type}_fetch_details_${typeID}`);
-  fireEvent.click(fetchDetails);
+  await user.click(fetchDetails);
   await screen.findByTestId(`${type}_annotation_${typeID}_1`, undefined, {
     timeout: 5500,
   });
@@ -237,6 +238,7 @@ const setUpLocalStorageWithOrder = (order: OrderValue) => {
 };
 
 const navigateFromScreenToPlate = async (
+  user: ReturnType<typeof userEvent.setup>,
   screenName: string,
   screenID: number,
   plateID: number,
@@ -253,7 +255,7 @@ const navigateFromScreenToPlate = async (
   if (!fetchPlates) {
     return false;
   }
-  fireEvent.click(fetchPlates);
+  await user.click(fetchPlates);
   try {
     await screen.findByTestId(`plate_name_display_${plateID}`, undefined, {
       timeout: 5500,
@@ -266,14 +268,16 @@ const navigateFromScreenToPlate = async (
 };
 
 const navigateFromScreenToPlateWIthoutSetup = async (
+  user: ReturnType<typeof userEvent.setup>,
   screenName: string,
   screenID: number,
   plateID: number,
 ): Promise<boolean> => {
-  return await navigateFromScreenToPlate(screenName, screenID, plateID, false);
+  return await navigateFromScreenToPlate(user, screenName, screenID, plateID, false);
 };
 
 const navigateFromProjectToDataset = async (
+  user: ReturnType<typeof userEvent.setup>,
   projectName: string,
   projectID: number,
   datasetID: number,
@@ -287,7 +291,7 @@ const navigateFromProjectToDataset = async (
   if (!fetchDatasets) {
     return false;
   }
-  fireEvent.click(fetchDatasets);
+  await user.click(fetchDatasets);
   try {
     await screen.findByTestId(`dataset_name_display_${datasetID}`, undefined, {
       timeout: 5500,
@@ -300,6 +304,7 @@ const navigateFromProjectToDataset = async (
 };
 
 const hideChildren = async (
+  user: ReturnType<typeof userEvent.setup>,
   type: string,
   typeID: number,
   childType: string,
@@ -317,12 +322,17 @@ const hideChildren = async (
     return false;
   }
   assertElemWithTestIDHasTextContent(fetchChildrenID, `hide children [${numchildren}]`);
-  fireEvent.click(hideChildrenLink);
+  await user.click(hideChildrenLink);
   assertElemWithTestIDHasTextContent(fetchChildrenID, `show ${childType}s [${numchildren}]`);
   return true;
 };
 
-const hideImageGrid = async (type: string, typeID: number, imageID: number): Promise<boolean> => {
+const hideImageGrid = async (
+  user: ReturnType<typeof userEvent.setup>,
+  type: string,
+  typeID: number,
+  imageID: number,
+): Promise<boolean> => {
   const targetImageID = `image_img_${imageID}`;
   const targetImage = screen.queryAllByTestId(targetImageID)[0];
   if (!targetImage) {
@@ -335,13 +345,14 @@ const hideImageGrid = async (type: string, typeID: number, imageID: number): Pro
   if (!hideImageGridLink) {
     return false;
   }
-  fireEvent.click(hideImageGridLink);
+  await user.click(hideImageGridLink);
   expect(screen.queryByTestId(targetImageID)).not.toBeInTheDocument();
   expect(getFirstByTestId(showImageGridLinkID)).toBeInTheDocument();
   return true;
 };
 
 const clickChildLinkAndShowPlateAcquisition = async (
+  user: ReturnType<typeof userEvent.setup>,
   childLInkID: number,
   plateAcquisitionID: number,
 ): Promise<boolean> => {
@@ -349,7 +360,7 @@ const clickChildLinkAndShowPlateAcquisition = async (
   if (!fetchPlatesAcquisitions) {
     return false;
   }
-  fireEvent.click(fetchPlatesAcquisitions);
+  await user.click(fetchPlatesAcquisitions);
   try {
     await screen.findByTestId(`plateAcquisition_name_display_${plateAcquisitionID}`, undefined, {
       timeout: 5500,
@@ -363,6 +374,7 @@ const clickChildLinkAndShowPlateAcquisition = async (
 
 //for plates that have 1 or 0 plate acquisitions and so can directly open grid of images and plate acquistion at same time
 const clickChildLinkAndShowPlateAcquisitionWithImages = async (
+  user: ReturnType<typeof userEvent.setup>,
   childLInkID: number,
   plateAcquisitionID: number,
   imageID: number,
@@ -371,7 +383,7 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   if (!fetchGridOfImages) {
     return false;
   }
-  fireEvent.click(fetchGridOfImages);
+  await user.click(fetchGridOfImages);
   try {
     await screen.findByTestId(`image_img_${imageID}`, undefined, {
       timeout: 5500,
@@ -389,12 +401,15 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   return true;
 };
 
-const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (imageID: number): Promise<boolean> => {
+const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (
+  user: ReturnType<typeof userEvent.setup>,
+  imageID: number,
+): Promise<boolean> => {
   const imageInGrid = screen.queryAllByTestId(`image_img_${imageID}`)[0];
   if (!imageInGrid) {
     return false;
   }
-  fireEvent.click(imageInGrid);
+  await user.click(imageInGrid);
   try {
     await screen.findByTestId(`image_name_display_${imageID}`, undefined, {
       timeout: 5500,
@@ -410,6 +425,7 @@ const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (i
 };
 
 const clickDatasetImageGridLinkAndCheckForImageWithID = async (
+  user: ReturnType<typeof userEvent.setup>,
   datasetID: number,
   targetImageID: number,
 ): Promise<boolean> => {
@@ -417,7 +433,7 @@ const clickDatasetImageGridLinkAndCheckForImageWithID = async (
   if (!fetchImages) {
     return false;
   }
-  fireEvent.click(fetchImages);
+  await user.click(fetchImages);
   try {
     await screen.findByTestId(`image_img_${targetImageID}`, undefined, {
       timeout: 5500,
@@ -430,6 +446,7 @@ const clickDatasetImageGridLinkAndCheckForImageWithID = async (
 };
 
 const clickImageGridLinkAndCheckForImageWithID = async (
+  user: ReturnType<typeof userEvent.setup>,
   imageGridLinkID: number,
   targetImageID: number,
 ): Promise<boolean> => {
@@ -437,7 +454,7 @@ const clickImageGridLinkAndCheckForImageWithID = async (
   if (!fetchGridOfImages) {
     return false;
   }
-  fireEvent.click(fetchGridOfImages);
+  await user.click(fetchGridOfImages);
   try {
     await screen.findByTestId(`image_img_${targetImageID}`, undefined, {
       timeout: 5500,
@@ -510,16 +527,18 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("screens can be sorted by name", async () => {
+    const user = userEvent.setup();
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled("idr0001-graml-sysgro/screenA", 192);
-    fireEvent.click(screen.getByText("workspace:tinymce.omero.columns.path"));
+    await user.click(screen.getByText("workspace:tinymce.omero.columns.path"));
     await assertThatFirstRowOfDataIsScreenCalled("idr0145-ho-replicationstress/screenB", 7);
   }, 9999);
 
   test("screens can be sorted by description", async () => {
+    const user = userEvent.setup();
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled("idr0001-graml-sysgro/screenA", 192);
-    fireEvent.click(screen.getByText("workspace:tinymce.omero.columns.description"));
+    await user.click(screen.getByText("workspace:tinymce.omero.columns.description"));
     await assertThatFirstRowOfDataIsScreenCalled("idr0006-fong-nuclearbodies/screenA", 169);
   }, 9999);
 
@@ -530,9 +549,10 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("projects can be sorted by name", async () => {
+    const user = userEvent.setup();
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled("idr0018-neff-histopathology/experimentA", 248);
-    fireEvent.click(screen.getByText("workspace:tinymce.omero.columns.path"));
+    await user.click(screen.getByText("workspace:tinymce.omero.columns.path"));
     await assertThatFirstRowOfDataIsProjectCalled("idr0148-schumacher-kidneytem/experimentA", 10);
   }, 9999);
 
@@ -543,22 +563,25 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("projects can be sorted by description", async () => {
+    const user = userEvent.setup();
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled("idr0018-neff-histopathology/experimentA", 248);
-    fireEvent.click(screen.getByText("workspace:tinymce.omero.columns.description"));
+    await user.click(screen.getByText("workspace:tinymce.omero.columns.description"));
     await assertThatFirstRowOfDataIsProjectCalled("idr0117-croce-marimba/experimentA", 9);
   }, 9999);
 
   test("items can have details added", async () => {
+    const user = userEvent.setup();
     await setUpProjectAndScreensInDescendingOrder();
-    await fetchDetailsFor("project", 101);
+    await fetchDetailsFor(user, "project", 101);
     expect(getFirstByTestId("path24")).toBeInTheDocument();
     expect(getFirstByTestId("description24")).not.toBeEmptyDOMElement();
     expect(getFirstByTestId("project_annotation_101_1")).toBeInTheDocument();
   }, 9999);
 
   test("projects can show datasets", async () => {
-    await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    await navigateFromProjectToDataset(user, "idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
     assertElemWithTestIDHasTextContent(
       "path28",
       "CDK5RAP2-Cdataset fetch detailsshow image grid [33] see in omero -> parent_project",
@@ -566,14 +589,26 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("projects can hide datasets", async () => {
-    const didNavigate = await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromProjectToDataset(
+      user,
+      "idr0021-lawo-pericentriolarmaterial/experimentA",
+      51,
+      51,
+    );
     if (!didNavigate) return;
-    const didHide = await hideChildren("project", 51, "dataset", 51, 10);
+    const didHide = await hideChildren(user, "project", 51, "dataset", 51, 10);
     if (!didHide) return;
   }, 9999);
 
   test("datasets have links to projects", async () => {
-    const didNavigate = await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromProjectToDataset(
+      user,
+      "idr0021-lawo-pericentriolarmaterial/experimentA",
+      51,
+      51,
+    );
     if (!didNavigate) return;
     //check has link to parent project and that the linked ID exists in the doc
     const parentLinks = screen.queryAllByTestId("dataset_link_parent_51");
@@ -587,7 +622,13 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("when projects are reordered datasets are reordered AFTER their parent projects", async () => {
-    const didNavigate = await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromProjectToDataset(
+      user,
+      "idr0021-lawo-pericentriolarmaterial/experimentA",
+      51,
+      51,
+    );
     if (!didNavigate) return;
     assertElemWithTestIDHasTextContent(
       "path27",
@@ -603,7 +644,7 @@ describe("Renders page with results data", () => {
     );
     const pathHeader = screen.queryAllByText("Path")[0];
     if (!pathHeader) return;
-    fireEvent.click(pathHeader);
+    await user.click(pathHeader);
     assertElemWithTestIDHasTextContent(
       "path11",
       "idr0021-lawo-pericentriolarmaterial/experimentAproject fetch details see in omero hide children [10]",
@@ -620,29 +661,42 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("datasets can show grids of images", async () => {
-    const didNavigate = await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromProjectToDataset(
+      user,
+      "idr0021-lawo-pericentriolarmaterial/experimentA",
+      51,
+      51,
+    );
     if (!didNavigate) return;
-    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
+    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(user, 51, 1884837);
     if (!didShow) return;
   }, 9999);
 
   test("datasets can hide grids of images", async () => {
-    const didNavigate = await navigateFromProjectToDataset("idr0021-lawo-pericentriolarmaterial/experimentA", 51, 51);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromProjectToDataset(
+      user,
+      "idr0021-lawo-pericentriolarmaterial/experimentA",
+      51,
+      51,
+    );
     if (!didNavigate) return;
-    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(51, 1884837);
+    const didShow = await clickDatasetImageGridLinkAndCheckForImageWithID(user, 51, 1884837);
     if (!didShow) return;
-    const didHide = await hideImageGrid("dataset", 51, 1884837);
+    const didHide = await hideImageGrid(user, "dataset", 51, 1884837);
     if (!didHide) return;
   }, 9999);
 
   test("screens can show plates, plates can show plate acquisitions", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
     assertElemWithTestIDHasTextContent(
       "path1",
       "JL_120731_S6Aplate fetch details see in omero show plateAcquisitions [6] -> parent_screen",
     );
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
     assertElemWithTestIDHasTextContent(
       "path2",
@@ -651,40 +705,44 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("screens can hide plates", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    const didHide = await hideChildren(user, "screen", 3, "plate", 2551, 192);
     if (!didHide) return;
   }, 20000);
 
   test("plates can hide plateacquisitions", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
-    const didHide = await hideChildren("plate", 2551, "plateAcquisition", 2661, 6);
+    const didHide = await hideChildren(user, "plate", 2551, "plateAcquisition", 2661, 6);
     if (!didHide) return;
   }, 9999);
 
   test("when screen hides plates it also hides plates children", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
-    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    const didHide = await hideChildren(user, "screen", 3, "plate", 2551, 192);
     if (!didHide) return;
     const plateAqcquisitionID = "plateAcquisition_name_display_2661";
     expect(screen.queryByTestId(plateAqcquisitionID)).not.toBeInTheDocument();
   }, 9999);
 
   test("when screen shows plates it also shows plates children", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
-    const didHide = await hideChildren("screen", 3, "plate", 2551, 192);
+    const didHide = await hideChildren(user, "screen", 3, "plate", 2551, 192);
     if (!didHide) return;
-    const didReshow = await navigateFromScreenToPlateWIthoutSetup("idr0001-graml-sysgro/screenA", 3, 2551);
+    const didReshow = await navigateFromScreenToPlateWIthoutSetup(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didReshow) return;
     const plateAqcquisitionID = "plateAcquisition_name_display_2661";
     const plateAcquisition = screen.queryByTestId(plateAqcquisitionID);
@@ -693,38 +751,42 @@ describe("Renders page with results data", () => {
   }, 9999);
 
   test("plate acquisitions can show grids of images", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
-    const didGrid = await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
+    const didGrid = await clickImageGridLinkAndCheckForImageWithID(user, 2661, 1230029);
     if (!didGrid) return;
   }, 9999);
 
   test("plate acquisitions can hide grids of images", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0001-graml-sysgro/screenA", 3, 2551);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0001-graml-sysgro/screenA", 3, 2551);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisition(2551, 2661);
+    const didShow = await clickChildLinkAndShowPlateAcquisition(user, 2551, 2661);
     if (!didShow) return;
-    const didGrid = await clickImageGridLinkAndCheckForImageWithID(2661, 1230029);
+    const didGrid = await clickImageGridLinkAndCheckForImageWithID(user, 2661, 1230029);
     if (!didGrid) return;
-    const didHide = await hideImageGrid("plateAcquisition", 2661, 1230029);
+    const didHide = await hideImageGrid(user, "plateAcquisition", 2661, 1230029);
     if (!didHide) return;
   }, 9999);
 
   test("plates with only one (or none) plate acquisition can directly show grids of images beside the plate acquisition", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0002-heriche-condensation/screenA", 102, 422);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0002-heriche-condensation/screenA", 102, 422);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
+    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(user, 422, 422, 179693);
     if (!didShow) return;
   }, 9999);
 
   test("On click of an image in the grid of images it is inserted into the document as a new child and has annotations with image data", async () => {
-    const didNavigate = await navigateFromScreenToPlate("idr0002-heriche-condensation/screenA", 102, 422);
+    const user = userEvent.setup();
+    const didNavigate = await navigateFromScreenToPlate(user, "idr0002-heriche-condensation/screenA", 102, 422);
     if (!didNavigate) return;
-    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(422, 422, 179693);
+    const didShow = await clickChildLinkAndShowPlateAcquisitionWithImages(user, 422, 422, 179693);
     if (!didShow) return;
-    const didClick = await clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData(179693);
+    const didClick = await clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData(user, 179693);
     if (!didClick) return;
     assertElemWithTestIDHasTextContent(
       "path3",
@@ -743,13 +805,14 @@ describe("Renders page with results data", () => {
   // Building the table to insert strips controls out of the rendered dialog, so
   // it must not happen while the user is still choosing what to insert.
   test("selecting an item leaves the dialog controls in place", async () => {
+    const user = userEvent.setup();
     await setUpProjectsAsData();
     await findFirstByText("idr0018-neff-histopathology/experimentA", undefined, {
       timeout: 5500,
     });
     expect(screen.getAllByTestId("project_fetch_details_101")[0]).toBeInTheDocument();
 
-    fireEvent.click(getFirstByTestId("checkbox-project-101"));
+    await user.click(getFirstByTestId("checkbox-project-101"));
 
     expect(screen.getAllByTestId("project_fetch_details_101")[0]).toBeInTheDocument();
   }, 9999);

@@ -31,6 +31,19 @@ replacing the previous ESLint + Prettier setup.
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
   check (`pnpm run lint:ci`).
 
+## React page fonts
+
+`src/main/webapp/ui/src/fonts.ts` loads the pinned `@fontsource-variable/roboto`
+weight axis in normal and italic and exports the shared font family. The shared
+MUI theme imports this module, so every theme consumer loads the font, including
+standalone pages and the Ketcher dialog. Entrypoints do not need font imports.
+The variable package ships only WOFF2 files and names its family `Roboto Variable`,
+with legacy `Roboto` and system fonts as fallbacks.
+
+`StyledTinyMceEditor` also injects the processed Fontsource CSS into its iframe
+through `content_style`, using the shared font family. Iframes cannot inherit
+font-face definitions from the parent document.
+
 ## Editor set up
 
 ### VSCode

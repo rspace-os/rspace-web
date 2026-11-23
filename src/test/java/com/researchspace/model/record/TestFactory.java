@@ -535,6 +535,8 @@ public class TestFactory {
       User user, Sample sample, int numSubSamples) {
     List<SubSample> result = new ArrayList<>();
     Container container = sample.getSubSamples().get(0).getParentContainer();
+    // the default subsample is replaced, so take it out of the container too
+    sample.getSubSamples().get(0).removeFromCurrentParent();
     for (int i = 0; i < numSubSamples; i++) {
       SubSample newSubSample = rf.createSubSample("test subSample", user, sample);
       newSubSample.moveToNewParent(container);

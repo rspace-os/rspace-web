@@ -197,4 +197,48 @@ class DataCiteYamlSidecarFileGeneratorTest {
     assertEquals("b2c3d4", loc.path("etag").asText());
     assertEquals("STANDARD", loc.path("storageClass").asText());
   }
+
+  @Test
+  void listsLinkedDocumentsAsUrlRelatedIdentifiersDocumentingTheDataset() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments")
+            .files(List.of())
+            .linkedDocumentUrls(
+                List.of(
+                    "https://rspace.example.com/globalId/SD11",
+                    "https://rspace.example.com/globalId/SD12"))
+            .build();
+
+    JsonNode related =
+        yaml.readTree(generator.generate(ctx).getContent()).path("relatedIdentifiers");
+
+    assertThat(related).hasSize(2);
+    assertEquals(
+        "https://rspace.example.com/globalId/SD11",
+        related.path(0).path("relatedIdentifier").path("value").asText());
+    assertEquals("URL", related.path(0).path("relatedIdentifierType").path("value").asText());
+    assertEquals("IsDocumentedBy", related.path(0).path("relationType").path("value").asText());
+  }
+
+  @Test
+  void omitsRelatedIdentifiersWhenNoDocumentLinksTheFolder() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments")
+            .files(List.of())
+            .linkedDocumentUrls(List.of())
+            .build();
+
+    assertTrue(
+        yaml.readTree(generator.generate(ctx).getContent())
+            .path("relatedIdentifiers")
+            .isMissingNode());
+  }
 }

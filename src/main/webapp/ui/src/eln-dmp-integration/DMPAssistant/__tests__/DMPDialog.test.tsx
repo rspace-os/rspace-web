@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -140,6 +141,7 @@ describe("DMPDialog", () => {
     });
 
     test("clicking a checkbox selects that DMP.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One")]);
 
       renderDialog();
@@ -147,26 +149,28 @@ describe("DMPDialog", () => {
       const cb = await checkboxForPlan("Plan One");
       expect(cb).not.toBeChecked();
 
-      fireEvent.click(cb);
+      await user.click(cb);
 
       expect(cb).toBeChecked();
     });
 
     test("clicking an already-selected checkbox deselects it.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One")]);
 
       renderDialog();
 
       const cb = await checkboxForPlan("Plan One");
-      fireEvent.click(cb);
+      await user.click(cb);
       expect(cb).toBeChecked();
 
-      fireEvent.click(cb);
+      await user.click(cb);
 
       expect(cb).not.toBeChecked();
     });
 
     test("multiple checkboxes can be selected at the same time.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two"), makePlan(3, "Plan Three")]);
 
       renderDialog();
@@ -175,8 +179,8 @@ describe("DMPDialog", () => {
       const cb2 = await checkboxForPlan("Plan Two");
       const cb3 = await checkboxForPlan("Plan Three");
 
-      fireEvent.click(cb1);
-      fireEvent.click(cb3);
+      await user.click(cb1);
+      await user.click(cb3);
 
       expect(cb1).toBeChecked();
       expect(cb2).not.toBeChecked();
@@ -186,26 +190,28 @@ describe("DMPDialog", () => {
 
   describe("Import button", () => {
     test("label reads 'Import' when a single DMP is selected.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
 
-      fireEvent.click(await checkboxForPlan("Plan One"));
+      await user.click(await checkboxForPlan("Plan One"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
 
     test("label includes the count when more than one DMP is selected.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two"), makePlan(3, "Plan Three")]);
 
       renderDialog();
 
-      fireEvent.click(await checkboxForPlan("Plan One"));
-      fireEvent.click(await checkboxForPlan("Plan Two"));
+      await user.click(await checkboxForPlan("Plan One"));
+      await user.click(await checkboxForPlan("Plan Two"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
 
-      fireEvent.click(await checkboxForPlan("Plan Three"));
+      await user.click(await checkboxForPlan("Plan Three"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
@@ -214,6 +220,7 @@ describe("DMPDialog", () => {
       "clicking Import with no selection surfaces a 'No DMP is selected.' " +
         "warning and does not POST to importPlans.",
       async () => {
+        const user = userEvent.setup();
         stubListPlans([makePlan(1, "Plan One")]);
         const importPostSpy = vi.fn();
         mockAxios.onPost(/importPlans/).reply((config) => {
@@ -226,7 +233,7 @@ describe("DMPDialog", () => {
         // wait until the dialog finishes loading and the Import button is present
         await checkboxForPlan("Plan One");
 
-        fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
+        await user.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
         expect(await screen.findByText("apps:dmpIntegrations.dialog.noDmpIsSelected")).toBeVisible();
         expect(importPostSpy).not.toHaveBeenCalled();
@@ -236,6 +243,7 @@ describe("DMPDialog", () => {
 
   describe("Select-all header checkbox", () => {
     test("selects every DMP on the current page when clicked.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
@@ -246,7 +254,7 @@ describe("DMPDialog", () => {
       });
       expect(selectAll).not.toBeChecked();
 
-      fireEvent.click(selectAll);
+      await user.click(selectAll);
 
       expect(await checkboxForPlan("Plan One")).toBeChecked();
       expect(await checkboxForPlan("Plan Two")).toBeChecked();
@@ -254,6 +262,7 @@ describe("DMPDialog", () => {
     });
 
     test("toggles back off when clicked a second time.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
@@ -263,20 +272,21 @@ describe("DMPDialog", () => {
         name: "apps:dmpIntegrations.dialog.selectAllLabel",
       });
 
-      fireEvent.click(selectAll);
-      fireEvent.click(selectAll);
+      await user.click(selectAll);
+      await user.click(selectAll);
 
       expect(await checkboxForPlan("Plan One")).not.toBeChecked();
       expect(await checkboxForPlan("Plan Two")).not.toBeChecked();
     });
 
     test("renders in the indeterminate state when some but not all DMPs are " + "selected.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
 
       const cb1 = await checkboxForPlan("Plan One");
-      fireEvent.click(cb1);
+      await user.click(cb1);
 
       const selectAll = screen.getByRole("checkbox", {
         name: "apps:dmpIntegrations.dialog.selectAllLabel",
@@ -289,12 +299,13 @@ describe("DMPDialog", () => {
     });
 
     test("renders checked (not indeterminate) once every DMP on the page is " + "selected.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
 
       renderDialog();
 
-      fireEvent.click(await checkboxForPlan("Plan One"));
-      fireEvent.click(await checkboxForPlan("Plan Two"));
+      await user.click(await checkboxForPlan("Plan One"));
+      await user.click(await checkboxForPlan("Plan Two"));
 
       const selectAll = screen.getByRole("checkbox", {
         name: "apps:dmpIntegrations.dialog.selectAllLabel",
@@ -306,6 +317,7 @@ describe("DMPDialog", () => {
 
   describe("Submit", () => {
     test("POSTs the selected DMPs as a single batch to " + "/apps/dmpassistant/importPlans.", async () => {
+      const user = userEvent.setup();
       stubListPlans([makePlan(1, "Plan One"), makePlan(2, "Plan Two")]);
       mockAxios.onPost(/importPlans/).reply(200, {
         data: [{}, {}],
@@ -314,10 +326,10 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      fireEvent.click(await checkboxForPlan("Plan One"));
-      fireEvent.click(await checkboxForPlan("Plan Two"));
+      await user.click(await checkboxForPlan("Plan One"));
+      await user.click(await checkboxForPlan("Plan Two"));
 
-      fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
+      await user.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
       await waitFor(() => {
         const importCalls = mockAxios.history.post.filter((c) => /importPlans/.test(c.url ?? ""));

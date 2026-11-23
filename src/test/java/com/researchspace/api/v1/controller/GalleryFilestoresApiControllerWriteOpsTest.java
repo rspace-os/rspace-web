@@ -11,16 +11,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
@@ -28,10 +31,14 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
+import com.researchspace.api.v1.model.NfsUserFileSystem;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.DeletableTarget;
@@ -39,12 +46,18 @@ import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
+import com.researchspace.netfiles.NfsFileDetails;
+import com.researchspace.netfiles.NfsFileTreeNode;
+import com.researchspace.netfiles.NfsFolderDetails;
+import com.researchspace.netfiles.NfsResourceDetails;
+import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -52,10 +65,13 @@ import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -85,6 +101,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
   @Mock private S3SidecarFileService s3SidecarFileService;
+  @Mock private NfsFieldLinkManager nfsFieldLinkManager;
   @Mock private User user;
 
   private final Long validFilestorePathId = 1L;
@@ -119,6 +136,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.setNfsFactory(nfsFactory);
     controller.properties = propertyHolder;
     controller.s3SidecarFileService = s3SidecarFileService;
+    controller.nfsFieldLinkManager = nfsFieldLinkManager;
     controller.metadataSidecarFileEnabled = true;
     controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
 
@@ -799,5 +817,188 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         UnsupportedOperationException.class, () -> controller.previewSidecarFile(1L, req, user));
     assertThrows(
         UnsupportedOperationException.class, () -> controller.saveSidecarFile(1L, req, user));
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_mapsReadableRowsAndOwnerOnlyPlaceholders() {
+    RecordInformation readable = new RecordInformation();
+    readable.setId(11L);
+    readable.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
+    readable.setName("Doc one");
+    readable.setOwnerFullName("Ada Lovelace");
+    RecordInformation hidden = new RecordInformation();
+    hidden.setOwnerFullName("Grace Hopper");
+    when(nfsManager.getNfsFileStore(1L))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user));
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user))
+        .thenReturn(List.of(readable, hidden));
+
+    List<ApiGalleryFilestoreLinkedDocument> result =
+        controller.getFilestoreItemLinkedDocuments(1L, "/XRD/run.dat", user);
+
+    assertEquals(2, result.size());
+    assertEquals("SD11", result.get(0).getGlobalId());
+    assertEquals("Doc one", result.get(0).getName());
+    assertNull(result.get(1).getId());
+    assertNull(result.get(1).getGlobalId());
+    assertEquals("Grace Hopper", result.get(1).getOwnerFullName());
+  }
+
+  private NfsClient loginToIrodsFilestore() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(1L, "i", user);
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    credentialsStore
+        .getCredentialsMapCache()
+        .put(
+            new NfsUserFileSystem(user, store.getFileSystem().getId()),
+            new ApiNfsCredentials(user, USERNAME, PASSWORD));
+    NfsClient client = mock(NfsClient.class);
+    when(nfsAuthentication.login(eq(USERNAME), eq(PASSWORD), any(), any())).thenReturn(client);
+    return client;
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWithoutLogin() {
+    when(nfsManager.getNfsFileStore(1L))
+        .thenReturn(GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(1L, "i", user));
+
+    assertThrows(
+        ExternalApiAuthorizationException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  private static NfsFolderDetails folderListing(NfsResourceDetails... content) {
+    NfsFolderDetails folder = new NfsFolderDetails("parent");
+    folder.getContent().addAll(List.of(content));
+    return folder;
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedWhenParentNotListable()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenThrow(new IOException("no access"));
+
+    assertThrows(
+        NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedForListedButUnreadableFile()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    // like SFTP, where ls lists a file the caller cannot open
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFileDetails("a.dat")));
+    when(client.queryNfsFileForDownload(any())).thenThrow(new IOException("permission denied"));
+
+    assertThrows(
+        NotFoundException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+    verify(client).closeSession();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForReadableFile()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFileDetails("a.dat")));
+    NfsFileDetails readable = new NfsFileDetails("a.dat");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(any())).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/a.dat", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user)).isEmpty();
+    verify(client).releaseNfsFileAfterDownload(readable);
+    verify(client).closeSession();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForListableFolder()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFolderDetails("XRD")));
+    when(client.createFileTree(eq("/XRD"), any(), any())).thenReturn(new NfsFileTreeNode());
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user)).isEmpty();
+    verify(client, never()).queryNfsFileForDownload(any());
+    verify(client).closeSession();
+  }
+
+  private static NfsTarget atPath(String path) {
+    return argThat(target -> target != null && path.equals(target.getPath()));
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksNestedFileUnderTheFilestoreBasePath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/data");
+    when(client.queryForNfsFolder(atPath("/data/XRD")))
+        .thenReturn(folderListing(new NfsFileDetails("run.dat")));
+    NfsFileDetails readable = new NfsFileDetails("run.dat");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(atPath("/data/XRD/run.dat"))).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/run.dat", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksNestedFolderUnderTheFilestoreBasePath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/data");
+    when(client.queryForNfsFolder(atPath("/data/XRD")))
+        .thenReturn(folderListing(new NfsFolderDetails("raw")));
+    when(client.createFileTree(eq("/data/XRD/raw"), any(), any()))
+        .thenReturn(new NfsFileTreeNode());
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/raw/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/XRD/raw/", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginFilesystemRefusedForUnlistableFolder()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    // like SMB, whose folder query still answers when listing the folder is denied
+    when(client.queryForNfsFolder(any())).thenReturn(folderListing(new NfsFolderDetails("XRD")));
+    when(client.createFileTree(any(), any(), any())).thenThrow(new IOException("access denied"));
+
+    assertThrows(
+        NotFoundException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/XRD/", user));
+    assertThrows(
+        NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/", user));
+    verifyNoInteractions(nfsFieldLinkManager);
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginAcceptsFolderListedByItsFullPath()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath("/tempZone/home/alice");
+    // iRODS names a listed collection by its absolute path
+    when(client.queryForNfsFolder(atPath("/tempZone/home/alice")))
+        .thenReturn(folderListing(new NfsFolderDetails("/tempZone/home/alice/test")));
+    when(client.createFileTree(eq("/tempZone/home/alice/test"), any(), any()))
+        .thenReturn(new NfsFileTreeNode());
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/test/", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/test/", user)).isEmpty();
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_refusedWhenFilestoresDisabled() {
+    when(propertyHolder.isNetFileStoresEnabled()).thenReturn(false);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
+    verifyNoInteractions(nfsFieldLinkManager);
   }
 }

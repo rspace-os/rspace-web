@@ -313,12 +313,14 @@ public interface UserManager extends GenericManager<User, Long> {
   void checkEmailUnique(String email) throws UserExistsException;
 
   /**
-   * Updates a user preference
+   * Inserts or updates a user preference atomically. Preference and integration caches are
+   * invalidated after the transaction commits. Cached reads within the same transaction can
+   * therefore retain their previous value until commit.
    *
    * @param preference
    * @param value - must be a valid value for preference type
    * @param subject - the username
-   * @return the newly created preference
+   * @return the persisted preference
    * @throws IllegalArgumentException if preference value isn't a valid value
    */
   UserPreference setPreference(Preference preference, String value, String subject);

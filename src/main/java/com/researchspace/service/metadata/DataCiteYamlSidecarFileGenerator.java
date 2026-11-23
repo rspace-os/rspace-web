@@ -32,6 +32,7 @@ public class DataCiteYamlSidecarFileGenerator {
             List.of(creatorFor(ctx)),
             new Publisher(new Valued<>(ctx.getInstitutionName())),
             new Valued<>(String.valueOf(Year.now().getValue())),
+            relatedIdentifiersFor(ctx),
             relatedItemsFor(ctx));
     String content = yamlMapper.writeValueAsString(model);
     return new GeneratedSidecarFile(filenameFor(ctx), content);
@@ -69,6 +70,19 @@ public class DataCiteYamlSidecarFileGenerator {
     return List.of(
         new NameIdentifier(
             new Valued<>(orcidId), new Valued<>("https://orcid.org"), new Valued<>("ORCID")));
+  }
+
+  /** One entry per Linked document, or null (omitted) when there is none. */
+  private List<RelatedIdentifier> relatedIdentifiersFor(SidecarFileGenerationContext ctx) {
+    if (ctx.getLinkedDocumentUrls() == null || ctx.getLinkedDocumentUrls().isEmpty()) {
+      return null;
+    }
+    return ctx.getLinkedDocumentUrls().stream()
+        .map(
+            url ->
+                new RelatedIdentifier(
+                    new Valued<>(url), new Valued<>("URL"), new Valued<>("IsDocumentedBy")))
+        .toList();
   }
 
   /** One {@code relatedItem} per S3 object, or null (omitted) when the folder is empty. */
@@ -112,6 +126,7 @@ public class DataCiteYamlSidecarFileGenerator {
     "creators",
     "publisher",
     "publicationYear",
+    "relatedIdentifiers",
     "relatedItems"
   })
   static class DataCiteMetadata {
@@ -120,7 +135,16 @@ public class DataCiteYamlSidecarFileGenerator {
     List<Creator> creators;
     Publisher publisher;
     Valued<String> publicationYear;
+    List<RelatedIdentifier> relatedIdentifiers;
     List<RelatedItem> relatedItems;
+  }
+
+  @Value
+  @JsonPropertyOrder({"relatedIdentifier", "relatedIdentifierType", "relationType"})
+  static class RelatedIdentifier {
+    Valued<String> relatedIdentifier;
+    Valued<String> relatedIdentifierType;
+    Valued<String> relationType;
   }
 
   @Value

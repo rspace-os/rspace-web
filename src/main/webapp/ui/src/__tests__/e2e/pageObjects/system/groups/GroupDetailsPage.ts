@@ -13,14 +13,18 @@ import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 export class GroupDetailsPage extends BasePage {
   readonly path = "/groups/view";
 
-  /** Late React mounts shift the members table; the Account Menu mounts last. */
   async openGroup(groupId: number): Promise<void> {
     await this.page.goto(`${this.path}/${groupId}`);
     await this.waitForLayoutToSettle();
   }
 
+  /** The header and Profile card mount late and shift the page; a click during the shift is lost. */
   private async waitForLayoutToSettle(): Promise<void> {
     await new AppHeader(this.page).accountMenuButton.waitFor({ state: "visible" });
+    const profileCardMount = this.page.locator("#groupEditBar");
+    if ((await profileCardMount.count()) > 0) {
+      await profileCardMount.locator('[data-test-id="profile-description"]').waitFor({ state: "visible" });
+    }
   }
 
   get heading(): Locator {
@@ -48,6 +52,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async rename(newName: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Rename", exact: true }).click();
     const dialog = new RenameGroupDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -60,6 +65,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async changePi(newPiFullName: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.changePiButton.click();
     const dialog = new ChangePiDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -68,6 +74,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async clickChangePiExpectingNoCandidate(): Promise<AppriseAlertComponent> {
+    await this.waitForLayoutToSettle();
     await this.changePiButton.click();
     const alert = new AppriseAlertComponent(this.page);
     await alert.waitUntilVisible();
@@ -79,12 +86,14 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async deleteGroup(): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.deleteGroupButton.click();
     await this.page.getByRole("dialog", { name: "Confirm Deletion" }).getByRole("button", { name: "Confirm" }).click();
     await this.page.waitForURL((url) => url.pathname === "/userform");
   }
 
   async requestCollaborationGroup(withUsername: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Create Collaboration Group", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -92,6 +101,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async inviteAnotherPiToCollaboration(withUsername: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Invite a New PI", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -99,6 +109,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async inviteMember(username: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Invite", exact: true }).click();
     const dialog = new InviteMembersDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -112,6 +123,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async leaveGroup(): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Leave Group", exact: true }).click();
     const left = this.page.waitForResponse((res) => res.url().includes("/groups/admin/removeSelf/"));
     await this.page
@@ -128,6 +140,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async leaveCollaboration(): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.page.getByRole("button", { name: "Leave Collaboration", exact: true }).click();
     await this.page.waitForURL((url) => url.pathname === "/userform");
   }
@@ -161,6 +174,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async removeMember(username: string): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.memberRemoveButton(username).click();
     await this.memberRow(username).waitFor({ state: "hidden" });
   }
@@ -178,6 +192,7 @@ export class GroupDetailsPage extends BasePage {
     username: string,
     submit: (dialog: ChangeRoleDialogComponent) => Promise<void>,
   ): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.memberChangeRoleButton(username).click();
     const dialog = new ChangeRoleDialogComponent(this.page);
     await dialog.waitUntilVisible();
@@ -205,6 +220,7 @@ export class GroupDetailsPage extends BasePage {
   }
 
   async setPiCanEditAllWork(enabled: boolean): Promise<void> {
+    await this.waitForLayoutToSettle();
     await this.editProfileButton.click();
     await this.piCanEditAllWorkCheckbox.setChecked(enabled);
     const saveButton = this.page.getByRole("button", { name: "Save", exact: true });

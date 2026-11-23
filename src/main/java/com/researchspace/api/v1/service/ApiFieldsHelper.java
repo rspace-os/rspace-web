@@ -363,8 +363,7 @@ public class ApiFieldsHelper {
           boolean hasLinkTarget;
           if (hasApiFieldForTemplateField) {
             ApiInventoryLink incomingLink = incomingApiFields.get(i).getLink();
-            hasLinkTarget =
-                incomingLink != null && StringUtils.isNotBlank(incomingLink.getTargetGlobalId());
+            hasLinkTarget = incomingLink != null && incomingLink.hasTarget();
           } else {
             hasLinkTarget = templateField.isValidValueForMandatoryField(null);
           }

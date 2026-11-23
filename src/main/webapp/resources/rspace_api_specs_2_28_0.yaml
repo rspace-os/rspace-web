@@ -338,7 +338,7 @@ paths:
           * Metadata about media items belonging to this document
           * Links to download the content of media files
 
-        A CSV representation of a list of Fields can also be obtained by setting an "Accept: text/csv" Header in your request or appending ".csv" to the URL. Error messages are also returned in CSV format.
+        A CSV representation of a list of Fields can also be obtained by setting an "Accept: text/csv" Header in your request. Error messages are also returned in CSV format.
       tags:
         - Documents
       parameters:

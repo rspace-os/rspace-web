@@ -58,12 +58,15 @@ export class ToolbarCreateMenu {
     const directItem = menu.getByRole("menuitem", { name, exact: true });
     if ((await directItem.count()) > 0) {
       await directItem.click();
-      return;
+    } else {
+      await fromForm.click();
+      const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
+      await dialog.waitFor({ state: "visible" });
+      // The link submits a POST form. Firefox navigates, but click() never stops waiting for that
+      // navigation, so wait for the new document's URL instead.
+      await dialog.getByRole("link", { name, exact: true }).click({ noWaitAfter: true });
     }
-    await fromForm.click();
-    const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
-    await dialog.waitFor({ state: "visible" });
-    await dialog.getByRole("link", { name, exact: true }).click();
+    await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
   }
 
   private async select(name: string): Promise<void> {

@@ -55,6 +55,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.shiro.authz.Permission;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.ColumnDefault;
@@ -848,6 +849,7 @@ public class User extends AbstractUserOrGroupImpl
    * @return
    */
   @OneToMany(fetch = FetchType.EAGER, mappedBy = "user")
+  @BatchSize(size = 50)
   public Set<UserGroup> getUserGroups() {
     return userGroups;
   }

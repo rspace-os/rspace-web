@@ -71,10 +71,15 @@ export default class MaterialsStore {
    */
   setup(): Promise<void> {
     if (this.setupPromise) return this.setupPromise;
-    this.setupPromise = this.rootStore.authStore.synchronizeWithSessionStorage().then(() => {
-      void this.rootStore.peopleStore.fetchCurrentUser();
-      void this.rootStore.unitStore.fetchUnits();
-    });
+    this.setupPromise = this.rootStore.authStore
+      .synchronizeWithSessionStorage()
+      .then(async () => {
+        await Promise.all([this.rootStore.peopleStore.fetchCurrentUser(), this.rootStore.unitStore.fetchUnits()]);
+      })
+      .catch((error: unknown) => {
+        this.setupPromise = null;
+        throw error;
+      });
     return this.setupPromise;
   }
 

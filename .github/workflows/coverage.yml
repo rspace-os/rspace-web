@@ -12,6 +12,10 @@ name: Coverage
 # rather than the sum of both phases.
 # ponytail: this doubles DB schema-init cost (each shard runs drop-recreate-db);
 # a pre-seeded DB image (planned) would remove that overhead.
+#
+# This is also the Java 17 check. Maven builds on 21, like every other workflow,
+# and -Djvm makes the test JVMs run on 17: a 21-built RSpace on a Java 17 server,
+# which customers will have until they move to 21.
 
 on:
   schedule:
@@ -19,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       java_vendor:
-        description: 'Java vendor Maven toolchain'
+        description: 'JDK distribution for setup-java'
         type: string
         default: 'temurin'
 
@@ -33,9 +37,6 @@ env:
 jobs:
   unit-spring-coverage:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [21]
     services:
       db:
         image: mariadb:10.11
@@ -54,16 +55,19 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: |
+            17
+            21
           cache: maven
 
       - name: Configure MariaDB
@@ -97,8 +101,7 @@ jobs:
         run: |
           ./mvnw clean test org.jacoco:jacoco-maven-plugin:report \
             -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djvm="${JAVA_HOME_17_X64:?}/bin/java" \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -123,7 +126,7 @@ jobs:
 
       - name: Upload HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-unit-spring
           path: target/site/jacoco
@@ -131,7 +134,7 @@ jobs:
 
       - name: Upload exec data for merge
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-exec-unit-spring
           path: target/jacoco.exec
@@ -139,15 +142,12 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v7.0.0
+        uses: codecov/codecov-action@v7.1.1
         with:
           files: target/site/jacoco/jacoco.xml
 
   integration-coverage:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [21]
     services:
       db:
         image: mariadb:10.11
@@ -166,16 +166,19 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: |
+            17
+            21
           cache: maven
 
       - name: Configure MariaDB
@@ -203,8 +206,7 @@ jobs:
         run: |
           ./mvnw clean verify -DskipUnitTests=true \
             -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djvm="${JAVA_HOME_17_X64:?}/bin/java" \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -229,7 +231,7 @@ jobs:
 
       - name: Upload HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-integration
           path: target/site/jacoco-it
@@ -237,7 +239,7 @@ jobs:
 
       - name: Upload exec data for merge
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-exec-integration
           path: target/jacoco-it.exec
@@ -245,7 +247,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v7.0.0
+        uses: codecov/codecov-action@v7.1.1
         with:
           files: target/site/jacoco-it/jacoco.xml
 
@@ -259,38 +261,34 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-spring-coverage, integration-coverage]
     if: always()
-    strategy:
-      matrix:
-        java-version: [21]
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache: maven
 
       - name: Compile main classes
         run: |
-          ./mvnw -q compile -Dspotless.apply.skip=true \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./mvnw -q compile -Dspotless.apply.skip=true
 
       - name: Download unit + Spring exec
         continue-on-error: true
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: coverage-exec-unit-spring
           path: target
 
       - name: Download integration exec
         continue-on-error: true
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: coverage-exec-integration
           path: target
@@ -326,7 +324,7 @@ jobs:
 
       - name: Upload merged HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-merged
           path: target/site/jacoco-merged

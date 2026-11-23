@@ -23,7 +23,7 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | Command | Purpose |
 |---|---|
 | `pnpm install --frozen-lockfile` | Install frontend dependencies |
-| `pnpm test` | Run Vitest/jsdom unit tests |
+| `pnpm test` | Run Vitest unit tests (jsdom, plus a Node project for pure utilities) |
 | `pnpm test src/components/MyComponent/__tests__/MyComponent.test.tsx` | Run one unit-test file |
 | `pnpm test --verbose <filter>` | Run tests with an option and filter |
 | `pnpm test-browser` | Run Browser Mode tests in Chromium, Firefox, and WebKit |
@@ -39,8 +39,8 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `mvn test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
 | `mvn clean test -Dfast=true` | Run all pure backend unit tests |
 | `mvn test -Dtest=MyClassName` | Run one Spring transactional test class |
-| `mvn clean test` | Run unit and Spring tests; requires a database |
-| `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
+| `mvn clean test` | Run unit and Spring tests; DB-backed tests use a throwaway MariaDB in Docker |
+| `mvn clean verify` | Run verification including `*IT`; DB-backed tests use a throwaway MariaDB in Docker |
 | `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
 
 Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
@@ -51,6 +51,7 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goa
 - Keep changes scoped; preserve unrelated work.
 - Read nested `AGENTS.md` files before editing.
 - Use `rg` and `rg --files` for searches.
+- Use explicit Java imports, including static imports. Avoid wildcard imports.
 - Only edit vendored code, minified files, build output, `target/`, `dist/`, or `node_modules/` when explicitly targeted.
 - Put plans and scratch notes in gitignored `.claude/`.
 - Add dependencies only when necessary.
@@ -107,7 +108,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 
 <important if="changing user-visible behavior">
 
-- Put backend user-facing text in `src/main/resources/bundles/` or `ApplicationResources.properties`; resolve through the injected message source. Exempt logs and internal messages.
+- Put backend user-facing text in the `server.*.json` catalogs under `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; resolve through the injected message source. Do not add properties bundles. Exempt logs and internal messages.
 - Frontend English catalogs live in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; use semantic keys. Follow `DevDocs/DeveloperNotes/i18n.md`.
 - New frontend text: use `t()` with literal `defaultValue`, run `pnpm run i18n:extract --sync-primary`, review catalogs, remove `defaultValue`, then run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`.
 - Wrap raw JSX text in `t()` before extraction. Use ICU syntax for interpolation and plurals.
@@ -137,10 +138,10 @@ Remove duplicate tests and comments that restate code. Keep a minimal check for 
 
 <important if="verifying runtime behavior">
 
-Use both MCP tools against this worktree's Docker Dev Stack:
+Use both MCP servers against this worktree's Docker Dev Stack. Tool-name prefixes come from each user's MCP config, so find the tools by server:
 
-- Playwright `mcp__playwright__browser_*` for repeatable flows and accessibility snapshots.
-- Chrome DevTools `mcp__chrome_devtools__*` for console/network errors, layout/reflow, performance traces, and Lighthouse.
+- Playwright MCP (`@playwright/mcp`) for repeatable flows and accessibility snapshots.
+- Chrome DevTools MCP (`chrome-devtools-mcp`) for console/network errors, layout/reflow, performance traces, and Lighthouse.
 
 Cover happy paths and likely regressions, including accessibility, failed requests, layout shifts, responsiveness, and performance. Report unavailable tools; do not claim full browser verification without both. Fixture and settings changes are allowed in this throwaway stack.
 </important>

@@ -368,18 +368,24 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
     RSChemElement rsChemElement = get(chemElemId, user);
     byte[] decodedBytes =
         ImageUtils.getImageBytesFromBase64DataImage(chemicalImageDTO.getImageBase64());
-    InputStream imageStream = new ByteArrayInputStream(decodedBytes);
-
-    return saveChemImagePng(rsChemElement, imageStream, user);
+    try (InputStream imageStream = new ByteArrayInputStream(decodedBytes)) {
+      attachChemImagePng(rsChemElement, imageStream, user);
+    }
+    return rsChemElementDao.save(rsChemElement);
   }
 
   @Override
   public RSChemElement saveChemImagePng(RSChemElement rsChemElement, InputStream imageIS, User user)
       throws IOException {
+    attachChemImagePng(rsChemElement, imageIS, user);
+    return save(rsChemElement, user);
+  }
+
+  private void attachChemImagePng(RSChemElement rsChemElement, InputStream imageIS, User user)
+      throws IOException {
     String fileName = "chem_" + rsChemElement.getId() + ".png";
     FileProperty fp = fileStore.createAndSaveFileProperty("chemImages", user, fileName, imageIS);
     rsChemElement.setImageFileProperty(fp);
-    return save(rsChemElement, user);
   }
 
   @Override
@@ -497,7 +503,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
             .metadata(chemElementDataDto.getMetadata())
             .build();
     // Save chem element here so the id isn't null when saving chem image
-    newChemElement = save(newChemElement, subject);
+    newChemElement = rsChemElementDao.save(newChemElement);
     result = saveChemImagePng(newChemElement, new ByteArrayInputStream(image), subject);
 
     return result;

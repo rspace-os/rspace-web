@@ -12,6 +12,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.NfsFieldLinkManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
   private @Autowired FieldManager fieldManager;
   private @Autowired FieldParser fieldParser;
   private @Autowired InternalLinkDao internalLinkDao;
+  private @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   @Override
   public FieldContentDelta syncFieldWithEntitiesOnautosave(
@@ -55,6 +57,9 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
 
     updateInternalLinks(permanentField, subject, incomingChangesRelativeToTempField, newFieldData);
     logSyncStageTime(sw, "updating internal links");
+
+    nfsFieldLinkManager.reindex(permanentField, newFieldData);
+    logSyncStageTime(sw, "updating filestore link index");
 
     return incomingChangesRelativeToTempField;
   }
@@ -255,6 +260,7 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
     if (delta.isUnchanged()) {
       return delta;
     }
+    nfsFieldLinkManager.reindex(field, field.getFieldData());
     // if we've added some links, we should delete the fieldMedia items, since we're
     // reverting to previous state - this won't be in the revision history, so we
     // can delete the row from the DB.

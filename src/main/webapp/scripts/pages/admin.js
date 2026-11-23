@@ -19,9 +19,15 @@ $(document).ready(function (){
 	};
 
 	const scrollCurrentMenuPanelIntoView = () => {
+		// Configuration responses must not move a link between pointer-down and click,
+		// or undo keyboard/carousel navigation that the user has already started.
+		if (menuScrollTarget !== null || document.querySelector("#menuFixer")?.contains(document.activeElement)) {
+			updateMenuScrollButtons();
+			return;
+		}
 		const currentPanel = document.querySelector("#menuMover .menuInnerPanel.currentPanel");
 		if (currentPanel !== null && currentPanel.offsetParent !== null) {
-			currentPanel.scrollIntoView({ block: "nearest", inline: "center" });
+			currentPanel.scrollIntoView({ block: "nearest", inline: "center", behavior: "instant" });
 			updateMenuScrollButtons();
 		}
 	};

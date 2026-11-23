@@ -89,7 +89,8 @@ public interface GenericDao<T, PK extends Serializable> {
   <N> Optional<T> getBySimpleNaturalId(N naturalId);
 
   /**
-   * Loads a proxied instance, not hitting the database, with only the id set using session.load()
+   * Loads a proxied instance, not hitting the database, with only the id set using
+   * session.getReference()
    *
    * @param id
    * @return the persisted object

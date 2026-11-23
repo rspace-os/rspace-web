@@ -36,6 +36,4 @@ public interface EcatCommentDao extends GenericDao<EcatComment, Long> {
   void deleteComment(Long comId, Long parentId);
 
   void deleteCommentItem(Long itemId);
-
-  void updateCommentItem(EcatCommentItem citm);
 }

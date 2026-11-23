@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -22,6 +23,7 @@ beforeEach(() => {
 describe("DMPAssistant", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
+      const user = userEvent.setup();
       const { baseElement } = render(
         <DMPAssistant
           integrationState={{
@@ -34,14 +36,15 @@ describe("DMPAssistant", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
   });
-  test("Should have a connect button when the user is not authenticated.", () => {
+  test("Should have a connect button when the user is not authenticated.", async () => {
+    const user = userEvent.setup();
     render(
       <DMPAssistant
         integrationState={{
@@ -54,10 +57,11 @@ describe("DMPAssistant", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
     expect(screen.getByRole("button", { name: "apps:actions.connect" })).toBeVisible();
   });
-  test("Should have a disconnect button when the user is authenticated.", () => {
+  test("Should have a disconnect button when the user is authenticated.", async () => {
+    const user = userEvent.setup();
     render(
       <DMPAssistant
         integrationState={{
@@ -70,10 +74,11 @@ describe("DMPAssistant", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
     expect(screen.getByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
   });
   test("Should flip to connected when the DMPASSISTANT_CONNECTED event fires.", async () => {
+    const user = userEvent.setup();
     render(
       <DMPAssistant
         integrationState={{
@@ -86,7 +91,7 @@ describe("DMPAssistant", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
     expect(screen.getByRole("button", { name: "apps:actions.connect" })).toBeVisible();
 
     // the OAuth popup's shared result page posts this over the BroadcastChannel
@@ -99,6 +104,7 @@ describe("DMPAssistant", () => {
     expect(await screen.findByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
   });
   test("Clicking disconnect issues the DELETE call and flips back to connect.", async () => {
+    const user = userEvent.setup();
     const mockAxios = new MockAdapter(axios);
     mockAxios.onDelete("/apps/dmpassistant/connect").reply(200);
     render(
@@ -113,8 +119,8 @@ describe("DMPAssistant", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: "apps:actions.disconnect" }));
+    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button", { name: "apps:actions.disconnect" }));
 
     await waitFor(() => expect(mockAxios.history.delete.length).toBe(1));
     expect(await screen.findByRole("button", { name: "apps:actions.connect" })).toBeVisible();

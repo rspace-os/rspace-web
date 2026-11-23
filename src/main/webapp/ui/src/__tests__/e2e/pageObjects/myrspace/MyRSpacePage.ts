@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { BasePage } from "../BasePage";
 import { AuditTrailPage } from "./AuditTrailPage";
@@ -20,27 +20,37 @@ export class MyRSpacePage extends BasePage {
     this.header = new AppHeader(page);
   }
 
+  /** Clicking a link the carousel clips only scrolls it, so retry until the page navigates. */
+  private async followToolbarLink(name: string, exact = false): Promise<void> {
+    const link = this.page.getByRole("link", { name, exact });
+    const destination = new URL((await link.getAttribute("href")) ?? "", this.page.url()).pathname;
+    await expect(async () => {
+      await link.click();
+      await this.page.waitForURL((url) => url.pathname === destination, { timeout: 5_000, waitUntil: "commit" });
+    }).toPass();
+  }
+
   async openAuditTrail(): Promise<AuditTrailPage> {
-    await this.page.getByRole("link", { name: "Auditing" }).click();
+    await this.followToolbarLink("Auditing");
     await this.page.waitForURL("**/audit/auditing**");
     return new AuditTrailPage(this.page);
   }
 
   async openDeletedItems(): Promise<DeletedItemsPage> {
-    await this.page.getByRole("link", { name: "Deleted Items" }).click();
+    await this.followToolbarLink("Deleted Items");
     await this.page.waitForURL("**/workspace/trash/list**");
     return new DeletedItemsPage(this.page);
   }
 
   async openProfile(): Promise<UserProfilePage> {
-    await this.page.getByRole("link", { name: "My Profile" }).click();
+    await this.followToolbarLink("My Profile");
     const page = new UserProfilePage(this.page);
     await page.waitUntilLoaded();
     return page;
   }
 
   async openDirectory(): Promise<DirectoryPage> {
-    await this.page.getByRole("link", { name: "Directory" }).click();
+    await this.followToolbarLink("Directory");
     await this.page.waitForURL((url) => url.pathname === "/directory");
     return new DirectoryPage(this.page);
   }
@@ -53,28 +63,31 @@ export class MyRSpacePage extends BasePage {
   }
 
   async openManageForms(): Promise<ManageFormsPage> {
-    await this.page.getByRole("link", { name: "Manage Forms" }).click();
+    await this.followToolbarLink("Manage Forms");
     const forms = new ManageFormsPage(this.page);
     await forms.waitUntilLoaded();
     return forms;
   }
 
   async openSharedDocuments(): Promise<SharedDocumentsPage> {
-    await this.page.getByRole("link", { name: "Shared Documents", exact: true }).click();
+    await this.followToolbarLink("Shared Documents", true);
     const shared = new SharedDocumentsPage(this.page);
     await shared.waitUntilLoaded();
     return shared;
   }
 
   async openPublishedDocuments(): Promise<PublishedDocumentsPage> {
-    await this.page.getByRole("link", { name: "My Group's Published Documents" }).click();
     const published = new PublishedDocumentsPage(this.page);
+    const link = this.page.getByRole("link", { name: "My Group's Published Documents" });
+    // The legacy menu scroll-snaps; keyboard activation keeps its moving hitbox out of navigation.
+    await link.focus();
+    await Promise.all([this.page.waitForURL((url) => url.pathname === published.path), link.press("Enter")]);
     await published.waitUntilLoaded();
     return published;
   }
 
   async openExportImport(): Promise<ExportImportPage> {
-    await this.page.getByRole("link", { name: "Export - Import" }).click();
+    await this.followToolbarLink("Export - Import");
     const page = new ExportImportPage(this.page);
     await page.waitUntilLoaded();
     return page;

@@ -21,6 +21,8 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
@@ -34,6 +36,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -47,12 +50,15 @@ import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
@@ -72,6 +78,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired InventoryEditLockTracker invLockTracker;
   private @Autowired SampleTemplateDao sampleTemplateDao;
+  private @Autowired NfsDao nfsDao;
   private ApplicationEventPublisher mockPublisher;
 
   private User testUser;
@@ -1018,6 +1025,40 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void duplicateByAGroupMemberKeepsThePisFilestoreLink() {
+    User pi = createAndSaveUserIfNotExists("pi" + getRandomName(8), Constants.PI_ROLE);
+    initialiseContentWithEmptyContent(pi);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, testUser);
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsDao.saveNfsFileSystem(fs);
+    NfsFileStore piStore = GalleryFilestoreTestUtils.createFileStore("s3", pi, fs);
+    piStore.setPath("/data");
+    nfsDao.saveNfsFileStore(piStore);
+
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType("IsSourceOf");
+    link.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(piStore.getId(), "/XRD/run.dat"));
+    ApiExtraField rawData = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+    rawData.setName("Raw data");
+    rawData.setNewFieldRequest(true);
+    rawData.setLink(link);
+    ApiSampleWithFullSubSamples piSample = new ApiSampleWithFullSubSamples();
+    piSample.setName("pi's linked sample");
+    piSample.getExtraFields().add(rawData);
+    piSample = sampleApiMgr.createNewApiSample(piSample, pi);
+
+    // ADR 0016: the owner rule covers choosing a target; a copy keeps its links as they are
+    Long copyId = sampleApiMgr.duplicate(piSample.getId(), testUser).getId();
+
+    ApiSample copy = sampleApiMgr.getApiSampleById(copyId, testUser);
+    assertEquals(testUser.getUsername(), copy.getOwner().getUsername());
+    assertEquals(
+        new ApiInventoryLinkFilestoreTarget(piStore.getId(), "/XRD/run.dat"),
+        copy.getExtraFields().get(0).getLink().getFilestoreTarget());
+  }
+
+  @Test
   public void transferSampleToAnotherUser() {
     ApiContainer testUserWorkbench = getWorkbenchForUser(testUser);
 
@@ -1206,7 +1247,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void checkLimitedReadSampleActions() {
+  public void checkLimitedReadSampleActions() throws Exception {
 
     // create a pi and other user
     User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
@@ -1240,6 +1281,11 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNull(sampleAsSeenByOtherUser.getFields());
     assertNull(sampleAsSeenByOtherUser.getExtraFields());
     assertNull(sampleAsSeenByOtherUser.getSubSamples());
+
+    Long sampleId = createdSample.getId();
+    Long sampleCount = getCountOfEntityTable("Sample");
+    assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
+    assertEquals(sampleCount, getCountOfEntityTable("Sample"));
 
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =

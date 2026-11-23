@@ -31,9 +31,14 @@ export class MailpitClient {
     return res.json() as Promise<MailpitMessage>;
   }
 
-  async deleteAllMessages(): Promise<void> {
-    const res = await this.request.delete("/api/v1/messages");
-    await this.assertOk(res, "deleteAllMessages");
+  /**
+   * Deletes only messages matching `query`. The inbox is shared with other tests and anyone
+   * else using this Mailpit, so never delete messages the caller doesn't own.
+   * @param query Mailpit search syntax, e.g. `to:user@example.com`.
+   */
+  async deleteMessages(query: string): Promise<void> {
+    const res = await this.request.delete(`/api/v1/search?query=${encodeURIComponent(query)}`);
+    await this.assertOk(res, "deleteMessages");
   }
 
   /** Polls until an email with `subject` reaches `to`, then returns it. */

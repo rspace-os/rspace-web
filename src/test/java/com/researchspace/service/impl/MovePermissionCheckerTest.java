@@ -1,8 +1,10 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -16,6 +18,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,6 +116,62 @@ public class MovePermissionCheckerTest {
 
     assertFalse(checker.checkMovePermissions(other, rootFolder, toMove));
     verifyNoInteractions(fDao);
+  }
+
+  @Test
+  public void batchCheckGivesSameAnswerAsSingleCheckPerRecord() throws IllegalAddChildOperation {
+    setUpPermissionsOK(target);
+    target.setSystemFolder(true);
+    setUpSharedFolderHierarchy();
+    when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
+    // toMove sits in grp2, sameGroupRecord in grp1 alongside the target
+    Folder sameGroupRecord = TestFactory.createAFolder("sameGroup", user);
+    toMove.setId(1L);
+    sameGroupRecord.setId(2L);
+    grp1.addChild(sameGroupRecord, user);
+    when(permUtil.isPermitted(sameGroupRecord, PermissionType.SEND, user)).thenReturn(true);
+
+    Map<Long, Boolean> movable =
+        checker.checkMovePermissions(user, target, List.of(toMove, sameGroupRecord));
+
+    assertEquals(2, movable.size());
+    assertEquals(checker.checkMovePermissions(user, target, toMove), movable.get(1L));
+    assertEquals(checker.checkMovePermissions(user, target, sameGroupRecord), movable.get(2L));
+    assertFalse(movable.get(1L));
+    assertTrue(movable.get(2L));
+  }
+
+  @Test
+  public void batchCheckComputesTargetContextOnce() throws IllegalAddChildOperation {
+    setUpPermissionsOK(target);
+    target.setSystemFolder(true);
+    setUpSharedFolderHierarchy();
+    when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
+    Folder movableRecord = TestFactory.createAFolder("movable", user);
+    toMove.setId(1L);
+    movableRecord.setId(2L);
+    grp1.addChild(movableRecord, user);
+    when(permUtil.isPermitted(movableRecord, PermissionType.SEND, user)).thenReturn(true);
+
+    checker.checkMovePermissions(user, target, List.of(toMove, movableRecord));
+
+    verify(fDao, times(1)).getUserSharedFolder(user);
+    verify(permUtil, times(1)).isPermitted(target, PermissionType.FOLDER_RECEIVE, user);
+  }
+
+  // the shared-folder lookup must stay behind the per-record SEND gate: a denied check
+  // costs no database work, matching the pre-batch ordering of the checks
+  @Test
+  public void deniedSendMoveCheckDoesNotCallDatabaseMethod() throws IllegalAddChildOperation {
+    setUpPermissionsOK(target);
+    target.setSystemFolder(true);
+    setUpSharedFolderHierarchy();
+    toMove.setId(1L);
+    when(permUtil.isPermitted(toMove, PermissionType.SEND, user)).thenReturn(false);
+
+    assertFalse(checker.checkMovePermissions(user, target, toMove));
+    assertFalse(checker.checkMovePermissions(user, target, List.of(toMove)).get(1L));
+    verify(fDao, never()).getUserSharedFolder(user);
   }
 
   protected void setUpPermissionsOK(Folder target) {

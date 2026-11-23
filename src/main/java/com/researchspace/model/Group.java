@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.Permission;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Formula;
 
 /** A Group of users. */
@@ -192,6 +193,7 @@ public class Group extends AbstractUserOrGroupImpl
       mappedBy = "group",
       orphanRemoval = true,
       fetch = FetchType.EAGER)
+  @BatchSize(size = 50)
   public Set<UserGroup> getUserGroups() {
     return userGroups;
   }

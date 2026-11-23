@@ -1,7 +1,10 @@
 package com.researchspace.dao;
 
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.record.StructuredDocument;
+import java.util.Collection;
 import java.util.List;
 
 /** Data Access Object for net filestores and filesystems */
@@ -52,4 +55,18 @@ public interface NfsDao {
    * @return whether fileSystem was successfully deleted
    */
   boolean deleteNfsFileSystem(Long id);
+
+  List<NfsFieldLink> getFieldLinks(Long fieldId);
+
+  void saveFieldLink(NfsFieldLink link);
+
+  void deleteFieldLink(NfsFieldLink link);
+
+  /**
+   * Current, non-deleted documents with a text field linking any of the normalised absolute paths
+   * on the filesystem, by ascending id. An empty collection of paths returns an empty list without
+   * querying.
+   */
+  List<StructuredDocument> getDocumentsLinkingTo(
+      Long fileSystemId, Collection<String> absolutePaths);
 }

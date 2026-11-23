@@ -23,14 +23,9 @@ on:
         type: boolean
         default: false
       java_vendor:
-        description: 'Java vendor Maven toolchain'
+        description: 'JDK distribution for setup-java'
         type: string
         default: 'temurin'
-      java_version:
-        description: 'Java version for the Java jobs'
-        type: choice
-        options: ['17', '21']
-        default: '17'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -53,10 +48,10 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@v4.0.2
+      - uses: dorny/paths-filter@v4.0.3
         id: filter
         with:
           filters: |
@@ -86,20 +81,21 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache: maven
@@ -117,12 +113,10 @@ jobs:
       - name: Run fast tests
         run: |
           # ponytail: 1C = one fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
-          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -142,13 +136,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -194,21 +188,22 @@ jobs:
       contents: read
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache: maven
@@ -221,9 +216,7 @@ jobs:
       # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
       - name: Spotless check
         run: |
-          ./mvnw -q spotless:check -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./mvnw -q spotless:check -DspotlessStrict
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -245,13 +238,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -279,7 +272,7 @@ jobs:
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: vitest-blob-report-${{ matrix.shard }}
           path: src/main/webapp/ui/.vitest/blob/*
@@ -287,7 +280,7 @@ jobs:
           retention-days: 1
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -316,12 +309,12 @@ jobs:
         needs.changed-files.outputs.frontend == 'true'
       )
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -336,7 +329,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download blob reports
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           path: src/main/webapp/ui/.vitest/blob
           pattern: vitest-blob-report-*
@@ -346,7 +339,7 @@ jobs:
         run: cd src/main/webapp/ui && npx vitest --merge-reports --reporter=default --coverage
 
       - name: Upload merged coverage report
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: vitest-coverage-report
           path: src/main/webapp/ui/coverage
@@ -372,13 +365,13 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -409,7 +402,7 @@ jobs:
         run: pnpm run storybook:test
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -421,12 +414,14 @@ jobs:
           comment_mode: off
           files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
 
-  # Bundle-size comparison: build the frontend on both the PR and the base
-  # branch, then diff the two stats.json files and post the result as a PR
-  # comment. Restricted to same-repo PRs because posting the comment needs a
-  # writable GITHUB_TOKEN, which fork PRs do not receive. Each build produces
+  # Bundle-size comparison: build the PR's frontend, get the base commit's
+  # stats.json (restored from the cache that main's build job saves, or built
+  # when there is no cache entry), then diff the two files and post the result
+  # as a PR comment. Restricted to same-repo PRs because posting the comment
+  # needs a writable GITHUB_TOKEN, which fork PRs do not receive. Builds write
   # src/main/webapp/ui/dist/stats.json via the vite-bundle-analyzer plugin
-  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats).
+  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats); in CI they skip
+  # the stats.html report.
   bundle-size-pr:
     name: Bundle size (PR)
     runs-on: ubuntu-latest
@@ -438,12 +433,12 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -461,7 +456,7 @@ jobs:
         run: pnpm run build:stats
 
       - name: Upload PR bundle stats
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bundle-stats-pr
           path: src/main/webapp/ui/dist/stats.json
@@ -479,9 +474,9 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
       # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
@@ -499,14 +494,22 @@ jobs:
             echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
           fi
 
-      - name: Setup pnpm
+      - name: Restore base bundle statistics
+        id: base-stats
         if: steps.base-support.outputs.supported == 'true'
-        uses: pnpm/action-setup@v6.1.0
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.event.pull_request.base.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
+      - name: Setup pnpm
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
       - name: Setup Node.js
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         uses: actions/setup-node@v7.1.0
         with:
           node-version-file: package.json
@@ -514,16 +517,16 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build with bundle stats
-        if: steps.base-support.outputs.supported == 'true'
+        if: steps.base-support.outputs.supported == 'true' && steps.base-stats.outputs.cache-hit != 'true'
         run: pnpm run build:stats
 
       - name: Upload base bundle stats
         if: steps.base-support.outputs.supported == 'true'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bundle-stats-base
           path: src/main/webapp/ui/dist/stats.json
@@ -539,7 +542,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Download PR bundle stats
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bundle-stats-pr
           path: pr
@@ -549,7 +552,7 @@ jobs:
       - name: Download base bundle stats
         id: download-base
         continue-on-error: true
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bundle-stats-base
           path: base
@@ -583,7 +586,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -607,14 +610,15 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache: maven
@@ -647,8 +651,6 @@ jobs:
       - name: Run Spring tests
         run: |
           ./mvnw clean test -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Djdbc.db.maven=rspace \
@@ -658,7 +660,7 @@ jobs:
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -680,7 +682,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -704,14 +706,15 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache: maven
@@ -740,8 +743,6 @@ jobs:
       - name: Run integration tests
         run: |
           ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -752,7 +753,7 @@ jobs:
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -797,16 +798,17 @@ jobs:
         ports:
           - 8090:8090
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ inputs.java_version || '17' }}
+          java-version: 21
           cache: maven
 
       - name: Configure MariaDB
@@ -832,12 +834,10 @@ jobs:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
-          MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
-          MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.26.0
         if: |
           always() &&
           (
@@ -862,22 +862,23 @@ jobs:
       needs.changed-files.outputs.java == 'true'
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v6.3.0
         with:
+          problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
           cache: maven
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           run_install: false
 
@@ -899,8 +900,17 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Build project
+        env:
+          FRONTEND_BUILD_STATS: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
         run: |
           ./mvnw clean package -DskipTests=true -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
+
+      # Base bundle comparisons on pull requests restore this instead of rebuilding main.
+      - name: Cache main bundle statistics
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: src/main/webapp/ui/dist/stats.json
+          key: bundle-stats-v1-${{ runner.os }}-${{ github.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}

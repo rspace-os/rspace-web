@@ -1,4 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -74,6 +75,7 @@ describe("VersionHistory", () => {
   });
 
   test("shows the current version and fetches the revisions list when opened", async () => {
+    const user = userEvent.setup();
     const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
@@ -81,12 +83,13 @@ describe("VersionHistory", () => {
     await renderVersionHistory(subsample);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("subSamples/1/revisions");
   });
 
   test("groups several revisions of the same version into one row", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(
         revisionsResponse([
@@ -98,7 +101,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const rows = screen.getAllByRole("row");
@@ -107,12 +110,13 @@ describe("VersionHistory", () => {
   });
 
   test("a version row links to the versioned viewer URL", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: "Version 1" });
@@ -120,22 +124,24 @@ describe("VersionHistory", () => {
   });
 
   test("shows an error message when the fetch fails", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
 
   test("a non-Error rejection still produces a helpful error message", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
       Promise.reject("boom"),
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load version history.");
   });
@@ -147,6 +153,7 @@ describe("VersionHistory", () => {
   });
 
   test("shows the version history of a sample template", async () => {
+    const user = userEvent.setup();
     const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
@@ -154,18 +161,19 @@ describe("VersionHistory", () => {
     await renderVersionHistory(template);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("sampleTemplates/1/revisions");
   });
 
   test("a template version row links to the versioned template viewer URL", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
     );
     const template = makeMockTemplate({ version: 2 });
     await renderVersionHistory(template);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: "Version 1" });
@@ -173,6 +181,7 @@ describe("VersionHistory", () => {
   });
 
   test("shows the version history of an instrument", async () => {
+    const user = userEvent.setup();
     const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
@@ -180,18 +189,19 @@ describe("VersionHistory", () => {
     await renderVersionHistory(instrument);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("instruments/1/revisions");
   });
 
   test("an instrument version row links to the versioned viewer URL", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
     );
     const instrument = makeMockInstrument({ version: 2 });
     await renderVersionHistory(instrument);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: "Version 1" });
@@ -199,6 +209,7 @@ describe("VersionHistory", () => {
   });
 
   test("shows the version history of an instrument template", async () => {
+    const user = userEvent.setup();
     const spy = vi
       .spyOn(InvApiService, "get")
       .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
@@ -206,18 +217,19 @@ describe("VersionHistory", () => {
     await renderVersionHistory(instrumentTemplate);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("instrumentTemplates/1/revisions");
   });
 
   test("an instrument template version row links to the versioned viewer URL", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
     );
     const instrumentTemplate = makeMockInstrumentTemplate({ version: 2 });
     await renderVersionHistory(instrumentTemplate);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: "Version 1" });
@@ -225,15 +237,17 @@ describe("VersionHistory", () => {
   });
 
   test("shows an informational message when there is no history yet", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.resolve(revisionsResponse([])));
     const subsample = makeMockSubSample({ version: 1 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("No version history is available for this item yet.");
   });
 
   test("the current version row is marked as such", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(
         revisionsResponse([
@@ -244,7 +258,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const currentRow = screen.getAllByRole("row").find((row) => row.textContent?.includes("Version 2"));
@@ -252,6 +266,7 @@ describe("VersionHistory", () => {
   });
 
   test("a historical view marks its pinned version as viewing, not current", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(
         revisionsResponse([
@@ -265,7 +280,7 @@ describe("VersionHistory", () => {
       historicalVersion: true,
     });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     const viewedRow = screen.getAllByRole("row").find((row) => row.textContent?.includes("Version 1"));
@@ -274,6 +289,7 @@ describe("VersionHistory", () => {
   });
 
   test("the newest revision of a version wins regardless of response order", async () => {
+    const user = userEvent.setup();
     // the endpoint returns oldest-first today, but nothing guarantees it:
     // serve newest-first and assert the newest revision's details still win
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
@@ -296,7 +312,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     await screen.findByRole("table");
     expect(screen.getByText("Newest Editor")).toBeVisible();
@@ -304,6 +320,7 @@ describe("VersionHistory", () => {
   });
 
   test("reopening the dialog does not flash the previous content", async () => {
+    const user = userEvent.setup();
     const resolvers: Array<(r: AxiosResponse) => void> = [];
     vi.spyOn(InvApiService, "get").mockImplementation(
       () =>
@@ -313,22 +330,23 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     resolvers[0](revisionsResponse([{ revisionId: 100, version: 1 }]));
     await screen.findByRole("table");
 
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
     // wait out the dialog exit transition, then reopen
     const reopen = await screen.findByRole("button", {
       name: "View version history",
     });
-    fireEvent.click(reopen);
+    await user.click(reopen);
 
     // while the second fetch is in flight, the stale table must not be shown
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   test("a stale fetch for a previous record cannot overwrite the current one", async () => {
+    const user = userEvent.setup();
     const resolvers: Array<(r: AxiosResponse) => void> = [];
     vi.spyOn(InvApiService, "get").mockImplementation(
       () =>
@@ -338,7 +356,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     const { rerender } = await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
 
     // the active record changes while the first fetch is still in flight
     const sample = makeMockSample({ version: 3 });
@@ -355,12 +373,13 @@ describe("VersionHistory", () => {
   });
 
   test("the dialog is accessible", async () => {
+    const user = userEvent.setup();
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
     );
     const subsample = makeMockSubSample({ version: 2 });
     const { baseElement } = await renderVersionHistory(subsample);
-    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    await user.click(screen.getByRole("button", { name: "View version history" }));
     await screen.findByRole("table");
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
