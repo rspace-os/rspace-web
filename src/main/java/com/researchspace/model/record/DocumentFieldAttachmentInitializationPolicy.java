@@ -74,6 +74,7 @@ public class DocumentFieldAttachmentInitializationPolicy extends DocumentInitial
       for (InventoryEntityField sf : parentSample.getActiveFields()) {
         sf.getAttachedFile();
       }
+      parentSample.getActiveExtraFields();
     }
   }
 }
