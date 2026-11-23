@@ -8,10 +8,13 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.InventoryAttachmentField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -98,8 +101,45 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
             userGroupMembers,
             userGroupsUniqueNames);
     List<SubSample> limitedSubSamples = subSampleQueryWithParams.list();
+    prefetchParentSampleFields(limitedSubSamples);
 
     return new SearchResultsImpl<>(limitedSubSamples, pgCrit, allSubSamplesCount);
+  }
+
+  /**
+   * The API listing serialises every parent sample's fields and extra fields, which would otherwise
+   * load lazily one sample at a time. This loads them for the whole page in a fixed number of
+   * queries. Both collections are bags, so they need separate queries (fetching two bags at once
+   * throws MultipleBagFetchException). Each field's eager template field is joined in, as the lazy
+   * collection load would, and attachment fields' file lists are loaded the same way.
+   */
+  private void prefetchParentSampleFields(List<SubSample> subSamples) {
+    List<Long> sampleIds =
+        subSamples.stream().map(ss -> ss.getSample().getId()).distinct().toList();
+    if (sampleIds.isEmpty()) {
+      return;
+    }
+    Session session = sessionFactory.getCurrentSession();
+    session
+        .createQuery(
+            "select s from SampleEntity s left join fetch s.fields f"
+                + " left join fetch f.templateField where s.id in :ids",
+            SampleEntity.class)
+        .setParameter("ids", sampleIds)
+        .list();
+    session
+        .createQuery(
+            "select s from SampleEntity s left join fetch s.extraFields where s.id in :ids",
+            SampleEntity.class)
+        .setParameter("ids", sampleIds)
+        .list();
+    session
+        .createQuery(
+            "select f from InventoryAttachmentField f left join fetch f.files"
+                + " where f.sample.id in :ids",
+            InventoryAttachmentField.class)
+        .setParameter("ids", sampleIds)
+        .list();
   }
 
   @Override

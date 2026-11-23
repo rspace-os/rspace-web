@@ -48,6 +48,8 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
@@ -58,6 +60,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -139,6 +142,48 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(0, allSubSamplesResult.getPageNumber().intValue());
     assertEquals("mySample 1.01", allSubSamplesResult.getSubSamples().get(0).getName());
     assertEquals("mySample 2.06", allSubSamplesResult.getSubSamples().get(11).getName());
+  }
+
+  @Test
+  public void subSampleListLoadsParentSampleFieldsInFixedNumberOfQueries() {
+    int sampleCount = 5;
+    for (int i = 0; i < sampleCount; i++) {
+      createComplexSampleForUser(testUser);
+    }
+    sessionFactory.getCurrentSession().flush();
+    clearSessionAndEvictAll();
+
+    Statistics stats = sessionFactory.getStatistics();
+    boolean statsWereEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      ApiSubSampleSearchResult result =
+          subSampleApiMgr.getSubSamplesForUser(null, null, null, testUser);
+
+      assertThat(result.getSubSamples()).hasSize(sampleCount);
+      assertThat(result.getSubSamples())
+          .extracting(ss -> ss.getSampleInfo().getId())
+          .doesNotHaveDuplicates();
+      assertThat(result.getSubSamples())
+          .allSatisfy(
+              ss -> {
+                assertThat(ss.getSampleInfo().getFields()).isNotEmpty();
+                assertThat(ss.getSampleInfo().getExtraFields()).hasSize(1);
+              });
+      assertEquals(0, collectionFetches(stats, SampleEntity.class, "fields"));
+      assertEquals(0, collectionFetches(stats, SampleEntity.class, "extraFields"));
+      assertEquals(0, collectionFetches(stats, InventoryAttachmentField.class, "files"));
+      // template fields come in with the sample fields, not one select each
+      assertEquals(
+          0, stats.getEntityStatistics(InventoryEntityField.class.getName()).getFetchCount());
+    } finally {
+      stats.setStatisticsEnabled(statsWereEnabled);
+    }
+  }
+
+  private long collectionFetches(Statistics stats, Class<?> owner, String property) {
+    return stats.getCollectionStatistics(owner.getName() + "." + property).getFetchCount();
   }
 
   @Test

@@ -380,6 +380,14 @@ public abstract class InventoryRecord {
     getActiveExtraFields();
   }
 
+  /**
+   * Drops the cached active extra fields without reading the collection, so a setter called while
+   * Hibernate hydrates the record doesn't initialise the lazy collection there and then.
+   */
+  protected void clearActiveExtraFieldsCache() {
+    activeExtraFields = null;
+  }
+
   @Transient
   protected abstract List<InventoryFile> getFiles();
 

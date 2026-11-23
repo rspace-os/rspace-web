@@ -520,7 +520,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
-    refreshActiveExtraFields();
+    clearActiveExtraFieldsCache();
   }
 
   /**
