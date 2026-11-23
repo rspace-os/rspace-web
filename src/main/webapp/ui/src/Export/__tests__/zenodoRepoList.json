@@ -262,14 +262,14 @@
         "dmpUserInternalId": 1,
         "dmpTitle": "foo",
         "dmpId": "e6c97551-f074-4b88-9779-5bdc4c13c694",
-        "platformName": "DMPtool",
+        "platformName": "DMPTool",
         "writeBackStatus": "OK"
       },
       {
         "dmpUserInternalId": 2,
         "dmpTitle": "bar",
         "dmpId": "e6c97551-f074-4b88-9779-5bdc4c13c695",
-        "platformName": "DMPtool",
+        "platformName": "DMPTool",
         "writeBackStatus": "OK"
       }
     ],

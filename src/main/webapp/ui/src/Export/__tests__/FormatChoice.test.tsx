@@ -62,7 +62,7 @@ describe("FormatChoice", () => {
               dmpUserInternalId: 1,
               dmpTitle: "saved one distibution",
               dmpId: "e6c97551-f074-4b88-9779-5bdc4c13c694",
-              platformName: "DMPtool",
+              platformName: "DMPTool",
               writeBackStatus: "OK",
             },
           ],

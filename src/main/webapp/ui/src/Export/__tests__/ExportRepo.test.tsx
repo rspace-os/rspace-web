@@ -202,14 +202,14 @@ describe("ExportRepo", () => {
         dmpUserInternalId: 1,
         dmpTitle: "Soil survey plan",
         dmpId: "plan-1",
-        platformName: "DMPtool",
+        platformName: "DMPTool",
         writeBackStatus: "OK",
       },
       {
         dmpUserInternalId: 2,
         dmpTitle: "River survey plan",
         dmpId: "plan-2",
-        platformName: "DMPtool",
+        platformName: "DMPTool",
         writeBackStatus: "OK",
       },
     ];
@@ -294,7 +294,7 @@ describe("ExportRepo", () => {
           dmpUserInternalId: 1,
           dmpTitle: "Soil survey plan",
           dmpId: "plan-1",
-          platformName: "DMPtool",
+          platformName: "DMPTool",
           writeBackStatus: "OK",
         },
       ]);
@@ -342,7 +342,7 @@ describe("ExportRepo", () => {
           dmpUserInternalId: 1,
           dmpTitle: "Soil survey plan",
           dmpId: "plan-1",
-          platformName: "DMPtool",
+          platformName: "DMPTool",
           writeBackStatus: "OK",
         },
         {
