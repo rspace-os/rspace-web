@@ -1,9 +1,16 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -15,6 +22,7 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.QuantityInfo;
@@ -27,10 +35,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,6 +67,20 @@ public abstract class InventoryItemCsvImporter {
   @Autowired private ApiAvailabilityHandler apiHandler;
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();
+
+  private static final ObjectReader STRICT_JSON_READER =
+      new ObjectMapper().reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+
+  /**
+   * The exporter's template field header: {@code Name (TYPE)}, or {@code Name (TYPE, IT<n>)} for
+   * sample templates and {@code Name (TYPE, NT<n>)} for instrument templates.
+   */
+  private static final Pattern EXPORTED_FIELD_COLUMN_NAME =
+      Pattern.compile(
+          "^(.*)\\(("
+              + Arrays.stream(FieldType.values()).map(Enum::name).collect(Collectors.joining("|"))
+              + ")(,\\s*(IT|NT)\\d+(v\\d+)?)?\\)$",
+          Pattern.CASE_INSENSITIVE);
 
   protected InventoryItemCsvImporter(ApiInventoryRecordType recordType) {
     this.recordType = recordType;
@@ -196,6 +225,198 @@ public abstract class InventoryItemCsvImporter {
     }
     throw new IllegalArgumentException(
         "Couldn't find '" + targetName + "' among columns in CSV file");
+  }
+
+  /**
+   * Decides which template field each CSV column not mapped to a default field fills. When the
+   * template was created from this CSV, the columns fill the template fields in order. Otherwise a
+   * column whose header names a template field fills that field, ignoring case, surrounding spaces,
+   * the exporter's {@code (TYPE, IT<n>)} suffix and the {@code _} prefix the parse step gives
+   * reserved names; the other columns fill the remaining template fields in order, as before.
+   *
+   * @param columnNames CSV header line
+   * @param defaultMappedColumnIndexes indexes of the columns mapped to default fields
+   * @param templateFields template fields, as many as the columns not mapped to default fields
+   * @param templateCreatedFromCsv whether the template was just created from this CSV's columns
+   * @return template field index for each column index not mapped to a default field
+   * @throws IllegalArgumentException if two headers name the same template field
+   */
+  protected Map<Integer, Integer> getColumnIndexToTemplateFieldIndexMap(
+      List<String> columnNames,
+      Set<Integer> defaultMappedColumnIndexes,
+      List<ApiInventoryEntityField> templateFields,
+      boolean templateCreatedFromCsv) {
+
+    Map<Integer, Integer> positionalMap =
+        getPositionalColumnIndexToTemplateFieldIndexMap(
+            columnNames.size(), defaultMappedColumnIndexes);
+    if (templateCreatedFromCsv) {
+      return positionalMap;
+    }
+
+    Map<Integer, Integer> nameMap = new LinkedHashMap<>();
+    for (Integer columnIndex : positionalMap.keySet()) {
+      Integer templateFieldIndex =
+          findTemplateFieldIndexForColumnName(columnNames.get(columnIndex), templateFields);
+      if (templateFieldIndex != null) {
+        nameMap.put(columnIndex, templateFieldIndex);
+      }
+    }
+    Map<Integer, List<String>> columnNamesByTemplateFieldIndex = new LinkedHashMap<>();
+    nameMap.forEach(
+        (columnIndex, templateFieldIndex) ->
+            columnNamesByTemplateFieldIndex
+                .computeIfAbsent(templateFieldIndex, k -> new ArrayList<>())
+                .add(columnNames.get(columnIndex).trim()));
+    for (Map.Entry<Integer, List<String>> entry : columnNamesByTemplateFieldIndex.entrySet()) {
+      if (entry.getValue().size() > 1) {
+        throw new IllegalArgumentException(
+            messages.getMessage(
+                "errors.inventory.import.csvColumnsMatchingSameTemplateField",
+                new Object[] {
+                  quoteColumnNames(entry.getValue()), templateFields.get(entry.getKey()).getName()
+                }));
+      }
+    }
+    // columns whose header names no template field keep filling the remaining fields in order
+    List<Integer> remainingTemplateFieldIndexes = new ArrayList<>();
+    for (int i = 0; i < templateFields.size(); i++) {
+      if (!nameMap.containsValue(i)) {
+        remainingTemplateFieldIndexes.add(i);
+      }
+    }
+    Map<Integer, Integer> result = new LinkedHashMap<>();
+    int nextRemaining = 0;
+    for (Integer columnIndex : positionalMap.keySet()) {
+      Integer templateFieldIndex = nameMap.get(columnIndex);
+      result.put(
+          columnIndex,
+          templateFieldIndex != null
+              ? templateFieldIndex
+              : remainingTemplateFieldIndexes.get(nextRemaining++));
+    }
+    return result;
+  }
+
+  /**
+   * Maps each CSV column not mapped to a default field to its template field, as {@link
+   * #getColumnIndexToTemplateFieldIndexMap} does, reporting an invalid mapping as a template error.
+   *
+   * @return the mapping, or null if it was reported as a template error
+   */
+  protected Map<Integer, Integer> mapColumnsToTemplateFieldsOrAddTemplateError(
+      List<String> columnNames,
+      Set<Integer> defaultMappedColumnIndexes,
+      List<ApiInventoryEntityField> templateFields,
+      boolean templateCreatedFromCsv,
+      Consumer<ApiError> addTemplateError) {
+    try {
+      return getColumnIndexToTemplateFieldIndexMap(
+          columnNames, defaultMappedColumnIndexes, templateFields, templateCreatedFromCsv);
+    } catch (IllegalArgumentException e) {
+      addTemplateError.accept(bulkOperationHandler.convertExceptionToApiError(e));
+      return null;
+    }
+  }
+
+  /** Columns not mapped to default fields fill the template fields in order. */
+  protected Map<Integer, Integer> getPositionalColumnIndexToTemplateFieldIndexMap(
+      int columnCount, Set<Integer> defaultMappedColumnIndexes) {
+    Map<Integer, Integer> result = new LinkedHashMap<>();
+    for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+      if (!defaultMappedColumnIndexes.contains(columnIndex)) {
+        result.put(columnIndex, result.size());
+      }
+    }
+    return result;
+  }
+
+  private Integer findTemplateFieldIndexForColumnName(
+      String columnName, List<ApiInventoryEntityField> templateFields) {
+    String trimmedName = columnName.trim();
+    Integer index = findTemplateFieldIndexForName(trimmedName, templateFields);
+    if (index == null && reservedSampleFieldNames.contains(trimmedName.toLowerCase(Locale.ROOT))) {
+      // parsing a CSV into a template names the field for a reserved column name "_<name>"
+      index = findTemplateFieldIndexForName("_" + trimmedName, templateFields);
+    }
+    if (index == null) {
+      Matcher exportedName = EXPORTED_FIELD_COLUMN_NAME.matcher(trimmedName);
+      if (exportedName.matches()) {
+        index = findTemplateFieldIndexForName(exportedName.group(1).trim(), templateFields);
+      }
+    }
+    return index;
+  }
+
+  /**
+   * Compares names as InventoryFieldNameUniquenessValidator does, so distinct fields stay distinct.
+   */
+  private Integer findTemplateFieldIndexForName(
+      String name, List<ApiInventoryEntityField> templateFields) {
+    String normalisedName = name.toLowerCase(Locale.ROOT);
+    for (int i = 0; i < templateFields.size(); i++) {
+      String fieldName = templateFields.get(i).getName();
+      if (fieldName != null && fieldName.trim().toLowerCase(Locale.ROOT).equals(normalisedName)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  private String quoteColumnNames(List<String> columnNames) {
+    return columnNames.stream().map(name -> "\"" + name + "\"").collect(Collectors.joining(", "));
+  }
+
+  /**
+   * Options selected by a CSV cell of a radio or choice field: the cell if it is an allowed option,
+   * else a JSON array of strings (the exporter's format), else for a choice field a comma list of
+   * allowed options. Any other cell is taken as one option, which validation rejects.
+   */
+  protected List<String> getSelectedOptionsFromCsvValue(
+      String value, ApiInventoryEntityField templateField) {
+    List<String> allowedOptions =
+        templateField.getDefinition() == null || templateField.getDefinition().getOptions() == null
+            ? List.of()
+            : templateField.getDefinition().getOptions();
+    if (allowedOptions.contains(value)) {
+      return List.of(value);
+    }
+    List<String> jsonOptions = parseJsonArrayOfStrings(value.trim());
+    if (jsonOptions != null) {
+      return jsonOptions;
+    }
+    if (ApiFieldType.CHOICE.equals(templateField.getType())) {
+      List<String> listedOptions = Arrays.stream(value.split(",", -1)).map(String::trim).toList();
+      if (listedOptions.stream().noneMatch(String::isEmpty)
+          && allowedOptions.containsAll(listedOptions)) {
+        return listedOptions;
+      }
+    }
+    return List.of(value);
+  }
+
+  /** The strings of a cell that is exactly one JSON array of strings, else null. */
+  private List<String> parseJsonArrayOfStrings(String value) {
+    if (!value.startsWith("[")) {
+      return null;
+    }
+    JsonNode node;
+    try {
+      node = STRICT_JSON_READER.readTree(value);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    if (!node.isArray()) {
+      return null;
+    }
+    List<String> options = new ArrayList<>();
+    for (JsonNode element : node) {
+      if (!element.isTextual()) {
+        return null;
+      }
+      options.add(element.textValue());
+    }
+    return options;
   }
 
   protected void setDefaultFieldFromMappedColumn(
