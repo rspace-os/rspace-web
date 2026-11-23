@@ -292,6 +292,69 @@ test.describe("Document CRUD and editing", () => {
     });
   });
 
+  test("As a user, I can download an FLV video inserted from Gallery", async ({ pageWorkspace, clientFiles }) => {
+    const fileName = `${alphaNumericUnique("e2eDocFlv")}.flv`;
+
+    const file = await test.step("Given an FLV video exists in Gallery", () =>
+      clientFiles.uploadFile({ name: fileName, mimeType: "video/x-flv", buffer: Buffer.from("e2e-fake-flv") }));
+
+    await test.step("When I insert it into a new document's field and view the saved document", async () => {
+      await pageWorkspace.open();
+      const editor = await pageWorkspace.createBasicDocument();
+      const picker = await editor.openGalleryPicker();
+      await picker.goToSection("Videos");
+      await picker.openFolder("Api Inbox");
+      await picker.selectItem(fileName);
+      await picker.add();
+      const saved = await editor.saveAndView();
+      await saved.reload();
+      const content = await saved.getFieldViewContent("", 0);
+
+      await test.step("Then it is offered as a download instead of a Flash player", async () => {
+        await expect(content.getByText(fileName, { exact: true })).toBeVisible();
+        await expect(content.getByRole("link", { name: "Download", exact: true })).toHaveAttribute(
+          "href",
+          `/Streamfile/${file.id}`,
+        );
+        await expect(content.getByText("Player not available")).toHaveCount(0);
+      });
+    });
+  });
+
+  test("As a user, I can download an FLV video saved with the legacy Flash player markup", async ({
+    pageWorkspace,
+    clientFiles,
+    clientDocuments,
+  }) => {
+    const fileName = `${alphaNumericUnique("e2eDocLegacyFlv")}.flv`;
+    const file = await clientFiles.uploadFile({
+      name: fileName,
+      mimeType: "video/x-flv",
+      buffer: Buffer.from("e2e-fake-flv"),
+    });
+    // The mediaPlayerHTML.vm markup that inserting an FLV produced before RSDEV-1405.
+    const legacyFlvHtml = `<div class="attachmentDiv mceNonEditable" id="attachmentDiv_${file.id}">
+<img id="0-${file.id}" class="videoDropped attachmentIcon" src="/images/icons/flv.png" data-video="${file.id},${fileName},flv" height="32" width="32"/>
+<div class="mediaDiv" style="border:1px solid; padding:3px; margin: 3px"><div class="videoTemp" id="videoContainer_${file.id}_1">Player not available</div></div>
+<p class="attachmentP"><a id="attachOnText_${file.id}" data-type="Miscellaneous" href="/Streamfile/${file.id}" target="_blank">${fileName}</a></p>
+<div class="attachmentInfoDiv" id="attachmentInfoDiv_${file.id}"><img class="attachmentInfoIcon" src="/images/getInfo12.png"/></div>
+</div>`;
+    const doc = await test.step("Given a document holding an FLV with the legacy Flash player markup", () =>
+      clientDocuments.create({ name: uniqueName("e2e-doc-legacy-flv"), fields: [{ content: legacyFlvHtml }] }));
+
+    const viewed = await test.step("When I view the document", () => pageWorkspace.openDocument(doc.id));
+
+    await test.step("Then the FLV is offered as a download instead of the dead player", async () => {
+      const content = await viewed.getFieldViewContent("", 0);
+      await expect(content.getByText(fileName, { exact: true })).toBeVisible();
+      await expect(content.getByRole("link", { name: "Download", exact: true })).toHaveAttribute(
+        "href",
+        `/Streamfile/${file.id}`,
+      );
+      await expect(content.getByText("Player not available")).toHaveCount(0);
+    });
+  });
+
   test("As a user, I can insert a document file from Gallery, and it stays non-editable alongside typed text", async ({
     pageWorkspace,
     clientFiles,
