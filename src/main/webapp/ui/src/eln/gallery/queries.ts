@@ -1,5 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "@/common/axios";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 import i18n from "@/modules/common/i18n";
@@ -138,24 +137,26 @@ async function convertToPdfWithAspose(fileId: string, signal: AbortSignal): Prom
 }
 
 /**
- * The URL of a PDF that Aspose converts the file into. Each version is converted at most once
- * per QueryClient, as the server keeps the converted file. A conversion still in flight when
- * the query is disabled is aborted, so that stepping past a file does not wait on it.
+ * The URL of a PDF that Aspose converts the file into, keyed by file id and version. A successful
+ * conversion is never refetched while it stays cached, as the server keeps the converted file. A
+ * failed one is not retried on window focus or reconnect, as each attempt reruns the conversion on
+ * the server. Disabling the query, such as when stepping past the file in the carousel, leaves an
+ * in-flight conversion running so that stepping back reuses it; aborting would not stop the
+ * server's synchronous conversion anyway. Unmounting the last observer aborts the request, so a
+ * file unmounted mid-conversion and revisited may be converted again.
  */
 export function useAsposePdfQuery(file: GalleryFile, { enabled }: { enabled: boolean }) {
-  const queryClient = useQueryClient();
   const fileId = idToString(file.id).orElse("");
-  const version = file.version ?? null;
-  React.useEffect(() => {
-    if (!enabled)
-      void queryClient.cancelQueries({ queryKey: galleryQueryKeys.asposePdf(fileId, version), exact: true });
-  }, [enabled, queryClient, fileId, version]);
+  // Plain useQuery rather than a suspense query: conversion is conditional on `enabled`, and a
+  // neighbour's conversion must not suspend the whole carousel.
   return useQuery({
-    queryKey: galleryQueryKeys.asposePdf(fileId, version),
+    queryKey: galleryQueryKeys.asposePdf(fileId, file.version ?? null),
     queryFn: ({ signal }) => convertToPdfWithAspose(fileId, signal),
     enabled: enabled && fileId !== "",
     retry: false,
     staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     gcTime: ASPOSE_PDF_GC_TIME,
   });
 }
