@@ -60,10 +60,12 @@ const DmpSelector = observer(
     state,
     handleSwitch,
     repo,
+    onSelectionChange,
   }: {
     state: { selectedPlans: Array<DMPUserInternalId>; linkDMP: boolean };
     handleSwitch: (foo: "linkDMP") => (event: { target: { checked: boolean } }) => void;
     repo: Repo;
+    onSelectionChange: () => void;
   }) => {
     const { t } = useTranslation("workspace");
     const addSelectedPlan = (id: DMPUserInternalId) => {
@@ -71,6 +73,7 @@ const DmpSelector = observer(
         runInAction(() => {
           state.selectedPlans = [...state.selectedPlans, id];
         });
+        onSelectionChange();
       }
     };
 
@@ -78,6 +81,7 @@ const DmpSelector = observer(
       runInAction(() => {
         state.selectedPlans = state.selectedPlans.filter((planId) => planId !== id);
       });
+      onSelectionChange();
     };
 
     return mapNullable(
@@ -88,7 +92,10 @@ const DmpSelector = observer(
               control={
                 <Switch
                   checked={state.linkDMP}
-                  onChange={handleSwitch("linkDMP")}
+                  onChange={(event) => {
+                    handleSwitch("linkDMP")(event);
+                    onSelectionChange();
+                  }}
                   value="link DMP"
                   color="primary"
                   data-test-id="link DMP"
@@ -140,8 +147,8 @@ function ExportRepo({
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
       otherProperties: {},
-      linkDMP: false,
-      selectedPlans: [] as Array<DMPUserInternalId>,
+      linkDMP: (repoDetails.selectedDMPs ?? []).length > 0,
+      selectedPlans: repoDetails.selectedDMPs ?? [],
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
       tags: [] as Array<Tag>,
@@ -205,7 +212,7 @@ function ExportRepo({
       appName: repo.repoName,
       depositToRepository: true,
       repoCfg: repo.repoCfg,
-      selectedDMPs: state.selectedPlans,
+      selectedDMPs: state.linkDMP ? state.selectedPlans : [],
       meta: {
         title: state.title,
         description: state.description,
@@ -342,7 +349,7 @@ function ExportRepo({
       <Grid>
         {repo.repoName === "app.dryad" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DryadRepo
               repo={repo}
               handleChange={handleChange}
@@ -359,7 +366,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.dataverse" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DataverseRepo
               repo={repo}
               handleChange={handleChange}
@@ -387,7 +394,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.figshare" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <FigshareRepo
               repo={repo}
               handleChange={handleChange}
@@ -406,7 +413,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.zenodo" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <ZenodoRepo
               handleChange={handleChange}
               inputValidations={state.inputValidations}
@@ -426,7 +433,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.digitalCommonsData" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DigitalCommonsDataRepo
               handleChange={handleChange}
               inputValidations={state.inputValidations}

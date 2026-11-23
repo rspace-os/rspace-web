@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import fc, { type Arbitrary } from "fast-check";
 import { HttpResponse, http } from "msw/http";
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, type Mock, test, vi } from "vitest";
 import { mkValidator } from "../../util/Validator";
 import ExportRepo from "../ExportRepo";
 import funders from "./funders.json";
@@ -193,6 +193,69 @@ describe("ExportRepo", () => {
     if (!config) throw new Error("ExportRepo did not report its config");
     renderRepo(config);
     await switchFromZenodoToDataverse();
+  });
+
+  describe("Plans sent with the export", () => {
+    const plans: Array<Plan> = [
+      {
+        dmpUserInternalId: 1,
+        dmpTitle: "Soil survey plan",
+        dmpId: "plan-1",
+        platformName: "DMPtool",
+        writeBackStatus: "OK",
+      },
+      {
+        dmpUserInternalId: 2,
+        dmpTitle: "River survey plan",
+        dmpId: "plan-2",
+        platformName: "DMPtool",
+        writeBackStatus: "OK",
+      },
+    ];
+    const renderWithPlans = async (selectedDMPs: Array<number> = []) => {
+      const user = userEvent.setup();
+      const updateRepoConfig = vi.fn<(repoDetails: RepoDetails) => void>();
+      await renderWithRealI18n(
+        <ExportRepo
+          repoDetails={{ ...props.repoDetails, selectedDMPs }}
+          repoList={[{ ...zenodoRepoList[0], linkedDMPs: plans, repoCfg: -1 }]}
+          state={DEFAULT_STATE}
+          updateRepoConfig={updateRepoConfig}
+          validator={mkValidator()}
+          fetchTags={props.fetchTags}
+        />,
+        { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
+      );
+      const associateSwitch = await screen.findByRole("checkbox", {
+        name: "Associate export with a Data Management Plans (DMPs)",
+      });
+      return { user, updateRepoConfig, associateSwitch };
+    };
+    const lastSentPlans = (updateRepoConfig: Mock<(repoDetails: RepoDetails) => void>) =>
+      updateRepoConfig.mock.lastCall?.[0].selectedDMPs;
+
+    test("sends a plan ticked as the last action", async () => {
+      const { user, updateRepoConfig, associateSwitch } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await user.click(screen.getByRole("checkbox", { name: "Select plan: River survey plan" }));
+      expect(lastSentPlans(updateRepoConfig)).toEqual([2]);
+    });
+
+    test("sends no plans after the association switch is turned off", async () => {
+      const { user, updateRepoConfig, associateSwitch } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await user.click(screen.getByRole("checkbox", { name: "Select plan: River survey plan" }));
+      expect(lastSentPlans(updateRepoConfig)).toEqual([2]);
+      await user.click(associateSwitch);
+      expect(lastSentPlans(updateRepoConfig)).toEqual([]);
+    });
+
+    test("restores the switch and ticked plans from the saved request when reopened", async () => {
+      const { associateSwitch } = await renderWithPlans([2]);
+      expect(associateSwitch).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Select plan: River survey plan" })).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Select plan: Soil survey plan" })).not.toBeChecked();
+    });
   });
 
   describe("Digital Commons Data", () => {
