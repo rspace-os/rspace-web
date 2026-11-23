@@ -110,8 +110,8 @@ export class Description {
  * carousel preview that is unmounted and remounted. A failed download is
  * forgotten so that it can be retried.
  */
-class SharedBlobDownload {
-  private readonly download: () => Promise<Blob>;
+export class SharedBlobDownload {
+  private download: () => Promise<Blob>;
   private url?: Promise<UrlType>;
 
   constructor(download: () => Promise<Blob>) {
@@ -128,13 +128,34 @@ class SharedBlobDownload {
     return url;
   }
 
+  /*
+   * Hands this download, finished or in flight, to `next`'s owner so that it is
+   * neither downloaded again nor revoked while callers of the older owner still
+   * wait on it. A retry after a failure then uses `next`'s request.
+   */
+  sharedWith(next: SharedBlobDownload): SharedBlobDownload {
+    this.download = next.download;
+    return this;
+  }
+
   // also revokes a URL whose download is still in flight, once it arrives
   revoke(): void {
-    void this.url?.then(
-      (url) => URL.revokeObjectURL(url),
+    const url = this.url;
+    this.url = undefined;
+    void url?.then(
+      (u) => URL.revokeObjectURL(u),
       () => {},
     );
   }
+}
+
+/*
+ * Lets `next`, from a newer listing, take over the download of `previous` when
+ * both are the same version of the same file. Returns whether it did, in which
+ * case `previous` must not be deconstructed.
+ */
+function takeOverDownload(next: GalleryFile, previous: GalleryFile): boolean {
+  return (next instanceof LocalGalleryFile || next instanceof RemoteFile) && next.takeOverDownloadOf(previous);
 }
 
 /**
@@ -461,6 +482,21 @@ export class LocalGalleryFile implements GalleryFile {
 
   deconstructor() {
     this.blobDownload?.revoke();
+  }
+
+  /*
+   * Shares the download of `previous`, an older object for the same version of
+   * this file, so that a refreshed listing neither downloads the file again nor
+   * revokes a URL that a preview is still waiting on. Returns whether it did.
+   */
+  takeOverDownloadOf(previous: GalleryFile): boolean {
+    if (!(previous instanceof LocalGalleryFile) || previous.key !== this.key || previous.version !== this.version)
+      return false;
+    if (!previous.blobDownload || !this.blobDownload) return false;
+    const shared = previous.blobDownload.sharedWith(this.blobDownload);
+    this.blobDownload = shared;
+    this.downloadHref = () => shared.href();
+    return true;
   }
 
   get isFolder(): boolean {
@@ -816,6 +852,20 @@ export class RemoteFile implements GalleryFile {
 
   deconstructor() {
     this.blobDownload?.revoke();
+  }
+
+  /*
+   * Shares the download of `previous`, an older object for the same remote file,
+   * as LocalGalleryFile.takeOverDownloadOf does. Filestores do not report a
+   * version, so the path alone identifies the file.
+   */
+  takeOverDownloadOf(previous: GalleryFile): boolean {
+    if (!(previous instanceof RemoteFile) || previous.key !== this.key) return false;
+    if (!previous.blobDownload || !this.blobDownload) return false;
+    const shared = previous.blobDownload.sharedWith(this.blobDownload);
+    this.blobDownload = shared;
+    this.downloadHref = () => shared.href();
+    return true;
   }
 
   get id(): Id {
@@ -1239,7 +1289,12 @@ export function useGalleryListing({
   }
 
   function clearAndSetGalleryListing(list: ReadonlyArray<GalleryFile>) {
+    const replacements = new Map(list.map((file) => [file.key, file]));
     galleryListing.forEach((file) => {
+      const replacement = replacements.get(file.key);
+      if (replacement === file) return;
+      // a file that is still listed at the same version keeps its download
+      if (replacement && takeOverDownload(replacement, file)) return;
       file.deconstructor();
     });
     setGalleryListing(list);

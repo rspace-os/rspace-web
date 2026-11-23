@@ -1,12 +1,21 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/useOauthToken";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw/http";
-import type React from "react";
+import React from "react";
 import { server } from "@/__tests__/mswServer";
+import createAccentedTheme from "@/accentedTheme";
+import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
+import { LandmarksProvider } from "@/components/LandmarksContext";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import * as FetchingData from "@/util/fetchingData";
+import { useGalleryListing } from "../useGalleryListing";
+import { GallerySelection } from "../useGallerySelection";
+import Carousel from "./Carousel";
 import { CarouselOpenedOnFifthFile, OfficeDocumentCarousel, SimpleCarousel } from "./Carousel.story";
 
 // pdf.js cannot load documents under jsdom; expose the loaded URL instead.
@@ -52,6 +61,70 @@ function stubEndpoints({
   return { downloads, conversions };
 }
 
+/*
+ * Serves a listing of one image, file 1 at `file.version` named `file.name`,
+ * so that a test can change it between refreshes.
+ */
+function stubListing(file: { version: number; name: string }) {
+  server.use(
+    http.get("/gallery/getUploadedFiles", () =>
+      HttpResponse.json({
+        data: {
+          items: {
+            totalHits: 1,
+            totalPages: 1,
+            results: [
+              {
+                id: 1,
+                oid: { idString: "GL1" },
+                name: file.name,
+                type: "Image",
+                extension: "jpg",
+                creationDate: 1729609058000,
+                modificationDate: 1729609058000,
+                description: null,
+                thumbnailId: null,
+                size: 5,
+                version: file.version,
+              },
+            ],
+          },
+        },
+      }),
+    ),
+  );
+}
+
+// The listing hook drives the carousel, as in the Gallery, with a button to soft-refresh it.
+function RefreshableCarousel() {
+  const listingOf = React.useMemo(() => ({ tag: "section" as const, section: "Images" as const, path: [] }), []);
+  const { galleryListing, refreshListing } = useGalleryListing({
+    listingOf,
+    searchTerm: "",
+    sortOrder: "DESC",
+    orderBy: "modificationDate",
+  });
+  return (
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <LandmarksProvider>
+        <button type="button" onClick={() => void refreshListing()}>
+          {"Refresh"}
+        </button>
+        {FetchingData.getSuccessValue(galleryListing)
+          .map((listing) =>
+            listing.tag === "list" ? (
+              <>
+                <p>{listing.list.map(({ name }) => name).join(", ")}</p>
+                <Carousel listing={listing} />
+              </>
+            ) : null,
+          )
+          .orElse(null)}
+      </LandmarksProvider>
+    </ThemeProvider>
+  );
+}
+
 function renderCarousel(carousel: React.ReactElement) {
   return render(<DeploymentPropertyContext.Provider value={new Map()}>{carousel}</DeploymentPropertyContext.Provider>);
 }
@@ -66,6 +139,10 @@ async function waitForPreviewsToLoad(position: string, mountedCount: number) {
     for (const preview of previews) expect(preview).toHaveAttribute("src", expect.stringMatching(/^blob:/));
   });
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("Carousel", () => {
   test("Should have no axe violations", async () => {
@@ -178,5 +255,64 @@ describe("Carousel", () => {
     await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
 
     expect(conversions).toEqual(["1", "2", "3"]);
+  });
+
+  test("Refreshing the listing while a preview downloads leaves it showing a live URL, downloaded once", async () => {
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
+    let releaseDownloads = () => {};
+    const { downloads } = stubEndpoints({
+      downloadsHeldUntil: new Promise((resolve) => {
+        releaseDownloads = resolve;
+      }),
+    });
+    stubListing({ version: 1, name: "before.jpg" });
+    const user = userEvent.setup();
+    renderCarousel(
+      <GallerySelection>
+        <RefreshableCarousel />
+      </GallerySelection>,
+    );
+    await waitFor(() => {
+      expect(downloads).toEqual(["1"]);
+    });
+
+    // a rename does not change the version, and shows when the refreshed listing is in place
+    stubListing({ version: 1, name: "after.jpg" });
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await screen.findByText("after.jpg");
+    releaseDownloads();
+
+    await waitForPreviewsToLoad("1 / 1", 1);
+    const src = screen.getByRole("img", PREVIEW).getAttribute("src");
+    await waitFor(() => {
+      expect(revokeObjectURL).not.toHaveBeenCalledWith(src);
+    });
+    expect(downloads).toEqual(["1"]);
+  });
+
+  test("Refreshing the listing onto a new version of the file reloads its preview", async () => {
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
+    const { downloads } = stubEndpoints();
+    stubListing({ version: 1, name: "image.jpg" });
+    const user = userEvent.setup();
+    renderCarousel(
+      <GallerySelection>
+        <RefreshableCarousel />
+      </GallerySelection>,
+    );
+    await screen.findByText("image.jpg");
+    await waitForPreviewsToLoad("1 / 1", 1);
+    const firstSrc = screen.getByRole("img", PREVIEW).getAttribute("src");
+
+    stubListing({ version: 2, name: "image.jpg" });
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("img", PREVIEW)).not.toHaveAttribute("src", firstSrc);
+    });
+    await waitForPreviewsToLoad("1 / 1", 1);
+    expect(revokeObjectURL).toHaveBeenCalledWith(firstSrc);
+    expect(revokeObjectURL).not.toHaveBeenCalledWith(screen.getByRole("img", PREVIEW).getAttribute("src"));
+    expect(downloads).toEqual(["1", "1"]);
   });
 });

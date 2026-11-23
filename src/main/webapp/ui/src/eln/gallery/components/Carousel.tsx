@@ -248,7 +248,9 @@ const Preview = React.memo(function Preview({
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
   // aspose.enabled may still be loading on the first render
   const asposeAvailable = canPreviewWithAspose(file).isOk;
-  const loadStarted = React.useRef(false);
+  // a new version of the file is loaded afresh; an unchanged file from a refreshed listing keeps its preview
+  const fileVersion = `${file.key}@${file.version ?? ""}`;
+  const loadedVersion = React.useRef<string | null>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [asposePdfUrl, setAsposePdfUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
@@ -261,7 +263,7 @@ const Preview = React.memo(function Preview({
   >(null);
 
   React.useEffect(() => {
-    if (loadStarted.current) return;
+    if (loadedVersion.current === fileVersion) return;
     canPreviewAsImage(file)
       .map((getDownloadHref) => ({ key: "image", getDownloadHref }))
       .orElseTry(() =>
@@ -282,35 +284,40 @@ const Preview = React.memo(function Preview({
       .do((preview) => {
         // conversion is expensive, so neighbours only preload images and PDFs
         if (preview.key === "aspose" && !visible) return;
-        loadStarted.current = true;
+        loadedVersion.current = fileVersion;
+        // drops the result of loading a version that has since been replaced
+        const ifStillCurrent = (update: () => void) => {
+          if (loadedVersion.current === fileVersion) update();
+        };
         void (async () => {
           if (preview.key === "image") {
             setImageUrl({ tag: "loading" });
             try {
               const downloadHref = await preview.getDownloadHref();
-              setImageUrl({ tag: "loaded", url: downloadHref });
+              ifStillCurrent(() => setImageUrl({ tag: "loaded", url: downloadHref }));
             } catch {
-              setImageUrl({ tag: "error" });
+              ifStillCurrent(() => setImageUrl({ tag: "error" }));
             }
           } else if (preview.key === "pdf") {
             setPdfUrl({ tag: "loading" });
             try {
               const downloadHref = await preview.getDownloadHref();
-              setPdfUrl({ tag: "loaded", url: downloadHref });
+              ifStillCurrent(() => setPdfUrl({ tag: "loaded", url: downloadHref }));
             } catch {
-              setPdfUrl({ tag: "error" });
+              ifStillCurrent(() => setPdfUrl({ tag: "error" }));
             }
           } else {
             setAsposePdfUrl({ tag: "loading" });
             try {
-              setAsposePdfUrl({ tag: "loaded", url: await convertWithAspose(file, asposePdfCache) });
+              const url = await convertWithAspose(file, asposePdfCache);
+              ifStillCurrent(() => setAsposePdfUrl({ tag: "loaded", url }));
             } catch {
-              setAsposePdfUrl({ tag: "error" });
+              ifStillCurrent(() => setAsposePdfUrl({ tag: "error" }));
             }
           }
         })();
       });
-  }, [visible, asposeAvailable]);
+  }, [visible, asposeAvailable, fileVersion]);
 
   function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
