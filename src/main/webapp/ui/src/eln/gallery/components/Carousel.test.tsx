@@ -4,7 +4,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw/http";
 import React from "react";
@@ -46,7 +46,6 @@ function stubEndpoints({
 } = {}) {
   const downloads: Array<string> = [];
   const conversions: Array<string> = [];
-  const abortedConversions: Array<string> = [];
   server.use(
     http.get("/deploymentproperties/ajax/property", ({ request }) =>
       HttpResponse.json(asposeEnabled && new URL(request.url).searchParams.get("name") === "aspose.enabled"),
@@ -58,14 +57,13 @@ function stubEndpoints({
       await downloadsHeldUntil;
       return new HttpResponse(new Blob(["image"]), { headers: { "Content-Type": "image/jpeg" } });
     }),
-    http.get("/Streamfile/ajax/convert/:id", async ({ params, request }) => {
+    http.get("/Streamfile/ajax/convert/:id", async ({ params }) => {
       conversions.push(String(params.id));
-      request.signal.addEventListener("abort", () => abortedConversions.push(String(params.id)));
       await conversionsHeldUntil;
       return HttpResponse.json({ data: `converted${String(params.id)}.pdf` });
     }),
   );
-  return { downloads, conversions, abortedConversions };
+  return { downloads, conversions };
 }
 
 /*
@@ -277,9 +275,9 @@ describe("Carousel", () => {
     expect(conversions).toEqual(["1", "2", "3"]);
   });
 
-  test("Stepping past an Office document before it is converted aborts its conversion", async () => {
+  test("Stepping past an Office document and back while it converts reuses the conversion in flight", async () => {
     let releaseConversions = () => {};
-    const { conversions, abortedConversions } = stubEndpoints({
+    const { conversions } = stubEndpoints({
       asposeEnabled: true,
       conversionsHeldUntil: new Promise((resolve) => {
         releaseConversions = resolve;
@@ -290,16 +288,36 @@ describe("Carousel", () => {
     await screen.findByText("gallery:carousel.generatingPdf");
 
     await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
-    await waitFor(() => {
-      expect(abortedConversions).toEqual(["1"]);
-    });
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.previous" }));
     releaseConversions();
 
-    await screen.findByRole("document", { name: "/Streamfile/direct/2?fileName=converted2.pdf" });
-    expect(conversions).toEqual(["1", "2"]);
-    expect(
-      screen.queryByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf", hidden: true }),
-    ).not.toBeInTheDocument();
+    await screen.findByRole("document", { name: "/Streamfile/direct/1?fileName=converted1.pdf" });
+    expect(conversions.filter((id) => id === "1")).toEqual(["1"]);
+  });
+
+  test("A failed conversion is not retried when the window regains focus or the network reconnects", async () => {
+    stubEndpoints({ asposeEnabled: true });
+    const conversions: Array<string> = [];
+    server.use(
+      http.get("/Streamfile/ajax/convert/:id", ({ params }) => {
+        conversions.push(String(params.id));
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    renderCarousel(<OfficeDocumentCarousel />);
+    await waitFor(() => {
+      expect(conversions).toEqual(["1"]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("gallery:carousel.generatingPdf")).not.toBeInTheDocument();
+    });
+
+    fireEvent(window, new Event("visibilitychange"));
+    fireEvent(window, new Event("offline"));
+    fireEvent(window, new Event("online"));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+
+    expect(conversions).toEqual(["1"]);
   });
 
   test("Reopening the carousel does not convert an Office document again", async () => {
