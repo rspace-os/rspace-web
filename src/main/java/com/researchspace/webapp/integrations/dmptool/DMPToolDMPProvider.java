@@ -17,17 +17,6 @@ public interface DMPToolDMPProvider {
    *
    * @param dmpId
    * @param doiIdentifier
-   * @param accessToken
-   * @return
-   */
-  ServiceOperationResult<String> addDoiIdentifierToDMP(
-      String dmpId, String doiIdentifier, String accessToken);
-
-  /**
-   * Attaches a DOI (perhaps obtained from depositing to a repository) to the DMP
-   *
-   * @param dmpId
-   * @param doiIdentifier
    * @param user Assumes this user has performed OAUth flow and can retrieve an accessToken from
    *     UserConnection table
    * @return

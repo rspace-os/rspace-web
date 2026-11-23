@@ -62,12 +62,6 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public ServiceOperationResult<String> addDoiIdentifierToDMP(
-      String dmpId, String doiIdentifier, String accessToken) {
-    return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, accessToken);
-  }
-
-  @Override
-  public ServiceOperationResult<String> addDoiIdentifierToDMP(
       String dmpId, String doiIdentifier, User user) {
     return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, user);
   }
