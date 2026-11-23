@@ -52,29 +52,4 @@
         </sql>
     </changeSet>
 
-    <changeSet id="remove-egnyte-e" context="run" author="tchoi">
-        <comment>Point files saved through the Egnyte file store back at the current local file
-            store root. Those files are marked external and point at the Egnyte root, which the local
-            store cannot resolve. Their local copy was never deleted (InternalFileStoreImpl.removeFile
-            does nothing), and relPath is the path under both roots, so they resolve to that copy
-            again. The upload overwrote each file's original local root_id, so this runs only when
-            the database has exactly one local root, and it is current: then that is where every copy
-            was saved. Otherwise it changes nothing (and never leaves no current root); see the
-            RSDEV-1735 upgrade notes. The Egnyte FileStoreRoot row is kept, no longer current, as a
-            record of where the files were in Egnyte.</comment>
-        <sql>
-            update FileProperty fp
-            join (select max(id) as id from FileStoreRoot where external = 0
-                  having count(*) = 1 and sum(current = 1) = 1) localRoot
-            set fp.external = 0, fp.root_id = localRoot.id
-            where fp.external = 1;
-
-            update FileStoreRoot r
-            join (select max(id) as id from FileStoreRoot where external = 0
-                  having count(*) = 1 and sum(current = 1) = 1) localRoot
-            set r.current = 0
-            where r.external = 1;
-        </sql>
-    </changeSet>
-
 </databaseChangeLog>
