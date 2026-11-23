@@ -85,12 +85,10 @@ public class RepositoryConfigurationController extends BaseController {
       info.setOptions(getOptionsForRepoUIConfigInfo(inf.getName(), inf.getOptions()));
       uiConfigs.add(info);
     }
-    if (isDMPEnabled(user)) {
-      List<LinkedDMP> linkedDMPs = getLinkedDMPs(user);
-      if (!linkedDMPs.isEmpty()) {
-        for (RepoUIConfigInfo info : uiConfigs) {
-          info.setLinkedDMPs(linkedDMPs);
-        }
+    List<LinkedDMP> linkedDMPs = getLinkedDMPs(user);
+    if (!linkedDMPs.isEmpty()) {
+      for (RepoUIConfigInfo info : uiConfigs) {
+        info.setLinkedDMPs(linkedDMPs);
       }
     }
     return uiConfigs;

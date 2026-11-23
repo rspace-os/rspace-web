@@ -321,6 +321,21 @@ class RepositoryConfigurationControllerTest {
     assertThat(activeRepos.get(0).getLinkedDMPs()).isNullOrEmpty();
   }
 
+  @Test
+  void getDMPsListsNoPlanWhenEveryPlatformIsOff() throws MalformedURLException {
+    givenDataverseActiveAndDmpIntegrations();
+    when(dmpManager.findDMPsForUser(exporter))
+        .thenReturn(List.of(plan(1L, DMPSource.DMP_TOOL), plan(2L, DMPSource.DMP_ONLINE)));
+    when(dmpPlatformStatusResolver.resolve(any(DMPSource.class), eq(exporter)))
+        .thenReturn(PlatformStatus.PLATFORM_OFF);
+
+    List<RepoUIConfigInfo> activeRepos =
+        repositoryConfigurationController.getAllActiveRepositories();
+
+    assertThat(activeRepos).hasSize(1);
+    assertThat(activeRepos.get(0).getLinkedDMPs()).isNullOrEmpty();
+  }
+
   private void givenDataverseActiveAndDmpIntegrations(IntegrationInfo... dmpInfos)
       throws MalformedURLException {
     IntegrationInfo dataverse = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
