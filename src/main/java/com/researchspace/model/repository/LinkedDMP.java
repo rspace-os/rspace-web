@@ -13,7 +13,10 @@ public class LinkedDMP {
   private String dmpTitle;
   private String dmpId;
 
-  /** Display name of the plan's platform; a plan with an unknown source is shown as DMPtool. */
+  /**
+   * Display name of the plan's platform. A plan with an unknown source is shown as DMPTool, or with
+   * an empty name when DMPTool is off.
+   */
   private String platformName;
 
   /**

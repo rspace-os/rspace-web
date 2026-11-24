@@ -18,6 +18,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 /** Writes a deposit's link onto each ticked plan, routed by the plan's own platform. */
@@ -63,8 +64,9 @@ public class DMPUpdateHandler {
   }
 
   /**
-   * Plans the user can tick when depositing: those whose own platform is on. DSW plans are never
-   * offered (RPD-276).
+   * Plans the user can tick when depositing: those whose own platform is on. A plan with no
+   * recorded source is routed to DMPTool, and is also offered without a platform name when DMPTool
+   * is off but DMPonline or Argos is on. DSW plans are never offered (RPD-276).
    *
    * @param user the plans' owner
    * @return one entry per offered plan, marked {@code NOT_CONNECTED} when its platform supports
@@ -81,20 +83,39 @@ public class DMPUpdateHandler {
       PlatformStatus status =
           statusByPlatform.computeIfAbsent(
               platform, source -> statusResolver.resolve(source, user));
-      if (status == PlatformStatus.PLATFORM_OFF) {
-        continue;
+      if (status != PlatformStatus.PLATFORM_OFF) {
+        boolean warnNotConnected =
+            status == PlatformStatus.NOT_CONNECTED && reporterFor(platform).isPresent();
+        linkable.add(
+            linkedDMP(
+                plan,
+                messages.getMessage(DmpPlatformStatusResolver.platformNameKey(platform)),
+                warnNotConnected ? PlatformStatus.NOT_CONNECTED : PlatformStatus.OK));
+      } else if (isUnknownSource(plan) && anyImporterOfUnknownPlansIsOn(user, statusByPlatform)) {
+        linkable.add(linkedDMP(plan, "", PlatformStatus.OK));
       }
-      boolean warnNotConnected =
-          status == PlatformStatus.NOT_CONNECTED && reporterFor(platform).isPresent();
-      linkable.add(
-          new LinkedDMP(
-              plan.getId(),
-              plan.getTitle(),
-              plan.getDmpId(),
-              messages.getMessage(DmpPlatformStatusResolver.platformNameKey(platform)),
-              warnNotConnected ? PlatformStatus.NOT_CONNECTED.name() : PlatformStatus.OK.name()));
     }
     return linkable;
+  }
+
+  private static LinkedDMP linkedDMP(DMPUser plan, String platformName, PlatformStatus status) {
+    return new LinkedDMP(
+        plan.getId(), plan.getTitle(), plan.getDmpId(), platformName, status.name());
+  }
+
+  private static boolean isUnknownSource(DMPUser plan) {
+    return plan.getSource() == null || plan.getSource() == DMPSource.UNKNOWN;
+  }
+
+  // plans without a recorded source were imported from DMPTool, DMPonline or Argos (RSDEV-563)
+  private boolean anyImporterOfUnknownPlansIsOn(
+      User user, Map<DMPSource, PlatformStatus> statusByPlatform) {
+    return Stream.of(DMPSource.DMP_ONLINE, DMPSource.ARGOS)
+        .map(
+            source ->
+                statusByPlatform.computeIfAbsent(
+                    source, platform -> statusResolver.resolve(platform, user)))
+        .anyMatch(status -> status != PlatformStatus.PLATFORM_OFF);
   }
 
   private Optional<DmpReporter> reporterFor(DMPSource platform) {

@@ -238,6 +238,47 @@ class DMPUpdateHandlerTest {
     assertThat(handler.linkablePlans(user)).isEmpty();
   }
 
+  @ParameterizedTest
+  @EnumSource(
+      value = DMPSource.class,
+      names = {"DMP_ONLINE", "ARGOS"})
+  void unknownPlanIsLinkableWithoutPlatformWhenDmpToolIsOffButAnotherImporterIsOn(
+      DMPSource onPlatform) {
+    givenPlans(plan(1L, DMPSource.UNKNOWN));
+    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
+        .thenAnswer(
+            invocation ->
+                invocation.getArgument(0) == onPlatform
+                    ? PlatformStatus.OK
+                    : PlatformStatus.PLATFORM_OFF);
+
+    assertThat(handler.linkablePlans(user))
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "", "OK"));
+  }
+
+  @Test
+  void unknownPlanIsNotLinkableWhenDmpToolDmpOnlineAndArgosAreOff() {
+    givenPlans(plan(1L, DMPSource.UNKNOWN));
+    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
+        .thenAnswer(
+            invocation ->
+                invocation.getArgument(0) == DMPSource.DMP_ASSISTANT
+                    ? PlatformStatus.OK
+                    : PlatformStatus.PLATFORM_OFF);
+
+    assertThat(handler.linkablePlans(user)).isEmpty();
+  }
+
+  @Test
+  void unknownPlanKeepsDmpToolWarningWhenDmpToolIsOnButNotConnected() {
+    givenPlans(plan(1L, DMPSource.UNKNOWN));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.NOT_CONNECTED);
+
+    assertThat(handler.linkablePlans(user))
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "NOT_CONNECTED"));
+  }
+
   private void givenPlans(DMPUser... plans) {
     when(dmpManager.findDMPsForUser(user)).thenReturn(List.of(plans));
   }
