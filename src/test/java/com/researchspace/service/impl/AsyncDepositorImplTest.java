@@ -657,9 +657,36 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
-  void writeBackErrorDoesNotEscapePostDeposit() throws Exception {
+  void writeBackErrorIsReportedToTheUserAndDoesNotEscapePostDeposit() throws Exception {
     when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L))))
         .thenThrow(new IllegalStateException("boom"));
+
+    assertDoesNotThrow(
+        () ->
+            depositor.postDeposit(
+                new RepositoryOperationResult(true, "done", null, new URL("https://doi.org/1/x")),
+                new App(APP_DATAVERSE, "Data<verse>", true),
+                anyUser,
+                null,
+                configWithPlans(App.APP_DATAVERSE, 1L)));
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    assertEquals(
+        "RSpace could not update the plans you selected after your deposit on"
+            + " \"Data&lt;verse&gt;\". You can add the deposit to them by hand.",
+        messages.getAllValues().get(1).trim());
+  }
+
+  @Test
+  void failureToSendTheWriteBackErrorDoesNotEscapePostDeposit() throws Exception {
+    when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L))))
+        .thenThrow(new IllegalStateException("boom"));
+    Mockito.doReturn(null)
+        .doThrow(new IllegalStateException("no notification"))
+        .when(comm)
+        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
 
     assertDoesNotThrow(
         () ->
@@ -669,8 +696,6 @@ public class AsyncDepositorImplTest {
                 anyUser,
                 null,
                 configWithPlans(App.APP_DATAVERSE, 1L)));
-    Mockito.verify(comm)
-        .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
   }
 
   @Test

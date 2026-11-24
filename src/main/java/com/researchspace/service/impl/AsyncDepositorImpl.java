@@ -248,18 +248,35 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     if (!result.isSucceeded() || !repoDepositConfig.hasDMPs()) {
       return;
     }
+    DepositReport deposit;
+    List<PlanReportResult> planResults;
     try {
-      DepositReport deposit =
-          buildDepositReport(result, app.getLabel(), repoDepositConfig.getAppName());
-      List<PlanReportResult> planResults =
-          dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
+      deposit = buildDepositReport(result, app.getLabel(), repoDepositConfig.getAppName());
+      planResults = dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
+    } catch (RuntimeException e) {
+      log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
+      notifyDmpUpdateFailed(app.getLabel(), subject);
+      return;
+    }
+    try {
       URL repositoryLink =
           deposit.identifier() == null
               ? null
               : repositoryLink(result, repoDepositConfig.getAppName());
       notifyDmpUpdateComplete(planResults, deposit, repositoryLink, subject);
     } catch (RuntimeException e) {
-      log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
+      log.error("Notifying the plan updates after a deposit to {} failed", app.getLabel(), e);
+    }
+  }
+
+  private void notifyDmpUpdateFailed(String repositoryName, User subject) {
+    try {
+      String msg =
+          messages.format(
+              DMP_NOTIFICATION_KEY + "updateFailed", List.of(escapeHtml(repositoryName)));
+      commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+    } catch (RuntimeException e) {
+      log.error("Notifying that plans could not be updated after a deposit failed", e);
     }
   }
 
