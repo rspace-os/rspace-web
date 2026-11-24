@@ -216,13 +216,23 @@ describe("ExportRepo", () => {
     const renderWithPlans = async (selectedDMPs: Array<number> = []) => {
       const user = userEvent.setup();
       const updateRepoConfig = vi.fn<(repoDetails: RepoDetails) => void>();
+      const validator = mkValidator();
       await renderWithRealI18n(
         <ExportRepo
-          repoDetails={{ ...props.repoDetails, selectedDMPs }}
+          repoDetails={{
+            ...props.repoDetails,
+            selectedDMPs,
+            meta: {
+              ...props.repoDetails.meta,
+              title: "Survey data",
+              description: "Survey data",
+              subject: "Mathematics",
+            },
+          }}
           repoList={[{ ...zenodoRepoList[0], linkedDMPs: plans, repoCfg: -1 }]}
           state={DEFAULT_STATE}
           updateRepoConfig={updateRepoConfig}
-          validator={mkValidator()}
+          validator={validator}
           fetchTags={props.fetchTags}
         />,
         { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
@@ -230,8 +240,10 @@ describe("ExportRepo", () => {
       const associateSwitch = await screen.findByRole("checkbox", {
         name: "Associate export with a Data Management Plans (DMPs)",
       });
-      return { user, updateRepoConfig, associateSwitch };
+      return { user, updateRepoConfig, associateSwitch, validator };
     };
+    const tick = (user: ReturnType<typeof userEvent.setup>, title: string) =>
+      user.click(screen.getByRole("checkbox", { name: `Select plan: ${title}` }));
     const lastSentPlans = (updateRepoConfig: Mock<(repoDetails: RepoDetails) => void>) =>
       updateRepoConfig.mock.lastCall?.[0].selectedDMPs;
 
@@ -248,6 +260,24 @@ describe("ExportRepo", () => {
       await user.click(screen.getByRole("checkbox", { name: "Select plan: River survey plan" }));
       expect(lastSentPlans(updateRepoConfig)).toEqual([2]);
       await user.click(associateSwitch);
+      expect(lastSentPlans(updateRepoConfig)).toEqual([]);
+    });
+
+    test("blocks a Zenodo export with two plans ticked", async () => {
+      const { user, associateSwitch, validator } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await tick(user, "Soil survey plan");
+      await tick(user, "River survey plan");
+      expect(await validator.isValid()).toBe(false);
+    });
+
+    test("lets a Zenodo export continue with two plans ticked once the association switch is off", async () => {
+      const { user, updateRepoConfig, associateSwitch, validator } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await tick(user, "Soil survey plan");
+      await tick(user, "River survey plan");
+      await user.click(associateSwitch);
+      expect(await validator.isValid()).toBe(true);
       expect(lastSentPlans(updateRepoConfig)).toEqual([]);
     });
 

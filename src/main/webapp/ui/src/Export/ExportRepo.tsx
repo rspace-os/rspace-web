@@ -157,6 +157,7 @@ function ExportRepo({
     }),
   );
   const [fetchingTags, setFetchingTags] = useState(false);
+  const plansToSend = (): Array<DMPUserInternalId> => (state.linkDMP ? state.selectedPlans : []);
 
   useEffect(() => {
     void (async () => {
@@ -197,9 +198,7 @@ function ExportRepo({
       });
 
       return Promise.resolve(
-        [...Object.values(validations), !(repo.repoName === "app.zenodo" && state.selectedPlans.length > 1)].every(
-          (b) => b,
-        ),
+        [...Object.values(validations), !(repo.repoName === "app.zenodo" && plansToSend().length > 1)].every((b) => b),
       );
     });
   }, []);
@@ -212,7 +211,7 @@ function ExportRepo({
       appName: repo.repoName,
       depositToRepository: true,
       repoCfg: repo.repoCfg,
-      selectedDMPs: state.linkDMP ? state.selectedPlans : [],
+      selectedDMPs: plansToSend(),
       meta: {
         title: state.title,
         description: state.description,
