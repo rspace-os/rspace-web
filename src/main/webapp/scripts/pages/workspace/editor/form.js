@@ -286,7 +286,6 @@ function disableInputs() {
   $("#structuredDocument :radio").attr('disabled', true);
   $("#structuredDocument :checkbox[class!='alwaysActive']").attr('disabled', 'disabled');
   $("#structuredDocument :text").attr('disabled', 'disabled');
-  $("#structuredDocument :password").attr('disabled', 'disabled');
 }
 
 function initNonEditableTinyMCE() {

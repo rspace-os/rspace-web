@@ -16,6 +16,7 @@ import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.ReferenceFieldForm;
+import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.field.URIFieldForm;
 import com.researchspace.model.record.FormState;
@@ -99,6 +100,8 @@ public class FormImporterTest {
     archivalForm.setType(FormType.NORMAL.name());
     archivalForm.setPublishingState(FormState.PUBLISHED.name());
     archivalForm.setFormVersion("1");
+    ArchivalFieldForm stringField = archivalFieldForm("string", FieldType.STRING, true, 4);
+    stringField.setDefaultValue("archived default");
     archivalForm
         .getFieldFormList()
         .addAll(
@@ -106,7 +109,8 @@ public class FormImporterTest {
                 archivalFieldForm("uri", FieldType.URI, true, 0),
                 archivalFieldForm("reference", FieldType.REFERENCE, false, 1),
                 archivalFieldForm("attachment", FieldType.ATTACHMENT, true, 2),
-                archivalFieldForm("text", FieldType.TEXT, false, 3)));
+                archivalFieldForm("text", FieldType.TEXT, false, 3),
+                stringField));
     ArchivalDocumentParserRef ref = new ArchivalDocumentParserRef();
     ref.setArchivalForm(archivalForm);
 
@@ -118,13 +122,15 @@ public class FormImporterTest {
             URIFieldForm.class,
             ReferenceFieldForm.class,
             AttachmentFieldForm.class,
-            TextFieldForm.class);
+            TextFieldForm.class,
+            StringFieldForm.class);
     assertThat(imported)
         .extracting(FieldForm::getName)
-        .containsExactly("uri", "reference", "attachment", "text");
+        .containsExactly("uri", "reference", "attachment", "text", "string");
     assertThat(imported)
         .extracting(FieldForm::isMandatory)
-        .containsExactly(true, false, true, false);
+        .containsExactly(true, false, true, false, true);
+    assertEquals("archived default", ((StringFieldForm) imported.get(4)).getDefaultStringValue());
     for (int i = 0; i < imported.size(); i++) {
       assertEquals(i, imported.get(i).getColumnIndex());
     }

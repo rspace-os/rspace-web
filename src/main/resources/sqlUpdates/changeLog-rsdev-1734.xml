@@ -4,12 +4,19 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-  <changeSet id="rspac-624-remove-password-field-flag" author="researchspace" context="run">
+  <!-- Databases that ran these drops under their earlier rspac-624 ids no longer have the columns. -->
+  <changeSet id="rsdev-1734-remove-password-field-flag" author="researchspace" context="run">
+    <preConditions onFail="MARK_RAN">
+      <columnExists tableName="FieldForm" columnName="ifPassword"/>
+    </preConditions>
     <comment>Remove the String field password option while preserving form defaults and document values.</comment>
     <dropColumn tableName="FieldForm" columnName="ifPassword"/>
   </changeSet>
 
-  <changeSet id="rspac-624-remove-audited-password-field-flag" author="researchspace" context="run">
+  <changeSet id="rsdev-1734-remove-audited-password-field-flag" author="researchspace" context="run">
+    <preConditions onFail="MARK_RAN">
+      <columnExists tableName="FieldForm_AUD" columnName="ifPassword"/>
+    </preConditions>
     <comment>Remove the retired password flag from form history while preserving historical defaults.</comment>
     <dropColumn tableName="FieldForm_AUD" columnName="ifPassword"/>
   </changeSet>

@@ -164,6 +164,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertNotNull(sft.getId());
     assertNotNull(sft.getForm());
     assertEquals(FieldType.STRING, sft.getType());
+    assertEquals("Default", sft.getDefaultStringValue());
 
     RSForm form2 = formMgr.get(form.getId(), null);
     assertEquals(1, form2.getNumActiveFields());
