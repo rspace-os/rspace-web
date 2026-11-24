@@ -2,9 +2,8 @@ package com.researchspace.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,6 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
+import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -198,12 +198,44 @@ class DMPUpdateHandlerTest {
   }
 
   @Test
-  void writeBackIsSupportedOnlyWhereAReporterExists() {
-    givenDmpToolSupported();
-    when(dmpToolReporter.supports(DMPSource.DMP_ONLINE)).thenReturn(false);
+  void linkablePlansAreThoseWhosePlatformIsOn() {
+    givenPlans(
+        plan(1L, DMPSource.UNKNOWN),
+        plan(2L, DMPSource.DMP_TOOL),
+        plan(3L, DMPSource.DMP_ONLINE),
+        plan(4L, DMPSource.DSW),
+        plan(5L, DMPSource.DMP_ASSISTANT));
+    when(dmpToolReporter.supports(DMPSource.DMP_ASSISTANT)).thenReturn(false);
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(statusResolver.resolve(DMPSource.DMP_ONLINE, user))
+        .thenReturn(PlatformStatus.PLATFORM_OFF);
+    when(statusResolver.resolve(DMPSource.DMP_ASSISTANT, user))
+        .thenReturn(PlatformStatus.NOT_CONNECTED);
 
-    assertTrue(handler.supportsWriteBack(DMPSource.UNKNOWN));
-    assertFalse(handler.supportsWriteBack(DMPSource.DMP_ONLINE));
+    assertThat(handler.linkablePlans(user))
+        .containsExactly(
+            new LinkedDMP(1L, "title1", "id1", "DMPTool", "OK"),
+            new LinkedDMP(2L, "title2", "id2", "DMPTool", "OK"),
+            new LinkedDMP(5L, "title5", "id5", "DMP Assistant", "OK"));
+  }
+
+  @Test
+  void linkablePlanIsMarkedNotConnectedWhenItsPlatformHasWriteBack() {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.NOT_CONNECTED);
+
+    assertThat(handler.linkablePlans(user))
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "NOT_CONNECTED"));
+  }
+
+  @Test
+  void noPlanIsLinkableWhenEveryPlatformIsOff() {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL), plan(2L, DMPSource.DMP_ONLINE));
+    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
+        .thenReturn(PlatformStatus.PLATFORM_OFF);
+
+    assertThat(handler.linkablePlans(user)).isEmpty();
   }
 
   private void givenPlans(DMPUser... plans) {

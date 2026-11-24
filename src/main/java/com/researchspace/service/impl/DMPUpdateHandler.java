@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
@@ -13,7 +14,9 @@ import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
 import com.researchspace.service.dmp.ValueOutcome;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,19 +63,48 @@ public class DMPUpdateHandler {
   }
 
   /**
-   * @param source a plan's source; {@code UNKNOWN} is treated as DMPtool
-   * @return whether RSpace can write a deposit's link onto plans from that platform
+   * Plans the user can tick when depositing: those whose own platform is on. DSW plans are never
+   * offered (RPD-276).
+   *
+   * @param user the plans' owner
+   * @return one entry per offered plan, marked {@code NOT_CONNECTED} when its platform supports
+   *     write-back but the user is not connected to it
    */
-  public boolean supportsWriteBack(DMPSource source) {
-    DMPSource platform = DmpPlatformStatusResolver.effectiveSource(source);
-    return reporters.stream().anyMatch(r -> r.supports(platform));
+  public List<LinkedDMP> linkablePlans(User user) {
+    Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
+    List<LinkedDMP> linkable = new ArrayList<>();
+    for (DMPUser plan : dmpManager.findDMPsForUser(user)) {
+      if (plan.getSource() == DMPSource.DSW) {
+        continue;
+      }
+      DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
+      PlatformStatus status =
+          statusByPlatform.computeIfAbsent(
+              platform, source -> statusResolver.resolve(source, user));
+      if (status == PlatformStatus.PLATFORM_OFF) {
+        continue;
+      }
+      boolean warnNotConnected =
+          status == PlatformStatus.NOT_CONNECTED && reporterFor(platform).isPresent();
+      linkable.add(
+          new LinkedDMP(
+              plan.getId(),
+              plan.getTitle(),
+              plan.getDmpId(),
+              messages.getMessage(DmpPlatformStatusResolver.platformNameKey(platform)),
+              warnNotConnected ? PlatformStatus.NOT_CONNECTED.name() : PlatformStatus.OK.name()));
+    }
+    return linkable;
+  }
+
+  private Optional<DmpReporter> reporterFor(DMPSource platform) {
+    return reporters.stream().filter(r -> r.supports(platform)).findFirst();
   }
 
   private PlanReportResult reportPlan(DMPUser plan, DepositReport deposit, User subject) {
     DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
     try {
-      Optional<DmpReporter> reporter =
-          reporters.stream().filter(r -> r.supports(platform)).findFirst();
+      Optional<DmpReporter> reporter = reporterFor(platform);
       if (reporter.isEmpty()) {
         return withStatus(plan, platform, PlanReportStatus.NOT_SUPPORTED);
       }

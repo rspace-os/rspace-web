@@ -12,22 +12,16 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.dmps.DMPSource;
-import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
-import com.researchspace.service.DMPManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
-import com.researchspace.service.dmp.DmpPlatformStatusResolver;
-import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
 import com.researchspace.service.impl.DMPUpdateHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +50,6 @@ public class RepositoryConfigurationController extends BaseController {
 
   private @Autowired RepositoryDepositHandler depositHandler;
   private @Autowired UserAppConfigManager userAppConfigMgr;
-  private @Autowired DMPManager dmpManager;
-  private @Autowired DmpPlatformStatusResolver dmpPlatformStatusResolver;
   private @Autowired DMPUpdateHandler dmpUpdateHandler;
 
   /**
@@ -85,43 +77,13 @@ public class RepositoryConfigurationController extends BaseController {
       info.setOptions(getOptionsForRepoUIConfigInfo(inf.getName(), inf.getOptions()));
       uiConfigs.add(info);
     }
-    List<LinkedDMP> linkedDMPs = getLinkedDMPs(user);
+    List<LinkedDMP> linkedDMPs = dmpUpdateHandler.linkablePlans(user);
     if (!linkedDMPs.isEmpty()) {
       for (RepoUIConfigInfo info : uiConfigs) {
         info.setLinkedDMPs(linkedDMPs);
       }
     }
     return uiConfigs;
-  }
-
-  /**
-   * Plans the user can tick: those whose own platform is on (DSW plans are not offered, RPD-276).
-   */
-  private List<LinkedDMP> getLinkedDMPs(User user) {
-    Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
-    List<LinkedDMP> linkedDMPs = new ArrayList<>();
-    for (DMPUser plan : dmpManager.findDMPsForUser(user)) {
-      if (plan.getSource() == DMPSource.DSW) {
-        continue;
-      }
-      DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
-      PlatformStatus status =
-          statusByPlatform.computeIfAbsent(
-              platform, source -> dmpPlatformStatusResolver.resolve(source, user));
-      if (status == PlatformStatus.PLATFORM_OFF) {
-        continue;
-      }
-      boolean warnNotConnected =
-          status == PlatformStatus.NOT_CONNECTED && dmpUpdateHandler.supportsWriteBack(platform);
-      linkedDMPs.add(
-          new LinkedDMP(
-              plan.getId(),
-              plan.getTitle(),
-              plan.getDmpId(),
-              getText(DmpPlatformStatusResolver.platformNameKey(platform)),
-              warnNotConnected ? PlatformStatus.NOT_CONNECTED.name() : PlatformStatus.OK.name()));
-    }
-    return linkedDMPs;
   }
 
   @Value("${dataverse.metadataLanguages:}")
