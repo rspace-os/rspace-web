@@ -1,21 +1,33 @@
 package com.researchspace.webapp.integrations.dmptool;
 
+import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.dmptool.client.DMPToolClient;
+import com.researchspace.dmptool.model.RelatedIdentifier;
+import com.researchspace.model.User;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserConnectionManager;
+import com.researchspace.testutils.TestFactory;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -42,6 +54,8 @@ class DMPToolDMPProviderImplTest {
   private static final String EDIT_LINK = "https://datadryad.org/edit/doi%3A10.1/secretCode";
 
   private @Mock DMPToolClient client;
+  private @Mock UserConnectionManager userConnectionManager;
+  private @Mock AnalyticsManager analyticsManager;
   private DMPToolDMPProviderImpl provider;
   private final EventCapture logs = new EventCapture();
   private final Logger logger = (Logger) LogManager.getLogger(DMPToolDMPProviderImpl.class);
@@ -50,6 +64,8 @@ class DMPToolDMPProviderImplTest {
   void setUp() throws Exception {
     provider = new DMPToolDMPProviderImpl(new URL("https://dmptool.example.org"));
     ReflectionTestUtils.setField(provider, "dmpToolClient", client);
+    ReflectionTestUtils.setField(provider, "userConnectionManager", userConnectionManager);
+    ReflectionTestUtils.setField(provider, "analyticsManager", analyticsManager);
     ReflectionTestUtils.setField(
         provider, "messages", new MessageSourceUtils(new JsonMessageSource()));
     logs.start();
@@ -115,6 +131,64 @@ class DMPToolDMPProviderImplTest {
         provider.addRelatedIdentifierToDMP(PLAN_ID, "url", EDIT_LINK, TOKEN);
 
     assertEquals("DMPTool could not be reached.", result.getEntity());
+  }
+
+  @Test
+  void doiIsSentAsDoiRelatedIdentifier() throws Exception {
+    ServiceOperationResult<String> result =
+        provider.addRelatedIdentifierToDMP(PLAN_ID, "doi", "https://doi.org/10.1/x", TOKEN);
+
+    assertTrue(result.isSucceeded());
+    verify(client)
+        .postRelatedIdentifiers(
+            PLAN_ID,
+            new RelatedIdentifier("documents", "dataset", "doi", "https://doi.org/10.1/x"),
+            TOKEN);
+  }
+
+  @Test
+  void landingPageIsSentAsUrlRelatedIdentifier() throws Exception {
+    ServiceOperationResult<String> result =
+        provider.addRelatedIdentifierToDMP(PLAN_ID, "url", "https://repo.example/ds/1", TOKEN);
+
+    assertTrue(result.isSucceeded());
+    verify(client)
+        .postRelatedIdentifiers(
+            PLAN_ID,
+            new RelatedIdentifier("documents", "dataset", "url", "https://repo.example/ds/1"),
+            TOKEN);
+  }
+
+  @Test
+  void userWithoutDmpToolConnectionGetsNoAccessTokenFailure() {
+    User user = TestFactory.createAnyUser("any");
+    when(userConnectionManager.findByUserNameProviderName(user.getUsername(), DMPTOOL_APP_NAME))
+        .thenReturn(Optional.empty());
+
+    ServiceOperationResult<String> result =
+        provider.addRelatedIdentifierToDMP(PLAN_ID, "url", "https://repo.example/ds/1", user);
+
+    assertFalse(result.isSucceeded());
+    assertEquals(
+        "Access token isn't enabled - user must connect in Apps page.", result.getEntity());
+    verifyNoInteractions(client);
+  }
+
+  @Test
+  void doiIdentifierUsesTheUsersStoredToken() throws Exception {
+    User user = TestFactory.createAnyUser("any");
+    UserConnection connection = new UserConnection();
+    connection.setAccessToken(TOKEN);
+    when(userConnectionManager.findByUserNameProviderName(user.getUsername(), DMPTOOL_APP_NAME))
+        .thenReturn(Optional.of(connection));
+
+    assertTrue(
+        provider.addDoiIdentifierToDMP(PLAN_ID, "https://doi.org/10.1/x", user).isSucceeded());
+    verify(client)
+        .postRelatedIdentifiers(
+            PLAN_ID,
+            new RelatedIdentifier("documents", "dataset", "doi", "https://doi.org/10.1/x"),
+            TOKEN);
   }
 
   private static class EventCapture extends AbstractAppender {
