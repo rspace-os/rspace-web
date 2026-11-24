@@ -263,6 +263,25 @@ describe("ExportRepo", () => {
       expect(lastSentPlans(updateRepoConfig)).toEqual([]);
     });
 
+    test("sends the earlier ticks again after the association switch is turned off and on", async () => {
+      const { user, updateRepoConfig, associateSwitch } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await tick(user, "River survey plan");
+      await user.click(associateSwitch);
+      await user.click(associateSwitch);
+      expect(screen.getByRole("checkbox", { name: "Select plan: River survey plan" })).toBeChecked();
+      expect(lastSentPlans(updateRepoConfig)).toEqual([2]);
+    });
+
+    test("sends only the plan still ticked after another is unticked", async () => {
+      const { user, updateRepoConfig, associateSwitch } = await renderWithPlans();
+      await user.click(associateSwitch);
+      await tick(user, "Soil survey plan");
+      await tick(user, "River survey plan");
+      await tick(user, "Soil survey plan");
+      expect(lastSentPlans(updateRepoConfig)).toEqual([2]);
+    });
+
     test("blocks a Zenodo export with two plans ticked", async () => {
       const { user, associateSwitch, validator } = await renderWithPlans();
       await user.click(associateSwitch);
@@ -299,12 +318,13 @@ describe("ExportRepo", () => {
         linkedDMPs,
         repoCfg: -1,
       };
+      const updateRepoConfig = vi.fn<(repoDetails: RepoDetails) => void>();
       const { baseElement } = await renderWithRealI18n(
         <ExportRepo
           repoDetails={props.repoDetails}
           repoList={[repo]}
           state={DEFAULT_STATE}
-          updateRepoConfig={() => {}}
+          updateRepoConfig={updateRepoConfig}
           validator={mkValidator()}
           fetchTags={props.fetchTags}
         />,
@@ -315,8 +335,22 @@ describe("ExportRepo", () => {
           name: "Associate export with a Data Management Plans (DMPs)",
         }),
       );
-      return { user, baseElement, table: await screen.findByRole("table") };
+      return { user, baseElement, updateRepoConfig, table: await screen.findByRole("table") };
     };
+
+    test("sends a ticked plan with the export", async () => {
+      const { user, updateRepoConfig, table } = await renderDigitalCommonsData([
+        {
+          dmpUserInternalId: 1,
+          dmpTitle: "Soil survey plan",
+          dmpId: "plan-1",
+          platformName: "DMPTool",
+          writeBackStatus: "OK",
+        },
+      ]);
+      await user.click(within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" }));
+      expect(updateRepoConfig.mock.lastCall?.[0].selectedDMPs).toEqual([1]);
+    });
 
     test("lists a plan on a connected platform without a warning", async () => {
       const { table } = await renderDigitalCommonsData([
