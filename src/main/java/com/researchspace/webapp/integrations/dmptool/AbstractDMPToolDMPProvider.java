@@ -67,8 +67,6 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
                       DMPSource.DMP_TOOL,
                       dmp.getDoiLink(),
                       dmp.getDmpLink())));
-    } else {
-      dmpUser.get().adoptSourceIfUnknown(DMPSource.DMP_TOOL);
     }
     if (dmpJson != null) {
       dmpUser.get().setDmpDownloadFile(dmpJson);
