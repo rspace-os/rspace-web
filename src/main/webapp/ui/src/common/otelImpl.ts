@@ -31,11 +31,14 @@ let uiPage: string | undefined;
 
 export const MALFORMED_URL_SENTINEL = "about:invalid";
 
+// Link-only shared documents and notebooks carry their access key in the path.
+const PUBLIC_LINK_PATH = /(\/public\/publishedView\/(?:document|notebook)\/)[^/]+/;
+
 export function sanitizeUrl(value: string): string {
   try {
     const url = new URL(value, window.location.origin);
     if (url.protocol !== "http:" && url.protocol !== "https:") return MALFORMED_URL_SENTINEL;
-    return `${url.origin}${url.pathname}`;
+    return `${url.origin}${url.pathname.replace(PUBLIC_LINK_PATH, "$1{publicLink}")}`;
   } catch {
     return MALFORMED_URL_SENTINEL;
   }

@@ -26,8 +26,10 @@ processors:
   batch/browser:
     send_batch_size: 256
     timeout: 5s
-  # Query strings can carry secrets such as password-reset tokens.
-  transform/backend_redaction:
+  # Query strings can carry secrets such as password-reset tokens, and
+  # link-only shared documents and notebooks carry their access key in the path.
+  # Browser spans are sanitized before export too; this is the backstop.
+  transform/url_redaction:
     error_mode: ignore
     trace_statements:
       - context: span
@@ -36,6 +38,10 @@ processors:
           - replace_pattern(span.attributes["url.full"], "[?#].*", "")
           - replace_pattern(span.attributes["http.url"], "[?#].*", "")
           - replace_pattern(span.attributes["http.target"], "[?#].*", "")
+          - replace_pattern(span.attributes["url.path"], "(/public/publishedView/(?:document|notebook)/)[^/]+", "$${1}{publicLink}")
+          - replace_pattern(span.attributes["url.full"], "(/public/publishedView/(?:document|notebook)/)[^/]+", "$${1}{publicLink}")
+          - replace_pattern(span.attributes["http.url"], "(/public/publishedView/(?:document|notebook)/)[^/]+", "$${1}{publicLink}")
+          - replace_pattern(span.attributes["http.target"], "(/public/publishedView/(?:document|notebook)/)[^/]+", "$${1}{publicLink}")
   transform/browser_identity:
     error_mode: propagate
     trace_statements:
@@ -70,7 +76,7 @@ service:
   pipelines:
     traces/backend:
       receivers: [otlp/backend]
-      processors: [memory_limiter/backend, transform/backend_redaction, batch/backend]
+      processors: [memory_limiter/backend, transform/url_redaction, batch/backend]
       exporters: [otlp_grpc]
     metrics/backend:
       receivers: [otlp/backend]
@@ -82,7 +88,7 @@ service:
       exporters: [otlp_grpc]
     traces/browser:
       receivers: [otlp/browser]
-      processors: [memory_limiter/browser, transform/browser_identity, batch/browser]
+      processors: [memory_limiter/browser, transform/browser_identity, transform/url_redaction, batch/browser]
       exporters: [otlp_grpc]
     metrics/browser:
       receivers: [otlp/browser]

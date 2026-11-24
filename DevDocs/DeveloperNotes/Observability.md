@@ -35,15 +35,21 @@ HttpClient, Quartz, and Log4j2. JavaMelody can run alongside it. It also adds
 `trace_id` and `span_id` to Log4j2 output.
 
 The agent records server request query strings in `url.query`, and RSpace sends
-secrets such as password-reset tokens there. Strip query strings from backend
-spans in the Collector, as `transform/backend_redaction` does in
-`docker/dev/otel/otel-collector-config.yaml`. The agent also exports JVM
-arguments, which can carry `-D` secrets. Set
+secrets such as password-reset tokens there. Link-only shared documents and
+notebooks also carry their access key in the path
+(`/public/publishedView/{document,notebook}/<key>`). Strip query strings and
+replace those keys in both backend and browser trace pipelines, as
+`transform/url_redaction` does in `docker/dev/otel/otel-collector-config.yaml`.
+The agent also exports JVM arguments, which can carry `-D` secrets. Set
 `OTEL_RESOURCE_DISABLED_KEYS=process.command_args,process.command_line`.
 
-RSpace has no custom spans or metrics. Before adding `@WithSpan`, note that
-the agent records exception messages on custom spans, and many RSpace
-exceptions include usernames.
+RSpace has no custom spans or metrics. The agent records an `exception` event,
+with message and stack trace, on any span an exception escapes, including its
+own server, Spring MVC, and JDBC spans. Many RSpace exception messages include
+usernames, and SQL errors can echo values, so treat the telemetry store as
+holding personal data. `transform/url_redaction` does not touch these events:
+an unknown public link, for example, appears in the `PublicLinkNotFoundException`
+message.
 
 ### Development tuning
 
@@ -69,7 +75,8 @@ so browser and backend spans share a trace.
 
 Every browser-created `url.full` and `http.url` value is reduced to origin and
 pathname before export. Query strings, fragments, and URL credentials are
-removed; malformed values become a fixed sentinel. Reassess this sanitizer
+removed, public-link keys are replaced, and malformed values become a fixed
+sentinel. Reassess this sanitizer
 before adding another browser instrumentation package. Core Web Vitals use the
 bounded `UiTraceContext.page` label rather than the browser path.
 

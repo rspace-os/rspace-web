@@ -30,6 +30,16 @@ describe("browser telemetry URL sanitization", () => {
     ["fragment", `/records#${MARKER}`, `${window.location.origin}/records`],
     ["URL credentials", `https://${MARKER}:${MARKER}@example.com/records`, "https://example.com/records"],
     ["malformed", `http://[${MARKER}`, MALFORMED_URL_SENTINEL],
+    [
+      "public document link",
+      `/public/publishedView/document/${MARKER}`,
+      `${window.location.origin}/public/publishedView/document/{publicLink}`,
+    ],
+    [
+      "public notebook link",
+      `/public/publishedView/notebook/${MARKER}/entry`,
+      `${window.location.origin}/public/publishedView/notebook/{publicLink}/entry`,
+    ],
   ])("sanitizes %s URLs", (_case, rawUrl, expected) => {
     const sanitized = sanitizeUrl(rawUrl);
 

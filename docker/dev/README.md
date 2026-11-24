@@ -461,6 +461,7 @@ is the quick lookup.
 | E2E integration calls reach live services or fail DNS | The stack was started without its mock mode | Run `rspace-dev up --e2e`; use the mock port printed by `rspace-dev ps` when running Playwright. |
 | Password reset / signup / notification emails never arrive anywhere | Mailpit not enabled — `email.enabled=false` by default locally, so mail is only logged | Run `rspace-dev up --mailpit`; read captured mail at the Mailpit URL printed by `rspace-dev ps`. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
+
 ## Observability
 
 Start the optional OpenTelemetry and Elastic APM/ELK stack with:

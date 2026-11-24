@@ -185,8 +185,10 @@ compose() {
   if observability_enabled; then
     profile_args+=(--profile observability)
     # The Collector runs as uid 10001; a checkout made under umask 077 leaves
-    # its bind-mounted config unreadable to that user.
-    chmod a+r "${SCRIPT_DIR}/otel/otel-collector-config.yaml"
+    # its bind-mounted config unreadable to that user. Best effort: a file the
+    # caller cannot chmod must not block ps/logs/down.
+    chmod a+r "${SCRIPT_DIR}/otel/otel-collector-config.yaml" 2>/dev/null ||
+      echo "rspace-dev: cannot make otel/otel-collector-config.yaml readable; the Collector may fail to start" >&2
   fi
   docker compose \
     --project-directory "${SCRIPT_DIR}" \
