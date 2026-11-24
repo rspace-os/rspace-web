@@ -11291,7 +11291,7 @@ export default interface Resources {
         "dmp": {
           "associateLabel": "Associate export with a Data Management Plans (DMPs)",
           "warning": {
-            "notConnected": "{platform} is not connected, so this plan will not be updated with the dataset's DOI."
+            "notConnected": "{platform} is not connected, so this plan will not be updated."
           },
           "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
         },

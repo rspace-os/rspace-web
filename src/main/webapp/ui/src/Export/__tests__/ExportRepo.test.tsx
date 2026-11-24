@@ -368,7 +368,7 @@ describe("ExportRepo", () => {
       expect(within(table).queryByText(/is not connected/)).not.toBeInTheDocument();
     });
 
-    test("warns that a plan on a platform the user has not connected will not get the DOI, and still lets it be ticked", async () => {
+    test("warns that a plan on a platform the user has not connected will not be updated, and still lets it be ticked", async () => {
       const { user, table } = await renderDigitalCommonsData([
         {
           dmpUserInternalId: 1,
@@ -379,9 +379,7 @@ describe("ExportRepo", () => {
         },
       ]);
       const checkbox = within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" });
-      expect(checkbox).toHaveAccessibleDescription(
-        "DMPonline is not connected, so this plan will not be updated with the dataset's DOI.",
-      );
+      expect(checkbox).toHaveAccessibleDescription("DMPonline is not connected, so this plan will not be updated.");
       expect(checkbox).toBeEnabled();
       await user.click(checkbox);
       expect(checkbox).toBeChecked();
@@ -420,9 +418,7 @@ describe("ExportRepo", () => {
       const connected = within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" });
       const notConnected = within(table).getByRole("checkbox", { name: "Select plan: River survey plan" });
       expect(connected).not.toHaveAttribute("aria-describedby");
-      expect(notConnected).toHaveAccessibleDescription(
-        "DMPonline is not connected, so this plan will not be updated with the dataset's DOI.",
-      );
+      expect(notConnected).toHaveAccessibleDescription("DMPonline is not connected, so this plan will not be updated.");
     });
   });
 });
