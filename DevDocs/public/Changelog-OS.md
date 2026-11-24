@@ -4,6 +4,14 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+## 2.28.1 2026-11-24
+
+### ELN Bugfix
+
+- RSDEV-1656 protocols.io import only downloads images from protocols.io hosts
+- RSDEV-1666 archive import refuses file paths pointing outside the imported archive
+- RSDEV-1731 signup only accepts the fields shown on the signup form
+
 # 2.28.0 2026-11-06
 
 ### Server
