@@ -1,5 +1,6 @@
 package com.researchspace.service.archive;
 
+import static com.researchspace.core.util.XMLReadWriteUtils.fromXML;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,6 +12,7 @@ import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalFileNotExistException;
+import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveManifest;
@@ -445,6 +447,25 @@ public class ArchiveParseTest {
     assertEquals("9ac5c918248cc7aa", aewf.getExtId());
     assertEquals("RNA-seq for Paired-end fastqs (release v1.1)", aewf.getName());
     assertEquals(1, aewf.getId());
+  }
+
+  @Test
+  void readsStringDefaultFromLegacyPasswordField(@TempDir Path tempDir) throws Exception {
+    Path legacyForm = V217.toPath().resolve("doc_Experiment1-298/doc_Experiment1-298_form.xml");
+    String xml =
+        Files.readString(legacyForm)
+            .replace("<type>Text</type>", "<type>String</type>")
+            .replace(
+                "<isPassword>false</isPassword>",
+                "<defaultValue>archived default</defaultValue><isPassword>true</isPassword>");
+    File formFile = Files.writeString(tempDir.resolve("form.xml"), xml).toFile();
+
+    ArchivalForm form =
+        fromXML(formFile, ArchivalForm.class, new File(V217, "formSchema.xsd"), null);
+
+    assertEquals(7, form.getFieldFormList().size());
+    assertEquals("String", form.getFieldFormList().get(0).getType());
+    assertEquals("archived default", form.getFieldFormList().get(0).getDefaultValue());
   }
 
   @Test

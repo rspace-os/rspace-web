@@ -91,10 +91,8 @@ public class FormImporterImpl implements FormImporter {
                   aff.isMandatory()));
           break;
         case STRING:
-          String tr = aff.isPassword() ? "yes" : "no";
           persistFieldForm(
-              form,
-              new StringFieldDTO<>(aff.getName(), aff.isMandatory(), tr, aff.getDefaultValue()));
+              form, new StringFieldDTO<>(aff.getName(), aff.isMandatory(), aff.getDefaultValue()));
           break;
         case RADIO:
           persistFieldForm(

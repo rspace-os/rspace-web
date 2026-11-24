@@ -31,11 +31,6 @@ public class StringField extends FieldAsString {
     return _getFieldForm().getDefaultStringValue();
   }
 
-  @Transient
-  public boolean getIfPassword() {
-    return _getFieldForm().isIfPassword();
-  }
-
   @Override
   public StringField shallowCopy() {
     StringField stringField = new StringField(fieldForm);

@@ -97,10 +97,7 @@ public class ArchiveModelFactory {
         rc.setDecimalPlace(Integer.toString(pos));
         break;
       case STRING: // "String"
-        // <summary>Type: [STRING], Is password: [false], Default : [string]
-        // </summary>
         StringFieldForm sfm = (StringFieldForm) fm;
-        rc.setPassword(sfm.isIfPassword());
         rc.setDefaultValue(sfm.getDefaultStringValue());
         break;
       case RADIO: // "Radio"

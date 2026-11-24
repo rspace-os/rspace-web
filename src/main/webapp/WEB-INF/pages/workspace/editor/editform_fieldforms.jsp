@@ -77,16 +77,6 @@
 			</td>
 		</tr>
 
-		<tr>
-			<td>
-				<label><spring:message code="form.fieldEditor.isPassword"/> </label>
-			</td>
-			<td>
-				<input type="radio" name="fieldIfPassword" value="yes" <c:if test="${fieldTemplate.ifPassword eq true}"> checked </c:if> > <spring:message code="common:actions.yes"/><br>
-				<input type="radio" name="fieldIfPassword" value="no" <c:if test="${fieldTemplate.ifPassword eq false}"> checked </c:if> > <spring:message code="common:actions.no"/><br>
-			</td>
-		</tr>
-	
 	</c:when>
 	<c:when test='${fieldTemplate.type.type eq "Text"}'>
 		<tr>

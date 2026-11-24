@@ -14,17 +14,9 @@
 				</td> 	 
 			<tr>
 				<td class="field-value-inner">
-					<c:choose>
-						<c:when test="${field.ifPassword}">
-							<input id="${field.id}" type="password" name="fieldData" value="${field.defaultStringValue}" />
-						</c:when>
-						<c:otherwise>
-							<input id="${field.id}" type="text" name="fieldData" value="${field.defaultStringValue}" />
-						</c:otherwise>
-					</c:choose>
+					<input id="${field.id}" type="text" name="fieldData" value="${field.defaultStringValue}" />
 					<input type="hidden" name="wasChanged" value="false"/>
 					<input type="hidden" name="defaultValue" value="${field.defaultStringValue}"/>
-					<input type="hidden" name="isPassword" value="${field.ifPassword}"/>
 					<input type="hidden" name="fieldId" value="${field.id}"/>
 	      		</td>
 	       	</tr>

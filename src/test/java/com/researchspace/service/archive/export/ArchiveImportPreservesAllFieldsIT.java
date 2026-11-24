@@ -121,6 +121,14 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
         recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
     String docName = "Doc_with_required_field_" + run;
     doc.setName(docName);
+    String stringFieldName = "Mandatory_String_" + run;
+    Field stringField =
+        doc.getFields().stream()
+            .filter(f -> f.getName().equals(stringFieldName))
+            .findFirst()
+            .orElseThrow();
+    stringField.setFieldData("edited string value");
+    fieldMgr.save(stringField, user);
     recordMgr.save(doc, user);
 
     ArchiveManifest manifest = new ArchiveManifest();
@@ -140,11 +148,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           getRequiredAttribute(formXml, "fieldForm", "name", fieldDefinition.name()),
           fieldDefinition.type() + " form field required flag");
     }
-    assertEquals(
-        "true",
-        getChildElementText(
-            formXml, "fieldForm", "name", passwordStringFieldName(run), "isPassword"),
-        "password string field flag");
+    assertThat(Files.readString(formXml.toPath())).doesNotContain("<isPassword>");
     assertEquals(
         "yes",
         getChildElementText(
@@ -181,9 +185,13 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           importedFieldRequirements.get(fieldDefinition.name()),
           fieldDefinition.type() + " imported form field required flag");
     }
-    assertTrue(
-        ((StringFieldForm) importedFields.get(passwordStringFieldName(run))).isIfPassword(),
-        "imported string field remains a password field");
+    assertEquals(
+        "string value",
+        ((StringFieldForm) importedFields.get(stringFieldName)).getDefaultStringValue());
+    assertThat(importedDoc.getFields())
+        .filteredOn(field -> field.getName().equals(stringFieldName))
+        .extracting(Field::getFieldData)
+        .containsExactly("edited string value");
     assertTrue(
         ((ChoiceFieldForm) importedFields.get(multiSelectChoiceFieldName(run))).isMultipleChoice(),
         "imported choice field remains multi-select");
@@ -511,17 +519,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             "Mandatory_String_" + run,
             true,
             FieldType.STRING,
-            new StringFieldDTO<>("Mandatory_String_" + run, true, "no", "string value")),
+            new StringFieldDTO<>("Mandatory_String_" + run, true, "string value")),
         new FieldDefinition(
             "Optional_String_" + run,
             false,
             FieldType.STRING,
-            new StringFieldDTO<>("Optional_String_" + run, false, "no", "string value")),
-        new FieldDefinition(
-            passwordStringFieldName(run),
-            true,
-            FieldType.STRING,
-            new StringFieldDTO<>(passwordStringFieldName(run), true, "yes", "secret value")),
+            new StringFieldDTO<>("Optional_String_" + run, false, "string value")),
         new FieldDefinition(
             "Mandatory_Text_" + run,
             true,
@@ -601,10 +604,6 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       boolean mandatory,
       FieldType type,
       FormFieldSource<? extends FieldForm> source) {}
-
-  private static String passwordStringFieldName(String run) {
-    return "Password_String_" + run;
-  }
 
   private static String multiSelectChoiceFieldName(String run) {
     return "MultiSelect_Choice_" + run;

@@ -106,14 +106,14 @@ public class FormControllerTest extends SpringTransactionalTest {
     logoutAndLoginAs(u);
     RSForm form = createAnyForm(u);
     AjaxReturnObject<StringFieldForm> rc =
-        rsFormController.createStringField("", "false", "any", form.getId(), false);
-    rc = rsFormController.saveEditedStringField("def", "yes", "name", rc.getData().getId(), false);
+        rsFormController.createStringField("", "any", form.getId(), false);
+    rc = rsFormController.saveEditedStringField("def", "name", rc.getData().getId(), false);
     assertNotNull(rc.getData());
     assertNull(rc.getErrorMsg());
 
     // no name. should be rejected
     AjaxReturnObject<StringFieldForm> rc2 =
-        rsFormController.saveEditedStringField("def", "yes", "", rc.getData().getId(), false);
+        rsFormController.saveEditedStringField("def", "", rc.getData().getId(), false);
     assertNull(rc2.getData());
     assertNotNull(rc2.getErrorMsg());
   }
