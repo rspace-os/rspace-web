@@ -92,7 +92,7 @@ jobs:
           - { project: webkit, shard: 2, shards: 2, browsers: webkit, select: webkit }
           - { project: mobile, shard: 1, shards: 1, browsers: chromium, select: "mobile,api" }
           - { project: desktop, shard: 1, shards: 1, browsers: chromium firefox webkit, select: "", cloud: true }
-          # Opt-in: needs the Docker conversion stack started below.
+          # Starts the sidecar and Gotenberg containers below; no other project needs them.
           - { project: conversion, shard: 1, shards: 1, browsers: chromium, select: conversion }
     services:
       db:

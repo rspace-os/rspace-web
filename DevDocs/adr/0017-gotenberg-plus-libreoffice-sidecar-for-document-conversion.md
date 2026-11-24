@@ -1,3 +1,7 @@
+---
+status: accepted
+---
+
 # HTTP-only document conversion replaces Aspose with Gotenberg and JODConverter
 
 The target architecture removes Aspose (the CLI jar and the hosted microservice). The first
