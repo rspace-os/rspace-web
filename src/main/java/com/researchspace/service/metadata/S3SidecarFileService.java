@@ -19,6 +19,9 @@ import com.researchspace.service.RoRService;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import com.researchspace.service.inventory.DataCiteRelationType;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
@@ -34,9 +37,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * Composes metadata sidecars for an S3 filestore folder and writes them back to S3. Deliberately
- * not a {@code *Manager}: no DAO, so it runs outside a DB transaction; the Linked documents come
- * from {@link NfsFieldLinkManager} in its own. Phase 1: folder-level, current user as sole creator,
- * DataCite the only format.
+ * not a {@code *Manager}: no DAO, so it runs outside a DB transaction; the Linked documents and the
+ * linking Inventory items come from {@link NfsFieldLinkManager} and {@link InventoryLinkManager},
+ * each in its own. Phase 1: folder-level, current user as sole creator, DataCite the only format.
  */
 @Service
 @AllArgsConstructor
@@ -55,6 +58,7 @@ public class S3SidecarFileService {
   private final MessageSourceUtils messages;
   private final RoRService rorService;
   private final NfsFieldLinkManager nfsFieldLinkManager;
+  private final InventoryLinkManager inventoryLinkManager;
 
   /** Composes and returns a sidecar for the folder without writing anything. */
   public GeneratedSidecarFile preview(Long filestoreId, String folderPath, User user) {
@@ -94,6 +98,15 @@ public class S3SidecarFileService {
   private GeneratedSidecarFile compose(
       S3Utilities s3, String prefix, User user, NfsFileSystem fileSystem) {
     List<SidecarFileEntry> files = listFiles(s3, prefix);
+    List<String> paths = new ArrayList<>(List.of(prefix));
+    files.forEach(file -> paths.add(file.key()));
+    List<String> documentIds = readableDocumentIds(fileSystem, paths, user);
+    List<FilestoreLinkingItem> items =
+        inventoryLinkManager.findItemsLinkingFilestorePaths(fileSystem, paths, user).stream()
+            .filter(FilestoreLinkingItem::isReadable)
+            .toList();
+    String serverUrl =
+        documentIds.isEmpty() && items.isEmpty() ? null : propertyHolder.getServerUrl();
     SidecarFileGenerationContext ctx =
         SidecarFileGenerationContext.builder()
             .user(user)
@@ -107,27 +120,43 @@ public class S3SidecarFileService {
             .bucketName(s3.getBucketName())
             .folderPath(prefix)
             .files(files)
-            .linkedDocumentUrls(linkedDocumentUrls(fileSystem, prefix, files, user))
+            .linkedDocumentUrls(
+                documentIds.stream()
+                    .map(id -> ArchiveUtils.getAbsoluteGlobalLink(id, serverUrl))
+                    .toList())
+            .linkingItemIdentifiers(linkingItemIdentifiers(items, serverUrl))
             .build();
     return sidecarFileGenerator.generate(ctx);
   }
 
-  /** Readable documents linking the folder itself or one of its files, once each, oldest first. */
-  private List<String> linkedDocumentUrls(
-      NfsFileSystem fileSystem, String prefix, List<SidecarFileEntry> files, User user) {
-    List<String> paths = new ArrayList<>(List.of(prefix));
-    files.forEach(file -> paths.add(file.key()));
-    List<String> globalIds =
-        nfsFieldLinkManager.getLinkedDocuments(fileSystem, paths, user).stream()
-            // documents the user cannot read come back as placeholders without a Global ID
-            .filter(info -> info.getOid() != null)
-            .map(info -> info.getOid().getIdString())
-            .toList();
-    if (globalIds.isEmpty()) {
-      return globalIds;
-    }
-    String serverUrl = propertyHolder.getServerUrl();
-    return globalIds.stream().map(id -> ArchiveUtils.getAbsoluteGlobalLink(id, serverUrl)).toList();
+  /**
+   * Global IDs of the readable documents linking the folder itself or one of its files, once each,
+   * oldest first.
+   */
+  private List<String> readableDocumentIds(
+      NfsFileSystem fileSystem, List<String> paths, User user) {
+    return nfsFieldLinkManager.getLinkedDocuments(fileSystem, paths, user).stream()
+        // documents the user cannot read come back as placeholders without a Global ID
+        .filter(info -> info.getOid() != null)
+        .map(info -> info.getOid().getIdString())
+        .toList();
+  }
+
+  /**
+   * One entry per readable linking Inventory item and relation, the inverse of the link's relation,
+   * since the record describes the folder (ADR 0016).
+   */
+  private static List<SidecarRelatedIdentifier> linkingItemIdentifiers(
+      List<FilestoreLinkingItem> items, String serverUrl) {
+    return items.stream()
+        .map(
+            item ->
+                new SidecarRelatedIdentifier(
+                    ArchiveUtils.getAbsoluteGlobalLink(item.globalId(), serverUrl),
+                    DataCiteRelationType.inverseInDataCite43(item.relationType())))
+        // two relations of one item can invert to the same value
+        .distinct()
+        .toList();
   }
 
   /** Files in the folder, skipping subfolders and any existing sidecar, with full S3 keys. */

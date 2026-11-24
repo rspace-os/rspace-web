@@ -22,6 +22,11 @@ that resolves, and Inventory items now refer to one through the same Link field.
    across every user's filestore. A path with a `.` or `..` segment is refused, like a blank or
    root path, rather than resolved: that rule keeps segments as written, as S3 keys are, and
    resolving them here would store Inventory paths differently from document ones.
+   *Amended 2026-11-23:* the linked-documents endpoint adds a missing leading slash to the request
+   and derives one path from it for the login check, the documents and the items alike, so a
+   request without the leading slash still finds the link, and a doubled leading slash names
+   another S3 key, which no Inventory link stores. The lookup compares paths exactly and asserts
+   read access to the filesystem, as ADR 0015 point 2 decides for documents.
 3. Only the owner of a filestore can link through it, and only the owner is told its name by the
    link target summary; anyone else, and an unknown filestore, get the identical redacted answer
    (ADR 0002). Read access to the filesystem was rejected as the rule: filestores are personal
@@ -35,6 +40,14 @@ that resolves, and Inventory items now refer to one through the same Link field.
 5. A template's default link cannot be a Filestore item: it would stamp one user's personal
    filestore onto every user's items. PIDINST registration leaves such a link out, because a
    registry entry needs an address that resolves. CSV import does not create one.
+6. In the metadata sidecar an Inventory item carries the inverse of its link's relation, because
+   the record describes the folder and not the item: an instrument that is the source of the data
+   appears as what the data is derived from. An inverse that the record's schema version (DataCite
+   4.3) does not list, and a relation that has none, are written as `IsReferencedBy`: a record that
+   validates was preferred to the exact relation, which stays in RSpace. Only items the generating
+   user can read in full are named; the filestores API shows the others as placeholders with only
+   their kind and their owner's name. As for documents (ADR 0015 point 5), "can read" is the
+   user's whole read right.
 
 ## Consequences
 

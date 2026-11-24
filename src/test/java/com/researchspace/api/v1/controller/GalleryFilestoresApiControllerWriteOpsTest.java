@@ -62,6 +62,8 @@ import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
@@ -71,6 +73,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +81,8 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -102,6 +107,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   @Mock private IPropertyHolder propertyHolder;
   @Mock private S3SidecarFileService s3SidecarFileService;
   @Mock private NfsFieldLinkManager nfsFieldLinkManager;
+  @Mock private InventoryLinkManager inventoryLinkManager;
   @Mock private User user;
 
   private final Long validFilestorePathId = 1L;
@@ -137,6 +143,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.properties = propertyHolder;
     controller.s3SidecarFileService = s3SidecarFileService;
     controller.nfsFieldLinkManager = nfsFieldLinkManager;
+    controller.inventoryLinkManager = inventoryLinkManager;
     controller.metadataSidecarFileEnabled = true;
     controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
 
@@ -844,6 +851,117 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertEquals("Grace Hopper", result.get(1).getOwnerFullName());
   }
 
+  @Test
+  void getFilestoreItemLinkedDocuments_appendsTheLinkingInventoryItemsAfterTheDocuments() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user);
+    store.setPath("/data");
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    RecordInformation doc = new RecordInformation();
+    doc.setId(11L);
+    doc.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
+    doc.setName("Doc one");
+    doc.setOwnerFullName("Ada Lovelace");
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of(doc));
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(
+            store.getFileSystem(), List.of("data/XRD/run.dat"), user))
+        .thenReturn(
+            List.of(
+                new FilestoreLinkingItem("SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"),
+                new FilestoreLinkingItem(null, null, "INSTRUMENT", "Grace Hopper", null)));
+
+    List<ApiGalleryFilestoreLinkedDocument> result =
+        controller.getFilestoreItemLinkedDocuments(1L, "/XRD/run.dat", user);
+
+    assertEquals(3, result.size());
+    assertEquals("SD11", result.get(0).getGlobalId());
+    assertEquals("SA7", result.get(1).getGlobalId());
+    assertEquals(7L, result.get(1).getId());
+    assertEquals("Buffer A", result.get(1).getName());
+    assertEquals("SAMPLE", result.get(1).getType());
+    // an item the caller cannot read gives away its kind and its owner only
+    assertNull(result.get(2).getId());
+    assertNull(result.get(2).getGlobalId());
+    assertNull(result.get(2).getName());
+    assertEquals("INSTRUMENT", result.get(2).getType());
+    assertEquals("Grace Hopper", result.get(2).getOwnerFullName());
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_listsAnItemOnceWhateverRelationsItsLinksHold() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user);
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    FilestoreLinkingItem hidden =
+        new FilestoreLinkingItem(null, null, "INSTRUMENT", "Grace Hopper", null);
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(
+            store.getFileSystem(), List.of("run.dat"), user))
+        .thenReturn(
+            List.of(
+                hidden,
+                hidden,
+                new FilestoreLinkingItem("SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"),
+                new FilestoreLinkingItem(
+                    "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "References")));
+
+    List<ApiGalleryFilestoreLinkedDocument> result =
+        controller.getFilestoreItemLinkedDocuments(1L, "/run.dat", user);
+
+    // two items the caller cannot read stay two rows
+    assertThat(result)
+        .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
+        .containsExactly(null, null, "SA7");
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_looksDocumentsAndItemsUpByThePathTheirLinksStore() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user);
+    store.setPath("/data");
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    RecordInformation doc = new RecordInformation();
+    doc.setId(11L);
+    doc.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of(doc));
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(
+            store.getFileSystem(), List.of("data/XRD/run.dat"), user))
+        .thenReturn(
+            List.of(
+                new FilestoreLinkingItem(
+                    "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf")));
+
+    // a link stores its path with a leading slash, whether or not the client sent one
+    List<ApiGalleryFilestoreLinkedDocument> result =
+        controller.getFilestoreItemLinkedDocuments(1L, "XRD/run.dat", user);
+
+    assertThat(result)
+        .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
+        .containsExactly("SD11", "SA7");
+  }
+
+  @Test
+  void getFilestoreItemLinkedDocuments_keepsADoubledLeadingSlashAsItsOwnKey() {
+    NfsFileStore store = GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(1L, "s3", user);
+    store.setPath("/data");
+    when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
+    RecordInformation doc = new RecordInformation();
+    doc.setId(11L);
+    doc.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
+    // the document index keeps data//run.dat, another S3 key than data/run.dat
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "//run.dat", user)).thenReturn(List.of(doc));
+    // an Inventory link to the single-slash key data/run.dat
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(
+            eq(store.getFileSystem()), anyCollection(), eq(user)))
+        .thenAnswer(
+            call ->
+                call.<Collection<String>>getArgument(1).contains("data/run.dat")
+                    ? List.of(
+                        new FilestoreLinkingItem(
+                            "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"))
+                    : List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "//run.dat", user))
+        .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
+        .containsExactly("SD11");
+  }
+
   private NfsClient loginToIrodsFilestore() {
     NfsFileStore store = GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(1L, "i", user);
     when(nfsManager.getNfsFileStore(1L)).thenReturn(store);
@@ -866,6 +984,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         ExternalApiAuthorizationException.class,
         () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verifyNoInteractions(inventoryLinkManager);
   }
 
   private static NfsFolderDetails folderListing(NfsResourceDetails... content) {
@@ -883,6 +1002,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThrows(
         NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verifyNoInteractions(inventoryLinkManager);
   }
 
   @Test
@@ -897,6 +1017,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         NotFoundException.class,
         () -> controller.getFilestoreItemLinkedDocuments(1L, "/a.dat", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verifyNoInteractions(inventoryLinkManager);
     verify(client).closeSession();
   }
 
@@ -975,6 +1096,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThrows(
         NotFoundException.class, () -> controller.getFilestoreItemLinkedDocuments(1L, "/", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verifyNoInteractions(inventoryLinkManager);
   }
 
   @Test
@@ -992,6 +1114,24 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "/test/", user)).isEmpty();
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"/data", ""})
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksThePathTheLinksStore(String basePath)
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    nfsManager.getNfsFileStore(1L).setPath(basePath);
+    // as sent, without its leading slash, the path names another item: /dataXRD/run.dat, or under
+    // an empty base, where both forms normalise alike, a path relative to the login's home
+    when(client.queryForNfsFolder(atPath(basePath + "/XRD")))
+        .thenReturn(folderListing(new NfsFileDetails("run.dat")));
+    NfsFileDetails readable = new NfsFileDetails("run.dat");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(atPath(basePath + "/XRD/run.dat"))).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "XRD/run.dat", user)).isEmpty();
+  }
+
   @Test
   void getFilestoreItemLinkedDocuments_refusedWhenFilestoresDisabled() {
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(false);
@@ -1000,5 +1140,6 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         UnsupportedOperationException.class,
         () -> controller.getFilestoreItemLinkedDocuments(1L, "/a", user));
     verifyNoInteractions(nfsFieldLinkManager);
+    verifyNoInteractions(inventoryLinkManager);
   }
 }

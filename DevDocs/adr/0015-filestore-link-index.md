@@ -22,6 +22,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    `data/a//b` or `Data/a` name different objects. Filestores are per user and point at arbitrary base paths of one filesystem, and a
    filestore's path cannot change after creation, so the absolute path is safe to denormalise and
    makes "who links this S3 key" one indexed equality query across every user's filestore.
+   *Amended 2026-11-23:* paths compare exactly, trailing spaces included: S3 keys keep them and the
+   columns' binary collation ignores them, so every lookup by path compares the matched path again
+   after its indexed query. A lookup by filesystem and paths also asserts the caller's read access
+   to the filesystem itself, whichever entry point calls it.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
    editor, and cancelling an edit re-reads the saved content.
 4. A link whose filestore id does not exist in this instance is skipped, not failed: archive imports

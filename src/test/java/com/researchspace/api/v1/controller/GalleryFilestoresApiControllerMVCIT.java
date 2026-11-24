@@ -8,7 +8,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreLinkedDocument;
+import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -294,6 +300,52 @@ public class GalleryFilestoresApiControllerMVCIT extends API_MVC_TestBase {
       assertThat(rows)
           .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
           .containsExactly(doc.getGlobalIdentifier());
+    } finally {
+      // the database is cleaned only after the class, and testGetFilesystems expects no active one
+      fs.setDisabled(true);
+      nfsManager.saveNfsFileSystem(fs);
+    }
+  }
+
+  @Test
+  public void linkedDocuments_alsoListsTheInventoryItemWhoseLinkFieldTargetsTheItem()
+      throws Exception {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsManager.saveNfsFileSystem(fs);
+    try {
+      NfsFileStore store = nfsManager.createAndSaveNewFileStore(fs.getId(), "s3", "/data", anyUser);
+      ApiSampleWithFullSubSamples sample = createBasicSampleForUser(anyUser);
+      ApiInventoryLink link = new ApiInventoryLink();
+      link.setRelationType("IsSourceOf");
+      link.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(store.getId(), "/XRD/run.dat"));
+      ApiExtraField field = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+      field.setName("Raw data");
+      field.setNewFieldRequest(true);
+      field.setLink(link);
+      ApiSample update = new ApiSample();
+      update.setId(sample.getId());
+      update.setExtraFields(List.of(field));
+      sampleApiMgr.updateApiSample(update, anyUser);
+
+      MvcResult result =
+          mockMvc
+              .perform(
+                  createBuilderForGet(
+                          API_VERSION.ONE,
+                          apiKey,
+                          "/gallery/filestores/" + store.getId() + "/linkedDocuments",
+                          anyUser)
+                      .param("remotePath", "/XRD/run.dat"))
+              .andExpect(status().isOk())
+              .andReturn();
+
+      assertNull(result.getResolvedException());
+      List<ApiGalleryFilestoreLinkedDocument> rows =
+          mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
+      assertEquals(1, rows.size());
+      assertEquals(sample.getGlobalId(), rows.get(0).getGlobalId());
+      assertEquals("SAMPLE", rows.get(0).getType());
+      assertEquals(sample.getName(), rows.get(0).getName());
     } finally {
       // the database is cleaned only after the class, and testGetFilesystems expects no active one
       fs.setDisabled(true);

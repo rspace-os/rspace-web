@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.model.User;
 import java.time.Year;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.Value;
 import org.springframework.stereotype.Component;
@@ -72,17 +73,25 @@ public class DataCiteYamlSidecarFileGenerator {
             new Valued<>(orcidId), new Valued<>("https://orcid.org"), new Valued<>("ORCID")));
   }
 
-  /** One entry per Linked document, or null (omitted) when there is none. */
+  /**
+   * One entry per Linked document, then one per linking Inventory item and relation, or null
+   * (omitted) when there is none.
+   */
   private List<RelatedIdentifier> relatedIdentifiersFor(SidecarFileGenerationContext ctx) {
-    if (ctx.getLinkedDocumentUrls() == null || ctx.getLinkedDocumentUrls().isEmpty()) {
-      return null;
-    }
-    return ctx.getLinkedDocumentUrls().stream()
-        .map(
-            url ->
-                new RelatedIdentifier(
-                    new Valued<>(url), new Valued<>("URL"), new Valued<>("IsDocumentedBy")))
-        .toList();
+    List<RelatedIdentifier> related =
+        Stream.concat(
+                Stream.ofNullable(ctx.getLinkedDocumentUrls())
+                    .flatMap(List::stream)
+                    .map(url -> new SidecarRelatedIdentifier(url, "IsDocumentedBy")),
+                Stream.ofNullable(ctx.getLinkingItemIdentifiers()).flatMap(List::stream))
+            .map(
+                id ->
+                    new RelatedIdentifier(
+                        new Valued<>(id.url()),
+                        new Valued<>("URL"),
+                        new Valued<>(id.relationType())))
+            .toList();
+    return related.isEmpty() ? null : related;
   }
 
   /** One {@code relatedItem} per S3 object, or null (omitted) when the folder is empty. */

@@ -225,7 +225,7 @@ class DataCiteYamlSidecarFileGeneratorTest {
   }
 
   @Test
-  void omitsRelatedIdentifiersWhenNoDocumentLinksTheFolder() throws Exception {
+  void omitsRelatedIdentifiersWhenNothingLinksTheFolder() throws Exception {
     SidecarFileGenerationContext ctx =
         SidecarFileGenerationContext.builder()
             .user(user())
@@ -234,11 +234,40 @@ class DataCiteYamlSidecarFileGeneratorTest {
             .folderPath("XRD-Experiments")
             .files(List.of())
             .linkedDocumentUrls(List.of())
+            .linkingItemIdentifiers(List.of())
             .build();
 
     assertTrue(
         yaml.readTree(generator.generate(ctx).getContent())
             .path("relatedIdentifiers")
             .isMissingNode());
+  }
+
+  @Test
+  void listsLinkingInventoryItemsAfterTheDocumentsWithTheirOwnRelation() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments")
+            .files(List.of())
+            .linkedDocumentUrls(List.of("https://rspace.example.com/globalId/SD11"))
+            .linkingItemIdentifiers(
+                List.of(
+                    new SidecarRelatedIdentifier(
+                        "https://rspace.example.com/globalId/IN3", "IsDerivedFrom")))
+            .build();
+
+    JsonNode related =
+        yaml.readTree(generator.generate(ctx).getContent()).path("relatedIdentifiers");
+
+    assertThat(related).hasSize(2);
+    assertEquals("IsDocumentedBy", related.path(0).path("relationType").path("value").asText());
+    assertEquals(
+        "https://rspace.example.com/globalId/IN3",
+        related.path(1).path("relatedIdentifier").path("value").asText());
+    assertEquals("URL", related.path(1).path("relatedIdentifierType").path("value").asText());
+    assertEquals("IsDerivedFrom", related.path(1).path("relationType").path("value").asText());
   }
 }

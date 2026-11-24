@@ -5,6 +5,8 @@ import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -72,4 +74,15 @@ public interface InventoryLinkManager {
    */
   ApiInventoryLinkTargetSummary getFilestoreTargetSummary(
       Long filestoreId, String remotePath, User actor);
+
+  /**
+   * The Inventory items whose Link field targets any of the absolute paths on the filesystem,
+   * through any user's filestore, once the actor's read access to the filesystem is asserted. Paths
+   * are normalised first. One row per item and relation type, ordered by Global ID (prefix, then
+   * number), then relation. Items in the trash and templates are left out. An item the actor cannot
+   * read in full is a single placeholder row: its kind and its owner's name, no Global ID, no name,
+   * no relation, as the linked-documents lookup does for documents.
+   */
+  List<FilestoreLinkingItem> findItemsLinkingFilestorePaths(
+      NfsFileSystem fileSystem, Collection<String> absolutePaths, User actor);
 }
