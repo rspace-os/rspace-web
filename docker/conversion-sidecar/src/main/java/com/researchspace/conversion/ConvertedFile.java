@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -71,7 +72,7 @@ final class ConvertedFile implements AutoCloseable {
   }
 
   void transferTo(OutputStream output) throws IOException {
-    try (var input = Files.newInputStream(file)) {
+    try (var input = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
       if (deadline != null) {
         deadline.resume(() -> {
           try {

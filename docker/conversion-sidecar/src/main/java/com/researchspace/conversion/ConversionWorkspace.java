@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 final class ConversionWorkspace {
   private final ConverterProperties properties;
 
+  /** LibreOffice looks for its pipe as {@code /tmp/OSL_PIPE_<uid>_<name>}. */
+  static String pipeAliasPrefix() throws IOException {
+    return "OSL_PIPE_" + Files.getAttribute(Path.of("/proc/self"), "unix:uid") + "_";
+  }
+
   ConversionWorkspace(ConverterProperties properties) {
     this.properties = properties;
   }
@@ -21,7 +26,7 @@ final class ConversionWorkspace {
     clean(
         Path.of(System.getProperty("java.io.tmpdir")),
         "conversion-upload-",
-        "OSL_PIPE_10001_rspace-");
+        pipeAliasPrefix() + "rspace-");
     Files.createDirectories(properties.workingDirectory());
   }
 

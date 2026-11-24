@@ -7,6 +7,8 @@ import java.nio.file.StandardCopyOption;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,8 @@ class GotenbergProxy {
 
   private final ConverterProperties properties;
   private final RestClient client;
+
+  private static final Logger LOG = LoggerFactory.getLogger(GotenbergProxy.class);
 
   GotenbergProxy(ConverterProperties properties) {
     this.properties = properties;
@@ -61,8 +65,7 @@ class GotenbergProxy {
           .getStatusCode()
           .is2xxSuccessful();
     } catch (RuntimeException e) {
-      org.slf4j.LoggerFactory.getLogger(GotenbergProxy.class)
-          .warn("Gotenberg readiness check failed", e);
+      LOG.warn("Gotenberg readiness check failed", e);
       return false;
     }
   }
@@ -125,10 +128,7 @@ class GotenbergProxy {
           .body(body)
           .exchange((request, response) -> {
             if (response.getStatusCode() != HttpStatus.OK) {
-              throw new ConversionException(
-                  HttpStatus.BAD_GATEWAY,
-                  ConversionError.SERVICE_UNAVAILABLE,
-                  "The PDF converter rejected the request");
+              throw upstreamFailure(response.getStatusCode().value());
             }
             if (!MediaType.APPLICATION_PDF.isCompatibleWith(
                 response.getHeaders().getContentType())) {
@@ -154,12 +154,10 @@ class GotenbergProxy {
       completed = true;
       return new ConvertedFile(directory, output, MediaType.APPLICATION_PDF_VALUE);
     } catch (ConversionException e) {
-      org.slf4j.LoggerFactory.getLogger(GotenbergProxy.class)
-          .warn("Gotenberg returned an invalid conversion result", e);
+      LOG.warn("Gotenberg returned an invalid conversion result", e);
       throw e;
     } catch (Exception e) {
-      org.slf4j.LoggerFactory.getLogger(GotenbergProxy.class)
-          .warn("Gotenberg conversion failed", e);
+      LOG.warn("Gotenberg conversion failed", e);
       throw new ConversionException(
           HttpStatus.BAD_GATEWAY,
           ConversionError.SERVICE_UNAVAILABLE,
@@ -170,6 +168,25 @@ class GotenbergProxy {
         deleteQuietly(directory);
       }
     }
+  }
+
+  /** Gotenberg answers 503 when its own request timeout expires and 429 when its queue is full. */
+  static ConversionException upstreamFailure(int status) {
+    return switch (status) {
+      case 429 ->
+          new ConversionException(
+              HttpStatus.TOO_MANY_REQUESTS,
+              ConversionError.SERVICE_BUSY,
+              "The PDF converter is busy");
+      case 503, 504 ->
+          new ConversionException(
+              HttpStatus.GATEWAY_TIMEOUT, ConversionError.TIMEOUT, "The PDF converter timed out");
+      default ->
+          new ConversionException(
+              HttpStatus.BAD_GATEWAY,
+              ConversionError.SERVICE_UNAVAILABLE,
+              "The PDF converter rejected the request");
+    };
   }
 
   private void copyBounded(java.io.InputStream input, Path output) throws IOException {
@@ -194,8 +211,7 @@ class GotenbergProxy {
     try {
       new ConvertedFile(directory, directory, "").close();
     } catch (IOException e) {
-      org.slf4j.LoggerFactory.getLogger(GotenbergProxy.class)
-          .warn("Could not remove a failed PDF conversion directory", e);
+      LOG.warn("Could not remove a failed PDF conversion directory", e);
     }
   }
 

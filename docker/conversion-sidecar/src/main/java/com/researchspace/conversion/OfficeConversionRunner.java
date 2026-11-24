@@ -4,7 +4,10 @@ import com.sun.star.document.MacroExecMode;
 import com.sun.star.document.UpdateDocMode;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 import java.util.UUID;
@@ -71,7 +74,9 @@ class OfficeConversionRunner {
         deadline.check();
       } else {
         // A stop that had to kill the outer bwrap can leave its sandbox behind.
-        awaitTermination(processes.terminate());
+        var terminated = processes.terminate();
+        deadline.cleanupBeforeRelease(terminated);
+        awaitTermination(terminated);
         if (!completed) {
           deleteQuietly(requestDirectory);
         }
@@ -145,13 +150,21 @@ class OfficeConversionRunner {
       deadline.check();
       convertDocument(input, inputExtension, output, outputExtension, manager);
       deadline.check();
-      if (!Files.isRegularFile(output)) {
+      // The sandbox controls the request directory, so never follow a link it left as output.
+      BasicFileAttributes outputAttributes;
+      try {
+        outputAttributes =
+            Files.readAttributes(output, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+      } catch (NoSuchFileException e) {
+        outputAttributes = null;
+      }
+      if (outputAttributes == null || !outputAttributes.isRegularFile()) {
         throw new ConversionException(
             HttpStatus.BAD_GATEWAY,
             ConversionError.OUTPUT_INVALID,
             "The converted file is missing");
       }
-      if (Files.size(output) > properties.maxOutputBytes()) {
+      if (outputAttributes.size() > properties.maxOutputBytes()) {
         throw new ConversionException(
             HttpStatus.PAYLOAD_TOO_LARGE,
             ConversionError.OUTPUT_TOO_LARGE,
@@ -253,9 +266,8 @@ class OfficeConversionRunner {
 
   private Path createPipeAlias(Path requestDirectory, String pipeName) {
     try {
-      String uid = Files.getAttribute(Path.of("/proc/self"), "unix:uid").toString();
       Path socketDirectory = Path.of("/tmp");
-      Path alias = socketDirectory.resolve("OSL_PIPE_" + uid + "_" + pipeName);
+      Path alias = socketDirectory.resolve(ConversionWorkspace.pipeAliasPrefix() + pipeName);
       Path socket = requestDirectory.resolve("ipc").resolve("OSL_PIPE_" + pipeName);
       Files.createSymbolicLink(alias, socket.toAbsolutePath());
       return alias;
