@@ -68,7 +68,8 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.8.0</version>
+        <!-- 3.7.0 and later need Maven 3.9; CI builds with the repository's Maven 3.8.1 wrapper. -->
+        <version>3.6.1</version>
         <executions>
           <execution>
             <id>shared-office-archive-validator</id>
