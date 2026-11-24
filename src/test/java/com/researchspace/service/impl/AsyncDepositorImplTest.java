@@ -7,20 +7,33 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.researchspace.archive.ArchiveResult;
+import com.researchspace.files.service.FileStore;
+import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dmps.DMPSource;
+import com.researchspace.model.dmps.DMPUser;
+import com.researchspace.model.dmps.DmpDto;
+import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
+import com.researchspace.model.repository.RepoDepositMeta;
+import com.researchspace.repository.spi.IRepository;
+import com.researchspace.repository.spi.LicenseDefs;
 import com.researchspace.repository.spi.RepositoryOperationResult;
+import com.researchspace.repository.spi.SubmissionMetadata;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.DMPManager;
+import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
@@ -37,8 +50,10 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -55,6 +70,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,6 +80,10 @@ public class AsyncDepositorImplTest {
   @Mock CommunicationManager comm;
   private @Mock RaIDServiceClientAdapter mockRaidServiceClientAdapter;
   private @Mock DMPUpdateHandler dmpUpdateHandler;
+  private @Mock IntegrationsHandler integrationsHandler;
+  private @Mock DMPManager dmpManager;
+  private @Mock FileStore fileStore;
+  private @Mock IRepository repository;
   AsyncDepositorImpl depositor;
 
   VelocityEngine engine;
@@ -667,6 +687,119 @@ public class AsyncDepositorImplTest {
                 configWithPlans(App.APP_DATAVERSE, 1L)));
     Mockito.verify(comm)
         .systemNotify(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
+  }
+
+  @Test
+  void twoTickedPlansOnDataverseAreDepositedWithoutPlanDoiAndBothAreReported() throws Exception {
+    givenDepositorWithPlans(plan(1L), plan(2L));
+    givenDepositSucceeds();
+    RepoDepositConfig cfg = depositConfigWithPlans(App.APP_DATAVERSE, 1L, 2L);
+
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(APP_DATAVERSE, "Dataverse", true),
+                anyUser,
+                repository,
+                cfg,
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+
+    assertTrue(result.isSucceeded());
+    ArgumentCaptor<SubmissionMetadata> metadata = ArgumentCaptor.forClass(SubmissionMetadata.class);
+    Mockito.verify(repository)
+        .submitDeposit(Mockito.any(), Mockito.any(), metadata.capture(), Mockito.any());
+    assertTrue(metadata.getValue().getDmpDoi().isEmpty());
+    Mockito.verify(dmpUpdateHandler)
+        .report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L, 2L)));
+  }
+
+  @Test
+  void twoTickedPlansOnZenodoStillFailTheDeposit() throws Exception {
+    givenDepositorWithPlans(plan(1L), plan(2L));
+
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(APP_ZENODO, "Zenodo", true),
+                anyUser,
+                repository,
+                depositConfigWithPlans(APP_ZENODO, 1L, 2L),
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+
+    assertFalse(result.isSucceeded());
+    Mockito.verifyNoInteractions(repository);
+  }
+
+  @Test
+  void oneTickedPlanSetsPlanDoiOnDepositMetadata() throws Exception {
+    DMPUser plan = plan(1L);
+    givenDepositorWithPlans(plan);
+    File dmpJson = File.createTempFile("dmp", ".json");
+    Files.writeString(
+        dmpJson.toPath(),
+        "{\"items\":[{\"dmp\":{\"dmp_id\":{\"identifier\":\"https://doi.org/10.48321/D1X\"}}}]}");
+    when(fileStore.findFile(Mockito.any())).thenReturn(dmpJson);
+    givenDepositSucceeds();
+
+    depositor
+        .depositArchive(
+            new App(APP_DATAVERSE, "Dataverse", true),
+            anyUser,
+            repository,
+            depositConfigWithPlans(App.APP_DATAVERSE, 1L),
+            null,
+            CompletableFuture.completedFuture(new ArchiveResult()))
+        .get();
+
+    ArgumentCaptor<SubmissionMetadata> metadata = ArgumentCaptor.forClass(SubmissionMetadata.class);
+    Mockito.verify(repository)
+        .submitDeposit(Mockito.any(), Mockito.any(), metadata.capture(), Mockito.any());
+    assertEquals(Optional.of("https://doi.org/10.48321/D1X"), metadata.getValue().getDmpDoi());
+  }
+
+  private void givenDepositorWithPlans(DMPUser... plans) {
+    IntegrationInfo on = new IntegrationInfo();
+    on.setAvailable(true);
+    on.setEnabled(true);
+    IntegrationInfo off = new IntegrationInfo();
+    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.ARGOS_APP_NAME))
+        .thenReturn(off);
+    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.DMPONLINE_APP_NAME))
+        .thenReturn(off);
+    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.DMPTOOL_APP_NAME))
+        .thenReturn(on);
+    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(plans));
+    ReflectionTestUtils.setField(depositor, "integrationsHandler", integrationsHandler);
+    ReflectionTestUtils.setField(depositor, "dmpManager", dmpManager);
+    ReflectionTestUtils.setField(depositor, "fileStore", fileStore);
+  }
+
+  private void givenDepositSucceeds() throws Exception {
+    when(repository.submitDeposit(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenReturn(new RepositoryOperationResult(true, "done", null, null));
+  }
+
+  private DMPUser plan(long id) {
+    DMPUser plan =
+        new DMPUser(anyUser, new DmpDto("id" + id, "title" + id, DMPSource.DMP_TOOL, null, null));
+    ReflectionTestUtils.setField(plan, "id", id);
+    plan.setDmpDownloadFile(new EcatDocumentFile());
+    return plan;
+  }
+
+  private RepoDepositConfig depositConfigWithPlans(String appName, Long... planIds) {
+    RepoDepositConfig cfg = configWithPlans(appName, planIds);
+    RepoDepositMeta meta = new RepoDepositMeta();
+    meta.setAuthors(List.of());
+    meta.setContacts(List.of());
+    meta.setTags(List.of());
+    meta.setLicenseUrl(LicenseDefs.NO_LICENSE_URL);
+    cfg.setMeta(meta);
+    return cfg;
   }
 
   private RepositoryOperationResult dryadResult(String link) throws MalformedURLException {

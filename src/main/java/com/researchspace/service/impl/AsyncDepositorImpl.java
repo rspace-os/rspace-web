@@ -545,8 +545,15 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               dmpsForUser.stream()
                   .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
                   .collect(Collectors.toList());
-          if (dmpsToUpdate.size() != 1) {
+          if (dmpsToUpdate.isEmpty()
+              || (dmpsToUpdate.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName()))) {
             throw new NoSuchElementException("Could not find DMP with selected ID.");
+          }
+          // only Zenodo reads the plan DOI, and it takes one plan
+          if (dmpsToUpdate.size() > 1) {
+            log.info(
+                "{} plans selected, so no plan DOI is set on the deposit", dmpsToUpdate.size());
+            return metadata;
           }
 
           DMPUser selectedDMP = dmpsToUpdate.get(0);

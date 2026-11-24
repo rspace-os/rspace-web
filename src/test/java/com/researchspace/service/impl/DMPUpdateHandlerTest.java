@@ -168,6 +168,21 @@ class DMPUpdateHandlerTest {
   }
 
   @Test
+  void twoTickedPlansAreBothReportedInOrder() throws Exception {
+    DMPUser first = plan(1L, DMPSource.DMP_TOOL);
+    DMPUser second = plan(2L, DMPSource.DMP_TOOL);
+    DepositReport deposit = deposit(DOI, null);
+    givenPlans(first, second);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.report(first, deposit, user)).thenReturn(reported(first));
+    when(dmpToolReporter.report(second, deposit, user)).thenReturn(reported(second));
+
+    assertThat(handler.report(deposit, user, List.of(1L, 2L)))
+        .containsExactly(reported(first), reported(second));
+  }
+
+  @Test
   void idThatIsNotOneOfTheUsersPlansIsIgnored() throws Exception {
     givenPlans(plan(1L, DMPSource.DMP_TOOL));
 
