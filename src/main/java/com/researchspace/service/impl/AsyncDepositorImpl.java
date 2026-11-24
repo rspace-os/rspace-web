@@ -253,7 +253,11 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           buildDepositReport(result, app.getLabel(), repoDepositConfig.getAppName());
       List<PlanReportResult> planResults =
           dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
-      notifyDmpUpdateComplete(planResults, deposit, subject);
+      URL repositoryLink =
+          deposit.identifier() == null
+              ? null
+              : repositoryLink(result, repoDepositConfig.getAppName());
+      notifyDmpUpdateComplete(planResults, deposit, repositoryLink, subject);
     } catch (RuntimeException e) {
       log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
     }
@@ -265,11 +269,16 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     if (result.getDoiUrl() != null) {
       return new DepositReport(repositoryName, result.getDoiUrl(), null);
     }
-    URL accessUrl = result.getUrl();
-    if (accessUrl != null && App.APP_DRYAD.equals(appName)) {
-      accessUrl = getDryadPublicUrl(accessUrl);
+    return new DepositReport(repositoryName, null, repositoryLink(result, appName));
+  }
+
+  /** The deposit's repository link, with Dryad's edit link made public. */
+  private URL repositoryLink(RepositoryOperationResult result, String appName) {
+    URL link = result.getUrl();
+    if (link != null && App.APP_DRYAD.equals(appName)) {
+      return getDryadPublicUrl(link);
     }
-    return new DepositReport(repositoryName, null, accessUrl);
+    return link;
   }
 
   /**
@@ -350,7 +359,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   private void notifyDmpUpdateComplete(
-      List<PlanReportResult> planResults, DepositReport deposit, User subject) {
+      List<PlanReportResult> planResults, DepositReport deposit, URL repositoryLink, User subject) {
     if (planResults.isEmpty()) {
       return;
     }
@@ -370,6 +379,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("repo", escapeHtml(deposit.repositoryApp()));
     config.put(
         "doi", deposit.identifier() == null ? null : escapeHtml4(deposit.identifier().toString()));
+    config.put("repoLink", repositoryLink == null ? null : escapeHtml4(repositoryLink.toString()));
     config.put("msg", messages);
 
     // drop trailing plans until the message fits, so it is never cut off mid-tag

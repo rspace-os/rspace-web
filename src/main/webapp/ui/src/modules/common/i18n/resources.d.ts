@@ -6721,7 +6721,7 @@ export default interface Resources {
     "email": {
       "notification": {
         "dmpUpdateCompleteNotification": {
-          "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>. You can add it to a plan by hand.",
+          "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>.",
           "failedNoValue": "The plan could not be updated: {0}.",
           "intro": "RSpace tried to add your deposit on \"{0}\" to the plans you selected.",
           "morePlans": "And {0, plural, one {# more plan} other {# more plans}} not listed here.",
@@ -6730,6 +6730,7 @@ export default interface Resources {
           "nothingToSend": "{0} returned no DOI and no link, so nothing was added.",
           "planHeading": "{0} ({1})",
           "platformOff": "{0} is switched off, so the plan was not updated.",
+          "repositoryLink": "You can open your deposit on {0} at <a href=\"{1}\">{1}</a>.",
           "unexpectedError": "an unexpected error occurred; you can add the link to the plan by hand",
           "valueFailed": "<a href=\"{0}\">{0}</a> could not be added: {1}.",
           "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."

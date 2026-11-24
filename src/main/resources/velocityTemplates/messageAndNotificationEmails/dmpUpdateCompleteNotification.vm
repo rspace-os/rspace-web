@@ -12,6 +12,11 @@ $msg.format("email.notification.dmpUpdateCompleteNotification.intro", [$repo])
 $msg.format("email.notification.dmpUpdateCompleteNotification.doiLink", [$doi])
 </p>
 #end
+#if($repoLink)
+<p>
+$msg.format("email.notification.dmpUpdateCompleteNotification.repositoryLink", [$repo, $repoLink])
+</p>
+#end
 <p>
 $msg.getMessage("email.common.dontReply")
 </p>

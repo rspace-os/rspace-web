@@ -499,8 +499,10 @@ public class AsyncDepositorImplTest {
             "DMPTool is switched off, so the plan was not updated.",
             "DMPTool is not connected, so the plan was not updated.",
             "The DOI link for this deposit is <a href=\"https://doi.org/10.1/x\">"
-                + "https://doi.org/10.1/x</a>. You can add it to a plan by hand.")
-        .doesNotContain("Written <plan>");
+                + "https://doi.org/10.1/x</a>.",
+            "You can open your deposit on Dataverse at <a href=\"https://dv.example/ds\">"
+                + "https://dv.example/ds</a>.")
+        .doesNotContain("Written <plan>", "by hand");
   }
 
   @Test
@@ -527,7 +529,7 @@ public class AsyncDepositorImplTest {
         .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
     assertThat(messages.getAllValues().get(1))
         .contains("was added to the plan.")
-        .doesNotContain("The DOI link for this deposit is");
+        .doesNotContain("The DOI link for this deposit is", "You can open your deposit");
   }
 
   @Test
