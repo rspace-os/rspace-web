@@ -101,11 +101,10 @@ export const DEFAULT_REPO_CONFIG = {
   },
   depositToRepository: false as boolean,
   exportToRaid: false,
+  selectedDMPs: [] as Array<DMPUserInternalId>,
 };
 
-export type RepoDetails = typeof DEFAULT_REPO_CONFIG & {
-  selectedDMPs?: Array<DMPUserInternalId>;
-};
+export type RepoDetails = typeof DEFAULT_REPO_CONFIG;
 
 /*
  * The backend's RepoDepositMeta requires authors, contacts and a subject for
