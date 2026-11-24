@@ -526,6 +526,35 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
+  void hostileTextIsEscapedInPlanNotification() throws Exception {
+    String hostileLink = "https://repo.example/ds?x=\"><script>alert(1)</script>";
+    when(dmpUpdateHandler.report(new DepositReport("Repo<b>", null, null), anyUser, List.of(1L)))
+        .thenReturn(
+            List.of(
+                reported(
+                    "A plan",
+                    new ValueOutcome(
+                        ReportedValueKind.ACCESS_URL, hostileLink, false, "<img src=x>."))));
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", null, null),
+        new App(APP_DATAVERSE, "Repo<b>", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L));
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    assertThat(messages.getAllValues().get(1))
+        .contains(
+            "Repo&lt;b&gt;",
+            "&lt;img src=x&gt;.",
+            "https://repo.example/ds?x=&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;")
+        .doesNotContain("Repo<b>", "<img", "<script>");
+  }
+
+  @Test
   void planNotificationHasNoDoiParagraphWithoutDoi() throws Exception {
     URL landing = new URL("https://dv.example/ds");
     when(dmpUpdateHandler.report(
