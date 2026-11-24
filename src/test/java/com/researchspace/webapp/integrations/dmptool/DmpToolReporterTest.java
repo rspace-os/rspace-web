@@ -87,7 +87,7 @@ class DmpToolReporterTest {
     when(provider.addRelatedIdentifierToDMP("123", "doi", DOI, user))
         .thenReturn(
             ServiceOperationResult.fromOptionalError(
-                Optional.of("DMPTool refused the update (error 403)")));
+                Optional.of("DMPTool refused the update (error 403).")));
 
     PlanReportResult result =
         reporter.report(plan, new DepositReport("Repo", new URL(DOI), null), user);
@@ -98,7 +98,7 @@ class DmpToolReporterTest {
                 ReportedValueKind.IDENTIFIER,
                 DOI,
                 false,
-                "DMPTool refused the update (error 403)")),
+                "DMPTool refused the update (error 403).")),
         result.values());
   }
 
@@ -114,10 +114,7 @@ class DmpToolReporterTest {
     assertEquals(
         List.of(
             new ValueOutcome(
-                ReportedValueKind.IDENTIFIER,
-                DOI,
-                false,
-                "an unexpected error occurred; you can add the link to the plan by hand")),
+                ReportedValueKind.IDENTIFIER, DOI, false, "An unexpected error occurred.")),
         result.values());
   }
 }

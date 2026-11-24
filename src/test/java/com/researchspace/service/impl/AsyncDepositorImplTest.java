@@ -482,7 +482,7 @@ public class AsyncDepositorImplTest {
                 reported(
                     "Written <plan>", new ValueOutcome(IDENTIFIER, doi.toString(), true, null)),
                 reported(
-                    "Failed plan", new ValueOutcome(IDENTIFIER, doi.toString(), false, "denied")),
+                    "Failed plan", new ValueOutcome(IDENTIFIER, doi.toString(), false, "Denied.")),
                 withStatus("Empty plan", DMPSource.DMP_TOOL, PlanReportStatus.NOTHING_TO_SEND),
                 withStatus("Online plan", DMPSource.DMP_ONLINE, PlanReportStatus.NOT_SUPPORTED),
                 withStatus("Off plan", DMPSource.DMP_TOOL, PlanReportStatus.PLATFORM_OFF),
@@ -511,8 +511,8 @@ public class AsyncDepositorImplTest {
         .contains(
             "Written &lt;plan&gt; (DMPTool)",
             "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> was added to the plan.",
-            "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> could not be added:"
-                + " denied.",
+            "<a href=\"https://doi.org/10.1/x\">https://doi.org/10.1/x</a> could not be added."
+                + " Denied. You can add this link to the plan by hand.",
             "Dataverse returned no DOI and no link, so nothing was added.",
             "Online plan (DMPonline)",
             "RSpace cannot yet update plans on DMPonline.",
@@ -522,7 +522,7 @@ public class AsyncDepositorImplTest {
                 + "https://doi.org/10.1/x</a>.",
             "You can open your deposit on Dataverse at <a href=\"https://dv.example/ds\">"
                 + "https://dv.example/ds</a>.")
-        .doesNotContain("Written <plan>", "by hand");
+        .doesNotContain("Written <plan>");
   }
 
   @Test
@@ -560,7 +560,7 @@ public class AsyncDepositorImplTest {
             List.of(
                 reported(
                     "A plan",
-                    new ValueOutcome(ReportedValueKind.ACCESS_URL, null, false, "it failed"))));
+                    new ValueOutcome(ReportedValueKind.ACCESS_URL, null, false, "It failed."))));
 
     depositor.postDeposit(
         new RepositoryOperationResult(true, "done", null, null),
@@ -573,8 +573,8 @@ public class AsyncDepositorImplTest {
     Mockito.verify(comm, Mockito.times(2))
         .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
     assertThat(messages.getAllValues().get(1))
-        .contains("The plan could not be updated: it failed.")
-        .doesNotContain("href=\"\"");
+        .contains("The plan could not be updated. It failed.")
+        .doesNotContain("href=\"\"", "by hand");
   }
 
   @Test

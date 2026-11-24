@@ -5657,9 +5657,9 @@ export default interface Resources {
           "downloadFile": "Couldn''t download DMP file for id: {0}",
           "getDetails": "Couldn''t get details of DMP with id: {0}",
           "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
-          "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-          "relatedIdentifierRefused": "DMPTool refused the update (error {0})",
-          "relatedIdentifierUnreachable": "DMPTool could not be reached"
+          "noAccessToken": "Access token isn't enabled - user must connect in Apps page.",
+          "relatedIdentifierRefused": "DMPTool refused the update (error {0}).",
+          "relatedIdentifierUnreachable": "DMPTool could not be reached."
         },
         "update": {
           "success": "DMP updated"
@@ -6722,7 +6722,7 @@ export default interface Resources {
       "notification": {
         "dmpUpdateCompleteNotification": {
           "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>.",
-          "failedNoValue": "The plan could not be updated: {0}.",
+          "failedNoValue": "The plan could not be updated. {0}",
           "intro": "RSpace tried to add your deposit on \"{0}\" to the plans you selected.",
           "notConnected": "{0} is not connected, so the plan was not updated.",
           "notSupported": "RSpace cannot yet update plans on {0}.",
@@ -6730,8 +6730,8 @@ export default interface Resources {
           "planHeading": "{0} ({1})",
           "platformOff": "{0} is switched off, so the plan was not updated.",
           "repositoryLink": "You can open your deposit on {0} at <a href=\"{1}\">{1}</a>.",
-          "unexpectedError": "an unexpected error occurred; you can add the link to the plan by hand",
-          "valueFailed": "<a href=\"{0}\">{0}</a> could not be added: {1}.",
+          "unexpectedError": "An unexpected error occurred.",
+          "valueFailed": "<a href=\"{0}\">{0}</a> could not be added. {1} You can add this link to the plan by hand.",
           "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."
         },
         "exportCompleteNotification": {

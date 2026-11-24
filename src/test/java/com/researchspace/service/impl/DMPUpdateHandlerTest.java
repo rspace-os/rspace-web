@@ -42,8 +42,7 @@ class DMPUpdateHandlerTest {
 
   private static final String DOI = "https://doi.org/10.1234/abc";
   private static final String LANDING = "https://repo.example.org/dataset/1";
-  private static final String UNEXPECTED_ERROR =
-      "an unexpected error occurred; you can add the link to the plan by hand";
+  private static final String UNEXPECTED_ERROR = "An unexpected error occurred.";
 
   private @Mock DMPManager dmpManager;
   private @Mock DmpPlatformStatusResolver statusResolver;

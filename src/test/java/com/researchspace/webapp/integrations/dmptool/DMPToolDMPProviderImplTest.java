@@ -78,7 +78,7 @@ class DMPToolDMPProviderImplTest {
         provider.addRelatedIdentifierToDMP(PLAN_ID, "url", EDIT_LINK, TOKEN);
 
     assertFalse(result.isSucceeded());
-    assertEquals("DMPTool refused the update (error 404)", result.getEntity());
+    assertEquals("DMPTool refused the update (error 404).", result.getEntity());
     assertEquals(1, logs.events.size());
     LogEvent warn = logs.events.get(0);
     assertEquals(Level.WARN, warn.getLevel());
@@ -97,7 +97,7 @@ class DMPToolDMPProviderImplTest {
         provider.addRelatedIdentifierToDMP(PLAN_ID, "url", EDIT_LINK, TOKEN);
 
     assertFalse(result.isSucceeded());
-    assertEquals("DMPTool could not be reached", result.getEntity());
+    assertEquals("DMPTool could not be reached.", result.getEntity());
     assertEquals(1, logs.events.size());
     assertEquals(Level.WARN, logs.events.get(0).getLevel());
     assertThat(logs.events.get(0).getMessage().getFormattedMessage())
@@ -114,7 +114,7 @@ class DMPToolDMPProviderImplTest {
     ServiceOperationResult<String> result =
         provider.addRelatedIdentifierToDMP(PLAN_ID, "url", EDIT_LINK, TOKEN);
 
-    assertEquals("DMPTool could not be reached", result.getEntity());
+    assertEquals("DMPTool could not be reached.", result.getEntity());
   }
 
   private static class EventCapture extends AbstractAppender {

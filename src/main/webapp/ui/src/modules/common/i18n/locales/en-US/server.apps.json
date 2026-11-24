@@ -48,9 +48,9 @@
         "downloadFile": "Couldn''t download DMP file for id: {0}",
         "getDetails": "Couldn''t get details of DMP with id: {0}",
         "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
-        "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-        "relatedIdentifierRefused": "DMPTool refused the update (error {0})",
-        "relatedIdentifierUnreachable": "DMPTool could not be reached"
+        "noAccessToken": "Access token isn't enabled - user must connect in Apps page.",
+        "relatedIdentifierRefused": "DMPTool refused the update (error {0}).",
+        "relatedIdentifierUnreachable": "DMPTool could not be reached."
       },
       "update": {
         "success": "DMP updated"
