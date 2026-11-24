@@ -5633,7 +5633,7 @@ export default interface Resources {
           "dmpAssistant": "DMP Assistant",
           "dmpOnline": "DMPonline",
           "dmpTool": "DMPTool",
-          "dsw": "DSW"
+          "dsw": "DSW / FAIR Wizard"
         }
       },
       "dmpAssistant": {
