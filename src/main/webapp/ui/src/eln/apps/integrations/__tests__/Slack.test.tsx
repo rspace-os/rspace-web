@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -14,6 +15,7 @@ import "@/__tests__/__mocks__/matchMedia";
 describe("Slack", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
+      const user = userEvent.setup();
       const { baseElement } = render(
         <Slack
           integrationState={{
@@ -24,7 +26,7 @@ describe("Slack", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -61,6 +63,7 @@ describe("Slack", () => {
     } as unknown as Window);
   });
   test("When Slack connects, the channel the server saved should be shown.", async () => {
+    const user = userEvent.setup();
     const mockAxios = new MockAdapter(axios);
     mockAxios
       .onGet("slack/oauthUrl")
@@ -95,8 +98,8 @@ describe("Slack", () => {
       </Alerts>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+    await user.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button", { name: "common:actions.add" }));
 
     // Simulate BroadcastChannel message from the OAuth redirect page
     const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
@@ -131,7 +134,8 @@ describe("Slack", () => {
         error: null,
       });
     const connect = async () => {
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
       bc.postMessage({ type: "SLACK_CONNECTED" });
       bc.close();
@@ -140,6 +144,7 @@ describe("Slack", () => {
     };
 
     test("A refetch that finds no new channel should not duplicate it or show the added toast.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
       mockServerChannels(mockAxios, [channel("1", "#one")]);
@@ -152,7 +157,7 @@ describe("Slack", () => {
           <Slack integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
       await connect();
 
@@ -166,6 +171,7 @@ describe("Slack", () => {
     });
 
     test("Remove after the server list changed should remove the channel with the matching optionsId.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
       mockAxios.onPost("integration/deleteAppOptions").reply(200, { success: true, data: null });
@@ -180,8 +186,10 @@ describe("Slack", () => {
           <Slack integrationState={integrationState} update={() => {}} />
         </Alerts>,
       );
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.change(screen.getAllByRole("textbox")[1], { target: { value: "unsaved label" } });
+      await user.click(screen.getByRole("button"));
+      const input = screen.getAllByRole("textbox")[1];
+      await user.clear(input);
+      await user.type(input, "unsaved label");
 
       await connect();
 
@@ -191,14 +199,15 @@ describe("Slack", () => {
         "#three",
       ]);
 
-      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
+      await user.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
       expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("2");
       expect(integrationState.credentials.map((c) => c.map(({ optionsId }) => optionsId).orElse(null))).toEqual(["3"]);
       expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual(["#three"]);
     });
   });
-  test("Should render the existing channels.", () => {
+  test("Should render the existing channels.", async () => {
+    const user = userEvent.setup();
     render(
       <Alerts>
         <Slack
@@ -221,12 +230,13 @@ describe("Slack", () => {
       </Alerts>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
     expect(screen.getAllByRole("definition")[0]).toHaveTextContent("RSpace Dev");
     expect(screen.getAllByRole("definition")[1]).toHaveTextContent("#rspace-slackpost-test");
     expect(screen.getByRole("textbox")).toHaveValue("custom label");
   });
   test("Channel label should be changeable.", async () => {
+    const user = userEvent.setup();
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/saveAppOptions").reply(200, {
       success: true,
@@ -268,12 +278,12 @@ describe("Slack", () => {
       </Alerts>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "custom label" },
-    });
+    await user.click(screen.getByRole("button"));
+    const input = screen.getByRole("textbox");
+    await user.clear(input);
+    await user.type(input, "custom label");
 
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
@@ -285,6 +295,7 @@ describe("Slack", () => {
     );
   });
   test("Saving changes to one channel should not overrwrite changes to other.", async () => {
+    const user = userEvent.setup();
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/saveAppOptions").reply(200, {
       success: true,
@@ -343,19 +354,20 @@ describe("Slack", () => {
       </Alerts>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
-    fireEvent.change(screen.getAllByRole("textbox")[0], {
-      target: { value: "custom label" },
-    });
-    fireEvent.change(screen.getAllByRole("textbox")[1], {
-      target: { value: "also custom label" },
-    });
+    await user.click(screen.getByRole("button"));
+    const input = screen.getAllByRole("textbox")[0];
+    await user.clear(input);
+    await user.type(input, "custom label");
+    const otherInput = screen.getAllByRole("textbox")[1];
+    await user.clear(otherInput);
+    await user.type(otherInput, "also custom label");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "common:actions.save" })[0]);
+    await user.click(screen.getAllByRole("button", { name: "common:actions.save" })[0]);
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(screen.getAllByRole("textbox")[1]).toHaveValue("also custom label");
   });
   test("Deleting a channel should make the right API call.", async () => {
+    const user = userEvent.setup();
     const mockAxios = new MockAdapter(axios);
     mockAxios.onPost("integration/deleteAppOptions").reply(200, {
       success: true,
@@ -386,9 +398,9 @@ describe("Slack", () => {
       </Alerts>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    await user.click(screen.getByRole("button"));
 
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");

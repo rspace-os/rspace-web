@@ -68,6 +68,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
    */
   @PostMapping("/connect")
   public RedirectView connect() {
+    assertProtocolsIOEnabled(userManager.getAuthenticatedUserInSession());
     String redirectUrl = properties.getServerUrl() + "/apps/protocolsio/redirect_uri";
     String state = generateState();
     String url =

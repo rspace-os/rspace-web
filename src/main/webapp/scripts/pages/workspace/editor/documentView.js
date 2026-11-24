@@ -365,6 +365,7 @@ function disableLastTextField() {
     var fieldId = getFieldIdFromTextFieldId(lastTextFieldId);
     $('#edit_' + fieldId).show();
     $('#stopEdit_' + fieldId).hide();
+    hideFieldHint($('#field-name-' + fieldId));
 
     _informUserIfFieldContentTooWide();
     lastTextEdited = -1;

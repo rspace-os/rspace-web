@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { describe, expect, test, vi } from "vitest";
@@ -59,7 +59,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
     // get list of all menu options by opening and closing menu
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
       .map((o) => o.textContent || "");
@@ -70,7 +70,7 @@ describe("GridDimensions", () => {
     );
     // for each menu option, assert it sets the rows and cols to valid values
     for (const option of menuOptions) {
-      fireEvent.mouseDown(screen.getByRole("combobox"));
+      await user.click(screen.getByRole("combobox"));
       await user.click(
         within(screen.getByRole("listbox")).getByRole("option", {
           name: option,
@@ -105,7 +105,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
     // get the first menu option that is not "Custom"
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
 
     const menuOptionValue = ArrayUtils.head(
       within(screen.getByRole("listbox"))
@@ -135,7 +135,7 @@ describe("GridDimensions", () => {
 
     expect(columnsBefore).not.toBeNull();
     // choose "custom"
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
         name: customSizeKey,
@@ -167,7 +167,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
     // set the first menu option that is not "Custom"
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     const menuOptionValue = ArrayUtils.head(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
@@ -192,9 +192,9 @@ describe("GridDimensions", () => {
     expect(rowsBefore).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newRows = (rowsBefore! + 1) % 24;
-    fireEvent.input(screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.rows" }), {
-      target: { value: newRows },
-    });
+    const rowsInput = screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.rows" });
+    await user.clear(rowsInput);
+    await user.type(rowsInput, String(newRows));
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
   });
@@ -209,7 +209,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
     // set the first menu option that is not "Custom"
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     const menuOptionValue = ArrayUtils.head(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
@@ -233,9 +233,9 @@ describe("GridDimensions", () => {
     expect(columnsBefore).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newColumns = (columnsBefore! + 1) % 24;
-    fireEvent.input(screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.columns" }), {
-      target: { value: newColumns },
-    });
+    const columnsInput = screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.columns" });
+    await user.clear(columnsInput);
+    await user.type(columnsInput, String(newColumns));
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
   });
@@ -250,7 +250,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
     // get list of all menu options by opening and closing menu
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
       .map((o) => o.textContent || "")
@@ -262,7 +262,7 @@ describe("GridDimensions", () => {
     );
     // for each menu option, assert that the rows and colunmns, when multiplied, are the number quoted by the option
     for (const option of menuOptions) {
-      fireEvent.mouseDown(screen.getByRole("combobox"));
+      await user.click(screen.getByRole("combobox"));
       await user.click(
         within(screen.getByRole("listbox")).getByRole("option", {
           name: option,
@@ -285,7 +285,8 @@ describe("GridDimensions", () => {
       expect(rows * columns).toBe(expectedCellCounts.get(option));
     }
   });
-  test("The first option, the most popular, should be 96-well plate.", () => {
+  test("The first option, the most popular, should be 96-well plate.", async () => {
+    const user = userEvent.setup();
     const { rootStore } = makeRootStoreWithGridContainer();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -294,7 +295,7 @@ describe("GridDimensions", () => {
         </storesContext.Provider>
       </ThemeProvider>,
     );
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     const menuOption = ArrayUtils.head(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
@@ -316,7 +317,7 @@ describe("GridDimensions", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.mouseDown(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "inventory:container.fields.gridDimensions.commonSizes.wellPlate96",
@@ -327,9 +328,9 @@ describe("GridDimensions", () => {
     });
   });
   test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
-    const user = userEvent.setup();
     await fc.assert(
       fc.asyncProperty(fc.nat(), async (unboundedIndex) => {
+        const user = userEvent.setup();
         cleanup();
         const { rootStore, gridContainer } = makeRootStoreWithGridContainer();
         render(
@@ -340,7 +341,7 @@ describe("GridDimensions", () => {
           </ThemeProvider>,
         );
         // get list of all menu options by opening and closing menu
-        fireEvent.mouseDown(screen.getByRole("combobox"));
+        await user.click(screen.getByRole("combobox"));
         const menuOptions = within(screen.getByRole("listbox"))
           .getAllByRole("option")
           .map((o) => o.textContent || "")

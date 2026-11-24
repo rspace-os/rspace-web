@@ -9,6 +9,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
@@ -17,11 +18,15 @@ import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFieldLinkManager;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
@@ -30,6 +35,8 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 @Slf4j
 public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
+
+  private static final int PATH_BATCH_SIZE = 1000;
 
   private final NfsDao nfsDao;
   private final FieldParser fieldParser;
@@ -84,9 +91,23 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
           messages.getMessage(
               "netFileStores.errors.fileStoreNotFound", new Object[] {filestoreId}));
     }
-    aclChecker.assertCanRead(user, filestore.getFileSystem());
-    String path = NfsFieldLink.normalisePath(filestore.getAbsolutePath(remotePath));
-    return nfsDao.getDocumentsLinkingTo(filestore.getFileSystem().getId(), List.of(path)).stream()
+    return getLinkedDocuments(
+        filestore.getFileSystem(), List.of(filestore.getAbsolutePath(remotePath)), user);
+  }
+
+  @Override
+  public List<RecordInformation> getLinkedDocuments(
+      NfsFileSystem fileSystem, Collection<String> absolutePaths, User user) {
+    aclChecker.assertCanRead(user, fileSystem);
+    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
+    // a whole S3 folder listing in one IN list can exceed the database's packet size
+    return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
+        .flatMap(batch -> nfsDao.getDocumentsLinkingTo(fileSystem.getId(), batch).stream())
+        .collect(
+            Collectors.toMap(
+                StructuredDocument::getId, doc -> doc, (first, duplicate) -> first, TreeMap::new))
+        .values()
+        .stream()
         .map(doc -> toRecordInfoOrPlaceholder(doc, user))
         .toList();
   }

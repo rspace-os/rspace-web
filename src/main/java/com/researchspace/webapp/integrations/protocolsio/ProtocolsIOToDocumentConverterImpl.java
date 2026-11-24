@@ -24,11 +24,16 @@ import com.researchspace.service.UserLocaleService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +57,15 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
     implements ProtocolsIOToDocumentConverter {
 
   private static final int DOWNLOAD_TIMEOUT_MILLIS = 10_000;
+
+  // Hosts protocols.io serves protocol images from. The shared S3 host is limited to
+  // protocols.io's own buckets.
+  private static final Map<String, List<String>> ALLOWED_IMAGE_PATH_PREFIXES_BY_HOST =
+      Map.of(
+          "content.protocols.io", List.of("/"),
+          "protocols-files.s3.amazonaws.com", List.of("/"),
+          "pr-journal.s3.amazonaws.com", List.of("/"),
+          "s3.amazonaws.com", List.of("/protocols-files/", "/pr-journal/"));
 
   private @Autowired VelocityEngine velocity;
   private @Autowired RecordManager recordMgr;
@@ -107,17 +121,31 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
   StructuredDocument processHtml(String html, StructuredDocument rspaceDocument, User subject) {
     org.jsoup.nodes.Document jsoupDocument = Jsoup.parse(html);
     Elements imgElements = jsoupDocument.select("img");
-    downloadImagesToTempFiles(imgElements);
+    Map<String, File> downloaded = new LinkedHashMap<>();
+    try {
+      downloadImagesToTempFiles(imgElements, subject, downloaded);
+      // only files downloaded above may be read from disk, never a path taken from the HTML
+      Set<String> downloadedPaths = new HashSet<>();
+      downloaded.values().forEach(f -> downloadedPaths.add(f.getAbsolutePath()));
+      Elements downloadedImgs = new Elements();
+      for (Element el : imgElements) {
+        if (downloadedPaths.contains(el.attr("src"))) {
+          downloadedImgs.add(el);
+        }
+      }
 
-    Folder imageTargetFolder = createTargetImageFolderIfImages(rspaceDocument.getName(), subject);
-    // this has to get called even if no images
-    return updateFieldContent(
-        subject,
-        jsoupDocument,
-        imgElements,
-        imageTargetFolder,
-        rspaceDocument,
-        el -> el.attr("src"));
+      Folder imageTargetFolder = createTargetImageFolderIfImages(rspaceDocument.getName(), subject);
+      // this has to get called even if no images
+      return updateFieldContent(
+          subject,
+          jsoupDocument,
+          downloadedImgs,
+          imageTargetFolder,
+          rspaceDocument,
+          el -> el.attr("src"));
+    } finally {
+      downloaded.values().forEach(FileUtils::deleteQuietly);
+    }
   }
 
   // null is valid return option
@@ -130,38 +158,77 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
     return jsoupDocument.select("img");
   }
 
-  protected Map<String, File> downloadImagesToTempFiles(Elements imgElements) {
-
-    Map<String, File> srcRefToFileMap = new LinkedHashMap<>();
+  /**
+   * Downloads images hosted by protocols.io to temp files, and points each image's src at its temp
+   * file. Images hosted anywhere else are removed: the protocol comes from the browser, so its
+   * image links could point at server files or internal addresses.
+   *
+   * @param srcRefToFileMap filled as each file downloads, so the caller can delete them even if a
+   *     later download throws
+   */
+  protected void downloadImagesToTempFiles(
+      Elements imgElements, User subject, Map<String, File> srcRefToFileMap) {
     log.info("There are {} images referenced in Protocol", imgElements.size());
     removeDuplicateElements(imgElements);
     for (Element el : imgElements) {
       String srcString = el.attr("src");
 
-      URL url = null;
-      try {
-        url = new URL(srcString);
-      } catch (MalformedURLException e) {
-        log.warn("Couldn't create valid URL from src attribute '{}'", srcString);
+      URL url = toAllowedImageUrl(srcString);
+      if (url == null) {
+        log.warn(
+            "Skipped protocols.io image not hosted by protocols.io, for user {}: {}",
+            subject.getUsername(),
+            forLog(srcString));
+        el.remove();
         continue;
       }
 
+      if (srcRefToFileMap.containsKey(srcString)) {
+        el.attr("src", srcRefToFileMap.get(srcString).getAbsolutePath());
+        log.info(" already downloaded {}, skipping", srcString);
+        continue;
+      }
+      File tempFile = null;
       try {
-        File tempFile = getTempFileFromURL(url);
-
-        if (!srcRefToFileMap.containsKey(srcString)) {
-          downloadFile(url, tempFile);
-          srcRefToFileMap.put(srcString, tempFile);
-          el.attr("src", tempFile.getAbsolutePath());
-        } else {
-          el.attr("src", srcRefToFileMap.get(srcString).getAbsolutePath());
-          log.info(" already downloaded {}, skipping", srcString);
-        }
+        tempFile = getTempFileFromURL(url);
+        downloadFile(url, tempFile);
+        srcRefToFileMap.put(srcString, tempFile);
+        el.attr("src", tempFile.getAbsolutePath());
       } catch (IOException e) {
+        FileUtils.deleteQuietly(tempFile);
         log.warn("Couldn't retrieve file from URL {} - {}", url, e.getMessage());
       }
     }
-    return srcRefToFileMap;
+  }
+
+  /**
+   * @return the URL if it is https on a protocols.io image host, else null
+   */
+  static URL toAllowedImageUrl(String src) {
+    try {
+      URI uri = new URI(src).normalize();
+      String host = uri.getHost();
+      String path = uri.getPath();
+      List<String> allowedPathPrefixes =
+          host == null
+              ? List.of()
+              : ALLOWED_IMAGE_PATH_PREFIXES_BY_HOST.getOrDefault(
+                  host.toLowerCase(Locale.ROOT), List.of());
+      boolean allowed =
+          "https".equalsIgnoreCase(uri.getScheme())
+              && uri.getRawUserInfo() == null
+              && uri.getPort() == -1
+              && path != null
+              && !path.contains("..")
+              && allowedPathPrefixes.stream().anyMatch(path::startsWith);
+      return allowed ? uri.toURL() : null;
+    } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  private static String forLog(String value) {
+    return value.replaceAll("[\\r\\n]", "_");
   }
 
   private void removeDuplicateElements(Elements imgElements) {
@@ -176,15 +243,30 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
   }
 
   File getTempFileFromURL(URL url) throws IOException {
-    String fNameString = FilenameUtils.getBaseName(url.getFile());
+    String fNameString = FilenameUtils.getBaseName(url.getPath());
     File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
     return File.createTempFile(
-        fNameString, "." + FilenameUtils.getExtension(url.getFile()), secureTmpDir);
+        fNameString, "." + FilenameUtils.getExtension(url.getPath()), secureTmpDir);
   }
 
   void downloadFile(URL url, File tempFile) throws IOException {
     log.info("Downloading from {}", url);
-    FileUtils.copyURLToFile(url, tempFile, DOWNLOAD_TIMEOUT_MILLIS, DOWNLOAD_TIMEOUT_MILLIS);
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    try {
+      // a redirect could lead to an internal address
+      connection.setInstanceFollowRedirects(false);
+      connection.setConnectTimeout(DOWNLOAD_TIMEOUT_MILLIS);
+      connection.setReadTimeout(DOWNLOAD_TIMEOUT_MILLIS);
+      int status = connection.getResponseCode();
+      if (status != HttpURLConnection.HTTP_OK) {
+        throw new IOException("Unexpected HTTP status " + status);
+      }
+      try (InputStream in = connection.getInputStream()) {
+        FileUtils.copyInputStreamToFile(in, tempFile);
+      }
+    } finally {
+      connection.disconnect();
+    }
     log.info("Downloaded file of size {} bytes", tempFile.length());
   }
 

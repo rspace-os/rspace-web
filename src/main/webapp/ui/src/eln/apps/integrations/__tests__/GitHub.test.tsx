@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
@@ -31,6 +31,7 @@ afterEach(cleanup);
 describe("GitHub", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
+      const user = userEvent.setup();
       const { baseElement } = render(
         <GitHub
           integrationState={{
@@ -41,7 +42,7 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -49,7 +50,8 @@ describe("GitHub", () => {
     });
   });
   describe("Correct rendering", () => {
-    test("When there are no repositories, there is a label.", () => {
+    test("When there are no repositories, there is a label.", async () => {
+      const user = userEvent.setup();
       render(
         <GitHub
           integrationState={{
@@ -60,10 +62,11 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       expect(screen.getByText("apps:integrations.github.repositories.noLinked")).toBeVisible();
     });
-    test("The names of repositories should be shown in a table.", () => {
+    test("The names of repositories should be shown in a table.", async () => {
+      const user = userEvent.setup();
       render(
         <GitHub
           integrationState={{
@@ -79,7 +82,7 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       expect(within(screen.getByRole("table")).getByText("username/someRepo")).toBeVisible();
     });
   });
@@ -142,6 +145,7 @@ describe("GitHub", () => {
     });
 
     test("When requested, all repositories should be listed in a table.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -170,9 +174,9 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -195,6 +199,7 @@ describe("GitHub", () => {
       ).toHaveTextContent("a repo");
     });
     test("When tapped, the add button in the repositories table should make the right API call.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -224,9 +229,9 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -241,7 +246,7 @@ describe("GitHub", () => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await user.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
           name: "common:actions.add",
         }),
@@ -253,6 +258,7 @@ describe("GitHub", () => {
       });
     });
     test("When the add button next to a repo is tapped, it should be added to the conncted repos table and removed from the all repos table.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -294,9 +300,9 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -311,7 +317,7 @@ describe("GitHub", () => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await user.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
           name: "common:actions.add",
         }),
@@ -334,6 +340,7 @@ describe("GitHub", () => {
       ).toHaveTextContent("apps:integrations.github.repositories.noAvailable");
     });
     test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
+      const user = userEvent.setup();
       const integrationState = observable<IntegrationStates["GITHUB"]>({
         mode: "DISABLED",
         credentials: [],
@@ -372,9 +379,9 @@ describe("GitHub", () => {
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -389,7 +396,7 @@ describe("GitHub", () => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
       const allReposTable = screen.getAllByRole("table")[1];
-      fireEvent.click(
+      await user.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
           name: "common:actions.add",
         }),
@@ -402,6 +409,7 @@ describe("GitHub", () => {
   });
   describe("Removing repositories", () => {
     test("Removing a repository should make the correct API call.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -427,9 +435,9 @@ describe("GitHub", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
 
@@ -441,6 +449,7 @@ describe("GitHub", () => {
       });
     });
     test("Removing a repository should mutate the integration state being passed as a prop.", async () => {
+      const user = userEvent.setup();
       const integrationState = observable({
         mode: "DISABLED" as const,
         credentials: [
@@ -463,15 +472,16 @@ describe("GitHub", () => {
 
       render(<GitHub integrationState={integrationState} update={() => {}} />);
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(0);
     });
     test("Removing the last repository asks for GitHub authorisation again before another can be added.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -499,8 +509,8 @@ describe("GitHub", () => {
       const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({ close: () => {} }) as unknown as Window);
       render(<GitHub integrationState={observable({ mode: "DISABLED", credentials: [] })} update={() => {}} />);
 
-      fireEvent.click(screen.getByRole("button"));
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       act(() => {
         for (const handler of broadcastHandlers)
           handler({ data: { type: "GITHUB_CONNECTED" } } as MessageEvent<GitHubConnectedMessage>);
@@ -508,13 +518,13 @@ describe("GitHub", () => {
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(2);
       });
-      fireEvent.click(within(screen.getAllByRole("table")[1]).getByRole("button", { name: "common:actions.add" }));
-      fireEvent.click(await screen.findByRole("button", { name: "common:actions.remove" }));
+      await user.click(within(screen.getAllByRole("table")[1]).getByRole("button", { name: "common:actions.add" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.remove" }));
 
       await waitFor(() => {
         expect(screen.getAllByRole("table").length).toBe(1);
       });
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       await waitFor(() => {
         expect(openWindow).toHaveBeenCalledTimes(2);
       });

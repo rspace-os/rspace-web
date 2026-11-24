@@ -11,6 +11,7 @@ const rootRenderCalls: Array<{
   node: React.ReactNode;
 }> = [];
 const mockCreateRoot = vi.fn((container: Element) => ({
+  unmount: vi.fn(),
   render: vi.fn((node: React.ReactNode) => {
     rootRenderCalls.push({ container, node });
   }),
@@ -49,6 +50,7 @@ type EditorCommand = () => void;
 type StoichiometryPluginConstructor = new (editor: EditorStub) => unknown;
 
 type EditorStub = {
+  on: ReturnType<typeof vi.fn>;
   ui: {
     registry: {
       addButton: ReturnType<typeof vi.fn>;
@@ -172,6 +174,7 @@ function createEditorHarness({
   initialSelectionNode: HTMLElement;
   execCommand?: ReturnType<typeof vi.fn>;
 }) {
+  const handlers = new Map<string, () => void>();
   const commands = new Map<string, EditorCommand>();
   const buttons = new Map<string, ButtonConfig>();
   const menuItems = new Map<string, MenuItemConfig>();
@@ -218,6 +221,7 @@ function createEditorHarness({
   });
 
   const editor: EditorStub = {
+    on: vi.fn((name: string, callback: () => void) => handlers.set(name, callback)),
     ui: {
       registry: {
         addButton: vi.fn((name: string, config: ButtonConfig) => {
@@ -250,6 +254,7 @@ function createEditorHarness({
   };
 
   return {
+    handlers,
     buttons,
     commands,
     editor,
@@ -284,11 +289,7 @@ function getLastRenderedDialogProps(): DialogProps | null {
       continue;
     }
 
-    const view = findRenderedComponentProps(renderCall.node, mockDialogEntrypoint);
-
-    if (view) {
-      return view;
-    }
+    return findRenderedComponentProps(renderCall.node, mockDialogEntrypoint);
   }
 
   return null;
@@ -301,6 +302,68 @@ describe("TinyMCE stoichiometry plugin", () => {
     rootRenderCalls.length = 0;
     document.body.innerHTML = "";
     window.insertActions = new Map<string, InsertAction>();
+  });
+
+  it("keeps one editor's open dialog open when another editor is constructed", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const initialSelectionNode = editorDocument.createElement("p");
+    editorDocument.body.appendChild(initialSelectionNode);
+    const { buttons, editor } = createEditorHarness({ editorDocument, initialSelectionNode });
+    new StoichiometryPlugin(editor);
+    buttons.get("stoichiometryInsertButton")?.onAction();
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+    });
+
+    new StoichiometryPlugin(createEditorHarness({ initialSelectionNode: document.createElement("p") }).editor);
+
+    expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+  });
+
+  it("keeps editor B's dialog open when editor A saves after B opened", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    const a = createEditorHarness({ initialSelectionNode: document.createElement("p") });
+    const b = createEditorHarness({ initialSelectionNode: document.createElement("p") });
+    new StoichiometryPlugin(a.editor);
+    new StoichiometryPlugin(b.editor);
+    a.commands.get("cmdCreateStoichiometry")?.();
+    const aProps = getLastRenderedDialogProps();
+    expect(aProps?.onSave).toEqual(expect.any(Function));
+    b.commands.get("cmdCreateStoichiometry")?.();
+    const bProps = getLastRenderedDialogProps();
+    expect(bProps?.open).toBe(true);
+
+    aProps?.onSave?.(15, 7);
+
+    expect(getLastRenderedDialogProps()).toBe(bProps);
+  });
+
+  it("closes the dialog only when the editor that owns it is removed", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    const a = createEditorHarness({ initialSelectionNode: document.createElement("p") });
+    const b = createEditorHarness({ initialSelectionNode: document.createElement("p") });
+    new StoichiometryPlugin(a.editor);
+    new StoichiometryPlugin(b.editor);
+    a.commands.get("cmdCreateStoichiometry")?.();
+    b.commands.get("cmdCreateStoichiometry")?.();
+    const bProps = getLastRenderedDialogProps();
+    expect(bProps?.open).toBe(true);
+    expect(a.handlers.get("remove")).toEqual(expect.any(Function));
+
+    a.handlers.get("remove")?.();
+
+    expect(getLastRenderedDialogProps()).toBe(bProps);
+
+    b.handlers.get("remove")?.();
+
+    expect(getLastRenderedDialogProps()).toBeNull();
   });
 
   it("registers toolbar/menu/slash actions and opens a new table with a tableOnly div", async () => {

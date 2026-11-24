@@ -4,6 +4,8 @@ import static com.researchspace.core.util.JacksonUtil.fromJson;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,11 +31,19 @@ import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +56,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -60,6 +72,8 @@ public class ProtocolsIOConverterTest {
 
   private static final String SIMPLE_PIO_JSON = "p_io_8163.json";
   private static final String UTF_8 = "UTF-8";
+  private static final String ALLOWED_IMAGE =
+      "https://s3.amazonaws.com/protocols-files/public/71edb71d/bmzeh4hw.jpg";
 
   static class ProtocolsIOToDocumentConverterImplTSS extends ProtocolsIOToDocumentConverterImpl {
     int downloadCount;
@@ -67,8 +81,18 @@ public class ProtocolsIOConverterTest {
     boolean updateFieldContentInvoked = false;
     StructuredDocument document = null;
 
+    boolean failDownload = false;
+    boolean failUpdate = false;
+    List<File> tempFiles = new ArrayList<>();
+    Document importedDoc;
+    List<String> importedImageRefs = new ArrayList<>();
+
     void downloadFile(URL url, File tempFile) throws IOException {
       downloadCount++;
+      tempFiles.add(tempFile);
+      if (failDownload) {
+        throw new IOException("download failed");
+      }
     }
 
     protected StructuredDocument updateFieldContent(
@@ -80,6 +104,11 @@ public class ProtocolsIOConverterTest {
         Function<Element, String> fileLocator) {
 
       updateFieldContentInvoked = true;
+      importedDoc = jsoupDoc;
+      aResourceLinks.forEach(el -> importedImageRefs.add(fileLocator.apply(el)));
+      if (failUpdate) {
+        throw new IllegalStateException("update failed");
+      }
       return document;
     }
   }
@@ -126,9 +155,11 @@ public class ProtocolsIOConverterTest {
   public void testIngestImages() throws Exception {
     File testFile = RSpaceTestUtils.getResource("pio-with-images.html");
     String htmlString = FileUtils.readFileToString(testFile, UTF_8);
-    Map<String, File> downloadedMap = impl.downloadImagesToTempFiles(impl.getImages(htmlString));
+    Map<String, File> downloadedMap = new HashMap<>();
+    impl.downloadImagesToTempFiles(impl.getImages(htmlString), any, downloadedMap);
     assertThat(downloadedMap).hasSize(5);
     assertEquals(5, impl.downloadCount);
+    downloadedMap.values().forEach(FileUtils::deleteQuietly);
   }
 
   @Test
@@ -151,6 +182,166 @@ public class ProtocolsIOConverterTest {
             new URL(
                 "https://s3.amazonaws.com/protocols-files/public/71edb71d34a3f900912c0cbb6075b211cc83bb9810591c5fca73217f74d99c52/bmzeh4hw.jpg"));
     assertThat(tempFile.getName()).endsWith(".jpg");
+    FileUtils.deleteQuietly(tempFile);
+  }
+
+  @Test
+  public void fileNameIgnoresQueryString() throws Exception {
+    File tempFile =
+        impl.getTempFileFromURL(
+            new URL(
+                "https://protocols-files.s3.amazonaws.com/files/bmzeh4hw.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=604800&X-Amz-Signature=abc123"));
+    assertThat(tempFile.getName()).startsWith("bmzeh4hw").endsWith(".png");
+    FileUtils.deleteQuietly(tempFile);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "file:///etc/passwd",
+        "/etc/passwd",
+        "jar:file:///opt/rspace.war!/WEB-INF/web.xml",
+        "http://s3.amazonaws.com/protocols-files/public/a.png",
+        "https://localhost/protocols-files/public/a.png",
+        "https://169.254.169.254/latest/meta-data/",
+        "https://10.0.0.1/protocols-files/public/a.png",
+        "https://s3.amazonaws.com/another-bucket/a.png",
+        "https://s3.amazonaws.com.attacker.example/protocols-files/public/a.png",
+        "https://user@s3.amazonaws.com/protocols-files/public/a.png",
+        "https://s3.amazonaws.com:8443/protocols-files/public/a.png",
+        "https://s3.amazonaws.com/protocols-files/../another-bucket/a.png",
+        "https://s3.amazonaws.com/protocols-files/%2e%2e/another-bucket/image.png",
+        "http://content.protocols.io/files/a.png",
+        "https://content.protocols.io.attacker.example/files/a.png",
+        "https://another-bucket.s3.amazonaws.com/files/a.png",
+        "https://files.protocols.io/external/a.png",
+        "not a url"
+      })
+  public void imagesOutsideProtocolsIOFileHostsAreNotImported(String src) {
+    impl.processHtml(imageHtml(src), doc, any);
+
+    assertEquals(0, impl.downloadCount);
+    assertThat(impl.importedImageRefs).isEmpty();
+    assertThat(impl.importedDoc.select("img")).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "https://s3.amazonaws.com/protocols-files/public/71edb71d/bmzeh4hw.jpg",
+        "https://s3.amazonaws.com/pr-journal/bvbcn2iw.png",
+        "https://content.protocols.io/files/bmzeh4hw.jpg",
+        "https://content.protocols.io/public/71edb71d/bmzeh4hw.png",
+        "https://content.protocols.io/bvbcn2iw.png",
+        "https://protocols-files.s3.amazonaws.com/files/bmzeh4hw.png?X-Amz-Expires=604800&X-Amz-Signature=abc123",
+        "https://pr-journal.s3.amazonaws.com/bvbcn2iw.png"
+      })
+  public void imagesOnProtocolsIOFileHostsAreImported(String src) {
+    impl.processHtml(imageHtml(src), doc, any);
+
+    assertEquals(1, impl.downloadCount);
+    assertThat(impl.importedImageRefs).containsExactly(impl.tempFiles.get(0).getAbsolutePath());
+  }
+
+  @Test
+  public void tempFilesAreDeletedAfterImport() {
+    impl.processHtml(imageHtml(ALLOWED_IMAGE), doc, any);
+
+    assertThat(impl.tempFiles).isNotEmpty().noneMatch(File::exists);
+  }
+
+  @Test
+  public void tempFilesAreDeletedWhenImportFails() {
+    impl.failUpdate = true;
+
+    assertThrows(
+        IllegalStateException.class, () -> impl.processHtml(imageHtml(ALLOWED_IMAGE), doc, any));
+    assertThat(impl.tempFiles).isNotEmpty().noneMatch(File::exists);
+  }
+
+  @Test
+  public void tempFilesAreDeletedWhenALaterImageThrows() {
+    // a file name under 3 characters makes File.createTempFile throw IllegalArgumentException
+    String html = imageHtml(ALLOWED_IMAGE) + imageHtml("https://content.protocols.io/a.png");
+
+    assertThrows(IllegalArgumentException.class, () -> impl.processHtml(html, doc, any));
+    assertThat(impl.tempFiles).hasSize(1).noneMatch(File::exists);
+  }
+
+  @Test
+  public void failedDownloadIsNotImportedAndLeavesNoTempFile() {
+    impl.failDownload = true;
+
+    impl.processHtml(imageHtml(ALLOWED_IMAGE), doc, any);
+
+    assertThat(impl.importedImageRefs).isEmpty();
+    assertThat(impl.tempFiles).isNotEmpty().noneMatch(File::exists);
+  }
+
+  @Test
+  public void downloadSavesResponseBody() throws Exception {
+    HttpServer server = startServer();
+    server.createContext("/image.png", exchange -> respond(exchange, 200, "png-bytes"));
+    try {
+      File target = new File(tempFolder, "image.png");
+
+      new ProtocolsIOToDocumentConverterImpl().downloadFile(urlOf(server, "/image.png"), target);
+
+      assertEquals("png-bytes", readFileToString(target, UTF_8));
+    } finally {
+      server.stop(0);
+    }
+  }
+
+  @Test
+  public void downloadDoesNotFollowRedirects() throws Exception {
+    HttpServer server = startServer();
+    AtomicBoolean redirectTargetRequested = new AtomicBoolean();
+    server.createContext(
+        "/image.png",
+        exchange -> {
+          exchange.getResponseHeaders().add("Location", "/internal");
+          respond(exchange, 302, "");
+        });
+    server.createContext(
+        "/internal",
+        exchange -> {
+          redirectTargetRequested.set(true);
+          respond(exchange, 200, "secret");
+        });
+    try {
+      File target = new File(tempFolder, "image.png");
+      ProtocolsIOToDocumentConverterImpl converter = new ProtocolsIOToDocumentConverterImpl();
+      URL url = urlOf(server, "/image.png");
+
+      assertThrows(IOException.class, () -> converter.downloadFile(url, target));
+      assertFalse(redirectTargetRequested.get());
+    } finally {
+      server.stop(0);
+    }
+  }
+
+  private static String imageHtml(String src) {
+    return "<p>text</p><p><img src=\"" + src + "\"></p>";
+  }
+
+  private static HttpServer startServer() throws IOException {
+    HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+    server.start();
+    return server;
+  }
+
+  private static URL urlOf(HttpServer server, String path) throws IOException {
+    return new URL("http://localhost:" + server.getAddress().getPort() + path);
+  }
+
+  private static void respond(HttpExchange exchange, int status, String body) throws IOException {
+    byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+    exchange.sendResponseHeaders(status, bytes.length == 0 ? -1 : bytes.length);
+    if (bytes.length > 0) {
+      exchange.getResponseBody().write(bytes);
+    }
+    exchange.close();
   }
 
   private void setupmocks(Protocol protocol, RSForm aform) {

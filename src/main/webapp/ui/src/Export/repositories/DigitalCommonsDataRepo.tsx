@@ -1,9 +1,8 @@
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { Person, StandardValidations } from "./common";
+import type { StandardValidations } from "./common";
 import type { Tag } from "./Tags";
 
 /*
@@ -11,12 +10,8 @@ import type { Tag } from "./Tags";
  */
 
 type DigitalCommonsDataRepoArgs = {
-  // To modify the metadata relating to persons call updatePeople, for all
-  // other metadata call handleChange. The form fields are uncontrolled so no
-  // current value is passed in from the caller; modified values are simply
-  // propagated up and the fields initialise to empty.
-  updatePeople: (people: Array<Person>) => void;
-  handleChange: (event: { target: { name: "subject" | "title" | "description"; value: string } }) => void;
+  // Modified values are propagated up through handleChange.
+  handleChange: (event: { target: { name: "title" | "description"; value: string } }) => void;
 
   // Callers of this component should validate the modified values and use
   // this prop to signal as to whether the corresponding field should be in an
@@ -48,7 +43,6 @@ export default function DigitalCommonsDataRepo({
   handleChange,
   inputValidations,
   submitAttempt,
-  updatePeople,
   title,
   description,
   tags: _tags,
@@ -56,34 +50,6 @@ export default function DigitalCommonsDataRepo({
   fetchingTags: _fetchingTags,
 }: DigitalCommonsDataRepoArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  /*
-   * DigitalCommonsData doesn't require all of the same information as all of the other
-   * repositories, but the RSpace backend is set up to require author,
-   * contact, and subject metadata. Rather than weaken the validations for
-   * all repositories, for DigitalCommonsData we pass these dummy values which are then
-   * ignored when the RSpace backend calls the DigitalCommonsData API.
-   */
-  useEffect(() => {
-    updatePeople([
-      {
-        uniqueName: "DUMMY_VALUE",
-        email: "DUMMY_VALUE@example.com",
-        type: "Author",
-      },
-      {
-        uniqueName: "DUMMY_VALUE",
-        email: "DUMMY_VALUE@example.com",
-        type: "Contact",
-      },
-    ]);
-    handleChange({
-      target: {
-        name: "subject",
-        value: "DUMMY_VALUE",
-      },
-    });
-  }, []);
-
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>

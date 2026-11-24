@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -465,5 +466,37 @@ public class ArchiveParseTest {
     assertEquals(7, form.getFieldFormList().size());
     assertEquals("String", form.getFieldFormList().get(0).getType());
     assertEquals("archived default", form.getFieldFormList().get(0).getDefaultValue());
+  }
+
+  @Test
+  public void parseFailsValidationWhenDocumentNamesFileOutsideArchive(@TempDir Path temp)
+      throws IOException {
+    File archive = temp.resolve("archive").toFile();
+    FileUtils.copyDirectory(V018, archive);
+    Path docXml = archive.toPath().resolve("doc_Experiment1-298/doc_Experiment1-298.xml");
+    String xml = Files.readString(docXml);
+    Files.writeString(
+        docXml,
+        xml.replaceFirst(
+            "<attachList/>",
+            "<attachList><attach-info><linkFile>../../secret.txt</linkFile></attach-info>"
+                + "</attachList>"));
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "archiveImport.errors.fileOutsideArchive", Locale.getDefault(), "outside {0}");
+    MessageSourceUtils messages = new MessageSourceUtils();
+    messages.setMessageSource(source);
+    ArchiveParserImpl realparser = new ArchiveParserImpl();
+    ReflectionTestUtils.setField(realparser, "messages", messages);
+    ImportArchiveReport report = new ImportArchiveReport();
+
+    realparser.parse(archive, report);
+    report.setValidationComplete(true);
+
+    assertFalse(report.isValidationSuccessful());
+    assertRuleValidationResult(
+        report, ImportValidationRule.FILE_NAMES_INSIDE_ARCHIVE, ValidationTestResult.FAIL);
+    assertThat(report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy("\n"))
+        .contains("outside doc_Experiment1-298");
   }
 }

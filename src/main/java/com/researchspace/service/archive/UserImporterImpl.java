@@ -9,7 +9,9 @@ import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.model.UserProfile;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
@@ -106,15 +108,25 @@ public class UserImporterImpl implements UserImporter {
       if (grpMgr.groupExists(archiveGroup.getUniqueName())) {
         continue;
       }
+      // The PI role comes from the group's PI, so only the Lab Admin role needs carrying over.
+      Map<User, RoleInGroup> membersWithRoles = new HashMap<>();
+      for (UserGroup ug : archiveGroup.getUserGroups()) {
+        RoleInGroup role =
+            RoleInGroup.RS_LAB_ADMIN.equals(ug.getRoleInGroup())
+                ? RoleInGroup.RS_LAB_ADMIN
+                : RoleInGroup.DEFAULT;
+        membersWithRoles.put(ug.getUser(), role);
+      }
       Group savedGroup =
           groupCreator.createAndSaveGroup(
               archiveGroup.getDisplayName(),
               archiveGroup.getPiusers().iterator().next(),
               importer,
               archiveGroup.getGroupType(),
-              archiveGroup.getMembers().toArray(new User[archiveGroup.getMembers().size()]));
+              membersWithRoles);
       savedGroup.setProfileText(archiveGroup.getProfileText());
       savedGroup = grpMgr.saveGroup(savedGroup, importer);
+      restoreLabAdminViewAll(fromXml, archiveGroup, savedGroup, importer);
       groupArchive2Database.put(archiveGroup, savedGroup);
     }
     Community savedComm = null;
@@ -131,6 +143,23 @@ public class UserImporterImpl implements UserImporter {
       for (User archiveAdmin : archiveComm.getAdmins()) {
         adminIds[index] = userArchive2Database.get(archiveAdmin).getId();
         communityMgr.addAdminsToCommunity(adminIds, savedComm.getId());
+      }
+    }
+  }
+
+  /**
+   * Group.addMember in ArchiveUsers.afterUnmarshal creates new memberships, so only the exported
+   * memberships still hold the view-all flag.
+   */
+  private void restoreLabAdminViewAll(
+      ArchiveUsers fromXml, Group archiveGroup, Group savedGroup, User importer) {
+    for (UserGroup ug : fromXml.getUserGroups()) {
+      if (savedGroup.isLabGroup()
+          && ug.getGroup().equals(archiveGroup)
+          && RoleInGroup.RS_LAB_ADMIN.equals(ug.getRoleInGroup())
+          && ug.isAdminViewDocsEnabled()) {
+        User labAdmin = userMgr.getUserByUsername(ug.getUser().getUsername());
+        grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), importer, savedGroup.getId(), true);
       }
     }
   }

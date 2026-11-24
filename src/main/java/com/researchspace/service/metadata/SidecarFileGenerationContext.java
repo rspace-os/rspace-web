@@ -29,4 +29,10 @@ public class SidecarFileGenerationContext {
   String folderPath;
 
   List<SidecarFileEntry> files;
+
+  /**
+   * Global ID page URLs of the Linked documents the user can read, distinct, by ascending id; null
+   * or empty when none.
+   */
+  List<String> linkedDocumentUrls;
 }

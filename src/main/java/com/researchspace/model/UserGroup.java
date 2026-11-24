@@ -158,6 +158,7 @@ public class UserGroup implements Permissable, Serializable {
    *
    * @return <code>true</code> if is enabled, false otherwise
    */
+  @XmlElement
   public boolean isAdminViewDocsEnabled() {
     return adminViewDocsEnabled;
   }

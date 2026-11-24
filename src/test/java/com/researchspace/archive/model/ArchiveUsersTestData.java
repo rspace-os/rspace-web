@@ -10,6 +10,7 @@ import com.researchspace.model.UserProfile;
 public class ArchiveUsersTestData {
   User user;
   User admin;
+  User labAdmin;
   Group group;
   Community community;
   UserProfile profile;
@@ -30,6 +31,14 @@ public class ArchiveUsersTestData {
 
   public void setAdmin(User admin) {
     this.admin = admin;
+  }
+
+  public User getLabAdmin() {
+    return labAdmin;
+  }
+
+  public void setLabAdmin(User labAdmin) {
+    this.labAdmin = labAdmin;
   }
 
   public Group getGroup() {

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { MockInstance } from "@vitest/spy";
 import MockAdapter from "axios-mock-adapter";
@@ -122,11 +122,12 @@ describe("Galaxy Upload Data tests", () => {
   });
   describe("uploads data to Galaxy", () => {
     const renderGalaxy = async () => {
+      const user = userEvent.setup();
       mockAxios.onPost("/apps/galaxy/setUpDataInGalaxyFor").reply(200, createdGalaxyHistory);
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
       await screen.findByRole("radio", { name: "galaxy eu server" });
       const checkBox = screen.getByRole("checkbox", { name: "Select row" });
-      fireEvent.click(checkBox);
+      await user.click(checkBox);
     };
 
     test("posts no-data selected while uploading", async () => {
@@ -163,10 +164,11 @@ describe("Galaxy Upload Data tests", () => {
   });
   describe("Handles errors", () => {
     const renderGalaxy = async () => {
+      const user = userEvent.setup();
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
       await screen.findByRole("radio", { name: "galaxy eu server" });
       const checkBox = screen.getByRole("checkbox", { name: "Select row" });
-      fireEvent.click(checkBox);
+      await user.click(checkBox);
     };
 
     test("displays error message if 403 returned", async () => {

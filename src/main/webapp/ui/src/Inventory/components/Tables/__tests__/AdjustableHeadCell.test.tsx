@@ -1,7 +1,8 @@
 import "@/stores/stores/RootStore";
 
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import materialTheme from "../../../../theme";
 import RsSet from "../../../../util/set";
@@ -9,7 +10,8 @@ import AdjustableHeadCell from "../AdjustableHeadCell";
 
 describe("AdjustableHeadCell", () => {
   describe("The menu of available options should", () => {
-    test("include an item with aria-current, as set by the `current` prop.", () => {
+    test("include an item with aria-current, as set by the `current` prop.", async () => {
+      const user = userEvent.setup();
       render(
         <ThemeProvider theme={materialTheme}>
           <AdjustableHeadCell
@@ -20,7 +22,7 @@ describe("AdjustableHeadCell", () => {
           />
         </ThemeProvider>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "inventory:tables.adjustableHeadCell.columnOptions" }));
+      await user.click(screen.getByRole("button", { name: "inventory:tables.adjustableHeadCell.columnOptions" }));
       expect(screen.getByRole("menuitem", { name: "foo" })).toHaveAttribute("aria-current", "true");
     });
   });

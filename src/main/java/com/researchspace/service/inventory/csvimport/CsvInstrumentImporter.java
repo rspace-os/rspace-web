@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -116,8 +117,9 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
     Map<Integer, String> columnIndexToDefaultFieldMap =
         generateColumnIndexToDefaultFieldMap(csvColumnToFieldMapping, columnNames);
 
-    checkInstrumentCsvCompatibilityWithTemplate(
-        instrumentProcessingResult, columnNames, columnIndexToDefaultFieldMap);
+    Map<Integer, Integer> columnIndexToTemplateFieldIndexMap =
+        checkInstrumentCsvCompatibilityWithTemplate(
+            instrumentProcessingResult, columnNames, columnIndexToDefaultFieldMap);
     boolean isTemplateCompatible = instrumentProcessingResult.getTemplate().getRecord() != null;
 
     if (isTemplateCompatible) {
@@ -126,12 +128,13 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
           instrumentProcessingResult,
           csvInstrumentLines,
           columnIndexToDefaultFieldMap,
+          columnIndexToTemplateFieldIndexMap,
           columnNames.size(),
           user);
     }
   }
 
-  private void checkInstrumentCsvCompatibilityWithTemplate(
+  private Map<Integer, Integer> checkInstrumentCsvCompatibilityWithTemplate(
       ApiInventoryImportInstrumentImportResult csvProcessingResult,
       List<String> columnNames,
       Map<Integer, String> columnIndexToDefaultFieldMap) {
@@ -152,6 +155,16 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       csvProcessingResult.addTemplateError(error);
     }
 
+    Map<Integer, Integer> columnIndexToTemplateFieldIndexMap =
+        csvProcessingResult.getTemplate().getError() != null
+            ? null
+            : mapColumnsToTemplateFieldsOrAddTemplateError(
+                columnNames,
+                columnIndexToDefaultFieldMap.keySet(),
+                template.getFields(),
+                csvProcessingResult.isTemplateCreated(),
+                csvProcessingResult::addTemplateError);
+
     if (csvProcessingResult.getTemplate().getError() != null) {
       csvProcessingResult.setErrorStatusAndResetSuccessCount(
           ApiInventoryBulkOperationResult.InventoryBulkOperationStatus.PREVALIDATION_ERROR);
@@ -159,12 +172,31 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       csvProcessingResult.setStatus(
           ApiInventoryBulkOperationResult.InventoryBulkOperationStatus.PREVALIDATED);
     }
+    return columnIndexToTemplateFieldIndexMap;
+  }
+
+  /** Converts lines whose columns not mapped to default fields fill the template in order. */
+  public void convertLinesToInstruments(
+      ApiInventoryImportInstrumentImportResult csvProcessingResult,
+      List<String[]> linesToImport,
+      Map<Integer, String> columnIndexToDefaultFieldMap,
+      int expectedColumnsNumber,
+      User user) {
+    convertLinesToInstruments(
+        csvProcessingResult,
+        linesToImport,
+        columnIndexToDefaultFieldMap,
+        getPositionalColumnIndexToTemplateFieldIndexMap(
+            expectedColumnsNumber, columnIndexToDefaultFieldMap.keySet()),
+        expectedColumnsNumber,
+        user);
   }
 
   public void convertLinesToInstruments(
       ApiInventoryImportInstrumentImportResult csvProcessingResult,
       List<String[]> linesToImport,
       Map<Integer, String> columnIndexToDefaultFieldMap,
+      Map<Integer, Integer> columnIndexToTemplateFieldIndexMap,
       int expectedColumnsNumber,
       User user) {
 
@@ -176,6 +208,8 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       ApiInstrument apiInstrument = new ApiInstrument();
       apiInstrument.setTemplateId(template.getId());
 
+      ApiInventoryEntityField[] fieldsInTemplateOrder =
+          new ApiInventoryEntityField[template.getFields().size()];
       try {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
@@ -203,13 +237,14 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
             }
           } else {
             ApiInventoryEntityField instrumentField = new ApiInventoryEntityField();
-            ApiInventoryEntityField templateField =
-                template.getFields().get(apiInstrument.getFields().size());
+            int templateFieldIndex = columnIndexToTemplateFieldIndexMap.get(currentColumnIndex);
+            ApiInventoryEntityField templateField = template.getFields().get(templateFieldIndex);
             instrumentField.setName(templateField.getName());
             instrumentField.setType(templateField.getType());
             if (!StringUtils.isBlank(value)) {
               if (instrumentField.isOptionsStoringField()) {
-                instrumentField.setSelectedOptions(Arrays.asList(value));
+                instrumentField.setSelectedOptions(
+                    getSelectedOptionsFromCsvValue(value, templateField));
               } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
                 if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
                   instrumentField.setLink(linkParser.parse(value, user));
@@ -218,9 +253,12 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
                 instrumentField.setContent(value);
               }
             }
-            apiInstrument.getFields().add(instrumentField);
+            fieldsInTemplateOrder[templateFieldIndex] = instrumentField;
           }
         }
+        Arrays.stream(fieldsInTemplateOrder)
+            .filter(Objects::nonNull)
+            .forEach(apiInstrument.getFields()::add);
         csvProcessingResult.addSuccessResult(apiInstrument);
       } catch (RuntimeException iae) {
         csvProcessingResult.addError(

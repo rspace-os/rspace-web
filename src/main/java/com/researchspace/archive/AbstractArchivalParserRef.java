@@ -11,6 +11,10 @@ public abstract class AbstractArchivalParserRef {
   String name;
   List<File> fileList = new ArrayList<>();
   File path;
+
+  /** The top folder of the extracted archive that {@link #path} is in. */
+  File archiveRoot;
+
   String documentFileName;
 
   public AbstractArchivalParserRef() {

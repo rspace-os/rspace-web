@@ -23,14 +23,9 @@ on:
         type: boolean
         default: false
       java_vendor:
-        description: 'Java vendor Maven toolchain'
+        description: 'JDK distribution for setup-java'
         type: string
         default: 'temurin'
-      java_version:
-        description: 'Java version for the Java jobs'
-        type: choice
-        options: ['17', '21']
-        default: '17'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -86,7 +81,7 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.fast_java_tests ||
@@ -118,9 +113,7 @@ jobs:
       - name: Run fast tests
         run: |
           # ponytail: 1C = one fork per CPU core the runner reports (4 on the public-repo runner); isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
-          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ./mvnw clean test -U -Dfast=true -DforkCount=1C -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE}
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.26.0
@@ -195,7 +188,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
@@ -221,11 +214,21 @@ jobs:
       # frontend checks (and vice versa).
       # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
       # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
+      # PRs check only the files that differ from main (main is checked in
+      # full on every push), unless pom.xml differs, since a formatter bump or
+      # config change can affect every file. This compares against main, not
+      # the PR's base, so a stacked PR also checks every layer below it.
+      # Pushes to main and manual runs check everything.
       - name: Spotless check
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          ./mvnw -q spotless:check -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+          ratchet=()
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] \
+            && git diff --quiet "origin/$DEFAULT_BRANCH...HEAD" -- pom.xml; then
+            ratchet=(-DratchetFrom="origin/$DEFAULT_BRANCH")
+          fi
+          ./mvnw -q spotless:check -DspotlessStrict "${ratchet[@]}"
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -595,7 +598,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -660,8 +663,6 @@ jobs:
       - name: Run Spring tests
         run: |
           ./mvnw clean test -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Djdbc.db.maven=rspace \
@@ -693,7 +694,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
         mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
@@ -754,8 +755,6 @@ jobs:
       - name: Run integration tests
         run: |
           ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
-            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -Dsurefire.rerunFailingTestsCount=1 \
@@ -821,7 +820,7 @@ jobs:
         with:
           problem-matcher: true
           distribution: ${{ inputs.java_vendor || 'temurin' }}
-          java-version: ${{ inputs.java_version || '17' }}
+          java-version: 21
           cache: maven
 
       - name: Configure MariaDB
@@ -847,8 +846,6 @@ jobs:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
-          MAVEN_TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
-          MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
@@ -877,7 +874,7 @@ jobs:
       needs.changed-files.outputs.java == 'true'
     strategy:
       matrix:
-        java-version: ["${{ inputs.java_version || '17' }}"]
+        java-version: [21]
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -920,7 +917,6 @@ jobs:
         run: |
           ./mvnw clean package -DskipTests=true -DgenerateReactDist -DrenameResourcesMD5=true \
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
 
       # Base bundle comparisons on pull requests restore this instead of rebuilding main.

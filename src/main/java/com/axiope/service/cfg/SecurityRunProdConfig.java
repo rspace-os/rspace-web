@@ -28,6 +28,10 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
   @Bean
   public SecurityManager securityManager() {
     DefaultWebSecurityManager rc = new ApiAwareWebSecurityManager();
+    // RSpace has no remember-me feature: sessions and explicit API credentials authenticate users.
+    // Without this, Shiro decrypts every rememberMe cookie and logs WARN stack traces for stale or
+    // invalid ones (RSDEV-1409).
+    rc.setRememberMeManager(null);
     Collection<Realm> realms = new ArrayList<>();
 
     if (deploymentPropertyConfig.isStandalone()

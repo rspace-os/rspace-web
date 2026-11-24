@@ -231,6 +231,10 @@ export default interface Resources {
           "testValid": "Connection details are valid."
         },
         "configuredLabel": "Configured Dataverse with name {name}",
+        "deleteConfirm": {
+          "message": "Delete the Dataverse configuration \"{name}\"?",
+          "title": "Delete Dataverse configuration?"
+        },
         "description": "Explore, analyse, and share data through an open-source research data repository software.",
         "errorGettingConfigs": "There was an error getting the configured Dataverses.",
         "fields": {
@@ -4528,8 +4532,8 @@ export default interface Resources {
             "subsamplesTransferred": "{count, plural, =2 {Both subsamples will be transferred to {requester}} other {All # subsamples will be transferred to {requester}}}"
           },
           "heading": "Hand over {sampleName} to {requester}",
-          "newSampleHint": "The new sample {sampleName} has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",
-          "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
+          "newSampleHint": "The new sample <sampleName></sampleName> has now been created and is currently in your own Inventory. If you Cancel the transfer now it will remain in your Inventory until it has been transferred manually.",
+          "warning": "<strong>You will no longer own this sample.</strong> Only <requester></requester> or their PI can transfer it back.",
           "whatWillHappen": "What will happen:"
         },
         "transferSampleButton": "Transfer Sample",
@@ -5734,6 +5738,11 @@ export default interface Resources {
           "notConfigured": "ownCloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
         }
       },
+      "protocolsio": {
+        "errors": {
+          "disabled": "protocols.io is not enabled."
+        }
+      },
       "raid": {
         "errors": {
           "associateGroup": "Not able to associate RAiD to group: {0}",
@@ -6121,6 +6130,7 @@ export default interface Resources {
         "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signup": {
+        "invalidFields": "Your sign-up could not be processed. Please sign up using the form.",
         "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
       },
       "signupCode": {
@@ -6561,7 +6571,7 @@ export default interface Resources {
         },
         "defaultWelcome": {
           "access": "You can access the application at <a href=\"{0}/workspace\">RSpace</a>.",
-          "browserAdvice": "We support recent versions of Chrome, Safari and Firefox.<br>We do not support Edge or Internet Explorer.",
+          "browserAdvice": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge.<br>We do not support Internet Explorer or legacy versions of Microsoft Edge.",
           "contact": "For any help, comments, or questions, contact <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
           "groupMember": "You are part of the Lab Group ''{0}'', and can share documents, send messages, and collaborate with other members of the group.",
           "guidanceHeading": "Guidance",
@@ -6769,6 +6779,7 @@ export default interface Resources {
         "extractionEntryCountExceeded": "The archive could not be imported because it contains more than {0} files and folders.",
         "extractionExpandedSizeExceeded": "The archive could not be imported because its contents expand to more than {0} MB.",
         "extractionInsufficientDiskSpace": "The archive could not be imported because extracting it would leave the server with less than {0} MB of free disk space.",
+        "fileOutsideArchive": "The archive could not be imported because folder {0} refers to a file outside the archive.",
         "invalidDocumentFolder": "{0} folder does not contain a valid document.",
         "itemFailed": "Archive item {0} could not be imported: {1}",
         "missingDocumentXml": "Missing XML file for document: {0}",
@@ -7531,6 +7542,7 @@ export default interface Resources {
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
+          "csvColumnsMatchingSameTemplateField": "CSV columns {0} match the same template field \"{1}\". Each template field can be filled from only one column.",
           "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
@@ -9016,11 +9028,12 @@ export default interface Resources {
       "accountCreatedLoginBusy": "Your account has been created, but the server is busy and could not sign you in automatically. Please sign in now using the same method you just used to sign up.",
       "browserWarning": {
         "chrome": "Chrome",
+        "edge": "Microsoft Edge",
         "firefox": "Firefox",
         "heading": "Browser upgrade recommended to use RSpace",
         "iconAlt": "Icon by Martin Leblanc",
-        "notice1": "It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.",
-        "notice2": "We do fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.",
+        "notice1": "It looks like you are using Internet Explorer or a legacy version of Microsoft Edge, which RSpace does not support. Some RSpace features will not work properly in these browsers.",
+        "notice2": "We support recent versions of Chrome, Firefox, Safari and Microsoft Edge. Use the links below to get a supported browser.",
         "safari": "Safari"
       },
       "community": {

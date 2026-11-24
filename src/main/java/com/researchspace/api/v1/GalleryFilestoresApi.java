@@ -176,8 +176,9 @@ public interface GalleryFilestoresApi {
 
   /**
    * Composes a metadata sidecar for the folder at {@code path} in the request and returns it
-   * without writing anything. Auto-populated from the S3 file listing, the current user, and the
-   * RSpace instance configuration. Non-S3 backends produce 404.
+   * without writing anything. Auto-populated from the S3 file listing, the Linked documents the
+   * user can read, the current user, and the RSpace instance configuration. Non-S3 backends produce
+   * 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/sidecarFile/preview",

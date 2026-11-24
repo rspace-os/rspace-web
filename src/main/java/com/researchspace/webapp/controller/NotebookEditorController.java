@@ -158,7 +158,10 @@ public class NotebookEditorController extends BaseController {
     model.addAttribute("extMessaging", getExternalMessagingIntegrationInfos(user));
     model.addAttribute(
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
-    model.addAttribute("workspaceFolderId", bcrumb.getParentFolderId());
+    // Opened from the notebook's own folder view: go back there, not to the notebook's parent.
+    Long workspaceFolderId =
+        notebookId.equals(grandParentId) ? notebookId : bcrumb.getParentFolderId();
+    model.addAttribute("workspaceFolderId", workspaceFolderId);
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(user));
     model.addAttribute("asposeEnabled", isAsposeEnabled());
     model.addAttribute("isPublished", notebook.isPublished());

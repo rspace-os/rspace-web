@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import axios from "@/common/axios";
@@ -50,16 +51,14 @@ const setUpComponent = () => {
     getWrapper();
   });
 };
-async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
+async function searchForRoRDetails(user: ReturnType<typeof userEvent.setup>, term = "https://ror.org/02mhbdp94") {
   const rorInput = screen.getByRole("textbox", {
     name: "system:ror.searchTooltip",
   });
-  fireEvent.change(rorInput, {
-    target: { value: term },
-  });
+  await user.type(rorInput, term);
   expect(rorInput).toHaveValue(term);
   const searchButton = await screen.findByLabelText("common:actions.search");
-  fireEvent.click(searchButton);
+  await user.click(searchButton);
 }
 async function assertRoRDetailsText() {
   await screen.findByText("Universidad de Los Andes");
@@ -77,12 +76,11 @@ async function assertRoRDetailsText() {
 
 describe("Renders page with ROR data", () => {
   test("loads the RoR view into mainArea from the config link", async () => {
+    const user = userEvent.setup();
     document.body.innerHTML = '<a href="#" id="rorRegistryLink">RoR</a><div id="mainArea">stale content</div>';
 
-    act(() => {
-      window.dispatchEvent(new Event("load"));
-      fireEvent.click(screen.getByRole("link", { name: "RoR" }));
-    });
+    window.dispatchEvent(new Event("load"));
+    await user.click(screen.getByRole("link", { name: "RoR" }));
 
     await waitFor(() => expect(screen.queryByText("stale content")).not.toBeInTheDocument());
     await screen.findByText("system:ror.heading");
@@ -110,27 +108,30 @@ describe("Renders page with ROR data", () => {
   });
 
   test("displays ROR v2 details on search", async () => {
+    const user = userEvent.setup();
     setUpComponent();
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
-    await searchForRoRDetails();
+    await searchForRoRDetails(user);
     await screen.findByText("system:ror.linkHelpText");
     await assertRoRDetailsText();
   });
 
   test("displays error when invalid ROR entered", async () => {
+    const user = userEvent.setup();
     setUpComponent();
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
-    await searchForRoRDetails("https://ror.org/02mhbdp941");
+    await searchForRoRDetails(user, "https://ror.org/02mhbdp941");
     await screen.findByText("https://ror.org/02mhbdp941 is not a valid ROR");
   });
 
   test("displays error when ROR details not found", async () => {
+    const user = userEvent.setup();
     setUpComponent();
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
-    await searchForRoRDetails("https://ror.org/02mhbdp92");
+    await searchForRoRDetails(user, "https://ror.org/02mhbdp92");
     await screen.findByText("ROR ID 'https://ror.org/02mhbdp92' does not exist");
   });
 });

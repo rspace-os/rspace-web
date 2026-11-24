@@ -53,7 +53,9 @@
         "credentials": "Cannot access the server using the supplied API key",
         "project": "Error retrieving DSW project",
         "projects": "Error getting DSW projects",
-        "serverUrl": "Cannot access the specified server URL"
+        "redirect": "The saved DSW URL redirects to a different address. Check it, for example http instead of https.",
+        "serverUrl": "Cannot access the specified server URL",
+        "versionCheck": "Could not check the version of the DSW server at the saved URL. Check the URL, or try again later."
       }
     },
     "dialogTitles": {
@@ -134,6 +136,11 @@
         "notConnected": "You are not connected to OMERO. Connect from the Apps page.",
         "rejectedCredentials": "OMERO rejected these credentials. Check your username and password.",
         "unknownServer": "RSpace is configured for an OMERO server named \"{0}\", which this OMERO instance does not offer. Please contact an administrator."
+      }
+    },
+    "protocolsio": {
+      "errors": {
+        "disabled": "protocols.io is not enabled."
       }
     },
     "raid": {
