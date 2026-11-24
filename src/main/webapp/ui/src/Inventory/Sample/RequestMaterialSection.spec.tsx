@@ -63,14 +63,14 @@ test("wraps a long sample name with spaces at the spaces, without splitting word
   const textNode = title.firstChild as Text;
   const text = textNode.data;
   let start = text.indexOf(word);
-  let lines = new Set<number>();
+  const lines = new Set<number>();
   while (start !== -1) {
     const range = document.createRange();
     range.setStart(textNode, start);
     range.setEnd(textNode, start + word.length);
     const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0);
     expect(rects).toHaveLength(1);
-    lines = lines.add(Math.round(rects[0].top));
+    lines.add(Math.round(rects[0].top));
     start = text.indexOf(word, start + word.length);
   }
   expect(lines.size).toBeGreaterThan(1);

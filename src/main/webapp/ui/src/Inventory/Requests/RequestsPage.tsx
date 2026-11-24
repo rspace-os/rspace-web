@@ -60,6 +60,8 @@ export default function RequestsPage(): React.ReactNode {
 
   // uiStore.visiblePanel is shared with the other Inventory pages, so a "right" left over from
   // one of them would otherwise open this page on an empty detail pane in a single-column layout.
+  // Must stay above the deep-link effect: with the request already cached both run in the same
+  // commit, and that effect's "right" has to win.
   useEffect(() => {
     uiStore.setVisiblePanel("left");
   }, [uiStore]);

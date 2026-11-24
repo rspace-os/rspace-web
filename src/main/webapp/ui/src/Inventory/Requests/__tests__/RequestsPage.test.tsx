@@ -1,7 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { action, observable } from "mobx";
 import { HttpResponse, http } from "msw";
@@ -524,15 +524,14 @@ describe("RequestsPage on a narrow viewport", () => {
   });
 
   test("shows a deep-link error with a way back to the list", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const user = userEvent.setup();
     server.use(http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })));
     renderWithProviders("?requestId=999");
 
     expect(await screen.findByText("inventory:requestsManagement.deepLinkError")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.back" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.back" }));
 
     await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).not.toBeVisible());
-    consoleErrorSpy.mockRestore();
   });
 
   test("resets a details pane left open by another Inventory page back to the list", async () => {

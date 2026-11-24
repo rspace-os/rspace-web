@@ -14,6 +14,7 @@ import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/C
 import useStores from "../../../stores/use-stores";
 import type { URL } from "../../../util/types";
 import CommonEditActions from "../CommonEditActions";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import MoreInfoSidebar from "../MoreInfoSidebar";
 import Toolbar from "../Toolbar/Toolbar";
 import StepperActions from "./StepperActions";
@@ -58,6 +59,7 @@ function _Stepper({
   const {
     searchStore: { activeResult },
   } = useStores();
+  const isSingleColumnLayout = useIsSingleColumnLayout();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
 
   const { useNavigate } = useContext(NavigateContext);
@@ -67,15 +69,19 @@ function _Stepper({
 
   /*
    * The header holding the Title, Global Id link, and record type label is pinned to the top so
-   * the user can always see what they are viewing/editing; the title is clamped so that long
-   * record names cannot cover most of the screen on smaller viewports.
+   * the user can always see what they are viewing/editing; in a single-column layout the title is
+   * clamped so that long record names cannot cover most of the screen. Long names with no spaces
+   * break mid-word, in either layout, rather than overflowing the header.
    */
   const Title = (
     <Stack direction="row" spacing={1}>
       <Typography
         variant="h5"
         component="h2"
-        sx={mergeSx({ mr: 0.75, minWidth: 0, color: "unset !important" }, clampToLines(2))}
+        sx={mergeSx(
+          { mr: 0.75, minWidth: 0, color: "unset !important", overflowWrap: "anywhere" },
+          isSingleColumnLayout ? clampToLines(2) : undefined,
+        )}
       >
         {titleText}
       </Typography>

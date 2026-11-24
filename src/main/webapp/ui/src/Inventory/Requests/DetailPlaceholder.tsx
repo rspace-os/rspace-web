@@ -9,9 +9,7 @@ import BackToListButton from "./BackToListButton";
 export default function DetailPlaceholder({ message }: { message: string }): React.ReactNode {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%" }}>
-      <Box sx={{ p: 1 }}>
-        <BackToListButton />
-      </Box>
+      <BackToListButton sx={{ m: 1, alignSelf: "flex-start" }} />
       <Box sx={{ display: "flex", flexGrow: 1, alignItems: "center", justifyContent: "center", p: 2 }}>
         <Typography variant="body1" color="text.secondary" sx={{ textAlign: "center" }}>
           {message}
