@@ -455,10 +455,22 @@ public class AsyncDepositorImplTest {
     "https://datadryad.org/dataset/" + DRYAD_DOI,
     "https://datadryad.org/stash/dataset/" + DRYAD_DOI,
   })
-  void dryadLinkWithoutEditPathIsSentUnchanged(String link) throws Exception {
+  void dryadLandingPageIsSentUnchanged(String link) throws Exception {
     assertEquals(
         new URL(link),
         depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://datadryad.org/stash/edit?doi=" + DRYAD_DOI + "&edit_code=secret",
+    "https://datadryad.org/dataset/" + DRYAD_DOI + "?edit_code=secret",
+    "https://datadryad.org/dataset/" + DRYAD_DOI + "#secret",
+    "https://user:secret@datadryad.org/dataset/" + DRYAD_DOI,
+    "https://datadryad.org/other/" + DRYAD_DOI,
+  })
+  void dryadLinkThatIsNotAKnownLandingPageSendsNothing(String link) throws Exception {
+    assertNull(depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
   }
 
   @ParameterizedTest

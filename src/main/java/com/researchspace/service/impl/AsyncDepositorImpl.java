@@ -300,13 +300,13 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   /**
    * Dryad returns an edit link holding a secret edit code; turns it into the dataset's landing page
-   * on the link's own host, with the code removed. A link with no edit segment is returned
-   * unchanged; an edit link that cannot be rewritten gives null, so nothing is sent.
+   * on the link's own host, with the code removed. A landing page link is returned unchanged; any
+   * other link gives null, so nothing is sent.
    */
   private URL getDryadPublicUrl(URL repositoryUrl) {
     String path = repositoryUrl.getPath();
     if (!path.contains(DRYAD_EDIT_PATH)) {
-      return repositoryUrl;
+      return isDryadLandingPage(repositoryUrl) ? repositoryUrl : null;
     }
     String landing;
     if (path.startsWith(DRYAD_OLD_EDIT_PATH)) {
@@ -327,6 +327,13 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       log.warn("Couldn't make a Dryad landing page from its edit link");
       return null;
     }
+  }
+
+  private static boolean isDryadLandingPage(URL url) {
+    return (url.getPath().startsWith("/dataset/") || url.getPath().startsWith("/stash/dataset/"))
+        && url.getQuery() == null
+        && url.getRef() == null
+        && url.getUserInfo() == null;
   }
 
   private static final String DRYAD_OLD_EDIT_PATH = "/stash/edit/";
