@@ -578,7 +578,7 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
-  void manyPlansAreSummarisedSoTheNotificationFits() throws Exception {
+  void everyPlanIsListedHoweverManyThereAre() throws Exception {
     List<PlanReportResult> results = new ArrayList<>();
     for (int i = 0; i < 12; i++) {
       results.add(
@@ -589,25 +589,9 @@ public class AsyncDepositorImplTest {
 
     String planMessage = planNotificationFor(results);
 
-    assertThat(planMessage.length()).isLessThan(2000);
-    assertThat(planMessage)
-        .contains("not listed here")
-        .containsPattern("And \\d+ more plans not listed here")
-        .contains("xplan 0")
-        .doesNotContain("xplan 11");
-    assertThat(planMessage.trim()).endsWith("</p>");
-  }
-
-  @Test
-  void fewPlansAreAllListed() throws Exception {
-    String planMessage =
-        planNotificationFor(
-            List.of(
-                withStatus("Plan A", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED),
-                withStatus("Plan B", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED),
-                withStatus("Plan C", DMPSource.DMP_TOOL, PlanReportStatus.NOT_CONNECTED)));
-
-    assertThat(planMessage).contains("Plan A", "Plan B", "Plan C").doesNotContain("not listed");
+    for (int i = 0; i < 12; i++) {
+      assertThat(planMessage).contains("xplan " + i + " (DMPTool)");
+    }
   }
 
   private String planNotificationFor(List<PlanReportResult> results) throws Exception {

@@ -3,9 +3,6 @@ $msg.format("email.notification.dmpUpdateCompleteNotification.intro", [$repo])
 #foreach($plan in $plans)
 <li>$plan.heading<br/>$plan.outcome</li>
 #end
-#if($morePlans > 0)
-<li>$msg.format("email.notification.dmpUpdateCompleteNotification.morePlans", [$morePlans])</li>
-#end
 </ul>
 #if($doi)
 <p>
