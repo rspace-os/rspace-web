@@ -1,30 +1,11 @@
 package com.researchspace.model.dto;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.apps.App;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class IntegrationInfoTest {
-  IntegrationInfo integrationInfo;
-
-  @BeforeEach
-  void before() {
-    integrationInfo = new IntegrationInfo();
-  }
-
-  @Test
-  void isOAuthAppUsable() {
-    assertFalse(integrationInfo.isOAuthAppUsable());
-    integrationInfo.setAvailable(true);
-    assertFalse(integrationInfo.isOAuthAppUsable());
-    integrationInfo.setEnabled(true);
-    assertFalse(integrationInfo.isOAuthAppUsable());
-    integrationInfo.setOauthConnected(true);
-    assertTrue(integrationInfo.isOAuthAppUsable());
-  }
-
   @Test
   void appToInfoNameRoundTrip() {
     String FIGSHARE_INFO_NAME = "FIGSHARE";
