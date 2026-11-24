@@ -35,7 +35,10 @@ public final class SafeOfficeArchiveValidator {
   // Match POI's 100 KiB grace size for small, highly compressible Office entries.
   private static final long MIN_COMPRESSION_RATIO_BYTES = 100L * 1024;
 
-  /** Packages whose embedded objects are rejected; spreadsheets and slides embed chart data. */
+  /**
+   * Packages whose embedded objects are rejected, apart from the workbooks that hold Word chart
+   * data. Spreadsheets and slides keep all their embeddings.
+   */
   private static final Set<String> TEXT_DOCUMENTS = Set.of("docx", "odt");
 
   private static final Set<String> NESTED_ARCHIVES =
@@ -99,7 +102,7 @@ public final class SafeOfficeArchiveValidator {
       if ((!entry.isDirectory() && NESTED_ARCHIVES.stream().anyMatch(lower::endsWith))
           || lower.endsWith("vbaproject.bin")
           || lower.endsWith("/objectpool")
-          || (textDocument && lower.contains("/embeddings/"))) {
+          || (textDocument && lower.contains("/embeddings/") && !isWordChartWorkbook(lower))) {
         throw invalid();
       }
       long expanded = count(zip.getInputStream(entry), MAX_ENTRY_BYTES);
@@ -111,6 +114,10 @@ public final class SafeOfficeArchiveValidator {
         throw tooLarge();
       }
     }
+  }
+
+  private static boolean isWordChartWorkbook(String lowerCaseName) {
+    return lowerCaseName.startsWith("word/embeddings/") && lowerCaseName.endsWith(".xlsx");
   }
 
   private static String normalize(String name) throws IOException {

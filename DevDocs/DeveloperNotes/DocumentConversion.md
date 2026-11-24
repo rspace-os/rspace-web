@@ -115,10 +115,11 @@ bubblewrap helpers cannot accumulate against the PID limit.
 ## Input and output boundaries
 
 The sidecar rejects unexpected multipart fields, query parameters, caller-supplied Gotenberg
-controls, unsupported extensions, and oversized files. Before Word import, it also rejects unsafe
-DOCX, ODT, and OTT packages, including nested archives, macro artifacts, and external OOXML
-relationships. Every other ZIP-based input (XLSX, PPTX, ODS, ODP) gets the same entry-count,
-expansion, and compression-ratio limits; embedded chart workbooks are allowed there. The per-entry
+controls, unsupported extensions, and oversized files. It also rejects unsafe DOCX, ODT, and OTT
+packages, for previews as well as Word import: nested archives, macro artifacts, external OOXML
+relationships, and embedded objects other than the `.xlsx` workbooks behind Word charts. Every
+other ZIP-based input (XLSX, PPTX, ODS, ODP) gets the same entry-count, expansion, and
+compression-ratio limits; embedded chart workbooks are allowed there. The per-entry
 compression-ratio limit applies only to entries that expand beyond 100 KiB. It caps archive entries,
 expanded bytes, response bytes, and conversion time. RSpace applies the same archive checks before
 sending a file, and rejects PDFs with more than 2,000,000 structural objects (dictionaries, arrays,

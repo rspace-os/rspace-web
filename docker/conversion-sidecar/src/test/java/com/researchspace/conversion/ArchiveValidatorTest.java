@@ -88,18 +88,26 @@ class ArchiveValidatorTest {
   }
 
   @Test
-  void rejectsDocxWorkbookEmbeddings() throws IOException {
-    Path archive = tempDir.resolve("embedded-workbook.docx");
-    try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(archive))) {
+  void acceptsDocxChartWorkbookButRejectsOtherDocxEmbeddings() throws IOException {
+    Path chart = tempDir.resolve("chart-workbook.docx");
+    try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(chart))) {
       entry(output, "[Content_Types].xml", "<Types/>");
       entry(output, "word/document.xml", "<document/>");
+      entry(output, "word/charts/chart1.xml", "<chartSpace/>");
       entry(output, "word/embeddings/Microsoft_Excel_Worksheet1.xlsx", minimalWorkbookArchive());
     }
+    Path oleObject = tempDir.resolve("ole-object.docx");
+    try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(oleObject))) {
+      entry(output, "[Content_Types].xml", "<Types/>");
+      entry(output, "word/document.xml", "<document/>");
+      entry(output, "word/embeddings/oleObject1.bin", "ole");
+    }
 
-    ConversionException exception =
-        assertThrows(ConversionException.class, () -> validator.validate(archive, "docx"));
-
-    assertEquals(ConversionError.INPUT_INVALID, exception.error());
+    assertDoesNotThrow(() -> validator.validate(chart, "docx"));
+    assertEquals(
+        ConversionError.INPUT_INVALID,
+        assertThrows(ConversionException.class, () -> validator.validate(oleObject, "docx"))
+            .error());
   }
 
   @Test
