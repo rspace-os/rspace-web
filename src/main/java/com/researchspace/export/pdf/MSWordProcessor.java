@@ -38,7 +38,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 public class MSWordProcessor extends AbstractExportProcessor implements ExportProcessor {
 
-  private static final int MAX_INLINE_IMAGES = 100;
   private static final long MAX_INLINE_IMAGE_BYTES = 10_000_000;
   private static final long MAX_TOTAL_INLINE_IMAGE_BYTES = 50_000_000;
   private static final Set<String> INLINE_IMAGE_TYPES =
@@ -188,52 +187,57 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     return doc;
   }
 
+  /**
+   * Inlines each image as a data URI. An image that cannot be inlined (a remote or invalid source,
+   * an unsupported type, or one past the size limits) becomes the placeholder image, as in other
+   * exports, rather than failing the whole export.
+   */
   private void inlineImageSources(ExportToFileConfig exportConfig, Elements images)
       throws IOException {
-    if (images.size() > MAX_INLINE_IMAGES) {
-      throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
-    }
     long totalBytes = 0;
     Tika tika = new Tika();
-    for (int i = 0; i < images.size(); i++) {
-      Element img = images.get(i);
+    for (Element img : images) {
       String source = img.attr("src");
-      validateInternalImageSource(source);
-      byte[] imgData = imageHelper.getImageBytesFromImgSrc(source, exportConfig);
-      if (imgData == null || imgData.length == 0 || imgData.length > MAX_INLINE_IMAGE_BYTES) {
-        throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
+      byte[] imgData =
+          isInternalImageSource(source)
+              ? imageHelper.getImageBytesFromImgSrc(source, exportConfig)
+              : null;
+      String mediaType = imgData == null ? null : tika.detect(imgData).toLowerCase(Locale.ROOT);
+      if (imgData == null
+          || imgData.length == 0
+          || imgData.length > MAX_INLINE_IMAGE_BYTES
+          || totalBytes + imgData.length > MAX_TOTAL_INLINE_IMAGE_BYTES
+          || !INLINE_IMAGE_TYPES.contains(mediaType)) {
+        log.warn("Exporting a placeholder for an image that cannot be inlined in Word export");
+        imgData = imageHelper.getPlaceholderImage();
+        mediaType = imgData == null ? null : tika.detect(imgData).toLowerCase(Locale.ROOT);
+        if (imgData == null || !INLINE_IMAGE_TYPES.contains(mediaType)) {
+          img.remove();
+          continue;
+        }
       }
       totalBytes += imgData.length;
-      if (totalBytes > MAX_TOTAL_INLINE_IMAGE_BYTES) {
-        throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
-      }
-      String mediaType = tika.detect(imgData).toLowerCase(Locale.ROOT);
-      if (!INLINE_IMAGE_TYPES.contains(mediaType)) {
-        throw new DocumentConversionException(DocumentConversionError.UNSUPPORTED);
-      }
       img.attr(
           "src", "data:" + mediaType + ";base64," + Base64.getEncoder().encodeToString(imgData));
     }
   }
 
-  private void validateInternalImageSource(String source) throws IOException {
+  private boolean isInternalImageSource(String source) {
     if (source == null
         || source.isBlank()
         || source.startsWith("//")
         || source.indexOf('\\') >= 0) {
-      throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID);
+      return false;
     }
     try {
       URI uri = URI.create(source);
       String path = uri.getPath();
-      if (uri.isAbsolute()
-          || uri.getAuthority() != null
-          || path == null
-          || java.nio.file.Path.of(path).normalize().startsWith("..")) {
-        throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID);
-      }
+      return !uri.isAbsolute()
+          && uri.getAuthority() == null
+          && path != null
+          && !java.nio.file.Path.of(path).normalize().startsWith("..");
     } catch (IllegalArgumentException e) {
-      throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID, e);
+      return false;
     }
   }
 }

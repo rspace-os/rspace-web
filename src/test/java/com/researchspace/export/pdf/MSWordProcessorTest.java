@@ -198,7 +198,8 @@ public class MSWordProcessorTest {
   }
 
   @Test
-  public void testMakeExportRejectsRemoteImagesBeforeRetrieval() throws IOException {
+  public void testMakeExportReplacesRemoteImagesWithPlaceholderWithoutRetrieval()
+      throws IOException {
     input =
         new ExportProcessorInput(
             "<html><img src='http://169.254.169.254/latest/meta-data/'></html>",
@@ -206,16 +207,35 @@ public class MSWordProcessorTest {
             null,
             null,
             null);
+    when(imageRetriever.getPlaceholderImage())
+        .thenReturn(java.util.Base64.getDecoder().decode(ONE_PIXEL_PNG));
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
 
-    assertEquals(
-        DocumentConversionError.INPUT_INVALID,
-        assertThrows(
-                DocumentConversionException.class,
-                () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg))
-            .error());
+    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+
     verify(imageRetriever, never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, never()).convert(any(Convertible.class), eq("docx"), eq(outfile));
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    String html = FileUtils.readFileToString(htmlInput, "UTF-8");
+    assertTrue(html.contains("data:image/png;base64," + ONE_PIXEL_PNG));
+    assertFalse(html.contains("169.254.169.254"));
+  }
+
+  @Test
+  public void testMakeExportReplacesUnsupportedImageTypesWithPlaceholder() throws IOException {
+    input = createAnyHTMLWithImage();
+    when(imageRetriever.getImageBytesFromImgSrc(Mockito.anyString(), eq(cfg)))
+        .thenReturn("<svg xmlns='http://www.w3.org/2000/svg'/>".getBytes());
+    when(imageRetriever.getPlaceholderImage())
+        .thenReturn(java.util.Base64.getDecoder().decode(ONE_PIXEL_PNG));
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
+
+    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    assertTrue(
+        FileUtils.readFileToString(htmlInput, "UTF-8")
+            .contains("data:image/png;base64," + ONE_PIXEL_PNG));
   }
 
   private ExportProcessorInput createAnyHTMLWithImage() {

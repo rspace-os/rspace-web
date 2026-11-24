@@ -93,6 +93,11 @@ public class ImageRetrieverHelperImpl implements ImageRetrieverHelper {
     return imageData;
   }
 
+  @Override
+  public byte[] getPlaceholderImage() {
+    return getUnknown();
+  }
+
   byte[] getUnknown() {
     String fallBackImage = "/images/icons/unknownDocument.png";
     try {
