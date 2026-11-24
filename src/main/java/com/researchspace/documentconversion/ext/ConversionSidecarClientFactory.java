@@ -1,10 +1,15 @@
 package com.researchspace.documentconversion.ext;
 
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.client.RestClientException;
 
 /** Creates the document-conversion clients from deployment properties. */
 public final class ConversionSidecarClientFactory {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ConversionSidecarClientFactory.class);
 
   private ConversionSidecarClientFactory() {}
 
@@ -49,7 +54,16 @@ public final class ConversionSidecarClientFactory {
             Duration.ofMillis(settings.responseTimeoutMs()),
             settings.maxInputBytes(),
             settings.maxOutputBytes());
-    sidecar.requireCapabilities();
+    try {
+      sidecar.requireCapabilities();
+    } catch (RestClientException e) {
+      // An unreachable sidecar must not stop RSpace starting; conversions fail until it is back.
+      // A reachable service that is not a compatible sidecar still fails startup.
+      LOG.warn(
+          "Could not reach the conversion sidecar at startup; document conversions will fail"
+              + " until it is reachable",
+          e);
+    }
     return new Clients(
         new PdfConversionClient(sidecar), new JodConverterClient(sidecar, settings.maxHtmlBytes()));
   }

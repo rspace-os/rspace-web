@@ -60,7 +60,9 @@ conversion.maxHtmlBytes=52428800
 traffic only from RSpace. Gotenberg remains on the internal `conversion` network.
 
 RSpace disables redirects and retries, then checks the sidecar protocol and protocol version at
-startup. Host filtering belongs to the deployment firewall and secure-tunnel configuration.
+startup. A service that answers with the wrong protocol stops RSpace starting; an unreachable
+sidecar only logs a warning, and conversions fail with `conversion.service-unavailable` until it is
+back. Host filtering belongs to the deployment firewall and secure-tunnel configuration.
 
 The sidecar defaults live in `application.properties`. Spring Boot also accepts each setting as an
 environment variable, for example `converter.max-output-bytes` becomes

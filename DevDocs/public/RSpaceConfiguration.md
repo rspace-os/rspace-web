@@ -184,7 +184,8 @@ Set these deployment properties to enable conversion:
 Connection, conversion, response, and size limits use the remaining `conversion.*` properties in
 `defaultDeployment.properties`. The URL accepts any HTTP origin because network policy is the
 deployment security boundary. Keep both services firewalled. RSpace must reach only the sidecar.
-Gotenberg must accept traffic only from the sidecar.
+Gotenberg must accept traffic only from the sidecar. RSpace still starts if the sidecar is not
+running yet; previews, Word import, and Word export fail until it is reachable.
 
 Aspose properties remain available for older deployments. They are deprecated. When
 `conversion.url` is set, the Gotenberg/JODConverter path takes precedence over Aspose.
