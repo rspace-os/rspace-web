@@ -99,7 +99,7 @@ function staleFieldPolicy<TDocument>(config: ResolvedCollectionConfig<TDocument>
   };
 }
 
-/** Requests the rows for `state`. Shared by every table-list entry point. */
+/** Shared by every table-list entry point. */
 export function useTableListQuery<TDocument extends Record<string, unknown>>(
   config: ResolvedCollectionConfig<TDocument>,
   state: CollectionQueryState<TDocument>,
