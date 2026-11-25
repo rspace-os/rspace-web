@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLandmark } from "@/components/LandmarksContext";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
 import NavigateContext from "@/stores/contexts/Navigate";
 import useStores from "@/stores/use-stores";
 import Layout2x1 from "../components/Layout/Layout2x1";
@@ -17,7 +18,7 @@ import type { ApiSampleRequestListItem } from "./sampleRequest";
  * Lets a user see all of the requests they have made, and (as an owner)
  * all of the requests made against their own samples.
  */
-export default function RequestsPage(): React.ReactNode {
+function RequestsPageContent(): React.ReactNode {
   const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
   const mainContentRef = useLandmark(t("requestsManagement.landmark"));
@@ -58,6 +59,37 @@ export default function RequestsPage(): React.ReactNode {
   // own stale selection without discarding one the user picked themselves since.
   const [deepLinkSelected, setDeepLinkSelected] = useState(false);
 
+  // Brings back the request shown when the user last left this page (see
+  // uiStore.lastSelectedSampleRequestId). Only read on mount, and never when the URL names a request.
+  const [restoreRequestId] = useState(() => (rawDeepLinkId === null ? uiStore.lastSelectedSampleRequestId : null));
+  const restoreQuery = useSampleRequestDetailQuery(restoreRequestId);
+  const [restoreHandled, setRestoreHandled] = useState(restoreRequestId === null);
+
+  useEffect(() => {
+    if (restoreHandled) return;
+    if (restoreQuery.isSuccess) {
+      setRestoreHandled(true);
+      // A row picked, or a deep link followed, while this loaded is more recent and so wins.
+      if (rawDeepLinkId === null) setSelectedRequest((current) => current ?? restoreQuery.data);
+    } else if (restoreQuery.isError) {
+      setRestoreHandled(true);
+      // Deleted, or no longer visible to this user; forget it unless something newer replaced it.
+      if (uiStore.lastSelectedSampleRequestId === restoreRequestId) uiStore.setLastSelectedSampleRequestId(null);
+    }
+  }, [
+    restoreHandled,
+    restoreQuery.isSuccess,
+    restoreQuery.isError,
+    restoreQuery.data,
+    rawDeepLinkId,
+    restoreRequestId,
+    uiStore,
+  ]);
+
+  useEffect(() => {
+    if (selectedRequest) uiStore.setLastSelectedSampleRequestId(selectedRequest.id);
+  }, [selectedRequest, uiStore]);
+
   // uiStore.visiblePanel is shared with the other Inventory pages, so a "right" left over from
   // one of them would otherwise open this page on an empty detail pane in a single-column layout.
   // Must stay above the deep-link effect: with the request already cached both run in the same
@@ -73,10 +105,14 @@ export default function RequestsPage(): React.ReactNode {
       // Only clears a selection the deep link itself set - a manual list pick survives, as it does
       // against a stale background refetch too.
       setLastHandledDeepLinkKey(null);
+      // Browser Back/Forward don't go through RouterNavigationContext, which would otherwise reset
+      // the panel, so return to the list here rather than leave it behind an empty detail pane.
+      if (deepLinkSelected || showDeepLinkError) uiStore.setVisiblePanel("left");
       setShowDeepLinkError(false);
       if (deepLinkSelected) {
         setSelectedRequest(null);
         setDeepLinkSelected(false);
+        uiStore.setLastSelectedSampleRequestId(null);
       }
       return;
     }
@@ -120,6 +156,9 @@ export default function RequestsPage(): React.ReactNode {
   ]);
 
   function selectRequest(request: ApiSampleRequestListItem) {
+    // Supersedes the current URL's deep link, so its still-pending result can't replace this pick
+    // when it arrives; a later navigation to a different requestId is still followed.
+    if (rawDeepLinkId !== null) setLastHandledDeepLinkKey(rawDeepLinkId);
     setShowDeepLinkError(false);
     setDeepLinkSelected(false);
     setSelectedRequest(request);
@@ -140,5 +179,17 @@ export default function RequestsPage(): React.ReactNode {
         }
       />
     </Main>
+  );
+}
+
+/**
+ * Loads the saved UI preferences, such as whether the user has hidden the right panel, which
+ * Layout2x1 shares with the Inventory search pages.
+ */
+export default function RequestsPage(): React.ReactNode {
+  return (
+    <UiPreferences>
+      <RequestsPageContent />
+    </UiPreferences>
   );
 }

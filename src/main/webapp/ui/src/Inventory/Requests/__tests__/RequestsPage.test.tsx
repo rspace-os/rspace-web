@@ -36,6 +36,7 @@ vi.mock("../RequestDetailPanel", () => ({
 
 const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
+const UI_PREFERENCES_URL = "/userform/ajax/preference";
 
 const apiGet = vi.fn();
 
@@ -46,6 +47,10 @@ function makeUiStore() {
     isSmall: false,
     setVisiblePanel: action((panel: "left" | "right") => {
       store.visiblePanel = panel;
+    }),
+    lastSelectedSampleRequestId: null as number | null,
+    setLastSelectedSampleRequestId: action((id: number | null) => {
+      store.lastSelectedSampleRequestId = id;
     }),
   });
   return store;
@@ -103,10 +108,42 @@ function requestDetailResponse(id: number) {
 beforeEach(() => {
   vi.clearAllMocks();
   uiStore = makeUiStore();
-  server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json({ requests: [], totalHits: 0 })));
+  server.use(
+    http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json({ requests: [], totalHits: 0 })),
+    http.get(UI_PREFERENCES_URL, () => HttpResponse.text("")),
+  );
 });
 
 describe("RequestsPage deep-linking", () => {
+  test("keeps a request picked from the list while the deep link's own result is still pending, but follows a later deep link", async () => {
+    let releaseDetail = () => {};
+    const detailHeld = new Promise<void>((resolve) => {
+      releaseDetail = resolve;
+    });
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, async ({ params }) => {
+        await detailHeld;
+        return HttpResponse.json(requestDetailResponse(Number(params.id)));
+      }),
+    );
+    const { queryClient, navigateTo } = renderWithProviders("?requestId=42");
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+
+    releaseDetail();
+    await waitFor(() => {
+      expect(queryClient.getQueryState(["sampleRequests", "detail", 42])?.status).toBe("success");
+    });
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+
+    navigateTo("?requestId=43");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:43"));
+  });
+
   test("resolves a ?requestId= deep link via a single GET, handing the result to RequestDetailPanel", async () => {
     server.use(
       http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
@@ -497,6 +534,25 @@ describe("RequestsPage on a narrow viewport", () => {
     window.innerWidth = originalWidth;
   });
 
+  test("returns to the list when browser Back/Forward leaves a deep link for the plain URL", async () => {
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => HttpResponse.json(requestDetailResponse(Number(params.id)))),
+    );
+    // The test's navigate is a no-op, so like a popstate these URL changes don't reset the panel.
+    const { navigateTo } = renderWithProviders("?requestId=42");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+
+    navigateTo(""); // sidebar's Requests link
+    navigateTo("?requestId=42"); // Back
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+    expect(screen.getByTestId("mock-detail-panel")).toBeVisible();
+    navigateTo(""); // Forward
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible());
+    expect(screen.getByText("SA9").closest("tr")).toBeVisible();
+  });
+
   test("shows only the list until a request is picked, then only that request's details", async () => {
     server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)));
     renderWithProviders("");
@@ -541,5 +597,93 @@ describe("RequestsPage on a narrow viewport", () => {
 
     expect((await screen.findByText("SA9")).closest("tr")).toBeVisible();
     expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible();
+  });
+});
+
+describe("RequestsPage's saved right-panel preference", () => {
+  test("keeps the details pane hidden on a wide viewport when the user hid it, e.g. on the Samples page", async () => {
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)),
+      http.get(UI_PREFERENCES_URL, () => HttpResponse.json({ INVENTORY_HIDDEN_RIGHT_PANEL: { value: true, time: 0 } })),
+    );
+    renderWithProviders("");
+
+    expect((await screen.findByText("SA9")).closest("tr")).toBeVisible();
+    expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible();
+    expect(screen.getByRole("button", { name: "inventory:layout.showRightPanel" })).toBeInTheDocument();
+  });
+});
+
+describe("RequestsPage remembering the shown request across visits", () => {
+  function serveListAndDetails() {
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet(Number(params.id));
+        return HttpResponse.json(requestDetailResponse(Number(params.id)));
+      }),
+    );
+  }
+
+  test("shows the request picked on an earlier visit when the page is opened again", async () => {
+    serveListAndDetails();
+    const { unmount } = renderWithProviders("");
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await userEvent.setup().keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+    unmount();
+
+    // e.g. browser Back to another Inventory page, then Forward to this one
+    renderWithProviders("");
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+  });
+
+  test("shows the request named in the URL instead of the remembered one", async () => {
+    serveListAndDetails();
+    uiStore.setLastSelectedSampleRequestId(7);
+
+    renderWithProviders("?requestId=42");
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+    expect(apiGet).not.toHaveBeenCalledWith(7);
+  });
+
+  test("forgets a remembered request that can no longer be loaded", async () => {
+    server.use(http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })));
+    uiStore.setLastSelectedSampleRequestId(7);
+
+    renderWithProviders("");
+
+    await waitFor(() => expect(uiStore.lastSelectedSampleRequestId).toBeNull());
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("none");
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+  });
+
+  test("keeps a request picked from the list while the remembered one is still loading", async () => {
+    let releaseDetail = () => {};
+    const detailHeld = new Promise<void>((resolve) => {
+      releaseDetail = resolve;
+    });
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json(LIST_WITH_ONE_REQUEST)),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, async ({ params }) => {
+        await detailHeld;
+        return HttpResponse.json(requestDetailResponse(Number(params.id)));
+      }),
+    );
+    uiStore.setLastSelectedSampleRequestId(42);
+    const { queryClient } = renderWithProviders("");
+
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await userEvent.setup().keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+
+    releaseDetail();
+    await waitFor(() => {
+      expect(queryClient.getQueryState(["sampleRequests", "detail", 42])?.status).toBe("success");
+    });
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+    expect(uiStore.lastSelectedSampleRequestId).toBe(7);
   });
 });

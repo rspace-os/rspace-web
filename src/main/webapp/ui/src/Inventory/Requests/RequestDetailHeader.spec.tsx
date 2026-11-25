@@ -11,12 +11,9 @@ afterEach(() => {
   cleanup();
 });
 
-test.each([
-  ["with spaces", "Long sample name ".repeat(15).slice(0, 255)],
-  ["without spaces", "x".repeat(255)],
-])("clamps a maximum-length sample name %s to two lines on a phone-width viewport", async (_, sampleName) => {
+async function renderHeaderAt(width: number, height: number, sampleName: string): Promise<HTMLElement> {
   const { innerWidth, innerHeight } = window;
-  await page.viewport(390, 844);
+  await page.viewport(width, height);
   onTestFinished(() => page.viewport(innerWidth, innerHeight));
 
   render(
@@ -26,9 +23,31 @@ test.each([
       </storesContext.Provider>
     </ThemeProvider>,
   );
+  return page.getByRole("heading").element() as HTMLElement;
+}
 
-  const heading = page.getByRole("heading").element();
-  const lineHeight = Number.parseFloat(getComputedStyle(heading).lineHeight);
-  expect(heading.getBoundingClientRect().height).toBeLessThanOrEqual(2 * lineHeight + 1);
-  expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth);
-});
+const MAX_LENGTH_NAMES = [
+  ["with spaces", "Long sample name ".repeat(15).slice(0, 255)],
+  ["without spaces", "x".repeat(255)],
+];
+
+test.each(MAX_LENGTH_NAMES)(
+  "clamps a maximum-length sample name %s to two lines on a phone-width viewport",
+  async (_, sampleName) => {
+    const heading = await renderHeaderAt(390, 844, sampleName);
+    const lineHeight = Number.parseFloat(getComputedStyle(heading).lineHeight);
+    expect(heading.getBoundingClientRect().height).toBeLessThanOrEqual(2 * lineHeight + 1);
+    expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth);
+  },
+);
+
+test.each(MAX_LENGTH_NAMES)(
+  "shows a maximum-length sample name %s in full, wrapped, on a desktop-width viewport",
+  async (_, sampleName) => {
+    const heading = await renderHeaderAt(1280, 720, sampleName);
+    expect(heading.scrollHeight).toBeLessThanOrEqual(heading.clientHeight);
+    expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth);
+    const lineHeight = Number.parseFloat(getComputedStyle(heading).lineHeight);
+    expect(heading.getBoundingClientRect().height).toBeGreaterThan(2 * lineHeight + 1);
+  },
+);

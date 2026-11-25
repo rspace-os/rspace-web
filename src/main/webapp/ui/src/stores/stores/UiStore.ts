@@ -47,6 +47,12 @@ export default class UiStore {
   // @ts-expect-error It is set by the constructor's call to updateViewportSize
   viewportSize: (typeof breakpoints)[keyof typeof breakpoints];
   dirty: boolean = false;
+  /*
+   * The request last shown on the Requests page, kept here (like the search pages' activeResult in
+   * SearchStore) so that leaving the page and returning to it, e.g. with the browser's Back and
+   * Forward buttons, shows the same request again.
+   */
+  lastSelectedSampleRequestId: number | null = null;
   discardChangesCallback: () => Promise<void> = async () => {};
 
   /*
@@ -78,6 +84,8 @@ export default class UiStore {
       confirmationDialogProps: observable.ref,
       viewportSize: observable,
       dirty: observable,
+      lastSelectedSampleRequestId: observable,
+      setLastSelectedSampleRequestId: action,
       updateViewportSize: action,
       addAlert: observable,
       toggleSidebar: action,
@@ -164,6 +172,10 @@ export default class UiStore {
 
   setVisiblePanel(panel: Panel) {
     this.visiblePanel = panel;
+  }
+
+  setLastSelectedSampleRequestId(id: number | null) {
+    this.lastSelectedSampleRequestId = id;
   }
 
   setDialogVisiblePanel(panel: Panel) {
