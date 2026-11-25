@@ -168,7 +168,7 @@ configuration is in `docker/dev/otel/otel-collector-config.yaml`; setup and
 usage are in `docker/dev/README.md`.
 
 The checked-in development versions are Collector `0.165.0`, Java agent
-`2.33.1`, Java contrib `1.62.1-alpha`, Elasticsearch/Kibana/APM Server `9.5.6`,
+`2.33.1`, Java contrib `1.62.1-alpha`, Elasticsearch/Kibana/APM Server `9.5.7`,
 APM integration `9.3.5-preview-1779430085`, OpenTelemetry JS SDK `3.1.1`, and
 JS instrumentation/exporters `0.301.2`. Keep this set pinned and review
 compatibility before changing any member. The Java contrib release must match
