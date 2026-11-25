@@ -393,9 +393,8 @@ resolved during design. This file is a glossary only — no implementation detai
   engines, so its publication link is no secret.
   _Avoid_: listed publication, public document
 - **Link-only publication** — a publication made with "Publish a link": not
-  listed, and search engines are told not to index it. A visitor who is not
-  signed in reaches it only through a publication link someone gave them:
-  RSpace never hands such a visitor that link by Global ID.
+  listed, and search engines are told not to index it. RSpace never hands a
+  visitor who is not signed in its publication link by Global ID.
   _Avoid_: unlisted publication, private publication
 
 ## Record version history
