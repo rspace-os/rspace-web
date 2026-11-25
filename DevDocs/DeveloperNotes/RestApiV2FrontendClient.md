@@ -119,6 +119,9 @@ token, so a signed-in caller keeps their view; otherwise, including after a refu
 anonymously. The setter returns a restore function, which tests use to swap
 providers; `setup.ts`, `browserSetup.ts` and the Storybook preview install one for tests and stories.
 
+In the app shell, `router.tsx` builds the provider with `appShellSessionHandlers` and puts it in `AppRouterContext` as
+`tokenProvider`; `AppEntrypoint` installs that same instance, so routes and generated calls share one provider.
+
 `SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:
 `getToken` re-mints a token inside the five-minute expiry buffer, so an idle tab does no background work. It works
 independently of a `QueryClient`. V2 callers neither pass tokens nor call `useOauthTokenQuery`. API v2 answers 401

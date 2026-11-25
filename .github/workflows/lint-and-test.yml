@@ -61,6 +61,7 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - '.ls-lint.yml'
               - '.github/workflows/**'
             java:
               - 'src/main/java/**'
@@ -536,6 +537,9 @@ jobs:
       - name: Build with bundle stats
         run: pnpm run build:stats
 
+      - name: Check generated routes are current
+        run: git diff --exit-code -- src/main/webapp/ui/src/routeTree.gen.ts src/main/webapp/ui/src/routes
+
       - name: Upload PR bundle stats
         uses: actions/upload-artifact@v7.0.2
         with:
@@ -995,3 +999,5 @@ jobs:
         with:
           path: src/main/webapp/ui/dist/stats.json
           key: bundle-stats-v1-${{ runner.os }}-${{ github.sha }}-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+      - name: Check generated routes are current
+        run: git diff --exit-code -- src/main/webapp/ui/src/routeTree.gen.ts src/main/webapp/ui/src/routes
