@@ -188,8 +188,9 @@
 				</c:forEach>
 				</ul>
 				<span class="bootstrap-custom-flat">
+				    <%-- LinkText is the browser's link blue, matching the (Delete) links above --%>
 				    <button type="button" class="btn btn-link btn-xs" id="clearChoiceDefault"
-				      <c:if test="${fieldTemplate.shownAsCheckboxes}">style="display: none"</c:if>><spring:message code="form.fieldEditor.clearDefault"/></button>
+				      style="color: LinkText;<c:if test="${fieldTemplate.shownAsCheckboxes}"> display: none;</c:if>"><spring:message code="form.fieldEditor.clearDefault"/></button>
 				</span>
 			</td>
 		</tr>
