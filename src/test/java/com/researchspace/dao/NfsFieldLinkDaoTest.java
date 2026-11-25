@@ -104,14 +104,10 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
         GalleryFilestoreTestUtils.createFileStore("other", other, store.getFileSystem());
     otherStore.setPath("/upload");
     nfsDao.saveNfsFileStore(otherStore);
-    StructuredDocument viaStore = createBasicDocumentInRootFolderWithText(u, "any");
-    nfsDao.saveFieldLink(new NfsFieldLink(viaStore.getFields().get(0), store, "/hello.txt"));
+    StructuredDocument viaStore = documentLinking(u, store, "/hello.txt");
     // the other user's document, linked through u's filestore: the filestore's owner decides
-    StructuredDocument viaRoot = createBasicDocumentInRootFolderWithText(other, "any");
-    nfsDao.saveFieldLink(
-        new NfsFieldLink(viaRoot.getFields().get(0), rootStore, "/upload/hello.txt"));
-    StructuredDocument viaOther = createBasicDocumentInRootFolderWithText(other, "any");
-    nfsDao.saveFieldLink(new NfsFieldLink(viaOther.getFields().get(0), otherStore, "/hello.txt"));
+    StructuredDocument viaRoot = documentLinking(other, rootStore, "/upload/hello.txt");
+    StructuredDocument viaOther = documentLinking(other, otherStore, "/hello.txt");
     // a filestore removed from the Gallery still reaches the same login
     rootStore.setDeleted(true);
     nfsDao.saveNfsFileStore(rootStore);
