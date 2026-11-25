@@ -62,8 +62,8 @@ public final class ConversionSidecarClientFactory {
       // is back. Any other answer (4xx, non-JSON, wrong protocol) means conversion.url names the
       // wrong service, and still fails startup.
       LOG.warn(
-          "Could not reach the conversion sidecar at startup; document conversions will fail"
-              + " until it is reachable",
+          "The conversion sidecar was unreachable or failing at startup; document conversions"
+              + " will fail until it answers",
           e);
     }
     return new Clients(
