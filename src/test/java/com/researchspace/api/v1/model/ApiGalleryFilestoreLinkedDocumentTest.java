@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 class ApiGalleryFilestoreLinkedDocumentTest {
 
   @Test
-  void placeholderForAnUnreadableDocumentSerialisesOnlyTheOwnerName() throws Exception {
+  void placeholderForAnUnreadableDocumentSerialisesOnlyTheOwnerNameAndType() throws Exception {
     RecordInformation placeholder = new RecordInformation();
     placeholder.setOwnerFullName("Grace Hopper");
 
     assertEquals(
-        "{\"ownerFullName\":\"Grace Hopper\"}",
+        "{\"ownerFullName\":\"Grace Hopper\",\"type\":\"DOCUMENT\"}",
         new ObjectMapper().writeValueAsString(new ApiGalleryFilestoreLinkedDocument(placeholder)));
   }
 }

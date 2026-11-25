@@ -438,8 +438,9 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: link table, nfs link table
 - **Metadata sidecar** — the DataCite-style YAML record RSpace composes for the
   files of an S3 folder and can save next to them; the Gallery action that
-  creates it is labelled "Generate Data Record". It names the folder's Linked
-  documents by their Global ID page.
+  creates it is labelled "Generate Data Record". It names, by their Global ID
+  page, the folder's Linked documents and the Inventory items whose Link target
+  is the folder or one of its files.
   _Avoid_: data record (outside the UI label), sidecar file
 
 ## Inventory links

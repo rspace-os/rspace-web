@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,8 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.nio.file.Files;
@@ -61,6 +64,7 @@ class S3SidecarFileServiceTest {
   private MessageSourceUtils messages;
   private RoRService rorService;
   private NfsFieldLinkManager nfsFieldLinkManager;
+  private InventoryLinkManager inventoryLinkManager;
   private NfsFileSystem filesystem;
   private S3SidecarFileService service;
 
@@ -78,6 +82,7 @@ class S3SidecarFileServiceTest {
     messages = mock(MessageSourceUtils.class);
     rorService = mock(RoRService.class);
     nfsFieldLinkManager = mock(NfsFieldLinkManager.class);
+    inventoryLinkManager = mock(InventoryLinkManager.class);
     when(rorService.getSystemRoRValue()).thenReturn("https://ror.org/00t3r8h32");
 
     user.setFirstName("Jana");
@@ -106,7 +111,8 @@ class S3SidecarFileServiceTest {
             auditService,
             messages,
             rorService,
-            nfsFieldLinkManager);
+            nfsFieldLinkManager,
+            inventoryLinkManager);
   }
 
   private S3FolderContentItem file(String name, long size, String etag, String storageClass) {
@@ -336,5 +342,88 @@ class S3SidecarFileServiceTest {
     JsonNode loc =
         yaml.readTree(result.getContent()).path("relatedItems").path(0).path("s3Location");
     assertEquals("top.dat", loc.path("key").asText());
+  }
+
+  private static final List<String> FOLDER_AND_FILE =
+      List.of("XRD-Experiments", "XRD-Experiments/xrd_run_041.dat");
+
+  private void stubOneFileInTheFolder() throws Exception {
+    when(s3Utilities.listFolderContents("XRD-Experiments"))
+        .thenReturn(List.of(file("xrd_run_041.dat", 2202009L, "\"b2c3\"", "STANDARD")));
+  }
+
+  private JsonNode relatedIdentifiers() throws Exception {
+    return yaml.readTree(service.preview(1L, "XRD-Experiments", user).getContent())
+        .path("relatedIdentifiers");
+  }
+
+  @Test
+  void namesReadableItemsWithTheInverseOfTheirRelation() throws Exception {
+    stubOneFileInTheFolder();
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(filesystem, FOLDER_AND_FILE, user))
+        .thenReturn(
+            List.of(
+                new FilestoreLinkingItem(
+                    "IN3", "XRD 1", "INSTRUMENT", "Ada Lovelace", "IsSourceOf"),
+                new FilestoreLinkingItem(
+                    "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "References")));
+
+    JsonNode related = relatedIdentifiers();
+
+    assertThat(related).hasSize(2);
+    assertEquals(
+        "https://rspace.example.com/globalId/IN3",
+        related.path(0).path("relatedIdentifier").path("value").asText());
+    assertEquals("IsDerivedFrom", related.path(0).path("relationType").path("value").asText());
+    assertEquals("IsReferencedBy", related.path(1).path("relationType").path("value").asText());
+  }
+
+  @Test
+  void relationsThatInvertToTheSameValueGiveOneEntryForTheItem() throws Exception {
+    // References and IsCollectedBy both read IsReferencedBy from the folder's side
+    stubOneFileInTheFolder();
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(filesystem, FOLDER_AND_FILE, user))
+        .thenReturn(
+            List.of(
+                new FilestoreLinkingItem(
+                    "IN3", "XRD 1", "INSTRUMENT", "Ada Lovelace", "IsCollectedBy"),
+                new FilestoreLinkingItem(
+                    "IN3", "XRD 1", "INSTRUMENT", "Ada Lovelace", "References"),
+                new FilestoreLinkingItem(
+                    "IN3", "XRD 1", "INSTRUMENT", "Ada Lovelace", "IsSourceOf")));
+
+    JsonNode related = relatedIdentifiers();
+
+    assertThat(related).hasSize(2);
+    assertEquals("IsReferencedBy", related.path(0).path("relationType").path("value").asText());
+    assertEquals("IsDerivedFrom", related.path(1).path("relationType").path("value").asText());
+  }
+
+  @Test
+  void anItemTheUserCannotReadLeavesNoTraceAndTheServerUrlIsNotRead() throws Exception {
+    stubOneFileInTheFolder();
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(filesystem, FOLDER_AND_FILE, user))
+        .thenReturn(List.of(new FilestoreLinkingItem(null, null, "SAMPLE", "Grace Hopper", null)));
+
+    assertTrue(relatedIdentifiers().isMissingNode());
+    verify(propertyHolder, never()).getServerUrl();
+  }
+
+  @Test
+  void theServerUrlIsReadOnceForDocumentsAndItemsTogether() throws Exception {
+    stubOneFileInTheFolder();
+    when(propertyHolder.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(nfsFieldLinkManager.getLinkedDocuments(filesystem, FOLDER_AND_FILE, user))
+        .thenReturn(List.of(readableDoc(11L)));
+    when(inventoryLinkManager.findItemsLinkingFilestorePaths(filesystem, FOLDER_AND_FILE, user))
+        .thenReturn(
+            List.of(
+                new FilestoreLinkingItem(
+                    "IN3", "XRD 1", "INSTRUMENT", "Ada Lovelace", "IsSourceOf")));
+
+    assertThat(relatedIdentifiers()).hasSize(2);
+    verify(propertyHolder, times(1)).getServerUrl();
   }
 }

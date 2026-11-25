@@ -35,4 +35,10 @@ public class SidecarFileGenerationContext {
    * or empty when none.
    */
   List<String> linkedDocumentUrls;
+
+  /**
+   * Global ID page URL and record-side relation of each Inventory item linking the folder or one of
+   * its files that the user can read, distinct; null or empty when none.
+   */
+  List<SidecarRelatedIdentifier> linkingItemIdentifiers;
 }

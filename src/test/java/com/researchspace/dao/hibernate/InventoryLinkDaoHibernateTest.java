@@ -8,13 +8,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.dao.NfsDao;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +28,7 @@ public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {
 
   @Autowired private InventoryLinkDao dao;
   @Autowired private NfsDao nfsDao;
+  @Autowired private SampleDao sampleDao;
 
   @Test
   public void saveAndGenerateId() {
@@ -100,6 +106,69 @@ public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {
                 .setParameter("p", "data/xrd/run.dat")
                 .list())
         .isEmpty();
+  }
+
+  @Test
+  public void findsBothLinkFieldKindsByTheExactFilestorePath() {
+    User user = createInitAndLoginAnyUser();
+    NfsFileStore store = savedStore(user.getUsername());
+    Sample sample = sampleDao.get(createBasicSampleForUser(user).getId());
+    ExtraLinkField extra = new ExtraLinkField();
+    extra.setCreatedBy(user.getUsername());
+    extra.setModifiedBy(user.getUsername());
+    extra.setLink(filestoreLink(store, "/XRD/run.dat"));
+    sample.addExtraField(extra);
+    InventoryLinkField structured = new InventoryLinkField("Raw data");
+    structured.setLink(filestoreLink(store, "/XRD/run.dat"));
+    sample.addSampleField(structured);
+    sampleDao.save(sample);
+    flushDatabaseState();
+    Long fsId = store.getFileSystem().getId();
+
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+        .containsExactly(extra);
+    assertThat(
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+        .containsExactly(structured);
+    // the column's collation ignores trailing spaces, which S3 keys keep
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat ")))
+        .isEmpty();
+    assertThat(
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat ")))
+        .isEmpty();
+  }
+
+  @Test
+  public void skipsDeletedLinkFieldsAndDeletedLinks() {
+    User user = createInitAndLoginAnyUser();
+    NfsFileStore store = savedStore(user.getUsername());
+    Sample sample = sampleDao.get(createBasicSampleForUser(user).getId());
+    ExtraLinkField deletedField = new ExtraLinkField();
+    deletedField.setCreatedBy(user.getUsername());
+    deletedField.setModifiedBy(user.getUsername());
+    deletedField.setLink(filestoreLink(store, "/XRD/run.dat"));
+    deletedField.setDeleted(true);
+    sample.addExtraField(deletedField);
+    InventoryLinkField deletedLink = new InventoryLinkField("Raw data");
+    deletedLink.setLink(filestoreLink(store, "/XRD/run.dat"));
+    deletedLink.getLink().setDeleted(true);
+    sample.addSampleField(deletedLink);
+    sampleDao.save(sample);
+    flushDatabaseState();
+    Long fsId = store.getFileSystem().getId();
+
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+        .isEmpty();
+    assertThat(
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+        .isEmpty();
+  }
+
+  private InventoryLink filestoreLink(NfsFileStore store, String remotePath) {
+    InventoryLink link = new InventoryLink();
+    link.setRelationType("IsSourceOf");
+    link.setFilestoreTarget(store, remotePath);
+    return link;
   }
 
   private InventoryLink newLink(
