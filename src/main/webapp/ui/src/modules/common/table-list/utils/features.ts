@@ -44,7 +44,6 @@ export const tableListFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 
-/** Returns a paged table to its first page, as after a change to its filters or sorting. */
 export function toFirstPage(pagination: TableListFeatures<unknown>["pagination"]): void {
   if (pagination !== false) pagination.onChange({ ...pagination.value, pageIndex: 0 });
 }

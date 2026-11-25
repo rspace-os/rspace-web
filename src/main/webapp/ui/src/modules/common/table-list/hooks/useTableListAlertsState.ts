@@ -14,7 +14,7 @@ function firstShown<TElement extends Element>(candidates: readonly TElement[]): 
   return shown ?? (document.body.getClientRects().length === 0 ? candidates[0] : undefined);
 }
 
-/** The first visible control in a row's actions; the table and card presentations both render, one hidden by CSS. */
+/** The first visible control in a row's actions. */
 function rowActionsFocusTarget(root: Element, rowId: string): HTMLElement | undefined {
   return firstShown(
     [...root.querySelectorAll<HTMLElement>("[data-table-list-row-actions]")]
@@ -81,8 +81,7 @@ function alertsReducer(alerts: readonly AlertEntry[], action: AlertsAction): rea
 }
 
 /**
- * TableList-owned alert state. Returned `api` is stable, so an action may push from a callback that
- * outlives its row, such as a dialog confirming a cancellation that removes the row.
+ * Returned `api` is stable, so an action may push from a callback that outlives its row.
  * Call `cancelWatchers` when the table root unmounts.
  */
 export function useTableListAlertsState({ root }: { root: RefObject<HTMLElement | null> }) {

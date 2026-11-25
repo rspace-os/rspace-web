@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import type { FieldType } from "../../collection/fieldTypes.ts";
 import { relationshipFilterPickerSchema } from "../../collection/relationshipFilterPicker.ts";
 import { sortRuleFromToken } from "../utils/sortRuleFromToken.ts";
 import { filterOperatorSchema, objectInput } from "./schemaPrimitives.ts";
@@ -18,7 +19,7 @@ const fieldTypes = {
   boolean: "boolean",
   dateTime: "dateTime",
   enum: "text",
-} as const;
+} as const satisfies Record<string, FieldType>;
 export type ApiV2PrimitiveFieldType = (typeof fieldTypes)[keyof typeof fieldTypes];
 
 // A selector of the generator's filter catalog, as the table list reads it.

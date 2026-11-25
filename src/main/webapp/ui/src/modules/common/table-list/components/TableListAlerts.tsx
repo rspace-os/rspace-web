@@ -9,7 +9,6 @@ export type TableListAlert = {
   /** Pushing an alert with an existing id replaces it. */
   id: string;
   message: ReactNode;
-  /** Optional controls related to the result, such as View details or Focus on calendar. */
   actions?: ReactNode;
   tone?: NonNullable<VariantProps<typeof alertToneVariants>["variant"]>;
   icon?: ReactNode;
@@ -36,7 +35,6 @@ export type AlertEntry = TableListAlert & {
 
 const TableListAlertsContext = createContext<TableListAlertsApi | null>(null);
 
-/** Emits alerts from any control rendered inside a TableList: row actions, selection actions, or toolbar controls. */
 export function useTableListAlerts(): TableListAlertsApi {
   const api = useContext(TableListAlertsContext);
   if (!api) throw new Error("useTableListAlerts must be used inside a TableList");
@@ -47,7 +45,7 @@ export function TableListAlertsProvider({ api, children }: { api: TableListAlert
   return <TableListAlertsContext.Provider value={api}>{children}</TableListAlertsContext.Provider>;
 }
 
-/** The alert stack. The live region stays mounted so an alert pushed into it is announced. */
+/** The live region stays mounted so an alert pushed into it is announced. */
 export function TableListAlertStack({
   alerts,
   onUndo,
