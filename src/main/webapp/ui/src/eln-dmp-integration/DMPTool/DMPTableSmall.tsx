@@ -39,6 +39,21 @@ export default function DMPTableSmall({
 }: TableArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "workspace"]);
   const warningIdPrefix = useId();
+  const writeBackWarning = (plan: Plan): string | null => {
+    const platform = plan.platformName;
+    switch (plan.writeBackStatus) {
+      case "NOT_CONNECTED":
+        return t("workspace:export.repositories.dmp.warning.notConnected", { platform });
+      case "PLATFORM_OFF":
+        return t("workspace:export.repositories.dmp.warning.platformOff", { platform });
+      case "NOT_SUPPORTED":
+        return t("workspace:export.repositories.dmp.warning.notSupported", { platform });
+      case "UNKNOWN_SOURCE":
+        return t("workspace:export.repositories.dmp.warning.unknownSource");
+      default:
+        return null;
+    }
+  };
   return (
     <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
@@ -61,7 +76,8 @@ export default function DMPTableSmall({
           {plans.map((plan, i) => {
             const id = plan.dmpUserInternalId;
             const isSelected = selectedPlans.includes(id);
-            const warningId = plan.writeBackStatus === "NOT_CONNECTED" ? `${warningIdPrefix}-${i}` : undefined;
+            const warning = writeBackWarning(plan);
+            const warningId = warning ? `${warningIdPrefix}-${i}` : undefined;
             return (
               <TableRow
                 key={i}
@@ -111,9 +127,7 @@ export default function DMPTableSmall({
                         id={warningId}
                         sx={{ display: "block", typography: "body2", color: "warning.dark" }}
                       >
-                        {t("workspace:export.repositories.dmp.warning.notConnected", {
-                          platform: plan.platformName,
-                        })}
+                        {warning}
                       </Box>
                     )}
                   </Box>

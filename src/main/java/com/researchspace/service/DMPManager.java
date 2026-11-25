@@ -9,10 +9,12 @@ import java.util.Optional;
 public interface DMPManager extends GenericManager<DMPUser, Long> {
 
   /**
-   * Finds all associated DMPs for a given user
+   * Finds all associated DMPs for a given user. A plan with no recorded source has its stored file
+   * read to work out its platform; a platform found this way is saved in a separate transaction.
+   * Neither step throws.
    *
-   * @param subject
-   * @return
+   * @param subject the plans' owner
+   * @return the user's plans
    */
   List<DMPUser> findDMPsForUser(User subject);
 

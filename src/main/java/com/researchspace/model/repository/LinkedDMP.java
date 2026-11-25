@@ -13,15 +13,13 @@ public class LinkedDMP {
   private String dmpTitle;
   private String dmpId;
 
-  /**
-   * Display name of the plan's platform. A plan with an unknown source is shown as DMPTool, or with
-   * an empty name when DMPTool is off.
-   */
+  /** Display name of the plan's platform; empty when the platform is unknown. */
   private String platformName;
 
   /**
-   * {@code NOT_CONNECTED} when the plan's platform supports write-back but the user is not
-   * connected to it, otherwise {@code OK}.
+   * {@code OK}, or the name of the {@code PlanReportStatus} saying why the plan will not be updated
+   * after a deposit: {@code NOT_CONNECTED}, {@code PLATFORM_OFF}, {@code NOT_SUPPORTED} or {@code
+   * UNKNOWN_SOURCE}.
    */
   private String writeBackStatus;
 }

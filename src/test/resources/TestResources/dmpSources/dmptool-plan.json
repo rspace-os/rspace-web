@@ -1,0 +1,1 @@
+{"application":"dmptool","source":"GET /api/v2/plans/69563","time":"2024-06-19T10:00:00Z","caller":"RSpace","code":200,"message":"OK","items":[{"dmp":{"title":"Testing DMP integration","dmp_id":{"type":"doi","identifier":"https://doi.org/10.48321/D1X"},"contact":{"name":"A Researcher"}}}]}

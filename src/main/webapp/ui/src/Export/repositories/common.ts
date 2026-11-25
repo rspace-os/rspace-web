@@ -36,7 +36,8 @@ export type Plan = {
   dmpTitle: string;
   dmpUserInternalId: DMPUserInternalId;
   platformName: string;
-  writeBackStatus: "OK" | "NOT_CONNECTED";
+  /** OK, or why RSpace will not update the plan after the deposit. */
+  writeBackStatus: "OK" | "NOT_CONNECTED" | "PLATFORM_OFF" | "NOT_SUPPORTED" | "UNKNOWN_SOURCE";
 };
 
 /**

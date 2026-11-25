@@ -197,7 +197,10 @@
       "dmp": {
         "associateLabel": "Associate export with a Data Management Plans (DMPs)",
         "warning": {
-          "notConnected": "{platform} is not connected, so this plan will not be updated."
+          "notConnected": "{platform} is not connected, so this plan will not be updated.",
+          "notSupported": "RSpace cannot yet update plans on {platform}, so this plan will not be updated.",
+          "platformOff": "{platform} is switched off, so this plan will not be updated.",
+          "unknownSource": "RSpace does not know which service this plan came from, so it will not be updated."
         },
         "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
       },

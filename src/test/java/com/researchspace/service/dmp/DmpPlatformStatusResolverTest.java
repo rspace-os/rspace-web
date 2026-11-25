@@ -39,23 +39,12 @@ class DmpPlatformStatusResolverTest {
     user = TestFactory.createAnyUser("any");
   }
 
-  @Test
-  void unknownSourceIsTreatedAsDmpTool() {
-    assertEquals(DMPSource.DMP_TOOL, DmpPlatformStatusResolver.effectiveSource(DMPSource.UNKNOWN));
-    assertEquals(DMPSource.DMP_TOOL, DmpPlatformStatusResolver.effectiveSource(null));
-    assertEquals(DMPSource.ARGOS, DmpPlatformStatusResolver.effectiveSource(DMPSource.ARGOS));
-
-    stub(DMPTOOL_APP_NAME, info(true, true, true));
-    assertEquals(OK, resolver.resolve(DMPSource.UNKNOWN, user));
-  }
-
   @ParameterizedTest
   @CsvSource({
-    "UNKNOWN, DMPTool",
     "DMP_TOOL, DMPTool",
     "DMP_ONLINE, DMPonline",
     "ARGOS, Argos",
-    "DSW, DSW",
+    "DSW, DSW / FAIR Wizard",
     "DMP_ASSISTANT, DMP Assistant"
   })
   void platformNameKeyResolvesToCatalogName(DMPSource source, String name) {

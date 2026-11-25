@@ -18,7 +18,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 /** Writes a deposit's link onto each ticked plan, routed by the plan's own platform. */
@@ -54,89 +53,90 @@ public class DMPUpdateHandler {
     if (dmpUserIds == null || dmpUserIds.isEmpty()) {
       return List.of();
     }
+    Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
     List<PlanReportResult> results = new ArrayList<>();
     for (DMPUser plan : dmpManager.findDMPsForUser(subject)) {
       if (dmpUserIds.contains(plan.getId())) {
-        results.add(reportPlan(plan, deposit, subject));
+        results.add(reportPlan(plan, deposit, subject, statusByPlatform));
       }
     }
     return results;
   }
 
   /**
-   * Plans the user can tick when depositing: those whose own platform is on. A plan with no
-   * recorded source is routed to DMPTool, and is also offered without a platform name when DMPTool
-   * is off but DMPonline or Argos is on. DSW plans are never offered (RPD-276).
+   * Every plan the user can tick when depositing, whatever is switched on, with the reason RSpace
+   * will not update it, if there is one.
    *
    * @param user the plans' owner
-   * @return one entry per offered plan, marked {@code NOT_CONNECTED} when its platform supports
-   *     write-back but the user is not connected to it
+   * @return one entry per plan; its write-back status is {@code OK} or a {@link PlanReportStatus}
+   *     name saying why the plan will not be updated
    */
   public List<LinkedDMP> linkablePlans(User user) {
     Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
     List<LinkedDMP> linkable = new ArrayList<>();
     for (DMPUser plan : dmpManager.findDMPsForUser(user)) {
-      if (plan.getSource() == DMPSource.DSW) {
-        continue;
-      }
-      DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
-      PlatformStatus status =
-          statusByPlatform.computeIfAbsent(
-              platform, source -> statusResolver.resolve(source, user));
-      if (status != PlatformStatus.PLATFORM_OFF) {
-        boolean warnNotConnected =
-            status == PlatformStatus.NOT_CONNECTED && reporterFor(platform).isPresent();
-        linkable.add(
-            linkedDMP(
-                plan,
-                messages.getMessage(DmpPlatformStatusResolver.platformNameKey(platform)),
-                warnNotConnected ? PlatformStatus.NOT_CONNECTED : PlatformStatus.OK));
-      } else if (isUnknownSource(plan) && anyImporterOfUnknownPlansIsOn(user, statusByPlatform)) {
-        linkable.add(linkedDMP(plan, "", PlatformStatus.OK));
-      }
+      String platformName =
+          isUnknownSource(plan)
+              ? ""
+              : messages.getMessage(DmpPlatformStatusResolver.platformNameKey(plan.getSource()));
+      String writeBackStatus =
+          noWriteBackReason(plan, user, statusByPlatform).map(Enum::name).orElse("OK");
+      linkable.add(
+          new LinkedDMP(
+              plan.getId(), plan.getTitle(), plan.getDmpId(), platformName, writeBackStatus));
     }
     return linkable;
   }
 
-  private static LinkedDMP linkedDMP(DMPUser plan, String platformName, PlatformStatus status) {
-    return new LinkedDMP(
-        plan.getId(), plan.getTitle(), plan.getDmpId(), platformName, status.name());
+  /**
+   * The one rule for whether a plan can be updated, used both when plans are offered and after a
+   * deposit.
+   *
+   * @return why RSpace will not update the plan, or empty if it will try
+   */
+  private Optional<PlanReportStatus> noWriteBackReason(
+      DMPUser plan, User user, Map<DMPSource, PlatformStatus> statusByPlatform) {
+    if (isUnknownSource(plan)) {
+      return Optional.of(PlanReportStatus.UNKNOWN_SOURCE);
+    }
+    DMPSource platform = plan.getSource();
+    PlatformStatus status =
+        statusByPlatform.computeIfAbsent(platform, source -> statusResolver.resolve(source, user));
+    if (status == PlatformStatus.PLATFORM_OFF) {
+      return Optional.of(PlanReportStatus.PLATFORM_OFF);
+    }
+    if (reporterFor(platform).isEmpty()) {
+      return Optional.of(PlanReportStatus.NOT_SUPPORTED);
+    }
+    if (status == PlatformStatus.NOT_CONNECTED) {
+      return Optional.of(PlanReportStatus.NOT_CONNECTED);
+    }
+    return Optional.empty();
   }
 
   private static boolean isUnknownSource(DMPUser plan) {
     return plan.getSource() == null || plan.getSource() == DMPSource.UNKNOWN;
   }
 
-  // plans without a recorded source were imported from DMPTool, DMPonline or Argos (RSDEV-563)
-  private boolean anyImporterOfUnknownPlansIsOn(
-      User user, Map<DMPSource, PlatformStatus> statusByPlatform) {
-    return Stream.of(DMPSource.DMP_ONLINE, DMPSource.ARGOS)
-        .map(
-            source ->
-                statusByPlatform.computeIfAbsent(
-                    source, platform -> statusResolver.resolve(platform, user)))
-        .anyMatch(status -> status != PlatformStatus.PLATFORM_OFF);
-  }
-
   private Optional<DmpReporter> reporterFor(DMPSource platform) {
     return reporters.stream().filter(r -> r.supports(platform)).findFirst();
   }
 
-  private PlanReportResult reportPlan(DMPUser plan, DepositReport deposit, User subject) {
-    DMPSource platform = DmpPlatformStatusResolver.effectiveSource(plan.getSource());
+  private PlanReportResult reportPlan(
+      DMPUser plan,
+      DepositReport deposit,
+      User subject,
+      Map<DMPSource, PlatformStatus> statusByPlatform) {
+    DMPSource platform = isUnknownSource(plan) ? DMPSource.UNKNOWN : plan.getSource();
     try {
-      Optional<DmpReporter> reporter = reporterFor(platform);
-      if (reporter.isEmpty()) {
-        return withStatus(plan, platform, PlanReportStatus.NOT_SUPPORTED);
-      }
-      PlatformStatus platformStatus = statusResolver.resolve(platform, subject);
-      if (platformStatus != PlatformStatus.OK) {
-        return withStatus(plan, platform, PlanReportStatus.valueOf(platformStatus.name()));
+      Optional<PlanReportStatus> noWriteBack = noWriteBackReason(plan, subject, statusByPlatform);
+      if (noWriteBack.isPresent()) {
+        return withStatus(plan, platform, noWriteBack.get());
       }
       if (deposit.identifier() == null && deposit.accessUrl() == null) {
         return withStatus(plan, platform, PlanReportStatus.NOTHING_TO_SEND);
       }
-      return reporter.get().report(plan, deposit, subject);
+      return reporterFor(platform).orElseThrow().report(plan, deposit, subject);
     } catch (RuntimeException e) {
       log.warn("Write-back to plan {} on {} failed", plan.getDmpId(), platform, e);
       return new PlanReportResult(

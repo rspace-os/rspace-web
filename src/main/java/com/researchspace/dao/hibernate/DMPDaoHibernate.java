@@ -41,4 +41,9 @@ public class DMPDaoHibernate extends GenericDaoHibernate<DMPUser, Long> implemen
         .setParameter("dmpId", dmpId)
         .uniqueResultOptional();
   }
+
+  @Override
+  public void detach(DMPUser plan) {
+    getSession().detach(plan);
+  }
 }

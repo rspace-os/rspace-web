@@ -17,6 +17,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dtos.RaidUpdateResult;
@@ -56,7 +57,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -72,7 +72,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -389,13 +388,21 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     }
     List<Map<String, String>> plans = new ArrayList<>();
     for (PlanReportResult planResult : planResults) {
+      String title = escapeHtml(planResult.planTitle());
+      if (planResult.platform() == DMPSource.UNKNOWN) {
+        plans.add(
+            Map.of(
+                "heading",
+                title,
+                "outcome",
+                messages.getMessage(DMP_NOTIFICATION_KEY + "unknownSource")));
+        continue;
+      }
       String platformName = messages.getMessage(platformNameKey(planResult.platform()));
       plans.add(
           Map.of(
               "heading",
-              messages.format(
-                  DMP_NOTIFICATION_KEY + "planHeading",
-                  List.of(escapeHtml(planResult.planTitle()), platformName)),
+              messages.format(DMP_NOTIFICATION_KEY + "planHeading", List.of(title, platformName)),
               "outcome",
               planOutcomeLines(planResult, platformName, deposit)));
     }
@@ -431,6 +438,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           messages.format(DMP_NOTIFICATION_KEY + "platformOff", List.of(platformName));
       case NOT_CONNECTED ->
           messages.format(DMP_NOTIFICATION_KEY + "notConnected", List.of(platformName));
+      case UNKNOWN_SOURCE -> messages.getMessage(DMP_NOTIFICATION_KEY + "unknownSource");
     };
   }
 
@@ -541,125 +549,84 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
 
-  private SubmissionMetadata setDmpOnlineDmpToolOnSubmissionMetadata(
-      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
-      throws IOException, IllegalStateException {
-    if (archiveConfig.hasDMPs()) {
-      if (isDmpOnlineEnabledAndAvailable(subject) || isDmpToolEnabledAndAvailable(subject)) {
-        List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-        if (!dmpsForUser.isEmpty()) {
-
-          List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-          List<DMPUser> dmpsToUpdate =
-              dmpsForUser.stream()
-                  .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-                  .collect(Collectors.toList());
-          if (dmpsToUpdate.isEmpty()
-              || (dmpsToUpdate.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName()))) {
-            throw new NoSuchElementException("Could not find DMP with selected ID.");
-          }
-          // only Zenodo reads the plan DOI, and it takes one plan
-          if (dmpsToUpdate.size() > 1) {
-            log.info(
-                "{} plans selected, so no plan DOI is set on the deposit", dmpsToUpdate.size());
-            return metadata;
-          }
-
-          DMPUser selectedDMP = dmpsToUpdate.get(0);
-          EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
-          File file = fileStore.findFile(jsonFile.getFileProperty());
-
-          // read json from file
-          ObjectMapper objectMapper = new ObjectMapper();
-          JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
-          Optional<String> url = extractUrlFromDmpFile(dmpFile);
-          if (url.isPresent()) {
-            metadata.setDmpDoi(url);
-          } else {
-            log.warn("it is not been possible to attach the Dmp DOI to the metadata");
-          }
-        }
-      }
-    }
-    return metadata;
-  }
-
-  private boolean isDmpOnlineEnabledAndAvailable(User subject) {
-    IntegrationInfo dmpOnlineInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
-    return dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable();
-  }
-
-  private boolean isDmpToolEnabledAndAvailable(User subject) {
-    IntegrationInfo dmpToolInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
-    return dmpToolInfo.isEnabled() && dmpToolInfo.isAvailable();
-  }
-
-  @Nullable
-  private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
-    String url = null;
-    if (dmpFile.get("dmp_id") != null) { // DMPOnline json file
-      url = dmpFile.get("dmp_id").get("identifier").asText().replace("/api/v1", "");
-    } else { // DMPTool json file
-      Iterator<JsonNode> nodeIt = dmpFile.get("items").iterator();
-      while (nodeIt.hasNext() && url == null) {
-        JsonNode dmpNode = nodeIt.next();
-        if (dmpNode.get("dmp") != null) {
-          url = dmpNode.get("dmp").get("dmp_id").get("identifier").asText().replace("/api/v1", "");
-        }
-      }
-    }
-    UrlValidator urlValidator = new UrlValidator();
-    return urlValidator.isValid(url) ? Optional.of(url) : Optional.empty();
-  }
-
-  private SubmissionMetadata setArgosDmpDoiOnSubmissionMetadata(
-      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
-      throws IOException, IllegalStateException {
+  /**
+   * Sets the ticked plan's identifier on the deposit metadata, read from the plan's stored file by
+   * the plan's own platform, whatever is switched on. Only Zenodo reads it, so several ticked plans
+   * are refused there and set nothing elsewhere. A file that cannot be read sets nothing.
+   */
+  private SubmissionMetadata setPlanIdentifierOnSubmissionMetadata(
+      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig) {
     if (!archiveConfig.hasDMPs()) {
       return metadata;
     }
-
-    IntegrationInfo argosInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.ARGOS_APP_NAME);
-    if (argosInfo.isEnabled() && argosInfo.isAvailable()) {
-
-      IntegrationInfo dmpToolInfo =
-          integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
-      if (dmpToolInfo.isEnabled()) {
-        throw new IllegalStateException(
-            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
-      }
-
-      List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-      if (dmpsForUser.isEmpty()) {
-        return metadata;
-      }
-
-      List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-      List<DMPUser> dmpsToUpdate =
-          dmpsForUser.stream()
-              .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-              .collect(Collectors.toList());
-      if (dmpsToUpdate.size() != 1) {
-        throw new NoSuchElementException("Could not find DMP with selected ID.");
-      }
-
-      DMPUser selectedDMP = dmpsToUpdate.get(0);
-      EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
-      File file = fileStore.findFile(jsonFile.getFileProperty());
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      ArgosDMP dmp = objectMapper.readValue(file, ArgosDMP.class);
-      Optional<String> doi = dmp.getDoi();
-      if (doi.isPresent()) {
-        metadata.setDmpDoi(doi);
-      } else {
-        throw new NoSuchElementException("DMP doesn't have a DOI");
-      }
+    boolean argosOn = isEnabledAndAvailable(subject, IntegrationsHandler.ARGOS_APP_NAME);
+    if (argosOn
+        && integrationsHandler
+            .getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME)
+            .isEnabled()) {
+      throw new IllegalStateException(
+          messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
     }
+    List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
+    List<DMPUser> selected =
+        dmpManager.findDMPsForUser(subject).stream()
+            .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
+            .collect(Collectors.toList());
+    if (selected.isEmpty()
+        || (selected.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName()))) {
+      throw new NoSuchElementException("Could not find DMP with selected ID.");
+    }
+    if (selected.size() > 1) {
+      log.info("{} plans selected, so no plan identifier is set on the deposit", selected.size());
+      return metadata;
+    }
+    readPlanIdentifier(selected.get(0), argosOn)
+        .ifPresent(identifier -> metadata.setDmpDoi(Optional.of(identifier)));
     return metadata;
+  }
+
+  private Optional<String> readPlanIdentifier(DMPUser plan, boolean argosOn) {
+    DMPSource source = plan.getSource();
+    if (source != DMPSource.DMP_TOOL
+        && source != DMPSource.DMP_ONLINE
+        && source != DMPSource.ARGOS) {
+      return Optional.empty();
+    }
+    Optional<String> identifier;
+    try {
+      File file = fileStore.findFile(plan.getDmpDownloadFile().getFileProperty());
+      ObjectMapper objectMapper = new ObjectMapper();
+      identifier =
+          source == DMPSource.ARGOS
+              ? objectMapper.readValue(file, ArgosDMP.class).getDoi()
+              : extractUrlFromDmpFile(objectMapper.readValue(file, JsonNode.class));
+    } catch (IOException | RuntimeException e) {
+      // parser messages can quote the file, so only the exception type is logged
+      log.warn(
+          "Couldn't read the identifier of plan {}: {}",
+          plan.getId(),
+          e.getClass().getSimpleName());
+      return Optional.empty();
+    }
+    if (identifier.isEmpty() && source == DMPSource.ARGOS && argosOn) {
+      throw new NoSuchElementException("DMP doesn't have a DOI");
+    }
+    if (identifier.isEmpty()) {
+      log.warn("Plan {} has no identifier to attach to the deposit", plan.getId());
+    }
+    return identifier;
+  }
+
+  private boolean isEnabledAndAvailable(User subject, String integrationName) {
+    IntegrationInfo info = integrationsHandler.getIntegration(subject, integrationName);
+    return info != null && info.isEnabled() && info.isAvailable();
+  }
+
+  // DMPonline saves the plan's dmp object, DMPTool its API response holding the plan
+  private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
+    JsonNode dmp = dmpFile.has("dmp_id") ? dmpFile : dmpFile.path("items").path(0).path("dmp");
+    String url = dmp.path("dmp_id").path("identifier").asText().replace("/api/v1", "");
+    return new UrlValidator().isValid(url) ? Optional.of(url) : Optional.empty();
   }
 
   private SubmissionMetadata generateSubmissionMetaData(
@@ -730,10 +697,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           .put(IGSN_INVENTORY_LINKED_ITEMS, String.join(",", igsnInventoryLinkedItems));
     }
 
-    return setDmpOnlineDmpToolOnSubmissionMetadata(
-        subject,
-        setArgosDmpDoiOnSubmissionMetadata(subject, metadata, archiveConfig),
-        archiveConfig);
+    return setPlanIdentifierOnSubmissionMetadata(subject, metadata, archiveConfig);
   }
 
   private List<String> getSubjects(RepoDepositConfig archiveConfig) {

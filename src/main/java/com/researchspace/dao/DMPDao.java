@@ -20,4 +20,11 @@ public interface DMPDao extends GenericDao<DMPUser, Long> {
   List<DMPUser> findDMPsByFile(User subject, Long ecatDocument_id);
 
   Optional<DMPUser> findByDmpId(String dmpId, User user);
+
+  /**
+   * Stops the current session tracking {@code plan}, so changes to it are not written.
+   *
+   * @param plan a plan loaded in the current session
+   */
+  void detach(DMPUser plan);
 }

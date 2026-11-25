@@ -64,6 +64,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -567,6 +568,19 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
+  void unknownSourcePlanIsNamedWithoutPlatformAndSaysItWasNotUpdated() throws Exception {
+    String planMessage =
+        planNotificationFor(
+            List.of(withStatus("Old plan", DMPSource.UNKNOWN, PlanReportStatus.UNKNOWN_SOURCE)));
+
+    assertThat(planMessage)
+        .contains(
+            "<li>Old plan<br/>RSpace does not know which service this plan came from, so it was"
+                + " not updated.</li>")
+        .doesNotContain("Old plan (");
+  }
+
+  @Test
   void planNotificationHasNoDoiParagraphWithoutDoi() throws Exception {
     URL landing = new URL("https://dv.example/ds");
     when(dmpUpdateHandler.report(
@@ -811,18 +825,124 @@ public class AsyncDepositorImplTest {
     assertEquals(Optional.of("https://doi.org/10.48321/D1X"), metadata.getValue().getDmpDoi());
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "DMP_TOOL, dmptool-plan.pdf",
+    "DMP_ONLINE, dmptool-plan.pdf",
+    "DMP_TOOL, argos-plan.json",
+    "ARGOS, dmponline-plan.json",
+    "DMP_TOOL, missing.json",
+  })
+  void planFileThatCannotBeReadIsDepositedWithoutPlanIdentifier(DMPSource source, String fileName)
+      throws Exception {
+    givenDepositorWithPlans(plan(1L, source));
+    givenPlanFile(fileName);
+    givenDepositSucceeds();
+
+    assertTrue(depositedMetadata(App.APP_ZENODO).getDmpDoi().isEmpty());
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = DMPSource.class,
+      names = {"UNKNOWN", "DSW", "DMP_ASSISTANT"})
+  void planFromPlatformWithoutReaderIsDepositedWithoutPlanIdentifier(DMPSource source)
+      throws Exception {
+    givenDepositorWithPlans(plan(1L, source));
+    givenDepositSucceeds();
+
+    assertTrue(depositedMetadata(App.APP_ZENODO).getDmpDoi().isEmpty());
+    Mockito.verifyNoInteractions(fileStore);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "DMP_TOOL, dmptool-plan.json, https://doi.org/10.48321/D1X",
+    "DMP_ONLINE, dmponline-plan.json, https://dmponline.dcc.ac.uk/plans/12345",
+    "ARGOS, argos-plan.json, 10.5281/zenodo.123",
+  })
+  void planIdentifierIsReadByThePlansOwnPlatformWhateverIsSwitchedOn(
+      DMPSource source, String fileName, String expected) throws Exception {
+    givenDepositorWithPlans(plan(1L, source));
+    givenPlanFile(fileName);
+    givenDepositSucceeds();
+
+    assertEquals(Optional.of(expected), depositedMetadata(App.APP_ZENODO).getDmpDoi());
+  }
+
+  @Test
+  void argosAndDmpToolBothOnStillFailTheDeposit() throws Exception {
+    wireDepositor();
+    givenIntegration(IntegrationsHandler.ARGOS_APP_NAME, true);
+    givenIntegration(IntegrationsHandler.DMPTOOL_APP_NAME, true);
+
+    assertDepositFails();
+  }
+
+  @Test
+  void argosPlanWithoutDoiStillFailsTheDepositWhenArgosIsOn() throws Exception {
+    wireDepositor();
+    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(plan(1L, DMPSource.ARGOS)));
+    givenIntegration(IntegrationsHandler.ARGOS_APP_NAME, true);
+    givenIntegration(IntegrationsHandler.DMPTOOL_APP_NAME, false);
+    givenPlanFile("argos-plan-without-doi.json");
+
+    assertDepositFails();
+  }
+
+  private void givenIntegration(String name, boolean on) {
+    IntegrationInfo info = new IntegrationInfo();
+    info.setAvailable(on);
+    info.setEnabled(on);
+    when(integrationsHandler.getIntegration(anyUser, name)).thenReturn(info);
+  }
+
+  private void assertDepositFails() throws Exception {
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(APP_ZENODO, "Zenodo", true),
+                anyUser,
+                repository,
+                depositConfigWithPlans(APP_ZENODO, 1L),
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+    assertFalse(result.isSucceeded());
+    Mockito.verifyNoInteractions(repository);
+  }
+
+  private void givenPlanFile(String fileName) throws Exception {
+    when(fileStore.findFile(Mockito.any()))
+        .thenReturn(new File("src/test/resources/TestResources/dmpSources/" + fileName));
+  }
+
+  private SubmissionMetadata depositedMetadata(String appName) throws Exception {
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(appName, "Repo", true),
+                anyUser,
+                repository,
+                depositConfigWithPlans(appName, 1L),
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+    assertTrue(result.isSucceeded(), result.getMessage());
+    ArgumentCaptor<SubmissionMetadata> metadata = ArgumentCaptor.forClass(SubmissionMetadata.class);
+    Mockito.verify(repository)
+        .submitDeposit(Mockito.any(), Mockito.any(), metadata.capture(), Mockito.any());
+    return metadata.getValue();
+  }
+
   private void givenDepositorWithPlans(DMPUser... plans) {
-    IntegrationInfo on = new IntegrationInfo();
-    on.setAvailable(true);
-    on.setEnabled(true);
-    IntegrationInfo off = new IntegrationInfo();
     when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.ARGOS_APP_NAME))
-        .thenReturn(off);
-    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.DMPONLINE_APP_NAME))
-        .thenReturn(off);
-    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.DMPTOOL_APP_NAME))
-        .thenReturn(on);
+        .thenReturn(new IntegrationInfo());
     when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(plans));
+    wireDepositor();
+  }
+
+  private void wireDepositor() {
     ReflectionTestUtils.setField(depositor, "integrationsHandler", integrationsHandler);
     ReflectionTestUtils.setField(depositor, "dmpManager", dmpManager);
     ReflectionTestUtils.setField(depositor, "fileStore", fileStore);
@@ -834,8 +954,11 @@ public class AsyncDepositorImplTest {
   }
 
   private DMPUser plan(long id) {
-    DMPUser plan =
-        new DMPUser(anyUser, new DmpDto("id" + id, "title" + id, DMPSource.DMP_TOOL, null, null));
+    return plan(id, DMPSource.DMP_TOOL);
+  }
+
+  private DMPUser plan(long id, DMPSource source) {
+    DMPUser plan = new DMPUser(anyUser, new DmpDto("id" + id, "title" + id, source, null, null));
     ReflectionTestUtils.setField(plan, "id", id);
     plan.setDmpDownloadFile(new EcatDocumentFile());
     return plan;

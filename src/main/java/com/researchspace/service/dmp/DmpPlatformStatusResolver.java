@@ -29,49 +29,44 @@ public class DmpPlatformStatusResolver {
   }
 
   /**
-   * @return the platform a plan is routed to: {@code UNKNOWN} (or a missing source) is DMPtool
-   */
-  public static DMPSource effectiveSource(DMPSource source) {
-    return source == null || source == DMPSource.UNKNOWN ? DMPSource.DMP_TOOL : source;
-  }
-
-  /**
-   * @return the message key of the platform's display name; {@code UNKNOWN} is shown as DMPtool
+   * @param source a known platform
+   * @return the message key of the platform's display name
    */
   public static String platformNameKey(DMPSource source) {
     String platform =
-        switch (effectiveSource(source)) {
+        switch (source) {
+          case DMP_TOOL -> "dmpTool";
           case DMP_ONLINE -> "dmpOnline";
           case ARGOS -> "argos";
           case DMP_ASSISTANT -> "dmpAssistant";
           case DSW -> "dsw";
-          default -> "dmpTool";
+          case UNKNOWN -> throw new IllegalArgumentException("A plan's platform is unknown");
         };
     return "apps.dmp.platformName." + platform;
   }
 
   /**
-   * @param source a plan's source; {@code UNKNOWN} is treated as DMPtool
+   * @param source a known platform
    * @param user the plan's owner
    * @return {@code PLATFORM_OFF} unless the integration is both available and enabled, then {@code
    *     NOT_CONNECTED} if the user has no connection to it, otherwise {@code OK}
    */
   public PlatformStatus resolve(DMPSource source, User user) {
-    DMPSource effective = effectiveSource(source);
-    IntegrationInfo info = integrationsHandler.getIntegration(user, integrationName(effective));
+    IntegrationInfo info = integrationsHandler.getIntegration(user, integrationName(source));
     if (info == null || !info.isAvailable() || !info.isEnabled()) {
       return PlatformStatus.PLATFORM_OFF;
     }
-    return isConnected(effective, info) ? PlatformStatus.OK : PlatformStatus.NOT_CONNECTED;
+    return isConnected(source, info) ? PlatformStatus.OK : PlatformStatus.NOT_CONNECTED;
   }
 
   private static String integrationName(DMPSource source) {
     return switch (source) {
+      case DMP_TOOL -> DMPTOOL_APP_NAME;
       case DMP_ONLINE -> DMPONLINE_APP_NAME;
       case ARGOS -> ARGOS_APP_NAME;
       case DMP_ASSISTANT -> DMPASSISTANT_APP_NAME;
       case DSW -> DSW_APP_NAME;
-      default -> DMPTOOL_APP_NAME;
+      case UNKNOWN -> throw new IllegalArgumentException("A plan's platform is unknown");
     };
   }
 

@@ -385,6 +385,27 @@ describe("ExportRepo", () => {
       expect(checkbox).toBeChecked();
     });
 
+    test.each([
+      ["PLATFORM_OFF", "DMPTool", "DMPTool is switched off, so this plan will not be updated."],
+      [
+        "NOT_SUPPORTED",
+        "DSW / FAIR Wizard",
+        "RSpace cannot yet update plans on DSW / FAIR Wizard, so this plan will not be updated.",
+      ],
+      ["UNKNOWN_SOURCE", "", "RSpace does not know which service this plan came from, so it will not be updated."],
+    ] as const)(
+      "warns when a plan's status is %s, and still sends it when ticked",
+      async (writeBackStatus, platformName, warning) => {
+        const { user, updateRepoConfig, table } = await renderDigitalCommonsData([
+          { dmpUserInternalId: 1, dmpTitle: "Soil survey plan", dmpId: "plan-1", platformName, writeBackStatus },
+        ]);
+        const checkbox = within(table).getByRole("checkbox", { name: "Select plan: Soil survey plan" });
+        expect(checkbox).toHaveAccessibleDescription(warning);
+        await user.click(checkbox);
+        expect(updateRepoConfig.mock.lastCall?.[0].selectedDMPs).toEqual([1]);
+      },
+    );
+
     test("has no accessibility violations when a plan's platform is not connected", async () => {
       const { baseElement } = await renderDigitalCommonsData([
         {

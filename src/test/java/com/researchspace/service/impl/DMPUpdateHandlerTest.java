@@ -76,16 +76,13 @@ class DMPUpdateHandlerTest {
   }
 
   @Test
-  void unknownPlanGoesToDmpToolReporter() throws Exception {
-    DMPUser plan = plan(1L, DMPSource.UNKNOWN);
-    DepositReport deposit = deposit(DOI, null);
-    PlanReportResult reported = reported(plan);
-    givenPlans(plan);
-    givenDmpToolSupported();
-    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
-    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported);
+  void unknownPlanIsNotReported() throws Exception {
+    givenPlans(plan(1L, DMPSource.UNKNOWN));
 
-    assertThat(handler.report(deposit, user, List.of(1L))).containsExactly(reported);
+    List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
+
+    assertEquals(PlanReportStatus.UNKNOWN_SOURCE, results.get(0).status());
+    verifyNoInteractions(statusResolver, dmpToolReporter);
   }
 
   @ParameterizedTest
@@ -94,6 +91,7 @@ class DMPUpdateHandlerTest {
       names = {"DMP_ONLINE", "ARGOS", "DMP_ASSISTANT", "DSW"})
   void otherPlatformsAreNotSupported(DMPSource source) throws Exception {
     givenPlans(plan(1L, source));
+    when(statusResolver.resolve(source, user)).thenReturn(PlatformStatus.OK);
     when(dmpToolReporter.supports(source)).thenReturn(false);
 
     List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
@@ -101,7 +99,6 @@ class DMPUpdateHandlerTest {
     assertEquals(PlanReportStatus.NOT_SUPPORTED, results.get(0).status());
     assertEquals(source, results.get(0).platform());
     verify(dmpToolReporter, never()).report(any(), any(), any());
-    verifyNoInteractions(statusResolver);
   }
 
   @Test
@@ -129,18 +126,26 @@ class DMPUpdateHandlerTest {
     assertThat(handler.report(deposit, user, List.of(1L))).containsExactly(reported);
   }
 
-  @ParameterizedTest
-  @EnumSource(
-      value = PlatformStatus.class,
-      names = {"PLATFORM_OFF", "NOT_CONNECTED"})
-  void platformOffOrNotConnectedSkipsReporter(PlatformStatus status) throws Exception {
+  @Test
+  void platformOffSkipsReporter() throws Exception {
     givenPlans(plan(1L, DMPSource.DMP_TOOL));
-    givenDmpToolSupported();
-    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(status);
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.PLATFORM_OFF);
 
     List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
 
-    assertEquals(PlanReportStatus.valueOf(status.name()), results.get(0).status());
+    assertEquals(PlanReportStatus.PLATFORM_OFF, results.get(0).status());
+    verifyNoInteractions(dmpToolReporter);
+  }
+
+  @Test
+  void notConnectedSkipsReporter() throws Exception {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.NOT_CONNECTED);
+
+    List<PlanReportResult> results = handler.report(deposit(DOI, null), user, List.of(1L));
+
+    assertEquals(PlanReportStatus.NOT_CONNECTED, results.get(0).status());
     verify(dmpToolReporter, never()).report(any(), any(), any());
   }
 
@@ -212,25 +217,31 @@ class DMPUpdateHandlerTest {
   }
 
   @Test
-  void linkablePlansAreThoseWhosePlatformIsOn() {
+  void everyPlanIsLinkableWhateverIsSwitchedOn() {
     givenPlans(
-        plan(1L, DMPSource.UNKNOWN),
-        plan(2L, DMPSource.DMP_TOOL),
-        plan(3L, DMPSource.DMP_ONLINE),
-        plan(4L, DMPSource.DSW),
-        plan(5L, DMPSource.DMP_ASSISTANT));
-    when(dmpToolReporter.supports(DMPSource.DMP_ASSISTANT)).thenReturn(false);
-    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
-    when(statusResolver.resolve(DMPSource.DMP_ONLINE, user))
+        plan(1L, DMPSource.DMP_TOOL),
+        plan(2L, DMPSource.DMP_ONLINE),
+        plan(3L, DMPSource.DSW),
+        plan(4L, DMPSource.UNKNOWN));
+    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
         .thenReturn(PlatformStatus.PLATFORM_OFF);
-    when(statusResolver.resolve(DMPSource.DMP_ASSISTANT, user))
-        .thenReturn(PlatformStatus.NOT_CONNECTED);
 
     assertThat(handler.linkablePlans(user))
         .containsExactly(
-            new LinkedDMP(1L, "title1", "id1", "DMPTool", "OK"),
-            new LinkedDMP(2L, "title2", "id2", "DMPTool", "OK"),
-            new LinkedDMP(5L, "title5", "id5", "DMP Assistant", "OK"));
+            new LinkedDMP(1L, "title1", "id1", "DMPTool", "PLATFORM_OFF"),
+            new LinkedDMP(2L, "title2", "id2", "DMPonline", "PLATFORM_OFF"),
+            new LinkedDMP(3L, "title3", "id3", "DSW / FAIR Wizard", "PLATFORM_OFF"),
+            new LinkedDMP(4L, "title4", "id4", "", "UNKNOWN_SOURCE"));
+  }
+
+  @Test
+  void linkablePlanOnConnectedDmpToolHasNoWarning() {
+    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+
+    assertThat(handler.linkablePlans(user))
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "OK"));
   }
 
   @Test
@@ -243,54 +254,25 @@ class DMPUpdateHandlerTest {
         .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "NOT_CONNECTED"));
   }
 
-  @Test
-  void noPlanIsLinkableWhenEveryPlatformIsOff() {
-    givenPlans(plan(1L, DMPSource.DMP_TOOL), plan(2L, DMPSource.DMP_ONLINE));
-    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
-        .thenReturn(PlatformStatus.PLATFORM_OFF);
-
-    assertThat(handler.linkablePlans(user)).isEmpty();
-  }
-
   @ParameterizedTest
   @EnumSource(
       value = DMPSource.class,
-      names = {"DMP_ONLINE", "ARGOS"})
-  void unknownPlanIsLinkableWithoutPlatformWhenDmpToolIsOffButAnotherImporterIsOn(
-      DMPSource onPlatform) {
-    givenPlans(plan(1L, DMPSource.UNKNOWN));
-    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
-        .thenAnswer(
-            invocation ->
-                invocation.getArgument(0) == onPlatform
-                    ? PlatformStatus.OK
-                    : PlatformStatus.PLATFORM_OFF);
+      names = {"DMP_ONLINE", "ARGOS", "DMP_ASSISTANT", "DSW"})
+  void linkablePlanOnPlatformWithoutWriteBackIsMarkedNotSupported(DMPSource source) {
+    givenPlans(plan(1L, source));
+    when(statusResolver.resolve(source, user)).thenReturn(PlatformStatus.OK);
+    when(dmpToolReporter.supports(source)).thenReturn(false);
 
-    assertThat(handler.linkablePlans(user))
-        .containsExactly(new LinkedDMP(1L, "title1", "id1", "", "OK"));
+    assertEquals("NOT_SUPPORTED", handler.linkablePlans(user).get(0).getWriteBackStatus());
   }
 
   @Test
-  void unknownPlanIsNotLinkableWhenDmpToolDmpOnlineAndArgosAreOff() {
+  void unknownPlanIsLinkableWithoutPlatformAndNoStatusLookup() {
     givenPlans(plan(1L, DMPSource.UNKNOWN));
-    when(statusResolver.resolve(any(DMPSource.class), eq(user)))
-        .thenAnswer(
-            invocation ->
-                invocation.getArgument(0) == DMPSource.DMP_ASSISTANT
-                    ? PlatformStatus.OK
-                    : PlatformStatus.PLATFORM_OFF);
-
-    assertThat(handler.linkablePlans(user)).isEmpty();
-  }
-
-  @Test
-  void unknownPlanKeepsDmpToolWarningWhenDmpToolIsOnButNotConnected() {
-    givenPlans(plan(1L, DMPSource.UNKNOWN));
-    givenDmpToolSupported();
-    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.NOT_CONNECTED);
 
     assertThat(handler.linkablePlans(user))
-        .containsExactly(new LinkedDMP(1L, "title1", "id1", "DMPTool", "NOT_CONNECTED"));
+        .containsExactly(new LinkedDMP(1L, "title1", "id1", "", "UNKNOWN_SOURCE"));
+    verifyNoInteractions(statusResolver, dmpToolReporter);
   }
 
   private void givenPlans(DMPUser... plans) {

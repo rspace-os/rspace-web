@@ -6731,6 +6731,7 @@ export default interface Resources {
           "platformOff": "{0} is switched off, so the plan was not updated.",
           "repositoryLink": "You can open your deposit on {0} at <a href=\"{1}\">{1}</a>.",
           "unexpectedError": "An unexpected error occurred.",
+          "unknownSource": "RSpace does not know which service this plan came from, so it was not updated.",
           "updateFailed": "RSpace could not update the plans you selected after your deposit on \"{0}\". You can add the deposit to them by hand.",
           "valueFailed": "<a href=\"{0}\">{0}</a> could not be added. {1} You can add this link to the plan by hand.",
           "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."
@@ -11291,7 +11292,10 @@ export default interface Resources {
         "dmp": {
           "associateLabel": "Associate export with a Data Management Plans (DMPs)",
           "warning": {
-            "notConnected": "{platform} is not connected, so this plan will not be updated."
+            "notConnected": "{platform} is not connected, so this plan will not be updated.",
+            "notSupported": "RSpace cannot yet update plans on {platform}, so this plan will not be updated.",
+            "platformOff": "{platform} is switched off, so this plan will not be updated.",
+            "unknownSource": "RSpace does not know which service this plan came from, so it will not be updated."
           },
           "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
         },
