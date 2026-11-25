@@ -18,7 +18,12 @@ function BackToListButton({ sx }: { sx?: SxProps<Theme> }): React.ReactNode {
 
   if (!isSingleColumnLayout) return null;
   return (
-    <IconButton aria-label={t("actions.back")} onClick={() => uiStore.setVisiblePanel("left")} size="small" sx={sx}>
+    <IconButton
+      aria-label={t("actions.back")}
+      onClick={() => uiStore.setSampleRequestsPanel("left")}
+      size="small"
+      sx={sx}
+    >
       <ArrowBackIosIcon fontSize="small" sx={{ ml: 0.5 }} />
     </IconButton>
   );

@@ -59,6 +59,14 @@ function RequestsPageContent(): React.ReactNode {
   // own stale selection without discarding one the user picked themselves since.
   const [deepLinkSelected, setDeepLinkSelected] = useState(false);
 
+  // uiStore.visiblePanel is shared with the other Inventory pages, so a "right" left over from
+  // one of them would otherwise open this page on an empty detail pane in a single-column layout.
+  // Must stay above the restore and deep-link effects: with the request already cached they run in
+  // the same commit, and their "right" has to win.
+  useEffect(() => {
+    uiStore.setVisiblePanel("left");
+  }, [uiStore]);
+
   // Brings back the request shown when the user last left this page (see
   // uiStore.lastSelectedSampleRequestId). Only read on mount, and never when the URL names a request.
   const [restoreRequestId] = useState(() => (rawDeepLinkId === null ? uiStore.lastSelectedSampleRequestId : null));
@@ -67,10 +75,20 @@ function RequestsPageContent(): React.ReactNode {
 
   useEffect(() => {
     if (restoreHandled) return;
+    // A deep link followed while this loaded is more recent, and supersedes it for good: checking
+    // the URL only when the response arrived would let returning to the plain URL re-enable it.
+    if (rawDeepLinkId !== null) {
+      setRestoreHandled(true);
+      return;
+    }
     if (restoreQuery.isSuccess) {
       setRestoreHandled(true);
-      // A row picked, or a deep link followed, while this loaded is more recent and so wins.
-      if (rawDeepLinkId === null) setSelectedRequest((current) => current ?? restoreQuery.data);
+      // A row picked while this loaded is more recent and so wins.
+      if (selectedRequest !== null) return;
+      setSelectedRequest(restoreQuery.data);
+      // Reopens the details only if they were showing when the user left, not if they had already
+      // gone back to the list.
+      if (uiStore.lastSampleRequestsPanel === "right") uiStore.setVisiblePanel("right");
     } else if (restoreQuery.isError) {
       setRestoreHandled(true);
       // Deleted, or no longer visible to this user; forget it unless something newer replaced it.
@@ -83,20 +101,13 @@ function RequestsPageContent(): React.ReactNode {
     restoreQuery.data,
     rawDeepLinkId,
     restoreRequestId,
+    selectedRequest,
     uiStore,
   ]);
 
   useEffect(() => {
     if (selectedRequest) uiStore.setLastSelectedSampleRequestId(selectedRequest.id);
   }, [selectedRequest, uiStore]);
-
-  // uiStore.visiblePanel is shared with the other Inventory pages, so a "right" left over from
-  // one of them would otherwise open this page on an empty detail pane in a single-column layout.
-  // Must stay above the deep-link effect: with the request already cached both run in the same
-  // commit, and that effect's "right" has to win.
-  useEffect(() => {
-    uiStore.setVisiblePanel("left");
-  }, [uiStore]);
 
   useEffect(() => {
     if (rawDeepLinkId === null) {
@@ -107,7 +118,7 @@ function RequestsPageContent(): React.ReactNode {
       setLastHandledDeepLinkKey(null);
       // Browser Back/Forward don't go through RouterNavigationContext, which would otherwise reset
       // the panel, so return to the list here rather than leave it behind an empty detail pane.
-      if (deepLinkSelected || showDeepLinkError) uiStore.setVisiblePanel("left");
+      if (deepLinkSelected || showDeepLinkError) uiStore.setSampleRequestsPanel("left");
       setShowDeepLinkError(false);
       if (deepLinkSelected) {
         setSelectedRequest(null);
@@ -122,7 +133,7 @@ function RequestsPageContent(): React.ReactNode {
       if (lastHandledDeepLinkKey === rawDeepLinkId) return;
       setLastHandledDeepLinkKey(rawDeepLinkId);
       setShowDeepLinkError(true);
-      uiStore.setVisiblePanel("right");
+      uiStore.setSampleRequestsPanel("right");
       return;
     }
     if (deepLinkQuery.isSuccess) {
@@ -134,14 +145,14 @@ function RequestsPageContent(): React.ReactNode {
       setShowDeepLinkError(false);
       setDeepLinkSelected(true);
       setSelectedRequest(deepLinkQuery.data);
-      uiStore.setVisiblePanel("right");
+      uiStore.setSampleRequestsPanel("right");
       return;
     }
     if (deepLinkQuery.isError) {
       if (lastHandledDeepLinkKey === rawDeepLinkId) return;
       setLastHandledDeepLinkKey(rawDeepLinkId);
       setShowDeepLinkError(true);
-      uiStore.setVisiblePanel("right");
+      uiStore.setSampleRequestsPanel("right");
     }
   }, [
     rawDeepLinkId,
@@ -162,7 +173,7 @@ function RequestsPageContent(): React.ReactNode {
     setShowDeepLinkError(false);
     setDeepLinkSelected(false);
     setSelectedRequest(request);
-    uiStore.setVisiblePanel("right");
+    uiStore.setSampleRequestsPanel("right");
   }
 
   return (

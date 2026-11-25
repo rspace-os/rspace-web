@@ -1,7 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { action, observable } from "mobx";
 import { HttpResponse, http } from "msw";
@@ -52,6 +52,11 @@ function makeUiStore() {
     setLastSelectedSampleRequestId: action((id: number | null) => {
       store.lastSelectedSampleRequestId = id;
     }),
+    lastSampleRequestsPanel: "left" as "left" | "right",
+    setSampleRequestsPanel: action((panel: "left" | "right") => {
+      store.visiblePanel = panel;
+      store.lastSampleRequestsPanel = panel;
+    }),
   });
   return store;
 }
@@ -83,8 +88,10 @@ function tree(queryClient: QueryClient, search: string) {
  * client-side navigation would, without remounting the page - rather than making a fresh render
  * with a different initial URL.
  */
-function renderWithProviders(search: string) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderWithProviders(
+  search: string,
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const utils = render(tree(queryClient, search));
   return {
     ...utils,
@@ -685,5 +692,90 @@ describe("RequestsPage remembering the shown request across visits", () => {
     });
     expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
     expect(uiStore.lastSelectedSampleRequestId).toBe(7);
+  });
+
+  test("does not restore the remembered request after a deep link followed while it loaded", async () => {
+    let releaseRemembered = () => {};
+    const rememberedHeld = new Promise<void>((resolve) => {
+      releaseRemembered = resolve;
+    });
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, async ({ params }) => {
+        const id = Number(params.id);
+        apiGet(id);
+        if (id === 7) await rememberedHeld;
+        return HttpResponse.json(requestDetailResponse(id));
+      }),
+    );
+    uiStore.setLastSelectedSampleRequestId(7);
+    const { queryClient, navigateTo } = renderWithProviders("");
+    await waitFor(() => expect(apiGet).toHaveBeenCalledWith(7));
+
+    navigateTo("?requestId=42");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+    navigateTo("");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("none"));
+
+    releaseRemembered();
+    await waitFor(() => {
+      expect(queryClient.getQueryState(["sampleRequests", "detail", 7])?.status).toBe("success");
+    });
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("none");
+    expect(uiStore.lastSelectedSampleRequestId).toBeNull();
+  });
+
+  describe("on a narrow viewport", () => {
+    const originalWidth = window.innerWidth;
+    beforeEach(() => {
+      window.innerWidth = 400;
+    });
+    afterEach(() => {
+      window.innerWidth = originalWidth;
+    });
+
+    async function pickRequestSeven() {
+      (await screen.findByText("SA9")).closest("tr")?.focus();
+      await userEvent.setup().keyboard("{Enter}");
+      await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toBeVisible());
+    }
+
+    // Navigating away resets the shared panel before this page unmounts, as RouterNavigationContext does.
+    function leavePage(unmount: () => void) {
+      uiStore.setVisiblePanel("left");
+      unmount();
+    }
+
+    test.each([
+      ["already cached", true],
+      ["not yet cached", false],
+    ])("reopens the details when the user left with them visible, with the request %s", async (_, reuseCache) => {
+      serveListAndDetails();
+      const first = renderWithProviders("");
+      await pickRequestSeven();
+      // What the real RequestDetailPanel's own detail query leaves behind; it is mocked in this file.
+      if (reuseCache) first.queryClient.setQueryData(["sampleRequests", "detail", 7], requestDetailResponse(7));
+      leavePage(first.unmount);
+
+      renderWithProviders("", reuseCache ? first.queryClient : undefined);
+
+      await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toBeVisible());
+      expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+      expect(screen.getByText("SA9").closest("tr")).not.toBeVisible();
+    });
+
+    test("stays on the list, with the request still selected, when the user had gone back to it", async () => {
+      serveListAndDetails();
+      const first = renderWithProviders("");
+      await pickRequestSeven();
+      // What BackToListButton does; the detail panel holding it is mocked in this file.
+      act(() => uiStore.setSampleRequestsPanel("left"));
+      leavePage(first.unmount);
+
+      renderWithProviders("", first.queryClient);
+
+      await waitFor(() => expect(screen.getByText("SA9").closest("tr")).toHaveAttribute("aria-current", "true"));
+      expect(screen.getByText("SA9").closest("tr")).toBeVisible();
+      expect(screen.getByTestId("mock-detail-panel")).not.toBeVisible();
+    });
   });
 });

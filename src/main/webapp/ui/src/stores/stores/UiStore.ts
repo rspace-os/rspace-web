@@ -53,6 +53,13 @@ export default class UiStore {
    * Forward buttons, shows the same request again.
    */
   lastSelectedSampleRequestId: number | null = null;
+  /*
+   * Which Requests pane was last shown, so that returning to the page in a single-column layout
+   * reopens the details only when the user left with them visible. Recorded by the Requests page's
+   * own pane switches rather than read from visiblePanel on leaving, as navigating away resets
+   * visiblePanel before the page unmounts.
+   */
+  lastSampleRequestsPanel: Panel = "left";
   discardChangesCallback: () => Promise<void> = async () => {};
 
   /*
@@ -86,6 +93,8 @@ export default class UiStore {
       dirty: observable,
       lastSelectedSampleRequestId: observable,
       setLastSelectedSampleRequestId: action,
+      lastSampleRequestsPanel: observable,
+      setSampleRequestsPanel: action,
       updateViewportSize: action,
       addAlert: observable,
       toggleSidebar: action,
@@ -176,6 +185,12 @@ export default class UiStore {
 
   setLastSelectedSampleRequestId(id: number | null) {
     this.lastSelectedSampleRequestId = id;
+  }
+
+  /** Shows a Requests page pane, remembering it for the next visit (see lastSampleRequestsPanel). */
+  setSampleRequestsPanel(panel: Panel) {
+    this.visiblePanel = panel;
+    this.lastSampleRequestsPanel = panel;
   }
 
   setDialogVisiblePanel(panel: Panel) {
