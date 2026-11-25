@@ -85,6 +85,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -139,6 +140,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired FieldLinksEntitiesSynchronizer fieldContentSynchroniser;
   private @Autowired FormDao formDao;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired NfsFieldLinkManager nfsFieldLinkManager;
   private @Autowired RecordGroupSharingDao recordGroupSharingDao;
   private @Autowired RecordUserFavoritesDao recordUserFavoritesDao;
   private @Autowired IRecordFactory recordFactory;
@@ -918,6 +920,7 @@ public class RecordManagerImpl implements RecordManager {
       if (!fieldIds.contains(fidx)) {
         Field fldx = fields.get(j);
         fldx.setData("");
+        nfsFieldLinkManager.reindex(fldx, "");
       }
     }
 
