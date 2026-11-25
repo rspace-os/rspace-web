@@ -105,14 +105,14 @@ Java updates should be tested first on community-test using a realistic database
 
 ## Using Liquibase 
 
-We use Liquibase to apply schema updates to the database. When you run a Gradle test task with `-Denvironment=drop-recreate-db`
-(e.g. `./gradlew test -Denvironment=drop-recreate-db`), what happens in the background is that its
+We use Liquibase to apply schema updates to the database. When you run Gradle with `-Denvironment=drop-recreate-db`
+(e.g. `./gradlew jettyRun -Denvironment=drop-recreate-db`), what happens in the background is that its
 `recreateDatabase` task drops the `rspace` database and re-creates it from the
 `src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql` script. Then, when RSpace is 
 started, all the changesets defined in liquibase "changelog" xmls are applied. On production, 
 the database already exists, the new changesets will be applied on top of it. 
 
-The flag is for resetting your local database before `mvn jetty:run`. Tests no longer need it:
+The flag is for resetting your local database before `./gradlew jettyRun`. Tests no longer need it:
 DB-backed tests start their own throwaway MariaDB container (see `TestDatabaseExtension`).
 
 When adding a new liquibase changeset:

@@ -13,15 +13,15 @@ name: Coverage
 # ponytail: this doubles DB schema-init cost (each shard runs drop-recreate-db);
 # a pre-seeded DB image (planned) would remove that overhead.
 #
-# This is also the Java 17 check. Maven builds on 21, like every other workflow,
-# and -Djvm makes the test JVMs run on 17: a 21-built RSpace on a Java 17 server,
-# which customers will have until they move to 21.
+# This is also the Java 17 check. Gradle runs on 21, like every other workflow,
+# and -Djava-version=17 compiles (still --release 17) and runs the tests on the
+# runner's preinstalled JDK 17: RSpace on a Java 17 server, which customers will
+# have until they move to 21.
 
 on:
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
-    inputs:
 
 permissions:
   contents: read
@@ -59,7 +59,7 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache-key: coverage
 
       - name: Configure MariaDB
@@ -91,7 +91,7 @@ jobs:
         run: |
           ./gradlew test jacocoTestReport \
             -DenableTestCoverage -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
+            -Djava-version=17 \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -DtestRetries=1 \
@@ -163,7 +163,7 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache-key: coverage
 
       - name: Configure MariaDB
@@ -191,7 +191,7 @@ jobs:
         run: |
           ./gradlew integrationTests jacocoIntegrationTestReport \
             -DenableTestCoverage -Denvironment=drop-recreate-db \
-            -Djava-version=${{ matrix.java-version }} \
+            -Djava-version=17 \
             -Djavax.xml.accessExternalDTD=all \
             -Dlog4j2.configurationFile=log4j2-dev.xml \
             -DtestRetries=1 \
@@ -254,7 +254,7 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache-key: coverage
           save-cache: 'false'
 
@@ -282,8 +282,8 @@ jobs:
             echo "No coverage exec data to merge." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          ./gradlew -q jacocoMergedReport -DenableTestCoverage \
-            -Djava-version=${{ matrix.java-version }}
+          # The same JDK as the test jobs, so the class files match their exec data
+          ./gradlew -q jacocoMergedReport -DenableTestCoverage -Djava-version=17
           echo "### Combined coverage (unit + Spring + integration)" >> "$GITHUB_STEP_SUMMARY"
           awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
             printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";

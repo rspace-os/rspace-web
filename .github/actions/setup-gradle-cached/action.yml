@@ -7,7 +7,7 @@ description: >-
 inputs:
   java-version:
     description: JDK major version, e.g. "17" or "21".
-    default: "17"
+    default: "21"
   cache-key:
     description: >-
       Cache family. Jobs that resolve the same dependencies share one, so a job

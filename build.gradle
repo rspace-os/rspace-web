@@ -222,6 +222,8 @@ dependencies {
   testImplementation 'org.hamcrest:hamcrest:3.0'
   testImplementation 'org.springframework:spring-test:6.2.19'
   testImplementation 'com.unboundid:unboundid-ldapsdk:7.0.6'
+  // throwaway MariaDB for local DB-backed tests, see TestDatabaseExtension
+  testImplementation 'org.testcontainers:testcontainers:2.0.5'
   implementation('org.springframework.batch:spring-batch-core:5.2.1') {
     exclude group: 'org.springframework.retry', module: 'spring-retry'
     exclude group: 'com.thoughtworks.xstream', module: 'xstream'
@@ -321,6 +323,7 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3:3.20.0'
   implementation 'com.ibm.icu:icu4j:78.3'
   implementation 'org.apache.commons:commons-text:1.14.0'
+  implementation 'org.semver4j:semver4j:6.0.0'
   implementation('org.hibernate.search:hibernate-search-mapper-orm:7.0.1.Final') {
     exclude group: 'org.jboss.logging', module: 'jboss-logging'
     exclude group: 'org.hibernate.orm', module: 'hibernate-core'
@@ -610,6 +613,16 @@ tasks.register('recreateDatabase', RecreateDatabase) {
   if (buildEnvironment != 'drop-recreate-hibernate-db') {
     baselineScript = layout.projectDirectory.file('src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql')
   }
+  // Refuse to reset a database other than the one the app and tests will use, e.g. -Djdbc.url on
+  // another port while jdbc.server.url still points at the default localhost:3306.
+  def appJdbcUrl = setting('jdbc.url')
+  def resetTarget = "${filterProperties['jdbc.server.url']}/${filterProperties['jdbc.server.db']}".toString()
+  doFirst {
+    if (appJdbcUrl != null && !(appJdbcUrl ==~ /${java.util.regex.Pattern.quote(resetTarget)}(\?.*)?/)) {
+      throw new GradleException("${buildEnvironment} would reset ${resetTarget}, but jdbc.url is ${appJdbcUrl}. " +
+        'Set -Djdbc.server.url and -Djdbc.server.db to match -Djdbc.url.')
+    }
+  }
 }
 
 if (recreatesDatabase) {
@@ -666,7 +679,7 @@ tasks.withType(Test).configureEach {
       excludeTags(*excludedTestGroups.split(','))
     }
   }
-  maxHeapSize = '1536m'
+  maxHeapSize = '2g'
   jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED',
     '--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
   systemProperties cliSystemProperties
@@ -720,10 +733,26 @@ tasks.withType(Test).configureEach {
   }
 }
 
+// Booting the prod context seeds built-in forms and other content that nothing removes, which
+// breaks tests that count them (FormDaoTest), so ProdConfigWiringTest runs after `test`, in its own
+// task. -Dtest runs it under `test` like any other class.
+def prodWiringTest = '**/ProdConfigWiringTest.class'
+def testProduction = tasks.register('testProduction', Test) {
+  description = 'Runs ProdConfigWiringTest, which boots the prod Spring context.'
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  mustRunAfter tasks.named('test')
+  include prodWiringTest
+  onlyIf('-Dtest runs it under test') { !testPatterns }
+  onlyIf('-Dfast skips the tests that need a database') { !fastRun }
+}
 tasks.named('test') {
   if (!testPatterns) {
     include '**/Test*.class', '**/*Test.class', '**/*Tests.class', '**/*TestCase.class'
+    exclude prodWiringTest
   }
+  finalizedBy testProduction
 }
 
 def registerItTask = { String name, String desc, Closure configure ->
@@ -732,7 +761,7 @@ def registerItTask = { String name, String desc, Closure configure ->
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    mustRunAfter tasks.named('test'), tasks.named('war')
+    mustRunAfter tasks.named('test'), testProduction, tasks.named('war')
     if (!testPatterns) {
       configure.delegate = it
       configure()
@@ -775,6 +804,9 @@ if (flag('enableTestCoverage')) {
     toolVersion = '0.8.15'
   }
   tasks.named('jacocoTestReport', JacocoReport) {
+    mustRunAfter testProduction
+    executionData.from(files(testProduction.map { it.extensions.getByType(JacocoTaskExtension).destinationFile })
+      .filter { it.exists() })
     reports {
       xml.required = true
       csv.required = true
@@ -951,10 +983,14 @@ tasks.register('printVersion') {
 
 // ---------------------------------------------------------------------------------------------
 // Formatting: spotlessApply and spotlessCheck (under `check`). -DspotlessStrict adds CleanThat;
-// -DspotlessFiles=<regex>[,<regex>...] limits both to files whose absolute path matches one.
+// -DspotlessFiles=<regex>[,<regex>...] limits both to files whose absolute path matches one, and
+// -DratchetFrom=<git ref> to files that differ from that ref.
 // ---------------------------------------------------------------------------------------------
 def spotlessFiles = setting('spotlessFiles')?.split(',')*.trim()?.findAll { it }
 spotless {
+  if (setting('ratchetFrom')) {
+    ratchetFrom setting('ratchetFrom')
+  }
   java {
     target 'src/**/*.java', 'buildSrc/src/**/*.java'
     if (spotlessFiles) {

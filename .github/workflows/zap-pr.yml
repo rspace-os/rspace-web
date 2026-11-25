@@ -29,7 +29,7 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-version: 17
+          java-version: 21
           cache-key: war
 
       - name: Set up Node + pnpm
@@ -44,7 +44,7 @@ jobs:
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR
-        run: ./gradlew war -DgenerateReactDist -Djava-version=17 -Dtimestamp=${{ github.run_id }}
+        run: ./gradlew war -DgenerateReactDist -Dtimestamp=${{ github.run_id }}
 
       - name: Stage WAR
         run: |

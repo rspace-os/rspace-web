@@ -37,63 +37,12 @@ GlobalInitManager.setApplicationInitialisors() AND IT DOES NOT populate with the
 classes do. (It does not add GroupSharedSnippetsFolderAppInitialiser)
 
 There are two automated tests for app startup, ProdConfigWiringTest and RunConfigWiringTestIT. Each boots a Spring
-context for its own profile, so each needs its own surefire execution. Otherwise several Spring containers run at once
-and their beans clash. Booting the prod context also seeds built-in forms and other content that nothing removes, so
-ProdConfigWiringTest must not run in default-test: it would break tests such as FormDaoTest that count forms. The pom
-excludes it from default-test and runs it in the unit-tests-production execution, a separate JVM that starts after
-default-test. It excludes RunConfigWiringTestIT from the standard integration run, because the other tests there use the
-dev profile, and runs it in integration-tests-run. The executions look like this:
-
-```
-<execution> <!-- separate execution for 'prod' profile tests -->
-						<id>unit-tests-production</id>
-						<phase>test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-						<configuration>
-							<skip>${skipUnitTests}</skip>
-							<includes>
-								<include>**/ProdConfigWiringTest.java</include>
-							</includes>
-						</configuration>
-					</execution>
-					<execution> <!-- for 'dev' profile IT tests -->
-						<id>integration-tests</id>
-						<phase>integration-test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-						<configuration>
-							<includes>
-								<include>**/*IT.java</include>
-							</includes>
-							<excludes>
-								<!-- run/prod tests  -->
-								<exclude>**/RunConfigWiringTestIT.java</exclude>
-								<exclude>**/SysAdminConfigControllerMVCIT.java</exclude>
-								<exclude>**/SysAdminSupportControllerMVCIT.java</exclude>
-								<!-- other problematic tests -->
-								<exclude>**/ExportApiControllerMVCIT.java</exclude>
-								<exclude>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</exclude>
-							</excludes>
-						</configuration>
-					</execution>
-					<execution> <!-- for 'run' profile IT tests -->
-						<id>integration-tests-run</id>
-						<phase>integration-test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-						<configuration>
-							<includes>
-								<include>**/RunConfigWiringTestIT.java</include>
-								<include>**/SysAdminConfigControllerMVCIT.java</include>
-								<include>**/SysAdminSupportControllerMVCIT.java</include>
-							</includes>
-						</configuration>
-					</execution>
-```
+context for its own profile, so each needs its own Gradle test task, which runs in its own JVM. Otherwise several Spring
+containers run at once and their beans clash. Booting the prod context also seeds built-in forms and other content that
+nothing removes, so ProdConfigWiringTest must not run in the `test` task: it would break tests such as FormDaoTest that
+count forms. `build.gradle` excludes it from `test` and runs it in `testProduction`, which `test` triggers and which
+starts after it. RunConfigWiringTestIT is likewise excluded from `integrationTest`, because the other tests there use
+the dev profile, and runs in `integrationTestRun` with the other run-profile tests (`runProfileITs` in `build.gradle`).
 
 ProdConfigWiringTest and RunConfigWiringTestIT use the 'prod' and 'run' profiles, so they can test the real set of
 initialiser beans that run on a real app start, such as GroupSharedSnippetsFolderAppInitialiser. `-Dfast=true` skips

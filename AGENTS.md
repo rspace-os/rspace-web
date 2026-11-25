@@ -39,13 +39,13 @@ Run frontend commands from the repository root. Scripts enter `src/main/webapp/u
 | `./gradlew test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
 | `./gradlew test -Dfast=true` | Run all pure backend unit tests |
 | `./gradlew test -Dtest=MyClassName` | Run one Spring transactional test class |
-| `./gradlew test` | Run unit and Spring tests; requires a database |
-| `./gradlew integrationTest -Dtest=MyClassIT` | Run one `*IT` class; requires a database |
-| `./gradlew verify -Denvironment=drop-recreate-db` | Run unit, Spring and `*IT` tests and build the WAR; resets the database |
+| `./gradlew test` | Run unit and Spring tests; DB-backed tests use a throwaway MariaDB in Docker |
+| `./gradlew integrationTest -Dtest=MyClassIT` | Run one `*IT` class; DB-backed tests use a throwaway MariaDB in Docker |
+| `./gradlew verify` | Run unit, Spring and `*IT` tests and build the WAR; DB-backed tests use a throwaway MariaDB in Docker |
 | `./gradlew war -DgenerateReactDist` | Build a WAR with the frontend |
 | `./gradlew spotlessApply` | Format Java |
 
-Gradle is the only build; see `DevDocs/DeveloperNotes/Gradle.md`. Run it on Java 17 or 21 under a UTF-8 locale, never `LC_ALL=C`. Pass build settings as `-D<name>=<value>`; they reach resource filtering and the test JVMs. Unchanged test tasks are skipped; add `--rerun` to run one again.
+Gradle is the only build; see `DevDocs/DeveloperNotes/Gradle.md`. Run it on Java 21 (17 also works) under a UTF-8 locale, never `LC_ALL=C`. Pass build settings as `-D<name>=<value>`; they reach resource filtering and the test JVMs. Unchanged test tasks are skipped; add `--rerun` to run one again.
 
 Dependencies resolve from Maven Central, JitPack (`com.github.*`) and DICE only, never `mavenLocal()`; do not add it. A dependency change also updates its pin in `gradle/pinned-versions.txt`; `./gradlew checkPinnedVersions` confirms. For sibling-project changes, push, wait for JitPack to build the release, then update the version in `build.gradle` and `gradle/pinned-versions.txt`.
 </important>

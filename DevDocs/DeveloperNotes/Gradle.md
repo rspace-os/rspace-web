@@ -11,9 +11,10 @@ configuration.
 
 ## Before you start
 
-- **JDK:** run Gradle on Java 17 or 21 (`JAVA_HOME`). The build fails fast on any other version,
-  because Spotless and the other plugins run in Gradle's own JVM. The code always compiles with
-  `--release 17`, so a WAR built on either JDK runs on both.
+- **JDK:** use Java 21, as CI and the dev stack do. Gradle runs on 17 or 21 (`JAVA_HOME`) and
+  fails fast on any other version, because Spotless and the other plugins run in Gradle's own
+  JVM. The code always compiles with `--release 17`, so a WAR built on either JDK runs on both,
+  and production servers may still run 17.
 - **Locale:** run Gradle under a UTF-8 locale, e.g. `LANG=en_US.UTF-8` (CI uses `C.UTF-8`), and
   never with `LC_ALL=C`. Some test resource file names are non-ASCII, and a daemon started under
   `LC_ALL=C` cannot read them. If one did, run `./gradlew --stop`.
@@ -28,10 +29,10 @@ configuration.
 |---|---|
 | `./gradlew classes` / `testClasses` | Compile main / main and test classes |
 | `./gradlew test -Dfast=true` | Run the pure unit tests (no database) |
-| `./gradlew test` | Run the unit and Spring tests against the database as it is |
+| `./gradlew test` | Run the unit and Spring tests; DB-backed tests start a throwaway MariaDB in Docker unless `-Djdbc.url` is set |
 | `./gradlew test -Dtest=MyClassTest` | Run one test class (see [-Dtest](#selecting-tests)) |
 | `./gradlew integrationTests` | Run the `*IT` tests: `integrationTest`, `integrationTestRun`, then `integrationTestProblematic` |
-| `./gradlew verify -Denvironment=drop-recreate-db` | Recreate the database, run `test`, build the WAR, then run `integrationTests` |
+| `./gradlew verify` | Run `test`, build the WAR, then run `integrationTests` |
 | `./gradlew check` | `test`, `integrationTests`, `spotlessCheck` and `checkPinnedVersions` |
 | `./gradlew war` | Build `build/libs/researchspace-<version>.war` |
 | `./gradlew war -DgenerateReactDist` | Build the WAR with the React/Vite bundle |
@@ -75,6 +76,7 @@ Switches:
 | `-DenableTestCoverage` | JaCoCo on every test task (see [Coverage](#coverage)) |
 | `-DspotlessStrict` | Spotless adds the CleanThat steps |
 | `-DspotlessFiles=<regex>,...` | Limit Spotless to files whose absolute path matches one regex |
+| `-DratchetFrom=<git ref>` | Limit Spotless to files that differ from that ref, e.g. `origin/main` |
 | `-Dtimestamp=<value>` / `-Dtimestamp=now` | Version stamp; defaults to `dev` |
 | `-Ddeployment=<name>` | Package `src/main/resources/deployments/<name>/` (default `dev`) |
 | `-Djava-version=<17\|21>` | Pick a toolchain JDK (see [Toolchains](#toolchains)) |
@@ -117,13 +119,22 @@ a build number.
 
 | Task | Classes |
 |---|---|
-| `test` | `Test*`, `*Test`, `*Tests`, `*TestCase` |
+| `test` | `Test*`, `*Test`, `*Tests`, `*TestCase`, apart from `ProdConfigWiringTest` |
+| `testProduction` | `ProdConfigWiringTest`, after `test`, which triggers it |
 | `integrationTest` | `*IT`, apart from the two lists below |
 | `integrationTestRun` | `RunConfigWiringTestIT`, `SysAdminConfigControllerMVCIT`, `SysAdminSupportControllerMVCIT` |
 | `integrationTestProblematic` | `ExportApiControllerMVCIT`, `CreateMissingUserFoldersForLabAdminsAndPIsIT` |
 
 `integrationTests` runs the three integration tasks in that order, and `verify` runs `test` and
 `war` before them. Test tasks share one database, so they never run in parallel with each other.
+`ProdConfigWiringTest` boots the prod Spring context, which seeds built-in forms that tests such
+as `FormDaoTest` count, so it runs in `testProduction` instead (see
+[CreatingNewFoldersForAllUsersOnStartup.md](CreatingNewFoldersForAllUsersOnStartup.md)).
+
+Without `-Djdbc.url`, `TestDatabaseExtension` starts a throwaway MariaDB container with the
+baseline schema for each test JVM, so DB-backed tests need Docker. `DatabaseCleaner` deletes
+nearly every row after each integration-test class, so only pass `-Djdbc.url`, as CI and Jenkins
+do, for a database whose contents you are happy to lose.
 
 Results: JUnit XML in `build/test-results/<task>/`, HTML reports in `build/reports/tests/<task>/`.
 Failures print in full on the console.
@@ -208,6 +219,9 @@ With `-Denvironment=drop-recreate-db`, every test task depends on `recreateDatab
   `jdbc.server.username`;
 - loads `src/main/resources/sqlUpdates/liquibaseConfig/rs-dbbaseline-utf8.sql`;
 - leaves the Liquibase changesets for RSpace to apply when it starts.
+
+It fails before dropping anything if `-Djdbc.url` is set and names a different server or database
+from `jdbc.server.url` and `jdbc.server.db`.
 
 `clean` then also empties the `archive/` and `pdfs/` folders of the attachment search index.
 
@@ -338,6 +352,9 @@ the tests, plus `jacocoMergedReport`, which you run yourself:
 - `-DspotlessFiles=<regex>,...` limits both tasks to files whose absolute path matches one regex,
   e.g. `-DspotlessFiles='.*/MyClass[.]java'`. The lefthook pre-commit hook uses it to check only
   staged files.
+- `-DratchetFrom=<git ref>` limits both tasks to files that differ from that ref. CI checks pull
+  requests with `-DratchetFrom=origin/main`, unless the Gradle build files differ from `main`,
+  since a formatter or config change can affect every file. Pushes to main check everything.
 
 ## Database tasks
 
@@ -374,7 +391,8 @@ the deployment properties control access to it. See [Storybook.md](Storybook.md)
 
 ## Toolchains
 
-RSpace supports Eclipse Temurin JDKs only; CI installs Temurin 17 or 21. Without
+RSpace supports Eclipse Temurin JDKs only; CI installs Temurin 21, and the nightly Coverage
+workflow runs the tests on 17 with `-Djava-version=17`. Without
 `-Djava-version`, the JDK running Gradle compiles and runs the tests. With `-Djava-version=17` or
 `-Djava-version=21`, Gradle uses an installed JDK of that version as a toolchain for compiling
 and testing.

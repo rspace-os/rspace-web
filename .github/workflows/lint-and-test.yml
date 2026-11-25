@@ -22,11 +22,6 @@ on:
         description: 'Run build'
         type: boolean
         default: false
-      java_version:
-        description: 'Java version for the Java jobs'
-        type: choice
-        options: ['17', '21']
-        default: '17'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -220,10 +215,23 @@ jobs:
       # frontend checks (and vice versa).
       # -DspotlessStrict adds the CleanThat checks. Plain spotlessApply will not
       # fix those; use `./gradlew spotlessApply -DspotlessStrict`.
+      # PRs check only the files that differ from main (main is checked in
+      # full on every push), unless the Gradle build files differ, since a
+      # formatter bump or config change can affect every file. This compares
+      # against main, not the PR's base, so a stacked PR also checks every
+      # layer below it. Pushes to main and manual runs check everything.
       - name: Formatting and dependency checks
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          ratchet=()
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] \
+            && git diff --quiet "origin/$DEFAULT_BRANCH...HEAD" -- \
+              build.gradle settings.gradle gradle.properties gradle/ buildSrc/; then
+            ratchet=(-DratchetFrom="origin/$DEFAULT_BRANCH")
+          fi
           ./gradlew -q --continue spotlessCheck checkPinnedVersions -DspotlessStrict \
-            -Djava-version=${{ matrix.java-version }}
+            -Djava-version=${{ matrix.java-version }} "${ratchet[@]}"
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -810,7 +818,7 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-gradle-cached
         with:
-          java-version: ${{ inputs.java_version || '17' }}
+          java-version: 21
           cache-key: tests
 
       - name: Configure MariaDB
@@ -836,7 +844,6 @@ jobs:
           CHEMISTRY_URL: http://localhost:8090
           JDBC_DB: rspace
           JDBC_URL: jdbc:mysql://localhost:3306/rspace
-          TOOLCHAIN_JAVA_VERSION: ${{ inputs.java_version || '17' }}
         run: scripts/run-chemistry-tests.sh
 
       - name: Publish test results
