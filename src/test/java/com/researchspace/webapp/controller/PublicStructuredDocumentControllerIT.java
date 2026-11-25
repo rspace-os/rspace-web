@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,6 +8,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
 import com.researchspace.model.EditStatus;
@@ -19,7 +23,7 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
-import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.Iterator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +39,7 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.ModelAndView;
 
-public class PublicStructuredDocumentControllerIT extends RealTransactionSpringTestBase {
+public class PublicStructuredDocumentControllerIT extends MVCTestBase {
 
   private @Autowired PublicStructuredDocumentController controller;
   private @Autowired JdbcTemplate jdbcTemplate;
@@ -210,5 +214,114 @@ public class PublicStructuredDocumentControllerIT extends RealTransactionSpringT
     assertEquals(
         rgs.getPublicLink() + "?initialRecordToDisplay=" + notebookEntryID,
         controller.getPublicDocForRecordOrParentOfRecord("SD" + notebookEntryID));
+  }
+
+  @Test
+  public void anonymousCallerGetsNoLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    assertEquals(
+        "",
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousGuestGetsNoLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser();
+    assertEquals(
+        "",
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousCallerGetsNoLinkForLinkOnlyNotebookOrItsEntry() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE, true);
+    Long entryId = folderMgr.getFolderChildrenIds(setup.notebook).iterator().next();
+    logoutCurrentUser();
+    assertEquals(
+        "", controller.getPublicDocForRecordOrParentOfRecord(setup.notebook.getGlobalIdentifier()));
+    assertEquals("", controller.getPublicDocForRecordOrParentOfRecord("SD" + entryId));
+  }
+
+  @Test
+  public void anonymousCallerGetsLinkForInternetPublication() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    publishDocumentForUser(setup.user, setup.structuredDocument.getId(), true, false, "");
+    String link =
+        recShareMgr.getRecordSharingInfo(setup.structuredDocument.getId()).get(0).getPublicLink();
+    logoutCurrentUser();
+    assertEquals(
+        link,
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousCallerGetsInternetNotebookLinkForItsEntries() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, true, 2);
+    publishDocumentForUser(setup.user, setup.notebook.getId(), true, false, "");
+    String notebookLink =
+        recShareMgr.getRecordSharingInfo(setup.notebook.getId()).get(0).getPublicLink();
+    Iterator<Long> entryIds = folderMgr.getFolderChildrenIds(setup.notebook).iterator();
+    Long entryWithOwnLink = entryIds.next();
+    Long plainEntry = entryIds.next();
+    // a link-only publication of the entry itself, inside the internet notebook
+    publishDocumentForUser(setup.user, entryWithOwnLink);
+    // precondition: without the entry's own withheld link, the second assertion repeats the first
+    Assertions.assertNotNull(
+        recShareMgr.getRecordSharingInfo(entryWithOwnLink).get(0).getPublicLink());
+    logoutCurrentUser();
+    assertEquals(
+        notebookLink + "?initialRecordToDisplay=" + plainEntry,
+        controller.getPublicDocForRecordOrParentOfRecord("SD" + plainEntry));
+    assertEquals(
+        notebookLink + "?initialRecordToDisplay=" + entryWithOwnLink,
+        controller.getPublicDocForRecordOrParentOfRecord("SD" + entryWithOwnLink));
+  }
+
+  @Test
+  public void containerPrincipalWithoutRSpaceLoginGetsNoLinkForLinkOnlyPublication()
+      throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    // under SSO the servlet container can supply a user who never signed in to RSpace
+    mockMvc
+        .perform(
+            get("/public/publishedView/publiclink")
+                .param("globalId", setup.structuredDocument.getGlobalIdentifier())
+                .principal(new MockPrincipal("ssoOnlyUser")))
+        .andExpect(status().isOk())
+        .andExpect(content().string(""));
+  }
+
+  @Test
+  public void otherSignedInUserGetsLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    String link =
+        recShareMgr.getRecordSharingInfo(setup.structuredDocument.getId()).get(0).getPublicLink();
+    User other = createAndSaveUser("other" + getRandomName(10), Constants.USER_ROLE);
+    logoutAndLoginAs(other);
+    assertEquals(
+        link,
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
   }
 }

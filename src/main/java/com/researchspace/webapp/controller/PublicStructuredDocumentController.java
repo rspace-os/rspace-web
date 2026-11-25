@@ -22,6 +22,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -101,19 +102,29 @@ public class PublicStructuredDocumentController extends BaseController {
     return new ModelAndView(view, model.asMap());
   }
 
+  /**
+   * Returns the publication link of the record or else of its parent notebook, with {@code
+   * ?initialRecordToDisplay=<id>}, or "" when neither is published. A link-only publication's link
+   * goes only to a signed-in caller; for anyone else it answers as if not published. The anonymous
+   * guest counts as not signed in: opening any publication signs a visitor in as that one shared
+   * account, which can read every publication. The caller comes from the Shiro subject: a request
+   * {@code Principal} falls back to the servlet container's user, which an SSO front end can set
+   * for someone not signed in to RSpace, and looking up the session user would create a session on
+   * this anonymous path.
+   */
   @GetMapping("/publishedView/publiclink")
   @ResponseBody
-  // If record is not published then return the public link of its parent if published else return
-  // empty string
   public String getPublicDocForRecordOrParentOfRecord(
       @RequestParam(value = "globalId", required = true) String globalId) {
-    String publicLink = getPublicLinkForRecord(new GlobalIdentifier(globalId).getDbId());
+    Object caller = SecurityUtils.getSubject().getPrincipal();
+    boolean signedIn = caller != null && !RecordGroupSharing.ANONYMOUS_USER.equals(caller);
+    String publicLink = getPublicLinkForRecord(new GlobalIdentifier(globalId).getDbId(), signedIn);
     if (publicLink.isEmpty()) {
       long id = new GlobalIdentifier(globalId).getDbId();
       if (recordManager.exists(id)) {
         Record data = recordManager.get(id);
         if (data.getParent() != null) {
-          publicLink = getPublicLinkForRecord(data.getParent().getId());
+          publicLink = getPublicLinkForRecord(data.getParent().getId(), signedIn);
           if (!publicLink.isEmpty()) {
             publicLink += "?initialRecordToDisplay=" + data.getId();
           }
@@ -123,10 +134,10 @@ public class PublicStructuredDocumentController extends BaseController {
     return publicLink;
   }
 
-  private String getPublicLinkForRecord(Long recordID) {
+  private String getPublicLinkForRecord(Long recordID, boolean signedIn) {
     List<RecordGroupSharing> shared = recordSharingManager.getRecordSharingInfo(recordID);
     for (RecordGroupSharing rgs : shared) {
-      if (rgs.getPublicLink() != null) {
+      if (rgs.getPublicLink() != null && (signedIn || rgs.isPublishOnInternet())) {
         return rgs.getPublicLink();
       }
     }

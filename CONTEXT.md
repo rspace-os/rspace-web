@@ -377,6 +377,27 @@ resolved during design. This file is a glossary only — no implementation detai
   entries are skipped as another server's.
   _Avoid_: dropped entry, lost link, failed link, unresolved identifier
 
+## Publications
+
+- **Publication** — an ELN document or notebook made viewable without signing
+  in, through its publication link. A notebook's publication covers all its
+  current and future entries. Every signed-in user can read any publication,
+  whichever kind it is.
+  _Avoid_: public share
+- **Publication link** — the unguessable token that addresses a publication's
+  public page; whoever holds it can view the publication. Distinct from the
+  Public link suffix of an Inventory identifier.
+  _Avoid_: public link, capability URL
+- **Internet publication** — a publication made with "Publish on the internet":
+  listed on RSpace's public list of published documents and open to search
+  engines, so its publication link is no secret.
+  _Avoid_: listed publication, public document
+- **Link-only publication** — a publication made with "Publish a link": not
+  listed, and search engines are told not to index it. A visitor who is not
+  signed in reaches it only through a publication link someone gave them:
+  RSpace never hands such a visitor that link by Global ID.
+  _Avoid_: unlisted publication, private publication
+
 ## Record version history
 
 - **Revision** — a single audit row: one recorded change to a record, identified
