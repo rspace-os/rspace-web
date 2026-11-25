@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -29,7 +30,8 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
   @Override
   public List<ExtraLinkField> findLinkFieldsTargetingFilestorePaths(
       Long fileSystemId, Collection<String> absolutePaths) {
-    return extraLinkFieldsHolding(liveLinksTargetingFilestorePaths(fileSystemId, absolutePaths));
+    return liveFieldsTargetingFilestorePaths(
+        ExtraLinkField.class, ExtraLinkField::getLink, fileSystemId, absolutePaths);
   }
 
   private List<ExtraLinkField> extraLinkFieldsHolding(List<InventoryLink> links) {
@@ -54,8 +56,8 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
   @Override
   public List<InventoryLinkField> findStructuredLinkFieldsTargetingFilestorePaths(
       Long fileSystemId, Collection<String> absolutePaths) {
-    return structuredLinkFieldsHolding(
-        liveLinksTargetingFilestorePaths(fileSystemId, absolutePaths));
+    return liveFieldsTargetingFilestorePaths(
+        InventoryLinkField.class, InventoryLinkField::getLink, fileSystemId, absolutePaths);
   }
 
   private List<InventoryLinkField> structuredLinkFieldsHolding(List<InventoryLink> links) {
@@ -83,8 +85,11 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
         .list();
   }
 
-  private List<InventoryLink> liveLinksTargetingFilestorePaths(
-      Long fileSystemId, Collection<String> absolutePaths) {
+  private <T> List<T> liveFieldsTargetingFilestorePaths(
+      Class<T> fieldType,
+      Function<T, InventoryLink> linkOf,
+      Long fileSystemId,
+      Collection<String> absolutePaths) {
     if (absolutePaths.isEmpty()) {
       return Collections.emptyList();
     }
@@ -93,14 +98,16 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from InventoryLink where targetFileSystemId=:fsId and targetAbsolutePath in (:paths)"
-                + " and deleted=false",
-            InventoryLink.class)
+            "select f from "
+                + fieldType.getSimpleName()
+                + " f join fetch f.link l where l.targetFileSystemId=:fsId"
+                + " and l.targetAbsolutePath in (:paths) and l.deleted=false and f.deleted=false",
+            fieldType)
         .setParameter("fsId", fileSystemId)
         .setParameterList("paths", absolutePaths)
         .list()
         .stream()
-        .filter(link -> exactPaths.contains(link.getTargetAbsolutePath()))
+        .filter(field -> exactPaths.contains(linkOf.apply(field).getTargetAbsolutePath()))
         .toList();
   }
 }
