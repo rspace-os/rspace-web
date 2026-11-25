@@ -21,8 +21,10 @@ so a resource that diverges from the shared shape fails `pnpm tsc`.
 `apiV2BlobFetch`, an explicit allowlist uses `apiV2HeadersFetch`, and unsupported success shapes or unread `ETag`
 headers fail generation.
 
-The filter step (`filters.ts`) reads `components.x-rspace-filters` and writes `generated/filters.ts`: per filter, each
-filterable selector with its allowed RSQL operators and value type. It then narrows each Orval `<Name>Parameter = string`
+The filter step (`filters.ts`) reads `components.x-rspace-filters` and classifies every selector once
+(`filterCatalog`): its value kind (enum values included), operators and wildcard support. It fails on value schemas it
+cannot type. It writes `generated/filters.ts` from that catalog: per filter, each filterable selector with its allowed
+RSQL operators and value type. It then narrows each Orval `<Name>Parameter = string`
 model for a `where` parameter that carries `x-rspace-filter` to `ApiV2Where<"<Filter>">`, and fails if Orval's model shape
 changes. This is the adapter's only rewrite of Orval output. `orval.config.ts` gives the same
 operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
