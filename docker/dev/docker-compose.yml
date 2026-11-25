@@ -240,7 +240,7 @@ services:
     restart: unless-stopped
 
   apm-server:
-    image: ${APM_IMAGE:-docker.elastic.co/apm/apm-server:9.4.6}
+    image: ${APM_IMAGE:-docker.elastic.co/apm/apm-server:9.5.6}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-apm-server
     profiles: ["observability"]
     command:
@@ -257,7 +257,7 @@ services:
     restart: unless-stopped
 
   elasticsearch:
-    image: ${ELASTIC_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:9.4.6}
+    image: ${ELASTIC_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:9.5.6}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-elasticsearch
     profiles: ["observability"]
     environment:
@@ -278,7 +278,7 @@ services:
     restart: unless-stopped
 
   kibana:
-    image: ${KIBANA_IMAGE:-docker.elastic.co/kibana/kibana:9.4.6}
+    image: ${KIBANA_IMAGE:-docker.elastic.co/kibana/kibana:9.5.6}
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-kibana
     profiles: ["observability"]
     environment:
