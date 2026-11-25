@@ -211,7 +211,9 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
         log.warn("Exporting a placeholder for an image that cannot be inlined in Word export");
         imgData = imageHelper.getPlaceholderImage();
         mediaType = imgData == null ? null : tika.detect(imgData).toLowerCase(Locale.ROOT);
-        if (imgData == null || !INLINE_IMAGE_TYPES.contains(mediaType)) {
+        if (imgData == null
+            || !INLINE_IMAGE_TYPES.contains(mediaType)
+            || totalBytes + imgData.length > MAX_TOTAL_INLINE_IMAGE_BYTES) {
           img.remove();
           continue;
         }
