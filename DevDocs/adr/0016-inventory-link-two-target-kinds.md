@@ -47,7 +47,9 @@ that resolves, and Inventory items now refer to one through the same Link field.
    validates was preferred to the exact relation, which stays in RSpace. Only items the generating
    user can read in full are named; the filestores API shows the others as placeholders with only
    their kind and their owner's name. As for documents (ADR 0015 point 5), "can read" is the
-   user's whole read right.
+   user's whole read right. A saved record shows these items' Global ID page URLs and relations to
+   anyone who can read the bucket, including items the user reads only through a group share; as
+   for documents, opening one still goes through RSpace's permission check.
 
 ## Consequences
 
