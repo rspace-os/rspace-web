@@ -65,8 +65,10 @@ public class CreateCommunicationSequences implements CustomTaskChange {
               highestUsedId, queryLong(statement, "SELECT COALESCE(MAX(id), 0) FROM " + table));
     }
     long start = firstSequenceValue(highestUsedId);
+    // DDL commits at once, so a run stopped between the two sequences leaves the first behind.
+    // Nothing allocates while every node is stopped, so that leftover is still above every used ID.
     statement.execute(
-        "CREATE SEQUENCE "
+        "CREATE SEQUENCE IF NOT EXISTS "
             + sequence
             + " START WITH "
             + start

@@ -11,19 +11,28 @@ import java.sql.Statement;
 import java.util.Map;
 import liquibase.database.Database;
 import liquibase.database.jvm.JdbcConnection;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CreateCommunicationSequencesTest {
 
-  @Test
-  void startsEachSequenceAboveItsHighestIdAndOldCounter() throws Exception {
-    // The highest ID is in MessageOrRequest, not Notification, so every table must count.
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "Notification",
+        "MessageOrRequest",
+        "GroupMessageOrRequest",
+        "CreateGroupMessageOrRequest",
+        "ShareRecordMessageOrRequest"
+      })
+  void startsEachSequenceAboveItsHighestIdAndOldCounter(String tableWithHighestId)
+      throws Exception {
     Map<String, Long> results =
         Map.of(
             "SELECT COALESCE(MAX(next_val), 0) FROM hibernate_sequences"
                 + " WHERE sequence_name = 'Communication'",
             20_000L,
-            "SELECT COALESCE(MAX(id), 0) FROM MessageOrRequest",
+            "SELECT COALESCE(MAX(id), 0) FROM " + tableWithHighestId,
             40_000L,
             "SELECT COALESCE(MAX(next_val), 0) FROM hibernate_sequences"
                 + " WHERE sequence_name = 'CommunicationTarget'",
@@ -49,9 +58,12 @@ class CreateCommunicationSequencesTest {
 
     // The first block of 50 (40051 to 40100) is entirely above 40000.
     verify(statement)
-        .execute("CREATE SEQUENCE communication_seq START WITH 40100 INCREMENT BY 50 NOCACHE");
+        .execute(
+            "CREATE SEQUENCE IF NOT EXISTS communication_seq START WITH 40100 INCREMENT BY 50"
+                + " NOCACHE");
     verify(statement)
         .execute(
-            "CREATE SEQUENCE communication_target_seq START WITH 30100 INCREMENT BY 50 NOCACHE");
+            "CREATE SEQUENCE IF NOT EXISTS communication_target_seq START WITH 30100 INCREMENT BY"
+                + " 50 NOCACHE");
   }
 }
