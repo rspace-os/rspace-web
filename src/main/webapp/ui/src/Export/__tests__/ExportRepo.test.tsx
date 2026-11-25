@@ -11,8 +11,8 @@ import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { server } from "@/__tests__/mswServer";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { server } from "@/__tests__/mswServer";
 import { DEFAULT_STATE } from "@/Export/constants";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
@@ -152,7 +152,7 @@ describe("ExportRepo", () => {
       ),
     );
     const zenodoThenDataverse = [
-      { ...zenodoRepoList[0], repoCfg: -1 },
+      { ...zenodoRepoList[0], linkedDMPs: [], repoCfg: -1 },
       { ...repoList[0], repoName: "app.dataverse", displayName: "Dataverse", repoCfg: -1 },
     ];
     const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
