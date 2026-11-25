@@ -1,0 +1,135 @@
+import { HttpResponse, http } from "msw";
+import { describe, expect, test } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { server } from "@/__tests__/mswServer";
+import {
+  ApiV2NetworkError,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+} from "@/modules/common/api/v2/ApiV2ProblemError";
+import { FEATURE_FLAGS } from "./generatedFeatureFlags";
+import { getFeatureFlags, retryFeatureFlagRead } from "./queries";
+
+const validFlagResponse = {
+  ...v2ListEnvelope([
+    {
+      name: FEATURE_FLAGS.bookingEnabled,
+      value: true,
+      baselineValue: false,
+      source: "USER_OVERRIDE",
+      canOverride: true,
+    },
+  ]),
+  limit: 100,
+};
+
+describe("feature flag queries", () => {
+  test("fetches flags with the signed-in caller's token so overrides apply", async () => {
+    let request: Request | undefined;
+    server.use(
+      http.get("/api/v2/feature-flags", ({ request: receivedRequest }) => {
+        request = receivedRequest;
+        return HttpResponse.json(validFlagResponse);
+      }),
+    );
+
+    await expect(getFeatureFlags()).resolves.toEqual({
+      flags: {
+        [FEATURE_FLAGS.bookingEnabled]: {
+          value: true,
+          baselineValue: false,
+          source: "USER_OVERRIDE",
+          canOverride: true,
+        },
+      },
+    });
+    expect(request?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
+    expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(new URL(request?.url ?? "http://localhost").searchParams.get("limit")).toBe("100");
+  });
+
+  test("follows hasNextPage without totals", async () => {
+    const pages: string[] = [];
+    server.use(
+      http.get("/api/v2/feature-flags", ({ request }) => {
+        const page = new URL(request.url).searchParams.get("page") ?? "";
+        pages.push(page);
+        const { totalDocs: _totalDocs, ...response } = validFlagResponse;
+        return HttpResponse.json({
+          ...response,
+          docs: page === "1" ? [] : validFlagResponse.docs,
+          page: Number(page),
+          hasNextPage: page === "1",
+        });
+      }),
+    );
+
+    const result = await getFeatureFlags();
+
+    expect(result.flags[FEATURE_FLAGS.bookingEnabled].value).toBe(true);
+    expect(pages).toEqual(["1", "2"]);
+  });
+
+  test("rejects an unsuccessful response", async () => {
+    server.use(
+      http.get("/api/v2/feature-flags", () => new HttpResponse(null, { status: 500, statusText: "Server Error" })),
+    );
+
+    await expect(getFeatureFlags()).rejects.toMatchObject({ name: "ApiV2ProblemError", status: 500 });
+  });
+
+  test("disables a flag when its document is invalid", async () => {
+    server.use(
+      http.get("/api/v2/feature-flags", () =>
+        HttpResponse.json({
+          ...validFlagResponse,
+          docs: [{ name: FEATURE_FLAGS.bookingEnabled, value: true }],
+        }),
+      ),
+    );
+
+    await expect(getFeatureFlags()).resolves.toEqual({
+      flags: {
+        [FEATURE_FLAGS.bookingEnabled]: {
+          value: false,
+          baselineValue: false,
+          source: "DEFAULT",
+          canOverride: false,
+        },
+      },
+    });
+  });
+
+  test("rejects pagination that cannot reach the next page", async () => {
+    server.use(
+      http.get("/api/v2/feature-flags", () =>
+        HttpResponse.json({
+          ...validFlagResponse,
+          hasNextPage: true,
+          page: 0,
+        }),
+      ),
+    );
+
+    await expect(getFeatureFlags()).rejects.toThrow("Feature flag pagination did not advance");
+  });
+});
+
+describe("feature flag read retries", () => {
+  test.each([
+    ["a 403 problem", new ApiV2ProblemError(403, undefined, "Forbidden")],
+    ["an undeclared 404", new ApiV2UnexpectedResponseError("undeclared", { status: 404, media: "text/html" })],
+    ["an ended session on the login page", new ApiV2SessionEndedError(200, undefined)],
+  ])("does not retry %s", (_, error) => {
+    expect(retryFeatureFlagRead(0, error)).toBe(false);
+  });
+
+  test.each([
+    ["a network failure", new ApiV2NetworkError(new TypeError("offline"))],
+    ["a 503 problem", new ApiV2ProblemError(503, undefined, "Unavailable")],
+  ])("retries %s twice", (_, error) => {
+    expect([0, 1, 2].map((count) => retryFeatureFlagRead(count, error))).toEqual([true, true, false]);
+  });
+});

@@ -2,6 +2,7 @@
 /** Fields a readable document of each resource always contains when requested (`x-rspace-read-guaranteed`). */
 export const apiV2GuaranteedReadFields = {
   containers: new Set(["id"] as const),
+  "feature-flags": new Set(["name"] as const),
   instruments: new Set(["id"] as const),
   maintenances: new Set(["id"] as const),
   users: new Set(["id"] as const),
