@@ -36,6 +36,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -181,12 +182,32 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return spec.resourceAccess();
   }
 
+  public Optional<ResourceAuditPolicy<T, ID>> audit() {
+    return spec.audit();
+  }
+
+  private ResourceAuditPolicy<T, ID> auditPolicy() {
+    return spec.audit().orElseThrow(NotFoundException::new);
+  }
+
   Set<String> relatedAuditFields() {
-    return operations.relatedAuditFields();
+    return auditPolicy().relatedAuditFields();
+  }
+
+  Set<String> relatedAuditIdentifierFields() {
+    return auditPolicy().relatedAuditIdentifierFields();
+  }
+
+  Map<String, String> requiredAuditFields(Object entity) {
+    return auditPolicy().requiredAuditFields(description.entityType().cast(entity));
+  }
+
+  Instant relatedAuditFallbackFrom(Object entity) {
+    return auditPolicy().relatedAuditFallbackFrom(description.entityType().cast(entity));
   }
 
   boolean auditBypassesActorDirectory() {
-    return operations.auditBypassesActorDirectory();
+    return auditPolicy().auditBypassesActorDirectory();
   }
 
   public ID parseResourceId(String rawId) {
@@ -438,11 +459,12 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   /** Finds one readable entity for the default audit endpoints. */
   ResolvedTarget requireReadableForAudit(
       String rawId, User actor, ResourceAccessManager accessManager) {
+    ResourceAuditPolicy<T, ID> policy = auditPolicy();
     ID id = parseId(rawId);
     AccessContext context =
         new AccessContext(actor, Operation.READ, description.resourceName(), id);
     decide(context, Operation.READ);
-    T entity = operations.findByIdForAudit(id, actor).orElseThrow(NotFoundException::new);
+    T entity = policy.findByIdForAudit(id, actor).orElseThrow(NotFoundException::new);
     ResolvedTarget target = new ResolvedTarget(entity, narrowFields(context, FieldSelection.all()));
     spec.resourceAccess()
         .ifPresent(
@@ -455,7 +477,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
                 throw new AuthorizationException("errors.api.v2.forbidden");
               }
             });
-    operations.requireAuditAccess(entity, actor);
+    policy.requireAuditAccess(entity, actor);
     return target;
   }
 

@@ -2,6 +2,7 @@
 import type * as v from "valibot";
 import type * as Models from "../models";
 import * as native from "./native";
+export const ApiV2AuditEventSchema = native.ApiV2AuditEvent;
 export const ApiV2ConfigSchema = native.ApiV2Config;
 export const ApiV2ConfigBrandingSchema = native.ApiV2ConfigBranding;
 export const ApiV2ConfigHelpLinkSchema = native.ApiV2ConfigHelpLink;
@@ -17,6 +18,7 @@ export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatalogEntry;
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
+export const AuditActionSchema = native.AuditAction;
 export const ContainersReadSchema = native.ContainersRead;
 export const ContainersReferenceSchema = native.ContainersReference;
 export const InstrumentsReadSchema = native.InstrumentsRead;
@@ -44,6 +46,10 @@ export const UsersReferenceSchema = native.UsersReference;
 type Assert<T extends true> = T;
 type Extends<A, B> = [A] extends [B] ? true : false;
 export type SchemaModelTypeChecks = {
+  ApiV2AuditEvent: [
+    Assert<Extends<v.InferOutput<typeof ApiV2AuditEventSchema>, Models.ApiV2AuditEvent>>,
+    Assert<Extends<Models.ApiV2AuditEvent, v.InferOutput<typeof ApiV2AuditEventSchema>>>,
+  ];
   ApiV2Config: [
     Assert<Extends<v.InferOutput<typeof ApiV2ConfigSchema>, Models.ApiV2Config>>,
     Assert<Extends<Models.ApiV2Config, v.InferOutput<typeof ApiV2ConfigSchema>>>,
@@ -103,6 +109,10 @@ export type SchemaModelTypeChecks = {
   ApiV2UiToken: [
     Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>,
     Assert<Extends<Models.ApiV2UiToken, v.InferOutput<typeof ApiV2UiTokenSchema>>>,
+  ];
+  AuditAction: [
+    Assert<Extends<v.InferOutput<typeof AuditActionSchema>, Models.AuditAction>>,
+    Assert<Extends<Models.AuditAction, v.InferOutput<typeof AuditActionSchema>>>,
   ];
   ContainersRead: [
     Assert<Extends<v.InferOutput<typeof ContainersReadSchema>, Models.ContainersRead>>,
