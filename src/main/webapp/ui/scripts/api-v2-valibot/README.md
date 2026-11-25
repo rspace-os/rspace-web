@@ -30,7 +30,9 @@ changes. This is the adapter's only rewrite of Orval output. `orval.config.ts` g
 operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
 
 The table metadata step (`tableMetadata.ts`) reads each LIST operation's sort, filter, limit, field and runtime-field
-extensions, validates them with the Valibot schemas in `src/modules/common/table-list/api-v2/metadataSchemas.ts`, and writes
+extensions. It takes each filter's selectors from `filterCatalog` in `filters.ts`, so the typed `where` objects and the
+table list classify a selector the same way; enum selectors keep their published `values`. It validates the rest with
+the Valibot schemas in `src/modules/common/table-list/api-v2/metadataSchemas.ts`, and writes
 `generated/tableListMetadata.ts` for the table list, so the browser never fetches or parses the OpenAPI document for
 it. It fails generation on metadata the table list cannot use, such as an unknown operator, a non-positive limit, a
 default sort on an unsortable field, or a runtime-field catalog that is not a RUNTIME_FIELDS route. Like every step,

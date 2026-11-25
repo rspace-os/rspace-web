@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { escapeRegExp, sortBy } from "es-toolkit";
+import type { OpenApiDocument } from "orval";
 import * as v from "valibot";
 import { dereferenceApiV2OpenApi } from "../../src/modules/common/api/v2/openApiReferences.ts";
 import {
@@ -11,11 +12,13 @@ import {
   metadataOperationSchema,
   metadataReadSchema,
   metadataRuntimeFieldsSchema,
+  metadataSelectorsSchema,
   metadataSortSchema,
   metadataWhereSchema,
 } from "../../src/modules/common/table-list/api-v2/metadataSchemas.ts";
 import { objectInput, runtimeFieldCatalogRoute } from "../../src/modules/common/table-list/api-v2/schemaPrimitives.ts";
 import { biomeFormat } from "./biome.ts";
+import { type FilterCatalog, filterCatalog, filteredWhereOperations } from "./filters.ts";
 import { componentRefName, parseOpenApiDocument } from "./openapi.ts";
 
 /** Validates one section of the OpenAPI document, naming the section and each failing path in the error. */
@@ -77,6 +80,7 @@ function collectionMetadata(
   path: string,
   resourceName: string,
   runtimeRoutes: readonly string[],
+  filter: FilterCatalog[string] | undefined,
 ) {
   const operation = parseOpenApiSection(
     metadataOperationSchema,
@@ -98,11 +102,13 @@ function collectionMetadata(
       throw new Error(`OpenAPI ${resourceName} default sort field ${field} is not sortable`);
   }
   const whereParameter = parameter("where");
-  const { selectors, ...limits } = parseOpenApiSection(
+  if (filter === undefined) throw new Error(`OpenAPI ${resourceName} list operation has no filter`);
+  const limits = parseOpenApiSection(
     metadataFilterSchema,
     whereParameter["x-rspace-filter"],
     `${resourceName} filter metadata`,
   );
+  const selectors = parseOpenApiSection(metadataSelectorsSchema, filter, `${resourceName} filter selectors`);
   const where = parseOpenApiSection(metadataWhereSchema, whereParameter.schema, `${resourceName} where schema`);
   const limit = parseOpenApiSection(metadataLimitSchema, parameter("limit").schema, `${resourceName} limit schema`);
   const allowedFields = parseOpenApiSection(
@@ -123,12 +129,7 @@ function collectionMetadata(
     fields,
     sorting: { fields: sort.fields, default: sort.default, maximumFields: sort.maximumFields },
     filtering: {
-      selectors: Object.fromEntries(
-        Object.entries(selectors).map(([name, { fieldType, operators, wildcards, picker }]) => [
-          name,
-          { fieldType, operators, wildcards, ...(picker ? { picker } : {}) },
-        ]),
-      ),
+      selectors,
       limits: { ...limits, maximumWhereLength: where.maxLength },
     },
     runtimeFields: runtimeFieldNamespaces(whereParameter["x-rspace-runtime-fields"], resourceName, runtimeRoutes),
@@ -140,12 +141,26 @@ export type TableListMetadataEntry = ReturnType<typeof collectionMetadata>;
 
 /** The table-list metadata of every resource with a LIST operation, keyed by resource name. */
 export function tableListMetadata(document: unknown): Record<string, TableListMetadataEntry> {
+  // Selectors are classified once, by the filter-types generator, from the raw document.
+  const catalog = filterCatalog(document as OpenApiDocument);
+  const filters = filteredWhereOperations(document as OpenApiDocument);
   const root = parseOpenApiSection(metadataDocumentSchema, dereferenceApiV2OpenApi(document), "document");
   const runtimeRoutes = operationsOfKind(root.paths, "RUNTIME_FIELDS").map(([path]) => path);
   const entries = operationsOfKind(root.paths, "LIST").flatMap(([path, operation]) => {
     const tags = parseOpenApiSection(v.array(v.string()), operation.tags, `${path} tags`);
+    const filter = filters.get(String(operation.operationId));
     return tags.map(
-      (resourceName) => [resourceName, collectionMetadata(root, path, resourceName, runtimeRoutes)] as const,
+      (resourceName) =>
+        [
+          resourceName,
+          collectionMetadata(
+            root,
+            path,
+            resourceName,
+            runtimeRoutes,
+            filter === undefined ? undefined : catalog[filter],
+          ),
+        ] as const,
     );
   });
   return Object.fromEntries(sortBy(entries, [([name]) => name]));

@@ -5,10 +5,32 @@ type Json = Record<string, unknown>;
 
 function fixture() {
   return {
-    components: { schemas: { RecordRead: { properties: {} } } },
+    components: {
+      schemas: { RecordRead: { properties: {} } },
+      "x-rspace-filters": {
+        Records: {
+          maximumComparisons: 50,
+          maximumLikeComparisons: 10,
+          maximumNesting: 10,
+          maximumArguments: 100,
+          selectors: {
+            title: { schema: { type: "string" }, operators: ["==", "=contains="], wildcards: true, title: "Title" },
+            "target.id": { schema: { type: "integer", format: "int64" }, operators: ["=="], wildcards: false },
+            "target.deleted": { schema: { type: "boolean" }, operators: ["=="], wildcards: false },
+            "target.updatedAt": {
+              schema: { type: "string", format: "date-time" },
+              operators: ["=="],
+              wildcards: false,
+            },
+            state: { schema: { type: "string", enum: ["OPEN", "CLOSED"] }, operators: ["=="], wildcards: false },
+          } as Record<string, Json>,
+        } as Json,
+      },
+    },
     paths: {
       "/api/v2/records": {
         get: {
+          operationId: "listRecords",
           tags: ["records"],
           "x-rspace-operation": "LIST",
           parameters: [
@@ -18,29 +40,9 @@ function fixture() {
             },
             {
               name: "where",
+              in: "query",
               schema: { type: "string", maxLength: 4096 },
-              "x-rspace-filter": {
-                maximumComparisons: 50,
-                maximumLikeComparisons: 10,
-                maximumNesting: 10,
-                maximumArguments: 100,
-                selectors: {
-                  title: {
-                    schema: { type: "string" },
-                    operators: ["==", "=contains="],
-                    wildcards: true,
-                    title: "Title",
-                  },
-                  "target.id": { schema: { type: "integer", format: "int64" }, operators: ["=="], wildcards: false },
-                  "target.deleted": { schema: { type: "boolean" }, operators: ["=="], wildcards: false },
-                  "target.updatedAt": {
-                    schema: { type: "string", format: "date-time" },
-                    operators: ["=="],
-                    wildcards: false,
-                  },
-                  "target.owner": { schema: { type: "object" }, operators: ["=="], wildcards: false },
-                } as Record<string, Json>,
-              } as Json,
+              "x-rspace-filter": { $ref: "#/components/x-rspace-filters/Records" },
             } as Json,
             { name: "limit", schema: { type: "integer", default: 20, maximum: 100 } },
             { name: "fields", "x-rspace-allowed-fields": { records: ["id", "title", "modifiedAt"] } },
@@ -69,7 +71,7 @@ const parameter = (document: Fixture, name: string): Json => {
   if (!found) throw new Error(`Fixture has no ${name} parameter`);
   return found;
 };
-const filter = (document: Fixture) => parameter(document, "where")["x-rspace-filter"] as Json;
+const filter = (document: Fixture) => document.components["x-rspace-filters"].Records;
 const selectors = (document: Fixture) => filter(document).selectors as Record<string, Json>;
 const records = (document: Fixture) => tableListMetadata(document).records;
 
@@ -109,7 +111,7 @@ describe("tableListMetadata", () => {
             "target.id": { fieldType: "number", operators: ["=="], wildcards: false },
             "target.deleted": { fieldType: "boolean", operators: ["=="], wildcards: false },
             "target.updatedAt": { fieldType: "dateTime", operators: ["=="], wildcards: false },
-            "target.owner": { fieldType: null, operators: ["=="], wildcards: false },
+            state: { fieldType: "text", operators: ["=="], wildcards: false, values: ["OPEN", "CLOSED"] },
           },
           limits: {
             maximumComparisons: 50,
@@ -165,16 +167,22 @@ describe("tableListMetadata", () => {
     expect(() => tableListMetadata(document)).toThrow(section);
   });
 
+  it("names a list operation whose where parameter has no filter", () => {
+    const document = fixture();
+    Reflect.deleteProperty(parameter(document, "where"), "x-rspace-filter");
+    expect(() => tableListMetadata(document)).toThrow("OpenAPI records list operation has no filter");
+  });
+
   it("rejects a default sort on a field that is not sortable", () => {
     const document = fixture();
     (parameter(document, "sort")["x-rspace-sort"] as Json).default = ["-createdAt"];
     expect(() => tableListMetadata(document)).toThrow("default sort field createdAt is not sortable");
   });
 
-  it.each([undefined, null, "true", 1])("rejects the selector flag %s instead of coercing it", (wildcards) => {
+  it("classifies selectors with the filter-types generator", () => {
     const document = fixture();
-    selectors(document).title.wildcards = wildcards;
-    expect(() => tableListMetadata(document)).toThrow("title.wildcards");
+    selectors(document).title.wildcards = "true";
+    expect(() => tableListMetadata(document)).toThrow("x-rspace-filters.Records.title: wildcards must be a boolean");
   });
 
   it.each([0, -1, 1.5, Number.POSITIVE_INFINITY, Number.NaN])("rejects invalid query limits: %s", (limit) => {
@@ -267,31 +275,14 @@ describe("tableListMetadata", () => {
   });
 
   it.each([
-    [{ oneOf: [{ type: "integer" }, { type: "number" }] }, "number"],
-    [{ oneOf: [{ type: "integer" }, { type: "string" }] }, "text"],
     [{ type: ["string", "null"], format: "date-time" }, "dateTime"],
     [{ type: ["integer", "null"] }, "number"],
+    [{ type: "integer", enum: [1, 2] }, "number"],
+    [{ type: "string", enum: ["OPEN"] }, "text"],
   ])("reads the selector type of %j", (schema, fieldType) => {
     const document = fixture();
     selectors(document).title.schema = schema;
     expect(records(document).filtering.selectors.title?.fieldType).toBe(fieldType);
-  });
-
-  it.each([
-    {},
-    { type: "file" },
-    { type: ["string", "number"] },
-    { oneOf: [] },
-    { oneOf: [{ type: ["string", "null"] }] },
-    { oneOf: [{ type: "object" }] },
-    { anyOf: [{ type: "string" }] },
-    { allOf: [{ type: "string" }] },
-    { $ref: "#/components/schemas/Name" },
-    { type: "string", oneOf: [{ type: "string" }] },
-  ])("rejects unsupported selector schema %j", (schema) => {
-    const document = fixture();
-    selectors(document).title.schema = schema;
-    expect(() => records(document)).toThrow("title.schema");
   });
 
   it("emits picker metadata", () => {
@@ -325,18 +316,6 @@ describe("tableListMetadata", () => {
       picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
     };
     expect(() => records(document)).toThrow("Filter selector target-id has an invalid picker");
-  });
-
-  it("rejects unknown operators", () => {
-    const document = fixture();
-    selectors(document).title.operators = ["=regex="];
-    expect(() => records(document)).toThrow("title.operators");
-  });
-
-  it("rejects selectors beyond one relationship hop", () => {
-    const document = fixture();
-    selectors(document)["target.value.globalId"] = { schema: { type: "string" }, operators: ["=="], wildcards: false };
-    expect(() => records(document)).toThrow("target.value.globalId");
   });
 
   it("requires a local list item reference instead of an inline schema", () => {
