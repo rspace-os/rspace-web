@@ -8,6 +8,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Navigation/SpeedDial/Composition",
+  tags: ["autodocs"],
   component: SpeedDial,
   parameters: { a11y: { test: "error" } },
   argTypes: { direction: { control: "select", options: ["up", "down", "left", "right"] } },

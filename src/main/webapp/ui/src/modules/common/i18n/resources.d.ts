@@ -1787,6 +1787,7 @@ export default interface Resources {
       "sendMessage": "Send a message"
     },
     "values": {
+      "inventoryGlobalId": "Inventory global ID",
       "noValue": "No Value",
       "none": "None",
       "unknown": "Unknown",

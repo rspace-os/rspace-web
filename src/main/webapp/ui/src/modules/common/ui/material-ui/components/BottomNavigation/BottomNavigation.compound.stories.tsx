@@ -6,6 +6,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 const meta = {
   title: "Material UI/Navigation/BottomNavigation/Composition",
+  tags: ["autodocs"],
   component: BottomNavigation,
   parameters: { a11y: { test: "error" } },
   argTypes: { showLabels: { control: "boolean" } },
