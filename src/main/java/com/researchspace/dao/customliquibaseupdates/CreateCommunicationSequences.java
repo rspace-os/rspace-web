@@ -65,8 +65,8 @@ public class CreateCommunicationSequences implements CustomTaskChange {
               highestUsedId, queryLong(statement, "SELECT COALESCE(MAX(id), 0) FROM " + table));
     }
     long start = firstSequenceValue(highestUsedId);
-    // DDL commits at once, so a run stopped between the two sequences leaves the first behind.
-    // Nothing allocates while every node is stopped, so that leftover is still above every used ID.
+    // DDL commits at once, so a stopped run can leave a sequence behind. If the old version ran
+    // before this retry, its IDs may have passed that sequence's start, so move it up.
     statement.execute(
         "CREATE SEQUENCE IF NOT EXISTS "
             + sequence
@@ -75,6 +75,9 @@ public class CreateCommunicationSequences implements CustomTaskChange {
             + " INCREMENT BY "
             + BLOCK_SIZE
             + " NOCACHE");
+    if (queryLong(statement, "SELECT next_not_cached_value FROM " + sequence) < start) {
+      statement.execute("ALTER SEQUENCE " + sequence + " RESTART WITH " + start);
+    }
     return start;
   }
 
