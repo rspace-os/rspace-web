@@ -189,8 +189,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  miew-react: 0.12.0
-  miew-react>miew: 0.12.0
+  miew-react: 0.12.1
   '@sa11y/vitest>vitest': 5.0.5
   katex@<0.18.2: 0.18.4
 
@@ -5749,9 +5748,8 @@ packages:
   micromark@4.0.2:
     resolution: {integrity: sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA==}
 
-  miew-react@0.12.0:
-    resolution: {integrity: sha512-RmWSDCeDAKUNdJFr0UbilVQiy3bNMP6D8+AVWntOMUV1zb6/5gpcWN4G18AMpakglnsIiWjtkG+Kid1fp9IdYg==}
-    deprecated: Version 0.12.0 was published with an incorrect dependency and is deprecated. Please use miew-react@0.12.1 or newer instead.
+  miew-react@0.12.1:
+    resolution: {integrity: sha512-IEqshj1trhb04atACp65cgcQyIhcUlv84mvSJZBM5oELKp8IDXyGWDe0tBlTfZc5JAXHrJn/Md7ZCf6BCZOt9g==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -12325,7 +12323,7 @@ snapshots:
       ketcher-macromolecules: 3.21.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(i18next@26.4.0(typescript@7.0.2))(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(supports-color@7.2.0)(typescript@7.0.2)(yjs@13.6.31)
       lexical: 0.40.0
       lodash: 4.18.1
-      miew-react: 0.12.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+      miew-react: 0.12.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
       paper: 0.12.18
       react: 19.2.8
       react-contexify: 6.0.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
@@ -13003,7 +13001,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  miew-react@0.12.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
+  miew-react@0.12.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
     dependencies:
       miew: 0.12.0
       react: 19.2.8
