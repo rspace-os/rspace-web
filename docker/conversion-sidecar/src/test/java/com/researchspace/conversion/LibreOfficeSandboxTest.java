@@ -239,7 +239,8 @@ class LibreOfficeSandboxTest {
     assertEquals(
         request.resolve("ipc").toAbsolutePath().toString(),
         command.get(command.indexOf("/tmp") - 1));
-    assertTrue(command.contains("/proc"));
+    // The container's /proc would show LibreOffice every process; a fresh procfs cannot be mounted.
+    assertFalse(command.contains("/proc"));
     assertTrue(command.indexOf("/tmp") < command.indexOf(request.toAbsolutePath().toString()));
     assertTrue(command.contains(request.toAbsolutePath().toString()));
     assertTrue(command.contains(request.resolve("tmp").toAbsolutePath().toString()));

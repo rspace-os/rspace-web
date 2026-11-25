@@ -24,7 +24,8 @@ Every Word conversion starts LibreOffice through a rootless bubblewrap sandbox. 
 private network namespace, a read-only view of the LibreOffice runtime, and access only to its own
 request directory. Its home, temporary files, and UNO socket are request-private. JODConverter
 reaches the socket through one random host-side symlink, while LibreOffice sees only the request's
-IPC directory as `/tmp`. Sandbox startup failure rejects the request. There is no unsandboxed
+IPC directory as `/tmp`. The sandbox has no `/proc`, so LibreOffice cannot see other processes or
+other requests' directories. Sandbox startup failure rejects the request. There is no unsandboxed
 fallback.
 
 ## Supported RSpace workflows

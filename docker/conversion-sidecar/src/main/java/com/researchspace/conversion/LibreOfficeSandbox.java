@@ -60,9 +60,6 @@ class LibreOfficeSandbox {
                   "--symlink",
                   "usr/lib64",
                   "/lib64",
-                  "--ro-bind",
-                  "/proc",
-                  "/proc",
                   "--dev",
                   "/dev",
                   "--",
@@ -113,9 +110,8 @@ class LibreOfficeSandbox {
             "--ro-bind",
             "/etc/libreoffice",
             "/etc/libreoffice",
-            "--ro-bind",
-            "/proc",
-            "/proc",
+            // No /proc: Docker's masked paths stop bubblewrap mounting a fresh procfs, and binding
+            // the container's /proc would show LibreOffice every process, including other requests.
             "--dev",
             "/dev",
             // Expose only this request's UNO socket directory inside the sandbox.
