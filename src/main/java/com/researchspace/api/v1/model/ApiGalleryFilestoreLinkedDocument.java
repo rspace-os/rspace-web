@@ -1,9 +1,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.RecordInformation;
-import com.researchspace.service.inventory.FilestoreLinkingItem;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,7 +21,7 @@ public class ApiGalleryFilestoreLinkedDocument {
   private String ownerFullName;
   private String type;
 
-  public static final String DOCUMENT_TYPE = "DOCUMENT";
+  private static final String DOCUMENT_TYPE = "DOCUMENT";
 
   public ApiGalleryFilestoreLinkedDocument(RecordInformation info) {
     this.id = info.getId();
@@ -31,13 +29,5 @@ public class ApiGalleryFilestoreLinkedDocument {
     this.name = info.getName();
     this.ownerFullName = info.getOwnerFullName();
     this.type = DOCUMENT_TYPE;
-  }
-
-  public ApiGalleryFilestoreLinkedDocument(FilestoreLinkingItem item) {
-    this.id = item.isReadable() ? new GlobalIdentifier(item.globalId()).getDbId() : null;
-    this.globalId = item.globalId();
-    this.name = item.name();
-    this.ownerFullName = item.ownerFullName();
-    this.type = item.type();
   }
 }

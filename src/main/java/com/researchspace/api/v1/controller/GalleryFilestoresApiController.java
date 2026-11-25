@@ -14,8 +14,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
-import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -32,6 +32,7 @@ import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
@@ -131,23 +132,31 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     // a request without its leading slash still matches; a doubled one names another S3 key
     String path = StringUtils.prependIfMissing(remotePath, "/");
-    assertItemReadableWithOwnLogin(user, filestoreId, path);
+    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    assertItemReadableWithOwnLogin(user, filestore, path);
     // first, as it refuses an unknown filestore and asserts read access
     var documents = nfsFieldLinkManager.getLinkedDocuments(filestoreId, path, user);
-    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     var items =
         inventoryLinkManager.findItemsLinkingFilestorePaths(
-            filestore.getFileSystem(),
-            List.of(NfsFieldLink.normalisePath(filestore.getAbsolutePath(path))),
-            user);
+            filestore.getFileSystem(), List.of(filestore.getAbsolutePath(path)), user);
     // the item rows come once per relation, which only the metadata sidecar uses
     Set<String> listedItems = new HashSet<>();
     return Stream.concat(
             documents.stream().map(ApiGalleryFilestoreLinkedDocument::new),
             items.stream()
                 .filter(item -> !item.isReadable() || listedItems.add(item.globalId()))
-                .map(ApiGalleryFilestoreLinkedDocument::new))
+                .map(GalleryFilestoresApiController::toLinkedDocument))
         .toList();
+  }
+
+  private static ApiGalleryFilestoreLinkedDocument toLinkedDocument(FilestoreLinkingItem item) {
+    ApiGalleryFilestoreLinkedDocument row = new ApiGalleryFilestoreLinkedDocument();
+    row.setId(item.isReadable() ? new GlobalIdentifier(item.globalId()).getDbId() : null);
+    row.setGlobalId(item.globalId());
+    row.setName(item.name());
+    row.setOwnerFullName(item.ownerFullName());
+    row.setType(item.type());
+    return row;
   }
 
   /**
@@ -157,8 +166,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
    * Filesystems without per-user logins are gated by their allowlists alone, and an unknown
    * filestore is left to the lookup's 404.
    */
-  private void assertItemReadableWithOwnLogin(User user, Long filestoreId, String remotePath) {
-    NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+  private void assertItemReadableWithOwnLogin(
+      User user, NfsFileStore filestore, String remotePath) {
     if (filestore == null
         || NfsAuthenticationType.NONE.equals(filestore.getFileSystem().getAuthType())) {
       return;
@@ -185,7 +194,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     } catch (IOException | RuntimeException e) {
       log.warn(
           "Filestore {} item {} not readable for {}: {}",
-          filestoreId,
+          filestore.getId(),
           remotePath,
           user.getUsername(),
           e.getMessage());

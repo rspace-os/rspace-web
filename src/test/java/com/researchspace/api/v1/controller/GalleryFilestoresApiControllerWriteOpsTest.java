@@ -863,7 +863,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     doc.setOwnerFullName("Ada Lovelace");
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of(doc));
     when(inventoryLinkManager.findItemsLinkingFilestorePaths(
-            store.getFileSystem(), List.of("data/XRD/run.dat"), user))
+            store.getFileSystem(), List.of("/data/XRD/run.dat"), user))
         .thenReturn(
             List.of(
                 new FilestoreLinkingItem("SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"),
@@ -893,7 +893,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     FilestoreLinkingItem hidden =
         new FilestoreLinkingItem(null, null, "INSTRUMENT", "Grace Hopper", null);
     when(inventoryLinkManager.findItemsLinkingFilestorePaths(
-            store.getFileSystem(), List.of("run.dat"), user))
+            store.getFileSystem(), List.of("/run.dat"), user))
         .thenReturn(
             List.of(
                 hidden,
@@ -921,7 +921,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     doc.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of(doc));
     when(inventoryLinkManager.findItemsLinkingFilestorePaths(
-            store.getFileSystem(), List.of("data/XRD/run.dat"), user))
+            store.getFileSystem(), List.of("/data/XRD/run.dat"), user))
         .thenReturn(
             List.of(
                 new FilestoreLinkingItem(
@@ -951,7 +951,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
             eq(store.getFileSystem()), anyCollection(), eq(user)))
         .thenAnswer(
             call ->
-                call.<Collection<String>>getArgument(1).contains("data/run.dat")
+                call.<Collection<String>>getArgument(1).contains("/data/run.dat")
                     ? List.of(
                         new FilestoreLinkingItem(
                             "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"))
