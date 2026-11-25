@@ -1,6 +1,6 @@
 import type * as v from "valibot";
 import { apiV2CollectionMetadata } from "@/modules/common/api/v2/generated/tableListMetadata";
-import type { FieldConfig, FieldName, SortRule } from "@/modules/common/collection/config";
+import type { FieldConfig, FieldName, SortRule, StructuredFieldType } from "@/modules/common/collection/config";
 import type { FilterOperatorToken } from "@/modules/common/collection/filterOperators";
 import type { RelationshipFilterPicker } from "@/modules/common/collection/relationshipFilterPicker";
 import type {
@@ -33,7 +33,7 @@ export type ApiV2FilterLimits = { readonly [K in keyof FilterLimits]: FilterLimi
 export type ApiV2RuntimeFieldNamespace = Readonly<Omit<v.InferOutput<typeof runtimeNamespaceSchema>, "viaResource">>;
 
 export type ApiV2StructuredField = {
-  readonly type: "array" | "object";
+  readonly type: StructuredFieldType;
   readonly fields: readonly FieldConfig<Record<string, unknown>>[];
   readonly nullable: boolean;
   readonly readOnly: boolean;

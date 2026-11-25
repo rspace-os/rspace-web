@@ -131,6 +131,9 @@ type BaseFieldConfig<
   form?: false | TFormConfig;
 };
 
+/** Field types whose value is a declared object or list of child fields, edited by an application-owned editor. */
+export type StructuredFieldType = "array" | "object";
+
 export type FieldConfig<TDocument> =
   | (BaseFieldConfig<TDocument, FieldFormConfig<TDocument, "text" | "textarea" | "time">> & {
       type: "text";
@@ -155,7 +158,7 @@ export type FieldConfig<TDocument> =
       hasMany: boolean;
     })
   | (BaseFieldConfig<TDocument, StructuredFieldFormConfig<TDocument>> & {
-      type: "array" | "object";
+      type: StructuredFieldType;
       fields: readonly FieldConfig<Record<string, unknown>>[];
       minRows?: number;
       maxRows?: number;
@@ -165,7 +168,7 @@ export type FieldConfig<TDocument> =
 export type StructuredFieldProps<TDocument> = {
   form: FormStore;
   disabled: boolean;
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "array" | "object" }>;
+  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: StructuredFieldType }>;
   id: string;
   describedBy: string | undefined;
   invalid: boolean;
