@@ -3,7 +3,15 @@ import { cdp, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
+import {
+  defaultApiV2SessionHandlers,
+  SessionTokenProvider,
+  setApiV2TokenProvider,
+} from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
+
+// Browser specs mint REST API v2 tokens through their mocked token route, as a page's entry point would.
+setApiV2TokenProvider(new SessionTokenProvider(defaultApiV2SessionHandlers));
 
 /*
  * Unlike the jsdom unit-test config (setup.ts), which deliberately runs in

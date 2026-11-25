@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import org.springframework.util.ReflectionUtils;
 
@@ -42,6 +43,25 @@ final class AuditResourceMembers {
             properties, "updatedBy", "updatedBy", "lastUpdatedBy", "modifiedBy")
         .ifPresent(relationships::add);
     return List.copyOf(relationships);
+  }
+
+  /** Returns the audit members, marking the named ones read-guaranteed. */
+  static <T> List<ResourceMember<T>> guaranteed(
+      List<Field<T, ?>> fields, List<Relationship<T>> relationships, Set<String> names) {
+    List<ResourceMember<T>> members = new ArrayList<>();
+    for (Field<T, ?> field : fields) {
+      members.add(names.contains(field.name()) ? field.readGuaranteed() : field);
+    }
+    for (Relationship<T> relationship : relationships) {
+      members.add(
+          names.contains(relationship.name()) ? relationship.readGuaranteed() : relationship);
+    }
+    for (String name : names) {
+      if (members.stream().noneMatch(member -> member.name().equals(name))) {
+        throw new IllegalArgumentException("No audit member " + name + " to guarantee");
+      }
+    }
+    return members;
   }
 
   private static <T> Field<T, Date> auditDateField(

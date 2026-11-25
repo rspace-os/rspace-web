@@ -24,6 +24,9 @@ import java.util.Set;
  * <p>Described programmatically rather than from an annotated record because the queryable name
  * lives at {@code editInfo.name}: {@code Instrument.getName()} is {@code @Transient}, so the
  * annotated path would describe a filter and sort target that has no column.
+ *
+ * <p>The default sort, name then ID, is served by the {@code ix_instrument_type_deleted_name_id}
+ * index, whose full-length name key keeps that order without a filesort.
  */
 public final class ApiV2InstrumentResource {
 

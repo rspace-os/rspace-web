@@ -403,7 +403,17 @@ export default defineConfig(async ({ mode }) => {
             environment: "jsdom",
             setupFiles: ["./src/__tests__/setup.ts"],
             include: ["**/?*.test.(js|cjs|mjs|jsx|ts|tsx)"],
-            exclude: [...configDefaults.exclude, ...nodeTestFiles],
+            exclude: [...configDefaults.exclude, ...nodeTestFiles, "scripts/**"],
+          },
+        },
+        {
+          // The API v2 generator scripts load Orval, which loads esbuild at import time. esbuild needs Node's realm.
+          resolve: { alias: [{ find: /^@\//, replacement: `${resolveFromRoot("src")}/` }] },
+          test: {
+            name: "scripts",
+            environment: "node",
+            include: ["scripts/api-v2-invalidation/*.check.ts", "scripts/api-v2-valibot/*.test.ts"],
+            testTimeout: 20000,
           },
         },
       ],

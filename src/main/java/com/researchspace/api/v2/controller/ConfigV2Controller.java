@@ -31,7 +31,10 @@ public class ConfigV2Controller {
   @Operation(
       operationId = "getApiV2Config",
       summary = "Get public REST API v2 configuration",
-      description = "Returns branding, help links, and deployment information.",
+      description =
+          "Returns branding, help links, and deployment information from an allowlist of public"
+              + " deployment properties. It never exposes other properties, credentials, or secret"
+              + " paths.",
       responses = {
         @ApiResponse(responseCode = "200", description = "Public deployment configuration."),
         @ApiResponse(responseCode = "429", description = "The request was throttled.")
