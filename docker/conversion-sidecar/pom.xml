@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.1.2</version>
+    <version>4.2.0</version>
     <relativePath />
   </parent>
 
@@ -69,7 +69,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <!-- 3.7.0 and later need Maven 3.9; CI builds with the repository's Maven 3.8.1 wrapper. -->
-        <version>3.6.1</version>
+        <version>3.6.2</version>
         <executions>
           <execution>
             <id>shared-office-archive-validator</id>
@@ -92,7 +92,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.11.0</version>
+        <version>3.12.0</version>
         <configuration>
           <java>
             <googleJavaFormat>

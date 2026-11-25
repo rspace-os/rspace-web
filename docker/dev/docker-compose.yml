@@ -268,7 +268,7 @@ services:
     restart: unless-stopped
 
   gotenberg:
-    image: gotenberg/gotenberg@sha256:2f4945f698c3d02f691a27d56bb8e7ba4585e6ab50bd233329a36eb0423ae587
+    image: gotenberg/gotenberg@sha256:f6b4b6f7c8ae0ca7805f9e105ef989bf13b02d548378fa784c3630a9c479c31b
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-gotenberg
     command:
       - gotenberg
