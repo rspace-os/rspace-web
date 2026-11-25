@@ -27,7 +27,7 @@ public class TestDatabaseExtension implements BeforeAllCallback, TestInstancePos
   static final String DB_USER = "rspacedbuser";
   static final String DB_PASSWORD = "rspacedbpwd";
 
-  // ponytail: one container per surefire fork (mvn verify starts several), each paying the
+  // ponytail: one container per test JVM (./gradlew verify starts several), each paying the
   // baseline load and Liquibase catch-up; use Testcontainers withReuse if that gets too slow.
   private static GenericContainer<?> container;
 

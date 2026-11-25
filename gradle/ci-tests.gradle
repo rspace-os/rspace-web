@@ -1,0 +1,64 @@
+// Local `test` still runs every unit/Spring test. CI runs the two disjoint tag sets.
+def suite = providers.gradleProperty('testSuite').orElse('all').get()
+if (!(suite in ['all', 'slow'])) {
+  throw new GradleException('-PtestSuite must be all or slow')
+}
+def fast = project.ext.cliSystemProperties.containsKey('fast') || providers.gradleProperty('fast').isPresent()
+if (fast && suite != 'all') {
+  throw new GradleException('-Dfast and -PtestSuite=slow select disjoint suites')
+}
+tasks.named('test', Test) {
+  useJUnitPlatform {
+    if (suite == 'slow') includeTags 'slow'
+    if (fast) excludeTags 'slow'
+  }
+}
+
+def shardSpec = providers.gradleProperty('testShard').getOrNull()
+if (shardSpec == null) return
+if (!(shardSpec ==~ /[1-9][0-9]*\/[1-9][0-9]*/)) {
+  throw new GradleException('-PtestShard must be an index/count pair, e.g. 1/2')
+}
+def (index, count) = shardSpec.split('/').collect { it.toInteger() }
+if (index > count || fast || project.ext.cliSystemProperties.containsKey('test') || providers.gradleProperty('test').isPresent()) {
+  throw new GradleException('Test sharding requires index <= count, and cannot be combined with -Dfast or -Dtest')
+}
+tasks.withType(Test).configureEach {
+  inputs.property('testShard', shardSpec)
+  // Keep reports from earlier shards out of the current shard's publication.
+  reports.junitXml.outputLocation = layout.buildDirectory.dir("test-results/${name}-shard${index}")
+  reports.html.outputLocation = layout.buildDirectory.dir("reports/tests/${name}-shard${index}")
+  if (name in ['integrationTestRun', 'integrationTestProblematic']) {
+    // Preserve the existing order and shared database for these special groups.
+    onlyIf('Special integration groups run on shard 1') { index == 1 }
+  } else {
+    // A shard can contain no matching tags. A full unsharded run still fails if empty.
+    failOnNoDiscoveredTests = false
+    doFirst { Test task ->
+      if (task.name == 'test' && suite != 'slow') {
+        throw new GradleException('Shard the slow test suite with -PtestSuite=slow')
+      }
+      def includes = task.includes
+      def excludes = task.excludes
+      def roots = task.testClassesDirs.files.collect { it.toPath() }
+      def names = task.testClassesDirs.asFileTree.matching {
+        include includes
+        exclude excludes
+        exclude '**/*$*'
+      }.files.collect { file ->
+        def path = file.toPath()
+        roots.find { path.startsWith(it) }.relativize(path).toString()
+          .replace(File.separator, '.').replaceAll(/[.]class$/, '')
+      }
+      // A stable hash, not measured durations: every runner computes the same split, and each
+      // class reaches exactly one shard.
+      def selected = names.findAll { Math.floorMod(it.hashCode(), count) == index - 1 }.sort()
+      task.filter {
+        failOnNoMatchingTests = false
+        // A nonmatching pattern prevents an empty shard from selecting everything.
+        (selected ?: ['__empty_ci_shard__']).each { includeTestsMatching it }
+      }
+      task.logger.lifecycle('CI shard {}/{}: {} of {} candidate classes', index, count, selected.size(), names.size())
+    }
+  }
+}

@@ -57,8 +57,8 @@ pulling: git deletes the file if you never edited it, and refuses to switch if y
 your backup over the fresh copy afterwards.
 
 At build time, the placeholder `${propertyFileDirPlaceholder}/deployment.properties` in
-`applicationContext-resources.xml` is resolved by Maven
-using values defined in pom.xml. Typically, this will resolve ${propertyFileDirPlaceholder} to `classpath:deployments/dev`
+`applicationContext-resources.xml` is resolved by Gradle resource filtering
+using values defined in `gradle/resource-filter.properties`. Typically, this will resolve ${propertyFileDirPlaceholder} to `classpath:deployments/dev`
 
 ### Production (and AWS FeatureBranch builds)
 Property files are externalised to enable easy editing and customization on a per-server basis.
@@ -66,7 +66,7 @@ Property files are externalised to enable easy editing and customization on a pe
 The external property file could be in any location, and may differ between servers. (Typically it is 
 `/etc/rspace/deployment.properties`, but this just convention). This means the location must be defined at runtime.
 
-In this case, the Maven build flag `-DpropertyFileDirPlaceholder=\$\{propertyFileDir\}` replaces `${propertyFileDirPlaceholder}/deployment.properties`
+In this case, the Gradle build flag `-DpropertyFileDirPlaceholder=\$\{propertyFileDir\}` replaces `${propertyFileDirPlaceholder}/deployment.properties`
 with the name of a runtime system property `${propertyFileDir}`. On the production server, `${propertyFileDir}` is
 defined in Tomcat configuration file. E.g. `-DpropertyFileDir=/etc/rspace`
 
