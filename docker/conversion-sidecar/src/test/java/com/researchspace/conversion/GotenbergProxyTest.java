@@ -100,6 +100,7 @@ class GotenbergProxyTest {
     assertEquals(HttpStatus.TOO_MANY_REQUESTS, GotenbergProxy.upstreamFailure(429).status());
     assertEquals(ConversionError.TIMEOUT, GotenbergProxy.upstreamFailure(503).error());
     assertEquals(HttpStatus.GATEWAY_TIMEOUT, GotenbergProxy.upstreamFailure(503).status());
+    assertEquals(ConversionError.TIMEOUT, GotenbergProxy.upstreamFailure(504).error());
     assertEquals(ConversionError.SERVICE_UNAVAILABLE, GotenbergProxy.upstreamFailure(400).error());
   }
 }

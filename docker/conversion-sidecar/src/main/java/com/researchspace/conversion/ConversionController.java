@@ -3,7 +3,9 @@ package com.researchspace.conversion;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -218,7 +220,10 @@ final class ConversionController {
         };
     long contentLength;
     try {
-      contentLength = Files.size(converted.file());
+      contentLength =
+          Files.readAttributes(
+                  converted.file(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+              .size();
     } catch (IOException e) {
       LOG.warn("Could not read the converted response size", e);
       throw new ConversionException(
