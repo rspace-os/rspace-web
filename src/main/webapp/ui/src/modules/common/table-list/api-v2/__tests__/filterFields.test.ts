@@ -665,3 +665,40 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(() => adapterWithSearch([selector], sourceMetadata)).toThrow(error);
   });
 });
+
+describe("configured select fields over enum selectors", () => {
+  const enumMetadata = (values: string[]): ApiV2CollectionMetadata<Booking> => ({
+    ...metadata,
+    filtering: {
+      ...metadata.filtering,
+      selectors: {
+        ...metadata.filtering.selectors,
+        id: { operators: ["=="], wildcards: false, fieldType: "text", values },
+      },
+    },
+  });
+  const selectConfig = (options: (string | { label: string; value: string })[]) => ({
+    ...config,
+    fields: [
+      { ...config.fields[0], type: "select" as const, options, list: false as const },
+      ...config.fields.slice(1),
+    ],
+  });
+
+  it("accepts options that are published values", () => {
+    expect(() =>
+      createApiV2FilterFields({
+        config: selectConfig(["OPEN", { label: "Closed", value: "CLOSED" }]),
+        metadata: enumMetadata(["OPEN", "CLOSED", "ARCHIVED"]),
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects an option the API does not publish, unless the field is local", () => {
+    const definition = { config: selectConfig(["OPEN", "PENDING"]), metadata: enumMetadata(["OPEN", "CLOSED"]) };
+    expect(() => createApiV2FilterFields(definition)).toThrow(
+      "Select field id offers values the API does not publish: PENDING",
+    );
+    expect(() => createApiV2FilterFields({ ...definition, localFields: ["id"] })).not.toThrow();
+  });
+});

@@ -14,7 +14,12 @@ export const apiV2CollectionMetadata = {
     },
     filtering: {
       selectors: {
-        containerType: { fieldType: "text", operators: ["!=", "==", "=exists="], wildcards: false },
+        containerType: {
+          fieldType: "text",
+          operators: ["!=", "==", "=exists="],
+          wildcards: false,
+          values: ["LIST", "GRID", "IMAGE", "WORKBENCH"],
+        },
         deleted: { fieldType: "boolean", operators: ["!=", "==", "=exists="], wildcards: false },
         id: {
           fieldType: "number",
@@ -98,7 +103,12 @@ export const apiV2CollectionMetadata = {
           operators: ["!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out="],
           wildcards: true,
         },
-        "parentContainer.containerType": { fieldType: "text", operators: ["=="], wildcards: false },
+        "parentContainer.containerType": {
+          fieldType: "text",
+          operators: ["=="],
+          wildcards: false,
+          values: ["LIST", "GRID", "IMAGE", "WORKBENCH"],
+        },
         "parentContainer.deleted": { fieldType: "boolean", operators: ["=="], wildcards: false },
         "parentContainer.globalId": { fieldType: "text", operators: [], wildcards: false },
         "parentContainer.id": { fieldType: "number", operators: ["==", "=in="], wildcards: false },

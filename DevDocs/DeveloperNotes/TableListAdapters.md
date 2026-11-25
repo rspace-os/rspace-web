@@ -243,6 +243,9 @@ sends the collection request through its registry entry, and returns mapped rows
 
 The metadata ships with the frontend build, so it changes only when `generate:api-v2` runs again and the frontend is rebuilt.
 
+A configured `select` field over an enum selector may offer only values the API publishes for that selector. Building
+the adapter fails otherwise, unless the field is one of the definition's `localFields`.
+
 By default, a REST API v2 table requests its visible fields. Use a fixed projection for a small
 collection with lightweight fields. This can avoid refetching after each column selection.
 

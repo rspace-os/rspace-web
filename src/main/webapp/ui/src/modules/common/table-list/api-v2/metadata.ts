@@ -4,26 +4,28 @@ import type { FieldName, SortRule } from "@/modules/common/collection/config";
 import type { FilterOperatorToken } from "@/modules/common/collection/filterOperators";
 import type { RelationshipFilterPicker } from "@/modules/common/collection/relationshipFilterPicker";
 import type {
-  fieldTypeSchema,
+  ApiV2PrimitiveFieldType,
   metadataFilterSchema,
   metadataWhereSchema,
   runtimeNamespaceSchema,
 } from "./metadataSchemas";
 
-export type ApiV2PrimitiveFieldType = NonNullable<v.InferOutput<typeof fieldTypeSchema>>;
+export type { ApiV2PrimitiveFieldType };
 
 export type ApiV2ParsedSelector = {
   readonly fieldType: ApiV2PrimitiveFieldType | null;
   readonly operators: readonly FilterOperatorToken[];
   readonly wildcards: boolean;
   readonly picker?: RelationshipFilterPicker;
+  /** The published values of an enum selector. */
+  readonly values?: readonly (string | number)[];
 };
 
 type ApiV2FilterSelector = Omit<ApiV2ParsedSelector, "fieldType"> & {
   readonly fieldType?: ApiV2ParsedSelector["fieldType"];
 };
 
-type FilterLimits = Omit<v.InferOutput<typeof metadataFilterSchema>, "selectors"> & {
+type FilterLimits = v.InferOutput<typeof metadataFilterSchema> & {
   maximumWhereLength: v.InferOutput<typeof metadataWhereSchema>["maxLength"];
 };
 export type ApiV2FilterLimits = { readonly [K in keyof FilterLimits]: FilterLimits[K] };

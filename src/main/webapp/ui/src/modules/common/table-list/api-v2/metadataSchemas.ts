@@ -10,70 +10,44 @@ import { filterOperatorSchema, objectInput } from "./schemaPrimitives.ts";
 const positiveInteger = v.pipe(v.number(), v.integer(), v.minValue(1));
 const nonNegativeInteger = v.pipe(v.number(), v.integer(), v.minValue(0));
 const strings = v.array(v.string());
-const scalarType = v.picklist(["string", "integer", "number", "boolean"]);
-const jsonType = v.picklist(["string", "integer", "number", "boolean", "object", "array"]);
-const declaredTypes = v.union([
-  jsonType,
-  v.strictTuple([jsonType]),
-  v.strictTuple([jsonType, v.literal("null")]),
-  v.strictTuple([v.literal("null"), jsonType]),
-]);
 
-function nonNullType(type: v.InferOutput<typeof declaredTypes>): v.InferOutput<typeof jsonType> {
-  if (typeof type === "string") return type;
-  if (type[0] === "null") return type[1];
-  return type[0];
-}
+/** The table-list field type of each value kind `scripts/api-v2-valibot/filters.ts` classifies a selector as. */
+const fieldTypes = {
+  string: "text",
+  number: "number",
+  boolean: "boolean",
+  dateTime: "dateTime",
+  enum: "text",
+} as const;
+export type ApiV2PrimitiveFieldType = (typeof fieldTypes)[keyof typeof fieldTypes];
 
-const declaredType = v.pipe(declaredTypes, v.transform(nonNullType));
-const noComposition = {
-  anyOf: v.optional(v.never()),
-  allOf: v.optional(v.never()),
-  $ref: v.optional(v.never()),
-};
-const typedEntries = { ...noComposition, format: v.optional(v.string()), oneOf: v.optional(v.never()) };
-const scalarSchema = v.object({ ...typedEntries, type: scalarType });
-
-function primitiveType(type: v.InferOutput<typeof jsonType>, format?: string) {
-  switch (type) {
-    case "string":
-      return format === "date-time" ? "dateTime" : "text";
-    case "integer":
-    case "number":
-      return "number";
-    case "boolean":
-      return "boolean";
-    case "object":
-    case "array":
-      return null;
-  }
-}
-
-export const fieldTypeSchema = v.pipe(
-  v.union([
-    v.object({ ...typedEntries, type: declaredType }),
-    v.object({ ...noComposition, type: v.optional(v.never()), oneOf: v.pipe(v.array(scalarSchema), v.nonEmpty()) }),
-  ]),
-  v.transform((schema) => {
-    if (schema.oneOf !== undefined) {
-      const types = schema.oneOf.map((variant) => primitiveType(variant.type, variant.format));
-      return types.reduce((type, next) => (type === next ? type : "text"));
-    }
-    return primitiveType(schema.type, schema.format);
-  }),
-);
-
-const selectorName = v.pipe(v.string(), v.regex(/^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)?$/));
+// A selector of the generator's filter catalog, as the table list reads it.
 const selectorSchema = v.pipe(
   v.object({
-    schema: fieldTypeSchema,
+    kind: v.picklist(Object.keys(fieldTypes) as (keyof typeof fieldTypes)[]),
+    values: v.optional(v.array(v.union([v.string(), v.number()]))),
     operators: v.array(filterOperatorSchema),
     wildcards: v.boolean(),
-    title: v.optional(v.string()),
-    viaTitle: v.optional(v.string()),
     picker: v.optional(relationshipFilterPickerSchema),
   }),
-  v.transform(({ schema, ...selector }) => ({ ...selector, fieldType: schema })),
+  v.transform(({ kind, values, picker, ...selector }) => ({
+    // An enum of numbers still compares as a number.
+    fieldType: kind === "enum" && values?.every((value) => typeof value === "number") ? "number" : fieldTypes[kind],
+    ...selector,
+    ...(picker ? { picker } : {}),
+    ...(values ? { values } : {}),
+  })),
+);
+export const metadataSelectorsSchema = v.pipe(
+  v.record(v.string(), selectorSchema),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (!dataset.typed) return;
+    for (const [name, selector] of Object.entries(dataset.value)) {
+      if (selector.picker && !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
+        addIssue({ message: `Filter selector ${name} has an invalid picker` });
+      }
+    }
+  }),
 );
 
 export const metadataSortSchema = v.object({
@@ -91,18 +65,6 @@ export const metadataFilterSchema = v.object({
   maximumLikeComparisons: positiveInteger,
   maximumNesting: positiveInteger,
   maximumArguments: positiveInteger,
-  selectors: v.pipe(
-    objectInput,
-    v.record(selectorName, selectorSchema),
-    v.rawCheck(({ dataset, addIssue }) => {
-      if (!dataset.typed) return;
-      for (const [name, selector] of Object.entries(dataset.value)) {
-        if (selector.picker && !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
-          addIssue({ message: `Filter selector ${name} has an invalid picker` });
-        }
-      }
-    }),
-  ),
 });
 
 export const metadataWhereSchema = v.object({ maxLength: positiveInteger });

@@ -7,6 +7,7 @@ import type {
   RelationshipLabel,
   ResolvedCollectionConfig,
   RuntimeNamespaceSummary,
+  SelectOption,
 } from "@/modules/common/collection/config";
 import { isFilterOperatorCompatible } from "@/modules/common/collection/fieldTypes";
 import type { FilterOperatorToken } from "@/modules/common/collection/filterOperators";
@@ -276,6 +277,20 @@ function derivedRuntimeFields<TDocument>(
   );
 }
 
+/** A configured select may offer a subset of an enum selector's published values, never a value the API rejects. */
+function assertPublishedOptions(
+  name: string,
+  options: readonly SelectOption[],
+  published: readonly (string | number)[],
+): void {
+  const values = new Set(published.map(String));
+  const unpublished = options
+    .map((option) => (typeof option === "string" ? option : option.value))
+    .filter((value) => !values.has(value));
+  if (unpublished.length > 0)
+    throw new Error(`Select field ${name} offers values the API does not publish: ${unpublished.join(", ")}`);
+}
+
 export function createApiV2FilterFields<TDocument>({
   config: sourceConfig,
   metadata,
@@ -290,6 +305,8 @@ export function createApiV2FilterFields<TDocument>({
     const selector = selectors[String(field.name)];
     if (!metadata.fields.includes(field.name) && selector) virtualFields.add(field.name);
     if (localFields.includes(field.name)) return field;
+    if (field.type === "select" && selector?.values)
+      assertPublishedOptions(String(field.name), field.options, selector.values);
     const picker = selector?.picker;
     return {
       ...field,
