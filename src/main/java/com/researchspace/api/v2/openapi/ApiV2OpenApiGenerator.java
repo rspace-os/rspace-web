@@ -76,10 +76,12 @@ public final class ApiV2OpenApiGenerator {
         .forEach(
             description -> resourceSchemas.put(description.resourceName(), description.schema()));
     ApiV2OpenApiComponents referenced = new ApiV2OpenApiComponents();
-    Set<String> routableNames =
+    Map<String, Set<ResourceOperation>> exposedOperations =
         catalog.routableResources().stream()
-            .map(ApiV2ResourceRegistration::resourceName)
-            .collect(Collectors.toUnmodifiableSet());
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    ApiV2ResourceRegistration::resourceName,
+                    ApiV2ResourceRegistration::exposedOperations));
 
     addStandardSchemas(schemas);
     addResourceAccessSchemas(schemas);
@@ -93,7 +95,7 @@ public final class ApiV2OpenApiGenerator {
                     schemas,
                     description.schema(),
                     componentNames,
-                    routableNames.contains(description.resourceName()),
+                    exposedOperations.getOrDefault(description.resourceName(), Set.of()),
                     text));
     ApiV2OpenApiDeclaredRows.share(schemas, catalog.allSchemas(), componentNames);
     catalog
@@ -107,6 +109,7 @@ public final class ApiV2OpenApiGenerator {
         .forEach(
             resource -> addPaths(paths, resource, componentNames, resourceSchemas, referenced));
 
+    ApiV2OpenApiSchemas.requireResponseOnlyRequired(paths, schemas);
     schemas.replaceAll(
         (name, schema) -> ApiV2OpenApiSchemas.withNullableReferenceProperties(schema));
     ApiV2OpenApiAccessPolicies.share(schemas, referenced);

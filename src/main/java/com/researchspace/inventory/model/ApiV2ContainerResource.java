@@ -10,7 +10,13 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import java.util.List;
 
-/** Read-only container fields safe for both full and contents-only Inventory visibility. */
+/**
+ * Read-only container fields safe for both full and contents-only Inventory visibility.
+ *
+ * <p>Global IDs use {@code IC} for containers and {@code BE} for workbenches and cannot be queried.
+ * Register the resource through {@link #description(AccessFunction)} with the deployment's {@code
+ * ContainerReadAccess}; the static {@link #DESCRIPTION} denies every read until one is supplied.
+ */
 public final class ApiV2ContainerResource {
   public static final String RESOURCE_NAME = "containers";
 

@@ -15,7 +15,14 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
-/** Authoritative REST v2 read policy for the instrument collection. */
+/**
+ * Authoritative REST v2 read policy for the instrument collection.
+ *
+ * <p>It returns one {@code AccessResult.allowedWhere(...)} constraint over the {@code
+ * InventoryReadFilters} selectors. {@code InventoryDaoHibernate} compiles that trusted constraint
+ * together with the client filter, so the database applies access, filtering, sorting, pagination
+ * and totals in one query.
+ */
 @Component
 public final class InstrumentReadAccess implements AccessFunction {
 

@@ -55,6 +55,7 @@ final class ApiV2OpenApiDeclaredRows {
                   ? mutableObjectMap(mutableObjectMap(property).get("items"))
                   : objectKeywords(mutableObjectMap(property));
           Class<?> type = declared.type().objectType();
+          requireLikeComponent(row, type, declared.fields());
           byTypeName
               .computeIfAbsent(ApiV2OpenApiNames.typeName(type), name -> new ArrayList<>())
               .add(new Declared(type, component, field.name(), array, properties, row));
@@ -83,6 +84,61 @@ final class ApiV2OpenApiDeclaredRows {
             declared.properties().put(declared.field(), withRowReference(declared, name));
           }
         });
+  }
+
+  /**
+   * Copies {@code required} from the response component of the row's Java type when the row has the
+   * same properties with the same nullability, keeping the row's own schema. A property is copied
+   * only when the embedded renderer always writes it: it has no read restriction of its own, and it
+   * is nullable (written as null) or required on create (never missing).
+   */
+  private static void requireLikeComponent(
+      Map<String, Object> row, Class<?> type, List<FieldSchema> fields) {
+    if (!(row.get("properties") instanceof Map<?, ?> rowProperties)) return;
+    Map<String, Object> scratch = new LinkedHashMap<>();
+    Map<String, Object> component =
+        resolve(ApiV2OpenApiSchemas.responseSchemaFor(type, scratch), scratch);
+    if (!(component.get("properties") instanceof Map<?, ?> componentProperties)
+        || !rowProperties.keySet().equals(componentProperties.keySet())
+        || !(component.get("required") instanceof List<?> componentRequired)) {
+      return;
+    }
+    for (Object name : rowProperties.keySet()) {
+      if (nullable(rowProperties.get(name)) != nullable(componentProperties.get(name))) {
+        return;
+      }
+    }
+    List<String> required = new ArrayList<>();
+    for (Object name : rowProperties.keySet()) {
+      fields.stream()
+          .filter(field -> field.name().equals(name))
+          .filter(field -> field.readInherited() && (field.nullable() || field.requiredOnCreate()))
+          .filter(field -> componentRequired.contains(field.name()))
+          .forEach(field -> required.add(field.name()));
+    }
+    if (!required.isEmpty()) row.put("required", required);
+  }
+
+  private static Map<String, Object> resolve(Object schema, Map<String, Object> components) {
+    Map<String, Object> map = mutableObjectMap(schema);
+    return map.get("$ref") instanceof String ref
+        ? mutableObjectMap(components.get(ref.substring(ref.lastIndexOf('/') + 1)))
+        : map;
+  }
+
+  private static boolean nullable(Object schema) {
+    if (!(schema instanceof Map<?, ?> map)) return false;
+    if ("null".equals(map.get("type"))
+        || (map.get("type") instanceof List<?> types && types.contains("null"))) {
+      return true;
+    }
+    for (String keyword : List.of("anyOf", "oneOf")) {
+      if (map.get(keyword) instanceof List<?> branches
+          && branches.stream().anyMatch(ApiV2OpenApiDeclaredRows::nullable)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static Map<String, Object> objectKeywords(Map<String, Object> property) {
