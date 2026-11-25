@@ -10237,6 +10237,7 @@ export default interface Resources {
         "resultsFieldValue": ""
       },
       "field": {
+        "clearSelection": "Clear selection",
         "lastModifiedLabel": "Last modified:",
         "picklistSuffix": "(Picklist)",
         "saveAndViewTitle": "Save and View"
@@ -10245,6 +10246,7 @@ export default interface Resources {
         "addNew": "Add New",
         "checked": "Checked",
         "checkedValue": "checked",
+        "clearDefault": "Clear default",
         "dateFormat": "Date Format",
         "decimalPlaces": "Decimal Places",
         "defaultDate": "Default Date",

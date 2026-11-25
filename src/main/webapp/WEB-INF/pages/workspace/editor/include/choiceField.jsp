@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<tr id="field_${field.id}" name="choice" class="field" data-multiple-choice="${field.multipleChoice}">
+<tr id="field_${field.id}" name="choice" class="field">
   <td class="field-value">
     <div id="theChoice" style="position: relative;">
       <table>
@@ -24,9 +24,7 @@
         </tr>
         <tr>
           <td class="field-value-inner">
-            <%-- Single fields that already store several values keep checkboxes so no value is lost --%>
-            <c:set var="choiceInputType"
-              value="${field.multipleChoice or fn:length(field.choiceOptionSelectedAsList) gt 1 ? 'checkbox' : 'radio'}" />
+            <c:set var="choiceInputType" value="${field.shownAsCheckboxes ? 'checkbox' : 'radio'}" />
             <ul id="choiceFieldsFinal" class="hideBulletPoint">
               <c:forEach var="fieldChoice" items="${field.choiceOptionAsList}" varStatus="choiceStatus">
                 <c:set var="isSelected" value="false" scope="page" />
@@ -48,6 +46,13 @@
                   </label>
                 </li>
               </c:forEach>
+              <%-- Radios cannot be unticked, so a single-selection field offers a way back to no value --%>
+              <li class='choiceLi ${field.id} bootstrap-custom-flat'>
+                <button type="button" class="btn btn-link btn-xs choiceClearButton" onclick="clearChoiceField(${field.id})"
+                  <c:if test="${field.shownAsCheckboxes}">style="display: none"</c:if>>
+                  <spring:message code="form.field.clearSelection"/>
+                </button>
+              </li>
               <input type="hidden" name="wasChanged" value="false" />
               <input type="hidden" name="fieldId" value="${field.id}" />
               <p class="checkboxText singleLineFieldInDocViewMode" id="choiceText_${field.id}">

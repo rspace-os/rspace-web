@@ -139,6 +139,7 @@ dynamicUserTest.describe("Choice fields", () => {
           { name: "LegacyDefaults", type: "Choice", options, defaultOptions: ["a", "c"], multipleChoice: false },
           { name: "GrowsLater", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
           { name: "ShrinksLater", type: "Choice", options, defaultOptions: ["a", "c"], multipleChoice: false },
+          { name: "Cleared", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
         ],
       });
       const document = await clientDocuments.create({ name: uniqueName("ChoiceModesDocument"), form: { id: form.id } });
@@ -172,17 +173,21 @@ dynamicUserTest.describe("Choice fields", () => {
       await componentDocumentFields.setOptions("GrowsLater", ["a", "b", "c"]);
       await componentDocumentFields.setOptions("ShrinksLater", ["c"]);
       await expect(await componentDocumentFields.choiceOptions("ShrinksLater", "radio")).toHaveCount(3);
+      // Radios cannot be unticked, so a single field is cleared with its own button.
+      await componentDocumentFields.clearChoice("Cleared");
 
       await pageDocument.leaveWithoutSaving();
       await pageWorkspace.openDocument(document.id);
-      for (const [name, value] of Object.entries({
-        OneOption: "b",
-        ManyOptions: "a,b",
-        LegacyDefaults: "a,b,c",
-        GrowsLater: "a,b,c",
-        ShrinksLater: "c",
-      })) {
+      for (const [name, value, role] of [
+        ["OneOption", "b", "radio"],
+        ["ManyOptions", "a,b", "checkbox"],
+        ["LegacyDefaults", "a,b,c", "checkbox"],
+        ["GrowsLater", "a,b,c", "checkbox"],
+        ["ShrinksLater", "c", "radio"],
+        ["Cleared", "", "radio"],
+      ] as const) {
         await expect(await componentDocumentFields.value(name)).toHaveText(value);
+        await expect(await componentDocumentFields.choiceOptions(name, role)).toHaveCount(3);
       }
     },
   );

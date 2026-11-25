@@ -51,6 +51,17 @@ public class ChoiceBehaviour {
     return result;
   }
 
+  /**
+   * Whether a Choice field's options show as checkboxes rather than radio buttons. A
+   * single-selection field that already holds several values keeps checkboxes, so no value is lost.
+   *
+   * @param multipleChoice whether the field allows several values
+   * @param selectedCount how many values the field holds (stored values, or defaults on a form)
+   */
+  static boolean showsCheckboxes(boolean multipleChoice, int selectedCount) {
+    return multipleChoice || selectedCount > 1;
+  }
+
   public static ChoiceFieldForm realOrProxy(IFieldForm ft) {
     if (ft instanceof ChoiceFieldForm) {
       return (ChoiceFieldForm) ft;

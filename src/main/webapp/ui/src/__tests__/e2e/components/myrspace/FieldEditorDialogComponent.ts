@@ -72,6 +72,10 @@ export class FieldEditorDialogComponent {
       .click();
   }
 
+  clearChoiceDefaultButton(): Locator {
+    return this.fieldGroup.getByRole("button", { name: "Clear default" });
+  }
+
   async setMultipleChoice(multiple: boolean): Promise<void> {
     await this.fieldGroup.getByRole("radio", { name: multiple ? "yes" : "no", exact: true }).check();
   }

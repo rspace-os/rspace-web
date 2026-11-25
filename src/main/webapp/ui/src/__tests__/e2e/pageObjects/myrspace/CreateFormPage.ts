@@ -20,9 +20,16 @@ export class CreateFormPage extends BasePage {
     await this.waitUntilLoaded();
   }
 
-  /** The preview row of one field. Legacy JSP rows have no accessible name, so match the name cell. */
+  /**
+   * The preview row of one field. Legacy JSP rows have no accessible name, so match the whole name cell:
+   * the name, then the "(Type)" suffix and required asterisk where shown.
+   */
   fieldPreview(name: string): Locator {
-    return this.page.locator("tr.field").filter({ has: this.page.locator("td.field-name").filter({ hasText: name }) });
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const nameCell = this.page
+      .locator("td.field-name")
+      .filter({ hasText: new RegExp(`^\\s*${escapedName}(\\s+\\(\\w+\\))?(\\s*\\*)?\\s*$`) });
+    return this.page.locator("tr.field").filter({ has: nameCell });
   }
 
   get statusNew(): Locator {

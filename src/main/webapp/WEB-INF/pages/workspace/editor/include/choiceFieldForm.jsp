@@ -15,8 +15,7 @@
 				</td> 
 			<tr>
 				<td class="field-value-inner">
-					<c:set var="choiceInputType"
-					  value="${field.multipleChoice or fn:length(field.defaultChoiceOptionAsList) gt 1 ? 'checkbox' : 'radio'}" />
+					<c:set var="choiceInputType" value="${field.shownAsCheckboxes ? 'checkbox' : 'radio'}" />
 					<ul id="choiceFieldsFinal">
 				<c:forEach var="fieldChoice" items="${field.choiceOptionAsList}" varStatus="choiceStatus">
 					<c:set var="isSelected" value="false" scope="page" />

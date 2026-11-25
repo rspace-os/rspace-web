@@ -65,6 +65,17 @@ public class ChoiceField extends FieldAsString {
     return internalChoiceBehaviour.getChoiceOptionSelectedAsList(this::getFieldData);
   }
 
+  /**
+   * Whether the options show as checkboxes rather than radio buttons, given the stored values.
+   *
+   * @see ChoiceBehaviour#showsCheckboxes(boolean, int)
+   */
+  @Transient
+  public boolean isShownAsCheckboxes() {
+    return ChoiceBehaviour.showsCheckboxes(
+        isMultipleChoice(), getChoiceOptionSelectedAsList().size());
+  }
+
   @Transient
   public String getChoiceOptionSelectedAsString() {
     return internalChoiceBehaviour.getChoiceOptionSelectedAsString(this::getFieldData);

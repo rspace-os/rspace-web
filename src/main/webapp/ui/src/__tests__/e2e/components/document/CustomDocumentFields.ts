@@ -51,6 +51,14 @@ export class CustomDocumentFields {
     );
   }
 
+  /** Clears a single-selection Choice field, whose radios cannot be unticked one by one. */
+  async clearChoice(name: string): Promise<void> {
+    const id = await resolveFieldId(this.page, name, 0, "clearChoice");
+    await this.page.locator(`#edit_${id}`).click();
+    const clear = this.page.locator(`#field_${id}`).getByRole("button", { name: "Clear selection" });
+    await this.waitForAutosave(id, () => clear.click(), "");
+  }
+
   /** A Choice field's option inputs of one role, or one named option, including those hidden outside edit mode. */
   async choiceOptions(name: string, role: "checkbox" | "radio", option?: string): Promise<Locator> {
     const id = await resolveFieldId(this.page, name, 0, "choiceOptions");

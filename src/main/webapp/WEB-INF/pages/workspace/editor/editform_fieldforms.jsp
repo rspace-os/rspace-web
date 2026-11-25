@@ -175,8 +175,7 @@
 				<span class="bootstrap-custom-flat">
 				    <button type="button" class="btn btn-default" id="addChoice"><spring:message code="form.fieldEditor.addNew"/></button>
 				</span>
-				<c:set var="choiceDefaultInputType"
-				  value="${fieldTemplate.multipleChoice or fn:length(fieldTemplate.defaultChoiceOptionAsList) gt 1 ? 'checkbox' : 'radio'}" />
+				<c:set var="choiceDefaultInputType" value="${fieldTemplate.shownAsCheckboxes ? 'checkbox' : 'radio'}" />
 				<ul id="choiceFields">
 				<c:forEach var="fieldChoice" items="${fieldTemplate.choiceOptionAsList}">
 					<c:set var="isSelected" value="false" scope="page" />
@@ -188,6 +187,10 @@
 					<li><label style="font-weight: normal;"><input type="${choiceDefaultInputType}" name="fieldSelectedChoices" value="${fieldChoice}" <c:if test="${isSelected eq 'true'}">checked</c:if>> <input type="hidden" name="fieldChoices" value="${fieldChoice}"> ${fieldChoice}</label> <a href="#" style="font-weight:bold;" class="deleteChoice"><spring:message code="form.fieldEditor.deleteOption"/></a></li>
 				</c:forEach>
 				</ul>
+				<span class="bootstrap-custom-flat">
+				    <button type="button" class="btn btn-link btn-xs" id="clearChoiceDefault"
+				      <c:if test="${fieldTemplate.shownAsCheckboxes}">style="display: none"</c:if>><spring:message code="form.fieldEditor.clearDefault"/></button>
+				</span>
 			</td>
 		</tr>
 	</c:when>

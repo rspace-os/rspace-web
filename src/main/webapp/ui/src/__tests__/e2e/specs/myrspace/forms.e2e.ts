@@ -110,6 +110,7 @@ test.describe("My RSpace Choice fields", () => {
     await editor.setMultipleChoice(false);
     await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
     await expect(editor.choiceDefaultOption("checkbox", "b")).toBeChecked();
+    await expect(editor.clearChoiceDefaultButton()).toBeHidden();
     await editor.saveExpectingValidationError();
     await expect(editor.root).toContainText("A single-selection field can have only one default option.");
 
@@ -125,6 +126,16 @@ test.describe("My RSpace Choice fields", () => {
     const singlePreview = pageCreateForm.fieldPreview("SingleChoice");
     await expect(singlePreview.getByRole("radio")).toHaveCount(2);
     await expect(singlePreview.getByRole("radio", { name: "b", exact: true })).toBeChecked();
+
+    // An option added through "Add New" takes the current input type, and radios can be cleared back to no default.
+    const reopened = await pageCreateForm.openFieldForEditing("SingleChoice");
+    await reopened.addOption("d");
+    await expect(reopened.choiceDefaultOption("radio", "d")).not.toBeChecked();
+    await reopened.clearChoiceDefaultButton().click();
+    await expect(reopened.choiceDefaultOption("radio", "b")).not.toBeChecked();
+    await reopened.save();
+    await expect(singlePreview.getByRole("radio")).toHaveCount(3);
+    await expect(singlePreview.getByRole("radio", { checked: true })).toHaveCount(0);
   });
 
   test("As a form author, a multiple-selection Choice field offers checkboxes for any number of defaults", async ({
@@ -174,6 +185,7 @@ test.describe("My RSpace Choice fields", () => {
     await editor.setMultipleChoice(true);
     await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
     await expect(editor.choiceDefaultOption("radio", "b")).toHaveCount(0);
+    await expect(editor.clearChoiceDefaultButton()).toBeHidden();
     await editor.save();
     await expectPreview("BecomesMulti", ["a"]);
   });
