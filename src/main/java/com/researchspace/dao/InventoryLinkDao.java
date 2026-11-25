@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -29,13 +30,15 @@ public interface InventoryLinkDao extends GenericDao<InventoryLink, Long> {
 
   /**
    * The record-level Link fields whose live link targets any of the normalised absolute paths on
-   * the filesystem, through any user's filestore. Soft-deleted fields and links are left out. An
-   * empty collection of paths gives an empty list without a query.
+   * the filesystem. Soft-deleted fields and links are left out. An empty collection of paths gives
+   * an empty list without a query.
+   *
+   * <p>{@code filestoreOwner} and {@code rootedBase} as for {@link NfsDao#getDocumentsLinkingTo}.
    */
   List<ExtraLinkField> findLinkFieldsTargetingFilestorePaths(
-      Long fileSystemId, Collection<String> absolutePaths);
+      Long fileSystemId, Collection<String> absolutePaths, User filestoreOwner, Boolean rootedBase);
 
   /** Counterpart of {@link #findLinkFieldsTargetingFilestorePaths} for template-defined fields. */
   List<InventoryLinkField> findStructuredLinkFieldsTargetingFilestorePaths(
-      Long fileSystemId, Collection<String> absolutePaths);
+      Long fileSystemId, Collection<String> absolutePaths, User filestoreOwner, Boolean rootedBase);
 }

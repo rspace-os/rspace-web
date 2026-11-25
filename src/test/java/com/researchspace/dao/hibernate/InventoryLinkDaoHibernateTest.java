@@ -125,16 +125,22 @@ public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {
     flushDatabaseState();
     Long fsId = store.getFileSystem().getId();
 
-    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+    assertThat(
+            dao.findLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat"), null, null))
         .containsExactly(extra);
     assertThat(
-            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat"), null, null))
         .containsExactly(structured);
     // the column's collation ignores trailing spaces, which S3 keys keep
-    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat ")))
+    assertThat(
+            dao.findLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat "), null, null))
         .isEmpty();
     assertThat(
-            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat ")))
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat "), null, null))
         .isEmpty();
   }
 
@@ -157,10 +163,13 @@ public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {
     flushDatabaseState();
     Long fsId = store.getFileSystem().getId();
 
-    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+    assertThat(
+            dao.findLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat"), null, null))
         .isEmpty();
     assertThat(
-            dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, List.of("data/XRD/run.dat")))
+            dao.findStructuredLinkFieldsTargetingFilestorePaths(
+                fsId, List.of("data/XRD/run.dat"), null, null))
         .isEmpty();
   }
 

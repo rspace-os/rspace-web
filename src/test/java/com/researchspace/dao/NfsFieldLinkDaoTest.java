@@ -49,14 +49,15 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
 
     assertThat(nfsDao.getFieldLinks(field.getId())).hasSize(2);
     Long fsId = store.getFileSystem().getId();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/XRD", "data/XRD/run.dat")))
+    assertThat(
+            nfsDao.getDocumentsLinkingTo(fsId, List.of("data/XRD", "data/XRD/run.dat"), null, null))
         .extracting(StructuredDocument::getId)
         .containsExactly(doc.getId(), otherDoc.getId());
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/XRD")))
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/XRD"), null, null))
         .extracting(StructuredDocument::getId)
         .containsExactly(doc.getId());
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/other.dat"))).isEmpty();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of())).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/other.dat"), null, null)).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of(), null, null)).isEmpty();
   }
 
   @Test
@@ -77,13 +78,83 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
         new NfsFieldLink(otherDoc.getFields().get(0), otherFsStore, "/data/report.csv"));
 
     Long fsId = store.getFileSystem().getId();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/report.csv"))).isEmpty();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/a/b"))).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/report.csv"), null, null))
+        .isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/a/b"), null, null)).isEmpty();
     // a trailing space names another S3 key, though padded collations compare it as equal
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv "))).isEmpty();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv", "data/a//b")))
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv "), null, null))
+        .isEmpty();
+    assertThat(
+            nfsDao.getDocumentsLinkingTo(fsId, List.of("data/Report.csv", "data/a//b"), null, null))
         .extracting(StructuredDocument::getId)
         .containsExactly(doc.getId());
+  }
+
+  @Test
+  public void anOwnerLimitsTheMatchesToLinksThroughTheirFilestores() {
+    User u = createAndSaveUserIfNotExists("nfslinkdao5");
+    initialiseContentWithEmptyContent(u);
+    NfsFileStore store = savedStore(u, "/upload");
+    NfsFileStore rootStore =
+        GalleryFilestoreTestUtils.createFileStore("root", u, store.getFileSystem());
+    nfsDao.saveNfsFileStore(rootStore);
+    User other = createAndSaveUserIfNotExists("nfslinkdao6");
+    initialiseContentWithEmptyContent(other);
+    NfsFileStore otherStore =
+        GalleryFilestoreTestUtils.createFileStore("other", other, store.getFileSystem());
+    otherStore.setPath("/upload");
+    nfsDao.saveNfsFileStore(otherStore);
+    StructuredDocument viaStore = createBasicDocumentInRootFolderWithText(u, "any");
+    nfsDao.saveFieldLink(new NfsFieldLink(viaStore.getFields().get(0), store, "/hello.txt"));
+    // the other user's document, linked through u's filestore: the filestore's owner decides
+    StructuredDocument viaRoot = createBasicDocumentInRootFolderWithText(other, "any");
+    nfsDao.saveFieldLink(
+        new NfsFieldLink(viaRoot.getFields().get(0), rootStore, "/upload/hello.txt"));
+    StructuredDocument viaOther = createBasicDocumentInRootFolderWithText(other, "any");
+    nfsDao.saveFieldLink(new NfsFieldLink(viaOther.getFields().get(0), otherStore, "/hello.txt"));
+    // a filestore removed from the Gallery still reaches the same login
+    rootStore.setDeleted(true);
+    nfsDao.saveNfsFileStore(rootStore);
+    Long fsId = store.getFileSystem().getId();
+
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("upload/hello.txt"), u, true))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaStore.getId(), viaRoot.getId());
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("upload/hello.txt"), null, null))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaStore.getId(), viaRoot.getId(), viaOther.getId());
+  }
+
+  private StructuredDocument documentLinking(User u, NfsFileStore store, String relPath) {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(u, "any");
+    nfsDao.saveFieldLink(new NfsFieldLink(doc.getFields().get(0), store, relPath));
+    return doc;
+  }
+
+  @Test
+  public void aBaseUnderTheLoginsHomeIsMatchedApartFromOneAtTheRoot() {
+    User u = createAndSaveUserIfNotExists("nfslinkdao7");
+    initialiseContentWithEmptyContent(u);
+    NfsFileStore rooted = savedStore(u, "/upload");
+    NfsFileSystem fs = rooted.getFileSystem();
+    NfsFileStore underHome = GalleryFilestoreTestUtils.createFileStore("home", u, fs);
+    underHome.setPath("upload");
+    nfsDao.saveNfsFileStore(underHome);
+    NfsFileStore noBase = GalleryFilestoreTestUtils.createFileStore("no base", u, fs);
+    nfsDao.saveNfsFileStore(noBase);
+    StructuredDocument viaRooted = documentLinking(u, rooted, "/hello.txt");
+    StructuredDocument viaHome = documentLinking(u, underHome, "/hello.txt");
+    StructuredDocument viaNoBase = documentLinking(u, noBase, "/upload/hello.txt");
+    // a link written without its leading slash, through no base, starts at the login's home
+    StructuredDocument viaNoBaseNoSlash = documentLinking(u, noBase, "upload/hello.txt");
+    List<String> path = List.of("upload/hello.txt");
+
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, true))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaRooted.getId(), viaNoBase.getId());
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, false))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaHome.getId(), viaNoBaseNoSlash.getId());
   }
 
   @Test
@@ -96,11 +167,11 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
     NfsFieldLink link = new NfsFieldLink(field, store, "/run.dat");
     nfsDao.saveFieldLink(link);
     Long fsId = store.getFileSystem().getId();
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("run.dat"))).hasSize(1);
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("run.dat"), null, null)).hasSize(1);
 
     doc.setRecordDeleted(true);
     recordDao.save(doc);
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("run.dat"))).isEmpty();
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("run.dat"), null, null)).isEmpty();
 
     nfsDao.deleteFieldLink(link);
     assertThat(nfsDao.getFieldLinks(field.getId())).isEmpty();

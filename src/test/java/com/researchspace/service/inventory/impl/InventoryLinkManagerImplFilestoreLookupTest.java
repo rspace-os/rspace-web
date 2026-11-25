@@ -106,9 +106,9 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     ExtraLinkField sampleRow = extraField(sample, link("IsSourceOf"));
     ExtraLinkField hiddenRow = extraField(hiddenOne, link("Collects"));
     InventoryLinkField hiddenTemplateRow = templateField(hiddenTwo, link("Collects"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS))
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS, null, null))
         .thenReturn(List.of(sampleRow, hiddenRow));
-    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(7L, PATHS))
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(7L, PATHS, null, null))
         .thenReturn(List.of(hiddenTemplateRow));
 
     List<FilestoreLinkingItem> rows =
@@ -135,7 +135,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     ExtraLinkField folderRow = extraField(sample, link("IsSourceOf"));
     ExtraLinkField fileRow = extraField(sample, link("IsSourceOf"));
     ExtraLinkField otherRelationRow = extraField(sample, link("References"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS))
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS, null, null))
         .thenReturn(List.of(folderRow, fileRow, otherRelationRow));
 
     List<FilestoreLinkingItem> rows =
@@ -158,9 +158,9 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     when(sameSample.getName()).thenReturn("Buffer A");
     ExtraLinkField firstBatchRow = extraField(sample, link("IsSourceOf"));
     ExtraLinkField secondBatchRow = extraField(sameSample, link("IsSourceOf"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, paths.subList(0, 1000)))
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, paths.subList(0, 1000), null, null))
         .thenReturn(List.of(firstBatchRow));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, paths.subList(1000, 1001)))
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, paths.subList(1000, 1001), null, null))
         .thenReturn(List.of(secondBatchRow));
 
     List<FilestoreLinkingItem> rows =
@@ -177,7 +177,8 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     InventoryRecord trashed = mock(InventoryRecord.class);
     when(trashed.isDeleted()).thenReturn(true);
     ExtraLinkField trashedRow = extraField(trashed, link("IsSourceOf"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS)).thenReturn(List.of(trashedRow));
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS, null, null))
+        .thenReturn(List.of(trashedRow));
 
     assertThat(manager.findItemsLinkingFilestorePaths(fileSystem, PATHS, actor)).isEmpty();
     verify(permissionUtils, never()).canUserReadInventoryRecord(any(InventoryRecord.class), any());
@@ -189,7 +190,8 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     InventoryRecord template = mock(InventoryRecord.class);
     when(template.getType()).thenReturn(InventoryRecordType.INSTRUMENT_TEMPLATE);
     ExtraLinkField templateRow = extraField(template, link("IsSourceOf"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS)).thenReturn(List.of(templateRow));
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, PATHS, null, null))
+        .thenReturn(List.of(templateRow));
 
     assertThat(manager.findItemsLinkingFilestorePaths(fileSystem, PATHS, actor)).isEmpty();
     verify(permissionUtils, never()).canUserReadInventoryRecord(any(InventoryRecord.class), any());
@@ -204,7 +206,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     ExtraLinkField tenRow = extraField(sampleTen, link("References"));
     ExtraLinkField twoRow = extraField(sampleTwo, link("References"));
     ExtraLinkField containerRow = extraField(container, link("References"));
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, List.of("data/XRD/run.dat")))
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(7L, List.of("data/XRD/run.dat"), null, null))
         .thenReturn(List.of(tenRow, twoRow, containerRow));
 
     List<FilestoreLinkingItem> rows =
@@ -213,6 +215,34 @@ class InventoryLinkManagerImplFilestoreLookupTest {
     assertThat(rows)
         .extracting(FilestoreLinkingItem::globalId)
         .containsExactly("IC3", "SA2", "SA10");
+  }
+
+  @Test
+  void onAPerUserLoginFilesystemOnlyTheActorsFilestoresWithAMatchingBaseAreSearched() {
+    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+    ExtraLinkField fromRoot =
+        extraField(
+            readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
+    ExtraLinkField fromHome =
+        extraField(
+            readable("SA2", "Rerun", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
+    List<String> rooted = List.of("data/XRD/run.dat");
+    List<String> underHome = List.of("data/XRD/rerun.dat");
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, rooted, actor, true))
+        .thenReturn(List.of(fromRoot));
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, rooted, actor, true))
+        .thenReturn(List.of());
+    // a path without a leading slash starts at the login's home
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
+        .thenReturn(List.of(fromHome));
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
+        .thenReturn(List.of());
+
+    assertThat(
+            manager.findItemsLinkingFilestorePaths(
+                irods, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactly("SA1", "SA2");
   }
 
   @Test

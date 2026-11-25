@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -144,18 +146,16 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   public List<FilestoreLinkingItem> findItemsLinkingFilestorePaths(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User actor) {
     aclChecker.assertCanRead(actor, fileSystem);
-    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
     List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
-    // a whole S3 folder listing in one IN list can exceed the database's packet size
-    for (List<String> batch : ListUtils.partition(paths, PATH_BATCH_SIZE)) {
-      for (ExtraLinkField field :
-          linkDao.findLinkFieldsTargetingFilestorePaths(fileSystem.getId(), batch)) {
-        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
-      }
-      for (InventoryLinkField field :
-          linkDao.findStructuredLinkFieldsTargetingFilestorePaths(fileSystem.getId(), batch)) {
-        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
-      }
+    if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
+      addItemsLinking(linking, fileSystem, absolutePaths, null, null);
+    } else {
+      // two logins can see different files at one path: ADR 0015 point 2
+      absolutePaths.stream()
+          .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
+          .forEach(
+              (rootedBase, paths) ->
+                  addItemsLinking(linking, fileSystem, paths, actor, rootedBase));
     }
     Map<String, FilestoreLinkingItem> rows = new LinkedHashMap<>();
     // one read check per item, however many of its links match
@@ -167,6 +167,28 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
         .forEach(
             item -> addRowOrPlaceholder(rows, readable, item.getLeft(), item.getRight(), actor));
     return new ArrayList<>(rows.values());
+  }
+
+  private void addItemsLinking(
+      List<Pair<InventoryRecord, InventoryLink>> linking,
+      NfsFileSystem fileSystem,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Boolean rootedBase) {
+    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
+    // a whole S3 folder listing in one IN list can exceed the database's packet size
+    for (List<String> batch : ListUtils.partition(paths, PATH_BATCH_SIZE)) {
+      for (ExtraLinkField field :
+          linkDao.findLinkFieldsTargetingFilestorePaths(
+              fileSystem.getId(), batch, filestoreOwner, rootedBase)) {
+        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
+      }
+      for (InventoryLinkField field :
+          linkDao.findStructuredLinkFieldsTargetingFilestorePaths(
+              fileSystem.getId(), batch, filestoreOwner, rootedBase)) {
+        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
+      }
+    }
   }
 
   private static boolean isTemplate(InventoryRecord parent) {

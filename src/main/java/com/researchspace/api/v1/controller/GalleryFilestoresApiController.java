@@ -160,11 +160,10 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   }
 
   /**
-   * The link index spans every user's filestores, so on filesystems with per-user logins the
-   * caller's own login must read the item: a folder must browse, a file must open. Listing the
-   * parent tells which it is, since some backends (SFTP) list a file the caller cannot open.
-   * Filesystems without per-user logins are gated by their allowlists alone, and an unknown
-   * filestore is left to the lookup's 404.
+   * On filesystems with per-user logins the caller's own login must read the item: a folder must
+   * browse, a file must open. Listing the parent tells which it is, since some backends (SFTP) list
+   * a file the caller cannot open. Filesystems without per-user logins are gated by their
+   * allowlists alone, and an unknown filestore is left to the lookup's 404.
    */
   private void assertItemReadableWithOwnLogin(
       User user, NfsFileStore filestore, String remotePath) {

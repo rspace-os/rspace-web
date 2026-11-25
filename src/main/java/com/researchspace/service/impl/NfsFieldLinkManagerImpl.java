@@ -6,6 +6,7 @@ import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -99,10 +101,21 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
   public List<RecordInformation> getLinkedDocuments(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User user) {
     aclChecker.assertCanRead(user, fileSystem);
-    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
-    // a whole S3 folder listing in one IN list can exceed the database's packet size
-    return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
-        .flatMap(batch -> nfsDao.getDocumentsLinkingTo(fileSystem.getId(), batch).stream())
+    Stream<StructuredDocument> linking;
+    if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
+      linking = documentsLinking(fileSystem, absolutePaths, null, null);
+    } else {
+      // two logins can see different files at one path: ADR 0015 point 2
+      linking =
+          absolutePaths.stream()
+              .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
+              .entrySet()
+              .stream()
+              .flatMap(
+                  byStart ->
+                      documentsLinking(fileSystem, byStart.getValue(), user, byStart.getKey()));
+    }
+    return linking
         .collect(
             Collectors.toMap(
                 StructuredDocument::getId, doc -> doc, (first, duplicate) -> first, TreeMap::new))
@@ -110,6 +123,21 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
         .stream()
         .map(doc -> toRecordInfoOrPlaceholder(doc, user))
         .toList();
+  }
+
+  private Stream<StructuredDocument> documentsLinking(
+      NfsFileSystem fileSystem,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Boolean rootedBase) {
+    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
+    // a whole S3 folder listing in one IN list can exceed the database's packet size
+    return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
+        .flatMap(
+            batch ->
+                nfsDao
+                    .getDocumentsLinkingTo(fileSystem.getId(), batch, filestoreOwner, rootedBase)
+                    .stream());
   }
 
   private RecordInformation toRecordInfoOrPlaceholder(StructuredDocument doc, User user) {

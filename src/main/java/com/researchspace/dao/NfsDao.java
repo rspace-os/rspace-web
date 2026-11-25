@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -66,7 +67,12 @@ public interface NfsDao {
    * Current, non-deleted documents with a text field linking any of the normalised absolute paths
    * on the filesystem, by ascending id. An empty collection of paths returns an empty list without
    * querying.
+   *
+   * @param filestoreOwner null for links through any user's filestore; otherwise only links through
+   *     this user's filestores whose base and link path together start with a slash ({@code
+   *     rootedBase} true) or without one (false), which SFTP reads under the login's home
+   * @param rootedBase required with an owner, ignored without one
    */
   List<StructuredDocument> getDocumentsLinkingTo(
-      Long fileSystemId, Collection<String> absolutePaths);
+      Long fileSystemId, Collection<String> absolutePaths, User filestoreOwner, Boolean rootedBase);
 }

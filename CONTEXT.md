@@ -450,7 +450,11 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Linked document** — an ELN document whose current, non-deleted content holds
   a Filestore link to a given item. The Gallery already lists "Linked Documents"
   for local Gallery items; for a Filestore item the metadata sidecar and the
-  filestores API report the same thing.
+  filestores API report the same thing. On a file system where each user signs
+  in with their own login, only links made through the user's own filestores
+  count, since two logins can see different files at one path, and a filestore
+  path without a leading slash (on SFTP, relative to the login's home) is kept
+  apart from one with it; the same holds for the Inventory items linking the item.
   _Avoid_: linking document, referencing document
 - **Filestore link index** — RSpace's own record of every Filestore link in
   current document content, kept in step with the documents so that the Linked

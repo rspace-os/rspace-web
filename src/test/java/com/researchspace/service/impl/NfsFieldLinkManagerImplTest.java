@@ -20,6 +20,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
@@ -149,7 +150,7 @@ class NfsFieldLinkManagerImplTest {
     owner.setLastName("Hopper");
     hidden.setOwner(owner);
     when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
-    when(nfsDao.getDocumentsLinkingTo(1L, List.of("data/x.dat")))
+    when(nfsDao.getDocumentsLinkingTo(1L, List.of("data/x.dat"), null, null))
         .thenReturn(List.of(readable, hidden));
     when(permUtils.isPermitted(readable, PermissionType.READ, user)).thenReturn(true);
     when(permUtils.isPermitted(hidden, PermissionType.READ, user)).thenReturn(false);
@@ -166,7 +167,8 @@ class NfsFieldLinkManagerImplTest {
   @Test
   void lookupByFilestoreAssertsReadAclAndResolvesTheAbsolutePath() {
     when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
-    when(nfsDao.getDocumentsLinkingTo(1L, List.of("data/XRD/run.dat"))).thenReturn(List.of());
+    when(nfsDao.getDocumentsLinkingTo(1L, List.of("data/XRD/run.dat"), null, null))
+        .thenReturn(List.of());
 
     manager.getLinkedDocuments(1L, "/XRD/run.dat", user);
 
@@ -174,10 +176,27 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @Test
+  void lookupByFilestoreOnAPerUserLoginFilesystemSearchesFromWhereTheFilestoreBaseStarts() {
+    NfsFileStore irodsStore =
+        GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(3L, "irods", user);
+    irodsStore.setPath("/upload");
+    StructuredDocument own = TestFactory.createAnySD();
+    own.setId(11L);
+    when(nfsDao.getNfsFileStore(3L)).thenReturn(irodsStore);
+    when(nfsDao.getDocumentsLinkingTo(3L, List.of("upload/hello.txt"), user, true))
+        .thenReturn(List.of(own));
+    when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
+
+    List<RecordInformation> result = manager.getLinkedDocuments(3L, "/hello.txt", user);
+
+    assertEquals(List.of(11L), result.stream().map(RecordInformation::getId).toList());
+  }
+
+  @Test
   void rootRemotePathOfRootFilestoreResolvesToEmptyPath() {
     store.setPath("");
     when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
-    when(nfsDao.getDocumentsLinkingTo(1L, List.of(""))).thenReturn(List.of());
+    when(nfsDao.getDocumentsLinkingTo(1L, List.of(""), null, null)).thenReturn(List.of());
 
     manager.getLinkedDocuments(1L, "/", user);
   }
@@ -191,14 +210,14 @@ class NfsFieldLinkManagerImplTest {
 
     assertThrows(
         AuthorizationException.class, () -> manager.getLinkedDocuments(1L, "/a.dat", user));
-    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any());
+    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any(), any(), any());
   }
 
   @Test
   void lookupByFilesystemNormalisesEveryPath() {
     StructuredDocument readable = TestFactory.createAnySD();
     readable.setId(11L);
-    when(nfsDao.getDocumentsLinkingTo(1L, List.of("XRD", "XRD/run.dat")))
+    when(nfsDao.getDocumentsLinkingTo(1L, List.of("XRD", "XRD/run.dat"), null, null))
         .thenReturn(List.of(readable));
     when(permUtils.isPermitted(readable, PermissionType.READ, user)).thenReturn(true);
 
@@ -206,6 +225,27 @@ class NfsFieldLinkManagerImplTest {
         manager.getLinkedDocuments(store.getFileSystem(), List.of("/XRD/", "XRD/run.dat"), user);
 
     assertEquals("SD11", result.get(0).getOid().getIdString());
+  }
+
+  @Test
+  void onAPerUserLoginFilesystemOnlyTheCallersFilestoresWithAMatchingBaseAreSearched() {
+    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+    StructuredDocument fromRoot = TestFactory.createAnySD();
+    fromRoot.setId(11L);
+    StructuredDocument fromHome = TestFactory.createAnySD();
+    fromHome.setId(12L);
+    when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/hello.txt"), user, true))
+        .thenReturn(List.of(fromRoot));
+    // a path without a leading slash starts at the login's home
+    when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/other.txt"), user, false))
+        .thenReturn(List.of(fromHome));
+    when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
+        .thenReturn(true);
+
+    List<RecordInformation> result =
+        manager.getLinkedDocuments(irods, List.of("/upload/hello.txt", "upload/other.txt"), user);
+
+    assertEquals(List.of(11L, 12L), result.stream().map(RecordInformation::getId).toList());
   }
 
   @Test
@@ -217,8 +257,9 @@ class NfsFieldLinkManagerImplTest {
     newer.setId(12L);
     StructuredDocument newerAgain = TestFactory.createAnySD();
     newerAgain.setId(12L);
-    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(0, 1000))).thenReturn(List.of(newer));
-    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(1000, 1001)))
+    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(0, 1000), null, null))
+        .thenReturn(List.of(newer));
+    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(1000, 1001), null, null))
         .thenReturn(List.of(older, newerAgain));
     when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
         .thenReturn(true);
@@ -237,7 +278,7 @@ class NfsFieldLinkManagerImplTest {
     assertThrows(
         AuthorizationException.class,
         () -> manager.getLinkedDocuments(store.getFileSystem(), List.of("a.dat"), user));
-    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any());
+    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any(), any(), any());
   }
 
   @Test
