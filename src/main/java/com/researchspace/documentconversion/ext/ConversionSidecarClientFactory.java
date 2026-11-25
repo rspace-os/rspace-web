@@ -4,7 +4,8 @@ import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 /** Creates the document-conversion clients from deployment properties. */
 public final class ConversionSidecarClientFactory {
@@ -56,9 +57,10 @@ public final class ConversionSidecarClientFactory {
             settings.maxOutputBytes());
     try {
       sidecar.requireCapabilities();
-    } catch (RestClientException e) {
-      // An unreachable sidecar must not stop RSpace starting; conversions fail until it is back.
-      // A reachable service that is not a compatible sidecar still fails startup.
+    } catch (ResourceAccessException | HttpServerErrorException e) {
+      // An unreachable or failing sidecar must not stop RSpace starting; conversions fail until it
+      // is back. Any other answer (4xx, non-JSON, wrong protocol) means conversion.url names the
+      // wrong service, and still fails startup.
       LOG.warn(
           "Could not reach the conversion sidecar at startup; document conversions will fail"
               + " until it is reachable",
