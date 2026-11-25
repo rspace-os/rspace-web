@@ -121,6 +121,8 @@ providers; `setup.ts`, `browserSetup.ts` and the Storybook preview install one f
 
 In the app shell, `router.tsx` builds the provider with `appShellSessionHandlers` and puts it in `AppRouterContext` as
 `tokenProvider`; `AppEntrypoint` installs that same instance, so routes and generated calls share one provider.
+The Inventory and Gallery entry points, whose feature-flag devtools call REST API v2, install
+`new SessionTokenProvider(defaultApiV2SessionHandlers)`.
 
 `SessionTokenProvider` shares token creation across concurrent callers. It refreshes on demand only:
 `getToken` re-mints a token inside the five-minute expiry buffer, so an idle tab does no background work. It works
