@@ -12,7 +12,8 @@
   },
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
-    "postinstall": "node scripts/link-skills.mjs",
+    "postinstall": "node scripts/link-skills.mjs && pnpm run cn:build",
+    "cn:build": "cd src/main/webapp/ui && cn build --quiet --full --css src/modules/common/styles/index.css --out src/modules/common/utils/cn-tables.ts",
     "dev:docker": "./docker/dev/rspace-dev",
     "test": "cd src/main/webapp/ui && cross-env LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 NODE_OPTIONS=\"--max-old-space-size=8192\" vitest run",
     "test:ui": "cd src/main/webapp/ui && cross-env LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 NODE_OPTIONS=\"--max-old-space-size=8192\" vitest --ui",
@@ -58,6 +59,7 @@
     "@storybook/addon-vitest": "10.6.2",
     "@storybook/react-vite": "10.6.2",
     "@suspensive/react": "3.21.3",
+    "@tailwindcss/vite": "4.3.5",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.5",
@@ -93,6 +95,7 @@
     "rollup-plugin-visualizer": "7.1.1",
     "secure-json-parse": "4.1.1",
     "storybook": "10.6.2",
+    "tailwindcss": "4.3.5",
     "type-fest": "6.0.3",
     "typescript": "7.0.2",
     "url": "0.11.4",
@@ -102,12 +105,19 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
     "@codemirror/language": "6.12.4",
     "@codemirror/legacy-modes": "6.5.3",
     "@dnd-kit/core": "6.3.1",
     "@emotion/cache": "11.14.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
+    "@fontsource-variable/noto-sans": "5.3.0",
+    "@fontsource-variable/noto-sans-hk": "5.3.1",
+    "@fontsource-variable/noto-sans-jp": "5.3.1",
+    "@fontsource-variable/noto-sans-kr": "5.3.1",
+    "@fontsource-variable/noto-sans-sc": "5.3.1",
+    "@fontsource-variable/noto-sans-tc": "5.3.1",
     "@fontsource-variable/roboto": "5.3.0",
     "@fortawesome/fontawesome-svg-core": "7.3.1",
     "@fortawesome/free-regular-svg-icons": "7.3.1",
@@ -133,8 +143,11 @@
     "@tanstack/query-core": "5.101.4",
     "@tanstack/react-form": "1.33.5",
     "@tanstack/react-query": "5.101.4",
+    "@tanstack/react-router": "1.170.46",
     "@tinymce/tinymce-react": "6.3.0",
     "axios": "1.20.0",
+    "class-variance-authority": "0.7.1",
+    "cn": "0.5.2",
     "date-fns": "4.4.0",
     "decimal.js": "10.6.0",
     "dompurify": "3.4.17",
@@ -146,6 +159,7 @@
     "i18next-icu": "2.4.4",
     "i18next-resources-to-backend": "1.2.3",
     "immer": "11.1.18",
+    "input-otp": "1.5.0",
     "intl-messageformat": "11.2.14",
     "jwt-decode": "4.0.0",
     "katex": "0.18.4",
@@ -153,9 +167,11 @@
     "ketcher-react": "3.18.0",
     "ketcher-standalone": "3.18.0",
     "leaflet": "1.9.4",
+    "lucide-react": "1.72.0",
     "mobx": "6.16.1",
     "mobx-react": "9.2.2",
     "mobx-react-lite": "4.1.1",
+    "nuqs": "2.10.3",
     "pdfjs-dist": "5.4.296",
     "photoswipe": "5.4.4",
     "posthog-js": "1.438.13",
@@ -163,6 +179,7 @@
     "purify-ts": "2.1.4",
     "qr-scanner": "1.4.2",
     "react": "19.2.8",
+    "react-day-picker": "10.0.2",
     "react-device-detect": "2.2.3",
     "react-dom": "19.2.8",
     "react-i18next": "17.0.12",
@@ -170,6 +187,7 @@
     "react-leaflet": "5.0.0",
     "react-pdf": "10.5.0",
     "react-photoswipe-gallery": "4.1.2",
+    "react-resizable-panels": "4.21.0",
     "react-router": "8.3.0",
     "react-select": "5.10.2",
     "react-timeago-i18n": "2.4.0",
@@ -179,6 +197,12 @@
     "rsql-builder": "1.4.2",
     "sockjs-client": "1.6.1",
     "tinymce": "8.9.3",
-    "valibot": "1.4.2"
+    "valibot": "1.4.2",
+    "zustand": "5.1.0"
+  },
+  "intent": {
+    "skills": [
+      "@tanstack/router-core"
+    ]
   }
 }
