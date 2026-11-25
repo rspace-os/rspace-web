@@ -3,6 +3,7 @@
 export const apiV2GuaranteedReadFields = {
   containers: new Set(["id"] as const),
   instruments: new Set(["id"] as const),
+  maintenances: new Set(["id"] as const),
   users: new Set(["id"] as const),
 };
 

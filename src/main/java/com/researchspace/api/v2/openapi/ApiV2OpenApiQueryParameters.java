@@ -274,10 +274,14 @@ final class ApiV2OpenApiQueryParameters {
   }
 
   static Map<String, Object> ifMatchParameter(String description) {
+    return ifMatchParameter(true, description);
+  }
+
+  static Map<String, Object> ifMatchParameter(boolean required, String description) {
     return parameter(
         "If-Match",
         "header",
-        true,
+        required,
         ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
         description);
   }
