@@ -73,7 +73,6 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -946,20 +945,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     doc.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, 11L));
     // the document index keeps data//run.dat, another S3 key than data/run.dat
     when(nfsFieldLinkManager.getLinkedDocuments(1L, "//run.dat", user)).thenReturn(List.of(doc));
-    // an Inventory link to the single-slash key data/run.dat
-    when(inventoryLinkManager.findItemsLinkingFilestorePaths(
-            eq(store.getFileSystem()), anyCollection(), eq(user)))
-        .thenAnswer(
-            call ->
-                call.<Collection<String>>getArgument(1).contains("/data/run.dat")
-                    ? List.of(
-                        new FilestoreLinkingItem(
-                            "SA7", "Buffer A", "SAMPLE", "Ada Lovelace", "IsSourceOf"))
-                    : List.of());
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "//run.dat", user))
         .extracting(ApiGalleryFilestoreLinkedDocument::getGlobalId)
         .containsExactly("SD11");
+    verify(inventoryLinkManager)
+        .findItemsLinkingFilestorePaths(store.getFileSystem(), List.of("/data//run.dat"), user);
   }
 
   private NfsClient loginToIrodsFilestore() {
