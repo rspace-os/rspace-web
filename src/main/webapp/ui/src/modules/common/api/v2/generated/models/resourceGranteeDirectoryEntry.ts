@@ -9,9 +9,9 @@
 import type { ResourceGranteeKind } from "./resourceGranteeKind.ts";
 
 export interface ResourceGranteeDirectoryEntry {
-  detail?: string;
-  id?: number;
-  key?: string;
-  kind?: ResourceGranteeKind;
-  name?: string;
+  detail: string;
+  id: number;
+  key: string;
+  kind: ResourceGranteeKind;
+  name: string;
 }

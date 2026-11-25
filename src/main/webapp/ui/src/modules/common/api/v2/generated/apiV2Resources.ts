@@ -7,7 +7,8 @@ import type {
 } from "../apiV2Resources";
 import * as resource0 from "./containers/containers.ts";
 import * as resource1 from "./instruments/instruments.ts";
-import * as resource2 from "./users/users.ts";
+import * as resource2 from "./maintenances/maintenances.ts";
+import * as resource3 from "./users/users.ts";
 
 export const apiV2Resources = {
   containers: {
@@ -29,12 +30,25 @@ export const apiV2Resources = {
       queryKey: resource1.getGetInstrumentRuntimeFieldsQueryKey,
     },
   } satisfies ApiV2ResourceEntry<"instruments", ApiV2OperationSet>,
+  maintenances: {
+    name: "maintenances",
+    filterResource: "Maintenances",
+    list: { request: resource2.listMaintenances, queryKey: resource2.getListMaintenancesQueryKey },
+    count: { request: resource2.countMaintenances, queryKey: resource2.getCountMaintenancesQueryKey },
+    get: { request: resource2.getMaintenance, queryKey: resource2.getGetMaintenanceQueryKey },
+    create: resource2.createMaintenance,
+    update: resource2.updateMaintenance,
+    delete: resource2.deleteMaintenance,
+    createMany: resource2.createManyMaintenances,
+    updateMany: resource2.updateManyMaintenances,
+    deleteMany: resource2.deleteManyMaintenances,
+  } satisfies ApiV2ResourceEntry<"maintenances", ApiV2OperationSet>,
   users: {
     name: "users",
     filterResource: "Users",
-    list: { request: resource2.listUsers, queryKey: resource2.getListUsersQueryKey },
-    count: { request: resource2.countUsers, queryKey: resource2.getCountUsersQueryKey },
-    get: { request: resource2.getUser, queryKey: resource2.getGetUserQueryKey },
+    list: { request: resource3.listUsers, queryKey: resource3.getListUsersQueryKey },
+    count: { request: resource3.countUsers, queryKey: resource3.getCountUsersQueryKey },
+    get: { request: resource3.getUser, queryKey: resource3.getGetUserQueryKey },
   } satisfies ApiV2ResourceEntry<"users", ApiV2OperationSet>,
 };
 
@@ -60,6 +74,14 @@ export type ApiV2ResourceOperationChecks = {
       Extends<
         (typeof apiV2Resources)["instruments"]["runtimeFields"],
         ApiV2RuntimeFieldsOperation<(typeof apiV2Resources)["instruments"]["runtimeFieldNamespaces"][number]>
+      >
+    >,
+  ];
+  maintenances: [
+    Assert<
+      Extends<
+        (typeof apiV2Resources)["maintenances"]["list"],
+        ApiV2ListOperation<(typeof apiV2Resources)["maintenances"]["filterResource"]>
       >
     >,
   ];

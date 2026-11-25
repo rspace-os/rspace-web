@@ -170,11 +170,8 @@ public final class ApiV2OpenApiGenerator {
           operations.operation(resource, operation, component, resourceSchemas, referenced));
     }
     runtimeFields.addRuntimeFieldsPath(paths, resource);
-  }
-
-  private void addResourceAccessPaths(
-      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
-    new ApiV2OpenApiResourceAccessDocs(text).addResourceAccessPaths(paths, resource, component);
+    new ApiV2OpenApiResourceAccessDocs(text, referenced)
+        .addResourceAccessPaths(paths, resource, component);
   }
 
   private Map<String, Object> securitySchemes() {

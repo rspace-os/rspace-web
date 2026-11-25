@@ -97,6 +97,10 @@
           "permanent": {
             "unsupported": "This resource does not support permanent deletion."
           }
+        },
+        "maintenance": {
+          "window": "End date must be after start date.",
+          "patch": "The maintenance patch is invalid."
         }
       },
       "pagination": {

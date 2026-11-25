@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.json;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonMappingException.Reference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
@@ -30,11 +31,7 @@ public final class ApiV2JsonMappers {
     register(converter, ApiV2JsonBody.class, limited(base));
     if (strictTypes.length > 0) {
       // Bean Validation owns HTTP records' required fields and nullable patch components.
-      ObjectMapper strictBody =
-          strict(base)
-              .disable(
-                  DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
-                  DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES);
+      ObjectMapper strictBody = strict(base);
       for (Class<?> type : strictTypes) {
         register(converter, type, strictBody);
       }
@@ -65,10 +62,11 @@ public final class ApiV2JsonMappers {
     ObjectMapper mapper = limited(base);
     mapper.enable(
         DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-        DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
-        DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES,
         DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS);
-    mapper.disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT);
+    mapper.disable(
+        DeserializationFeature.ACCEPT_FLOAT_AS_INT,
+        DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,
+        DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES);
 
     MutableCoercionConfig textual = mapper.coercionConfigFor(LogicalType.Textual);
     textual.setCoercion(CoercionInputShape.Integer, CoercionAction.Fail);
@@ -89,9 +87,11 @@ public final class ApiV2JsonMappers {
   }
 
   /** Maps a strict Jackson binding failure to the API v2 validation response model. */
-  public static DocumentValidationException validationException(
-      MismatchedInputException exception) {
-    Reason reason = reason(exception);
+  public static DocumentValidationException validationException(JsonMappingException exception) {
+    Reason reason =
+        exception instanceof MismatchedInputException mismatch
+            ? reason(mismatch)
+            : Reason.INVALID_VALUE;
     String field = path(exception);
     if (exception instanceof UnrecognizedPropertyException unknown) {
       field = appendField(field, unknown.getPropertyName());
@@ -106,19 +106,10 @@ public final class ApiV2JsonMappers {
     if (exception instanceof InvalidNullException) {
       return Reason.NULL_NOT_ALLOWED;
     }
-    // Jackson reports both creator failures as MismatchedInputException without a reason code.
-    String message = exception.getOriginalMessage();
-    if (message.startsWith("Missing creator property")
-        || message.startsWith("Missing required creator property")) {
-      return Reason.REQUIRED;
-    }
-    if (message.startsWith("Null value for creator property")) {
-      return Reason.NULL_NOT_ALLOWED;
-    }
     return Reason.WRONG_TYPE;
   }
 
-  private static String path(MismatchedInputException exception) {
+  private static String path(JsonMappingException exception) {
     StringBuilder path = new StringBuilder();
     for (Reference reference : exception.getPath()) {
       if (reference.getFieldName() != null) {
