@@ -356,9 +356,6 @@ importers:
       mobx:
         specifier: 6.16.1
         version: 6.16.1
-      mobx-react:
-        specifier: 9.2.2
-        version: 9.2.2(@types/react@19.2.18)(mobx@6.16.1)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
       mobx-react-lite:
         specifier: 4.1.1
         version: 4.1.1(@types/react@19.2.18)(mobx@6.16.1)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
@@ -5724,25 +5721,6 @@ packages:
 
   mobx-react-lite@4.1.1:
     resolution: {integrity: sha512-iUxiMpsvNraCKXU+yPotsOncNNmyeS2B5DKL+TL6Tar/xm+wwNJAubJmtRSeAoYawdZqwv8Z/+5nPRHeQxTiXg==}
-    peerDependencies:
-      '@types/mobx': '*'
-      '@types/react': '*'
-      mobx: ^6.9.0
-      react: ^16.8.0 || ^17 || ^18 || ^19
-      react-dom: '*'
-      react-native: '*'
-    peerDependenciesMeta:
-      '@types/mobx':
-        optional: true
-      '@types/react':
-        optional: true
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
-
-  mobx-react@9.2.2:
-    resolution: {integrity: sha512-ShszmQzR/VrhU3M0cQ7DA/s8qNcLcF2emSuudJ/TnDILS3C1Im48mdaG6CpyjZHy8+WqgXUCC9mPqSRIwPPMuQ==}
     peerDependencies:
       '@types/mobx': '*'
       '@types/react': '*'
@@ -12838,15 +12816,6 @@ snapshots:
       mobx: 6.16.1
       react: 19.2.8
       use-sync-external-store: 1.6.0(@types/react@19.2.18)(react@19.2.8)
-    optionalDependencies:
-      '@types/react': 19.2.18
-      react-dom: 19.2.8(@types/react@19.2.18)(react@19.2.8)
-
-  mobx-react@9.2.2(@types/react@19.2.18)(mobx@6.16.1)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
-    dependencies:
-      mobx: 6.16.1
-      mobx-react-lite: 4.1.1(@types/react@19.2.18)(mobx@6.16.1)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
     optionalDependencies:
       '@types/react': 19.2.18
       react-dom: 19.2.8(@types/react@19.2.18)(react@19.2.8)
