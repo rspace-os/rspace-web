@@ -152,7 +152,7 @@ describe("ExportRepo", () => {
       ),
     );
     const zenodoThenDataverse = [
-      { ...zenodoRepoList[0], linkedDMPs: [], repoCfg: -1 },
+      { ...zenodoRepoList[0], linkedDMPs: zenodoRepoList[0].linkedDMPs as Array<Plan>, repoCfg: -1 },
       { ...repoList[0], repoName: "app.dataverse", displayName: "Dataverse", repoCfg: -1 },
     ];
     const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
@@ -305,6 +305,67 @@ describe("ExportRepo", () => {
       expect(associateSwitch).toBeChecked();
       expect(screen.getByRole("checkbox", { name: "Select plan: River survey plan" })).toBeChecked();
       expect(screen.getByRole("checkbox", { name: "Select plan: Soil survey plan" })).not.toBeChecked();
+    });
+
+    const renderThreeRepos = async () => {
+      const user = userEvent.setup();
+      const updateRepoConfig = vi.fn<(repoDetails: RepoDetails) => void>();
+      const validator = mkValidator();
+      const withPlans = (repoName: string, displayName: string) => ({
+        ...repoList[0],
+        repoName,
+        displayName,
+        linkedDMPs: plans,
+        repoCfg: -1,
+      });
+      await renderWithRealI18n(
+        <ExportRepo
+          repoDetails={{
+            ...props.repoDetails,
+            repoChoice: 0,
+            meta: {
+              ...props.repoDetails.meta,
+              title: "Survey data",
+              description: "Survey data",
+              subject: "Mathematics",
+            },
+          }}
+          repoList={[
+            withPlans("app.dryad", "Dryad"),
+            withPlans("app.dataverse", "Dataverse"),
+            { ...zenodoRepoList[0], linkedDMPs: plans, repoCfg: -1 },
+          ]}
+          state={DEFAULT_STATE}
+          updateRepoConfig={updateRepoConfig}
+          validator={validator}
+          fetchTags={props.fetchTags}
+        />,
+        { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
+      );
+      const associateSwitch = await screen.findByRole("checkbox", {
+        name: "Associate export with a Data Management Plans (DMPs)",
+      });
+      return { user, updateRepoConfig, associateSwitch, validator };
+    };
+
+    test("still sends plans ticked on Dryad after switching to Dataverse", async () => {
+      const { user, updateRepoConfig, associateSwitch } = await renderThreeRepos();
+      await user.click(associateSwitch);
+      await tick(user, "Soil survey plan");
+      await tick(user, "River survey plan");
+      await user.click(screen.getByRole("radio", { name: "Dataverse" }));
+      expect(lastSentPlans(updateRepoConfig)).toEqual([1, 2]);
+    });
+
+    test("blocks the export and explains the limit after switching to Zenodo with two plans ticked", async () => {
+      const { user, validator } = await renderThreeRepos();
+      await user.click(screen.getByRole("radio", { name: "Dataverse" }));
+      await user.click(screen.getByRole("checkbox", { name: "Associate export with a Data Management Plans (DMPs)" }));
+      await tick(user, "Soil survey plan");
+      await tick(user, "River survey plan");
+      await user.click(screen.getByRole("radio", { name: "Zenodo" }));
+      expect(await validator.isValid()).toBe(false);
+      expect(screen.getByText("Only one DMP can be associated with an export to Zenodo.")).toBeVisible();
     });
 
     test("does not send a remembered plan that is no longer listed", async () => {
