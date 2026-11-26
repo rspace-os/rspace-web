@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { BasePage } from "../BasePage";
 
 export type AuditDomain = "ELN" | "Inventory" | "Requests" | "Other";
@@ -152,7 +153,7 @@ export class AuditTrailPage extends BasePage {
   }
 
   private async columnIndex(headerName: string): Promise<number> {
-    const headers = await this.page.locator("#renderedTable").getByRole("columnheader").allInnerTexts();
+    const headers = await innerTexts(this.page.locator("#renderedTable").getByRole("columnheader"));
     const index = headers.findIndex((header) => header.trim() === headerName);
     if (index === -1) throw new Error(`columnIndex: no "${headerName}" column header found`);
     return index;

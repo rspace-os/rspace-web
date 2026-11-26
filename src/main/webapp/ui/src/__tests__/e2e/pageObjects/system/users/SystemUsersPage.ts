@@ -2,6 +2,7 @@ import { type Download, expect, type Locator } from "@playwright/test";
 import { OperateAsDialogComponent } from "@/__tests__/e2e/components/system/operate-as/OperateAsDialogComponent";
 import { GrantRevokePiRoleDialogComponent } from "@/__tests__/e2e/components/system/users/GrantRevokePiRoleDialogComponent";
 import { TagUsersDialogComponent } from "@/__tests__/e2e/components/system/users/TagUsersDialogComponent";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 export class SystemUsersPage extends BasePage {
@@ -160,10 +161,9 @@ export class SystemUsersPage extends BasePage {
   }
 
   async columnValues(field: string): Promise<string[]> {
-    return this.page
-      .getByRole("grid", { name: "users" })
-      .locator(`[role="gridcell"][data-field="${field}"]`)
-      .allInnerTexts();
+    return innerTexts(
+      this.page.getByRole("grid", { name: "users" }).locator(`[role="gridcell"][data-field="${field}"]`),
+    );
   }
 
   private async sortColumn(columnHeader: string, menuItemName: "Sort by ASC" | "Sort by DESC"): Promise<void> {

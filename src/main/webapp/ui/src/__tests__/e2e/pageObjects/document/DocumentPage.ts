@@ -15,6 +15,7 @@ import { ExportWizardComponent } from "@/__tests__/e2e/components/shared/ExportW
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { waitForWorkspaceAnimations } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { BasePage } from "../BasePage";
 
 export class DocumentPage extends BasePage {
@@ -107,7 +108,7 @@ export class DocumentPage extends BasePage {
   /** Reads an "Ontologies" field's tag list in view mode: one tag per rendered <p>. */
   async getOntologyTags(index = 0): Promise<string[]> {
     const field = await this.getFieldViewContent("Ontologies", index);
-    const lines = await field.locator("p").allInnerTexts();
+    const lines = await innerTexts(field.locator("p"));
     return lines.map((line) => line.trim()).filter((line) => line.length > 0);
   }
 

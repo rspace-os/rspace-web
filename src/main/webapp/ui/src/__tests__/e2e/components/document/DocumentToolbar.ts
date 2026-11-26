@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { ToolbarCommonActions } from "@/__tests__/e2e/components/shared/ToolbarCommonActions";
+import { textContents } from "@/__tests__/e2e/locatorTexts";
 
 export class DocumentToolbar {
   readonly saveMenuButton: Locator;
@@ -42,7 +43,7 @@ export class DocumentToolbar {
     await this.saveMenuButton.click();
     const menu = this.page.getByRole("menu").filter({ visible: true });
     await menu.getByRole("menuitem", { name: "Save", exact: true }).waitFor({ state: "visible" });
-    const actions = await menu.getByRole("menuitem").allTextContents();
+    const actions = await textContents(menu.getByRole("menuitem"));
     await menu.press("Escape");
     await menu.waitFor({ state: "hidden" });
     return actions.map((action) => action.trim());
