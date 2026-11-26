@@ -304,44 +304,45 @@ const runtimeRows = rows.map((row) => ({
 
 const prototypeI18n = i18n.cloneInstance({ forkResourceStore: true });
 
+const runtimeFieldNamespaces = ["customFields", "extraFields"];
+
+// One fake per relationship serves both namespaces in one request, as the real resource does.
 const prototypeResources = Object.fromEntries(
-  relationships.flatMap((relationship) =>
-    ["customFields", "extraFields"].map((namespace) => [
-      `${relationship.via}.${namespace}`,
-      {
-        name: relationship.resource,
-        runtimeFieldNamespaces: [namespace],
-        runtimeFieldSearch: {
-          queryKey: (params: { namespace: string[]; q: string; limit?: number }) =>
-            [`prototype/${relationship.resource}/fields`, params] as const,
-          request: async ({ namespace: names, q, limit = 20 }: { namespace: string[]; q: string; limit?: number }) => ({
-            catalogs: Object.fromEntries(
-              names.map((name) => {
-                const fields = relationship.catalog.filter(
-                  (definition) =>
-                    definition.selector.startsWith(`${name}.`) &&
-                    `${definition.label} ${definition.source.label} ${definition.id}`
-                      .toLowerCase()
-                      .includes(q.toLowerCase()),
-                );
-                const hasMore = fields.length > limit;
-                return [
-                  name,
-                  {
-                    fields: fields.slice(0, limit),
-                    hasMore,
-                    page: 1,
-                    limit,
-                    ...(hasMore ? {} : { totalFields: fields.length }),
-                  },
-                ];
-              }),
-            ),
-          }),
-        },
+  relationships.flatMap((relationship) => {
+    const resource = {
+      name: relationship.resource,
+      runtimeFieldNamespaces,
+      runtimeFieldSearch: {
+        queryKey: (params: { namespace: string[]; q: string; limit?: number }) =>
+          [`prototype/${relationship.resource}/fields`, params] as const,
+        request: async ({ namespace: names, q, limit = 20 }: { namespace: string[]; q: string; limit?: number }) => ({
+          catalogs: Object.fromEntries(
+            names.map((name) => {
+              const fields = relationship.catalog.filter(
+                (definition) =>
+                  definition.selector.startsWith(`${name}.`) &&
+                  `${definition.label} ${definition.source.label} ${definition.id}`
+                    .toLowerCase()
+                    .includes(q.toLowerCase()),
+              );
+              const hasMore = fields.length > limit;
+              return [
+                name,
+                {
+                  fields: fields.slice(0, limit),
+                  hasMore,
+                  page: 1,
+                  limit,
+                  ...(hasMore ? {} : { totalFields: fields.length }),
+                },
+              ];
+            }),
+          ),
+        }),
       },
-    ]),
-  ),
+    };
+    return runtimeFieldNamespaces.map((namespace) => [`${relationship.via}.${namespace}`, resource] as const);
+  }),
 );
 
 function UnifiedFiltersPrototype() {
