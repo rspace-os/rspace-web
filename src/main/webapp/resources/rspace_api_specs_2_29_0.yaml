@@ -4912,6 +4912,8 @@ components:
     GalleryFilestoreLinkedDocument:
       description: An ELN document linking a filestore item. `id`, `globalId` and `name` are
         absent when the caller cannot read the document; `ownerFullName` is always given.
+      required:
+        - ownerFullName
       properties:
         id:
           type: integer
