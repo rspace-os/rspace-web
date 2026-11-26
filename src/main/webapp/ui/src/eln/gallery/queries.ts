@@ -1,13 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
+import * as v from "valibot";
 import axios from "@/common/axios";
+import useOauthToken from "@/hooks/auth/useOauthToken";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 import i18n from "@/modules/common/i18n";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { getLinkedDocuments as fetchLinkedDocuments } from "@/modules/workspace/linkedRecords";
-import type { PrivateLinkedRecordsByOwner } from "@/modules/workspace/schema";
+import type { LinkedRecords, PrivateLinkedRecordsByOwner, ReadableLinkedRecord } from "@/modules/workspace/schema";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import { type GalleryFile, idToString } from "./useGalleryListing";
+import { type GalleryFile, idToString, type RemoteFile } from "./useGalleryListing";
 
 /**
  * Both desktop and mobile info panels remain mounted in the responsive layout. This keeps a
@@ -47,6 +50,8 @@ const GALLERY_FILE_PREFIX = "GL";
 export const galleryQueryKeys = {
   all: ["rspace.gallery"] as const,
   linkedDocuments: (fileId: string) => [...galleryQueryKeys.all, "linkedDocuments", fileId] as const,
+  filestoreLinkedDocuments: (filestoreId: string, remotePath: string) =>
+    [...galleryQueryKeys.all, "filestoreLinkedDocuments", filestoreId, remotePath] as const,
   referencingInventoryItems: (globalId: string | null) =>
     [...galleryQueryKeys.all, "referencingInventoryItems", globalId] as const,
 };
@@ -87,7 +92,10 @@ export type LinkedDocuments = {
  * caller cannot read. Those are surfaced as per-owner counts rather than as table rows.
  */
 async function getLinkedDocuments(fileId: number): Promise<LinkedDocuments> {
-  const { readable, privateByOwner } = await fetchLinkedDocuments(fileId);
+  return toLinkedDocuments(await fetchLinkedDocuments(fileId));
+}
+
+function toLinkedDocuments({ readable, privateByOwner }: LinkedRecords): LinkedDocuments {
   return {
     documents: readable.map(({ id, globalId, name }) => ({
       id,
@@ -98,6 +106,48 @@ async function getLinkedDocuments(fileId: number): Promise<LinkedDocuments> {
     })),
     privateByOwner,
   };
+}
+
+const FilestoreLinkedDocumentsSchema = v.array(
+  v.object({
+    id: v.optional(v.nullable(v.number())),
+    globalId: v.optional(v.nullable(v.string())),
+    name: v.optional(v.nullable(v.string())),
+    ownerFullName: v.optional(v.nullable(v.string())),
+    type: v.optional(v.nullable(v.string())),
+  }),
+);
+
+/** Rows with a `type` other than `DOCUMENT` are Inventory items, which this panel does not list. */
+async function getFilestoreLinkedDocuments(
+  filestoreId: string,
+  remotePath: string,
+  token: string,
+): Promise<LinkedDocuments> {
+  const { data } = await axios.get<unknown>(
+    `/api/v1/gallery/filestores/${filestoreId}/linkedDocuments?remotePath=${encodeURIComponent(remotePath)}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const readable: Array<ReadableLinkedRecord> = [];
+  const privateCounts = new Map<string, number>();
+  for (const row of parseOrThrow(FilestoreLinkedDocumentsSchema, data)) {
+    if (row.type != null && row.type !== "DOCUMENT") continue;
+    if (row.id != null && row.globalId) {
+      readable.push({
+        id: row.id,
+        globalId: row.globalId,
+        name: row.name ?? "",
+        ownerFullName: row.ownerFullName ?? null,
+      });
+    } else {
+      const owner = row.ownerFullName ?? "";
+      privateCounts.set(owner, (privateCounts.get(owner) ?? 0) + 1);
+    }
+  }
+  return toLinkedDocuments({
+    readable,
+    privateByOwner: Array.from(privateCounts, ([ownerFullName, count]) => ({ ownerFullName, count })),
+  });
 }
 
 /** Folders and snippets are not media files; the hardened endpoint rejects their ids outright. */
@@ -114,6 +164,19 @@ export function useLinkedDocumentsQuery(file: GalleryFile) {
     queryKey: galleryQueryKeys.linkedDocuments(idToString(fileId).orElse("")),
     queryFn: () => getLinkedDocuments(fileId as number),
     enabled: fileId !== null && isLinkableMediaFile(file),
+    retry: false,
+    staleTime: INFO_PANEL_STALE_TIME,
+  });
+}
+
+export function useFilestoreLinkedDocumentsQuery(file: RemoteFile) {
+  const { getToken } = useOauthToken();
+  const filestoreId = idToString(file.path.at(0)?.id ?? null).orElse(null);
+  const { remotePath } = file;
+  return useQuery({
+    queryKey: galleryQueryKeys.filestoreLinkedDocuments(filestoreId ?? "", remotePath),
+    queryFn: async () => getFilestoreLinkedDocuments(filestoreId as string, remotePath, await getToken()),
+    enabled: filestoreId !== null,
     retry: false,
     staleTime: INFO_PANEL_STALE_TIME,
   });
