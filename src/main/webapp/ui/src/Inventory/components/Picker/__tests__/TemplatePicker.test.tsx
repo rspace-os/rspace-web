@@ -6,7 +6,6 @@ import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore
 import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import TemplatePicker from "../TemplatePicker";
-import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, type Mock, test, vi } from "vitest";

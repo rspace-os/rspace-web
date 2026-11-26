@@ -1,5 +1,4 @@
 import "@/stores/stores/RootStore";
-import "@/__tests__/__mocks__/resizeObserver";
 import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, within } from "@testing-library/react";

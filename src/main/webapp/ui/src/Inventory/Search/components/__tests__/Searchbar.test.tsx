@@ -9,8 +9,6 @@ import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
 import Searchbar from "../Searchbar";
 
-import "@/__tests__/__mocks__/resizeObserver";
-
 describe("Searchbar", () => {
   test("If lots of text is entered then the expanded field dialog it available.", async () => {
     const user = userEvent.setup();
