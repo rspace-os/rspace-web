@@ -641,9 +641,22 @@ public class AsyncDepositorImplTest {
 
     String planMessage = planNotificationFor(results);
 
+    assertThat(planMessage).contains("to the plans you selected.");
     for (int i = 0; i < 12; i++) {
       assertThat(planMessage).contains("xplan " + i + " (DMPTool)");
     }
+  }
+
+  @Test
+  void introNamesASinglePlan() throws Exception {
+    String planMessage =
+        planNotificationFor(
+            List.of(
+                reported(
+                    "A plan", new ValueOutcome(IDENTIFIER, "https://doi.org/10.1/x", true, null))));
+
+    assertThat(planMessage)
+        .contains("RSpace tried to add your deposit on \"Dataverse\" to the plan you selected.");
   }
 
   private String planNotificationFor(List<PlanReportResult> results) throws Exception {
@@ -726,8 +739,29 @@ public class AsyncDepositorImplTest {
     Mockito.verify(comm, Mockito.times(2))
         .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
     assertEquals(
+        "RSpace could not update the plan you selected after your deposit on"
+            + " \"Data&lt;verse&gt;\". You can add the deposit to it by hand.",
+        messages.getAllValues().get(1).trim());
+  }
+
+  @Test
+  void writeBackErrorForTwoTickedPlansNamesThePlans() throws Exception {
+    when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L, 2L))))
+        .thenThrow(new IllegalStateException("boom"));
+
+    depositor.postDeposit(
+        new RepositoryOperationResult(true, "done", null, new URL("https://doi.org/1/x")),
+        new App(APP_DATAVERSE, "Dataverse", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DATAVERSE, 1L, 2L));
+
+    ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+    Mockito.verify(comm, Mockito.times(2))
+        .systemNotify(Mockito.any(), messages.capture(), Mockito.any(), Mockito.anyBoolean());
+    assertEquals(
         "RSpace could not update the plans you selected after your deposit on"
-            + " \"Data&lt;verse&gt;\". You can add the deposit to them by hand.",
+            + " \"Dataverse\". You can add the deposit to them by hand.",
         messages.getAllValues().get(1).trim());
   }
 

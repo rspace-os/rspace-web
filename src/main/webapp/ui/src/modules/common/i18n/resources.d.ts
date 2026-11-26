@@ -6723,7 +6723,7 @@ export default interface Resources {
         "dmpUpdateCompleteNotification": {
           "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>.",
           "failedNoValue": "The plan could not be updated. {0}",
-          "intro": "RSpace tried to add your deposit on \"{0}\" to the plans you selected.",
+          "intro": "RSpace tried to add your deposit on \"{0}\" to {1, plural, one {the plan you selected} other {the plans you selected}}.",
           "notConnected": "{0} is not connected, so the plan was not updated.",
           "notSupported": "RSpace cannot yet update plans on {0}.",
           "nothingToSend": "{0} returned no DOI and no link, so nothing was added.",
@@ -6732,7 +6732,7 @@ export default interface Resources {
           "repositoryLink": "You can open your deposit on {0} at <a href=\"{1}\">{1}</a>.",
           "unexpectedError": "An unexpected error occurred.",
           "unknownSource": "RSpace does not know which service this plan came from, so it was not updated.",
-          "updateFailed": "RSpace could not update the plans you selected after your deposit on \"{0}\". You can add the deposit to them by hand.",
+          "updateFailed": "RSpace could not update {1, plural, one {the plan you selected} other {the plans you selected}} after your deposit on \"{0}\". You can add the deposit to {1, plural, one {it} other {them}} by hand.",
           "valueFailed": "<a href=\"{0}\">{0}</a> could not be added. {1} You can add this link to the plan by hand.",
           "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."
         },

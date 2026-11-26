@@ -251,7 +251,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       planResults = dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
     } catch (RuntimeException e) {
       log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
-      notifyDmpUpdateFailed(app.getLabel(), subject);
+      notifyDmpUpdateFailed(app.getLabel(), repoDepositConfig.getSelectedDMPs().size(), subject);
       return;
     }
     try {
@@ -265,11 +265,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     }
   }
 
-  private void notifyDmpUpdateFailed(String repositoryName, User subject) {
+  private void notifyDmpUpdateFailed(String repositoryName, int planCount, User subject) {
     try {
       String msg =
           messages.format(
-              DMP_NOTIFICATION_KEY + "updateFailed", List.of(escapeHtml(repositoryName)));
+              DMP_NOTIFICATION_KEY + "updateFailed",
+              List.of(escapeHtml(repositoryName), planCount));
       commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
     } catch (RuntimeException e) {
       log.error("Notifying that plans could not be updated after a deposit failed", e);
@@ -410,6 +411,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("repoLink", repositoryLink == null ? null : escapeHtml4(repositoryLink.toString()));
     config.put("msg", messages);
     config.put("plans", plans);
+    config.put("planCount", planResults.size());
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "dmpUpdateCompleteNotification.vm", "UTF-8", config);

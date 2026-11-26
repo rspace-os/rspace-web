@@ -1,4 +1,4 @@
-$msg.format("email.notification.dmpUpdateCompleteNotification.intro", [$repo])
+$msg.format("email.notification.dmpUpdateCompleteNotification.intro", [$repo, $planCount])
 <ul>
 #foreach($plan in $plans)
 <li>$plan.heading<br/>$plan.outcome</li>
