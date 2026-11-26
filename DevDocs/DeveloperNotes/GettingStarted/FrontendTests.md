@@ -141,7 +141,7 @@ Be sure to also run Biome (`pnpm run lint`) and type checking over any new or mo
 
 ### Shared test setup
 
-`src/__tests__/setup.ts`, `src/__tests__/browserSetup.ts` and `.storybook/preview.tsx` run before every jsdom test file, every Browser Mode spec and every story, so anything they import is loaded everywhere. Keep them feature-neutral: they may import the i18n singleton, the REST API v2 token provider and the global styles, but no other module under `src/modules/` and no `.json` catalog. A Biome `noRestrictedImports` override in `biome.jsonc` enforces this.
+`src/__tests__/setup.ts`, `src/__tests__/browserSetup.ts` and `.storybook/preview.tsx` run before every jsdom test file, every Browser Mode spec and every story, so anything they import is loaded everywhere. Keep them feature-neutral: they may import the i18n singleton, the REST API v2 token provider and the global styles, but nothing else under `src/modules/`, which includes the `.json` catalogs in `common/i18n/locales/`. A Biome `noRestrictedImports` override in `biome.jsonc` enforces this.
 
 Load a feature's test catalog or fixtures from the spec, story or fixture that renders them, through `registerTestCatalog()` (see [i18n](../i18n.md)). This keeps each test's dependencies visible, so a test cannot pass only because setup happened to load what it needs; it keeps test-only translation keys out of unrelated suites and the Storybook bundle; and a change in one feature cannot break the tests of another.
 

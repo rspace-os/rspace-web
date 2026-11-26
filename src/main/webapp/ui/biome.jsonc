@@ -78,21 +78,15 @@
                     "group": [
                       "@/modules/**",
                       "../src/modules/**",
-                      // The relative form from src/__tests__/.
                       "../modules/**",
                       // The i18n singleton, the REST API v2 token provider and the global styles are shared start-up, not feature code.
                       "!@/modules/common/i18n",
-                      "!@/modules/common/i18n/**",
                       "!@/modules/common/api/v2/tokenProvider",
-                      "!../src/modules/common/i18n/**",
                       "!../src/modules/common/api/v2/tokenProvider",
-                      "!../src/modules/common/styles/**"
+                      "!../src/modules/common/i18n/I18nRoot",
+                      "!../src/modules/common/styles/index.css"
                     ],
                     "message": "Shared test setup must stay feature-neutral. Import a feature's catalog or fixtures from the spec, story or fixture that needs them."
-                  },
-                  {
-                    "group": ["**/*.json"],
-                    "message": "Shared test setup must not load catalogs. Register a test catalog from the feature that uses it."
                   }
                 ]
               }
