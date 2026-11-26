@@ -26,7 +26,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
           label: t("calendar.availability"),
           minWidth: 320,
           width: 320,
-          card: { fullWidth: true },
+          item: { fullWidth: true },
           renderCell: (row) => {
             const target = row.target;
             if (!target || !row.timezone) return t("calendar.availabilityUnavailable");
