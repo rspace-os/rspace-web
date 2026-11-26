@@ -77,7 +77,8 @@ public class DmpPlatformStatusResolver {
       case DMP_ONLINE ->
           info.getOptions().containsKey(DMPONLINE_USER_TOKEN)
               && !"".equals(info.getOptions().get(DMPONLINE_USER_TOKEN));
-      default -> true;
+      case ARGOS, DSW -> true;
+      case UNKNOWN -> throw new IllegalArgumentException("A plan's platform is unknown");
     };
   }
 }

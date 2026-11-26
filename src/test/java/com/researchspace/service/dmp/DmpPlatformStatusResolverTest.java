@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus.NOT_CONNECTED;
 import static com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus.OK;
 import static com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus.PLATFORM_OFF;
@@ -101,10 +102,11 @@ class DmpPlatformStatusResolverTest {
     assertEquals(OK, resolver.resolve(DMPSource.DMP_ONLINE, user));
   }
 
-  @Test
-  void argosIsNeverNotConnected() {
-    stub(ARGOS_APP_NAME, info(true, true, false));
-    assertEquals(OK, resolver.resolve(DMPSource.ARGOS, user));
+  @ParameterizedTest
+  @CsvSource({"ARGOS, " + ARGOS_APP_NAME, "DSW, " + DSW_APP_NAME})
+  void platformWithoutUserConnectionIsNeverNotConnected(DMPSource source, String integration) {
+    stub(integration, info(true, true, false));
+    assertEquals(OK, resolver.resolve(source, user));
   }
 
   private void stub(String integration, IntegrationInfo info) {
