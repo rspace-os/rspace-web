@@ -389,12 +389,14 @@ function UnifiedFiltersPrototype() {
               rows={runtimeRows}
               getRowId={(row) => row.id}
               clientSide
-              runtimeFieldDefinitions={runtimeFieldDefinitions}
-              runtimeFieldAuthScope="unified-filters-prototype"
-              onSelectRuntimeField={(namespace, definition) => {
-                const selector = `${namespace}.${definition.id}`;
-                setSelectedFields((current) => (current.includes(selector) ? current : [...current, selector]));
+              runtimeFields={{
+                definitions: runtimeFieldDefinitions,
+                onSelect: (namespace, definition) => {
+                  const selector = `${namespace}.${definition.id}`;
+                  setSelectedFields((current) => (current.includes(selector) ? current : [...current, selector]));
+                },
               }}
+              authScope="unified-filters-prototype"
               features={{
                 filtering: { value: filters, onChange: setFilters },
                 sorting: false,
