@@ -14,10 +14,10 @@
 export type ColorMode = "light" | "dark" | "system";
 
 /**
- * Pages that can render dark: those rendered entirely by React, and JSP pages
- * that load dark overrides for their legacy styles (see
- * `styles/dark/legacy-dark.css`). Other JSP pages stay light, and so do the
- * MUI elements embedded in them.
+ * Pages rendered entirely by React, which have no JSP decorator. Decorated
+ * JSP pages opt in through `common/legacyDarkMode.jsp`, which marks <html>
+ * with `data-dark-mode`. Anything else, such as bare JSP pages without the
+ * decorator, stays light, and so do the MUI elements embedded in it.
  */
 const DARK_MODE_PATHS = [
   /^\/gallery(\/|$)/,
@@ -26,14 +26,15 @@ const DARK_MODE_PATHS = [
   /^\/public\/inventory\//,
   /^\/apps$/,
   /^\/about(\/|$)/,
-  /^\/workspace(\/\d+)?\/?$/,
 ];
 
 export function isDarkModePath(pathname: string): boolean {
   return DARK_MODE_PATHS.some((path) => path.test(pathname));
 }
 
-export const darkModeAvailable: boolean = typeof window !== "undefined" && isDarkModePath(window.location.pathname);
+export const darkModeAvailable: boolean =
+  typeof window !== "undefined" &&
+  (isDarkModePath(window.location.pathname) || document.documentElement.hasAttribute("data-dark-mode"));
 
 export const MUI_MODE_STORAGE_KEY = "mui-mode";
 const DS_THEME_STORAGE_KEY = "rspace-ds-theme";

@@ -1,11 +1,13 @@
 <%--
-  Opts a legacy page into dark mode. Include it in the page's <head>, link
-  the page's own dark overrides after it, and add the page's path to
-  DARK_MODE_PATHS in ui/src/colorScheme.ts.
+  Puts a legacy page into dark mode when the user's mode is dark. Both page
+  decorators include it after the page's own <head> content, so every
+  decorated JSP page can render dark. Page-specific overrides live in
+  styles/dark/ and are scoped to html.dark.
 
   The script applies the stored mode before first paint, so the page does not
-  flash light while the React bundles load. colorScheme.ts takes over once
-  they do; the two must agree on the `mui-mode` key and its values.
+  flash light while the React bundles load, and marks <html> with
+  data-dark-mode so ui/src/colorScheme.ts lets the page's React roots follow.
+  The two must agree on the `mui-mode` key and its values.
 --%>
 <script>
   (function () {
@@ -19,6 +21,8 @@
       mode === "dark" ||
       (mode !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.classList.add(dark ? "dark" : "light");
+    document.documentElement.setAttribute("data-dark-mode", "");
   })();
 </script>
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/dark/legacy-generated.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/dark/legacy-dark.css'/>" />

@@ -301,6 +301,7 @@ function initReadOnlyTinyMCE(textareas) {
     textareas$.tinymce({
       selector: "",
       theme: "silver",
+      skin: RS.tinymceSkin(),
       width: "800px",
       plugins: [
         "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
@@ -353,6 +354,7 @@ function initSoftTinyMCE() {
   $('textarea.tempform').tinymce({
     selector: "",
     theme: "silver",
+    skin: RS.tinymceSkin(),
     width: "800px",
     plugins: [
       "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
@@ -379,6 +381,7 @@ function initSpecificTinyMCE(id) {
 
     $(objt).tinymce({
       theme: "silver",
+      skin: RS.tinymceSkin(),
       width: "800px",
       plugins: [
         "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",

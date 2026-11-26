@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
 
     <sitemesh:write property='head'/>
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 
     <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
 

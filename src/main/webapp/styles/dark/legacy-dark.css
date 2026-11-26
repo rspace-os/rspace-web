@@ -1,10 +1,9 @@
 /*
- * Dark overrides for the styles every legacy (JSP) page shares: the page
- * itself, Bootstrap, and jQuery UI. A JSP page opts in by including
- * common/legacyDarkMode.jsp (which sets the `dark` class on <html> before
- * first paint and links this file), linking its own page overrides, and
- * adding its path to DARK_MODE_PATHS in ui/src/colorScheme.ts so the React
- * roots and the toggle follow. The include and the path list must agree.
+ * Hand-written dark overrides for the legacy (JSP) pages. Both page
+ * decorators include common/legacyDarkMode.jsp, which sets the `dark` class
+ * on <html> before first paint and loads legacy-generated.css and then this
+ * file. legacy-generated.css is derived from the legacy stylesheets by
+ * scripts/generate-legacy-dark-css.mjs; this file adjusts what it gets wrong.
  *
  * The colours match the dark MUI palette in ui/src/theme.ts. Some legacy
  * rules use !important, so the overrides for those properties must too.
@@ -33,9 +32,21 @@ html.dark body {
   color: var(--rs-dark-text);
 }
 /* MUI elements embedded in the page style themselves, so element rules skip them. */
-html.dark a[href]:not([class*="Mui"]),
+html.dark a[href]:not([class*="Mui"], :where(.textFieldViewModeDiv, .journalPageContent) *),
 html.dark div#footer a {
   color: var(--rs-dark-link);
+}
+
+/*
+ * User-authored rich text stays light, like paper, because its content
+ * carries its own colours (text pasted from Word is often explicitly black).
+ * Must match USER_CONTENT in scripts/generate-legacy-dark-css.mjs.
+ */
+html.dark .textFieldViewModeDiv,
+html.dark .journalPageContent {
+  background-color: #fff;
+  color: #444;
+  color-scheme: light;
 }
 html.dark #footer,
 html.dark #footer .version {
@@ -164,10 +175,10 @@ html.dark .fileTreeBrowserPanel .fancytree-node.fancytree-selected .fancytree-ti
 html.dark .fileTreeBrowserPanel .fancytree-node .fancytree-expander {
   filter: invert(1);
 }
+/* The generated rules darken the blue behind the active entry. */
 html.dark span.fancytree-active span.fancytree-title,
 html.dark .fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
-  background: var(--rs-dark-link);
-  color: var(--rs-dark-on-link);
+  color: #fff;
 }
 
 /* jqueryFileTree (the Move dialog's folder picker sets its background inline) */
@@ -181,13 +192,6 @@ html.dark ul.jqueryFileTree a {
 }
 html.dark ul.jqueryFileTree a:hover {
   background: var(--rs-dark-hover);
-}
-
-/* Search and folder status banners keep their colours; white text fails on them. */
-
-html.dark #searchModePanel,
-html.dark .panel .directoryMsg {
-  color: #000;
 }
 
 /*
@@ -218,4 +222,17 @@ html.dark .crudopsTopPanel ul a.link:hover {
   background-color: var(--rs-dark-link);
   color: var(--rs-dark-on-link);
   border-color: var(--rs-dark-link);
+}
+
+/* My RSpace section tiles: the icons are bitmaps drawn on white. */
+
+html.dark #menuMover .menuInnerPanelIcon {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+/* Revision history search button: its colours are set inline. */
+
+html.dark #revisionSearch {
+  background-color: #3d5a73 !important;
+  border-color: #3d5a73 !important;
 }

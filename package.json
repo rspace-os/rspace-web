@@ -27,6 +27,8 @@
     "format": "cd src/main/webapp/ui && biome format --write .",
     "lint:ci": "cd src/main/webapp/ui && biome ci --error-on-warnings --diagnostic-level=info .",
     "biome": "cd src/main/webapp/ui && biome",
+    "css:legacy-dark": "node scripts/generate-legacy-dark-css.mjs",
+    "css:legacy-dark:check": "node scripts/generate-legacy-dark-css.mjs --check",
     "i18n:extract": "cd src/main/webapp/ui && i18next-cli extract",
     "i18n:check": "cd src/main/webapp/ui && i18next-cli extract --ci",
     "i18n:status": "cd src/main/webapp/ui && i18next-cli status",

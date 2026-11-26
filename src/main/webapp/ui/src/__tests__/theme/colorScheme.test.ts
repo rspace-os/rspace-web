@@ -2,19 +2,31 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { isDarkModePath, MUI_MODE_STORAGE_KEY } from "@/colorScheme";
 
 describe("isDarkModePath", () => {
-  it.each(["/gallery", "/inventory/search", "/apps", "/workspace", "/workspace/", "/workspace/123"])(
-    "allows %s",
-    (path) => {
-      expect(isDarkModePath(path)).toBe(true);
-    },
-  );
+  it.each(["/gallery", "/inventory/search", "/apps", "/about"])("allows %s", (path) => {
+    expect(isDarkModePath(path)).toBe(true);
+  });
 
-  it.each(["/workspace/editor/structuredDocument/32", "/workspace/trash/list", "/userform", "/apps/foo"])(
-    "keeps %s light",
-    (path) => {
-      expect(isDarkModePath(path)).toBe(false);
-    },
-  );
+  it.each(["/workspace", "/userform", "/apps/foo"])("leaves %s to the JSP decorator", (path) => {
+    expect(isDarkModePath(path)).toBe(false);
+  });
+});
+
+describe("darkModeAvailable", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+    document.documentElement.removeAttribute("data-dark-mode");
+    vi.resetModules();
+  });
+
+  it("follows the marker the JSP decorator sets", async () => {
+    window.history.pushState({}, "", "/userform");
+    vi.resetModules();
+    expect((await import("@/colorScheme")).darkModeAvailable).toBe(false);
+
+    document.documentElement.setAttribute("data-dark-mode", "");
+    vi.resetModules();
+    expect((await import("@/colorScheme")).darkModeAvailable).toBe(true);
+  });
 });
 
 describe("setColorMode", () => {

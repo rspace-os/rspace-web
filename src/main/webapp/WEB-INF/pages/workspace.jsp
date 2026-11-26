@@ -37,7 +37,6 @@
   <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
-  <%@ include file="/common/legacyDarkMode.jsp"%>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dark.css'/>" />
 
   <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>

@@ -29,6 +29,7 @@
 		</script>
 		<rst:i18nMessages />
 		<sitemesh:write property='head'/>
+		<%@ include file="/common/legacyDarkMode.jsp"%>
 	</head>
 
 	<jsp:include page="/scripts/templates/blockUI.html"/>
