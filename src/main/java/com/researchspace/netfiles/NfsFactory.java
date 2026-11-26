@@ -1,8 +1,10 @@
 package com.researchspace.netfiles;
 
 import com.researchspace.model.UserKeyPair;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.irods.IRODSClient;
@@ -14,6 +16,9 @@ import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -219,23 +224,43 @@ public class NfsFactory {
   }
 
   /**
-   * Whether the file system's client reads a path as the same file with or without its leading
-   * slash. Only SMB clients do: jcifs always puts a slash in front of a path without one, and SMBJ
-   * reads both alike unless the server URL names a folder after the share without a trailing slash,
-   * which it then glues to a path without the slash. A jcifs file system handing downloads to SMBJ
-   * follows the SMBJ rule.
+   * The leading-slash spellings of an absolute path (a filestore's path followed by an item's path)
+   * that the file system's client opens as the same file as the path's own spelling. SMBJ can strip
+   * a first folder named like the share, or glue the folder the server URL names after the share to
+   * a path without a separator, so it is asked; jcifs puts a slash in front of any path, and hands
+   * downloads to SMBJ when so configured. Elsewhere, as on SFTP and iRODS, a path starting with a
+   * slash is read apart from one without.
    */
-  public boolean readsPathsAlikeWithOrWithoutLeadingSlash(NfsFileSystem fileSystem) {
+  public Set<LeadingSlashes> spellingsOfTheSameFile(NfsFileSystem fileSystem, String absolutePath) {
     if (NfsClientType.SMBJ.equals(fileSystem.getClientType())) {
-      return SmbjClient.readsPathsAlikeWithOrWithoutLeadingSlash(
-          fileSystem.getUrl(), fileSystem.getClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME));
+      return smbjSpellingsOfTheSameFile(
+          fileSystem.getUrl(),
+          fileSystem.getClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME),
+          absolutePath);
     }
     if (NfsClientType.SAMBA.equals(fileSystem.getClientType())) {
-      return !Boolean.TRUE.equals(smbjDownload)
-          || SmbjClient.readsPathsAlikeWithOrWithoutLeadingSlash(
-              fileSystem.getUrl(), smbjShareName);
+      return Boolean.TRUE.equals(smbjDownload)
+          ? smbjSpellingsOfTheSameFile(fileSystem.getUrl(), smbjShareName, absolutePath)
+          : EnumSet.allOf(LeadingSlashes.class);
     }
-    return false;
+    return LeadingSlashes.of(absolutePath) == LeadingSlashes.NONE
+        ? EnumSet.of(LeadingSlashes.NONE)
+        : EnumSet.of(LeadingSlashes.ONE, LeadingSlashes.MORE);
+  }
+
+  private static Set<LeadingSlashes> smbjSpellingsOfTheSameFile(
+      String serverUrl, String shareName, String absolutePath) {
+    String path = NfsFieldLink.normalisePath(absolutePath);
+    LeadingSlashes own = LeadingSlashes.of(absolutePath);
+    String opened = SmbjClient.pathOnShare(serverUrl, shareName, own.spell(path));
+    if (opened == null) {
+      return EnumSet.of(own);
+    }
+    return EnumSet.allOf(LeadingSlashes.class).stream()
+        .filter(
+            spelling ->
+                opened.equals(SmbjClient.pathOnShare(serverUrl, shareName, spelling.spell(path))))
+        .collect(Collectors.toCollection(() -> EnumSet.noneOf(LeadingSlashes.class)));
   }
 
   private void verifyFileSystemProperties(NfsFileSystem fileSystem) {

@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.NfsFactory;
@@ -32,13 +33,13 @@ import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -222,58 +223,37 @@ class InventoryLinkManagerImplFilestoreLookupTest {
         .containsExactly("IC3", "SA2", "SA10");
   }
 
-  @ParameterizedTest
-  @EnumSource(names = {"SFTP", "IRODS", "SMBJ"})
-  void whereTheSlashCanNameAnotherFileOnlyTheActorsFilestoresWithAMatchingBaseAreSearched(
-      NfsClientType clientType) {
+  @Test
+  void perUserLoginLookupsMatchOnlyTheSpellingsTheClientOpensAsTheSameFile() {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
-    fs.setClientType(clientType);
-    ExtraLinkField fromRoot =
+    fs.setClientType(NfsClientType.SMBJ);
+    when(nfsFactory.spellingsOfTheSameFile(fs, "/share/run.dat"))
+        .thenReturn(EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE));
+    when(nfsFactory.spellingsOfTheSameFile(fs, "//share/run.dat"))
+        .thenReturn(EnumSet.of(LeadingSlashes.MORE));
+    ExtraLinkField viaShare =
         extraField(
             readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
-    ExtraLinkField fromHome =
+    ExtraLinkField viaFolderNamedLikeTheShare =
         extraField(
             readable("SA2", "Rerun", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
-    List<String> rooted = List.of("data/XRD/run.dat");
-    List<String> underHome = List.of("data/XRD/rerun.dat");
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, rooted, actor, true))
-        .thenReturn(List.of(fromRoot));
-    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, rooted, actor, true))
+    List<String> path = List.of("share/run.dat");
+    Set<LeadingSlashes> stripped = EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE);
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, path, actor, stripped))
+        .thenReturn(List.of(viaShare));
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, path, actor, stripped))
         .thenReturn(List.of());
-    // a path without a leading slash can start at the login's home or the server URL's folder
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
-        .thenReturn(List.of(fromHome));
-    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
+    Set<LeadingSlashes> kept = EnumSet.of(LeadingSlashes.MORE);
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, path, actor, kept))
+        .thenReturn(List.of(viaFolderNamedLikeTheShare));
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, path, actor, kept))
         .thenReturn(List.of());
 
     assertThat(
             manager.findItemsLinkingFilestorePaths(
-                fs, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+                fs, List.of("/share/run.dat", "//share/run.dat"), actor))
         .extracting(FilestoreLinkingItem::globalId)
         .containsExactly("SA1", "SA2");
-  }
-
-  @ParameterizedTest
-  @EnumSource(names = {"SAMBA", "SMBJ"})
-  void whereSmbReadsBothSpellingsAlikeOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(
-      NfsClientType clientType) {
-    NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
-    smb.setClientType(clientType);
-    when(nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(smb)).thenReturn(true);
-    ExtraLinkField own =
-        extraField(
-            readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
-    List<String> paths = List.of("data/XRD/run.dat", "data/XRD/rerun.dat");
-    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, paths, actor, null))
-        .thenReturn(List.of(own));
-    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, paths, actor, null))
-        .thenReturn(List.of());
-
-    assertThat(
-            manager.findItemsLinkingFilestorePaths(
-                smb, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
-        .extracting(FilestoreLinkingItem::globalId)
-        .containsExactly("SA1");
   }
 
   @Test

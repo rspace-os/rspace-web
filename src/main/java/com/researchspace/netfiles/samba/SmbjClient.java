@@ -10,6 +10,7 @@ import com.hierynomus.protocol.commons.EnumWithValue;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
+import com.hierynomus.smbj.common.SmbPath;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
@@ -351,22 +352,21 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   private static final String SMBJ_PATH_SEPARATOR = "/";
 
   /**
-   * Whether a path names the same file with or without its leading slash: when the server URL names
-   * no folder after the share, or ends with a slash, as a doubled separator reads as one. Not when
-   * it names a folder without a trailing slash, as that folder is then glued to a path without the
-   * slash. False for a URL that cannot be parsed.
+   * The path on the share that this client opens for a filesystem path, as SMBJ sends it, with runs
+   * of separators collapsed as the server reads them; null for a URL that cannot be parsed.
    */
-  public static boolean readsPathsAlikeWithOrWithoutLeadingSlash(
-      String serverUrl, String shareName) {
+  public static String pathOnShare(String serverUrl, String shareName, String path) {
     try {
       String share =
           shareName == null ? "" : StringUtils.removeStart(shareName, SMBJ_PATH_SEPARATOR);
       String afterShareName =
           calculateAfterShareNamePath(SambaUtils.parseSambaUrl(serverUrl).getPath(), share);
-      return afterShareName.isEmpty() || afterShareName.endsWith("\\");
+      String sent =
+          new SmbPath("", share, remotePathWithoutShareName(share, afterShareName, path)).getPath();
+      return StringUtils.removeEnd(sent == null ? "" : sent.replaceAll("\\\\+", "\\\\"), "\\");
     } catch (MalformedURLException e) {
       log.warn("couldn't parse SMB serverUrl: {}", serverUrl, e);
-      return false;
+      return null;
     }
   }
 
@@ -396,6 +396,11 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   }
 
   protected String getRemotePathWithoutShareName(String fpath) {
+    return remotePathWithoutShareName(shareName, afterShareNamePath, fpath);
+  }
+
+  private static String remotePathWithoutShareName(
+      String shareName, String afterShareNamePath, String fpath) {
     /*
      * path passed from file tree navigation (SambaClient) may have different
      * format, depending on serverURL. it may be absolute path (including share

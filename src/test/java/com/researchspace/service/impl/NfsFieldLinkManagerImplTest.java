@@ -17,6 +17,7 @@ import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
@@ -32,14 +33,13 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -189,7 +189,13 @@ class NfsFieldLinkManagerImplTest {
     StructuredDocument own = TestFactory.createAnySD();
     own.setId(11L);
     when(nfsDao.getNfsFileStore(3L)).thenReturn(sftpStore);
-    when(nfsDao.getDocumentsLinkingTo(3L, List.of("upload/hello.txt"), user, true))
+    when(nfsFactory.spellingsOfTheSameFile(sftpStore.getFileSystem(), "/upload/hello.txt"))
+        .thenReturn(EnumSet.of(LeadingSlashes.ONE, LeadingSlashes.MORE));
+    when(nfsDao.getDocumentsLinkingTo(
+            3L,
+            List.of("upload/hello.txt"),
+            user,
+            EnumSet.of(LeadingSlashes.ONE, LeadingSlashes.MORE)))
         .thenReturn(List.of(own));
     when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
 
@@ -233,48 +239,38 @@ class NfsFieldLinkManagerImplTest {
     assertEquals("SD11", result.get(0).getOid().getIdString());
   }
 
-  @ParameterizedTest
-  @EnumSource(names = {"SFTP", "IRODS", "SMBJ"})
-  void whereTheSlashCanNameAnotherFileOnlyTheCallersFilestoresWithAMatchingBaseAreSearched(
-      NfsClientType clientType) {
+  @Test
+  void perUserLoginLookupsMatchOnlyTheSpellingsTheClientOpensAsTheSameFile() {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
-    fs.setClientType(clientType);
-    StructuredDocument fromRoot = TestFactory.createAnySD();
-    fromRoot.setId(11L);
-    StructuredDocument fromHome = TestFactory.createAnySD();
-    fromHome.setId(12L);
-    when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/hello.txt"), user, true))
-        .thenReturn(List.of(fromRoot));
-    // a path without a leading slash can start at the login's home or the server URL's folder
-    when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/other.txt"), user, false))
-        .thenReturn(List.of(fromHome));
+    fs.setClientType(NfsClientType.SMBJ);
+    when(nfsFactory.spellingsOfTheSameFile(fs, "/upload/hello.txt"))
+        .thenReturn(EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE));
+    when(nfsFactory.spellingsOfTheSameFile(fs, "share/report.txt"))
+        .thenReturn(EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE));
+    when(nfsFactory.spellingsOfTheSameFile(fs, "//share/report.txt"))
+        .thenReturn(EnumSet.of(LeadingSlashes.MORE));
+    StructuredDocument viaShare = TestFactory.createAnySD();
+    viaShare.setId(11L);
+    StructuredDocument viaFolderNamedLikeTheShare = TestFactory.createAnySD();
+    viaFolderNamedLikeTheShare.setId(12L);
+    // paths with the same spellings share one query
+    when(nfsDao.getDocumentsLinkingTo(
+            2L,
+            List.of("upload/hello.txt", "share/report.txt"),
+            user,
+            EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE)))
+        .thenReturn(List.of(viaShare));
+    when(nfsDao.getDocumentsLinkingTo(
+            2L, List.of("share/report.txt"), user, EnumSet.of(LeadingSlashes.MORE)))
+        .thenReturn(List.of(viaFolderNamedLikeTheShare));
     when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
         .thenReturn(true);
 
     List<RecordInformation> result =
-        manager.getLinkedDocuments(fs, List.of("/upload/hello.txt", "upload/other.txt"), user);
+        manager.getLinkedDocuments(
+            fs, List.of("/upload/hello.txt", "share/report.txt", "//share/report.txt"), user);
 
     assertEquals(List.of(11L, 12L), result.stream().map(RecordInformation::getId).toList());
-  }
-
-  @ParameterizedTest
-  @EnumSource(names = {"SAMBA", "SMBJ"})
-  void whereSmbReadsBothSpellingsAlikeOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(
-      NfsClientType clientType) {
-    NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
-    smb.setClientType(clientType);
-    when(nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(smb)).thenReturn(true);
-    StructuredDocument own = TestFactory.createAnySD();
-    own.setId(11L);
-    when(nfsDao.getDocumentsLinkingTo(
-            2L, List.of("upload/hello.txt", "upload/other.txt"), user, null))
-        .thenReturn(List.of(own));
-    when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
-
-    List<RecordInformation> result =
-        manager.getLinkedDocuments(smb, List.of("/upload/hello.txt", "upload/other.txt"), user);
-
-    assertEquals(List.of(11L), result.stream().map(RecordInformation::getId).toList());
   }
 
   @Test

@@ -7,6 +7,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,14 +34,14 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
       Long fileSystemId,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     return liveFieldsTargetingFilestorePaths(
         ExtraLinkField.class,
         ExtraLinkField::getLink,
         fileSystemId,
         absolutePaths,
         filestoreOwner,
-        rootedBase);
+        spellings);
   }
 
   private List<ExtraLinkField> extraLinkFieldsHolding(List<InventoryLink> links) {
@@ -67,14 +68,14 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
       Long fileSystemId,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     return liveFieldsTargetingFilestorePaths(
         InventoryLinkField.class,
         InventoryLinkField::getLink,
         fileSystemId,
         absolutePaths,
         filestoreOwner,
-        rootedBase);
+        spellings);
   }
 
   private List<InventoryLinkField> structuredLinkFieldsHolding(List<InventoryLink> links) {
@@ -108,7 +109,7 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
       Long fileSystemId,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     if (absolutePaths.isEmpty()) {
       return Collections.emptyList();
     }
@@ -122,10 +123,9 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
     if (filestoreOwner != null) {
       hql +=
           " and l.filestoreId in (select s.id from NfsFileStore s where s.user = :owner"
-              + (rootedBase == null
-                  ? ")"
-                  : " and concat(coalesce(s.path, ''), l.targetRemotePath)"
-                      + (rootedBase ? " like '/%')" : " not like '/%')"));
+              + LeadingSlashes.hqlCondition(
+                  "concat(coalesce(s.path, ''), l.targetRemotePath)", spellings)
+              + ")";
     }
     var query =
         sessionFactory

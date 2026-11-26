@@ -32,6 +32,11 @@ that resolves, and Inventory items now refer to one through the same Link field.
    item now, and except where SMB reads both spellings as one file a path with a leading slash is
    kept apart from one without. The endpoint hands
    the item lookup that path before normalisation, so its leading slash survives.
+   *Amended 2026-11-26:* items are matched by the leading-slash spellings the client opens as the
+   same file, as documents are (ADR 0015 point 2). The endpoint adds a missing leading slash only
+   under a filestore path that does not end with one, where the path would otherwise run into the
+   last folder name; under an empty or "/" filestore path it takes the request as sent, as links
+   saved there without the slash can name another file than those with it.
 3. Only the owner of a filestore can link through it, and only the owner is told its name by the
    link target summary; anyone else, and an unknown filestore, get the identical redacted answer
    (ADR 0002). Read access to the filesystem was rejected as the rule: filestores are personal

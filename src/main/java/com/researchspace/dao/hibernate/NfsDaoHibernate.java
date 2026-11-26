@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.NfsDao;
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -156,7 +157,7 @@ public class NfsDaoHibernate implements NfsDao {
       Long fileSystemId,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     if (absolutePaths.isEmpty()) {
       return List.of();
     }
@@ -164,12 +165,10 @@ public class NfsDaoHibernate implements NfsDao {
     Set<String> exactPaths = Set.copyOf(absolutePaths);
     String where = " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)";
     if (filestoreOwner != null) {
-      where += " and l.fileStore.user = :owner";
-      if (rootedBase != null) {
-        where +=
-            " and concat(coalesce(l.fileStore.path, ''), l.relPath)"
-                + (rootedBase ? " like '/%'" : " not like '/%'");
-      }
+      where +=
+          " and l.fileStore.user = :owner"
+              + LeadingSlashes.hqlCondition(
+                  "concat(coalesce(l.fileStore.path, ''), l.relPath)", spellings);
     }
     var query =
         sessionFactory

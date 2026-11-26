@@ -1,12 +1,14 @@
 package com.researchspace.dao;
 
 import com.researchspace.model.User;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /** Data Access Object for net filestores and filesystems */
 public interface NfsDao {
@@ -70,10 +72,13 @@ public interface NfsDao {
    *
    * @param filestoreOwner null for links through any user's filestore; otherwise only links through
    *     this user's filestores
-   * @param rootedBase with an owner, only links whose filestore base and link path together start
-   *     with a slash (true) or without one (false), which SFTP, iRODS and SMB under a server URL's
-   *     folder can read as different files; null for either. Ignored without an owner
+   * @param spellings with an owner, only links whose filestore base and link path together start
+   *     with one of these leading-slash spellings, which a client can read as different files; null
+   *     for any. Ignored without an owner
    */
   List<StructuredDocument> getDocumentsLinkingTo(
-      Long fileSystemId, Collection<String> absolutePaths, User filestoreOwner, Boolean rootedBase);
+      Long fileSystemId,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings);
 }

@@ -4,13 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,6 +21,9 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
 
   @Autowired private NfsDao nfsDao;
   @Autowired private RecordDao recordDao;
+
+  private static final Set<LeadingSlashes> ROOTED =
+      EnumSet.of(LeadingSlashes.ONE, LeadingSlashes.MORE);
 
   private NfsFileStore savedStore(User u, String basePath) {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(null);
@@ -113,7 +119,7 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
     nfsDao.saveNfsFileStore(rootStore);
     Long fsId = store.getFileSystem().getId();
 
-    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("upload/hello.txt"), u, true))
+    assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("upload/hello.txt"), u, ROOTED))
         .extracting(StructuredDocument::getId)
         .containsExactly(viaStore.getId(), viaRoot.getId());
     assertThat(nfsDao.getDocumentsLinkingTo(fsId, List.of("upload/hello.txt"), null, null))
@@ -145,16 +151,40 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
     StructuredDocument viaNoBaseNoSlash = documentLinking(u, noBase, "upload/hello.txt");
     List<String> path = List.of("upload/hello.txt");
 
-    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, true))
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, ROOTED))
         .extracting(StructuredDocument::getId)
         .containsExactly(viaRooted.getId(), viaNoBase.getId());
-    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, false))
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, EnumSet.of(LeadingSlashes.NONE)))
         .extracting(StructuredDocument::getId)
         .containsExactly(viaHome.getId(), viaNoBaseNoSlash.getId());
     assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, null))
         .extracting(StructuredDocument::getId)
         .containsExactly(
             viaRooted.getId(), viaHome.getId(), viaNoBase.getId(), viaNoBaseNoSlash.getId());
+  }
+
+  @Test
+  public void twoLeadingSlashesAreMatchedApartFromOne() {
+    User u = createAndSaveUserIfNotExists("nfslinkdao8");
+    initialiseContentWithEmptyContent(u);
+    NfsFileStore root = savedStore(u, "/");
+    NfsFileSystem fs = root.getFileSystem();
+    NfsFileStore share = GalleryFilestoreTestUtils.createFileStore("share", u, fs);
+    share.setPath("/share");
+    nfsDao.saveNfsFileStore(share);
+    // SMBJ reads a first folder named like the share as the share, unless two slashes precede it
+    StructuredDocument viaRoot = documentLinking(u, root, "/share/report.txt");
+    StructuredDocument viaShare = documentLinking(u, share, "/report.txt");
+    List<String> path = List.of("share/report.txt");
+
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, EnumSet.of(LeadingSlashes.MORE)))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaRoot.getId());
+    assertThat(
+            nfsDao.getDocumentsLinkingTo(
+                fs.getId(), path, u, EnumSet.of(LeadingSlashes.NONE, LeadingSlashes.ONE)))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(viaShare.getId());
   }
 
   @Test

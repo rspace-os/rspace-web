@@ -130,9 +130,14 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
-    // a request without its leading slash still matches; a doubled one names another S3 key
-    String path = StringUtils.prependIfMissing(remotePath, "/");
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    // a path without its leading slash would run into a base not ending with one; a path under
+    // any other base is taken as sent, as a link stores it, and a doubled slash names another key
+    String base = filestore == null ? "" : NfsFileStore.validateTargetPath(filestore.getPath());
+    String path =
+        base.isEmpty() || base.endsWith("/")
+            ? remotePath
+            : StringUtils.prependIfMissing(remotePath, "/");
     assertItemReadableWithOwnLogin(user, filestore, path);
     // first, as it refuses an unknown filestore and asserts read access
     var documents = nfsFieldLinkManager.getLinkedDocuments(filestoreId, path, user);

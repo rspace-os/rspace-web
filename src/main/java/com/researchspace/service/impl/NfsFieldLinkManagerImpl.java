@@ -6,6 +6,7 @@ import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
@@ -106,20 +107,20 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     Stream<StructuredDocument> linking;
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       linking = documentsLinking(fileSystem, absolutePaths, null, null);
-    } else if (nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(fileSystem)) {
-      // two logins can see different files at one path: ADR 0015 point 2
-      linking = documentsLinking(fileSystem, absolutePaths, user, null);
     } else {
-      // and elsewhere a login's home or the server URL's folder can prefix a path, depending on
-      // its leading slash
+      // two logins can see different files at one path (ADR 0015 point 2), and the client can
+      // read paths with the same normalised form as different files, by their leading slashes
       linking =
           absolutePaths.stream()
-              .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
+              .collect(
+                  Collectors.groupingBy(
+                      path -> nfsFactory.spellingsOfTheSameFile(fileSystem, path)))
               .entrySet()
               .stream()
               .flatMap(
-                  byStart ->
-                      documentsLinking(fileSystem, byStart.getValue(), user, byStart.getKey()));
+                  bySpellings ->
+                      documentsLinking(
+                          fileSystem, bySpellings.getValue(), user, bySpellings.getKey()));
     }
     return linking
         .collect(
@@ -135,14 +136,14 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
       NfsFileSystem fileSystem,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
     // a whole S3 folder listing in one IN list can exceed the database's packet size
     return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
         .flatMap(
             batch ->
                 nfsDao
-                    .getDocumentsLinkingTo(fileSystem.getId(), batch, filestoreOwner, rootedBase)
+                    .getDocumentsLinkingTo(fileSystem.getId(), batch, filestoreOwner, spellings)
                     .stream());
   }
 

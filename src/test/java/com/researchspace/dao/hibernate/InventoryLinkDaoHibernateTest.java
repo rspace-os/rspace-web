@@ -15,11 +15,14 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,6 +174,43 @@ public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {
             dao.findStructuredLinkFieldsTargetingFilestorePaths(
                 fsId, List.of("data/XRD/run.dat"), null, null))
         .isEmpty();
+  }
+
+  @Test
+  public void anOwnerAndLeadingSlashSpellingsNarrowTheFilestoreLinksFound() {
+    User user = createInitAndLoginAnyUser();
+    NfsFileStore root = savedStore(user.getUsername());
+    root.setPath("/");
+    nfsDao.saveNfsFileStore(root);
+    NfsFileStore share =
+        GalleryFilestoreTestUtils.createFileStore("share", user, root.getFileSystem());
+    share.setPath("/share");
+    nfsDao.saveNfsFileStore(share);
+    Sample sample = sampleDao.get(createBasicSampleForUser(user).getId());
+    InventoryLinkField viaRoot = new InventoryLinkField("Raw data");
+    viaRoot.setLink(filestoreLink(root, "/share/run.dat"));
+    sample.addSampleField(viaRoot);
+    ExtraLinkField viaShare = new ExtraLinkField();
+    viaShare.setCreatedBy(user.getUsername());
+    viaShare.setModifiedBy(user.getUsername());
+    viaShare.setLink(filestoreLink(share, "/run.dat"));
+    sample.addExtraField(viaShare);
+    sampleDao.save(sample);
+    flushDatabaseState();
+    Long fsId = root.getFileSystem().getId();
+    List<String> path = List.of("share/run.dat");
+    Set<LeadingSlashes> one = EnumSet.of(LeadingSlashes.ONE);
+    Set<LeadingSlashes> more = EnumSet.of(LeadingSlashes.MORE);
+
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, path, user, one))
+        .containsExactly(viaShare);
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, path, user, more)).isEmpty();
+    assertThat(dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, path, user, more))
+        .containsExactly(viaRoot);
+    assertThat(dao.findStructuredLinkFieldsTargetingFilestorePaths(fsId, path, user, one))
+        .isEmpty();
+    User other = createInitAndLoginAnyUser();
+    assertThat(dao.findLinkFieldsTargetingFilestorePaths(fsId, path, other, null)).isEmpty();
   }
 
   private InventoryLink filestoreLink(NfsFileStore store, String remotePath) {

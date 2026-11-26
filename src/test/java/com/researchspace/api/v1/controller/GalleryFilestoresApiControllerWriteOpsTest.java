@@ -82,7 +82,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -1107,21 +1107,27 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"/data", ""})
-  void getFilestoreItemLinkedDocuments_perUserLoginChecksThePathTheLinksStore(String basePath)
-      throws IOException {
+  @CsvSource({
+    // without its leading slash, the path would run into the base: /dataXRD/run.dat
+    "/data, /XRD/run.dat, /data/XRD",
+    // under no base, a path without the slash can name another item, relative to the login's home
+    "'', XRD/run.dat, XRD",
+    "/, XRD/run.dat, /XRD"
+  })
+  void getFilestoreItemLinkedDocuments_perUserLoginChecksThePathTheLinksStore(
+      String basePath, String linkPath, String parentPath) throws IOException {
     NfsClient client = loginToIrodsFilestore();
     nfsManager.getNfsFileStore(1L).setPath(basePath);
-    // as sent, without its leading slash, the path names another item: /dataXRD/run.dat, or under
-    // an empty base, where both forms normalise alike, a path relative to the login's home
-    when(client.queryForNfsFolder(atPath(basePath + "/XRD")))
+    when(client.queryForNfsFolder(atPath(parentPath)))
         .thenReturn(folderListing(new NfsFileDetails("run.dat")));
     NfsFileDetails readable = new NfsFileDetails("run.dat");
     readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
-    when(client.queryNfsFileForDownload(atPath(basePath + "/XRD/run.dat"))).thenReturn(readable);
-    when(nfsFieldLinkManager.getLinkedDocuments(1L, "/XRD/run.dat", user)).thenReturn(List.of());
+    when(client.queryNfsFileForDownload(atPath(parentPath + "/run.dat"))).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, linkPath, user)).thenReturn(List.of());
 
     assertThat(controller.getFilestoreItemLinkedDocuments(1L, "XRD/run.dat", user)).isEmpty();
+    verify(inventoryLinkManager)
+        .findItemsLinkingFilestorePaths(any(), eq(List.of(parentPath + "/run.dat")), eq(user));
   }
 
   @Test

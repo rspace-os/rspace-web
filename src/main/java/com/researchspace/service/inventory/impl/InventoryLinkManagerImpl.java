@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -151,17 +153,14 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       addItemsLinking(linking, fileSystem, absolutePaths, null, null);
-    } else if (nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(fileSystem)) {
-      // two logins can see different files at one path: ADR 0015 point 2
-      addItemsLinking(linking, fileSystem, absolutePaths, actor, null);
     } else {
-      // and elsewhere a login's home or the server URL's folder can prefix a path, depending on
-      // its leading slash
+      // two logins can see different files at one path (ADR 0015 point 2), and the client can
+      // read paths with the same normalised form as different files, by their leading slashes
       absolutePaths.stream()
-          .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
+          .collect(
+              Collectors.groupingBy(path -> nfsFactory.spellingsOfTheSameFile(fileSystem, path)))
           .forEach(
-              (rootedBase, paths) ->
-                  addItemsLinking(linking, fileSystem, paths, actor, rootedBase));
+              (spellings, paths) -> addItemsLinking(linking, fileSystem, paths, actor, spellings));
     }
     Map<String, FilestoreLinkingItem> rows = new LinkedHashMap<>();
     // one read check per item, however many of its links match
@@ -180,18 +179,18 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
       NfsFileSystem fileSystem,
       Collection<String> absolutePaths,
       User filestoreOwner,
-      Boolean rootedBase) {
+      Set<LeadingSlashes> spellings) {
     List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
     // a whole S3 folder listing in one IN list can exceed the database's packet size
     for (List<String> batch : ListUtils.partition(paths, PATH_BATCH_SIZE)) {
       for (ExtraLinkField field :
           linkDao.findLinkFieldsTargetingFilestorePaths(
-              fileSystem.getId(), batch, filestoreOwner, rootedBase)) {
+              fileSystem.getId(), batch, filestoreOwner, spellings)) {
         linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
       }
       for (InventoryLinkField field :
           linkDao.findStructuredLinkFieldsTargetingFilestorePaths(
-              fileSystem.getId(), batch, filestoreOwner, rootedBase)) {
+              fileSystem.getId(), batch, filestoreOwner, spellings)) {
         linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
       }
     }
