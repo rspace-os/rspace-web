@@ -173,8 +173,6 @@ export default class MoveStore {
   }
 
   async moveSelected(removeParentContainers: boolean = false): Promise<void> {
-    this.submitting = removeParentContainers ? "MAKE-TOP" : "TO-OTHER";
-
     let serialisedRecords: Array<SerialisedRecord>;
     if (removeParentContainers) {
       serialisedRecords = this.selectedResults.map((r) => ({
@@ -214,6 +212,9 @@ export default class MoveStore {
       }
     }
 
+    // Set only once validation has passed: moveRecords is what clears it, so a
+    // throw above would otherwise leave the Move buttons spinning.
+    this.submitting = removeParentContainers ? "MAKE-TOP" : "TO-OTHER";
     await this.moveRecords(serialisedRecords);
     await this.refreshAfterMove();
   }

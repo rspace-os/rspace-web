@@ -73,6 +73,7 @@ function Actions({ handleClose, handleMove, handleBack, handleNext, activeStep }
         onMove={handleMove}
         disabled={!isSelectionValid()}
         stepsCount={2}
+        loading={moveStore.submitting === "TO-OTHER"}
       />
     </Stack>
   );

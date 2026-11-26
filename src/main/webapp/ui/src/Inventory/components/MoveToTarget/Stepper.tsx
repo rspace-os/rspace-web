@@ -14,6 +14,7 @@ type StepperArgs = {
   onMove: () => void;
   stepsCount: number;
   disabled: boolean;
+  loading: boolean;
 };
 
 export default function Stepper({
@@ -24,6 +25,7 @@ export default function Stepper({
   onMove,
   stepsCount,
   disabled,
+  loading,
 }: StepperArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
   const prevButton = () =>
@@ -37,7 +39,12 @@ export default function Stepper({
 
   const nextButton = () =>
     activeStep === stepsCount - 1 ? (
-      <SubmitSpinner onClick={onMove} disabled={disabled} loading={false} label={t("common:actions.move")} />
+      <SubmitSpinner
+        onClick={onMove}
+        disabled={disabled || loading}
+        loading={loading}
+        label={t("common:actions.move")}
+      />
     ) : (
       <Button size="medium" onClick={handleNext}>
         {t("common:actions.next")} <KeyboardArrowRight />
