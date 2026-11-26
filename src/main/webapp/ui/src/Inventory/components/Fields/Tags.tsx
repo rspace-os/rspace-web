@@ -3,7 +3,7 @@ import type React from "react";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import AddTag from "../../../components/Tags/AddTag";
-import TagListing from "../../../components/Tags/TagListing";
+import TagListing, { searchHref } from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import type { Tag } from "../../../stores/definitions/Tag";
@@ -53,7 +53,7 @@ function Tags<
         // id prop is ignored because there is no singular HTMLInputElement to attach it to
         <TagListing
           onClick={(tag) => {
-            navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
+            navigate(searchHref(tag));
           }}
           tags={fieldOwner.fieldValues.tags}
           {...(fieldOwner.isFieldEditable("tags")

@@ -25,6 +25,9 @@ public class DetailedRecordInformation extends RecordInformation {
   private String path;
   private String tags;
 
+  /** The same tags with any ontology metadata, encoded as stored. */
+  private String tagMetaData;
+
   private boolean isShared;
   private boolean isImplicitlyShared;
 
@@ -83,6 +86,7 @@ public class DetailedRecordInformation extends RecordInformation {
     }
     if (baseRecord.isTaggable()) {
       setTags(((TaggableElnRecord) baseRecord).getDocTag());
+      setTagMetaData(((TaggableElnRecord) baseRecord).getTagMetaData());
     }
   }
 

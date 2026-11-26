@@ -131,6 +131,24 @@ describe("DocumentSections (structured document)", () => {
     expect(screen.getByText("alpha, beta")).toBeInTheDocument();
   });
 
+  it("shows tags with ontology metadata as chips that open the metadata", async () => {
+    const user = userEvent.setup();
+    renderDoc({
+      info: {
+        ...baseInfo,
+        tags: "alpha,beta",
+        tagMetaData:
+          "alpha,beta__RSP_EXTONT_URL_DELIM__https:__rspactags_forsl____rspactags_forsl__example.org" +
+          "__RSP_EXTONT_NAME_DELIM__Vocabulary__RSP_EXTONT_VERSION_DELIM__1.0",
+      },
+    });
+
+    expect(screen.queryByText("alpha, beta")).not.toBeInTheDocument();
+    expect(screen.getByText("alpha")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "beta" }));
+    expect(screen.getByText("https://example.org")).toBeVisible();
+  });
+
   it("renders the self link to /globalId/SD123", () => {
     renderDoc();
     const selfLink = screen.getByRole("link", { name: "SD123" });

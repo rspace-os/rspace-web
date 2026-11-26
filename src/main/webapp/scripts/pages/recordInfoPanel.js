@@ -78,12 +78,7 @@ function generate$RecordInfoPanel(info) {
   var showTags = isStructuredDocument || isFolder || isNotebook;
   $newInfoPanel.find('tr.infoPanelTagsRow').toggle(showTags);
   if (showTags) {
-    $newInfoPanel.find('.infoPanel-tags').text(info.tags == null ? "" :
-      info.tags
-          .replaceAll(",", ", ")
-          .replaceAll("__rspactags_forsl__", "/")
-          .replaceAll("__rspactags_comma__", ",")
-    );
+    _setInfoPanelTags($newInfoPanel.find('.infoPanel-tags').get(0), info);
   }
   $newInfoPanel.find('tr.infoPanelSignatureStatusRow').toggle(isStructuredDocument);
 
@@ -395,6 +390,52 @@ function _getInfoPanelSignatureStatus(info) {
     console.log("Unexpected signature status");
     return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusUnknown");
   }
+}
+
+function _decodeInfoPanelTag(tag) {
+  return tag.replaceAll("__rspactags_forsl__", "/").replaceAll("__rspactags_comma__", ",");
+}
+
+/**
+ * Fills the tags cell. Without ontology metadata the tags are plain text; otherwise each
+ * tag is listed with the vocabulary and version of its term and a link to the term's URI.
+ * Text is only set as text, never as HTML.
+ */
+function _setInfoPanelTags(cell, info) {
+  var termRE = /^(.*)__RSP_EXTONT_URL_DELIM__(.*)__RSP_EXTONT_NAME_DELIM__(.*)__RSP_EXTONT_VERSION_DELIM__(.*)$/;
+  var tags = (info.tagMetaData || "").split(",").filter(Boolean).map(function (tag) {
+    var term = termRE.exec(_decodeInfoPanelTag(tag));
+    return term ? { value: term[1], uri: term[2], vocabulary: term[3], version: term[4] }
+      : { value: _decodeInfoPanelTag(tag) };
+  });
+  cell.textContent = "";
+  if (!tags.some(function (tag) { return tag.uri; })) {
+    cell.textContent = info.tags == null ? "" : _decodeInfoPanelTag(info.tags.replaceAll(",", ", "));
+    return;
+  }
+  var list = document.createElement("ul");
+  list.style.margin = "0";
+  list.style.paddingLeft = "1em";
+  tags.forEach(function (tag) {
+    var item = document.createElement("li");
+    item.appendChild(document.createTextNode(tag.value));
+    if (tag.uri) {
+      item.appendChild(document.createTextNode(" (" +
+        RS.msg("legacyjs.workspace.recordInfoPanel.tagSource", tag.version, tag.vocabulary) + ") "));
+      if (/^https?:\/\//i.test(tag.uri)) {
+        var uriLink = document.createElement("a");
+        uriLink.setAttribute("href", tag.uri);
+        uriLink.setAttribute("target", "_blank");
+        uriLink.setAttribute("rel", "noopener noreferrer");
+        uriLink.textContent = tag.uri;
+        item.appendChild(uriLink);
+      } else {
+        item.appendChild(document.createTextNode(tag.uri));
+      }
+    }
+    list.appendChild(item);
+  });
+  cell.appendChild(list);
 }
 
 function _setInfoPanelGlobalIdRow($infoPanelGlobalIdRow, showRowFlag, oid) {

@@ -108,4 +108,19 @@ public class RecordInformationTest {
     assertEquals(ri, ri1);
     assertEquals(ri.hashCode(), ri1.hashCode());
   }
+
+  @Test
+  void detailedInformationIncludesTagMetadata() {
+    String term =
+        "X__RSP_EXTONT_URL_DELIM__https:__rspactags_forsl____rspactags_forsl__example.org"
+            + "__RSP_EXTONT_NAME_DELIM__Vocabulary__RSP_EXTONT_VERSION_DELIM__1";
+    Folder tagged = (Folder) folder;
+    tagged.setDocTag("X");
+    tagged.setTagMetaData(term);
+
+    DetailedRecordInformation info = new DetailedRecordInformation(tagged);
+
+    assertEquals("X", info.getTags());
+    assertEquals(term, info.getTagMetaData());
+  }
 }

@@ -1605,6 +1605,7 @@ export default interface Resources {
       "metadata": {
         "controlledVocabularyName": "Controlled Vocabulary Name",
         "controlledVocabularyVersion": "Controlled Vocabulary Version",
+        "search": "Search for this tag",
         "term": "Term",
         "termUri": "Term's URI",
         "view": "View metadata"
@@ -1613,6 +1614,7 @@ export default interface Resources {
       "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
       "noName": "no name",
       "noTagsAvailable": "No tags available",
+      "removeTag": "Remove tag {tag}",
       "tryAgain": "Please try again.",
       "typeTagInstead": "Simply type in the tag and press enter instead.",
       "useNewTagHint": "To use a new tag, press Enter.",
@@ -8813,6 +8815,7 @@ export default interface Resources {
           "statusReadOnly": "read-only",
           "statusViewable": "viewable",
           "statusViewableEditable": "viewable & editable",
+          "tagSource": "from version {0} of {1}",
           "updatingInfoAction": "Updating info",
           "updatingRecordInformation": "Updating record information..."
         },

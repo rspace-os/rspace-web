@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import GlobalId from "../../../components/GlobalId";
-import TagListing from "../../../components/Tags/TagListing";
+import TagListing, { searchHref } from "../../../components/Tags/TagListing";
 import UserDetails from "../../../components/UserDetails";
 import { RecordLink } from "../../../Inventory/components/RecordLink";
 import RecordLocation from "../../../Inventory/components/RecordLocation";
@@ -41,7 +41,7 @@ function AdjustableCell<T extends AdjustableTableRowLabel>({
     content = (
       <TagListing
         onClick={(tag) => {
-          navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
+          navigate(searchHref(tag));
         }}
         tags={cellContent.data}
         size="small"

@@ -1,6 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { Optional } from "../../../util/optional";
 import AddTag from "../AddTag";
 import { makeTags, ontologyTagsHandler } from "./mocks/tagsComboboxMocks";
 import { TagsComboboxPage } from "./pageObjects/TagsComboboxPage";
@@ -117,5 +119,45 @@ describe("TagsCombobox (ontologies, paginated)", () => {
 
     await expect.poll(() => onSelection.mock.calls.length).toBeGreaterThan(0);
     expect(onSelection).toHaveBeenCalledWith(expect.objectContaining({ value: "tag-003" }));
+  });
+
+  describe("suggestions sharing a label", () => {
+    const sameLabel = [
+      "Shared label__RSP_EXTONT_URL_DELIM__https://example.org/a__RSP_EXTONT_NAME_DELIM__Vocabulary A__RSP_EXTONT_VERSION_DELIM__1.0",
+      "Shared label__RSP_EXTONT_URL_DELIM__https://example.org/b__RSP_EXTONT_NAME_DELIM__Vocabulary B__RSP_EXTONT_VERSION_DELIM__2.0",
+    ];
+    const plainTag = (value: string) => ({
+      value,
+      vocabulary: Optional.empty<string>(),
+      uri: Optional.empty<string>(),
+      version: Optional.empty<string>(),
+    });
+
+    beforeEach(() => {
+      worker.use(ontologyTagsHandler({ allTags: sameLabel, requestedPositions }));
+    });
+
+    test("still names the vocabulary and version when the label is already selected", async () => {
+      render(<AddTag onSelection={vi.fn()} value={[plainTag("Shared label")]} enforceOntologies={false} />);
+      await pageObj.open();
+
+      for (const source of ["From version 1.0 of Vocabulary A", "From version 2.0 of Vocabulary B"]) {
+        const option = pageObj.option(new RegExp(`Tag is already selected\\..*${source}`));
+        await expect.element(option).toHaveAttribute("aria-disabled", "true");
+      }
+    });
+
+    test("adds a typed exact match as a plain tag when Enter is pressed", async () => {
+      const onSelection = vi.fn();
+      render(<AddTag onSelection={onSelection} value={[]} enforceOntologies={false} />);
+      await pageObj.open();
+      await expect.element(pageObj.option(/Vocabulary A/)).toBeVisible();
+
+      pageObj.filter("Shared label");
+      await userEvent.keyboard("{Enter}");
+
+      await expect.poll(() => onSelection.mock.calls.length).toBe(1);
+      expect(onSelection).toHaveBeenCalledWith(plainTag("Shared label"));
+    });
   });
 });

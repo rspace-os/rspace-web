@@ -9,6 +9,8 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { decodeTagString, parseEncodedTags } from "@/components/Tags/ParseEncodedTagStrings";
+import TagListing from "@/components/Tags/TagListing";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getLinkedByRecords } from "@/modules/workspace/linkedRecords";
 import { getPublicLink } from "@/modules/workspace/publicLink";
@@ -33,6 +35,15 @@ export interface DocumentSectionsProps {
 function formatTags(tags: string | null | undefined): string {
   if (!tags) return "";
   return tags.replaceAll(",", ", ").replaceAll("__rspactags_forsl__", "/").replaceAll("__rspactags_comma__", ",");
+}
+
+/** The tags as chips when any has ontology metadata, so that metadata can be opened. */
+function tagsWithMetadata(tagMetaData: string | null | undefined) {
+  const tags = parseEncodedTags((tagMetaData ?? "").split(",")).map((tag) => ({
+    ...tag,
+    value: decodeTagString(tag.value),
+  }));
+  return tags.some((tag) => tag.uri.isPresent()) ? tags : null;
 }
 
 const SHARING_ACCESS_LABEL_KEYS = {
@@ -230,6 +241,7 @@ export default function DocumentSections({
   // The version-stripped global id, used for the "latest" link in the version header.
   const unversionedGlobalId = info.oid.idString.replace(/v\d+$/, "");
   const tags = formatTags(info.tags);
+  const tagChips = tagsWithMetadata(info.tagMetaData);
 
   return (
     <Stack spacing={2}>
@@ -318,7 +330,11 @@ export default function DocumentSections({
                 <GlobalIdLink globalId={info.templateOid}>{info.templateName ?? info.templateOid}</GlobalIdLink>
               </MetaRow>
             ) : null}
-            {tags ? <MetaRow label={t("fields.link.documentSections.meta.tags")}>{tags}</MetaRow> : null}
+            {tags ? (
+              <MetaRow label={t("fields.link.documentSections.meta.tags")}>
+                {tagChips ? <TagListing tags={tagChips} size="small" /> : tags}
+              </MetaRow>
+            ) : null}
           </TableBody>
         </Table>
       </Box>

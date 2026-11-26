@@ -147,3 +147,22 @@ export const helpText = (tagValidation: TagValidation): string | null => {
   }
   throw new Error("impossible");
 };
+
+/**
+ * The secondary lines of a suggestion: why it cannot be chosen, if it cannot,
+ * and the vocabulary and version it comes from, if it has them. The source is
+ * shown even when the suggestion is disabled, so that suggestions with the same
+ * label can still be told apart.
+ */
+export const suggestionHelpText = (
+  tag: InternalTag,
+  { enforceOntologies }: { enforceOntologies: boolean },
+): Array<string> => {
+  const validationText = helpText(checkInternalTag(tag, { enforceOntologies }));
+  const sourceText = lift2(
+    (version, filename) => i18n.t("tags.validation.fromSource", { filename, version }),
+    tag.version,
+    tag.vocabulary,
+  ).orElse(null);
+  return [...new Set([validationText, sourceText])].filter((text): text is string => text !== null);
+};

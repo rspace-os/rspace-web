@@ -22,7 +22,7 @@ import type { Tag } from "../../stores/definitions/Tag";
 import { lift3, Optional } from "../../util/optional";
 import type RsSet from "../../util/set";
 import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
-import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./TagValidation";
+import { checkInternalTag, checkUserInputString, helpText, isAllowed, suggestionHelpText } from "./TagValidation";
 
 /*
  * This component is a general purpose combobox for selecting a tag. The list
@@ -167,7 +167,7 @@ function TagRow({
         ...style,
         // These depend on `option`, so must stay inline (a class-based width
         // would otherwise be overridden by the positioning `style` above).
-        filter: tagIsAllowed ? "" : "opacity(0.2)",
+        filter: tagIsAllowed ? "" : "opacity(0.6)",
         pointerEvents: tagIsAllowed ? "auto" : "none",
         whiteSpace: "nowrap",
         width: "unset",
@@ -188,7 +188,14 @@ function TagRow({
        * suggestion whose name matches an already-selected tag; removing tags is
        * the parent component's responsibility.
        */}
-      <ListItemText primary={label} secondary={helpText(checkInternalTag(option, { enforceOntologies }))} />
+      <ListItemText
+        primary={label}
+        secondary={suggestionHelpText(option, { enforceOntologies }).map((text) => (
+          <span key={text} style={{ display: "block" }}>
+            {text}
+          </span>
+        ))}
+      />
     </li>
   );
 }
@@ -253,8 +260,8 @@ function OptionsListing({
         getOptionProps,
       }}
       /*
-       * Allocates the height for each tag by index. Most tags get OPTION_HEIGHT;
-       * those showing helper text need more. The virtualised list needs explicit
+       * Allocates the height for each tag by index: OPTION_HEIGHT plus 20px
+       * for each line of helper text. The virtualised list needs explicit
        * heights to compute vertical offsets (CSS flexbox can't be used). The list
        * re-reads this function when `rowProps` change, so heights recalculate when
        * the tag list changes.
@@ -266,10 +273,7 @@ function OptionsListing({
       rowHeight={(i) =>
         OPTION_HEIGHT +
         Optional.fromNullable(sortedOptions.at(i))
-          .map((tag) => {
-            const tagHasHelpText = helpText(checkInternalTag(tag, { enforceOntologies })) === null;
-            return tagHasHelpText ? 0 : 20;
-          })
+          .map((tag) => suggestionHelpText(tag, { enforceOntologies }).length * 20)
           .orElse(0)
       }
     />

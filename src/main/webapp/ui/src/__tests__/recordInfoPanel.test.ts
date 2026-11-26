@@ -61,7 +61,7 @@ function loadRecordInfoPanelFunctions() {
       escapeHtml,
       msg: legacyMsg,
     },
-    document: {},
+    document,
     window: { location: { href: "" } },
     console,
   };
@@ -88,6 +88,10 @@ function loadRecordInfoPanelFunctions() {
     displayType: (sandbox as unknown as Record<string, unknown>)._getInfoPanelTypeDisplayName as (
       type: string,
     ) => string,
+    setTags: (sandbox as unknown as Record<string, unknown>)._setInfoPanelTags as (
+      cell: HTMLElement,
+      info: { tags: string | null; tagMetaData?: string | null },
+    ) => void,
   };
 }
 
@@ -170,5 +174,46 @@ describe("record info panel type display names", () => {
       expect(displayType(type)).toBe(displayName);
     }
     expect(displayType("Future Record Type")).toBe("Future Record Type");
+  });
+});
+
+describe("record info panel tags", () => {
+  const term = (label: string, uri: string) =>
+    `${label}__RSP_EXTONT_URL_DELIM__${uri}__RSP_EXTONT_NAME_DELIM__Vocabulary__RSP_EXTONT_VERSION_DELIM__1.0`;
+
+  it("lists ontology terms with their source and safe links", () => {
+    const { setTags } = loadRecordInfoPanelFunctions();
+    const cell = document.createElement("td");
+
+    setTags(cell, {
+      tags: "plain,<img src=x>,unsafe",
+      tagMetaData: [
+        "plain",
+        term("<img src=x>", "https:__rspactags_forsl____rspactags_forsl__example.org__rspactags_forsl__x"),
+        term("unsafe", "javascript:alert(1)"),
+      ].join(","),
+    });
+
+    expect(cell.querySelector("img")).toBeNull();
+    const [plain, encoded, unsafe] = Array.from(cell.querySelectorAll("li"));
+    expect(plain.textContent).toBe("plain");
+    expect(encoded.textContent).toBe("<img src=x> (from version 1.0 of Vocabulary) https://example.org/x");
+    const [uriLink, ...otherLinks] = Array.from(encoded.querySelectorAll("a"));
+    expect(uriLink.getAttribute("href")).toBe("https://example.org/x");
+    expect(uriLink.getAttribute("rel")).toBe("noopener noreferrer");
+    // An Inventory search would not find the ELN record that carries the tag.
+    expect(otherLinks).toEqual([]);
+    expect(unsafe.textContent).toBe("unsafe (from version 1.0 of Vocabulary) javascript:alert(1)");
+    expect(unsafe.querySelector("a")).toBeNull();
+  });
+
+  it("replaces earlier content and keeps plain text when no tag has metadata", () => {
+    const { setTags } = loadRecordInfoPanelFunctions();
+    const cell = document.createElement("td");
+    setTags(cell, { tags: "x", tagMetaData: term("x", "https://example.org/x") });
+
+    setTags(cell, { tags: "a__rspactags_forsl__b,c", tagMetaData: "a__rspactags_forsl__b,c" });
+
+    expect(cell.innerHTML).toBe("a/b, c");
   });
 });
