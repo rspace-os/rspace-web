@@ -130,8 +130,8 @@ function registerMessages(i18next: i18n, lng: string): void {
 /**
  * Makes Valibot's issue messages come from the `valibot` catalogue in the
  * language of the given i18next instance. Register it before `init`, so that
- * the initial language is applied too. Until the catalogue loads, and in
- * `cimode`, Valibot uses its built-in English messages.
+ * the initial language is applied too. Until the catalogue loads, if it fails
+ * to load, and in `cimode`, Valibot uses its built-in English messages.
  */
 export function localiseValibot(i18next: i18n): void {
   i18next.on("languageChanged", (lng: string) => {
@@ -139,15 +139,16 @@ export function localiseValibot(i18next: i18n): void {
       v.setGlobalConfig({ lang: undefined });
       return;
     }
-    i18next
-      .loadNamespaces(NAMESPACE)
-      .then(() => {
-        if (i18next.language !== lng) return;
-        registerMessages(i18next, lng);
-        v.setGlobalConfig({ lang: lng });
-      })
-      .catch((error: unknown) => {
-        console.warn(`Could not load the Valibot messages for ${lng}`, error);
-      });
+    // loadNamespaces resolves even when the catalogue fails to load.
+    void i18next.loadNamespaces(NAMESPACE).then(() => {
+      if (i18next.language !== lng) return;
+      if (!i18next.exists("schema", { lng, ns: NAMESPACE })) {
+        console.warn(`Could not load the Valibot messages for ${lng}`);
+        v.setGlobalConfig({ lang: undefined });
+        return;
+      }
+      registerMessages(i18next, lng);
+      v.setGlobalConfig({ lang: lng });
+    });
   });
 }

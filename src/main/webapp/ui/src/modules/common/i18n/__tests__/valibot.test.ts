@@ -2,6 +2,7 @@ import i18next from "i18next";
 import ICU from "i18next-icu";
 import * as v from "valibot";
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import enUS from "../locales/en-US/valibot.json";
 import { localiseValibot } from "../valibot";
 
@@ -49,5 +50,31 @@ describe("localiseValibot", () => {
 
     await instance.changeLanguage("cimode");
     expect(messages()[0]).toBe("Invalid type: Expected string but received 1");
+  });
+
+  test("keeps the built-in messages when the catalogue fails to load", async () => {
+    const builtIn = messages();
+    const restoreConsole = silenceConsole(["warn"], ["Could not load the Valibot messages"]);
+    const { warn } = console;
+    try {
+      const instance = i18next.createInstance().use(ICU);
+      instance.use({
+        type: "backend",
+        init() {},
+        read(_language: string, _namespace: string, callback: (error: Error, data: false) => void) {
+          callback(new Error("chunk failed to load"), false);
+        },
+      });
+      localiseValibot(instance);
+      await instance.init({ lng: "en-US", fallbackLng: "en-US", ns: [] });
+
+      await vi.waitFor(() =>
+        expect(vi.mocked(warn)).toHaveBeenCalledWith("Could not load the Valibot messages for en-US"),
+      );
+      expect(v.getGlobalConfig().lang).toBeUndefined();
+      expect(messages()).toEqual(builtIn);
+    } finally {
+      restoreConsole();
+    }
   });
 });
