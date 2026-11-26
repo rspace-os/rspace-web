@@ -88,6 +88,10 @@ users as each users has their open separate Gallery.
 /gallery/item/{id}/{version}          # Same, pinned to a past version (read-only)
 ```
 
+The item routes load pages of the folder until the item is listed, so an item
+beyond the first page is still selected. If no page lists it, a pinned link
+reports that, while a live link shows the folder.
+
 Every route also needs a matching rule in
 [urlrewrite.xml](../../../WEB-INF/urlrewrite.xml), which forwards it to the SPA
 shell before Spring MVC sees it. The rules are anchored regexes, so a new URL

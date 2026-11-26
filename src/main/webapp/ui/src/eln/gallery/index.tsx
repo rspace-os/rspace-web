@@ -102,11 +102,13 @@ const WholePage = ({
     path,
     refreshListing,
     selectedSection,
+    targetNotListed,
   } = useGalleryListing({
     listingOf,
     searchTerm: appliedSearchTerm,
     orderBy,
     sortOrder,
+    pageUntilIncluded: autoSelect?.[0],
   });
 
   /*
@@ -187,6 +189,12 @@ const WholePage = ({
       return t("pageTitle");
     }
   }, [path, selectedSection, t, title]);
+
+  /*
+   * A link to a version must show that version or say why not; a live link can
+   * still fall back to showing the folder.
+   */
+  if (decorateFile && targetNotListed) return t("landingPage.error", { error: t("pinnedVersion.notInFolder") });
 
   return (
     <Box
