@@ -5662,7 +5662,9 @@ export default interface Resources {
           "credentials": "Cannot access the server using the supplied API key",
           "project": "Error retrieving DSW project",
           "projects": "Error getting DSW projects",
-          "serverUrl": "Cannot access the specified server URL"
+          "redirect": "The saved DSW URL redirects to a different address. Check it, for example http instead of https.",
+          "serverUrl": "Cannot access the specified server URL",
+          "versionCheck": "Could not check the version of the DSW server at the saved URL. Check the URL, or try again later."
         }
       },
       "egnyte": {
@@ -5992,6 +5994,9 @@ export default interface Resources {
           "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
+        "inventoryOauthToken": {
+          "loginRequired": "Inventory access tokens are only available to signed-in RSpace users."
+        },
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",

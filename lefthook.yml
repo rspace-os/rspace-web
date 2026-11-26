@@ -76,8 +76,9 @@ pre-commit:
       run: pnpm run lint:ci --colors=off
     # Keep the i18n catalogs in sync with the code: i18n:check (extract --ci)
     # fails if a key was added/removed/reordered without regenerating the
-    # catalogs, and i18n:lint enforces the i18next lint rules. Triggered by any
-    # staged UI source or locale-catalog change.
+    # catalogs, i18n:types:check fails if the key types were not regenerated
+    # after a catalog change, and i18n:lint enforces the i18next lint rules.
+    # Triggered by any staged UI source or locale-catalog change.
     i18n:
       glob: "src/main/webapp/ui/src/**/*.{ts,tsx,json}"
-      run: pnpm run i18n:check && pnpm run i18n:lint
+      run: pnpm run i18n:check && pnpm run i18n:types:check && pnpm run i18n:lint
