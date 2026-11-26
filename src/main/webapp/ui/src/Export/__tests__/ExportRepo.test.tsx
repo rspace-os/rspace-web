@@ -306,6 +306,18 @@ describe("ExportRepo", () => {
       expect(screen.getByRole("checkbox", { name: "Select plan: River survey plan" })).toBeChecked();
       expect(screen.getByRole("checkbox", { name: "Select plan: Soil survey plan" })).not.toBeChecked();
     });
+
+    test("does not send a remembered plan that is no longer listed", async () => {
+      const { user, updateRepoConfig } = await renderWithPlans([2, 99]);
+      await tick(user, "Soil survey plan");
+      expect(lastSentPlans(updateRepoConfig)).toEqual([2, 1]);
+    });
+
+    test("does not block a Zenodo export with one listed plan and one remembered plan no longer listed", async () => {
+      const { validator } = await renderWithPlans([2, 99]);
+      expect(await validator.isValid()).toBe(true);
+      expect(screen.queryByText("Only one DMP can be associated with an export to Zenodo.")).not.toBeInTheDocument();
+    });
   });
 
   describe("Digital Commons Data", () => {

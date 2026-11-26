@@ -22,6 +22,7 @@ import type { Validator } from "../util/Validator";
 import {
   type DMPUserInternalId,
   type Person,
+  type Plan,
   REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
   type Repo,
   type RepoDetails,
@@ -54,6 +55,13 @@ type ExportRepoArgs = {
   updateRepoConfig: (repoDetails: RepoDetails) => void;
   fetchTags: () => Promise<Array<Tag>>;
 };
+
+// a remembered tick can name a plan that is no longer listed
+const listedPlans = (
+  selectedPlans: Array<DMPUserInternalId>,
+  linkedDMPs: Array<Plan> | null,
+): Array<DMPUserInternalId> =>
+  selectedPlans.filter((id) => (linkedDMPs ?? []).some((plan) => plan.dmpUserInternalId === id));
 
 const DmpSelector = observer(
   ({
@@ -113,7 +121,7 @@ const DmpSelector = observer(
                 addSelectedPlan={addSelectedPlan}
                 removeSelectedPlan={removeSelectedPlan}
               />
-              {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
+              {repo.repoName === "app.zenodo" && listedPlans(state.selectedPlans, dmps).length > 1 && (
                 <Alert severity="error">{t("export.repositories.dmp.zenodoLimit")}</Alert>
               )}
             </Collapse>
@@ -157,7 +165,8 @@ function ExportRepo({
     }),
   );
   const [fetchingTags, setFetchingTags] = useState(false);
-  const plansToSend = (): Array<DMPUserInternalId> => (state.linkDMP ? state.selectedPlans : []);
+  const plansToSend = (): Array<DMPUserInternalId> =>
+    state.linkDMP ? listedPlans(state.selectedPlans, repoList[state.repoChoice].linkedDMPs) : [];
 
   useEffect(() => {
     void (async () => {

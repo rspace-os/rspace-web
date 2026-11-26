@@ -868,6 +868,15 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
+  void tickedIdThatIsNotTheUsersPlanIsDepositedWithoutPlanIdentifier() throws Exception {
+    givenDepositorWithPlans(plan(2L));
+    givenDepositSucceeds();
+
+    assertTrue(depositedMetadata(APP_ZENODO).getDmpDoi().isEmpty());
+    Mockito.verifyNoInteractions(fileStore);
+  }
+
+  @Test
   void argosPlanWithoutDoiIsDepositedWithoutPlanIdentifier() throws Exception {
     givenDepositorWithPlans(plan(1L, DMPSource.ARGOS));
     givenPlanFile("argos-plan-without-doi.json");

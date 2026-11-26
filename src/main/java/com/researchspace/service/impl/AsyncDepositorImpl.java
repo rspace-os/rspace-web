@@ -561,8 +561,14 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         dmpManager.findDMPsForUser(subject).stream()
             .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
             .collect(Collectors.toList());
-    if (selected.isEmpty()
-        || (selected.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName()))) {
+    if (selected.isEmpty()) {
+      log.warn(
+          "None of the {} plans ticked by {} is one of their plans, so no plan identifier is set",
+          dmpUserIds.size(),
+          subject.getUsername());
+      return metadata;
+    }
+    if (selected.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName())) {
       throw new NoSuchElementException("Could not find DMP with selected ID.");
     }
     if (selected.size() > 1) {
