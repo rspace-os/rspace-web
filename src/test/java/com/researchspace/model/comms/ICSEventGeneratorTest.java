@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.validate.ValidationException;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +34,7 @@ public class ICSEventGeneratorTest {
     mor.setMessage(" A message");
     Date future = new Date(Instant.now().plus(10, ChronoUnit.DAYS).toEpochMilli());
     mor.setRequestedCompletionDate(future);
-    net.fortuna.ical4j.model.Calendar cal = icalgen.createICalEventFor(mor, "Request summary");
+    Calendar cal = icalgen.createICalEventFor(mor, "Request summary");
     cal.validate();
     assertNotNull(cal);
     assertThat(cal.getComponents()).hasSizeGreaterThan(0);

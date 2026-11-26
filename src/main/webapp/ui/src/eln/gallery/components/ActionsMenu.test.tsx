@@ -4,12 +4,10 @@ import "@/__tests__/__mocks__/useOauthToken";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import type React from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { emptyShareListingHandler, raidIntegrationInfoHandler } from "../__tests__/mocks/raidIntegrationMocks";
 import {
   ActionsMenuInWritableS3Filestore,
@@ -173,17 +171,6 @@ afterEach(() => {
   mockAxios.reset();
 });
 
-/*
- * useDeploymentProperty caches results in a module-level Map that is the
- * default value of DeploymentPropertyContext, so without a fresh provider the
- * cache would leak between tests (e.g. netfilestores.enabled fetched as false
- * in one test would be served from cache in the next). We wrap each render in
- * a provider holding a new Map to keep tests isolated.
- */
-function renderStory(ui: React.ReactElement) {
-  return render(<DeploymentPropertyContext.Provider value={new Map()}>{ui}</DeploymentPropertyContext.Provider>);
-}
-
 async function openMenu(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "gallery:actionsMenu.actions" }));
 }
@@ -205,7 +192,7 @@ function expectMenuItemEnabled(item: HTMLElement) {
 describe("ActionsMenu", () => {
   describe("Should have no axe violations", () => {
     test("Should have no axe violations", async () => {
-      const { baseElement } = renderStory(<ActionsMenuWithNonFolder />);
+      const { baseElement } = render(<ActionsMenuWithNonFolder />);
       // Wait for the bootstrap state to settle so the rendered tree is stable.
       await screen.findByRole("button", { name: "gallery:actionsMenu.actions" });
       await expectAccessible(baseElement);
@@ -215,7 +202,7 @@ describe("ActionsMenu", () => {
   describe("File menu options", () => {
     test("When the selected file isn't a folder, open should not be visible", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithNonFolder />);
+      render(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await screen.findByRole("menu", { name: "gallery:actionsMenu.label" });
       expect(screen.queryByRole("menuitem", { name: "common:actions.open" })).not.toBeInTheDocument();
@@ -223,14 +210,14 @@ describe("ActionsMenu", () => {
 
     test("When the selected file is a folder, open should be visible", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithFolder />);
+      render(<ActionsMenuWithFolder />);
       await openMenu(user);
       expect(await screen.findByRole("menuitem", { name: "common:actions.open" })).toBeVisible();
     });
 
     test("When the selected file is a snippet, download should be disabled", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /common:actions\.download/i }));
     });
@@ -238,7 +225,7 @@ describe("ActionsMenu", () => {
     /* the dialog is a React child of the Menu, which closes on Tab and so used to unmount it */
     test("Tab inside the version history dialog moves focus rather than closing it", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithNonFolder />);
+      render(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
       const dialog = await screen.findByRole("dialog");
@@ -249,7 +236,7 @@ describe("ActionsMenu", () => {
     /* the Tab fix stops propagation, so this pins that dismissal still works */
     test("Escape still closes the version history dialog", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithNonFolder />);
+      render(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
       await screen.findByRole("dialog");
@@ -259,7 +246,7 @@ describe("ActionsMenu", () => {
 
     test("When the selected file is a snippet, view version history should be disabled", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       expectMenuItemDisabled(
         await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }),
@@ -268,7 +255,7 @@ describe("ActionsMenu", () => {
 
     test("Share should always be visible and enabled when only snippets are selected", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: "common:actions.share" });
       expect(share).toBeVisible();
@@ -277,7 +264,7 @@ describe("ActionsMenu", () => {
 
     test("Share should be disabled when snippets and non-snippets are selected together", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithMixedSelection />);
+      render(<ActionsMenuWithMixedSelection />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
@@ -286,7 +273,7 @@ describe("ActionsMenu", () => {
 
     test("Share should open dialog for a single snippet", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: "common:actions.share" });
       await waitFor(() => expectMenuItemEnabled(share));
@@ -296,7 +283,7 @@ describe("ActionsMenu", () => {
 
     test("Share should pass all selected snippets to the dialog", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithMultipleSnippets />);
+      render(<ActionsMenuWithMultipleSnippets />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: "common:actions.share" });
       await waitFor(() => expectMenuItemEnabled(share));
@@ -313,7 +300,7 @@ describe("ActionsMenu", () => {
 
     test("Share should be disabled when snippet global ID is missing", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippetMissingGlobalId />);
+      render(<ActionsMenuWithSnippetMissingGlobalId />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemDisabled(share));
@@ -322,7 +309,7 @@ describe("ActionsMenu", () => {
 
     test("Share should be enabled when the current user owns a snippet in a shared folder", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
+      render(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: "common:actions.share" });
       expect(share).toBeVisible();
@@ -331,7 +318,7 @@ describe("ActionsMenu", () => {
 
     test("Share should be disabled when another user owns a snippet in a shared folder", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
+      render(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
@@ -341,7 +328,7 @@ describe("ActionsMenu", () => {
 
     test("Share should not be enabled for a snippet in a system shared folder", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippetInSystemSharedFolder />);
+      render(<ActionsMenuWithSnippetInSystemSharedFolder />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
@@ -359,7 +346,7 @@ describe("ActionsMenu", () => {
       );
 
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
@@ -369,7 +356,7 @@ describe("ActionsMenu", () => {
 
     test("Saving a gallery share should show success alert and close dialog", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithSnippet />);
+      render(<ActionsMenuWithSnippet />);
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: "common:actions.share" });
       await waitFor(() => expectMenuItemEnabled(share));
@@ -414,7 +401,7 @@ describe("ActionsMenu", () => {
 
       try {
         const user = userEvent.setup();
-        renderStory(<ActionsMenuWithNonFolder />);
+        render(<ActionsMenuWithNonFolder />);
         await openMenu(user);
         expect(await screen.findByRole("menuitem", { name: "gallery:actionsMenu.moveToS3" })).toBeVisible();
 
@@ -429,7 +416,7 @@ describe("ActionsMenu", () => {
 
     test("Move to iRODS and Move to S3 should be hidden when netfilestores is disabled", async () => {
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithNonFolder />);
+      render(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await screen.findByRole("menu", { name: "gallery:actionsMenu.label" });
       expect(screen.queryByRole("menuitem", { name: "gallery:actionsMenu.moveToIrods" })).not.toBeInTheDocument();
@@ -441,7 +428,7 @@ describe("ActionsMenu", () => {
     test("is hidden when gallery.actions.metadata.sidecarFile.enabled is false", async () => {
       // A selection is present so the menu opens even with the property off.
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithFolder />);
+      render(<ActionsMenuWithFolder />);
       await openMenu(user);
       await screen.findByRole("menu", { name: "gallery:actionsMenu.label" });
       expect(
@@ -453,7 +440,7 @@ describe("ActionsMenu", () => {
       mockAxios.reset();
       stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
-      renderStory(<ActionsMenuWithFolder />);
+      render(<ActionsMenuWithFolder />);
       await openMenu(user);
       const item = await screen.findByRole("menuitem", {
         name: /gallery:actionsMenu\.generateDataRecord/i,
@@ -465,7 +452,7 @@ describe("ActionsMenu", () => {
       mockAxios.reset();
       stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
-      renderStory(<ActionsMenuInWritableS3Filestore />);
+      render(<ActionsMenuInWritableS3Filestore />);
       // The no-selection open depends on the async deployment-property fetch, so wait for
       // the Actions button to become enabled before opening it.
       await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
@@ -482,7 +469,7 @@ describe("ActionsMenu", () => {
       mockAxios.reset();
       stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
-      renderStory(<ActionsMenuInWritableS3Filestore />);
+      render(<ActionsMenuInWritableS3Filestore />);
       await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
       await openMenu(user);
       await waitFor(() =>
@@ -510,7 +497,7 @@ describe("ActionsMenu", () => {
       mockAxios.reset();
       stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
-      renderStory(<ActionsMenuInWritableS3Filestore />);
+      render(<ActionsMenuInWritableS3Filestore />);
       await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
       await openMenu(user);
       const item = await screen.findByRole("menuitem", {
@@ -526,7 +513,7 @@ describe("ActionsMenu", () => {
       // Actions button keeps its existing selection requirement.
       mockAxios.reset();
       stubCommonEndpoints({ metadataSidecarFileEnabled: true });
-      renderStory(<ActionsMenuWithNoSelection />);
+      render(<ActionsMenuWithNoSelection />);
       expect(await screen.findByRole("button", { name: "gallery:actionsMenu.actions" })).toBeDisabled();
     });
   });

@@ -23,7 +23,6 @@ import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
-import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
@@ -84,7 +83,7 @@ public class ArchiveModelFactory {
     rc.setModificationDate(fm.getModificationDate());
     rc.setType(fm.getType().getType());
     rc.setSummary(fm.getSummary());
-    switch (FieldType.getFieldTypeForString(rc.getType())) {
+    switch (fm.getType()) {
       case NUMBER: // "Number"
         NumberFieldForm nfm = (NumberFieldForm) fm;
         rc.setMin((nfm.getMinNumberValue() != null) ? nfm.getMinNumberValue() + "" : "");
@@ -98,10 +97,7 @@ public class ArchiveModelFactory {
         rc.setDecimalPlace(Integer.toString(pos));
         break;
       case STRING: // "String"
-        // <summary>Type: [STRING], Is password: [false], Default : [string]
-        // </summary>
         StringFieldForm sfm = (StringFieldForm) fm;
-        rc.setPassword(sfm.isIfPassword());
         rc.setDefaultValue(sfm.getDefaultStringValue());
         break;
       case RADIO: // "Radio"
@@ -137,9 +133,20 @@ public class ArchiveModelFactory {
         rc.setDefaultValue(mfm.getDefaultTimeAsString());
         rc.setDateFormat(mfm.getTimeFormat());
         break;
-      default: // Text
+      case TEXT:
         TextFieldForm tfm = (TextFieldForm) fm;
         rc.setDefaultValue(tfm.getDefaultValue());
+        break;
+      case URI:
+      case REFERENCE:
+      case ATTACHMENT:
+        // no type-specific settings beyond the common ones set above
+        break;
+      default: // e.g. inventory-only types; exporting them as Text would re-import wrongly
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot export field form '%s' (id %d): unsupported field type %s",
+                fm.getName(), fm.getId(), fm.getType()));
     }
     return rc;
   }
@@ -280,7 +287,7 @@ public class ArchiveModelFactory {
 
     addParentFolderDetails(std.getOwnerParent(), rc);
 
-    for (com.researchspace.model.field.Field fdx : std.getFields()) {
+    for (Field fdx : std.getFields()) {
       ArchivalField afdx = createArchivalField(fdx);
       rc.addArchivalField(afdx);
     }

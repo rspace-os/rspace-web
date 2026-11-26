@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Java backend: Maven + Temurin JDK 17 running `mvn jetty:run`. The worktree
+  # Java backend: Maven + JetBrains Runtime 21 running `mvn jetty:run`. The worktree
   # source tree is bind-mounted at /rspace so edits on the host are live in the
   # container; build/output dirs are masked with named volumes so host (often
   # macOS/arm64) artifacts never mix with the Linux container's.
@@ -49,8 +49,10 @@ services:
       context: .
       dockerfile: Dockerfile.app
       args:
-        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-17}
-    image: rspace-dev-app:local
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9-eclipse-temurin-21}
+    # Tagged by JDK: every worktree shares this tag, and restart/reset-db reuse it
+    # without rebuilding, so a branch on another JDK must not overwrite it.
+    image: rspace-dev-app:jbr21
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-app
     depends_on:
       db:
@@ -128,7 +130,9 @@ services:
     # stdin; the entrypoint feeds it from a FIFO for `rspace-dev reload`.
     stdin_open: true
     tty: true
-    restart: unless-stopped
+    # No auto-restart: a JVM crash (e.g. OOM, a bad hot-swap) should surface as a
+    # stopped container so `logs app` shows the failure, not silently loop.
+    restart: "no"
 
   # ---------------------------------------------------------------------------
   # Frontend: Vite dev server. Runs `pnpm run serve` from the repo root, where

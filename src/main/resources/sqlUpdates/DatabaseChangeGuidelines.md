@@ -138,6 +138,11 @@ Then append them into the current version's changeset file in *src/main/resource
 *DON'T EDIT EXISTING CHANGESETS!!!!!* Liquibase uses checksums to determine if changesets have altered and complains 
 - it cannot tell if the database is inconsistent or if it's just an altered changeset.
 
+*Never point a changeset at a file inside a library jar* (e.g. `<sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>`).
+The checksum covers the file's content, so a library upgrade that changes the file fails validation at startup on every
+database that already ran the changeset. Copy the file into `src/main/resources/sqlUpdates/` and reference it with
+`relativeToChangelogFile="true"`, then never edit the copy.
+
 *If you're not sure what changes to include, then please seek advice before committing the changes to Git.*
 
 ### Auto-generating the changesets by comparing to the schema created out of Hibernate/JPA annotations 

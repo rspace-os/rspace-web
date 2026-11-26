@@ -40,6 +40,7 @@ import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.MessagedServiceOperationResult;
@@ -77,6 +78,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.OngoingStubbing;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
@@ -88,7 +90,7 @@ import org.springframework.web.multipart.MultipartFile;
 @ExtendWith(MockitoExtension.class)
 public class StructuredDocumentControllerTest {
 
-  @Mock private org.springframework.context.ApplicationEventPublisher publisher;
+  @Mock private ApplicationEventPublisher publisher;
   @Mock private UserManager userMgr;
   @Mock private RecordManager recordMgr;
   @Mock private SharingHandler recordShareHandler;
@@ -729,8 +731,7 @@ public class StructuredDocumentControllerTest {
   public void updateFromWordKeepsIdentityAndDoesNotReshare() throws Exception {
     getAuthenticatedUser();
     StructuredDocument target =
-        TestFactory.createAnySDForUser(
-            new com.researchspace.model.record.RecordFactory().createBasicDocumentForm(user), user);
+        TestFactory.createAnySDForUser(new RecordFactory().createBasicDocumentForm(user), user);
     target.setId(2L);
     Folder parent = TestFactory.createAFolder("parent", user);
     parent.setId(1L);
@@ -756,8 +757,7 @@ public class StructuredDocumentControllerTest {
   public void invalidWordReplacementTargetsNeverReachConverter() throws Exception {
     getAuthenticatedUser();
     StructuredDocument target =
-        TestFactory.createAnySDForUser(
-            new com.researchspace.model.record.RecordFactory().createBasicDocumentForm(user), user);
+        TestFactory.createAnySDForUser(new RecordFactory().createBasicDocumentForm(user), user);
     target.setId(2L);
     MultipartFile file =
         new MockMultipartFile(

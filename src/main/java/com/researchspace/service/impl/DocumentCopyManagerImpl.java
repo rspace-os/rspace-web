@@ -37,6 +37,7 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FileDuplicateStrategy;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RequiresActiveLicense;
 import com.researchspace.service.StoichiometryManager;
@@ -71,6 +72,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
   private @Autowired RSMathDao mathDao;
   private @Autowired FieldDao fieldDao;
   private @Autowired FieldManager fieldMgr;
+  private @Autowired NfsFieldLinkManager nfsFieldLinkManager;
   private @Autowired ThumbnailManager thumbMgr;
   private @Autowired BaseRecordAdaptable recordAdapter;
   private @Autowired RichTextUpdater updater;
@@ -384,12 +386,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     copy = recordDao.save(copy);
 
     if (targetFolder != null && targetFolder.isFolder()) {
-      // Use skipAddingToChildren=false so the new RecordToFolder is added to
-      // targetFolder.children (a tracked PersistentSet) and then cascade-persisted
-      // via folderDao.save(). The prior skipAddingToChildren=true relied on Hibernate 5's
-      // SAVE_UPDATE cascade reachability which no longer exists in Hibernate 6 JPA.
-      targetFolder.addChild(copy, user, false);
-      folderDao.save(targetFolder);
+      targetFolder.addChild(copy, user);
     }
 
     if (original.hasType(RecordType.MEDIA_FILE)) {
@@ -423,6 +420,9 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
       String updatedContent =
           copyElementsInContent(fieldCopy.getId(), copySD, fieldCopy.getFieldData(), user);
       fieldCopy.setFieldData(updatedContent);
+      // Not in copyElementsInContent: a paste passes it only the pasted fragment, and reindex
+      // would drop the rows of the field's other links.
+      nfsFieldLinkManager.reindex(fieldCopy, updatedContent);
     }
     List<Field> listFields = copySD.getFields();
     copySD.setAllFieldsValid(listFields.stream().allMatch(f -> f.isMandatoryStateSatisfied()));

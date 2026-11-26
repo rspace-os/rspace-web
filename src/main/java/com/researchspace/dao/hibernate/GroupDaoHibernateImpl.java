@@ -42,9 +42,9 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
         getSession()
             .createQuery(
                 // get users from lab groups of PIs
-                "select new com.researchspace.model.views.UserView (ug2.user.id, ug2.user.username,"
-                    + " ug2.user.email, concat(ug2.user.lastName, ', ', ug2.user.firstName)) from"
-                    + " UserGroup ug2  where ug2.group.id in ("
+                "select distinct new com.researchspace.model.views.UserView (ug2.user.id,"
+                    + " ug2.user.username, ug2.user.email, concat(ug2.user.lastName, ', ',"
+                    + " ug2.user.firstName)) from UserGroup ug2  where ug2.group.id in ("
                     // get all labgroups where pi is already in collab group
                     + "select group.id  from UserGroup ug where ug.user.id in ("
                     // get existing PIs in Collab group

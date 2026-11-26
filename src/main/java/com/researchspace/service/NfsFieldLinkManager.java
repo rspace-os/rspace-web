@@ -2,7 +2,9 @@ package com.researchspace.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.RecordInformation;
+import java.util.Collection;
 import java.util.List;
 
 /** Keeps the Filestore link index in step with field content and answers lookups on it. */
@@ -26,4 +28,11 @@ public interface NfsFieldLinkManager {
    * @throws jakarta.ws.rs.NotFoundException for an unknown filestore
    */
   List<RecordInformation> getLinkedDocuments(Long filestoreId, String remotePath, User user);
+
+  /**
+   * Linked documents of any of the absolute paths on the filesystem, as the overload above: each
+   * document once, oldest first.
+   */
+  List<RecordInformation> getLinkedDocuments(
+      NfsFileSystem fileSystem, Collection<String> absolutePaths, User user);
 }

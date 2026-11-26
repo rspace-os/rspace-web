@@ -40,6 +40,7 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,7 +175,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         List.of(ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ));
     // an empty list, not null: clearPropertiesForLimitedView copies over a fresh instance whose
     // identifiers field already defaults to an empty ArrayList, so this is production's real shape
-    limited.setIdentifiers(new java.util.ArrayList<>());
+    limited.setIdentifiers(new ArrayList<>());
     return limited;
   }
 

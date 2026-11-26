@@ -71,8 +71,8 @@ allowBuilds:
   # Storybook's test configuration is maintained in .storybook, not by its installer.
   '@storybook/addon-vitest': false
 
-# Block packages published less than 7 days ago (10080 minutes) as a defence
+# Block packages published less than 3 days ago (4320 minutes) as a defence
 # against supply-chain attacks that are typically caught within that window.
 # Stricter than pnpm 11's 1440-minute (1 day) default.
-minimumReleaseAge: 10080
+minimumReleaseAge: 4320
 strictPeerDependencies: true

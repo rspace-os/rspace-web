@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.model.User;
 import java.time.Year;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.Value;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ public class DataCiteYamlSidecarFileGenerator {
             List.of(creatorFor(ctx)),
             new Publisher(new Valued<>(ctx.getInstitutionName())),
             new Valued<>(String.valueOf(Year.now().getValue())),
+            relatedIdentifiersFor(ctx),
             relatedItemsFor(ctx));
     String content = yamlMapper.writeValueAsString(model);
     return new GeneratedSidecarFile(filenameFor(ctx), content);
@@ -69,6 +71,27 @@ public class DataCiteYamlSidecarFileGenerator {
     return List.of(
         new NameIdentifier(
             new Valued<>(orcidId), new Valued<>("https://orcid.org"), new Valued<>("ORCID")));
+  }
+
+  /**
+   * One entry per Linked document, then one per linking Inventory item and relation, or null
+   * (omitted) when there is none.
+   */
+  private List<RelatedIdentifier> relatedIdentifiersFor(SidecarFileGenerationContext ctx) {
+    List<RelatedIdentifier> related =
+        Stream.concat(
+                Stream.ofNullable(ctx.getLinkedDocumentUrls())
+                    .flatMap(List::stream)
+                    .map(url -> new SidecarRelatedIdentifier(url, "IsDocumentedBy")),
+                Stream.ofNullable(ctx.getLinkingItemIdentifiers()).flatMap(List::stream))
+            .map(
+                id ->
+                    new RelatedIdentifier(
+                        new Valued<>(id.url()),
+                        new Valued<>("URL"),
+                        new Valued<>(id.relationType())))
+            .toList();
+    return related.isEmpty() ? null : related;
   }
 
   /** One {@code relatedItem} per S3 object, or null (omitted) when the folder is empty. */
@@ -112,6 +135,7 @@ public class DataCiteYamlSidecarFileGenerator {
     "creators",
     "publisher",
     "publicationYear",
+    "relatedIdentifiers",
     "relatedItems"
   })
   static class DataCiteMetadata {
@@ -120,7 +144,16 @@ public class DataCiteYamlSidecarFileGenerator {
     List<Creator> creators;
     Publisher publisher;
     Valued<String> publicationYear;
+    List<RelatedIdentifier> relatedIdentifiers;
     List<RelatedItem> relatedItems;
+  }
+
+  @Value
+  @JsonPropertyOrder({"relatedIdentifier", "relatedIdentifierType", "relationType"})
+  static class RelatedIdentifier {
+    Valued<String> relatedIdentifier;
+    Valued<String> relatedIdentifierType;
+    Valued<String> relationType;
   }
 
   @Value

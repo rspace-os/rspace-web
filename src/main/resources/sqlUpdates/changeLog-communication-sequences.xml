@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+  <changeSet id="communication-native-sequences-sql" author="rspace" context="run" dbms="mariadb" runInTransaction="false">
+    <comment>Native sequences for Communication and CommunicationTarget IDs. Each value is the top of a
+      block of 50 IDs, so each sequence starts one block above the highest existing ID and the old
+      hibernate_sequences counter. Inserting a full row sets a sequence's state, which START WITH
+      cannot do from a query. A sequence left by an interrupted run is raised if too low and kept if
+      higher. The old hibernate_sequences rows are kept for a manual rollback.</comment>
+    <sql>
+      CREATE SEQUENCE IF NOT EXISTS communication_seq INCREMENT BY 50 NOCACHE;
+      INSERT INTO communication_seq (next_not_cached_value, minimum_value, maximum_value, start_value,
+          increment, cache_size, cycle_option, cycle_count)
+      SELECT v, 1, 9223372036854775806, v, 50, 0, 0, 0 FROM (SELECT GREATEST(
+          (SELECT next_not_cached_value FROM communication_seq),
+          (GREATEST(
+              (SELECT COALESCE(MAX(id), 0) FROM Notification),
+              (SELECT COALESCE(MAX(id), 0) FROM MessageOrRequest),
+              (SELECT COALESCE(MAX(id), 0) FROM GroupMessageOrRequest),
+              (SELECT COALESCE(MAX(id), 0) FROM CreateGroupMessageOrRequest),
+              (SELECT COALESCE(MAX(id), 0) FROM ShareRecordMessageOrRequest),
+              (SELECT COALESCE(MAX(next_val), 0) FROM hibernate_sequences
+                  WHERE sequence_name = 'Communication')
+          ) DIV 50 + 2) * 50) AS v) AS start_value;
+
+      CREATE SEQUENCE IF NOT EXISTS communication_target_seq INCREMENT BY 50 NOCACHE;
+      INSERT INTO communication_target_seq (next_not_cached_value, minimum_value, maximum_value,
+          start_value, increment, cache_size, cycle_option, cycle_count)
+      SELECT v, 1, 9223372036854775806, v, 50, 0, 0, 0 FROM (SELECT GREATEST(
+          (SELECT next_not_cached_value FROM communication_target_seq),
+          (GREATEST(
+              (SELECT COALESCE(MAX(id), 0) FROM CommunicationTarget),
+              (SELECT COALESCE(MAX(next_val), 0) FROM hibernate_sequences
+                  WHERE sequence_name = 'CommunicationTarget')
+          ) DIV 50 + 2) * 50) AS v) AS start_value;
+    </sql>
+  </changeSet>
+</databaseChangeLog>

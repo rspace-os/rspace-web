@@ -1,10 +1,8 @@
 package com.researchspace.service;
 
-import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
 import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
@@ -13,6 +11,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
+import com.researchspace.model.record.RecordContainerProcessor;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
@@ -27,15 +26,6 @@ public interface FolderManager {
    * which locks on this object.
    */
   Object API_INBOX_LOCK = new Object();
-
-  /**
-   * @param folderid
-   * @param user
-   * @param depth whether folders should be loaded recursively or not to initialise all subfolder
-   *     trees for use outside session. ZERO = this folder, 1 = load children; infinite = recurse
-   * @return
-   */
-  Folder getFolder(Long folderid, User user, SearchDepth depth);
 
   /**
    * Equivalent to getFolder(folderID, user, false). <br>
@@ -60,26 +50,6 @@ public interface FolderManager {
   Folder save(Folder f, User user);
 
   /**
-   * MArks a record as deleted
-   *
-   * @param toDeleteID
-   * @param folderid
-   * @param user
-   * @return
-   */
-  Folder setRecordFromFolderDeleted(Long toDeleteID, Long folderid, User user);
-
-  /**
-   * Actually removes a record from the collection of records in this folder.
-   *
-   * @param toDeleteID - a RECORD id, not a folder id
-   * @param folderid
-   * @param user
-   * @return
-   */
-  Folder removeRecordFromFolder(Long toDeleteID, Long folderid, User user);
-
-  /**
    * Actually removes a BaseRecord from the collection of records in this folder.
    *
    * @param toDelete A BaseRecord
@@ -91,7 +61,8 @@ public interface FolderManager {
   /**
    * @param toDelete A BaseRecord
    * @param parentfolderid The id of the parent folder from which toDelete will be removed.
-   * @param aclPolicy an {@link ACLPropagationPolicy} to set ACL behaviour during deletion
+   * @param aclPolicy an {@link ACLPropagationPolicy} to set ACL behaviour during deletion; it is
+   *     also applied to the content of a removed folder or notebook
    */
   Folder removeBaseRecordFromFolder(
       BaseRecord toDelete, Long parentfolderid, ACLPropagationPolicy aclPolicy);
@@ -184,7 +155,8 @@ public interface FolderManager {
 
   /**
    * Alternative to <code>addChild(Long folderId, BaseRecord child, User owner)</code> where the
-   * {@link ACLPropagationPolicy#DEFAULT_POLICY} is not the appropriate one.
+   * {@link ACLPropagationPolicy#DEFAULT_POLICY} is not the appropriate one. The policy is also
+   * applied to the content of an added folder or notebook.
    *
    * @throws IllegalAddChildOperation
    */
@@ -267,34 +239,17 @@ public interface FolderManager {
   Long getLabGroupFolderIdForUser(User user);
 
   /**
-   * Gets the a media folder for the specified user given the path
-   *
-   * @param user
-   * @return
-   */
-  Folder getMediaFolderFromURLPath(String path, User user);
-
-  /**
-   * Used by file tree - returns a record based on a path of names. The ROOT Record is "/" and a
-   * path to its children would be "/child/child/targetRecord". <br>
-   * This method should initialize children collection, filtered by a the collection filter
-   *
-   * @param path
-   * @param user
-   * @param filter
-   * @return
-   */
-  Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter);
-
-  /**
-   * Returns all sub-folders of the given folder
-   *
-   * @param rootFolder
-   * @return
+   * Returns the direct subfolders (notebooks included) of the given folder, excluding deleted
+   * folders (record flag; the in-folder flag is not checked).
    */
   List<Folder> getSubFolders(Folder rootFolder);
 
-  Folder getInitialisedFolder(Long fId, User user, CollectionFilter<BaseRecord> filter);
+  /**
+   * Visits the folder tree: calls <code>processor</code> on the folder, then on its records, then
+   * recurses into its subfolders. Content of a folder is skipped if the processor returns false for
+   * that folder. Deleted items are included; the processor filters them.
+   */
+  void process(Folder folder, RecordContainerProcessor processor);
 
   /**
    * Gets the template folder for the user

@@ -9,29 +9,53 @@ import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.inventory.DataCiteRelationType;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
+  private static final int PATH_BATCH_SIZE = 1000;
+
+  private static final Comparator<Pair<InventoryRecord, InventoryLink>> BY_GLOBAL_ID_THEN_RELATION =
+      Comparator.comparing(
+              (Pair<InventoryRecord, InventoryLink> item) ->
+                  item.getLeft().getOid().getPrefix().name())
+          .thenComparing(item -> item.getLeft().getOid().getDbId())
+          .thenComparing(
+              item -> item.getRight().getRelationType(),
+              Comparator.nullsFirst(Comparator.naturalOrder()));
+
   @Autowired private InventoryLinkDao linkDao;
   @Autowired private InventoryPermissionUtils permissionUtils;
   @Autowired private LinkTargetResolver linkTargetResolver;
   @Autowired private LinkTargetSnapshotResolver snapshotResolver;
+  @Autowired private FilestoreAclChecker aclChecker;
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
@@ -114,6 +138,60 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
       row.setModifiedAtMillis(link.getModifiedAt().getTime());
     }
     rows.add(row);
+  }
+
+  @Override
+  public List<FilestoreLinkingItem> findItemsLinkingFilestorePaths(
+      NfsFileSystem fileSystem, Collection<String> absolutePaths, User actor) {
+    aclChecker.assertCanRead(actor, fileSystem);
+    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
+    List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
+    // a whole S3 folder listing in one IN list can exceed the database's packet size
+    for (List<String> batch : ListUtils.partition(paths, PATH_BATCH_SIZE)) {
+      for (ExtraLinkField field :
+          linkDao.findLinkFieldsTargetingFilestorePaths(fileSystem.getId(), batch)) {
+        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
+      }
+      for (InventoryLinkField field :
+          linkDao.findStructuredLinkFieldsTargetingFilestorePaths(fileSystem.getId(), batch)) {
+        linking.add(Pair.of(field.getInventoryRecord(), field.getLink()));
+      }
+    }
+    Map<String, FilestoreLinkingItem> rows = new LinkedHashMap<>();
+    // one read check per item, however many of its links match
+    Map<String, Boolean> readable = new HashMap<>();
+    linking.stream()
+        .filter(item -> item.getLeft() != null && item.getRight() != null)
+        .filter(item -> !item.getLeft().isDeleted() && !isTemplate(item.getLeft()))
+        .sorted(BY_GLOBAL_ID_THEN_RELATION)
+        .forEach(
+            item -> addRowOrPlaceholder(rows, readable, item.getLeft(), item.getRight(), actor));
+    return new ArrayList<>(rows.values());
+  }
+
+  private static boolean isTemplate(InventoryRecord parent) {
+    return parent.getType() == InventoryRecordType.SAMPLE_TEMPLATE
+        || parent.getType() == InventoryRecordType.INSTRUMENT_TEMPLATE;
+  }
+
+  private void addRowOrPlaceholder(
+      Map<String, FilestoreLinkingItem> rows,
+      Map<String, Boolean> readable,
+      InventoryRecord parent,
+      InventoryLink link,
+      User actor) {
+    String globalId = parent.getOid().getIdString();
+    String type = parent.getType().toString();
+    String ownerFullName = parent.getOwner().getFullName();
+    if (readable.computeIfAbsent(
+        globalId, id -> permissionUtils.canUserReadInventoryRecord(parent, actor))) {
+      rows.putIfAbsent(
+          globalId + " " + link.getRelationType(),
+          new FilestoreLinkingItem(
+              globalId, parent.getName(), type, ownerFullName, link.getRelationType()));
+    } else {
+      rows.putIfAbsent(globalId, new FilestoreLinkingItem(null, null, type, ownerFullName, null));
+    }
   }
 
   @Override

@@ -25,17 +25,23 @@ import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttri
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -222,14 +228,50 @@ public class SignupController extends BaseController {
     return false;
   }
 
+  /** The signup form binds onto the User entity, so bind only the fields the form shows. */
+  @InitBinder("user")
+  void restrictSignupFields(WebDataBinder binder) {
+    binder.setAllowedFields(
+        "username",
+        "email",
+        "password",
+        "confirmPassword",
+        "firstName",
+        "lastName",
+        "affiliation",
+        "picreateGroupOnSignup",
+        "signupCode",
+        "token");
+  }
+
   /** Handles signup submission POST */
   @PostMapping
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"password, confirmPassword"})
+  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"password", "confirmPassword"})
   @DeploymentProperty(value = DeploymentPropertyType.USER_SIGNUP_ENABLED)
   public String onSubmit(User user, BindingResult errors, HttpServletRequest request) {
 
     if (request.getParameter("cancel") != null) {
       return getCancelView();
+    }
+    List<String> blockedUserFields = new ArrayList<>();
+    BeanWrapper userProperties = PropertyAccessorFactory.forBeanPropertyAccess(user);
+    for (String suppressed : errors.getSuppressedFields()) {
+      if (userProperties.isWritableProperty(suppressed)) {
+        blockedUserFields.add(suppressed);
+      }
+    }
+    if (!blockedUserFields.isEmpty()) {
+      SECURITY_LOG.warn(
+          "Signup from {} tried to set User fields the form does not expose, which were not"
+              + " bound: {}",
+          RequestUtil.remoteAddr(request),
+          String.join(", ", blockedUserFields));
+    }
+    // Signup never sets id or version, so a request carrying them is refused. Other stray fields
+    // (such as role) are ignored, as signup has always done.
+    if (blockedUserFields.contains("id") || blockedUserFields.contains("version")) {
+      errors.reject("errors.signup.invalidFields");
+      return returnToSignupPage(user);
     }
     log.info("Signing up user {}", user.getUsername());
     // we verify captcha 1st if it is enabled

@@ -139,8 +139,8 @@ meaning. Multiple code points form [grapheme clusters](#grapheme-cluster).
 
 The degree to which adjacent elements are displayed using colours that are
 sufficiently different so as to be easily distinguished. This is a critical
-aspect of [accessible design](#accessibility), and is discussed at length in
-[Accessibility.md](./Accessibility.md).
+aspect of [accessible design](#accessibility); see the contrast guidance in
+[Accessibility.md](./Accessibility.md#design-and-implementation).
 
 ### Complect
 

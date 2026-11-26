@@ -12,6 +12,7 @@ import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -21,6 +22,7 @@ import com.researchspace.service.inventory.LinkTargetResolver;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,7 +85,7 @@ class InventoryLinkManagerImplReferencingTest {
   }
 
   private void stubSourceIdentity(InventoryRecord record, String globalId, String name) {
-    when(record.getOid()).thenReturn(new com.researchspace.model.core.GlobalIdentifier(globalId));
+    when(record.getOid()).thenReturn(new GlobalIdentifier(globalId));
     when(record.getName()).thenReturn(name);
   }
 
@@ -151,7 +153,7 @@ class InventoryLinkManagerImplReferencingTest {
     List<ApiInventoryReferencingItem> rows = manager.findReferencingItems("SD123", actor);
 
     assertThat(rows).hasSize(1);
-    org.junit.jupiter.api.Assertions.assertNull(rows.get(0).getModifiedAtMillis());
+    Assertions.assertNull(rows.get(0).getModifiedAtMillis());
   }
 
   @Test
@@ -166,7 +168,7 @@ class InventoryLinkManagerImplReferencingTest {
     when(structured.getInventoryRecord()).thenReturn(sample);
     when(structured.getLink()).thenReturn(link);
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L))
-        .thenReturn(java.util.Collections.emptyList());
+        .thenReturn(Collections.emptyList());
     when(linkDao.findReferencingStructuredLinkFields(GlobalIdPrefix.SD, 123L))
         .thenReturn(List.of(structured));
     when(permissionUtils.canUserReadInventoryRecord(sample, actor)).thenReturn(true);

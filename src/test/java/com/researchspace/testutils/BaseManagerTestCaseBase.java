@@ -76,6 +76,7 @@ import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
@@ -153,6 +154,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.Session;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -422,7 +424,7 @@ public abstract class BaseManagerTestCaseBase {
    * @param user
    */
   private void addUserAsSessionAttribute(User user) {
-    org.apache.shiro.session.Session session = SecurityUtils.getSubject().getSession();
+    Session session = SecurityUtils.getSubject().getSession();
     session.setAttribute(SessionAttributeUtils.USER, user);
   }
 
@@ -547,7 +549,7 @@ public abstract class BaseManagerTestCaseBase {
       User user, Folder folder, final String text) {
     RSForm ontologyForm = formMgr.findOldestFormByName(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME);
     StructuredDocument doc =
-        recordMgr.createNewStructuredDocument(folder.getId(), ontologyForm.getId(), user, true);
+        recordMgr.createNewStructuredDocument(folder.getId(), ontologyForm.getId(), user);
     Field field = doc.getFields().get(0);
     field.setData(text);
     doc.setName(getRandomAlphabeticString("BasicDocument"));
@@ -1099,6 +1101,16 @@ public abstract class BaseManagerTestCaseBase {
     nfsMgr.saveNfsFileSystem(store.getFileSystem());
     nfsMgr.saveNfsFileStore(store);
     return addNfsFileStoreLink(field, owner, store.getId(), filePath, false);
+  }
+
+  protected NfsFileStore savedS3Store(User owner) {
+    NfsFileSystem fileSystem = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsMgr.saveNfsFileSystem(fileSystem);
+    return nfsMgr.createAndSaveNewFileStore(fileSystem.getId(), "s3", "/data", owner);
+  }
+
+  protected String nfsLink(NfsFileStore store, String path) {
+    return richTextUpdater.generateURLStringForNfs(store.getId(), path, false);
   }
 
   protected NfsElement addNfsFileStoreLink(

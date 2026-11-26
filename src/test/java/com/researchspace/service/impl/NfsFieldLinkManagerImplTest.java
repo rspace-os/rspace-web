@@ -30,6 +30,7 @@ import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -190,6 +191,52 @@ class NfsFieldLinkManagerImplTest {
 
     assertThrows(
         AuthorizationException.class, () -> manager.getLinkedDocuments(1L, "/a.dat", user));
+    verify(nfsDao, never()).getDocumentsLinkingTo(any(), any());
+  }
+
+  @Test
+  void lookupByFilesystemNormalisesEveryPath() {
+    StructuredDocument readable = TestFactory.createAnySD();
+    readable.setId(11L);
+    when(nfsDao.getDocumentsLinkingTo(1L, List.of("XRD", "XRD/run.dat")))
+        .thenReturn(List.of(readable));
+    when(permUtils.isPermitted(readable, PermissionType.READ, user)).thenReturn(true);
+
+    List<RecordInformation> result =
+        manager.getLinkedDocuments(store.getFileSystem(), List.of("/XRD/", "XRD/run.dat"), user);
+
+    assertEquals("SD11", result.get(0).getOid().getIdString());
+  }
+
+  @Test
+  void lookupByFilesystemQueriesInBatchesAndMergesThemOldestFirst() {
+    List<String> paths = IntStream.range(0, 1001).mapToObj(i -> "f" + i).toList();
+    StructuredDocument older = TestFactory.createAnySD();
+    older.setId(11L);
+    StructuredDocument newer = TestFactory.createAnySD();
+    newer.setId(12L);
+    StructuredDocument newerAgain = TestFactory.createAnySD();
+    newerAgain.setId(12L);
+    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(0, 1000))).thenReturn(List.of(newer));
+    when(nfsDao.getDocumentsLinkingTo(1L, paths.subList(1000, 1001)))
+        .thenReturn(List.of(older, newerAgain));
+    when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
+        .thenReturn(true);
+
+    List<RecordInformation> result = manager.getLinkedDocuments(store.getFileSystem(), paths, user);
+
+    assertEquals(List.of(11L, 12L), result.stream().map(RecordInformation::getId).toList());
+  }
+
+  @Test
+  void lookupByFilesystemDeniedByTheAclNeverReadsTheIndex() {
+    doThrow(new AuthorizationException("denied"))
+        .when(aclChecker)
+        .assertCanRead(user, store.getFileSystem());
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> manager.getLinkedDocuments(store.getFileSystem(), List.of("a.dat"), user));
     verify(nfsDao, never()).getDocumentsLinkingTo(any(), any());
   }
 

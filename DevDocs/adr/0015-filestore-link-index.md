@@ -22,6 +22,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    `data/a//b` or `Data/a` name different objects. Filestores are per user and point at arbitrary base paths of one filesystem, and a
    filestore's path cannot change after creation, so the absolute path is safe to denormalise and
    makes "who links this S3 key" one indexed equality query across every user's filestore.
+   *Amended 2026-11-23:* paths compare exactly, trailing spaces included: S3 keys keep them and the
+   columns' binary collation ignores them, so every lookup by path compares the matched path again
+   after its indexed query. A lookup by filesystem and paths also asserts the caller's read access
+   to the filesystem itself, whichever entry point calls it.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
    editor, and cancelling an edit re-reads the saved content.
 4. A link whose filestore id does not exist in this instance is skipped, not failed: archive imports
@@ -30,6 +34,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    the API additionally reports the unreadable ones as owner-only placeholders, like the Gallery's
    linked-documents list. A sidecar is written into a bucket, so a private document's Global ID must
    not leave RSpace through it.
+   *Amended 2026-11-20:* "can read" is the generating user's whole read right, including what a PI
+   or admin may read in their group or community, shared or not, so a sidecar they save can name a
+   member's unshared document. That is intended: the sidecar carries only the Global ID page URL,
+   never the name, and opening it goes through the usual document permission check.
 
 ## Consequences
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-23-rsdev1736-index-barcode-data" context="run" author="tchoi">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="Barcode" indexName="idx_Barcode_barcodeData"/>
+      </not>
+    </preConditions>
+
+    <comment>RSDEV-1736: index Barcode.barcodeData. Every Inventory search runs an exact-match
+      barcode lookup (BarcodeDaoHibernateImpl) beside the Lucene query, and the column had no
+      index, so each search scanned every barcode ever added, soft-deleted ones included.
+
+      Raw SQL with a 190-character prefix for the same reason as changeLog-rsdev-1326.xml:
+      createIndex cannot express a prefix, and 190 utf8mb4 characters (760 bytes) stays under the
+      767-byte per-column limit of the REDUNDANT and COMPACT row formats. Longer barcodes still
+      match correctly; rows sharing the prefix are rechecked against the full value.
+
+      deleted is left out: it has low selectivity, the query loads whole entities so a prefix
+      index can never cover it, and it is rechecked on the fetched rows anyway.
+
+      ALGORITHM=INPLACE, LOCK=NONE keeps writes available during the build and makes MariaDB fail
+      loudly rather than silently copy the table at startup.</comment>
+
+    <sql>
+      ALTER TABLE Barcode
+      ADD INDEX idx_Barcode_barcodeData (barcodeData(190)),
+      ALGORITHM=INPLACE, LOCK=NONE;
+    </sql>
+
+    <rollback>
+      <sql>
+        ALTER TABLE Barcode DROP INDEX idx_Barcode_barcodeData;
+      </sql>
+    </rollback>
+  </changeSet>
+
+</databaseChangeLog>

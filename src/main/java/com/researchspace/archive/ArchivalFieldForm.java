@@ -44,8 +44,6 @@ public class ArchivalFieldForm {
 
   @XmlElement private String selection;
 
-  @XmlElement boolean isPassword;
-
   @XmlElement private String decimalPlace;
 
   @XmlElement private String multipleChoice;

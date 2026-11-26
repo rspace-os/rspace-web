@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
@@ -13,21 +14,27 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.AttachmentFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.ReferenceFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.dtos.UriFieldDTO;
+import com.researchspace.model.field.AttachmentFieldForm;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.RadioFieldForm;
+import com.researchspace.model.field.ReferenceFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.field.URIFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
@@ -114,6 +121,14 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
         recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
     String docName = "Doc_with_required_field_" + run;
     doc.setName(docName);
+    String stringFieldName = "Mandatory_String_" + run;
+    Field stringField =
+        doc.getFields().stream()
+            .filter(f -> f.getName().equals(stringFieldName))
+            .findFirst()
+            .orElseThrow();
+    stringField.setFieldData("edited string value");
+    fieldMgr.save(stringField, user);
     recordMgr.save(doc, user);
 
     ArchiveManifest manifest = new ArchiveManifest();
@@ -133,11 +148,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           getRequiredAttribute(formXml, "fieldForm", "name", fieldDefinition.name()),
           fieldDefinition.type() + " form field required flag");
     }
-    assertEquals(
-        "true",
-        getChildElementText(
-            formXml, "fieldForm", "name", passwordStringFieldName(run), "isPassword"),
-        "password string field flag");
+    assertThat(Files.readString(formXml.toPath())).doesNotContain("<isPassword>");
     assertEquals(
         "yes",
         getChildElementText(
@@ -174,9 +185,13 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
           importedFieldRequirements.get(fieldDefinition.name()),
           fieldDefinition.type() + " imported form field required flag");
     }
-    assertTrue(
-        ((StringFieldForm) importedFields.get(passwordStringFieldName(run))).isIfPassword(),
-        "imported string field remains a password field");
+    assertEquals(
+        "string value",
+        ((StringFieldForm) importedFields.get(stringFieldName)).getDefaultStringValue());
+    assertThat(importedDoc.getFields())
+        .filteredOn(field -> field.getName().equals(stringFieldName))
+        .extracting(Field::getFieldData)
+        .containsExactly("edited string value");
     assertTrue(
         ((ChoiceFieldForm) importedFields.get(multiSelectChoiceFieldName(run))).isMultipleChoice(),
         "imported choice field remains multi-select");
@@ -184,6 +199,113 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     assertTrue(importedRadio.isShowAsPickList(), "imported radio field remains a pick-list");
     assertTrue(
         importedRadio.isSortAlphabetic(), "imported radio field remains sorted alphabetically");
+  }
+
+  @Test
+  public void uriReferenceAndAttachmentFieldsKeepTypeAndContentThroughXmlExportAndImport()
+      throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+
+    String run = getRandomName(6);
+    List<FieldDefinition> fieldDefinitions =
+        List.of(
+            new FieldDefinition(
+                "Uri_" + run, true, FieldType.URI, new UriFieldDTO("Uri_" + run, true)),
+            new FieldDefinition(
+                "Reference_" + run,
+                false,
+                FieldType.REFERENCE,
+                new ReferenceFieldDTO("Reference_" + run, false)),
+            new FieldDefinition(
+                "Attachment_" + run,
+                true,
+                FieldType.ATTACHMENT,
+                new AttachmentFieldDTO("Attachment_" + run, true)),
+            new FieldDefinition(
+                "Text_" + run,
+                false,
+                FieldType.TEXT,
+                new TextFieldDTO<TextFieldForm>("Text_" + run, false, "")));
+    Map<String, String> contentByField =
+        Map.of(
+            "Uri_" + run, "https://example.org/" + run,
+            "Reference_" + run, "SD123",
+            "Attachment_" + run, "attachment_" + run + ".txt",
+            "Text_" + run, "<p>text " + run + "</p>");
+
+    RSForm form = formMgr.create(user);
+    for (FieldDefinition fieldDefinition : fieldDefinitions) {
+      formMgr.createFieldForm(fieldDefinition.source(), form.getId(), user);
+    }
+    formMgr.publish(form.getId(), true, null, user);
+
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    String docName = "Doc_with_uri_reference_attachment_" + run;
+    doc.setName(docName);
+    for (Field field : doc.getFields()) {
+      field.setFieldData(contentByField.get(field.getName()));
+      fieldMgr.save(field, user);
+    }
+    recordMgr.save(doc, user);
+
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(doc.getOid());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile =
+        archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
+
+    ArchivalImportConfig importConfig =
+        createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
+    ImportArchiveReport report =
+        importer.importArchive(zipFile, importConfig, NULL_MONITOR, importStrategy::doImport);
+
+    assertTrue(
+        report.isSuccessful(), report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy("; "));
+    StructuredDocument importedDoc = findImportedDoc(report, docName, user);
+    RSForm importedForm = formMgr.getWithPopulatedFieldForms(importedDoc.getForm().getId(), user);
+    List<FieldForm> importedFieldForms =
+        importedForm.getFieldForms().stream()
+            .sorted(Comparator.comparingInt(FieldForm::getColumnIndex))
+            .collect(Collectors.toList());
+
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getName)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::name).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getType)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::type).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::isMandatory)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::mandatory).collect(Collectors.toList()));
+    assertThat(importedFieldForms)
+        .extracting(FieldForm::getClass)
+        .containsExactly(
+            URIFieldForm.class,
+            ReferenceFieldForm.class,
+            AttachmentFieldForm.class,
+            TextFieldForm.class);
+
+    List<Field> importedFields =
+        importedDoc.getFields().stream()
+            .sorted(Comparator.comparingInt(Field::getColumnIndex))
+            .collect(Collectors.toList());
+    assertThat(importedFields)
+        .extracting(Field::getType)
+        .containsExactlyElementsOf(
+            fieldDefinitions.stream().map(FieldDefinition::type).collect(Collectors.toList()));
+    for (Field field : importedFields) {
+      assertEquals(
+          contentByField.get(field.getName()),
+          field.getFieldData(),
+          field.getType() + " field content");
+    }
   }
 
   @Test
@@ -310,6 +432,64 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
         .isEmpty();
   }
 
+  @Test
+  public void signStateReflectsImportedFieldValues() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+    String run = getRandomName(6);
+
+    // a document created from each form starts with the opposite sign state to its saved content
+    StructuredDocument filledDoc =
+        createSingleMandatoryTextFieldDoc(user, "Filled_" + run, "", "imported value");
+    StructuredDocument clearedDoc =
+        createSingleMandatoryTextFieldDoc(user, "Cleared_" + run, "default value", "");
+
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(filledDoc.getOid());
+    exportList.add(clearedDoc.getOid());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
+    expCfg.setExportScope(ExportScope.SELECTION);
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile =
+        archiveService.exportArchive(new ArchiveManifest(), exportList, expCfg).getExportFile();
+
+    ImportArchiveReport report =
+        importer.importArchive(
+            zipFile,
+            createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "sign-state")),
+            NULL_MONITOR,
+            importStrategy::doImport);
+
+    assertTrue(report.isSuccessful());
+    assertTrue(
+        findImportedDoc(report, filledDoc.getName(), user).isAllFieldsValid(),
+        "imported document with its mandatory field filled is signable");
+    assertFalse(
+        findImportedDoc(report, clearedDoc.getName(), user).isAllFieldsValid(),
+        "imported document with its mandatory field empty is not signable");
+  }
+
+  private StructuredDocument createSingleMandatoryTextFieldDoc(
+      User user, String docName, String defaultValue, String content) {
+    RSForm form = formMgr.create(user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>("Mandatory_" + docName, true, defaultValue),
+        form.getId(),
+        user);
+    formMgr.publish(form.getId(), true, null, user);
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    assertEquals(defaultValue.isEmpty(), !doc.isAllFieldsValid(), "sign state on creation");
+    doc.setName(docName);
+    Field field = doc.getFields().get(0);
+    field.setFieldData(content);
+    fieldMgr.save(field, user);
+    doc.setAllFieldsValid(!content.isEmpty());
+    recordMgr.save(doc, user);
+    return doc;
+  }
+
   private StructuredDocument findImportedDoc(ImportArchiveReport report, String name, User user) {
     for (BaseRecord rec : report.getImportedRecords()) {
       if (rec.isStructuredDocument() && name.equals(rec.getName())) {
@@ -339,17 +519,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             "Mandatory_String_" + run,
             true,
             FieldType.STRING,
-            new StringFieldDTO<>("Mandatory_String_" + run, true, "no", "string value")),
+            new StringFieldDTO<>("Mandatory_String_" + run, true, "string value")),
         new FieldDefinition(
             "Optional_String_" + run,
             false,
             FieldType.STRING,
-            new StringFieldDTO<>("Optional_String_" + run, false, "no", "string value")),
-        new FieldDefinition(
-            passwordStringFieldName(run),
-            true,
-            FieldType.STRING,
-            new StringFieldDTO<>(passwordStringFieldName(run), true, "yes", "secret value")),
+            new StringFieldDTO<>("Optional_String_" + run, false, "string value")),
         new FieldDefinition(
             "Mandatory_Text_" + run,
             true,
@@ -429,10 +604,6 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       boolean mandatory,
       FieldType type,
       FormFieldSource<? extends FieldForm> source) {}
-
-  private static String passwordStringFieldName(String run) {
-    return "Password_String_" + run;
-  }
 
   private static String multiSelectChoiceFieldName(String run) {
     return "MultiSelect_Choice_" + run;

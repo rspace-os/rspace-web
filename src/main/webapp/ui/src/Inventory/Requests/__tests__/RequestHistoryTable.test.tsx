@@ -1,6 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import materialTheme from "@/theme";
@@ -19,10 +18,10 @@ function change(overrides: Partial<ApiSampleRequestStatusChangeItem> = {}): ApiS
   };
 }
 
-function renderTable(statusChanges: Array<ApiSampleRequestStatusChangeItem>) {
+function renderTable(statusChanges: Array<ApiSampleRequestStatusChangeItem>, requesterNote: string | null = null) {
   return render(
     <ThemeProvider theme={materialTheme}>
-      <RequestHistoryTable statusChanges={statusChanges} />
+      <RequestHistoryTable statusChanges={statusChanges} requesterNote={requesterNote} />
     </ThemeProvider>,
   );
 }
@@ -49,30 +48,45 @@ describe("RequestHistoryTable", () => {
     ]);
   });
 
-  test("shows the date column by default", () => {
+  test("shows the Date and Additional Notes columns together, every time", () => {
     const created = "2026-01-01T10:00:00Z";
-    renderTable([change({ created })]);
+    renderTable([
+      change({ id: 1, status: "APPROVED", reason: "Sample no longer available", created }),
+      change({ id: 2, status: "REJECTED", reason: null, created }),
+    ]);
 
     // Computed via the same formatter under test, rather than a hardcoded literal, so this
     // doesn't depend on the test runner's own timezone.
-    expect(screen.getByText(isoToLocale(created))).toBeInTheDocument();
-  });
-
-  test("switches to the Additional Notes column, showing each change's reason or a placeholder", async () => {
-    const user = userEvent.setup();
-    const created = "2026-01-01T10:00:00Z";
-    renderTable([
-      change({ id: 1, reason: "Sample no longer available", created }),
-      change({ id: 2, reason: null, created }),
-    ]);
-
-    await user.click(screen.getByRole("button", { name: "inventory:tables.adjustableHeadCell.columnOptions" }));
-    await user.click(
-      screen.getByRole("menuitem", { name: "inventory:requestsManagement.detail.history.columns.additionalNotes" }),
-    );
-
+    expect(screen.getAllByText(isoToLocale(created))).toHaveLength(2);
     expect(screen.getByText("Sample no longer available")).toBeInTheDocument();
     expect(screen.getByText("inventory:requestsManagement.detail.fields.noComment")).toBeInTheDocument();
-    expect(screen.queryByText(isoToLocale(created))).not.toBeInTheDocument();
+  });
+
+  test("shows the requester's own note, not a reason, in the PENDING row", () => {
+    renderTable(
+      [
+        change({ id: 1, status: "PENDING", reason: null }),
+        change({ id: 2, status: "APPROVED", reason: "Looks good", created: "2026-01-02T10:00:00Z" }),
+      ],
+      "Need this for an upcoming experiment",
+    );
+
+    expect(screen.getByText("Need this for an upcoming experiment")).toBeInTheDocument();
+    expect(screen.getByText("Looks good")).toBeInTheDocument();
+  });
+
+  test("falls back to the placeholder in the PENDING row when the requester left no note", () => {
+    renderTable([change({ id: 1, status: "PENDING", reason: "A reason that should not be shown" })], null);
+
+    expect(screen.getByText("inventory:requestsManagement.detail.fields.noComment")).toBeInTheDocument();
+    expect(screen.queryByText("A reason that should not be shown")).not.toBeInTheDocument();
+  });
+
+  test("has no column-options cog", () => {
+    renderTable([change()]);
+
+    expect(
+      screen.queryByRole("button", { name: "inventory:tables.adjustableHeadCell.columnOptions" }),
+    ).not.toBeInTheDocument();
   });
 });

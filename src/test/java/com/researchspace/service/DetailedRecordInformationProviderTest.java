@@ -57,7 +57,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
 
     DetailedRecordInformation entry1Info =
         infoProvider.getDetailedRecordInformation(
-            notebook.getChildrens().iterator().next().getId(), u1, null, null);
+            folderDao.getChildren(notebook).iterator().next().getId(), u1, null, null);
     assertThat(entry1Info.getImplicitShares()).containsKey(notebook.getGlobalIdentifier());
     assertThat(entry1Info.getImplicitShares().get(notebook.getGlobalIdentifier()))
         .contains(group.getGroup().getDisplayName());

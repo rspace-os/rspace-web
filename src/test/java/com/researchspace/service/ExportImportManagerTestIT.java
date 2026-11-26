@@ -50,6 +50,7 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.dao.EcatImageDao;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
@@ -81,6 +82,7 @@ import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalSe
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalWorkFlowDataBuilder;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsElement;
+import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
@@ -191,6 +193,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired IconImageManager iconMgr;
   private @Autowired IMutablePropertyHolder properties;
   private @Autowired EcatImageDao imagDao;
+  private @Autowired NfsDao nfsDao;
   private @Autowired ArchiveRemover archiveRemover;
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired DiskSpaceChecker diskSpaceChecker;
@@ -1723,11 +1726,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     doInTransaction(
         () -> {
           Notebook copy = getNotebookNotById(createdNotebook, u1);
-          List<BaseRecord> copiedEntries = new ArrayList<>(copy.getChildrens());
+          List<BaseRecord> copiedEntries = new ArrayList<>(folderDao.getChildren(copy));
           copiedEntries.sort(creationDateSorter());
           Notebook original = getNotebookById(createdNotebook);
           assertFalse(original.getId().equals(copy.getId()));
-          List<BaseRecord> originalEntries = new ArrayList<>(original.getChildrens());
+          List<BaseRecord> originalEntries = new ArrayList<>(folderDao.getChildren(original));
           originalEntries.sort(creationDateSorter());
           String copies = join(copiedEntries.stream().map(r -> r.getName()).collect(toList()), ",");
           String originals =
@@ -2236,6 +2239,53 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
                 .getCurrentSession()
                 .createQuery("select count(i) from IconEntity i", Long.class)
                 .getSingleResult());
+  }
+
+  @Test
+  public void reimportedDocumentIndexesLinksToFilestoresOfThisInstance() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    NfsFileStore store = savedS3Store(user);
+    long exportingInstanceFilestoreId = 999999L;
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(
+            user,
+            nfsLink(store, "/run.dat")
+                + richTextUpdater.generateURLStringForNfs(
+                    exportingInstanceFilestoreId, "/foreign.dat", false));
+    ArchiveExportConfig cfg = createDefaultArchiveConfig(user, tempExportFolder);
+    ExportSelection selection =
+        ExportSelection.createRecordsExportSelection(
+            new Long[] {doc.getId()}, new String[] {"NORMAL"});
+    File zipFile =
+        exportImportMgr
+            .asyncExportSelectionToArchive(
+                selection, cfg, user, new URI("http://www.google.com"), standardPostExport)
+            .get()
+            .getExportFile();
+
+    user = userMgr.getUserByUsername(user.getUsername());
+    ArchivalImportConfig importCfg = createDefaultArchiveImportConfig(user, tempImportFolder);
+    ImportArchiveReport report =
+        exportImportMgr.importArchive(
+            fileToMultipartfile(zipFile.getName(), zipFile),
+            user.getUsername(),
+            importCfg,
+            NULL_MONITOR,
+            importStrategy::doImport);
+    assertTrue(report.isSuccessful());
+    StructuredDocument imported =
+        (StructuredDocument)
+            report.getImportedRecords().stream()
+                .filter(BaseRecord::isStructuredDocument)
+                .findFirst()
+                .orElseThrow();
+    assertThat(imported.getTextFields().get(0).getFieldData())
+        .contains(exportingInstanceFilestoreId + ":/foreign.dat");
+
+    List<NfsFieldLink> rows =
+        doInTransaction(() -> nfsDao.getFieldLinks(imported.getTextFields().get(0).getId()));
+    assertThat(rows).hasSize(1);
+    assertEquals("/run.dat", rows.get(0).getRelPath());
   }
 
   @Test

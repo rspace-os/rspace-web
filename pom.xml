@@ -270,10 +270,6 @@
     </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-toolchains-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
@@ -298,6 +294,22 @@
             <id>default-test</id>
             <configuration>
               <skip>${skipUnitTests}</skip>
+              <excludes>
+                <exclude>**/ProdConfigWiringTest.java</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+          <execution> <!-- separate execution for 'prod' profile tests -->
+            <id>unit-tests-production</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${skipUnitTests}</skip>
+              <includes>
+                <include>**/ProdConfigWiringTest.java</include>
+              </includes>
             </configuration>
           </execution>
           <execution> <!-- for 'dev' profile IT tests -->
@@ -317,7 +329,6 @@
                 <exclude>**/SysAdminSupportControllerMVCIT.java</exclude>
                 <!-- other problematic tests -->
                 <exclude>**/ExportApiControllerMVCIT.java</exclude>
-                <exclude>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</exclude>
               </excludes>
             </configuration>
           </execution>
@@ -344,7 +355,6 @@
             <configuration>
               <includes>
                 <include>**/ExportApiControllerMVCIT.java</include>
-                <include>**/CreateMissingUserFoldersForLabAdminsAndPIsIT.java</include>
               </includes>
             </configuration>
           </execution>
@@ -402,8 +412,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[17,18),[21,22)</version>
-                  <message>RSpace builds on Java 17 or 21. Run Maven with one of those (JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.</message>
+                  <version>${maven.java.versions}</version>
+                  <message>Run Maven on Java 21 (JAVA_HOME). To build or test on 17, pass -Djava-version=17 with a 17 entry in ~/.m2/toolchains.xml.</message>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -413,22 +423,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.2</version>
+        <version>3.11.0</version>
         <configuration>
           <usedDependencies>
             <!-- these dependencies show up as false positives in the unused dependency list -->
-            <dependency>org.tuckey:urlrewritefilter</dependency> <!-- used but not referenced in code -->
             <dependency>com.mysql:mysql-connector-j</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
             <dependency>jaxen:jaxen</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate.orm:hibernate-jcache</dependency> <!-- used but not referenced in code -->
-            <dependency>org.apache.tika:tika-parsers</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.codehaus.woodstox:wstx-asl</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>org.slf4j:slf4j-log4j12</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>com.lowagie:itext</dependency> <!-- used by javamelody -->
             <dependency>xalan:xalan</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
-            <dependency>net.bull.javamelody:javamelody-core</dependency> <!-- used for monitoring -->
-            <dependency>dom4j:dom4j</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.apache.commons:commons-dbcp2</dependency> <!-- used but not referenced in code -->
             <dependency>io.jsonwebtoken:jjwt-impl</dependency> <!-- used but not referenced in code -->
             <dependency>com.thoughtworks.xstream:xstream</dependency> <!-- used but not referenced in code -->
@@ -449,6 +453,7 @@
           <configuration>
               <java>
                   <toggleOffOn/>
+                  <shortenFullyQualifiedTypes/>
                   <removeUnusedImports/>
                   <googleJavaFormat>
                       <version>1.28.0</version>
@@ -1329,6 +1334,11 @@
       <version>1.14.0</version>
     </dependency>
     <dependency>
+      <groupId>org.semver4j</groupId>
+      <artifactId>semver4j</artifactId>
+      <version>6.0.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.hibernate.search</groupId>
       <artifactId>hibernate-search-mapper-orm</artifactId>
       <version>${hibernate-search.version}</version>
@@ -1970,7 +1980,7 @@
     <dependency>
       <groupId>org.xhtmlrenderer</groupId>
       <artifactId>flying-saucer-pdf</artifactId>
-      <version>9.7.1</version>
+      <version>9.13.4</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>
@@ -2003,6 +2013,28 @@
   </dependencies>
 
   <profiles>
+    <!-- Compile and test on a toolchain JDK only when asked (-Djava-version=17), for example
+      to run the tests on 17 from a Maven running on 21. Otherwise the Maven JVM is used, so no
+      toolchains.xml is needed. -->
+    <profile>
+      <id>toolchain</id>
+      <activation>
+        <property>
+          <name>java-version</name>
+        </property>
+      </activation>
+      <properties>
+        <maven.java.versions>[17,18),[21,22)</maven.java.versions>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-toolchains-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- Opt-in WAR content. Keep the bundle under WEB-INF so the deployment
       property controls access, including when the servlet container serves static files. -->
     <profile>
@@ -2613,6 +2645,12 @@
               <java>
                 <cleanthat/>
               </java>
+              <!-- The index is discarded whenever the Spotless config changes, so sharing it
+                   with the base config made every strict run (e.g. the pre-commit hook) force
+                   the next compile to re-format every file. -->
+              <upToDateChecking>
+                <indexFile>${project.basedir}/.spotless/spotless-strict-index</indexFile>
+              </upToDateChecking>
             </configuration>
             <executions>
               <execution>
@@ -2722,6 +2760,10 @@
 
     <assertj.version>3.27.7</assertj.version>
 
+    <!-- JDKs Maven may run on. Without a toolchain the build compiles and tests on it, so only
+      21; the toolchain profile also accepts 17. -->
+    <maven.java.versions>[21,22)</maven.java.versions>
+
     <!-- TEMPORARY: rspace-parent 3.2.1 still manages Mockito 3.7.7. Parent 3.3.0 carries
          5.23.0, so delete this override once the pinned parent version is bumped. -->
     <mockito.version>5.23.0</mockito.version>
@@ -2791,7 +2833,7 @@
     <sitemesh.version>3.2.2</sitemesh.version>
     <urlrewrite.version>5.1.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
-    <spotless.version>3.5.1</spotless.version>
+    <spotless.version>3.11.0</spotless.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->

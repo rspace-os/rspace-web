@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
@@ -565,8 +566,7 @@ class B2instConnectorImplTest {
           }
         };
     capture.start();
-    org.apache.logging.log4j.core.Logger coreLogger =
-        (org.apache.logging.log4j.core.Logger) LogManager.getLogger(B2instConnectorImpl.class);
+    Logger coreLogger = (Logger) LogManager.getLogger(B2instConnectorImpl.class);
     coreLogger.addAppender(capture);
     try {
       assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
@@ -679,8 +679,7 @@ class B2instConnectorImplTest {
           }
         };
     capture.start();
-    org.apache.logging.log4j.core.Logger coreLogger =
-        (org.apache.logging.log4j.core.Logger) LogManager.getLogger(B2instConnectorImpl.class);
+    Logger coreLogger = (Logger) LogManager.getLogger(B2instConnectorImpl.class);
     coreLogger.addAppender(capture);
     try {
       assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));

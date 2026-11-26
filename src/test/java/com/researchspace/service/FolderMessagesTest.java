@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -41,7 +42,7 @@ class FolderMessagesTest {
     assertEquals(
         "Cannot add this object [" + folder + "] as a child of itself.",
         messages.getExceptionMessage(exception));
-    assertEquals(0, folder.getChildren().size());
+    assertThat(folder.getParents()).isEmpty();
 
     ResponseEntity<Object> response =
         apiAdvice().handleLocalizedIllegalStateException(exception, null);
@@ -74,7 +75,6 @@ class FolderMessagesTest {
             + "]",
         messages.getExceptionMessage(exception));
     assertNull(child.getParent());
-    assertEquals(0, parent.getChildren().size());
   }
 
   @Test
@@ -93,7 +93,7 @@ class FolderMessagesTest {
         messages.getExceptionMessage(exception));
     assertEquals(parent, child.getParent());
     assertNull(parent.getParent());
-    assertEquals(1, parent.getChildren().size());
+    assertThat(child.getParents()).hasSize(1);
   }
 
   @Test

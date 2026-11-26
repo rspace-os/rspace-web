@@ -86,13 +86,12 @@ public class HtmlImageResolver implements ReplacedElementFactory {
         final Image image = Image.getInstance(imageBytes);
         image.scaleAbsolute(
             image.getPlainWidth() * dotsPerPixel, image.getPlainHeight() * dotsPerPixel);
-        final FSImage fsImage = new ITextFSImage(image);
-        if (fsImage != null) {
-          if ((cssWidth != -1) || (cssHeight != -1)) {
-            fsImage.scale(cssWidth, cssHeight);
-          }
-          return new ITextImageElement(fsImage);
+        FSImage fsImage = new ITextFSImage(image);
+        if ((cssWidth != -1) || (cssHeight != -1)) {
+          // FSImage is immutable: scale() returns a new image rather than resizing this one.
+          fsImage = fsImage.scale(cssWidth, cssHeight);
         }
+        return new ITextImageElement(fsImage);
       } catch (IOException | BadElementException e) {
         log.warn(String.format("Problem adding image %s to pdf.", src), e);
         return null;

@@ -397,7 +397,10 @@ function _updateFields(fields) {
   }
 }
 
-/* this is called after an 'import file' or drag & drop */
+/*
+ * This is called after an 'import file' or drag & drop.
+ * Returns a promise for a chemistry file, which settles once its element is inserted or has failed.
+ */
 function insertContentAfterFileUpload(activeEditorId, result) {
   var template = "";
   var json = {};
@@ -436,7 +439,7 @@ function insertContentAfterFileUpload(activeEditorId, result) {
         ? "insertedDocumentTemplate"
         : "insertedMiscdocTemplate";
   } else if (result.type == "Chemistry") {
-    insertChemElement(result.id, activeEditorId, result.name);
+    return insertChemElement(result.id, activeEditorId, result.name);
   }
 
   if (template) {

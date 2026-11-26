@@ -153,7 +153,8 @@ public class ViteDevServerProxyServlet extends HttpServlet {
   }
 
   private URI buildUpstreamUri(HttpServletRequest req) {
-    String path = req.getRequestURI();
+    // Jetty passes literal braces through in request URIs, but URI.create rejects them.
+    String path = req.getRequestURI().replace("{", "%7B").replace("}", "%7D");
     String query = req.getQueryString();
     return URI.create(upstreamOrigin + path + (query == null ? "" : "?" + query));
   }

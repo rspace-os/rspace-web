@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { Page } from "@playwright/test";
+import type { Locator, Page, Route } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { CHEM_IMAGE_SELECTOR } from "@/__tests__/e2e/components/document/ChemistryFieldContent";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
@@ -20,11 +20,74 @@ const ASPIRIN = {
 };
 
 const CHEMDRAW_CDX = fixturePath(import.meta.url, "fixtures/Fluorescein1.cdx");
+const CREATE_CHEM_ELEMENT_URL = "**/chemical/ajax/createChemElement/";
+const CHEM_ELEMENT_TEMPLATE_URL = "**/fieldTemplates/ajax/chemElementLink";
 const MRV_STRUCTURE_A = fixturePath(import.meta.url, "fixtures/marvinjs_structure_a.mrv");
 const MRV_STRUCTURE_B = fixturePath(import.meta.url, "fixtures/marvinjs_structure_b.mrv");
 const MRV_STRUCTURE_AB = fixturePath(import.meta.url, "fixtures/marvinjs_structure_ab.mrv");
 // A true chemical substructure of MRV_STRUCTURE_A: the same ring system with two of its three substituent branches removed.
 const MRV_SUBSTRUCTURE_A = fixturePath(import.meta.url, "fixtures/marvinjs_substructure_a.mrv");
+
+/** Holds matching requests until the test releases each one, so a pending state can be asserted. */
+async function holdRequests(page: Page, url: string): Promise<{ next: () => Promise<Route> }> {
+  const held: Route[] = [];
+  const waiting: ((route: Route) => void)[] = [];
+  await page.route(url, (route) => {
+    const waiter = waiting.shift();
+    if (waiter) {
+      waiter(route);
+    } else {
+      held.push(route);
+    }
+  });
+  return {
+    next: () => {
+      const route = held.shift();
+      return route ? Promise.resolve(route) : new Promise((resolve) => waiting.push(resolve));
+    },
+  };
+}
+
+function chemdrawFile(name: string): { name: string; mimeType: string; buffer: Buffer } {
+  return { name, mimeType: "application/octet-stream", buffer: readFileSync(CHEMDRAW_CDX) };
+}
+
+// The legacy jQuery blockUI overlay has no role or accessible name.
+function insertingBlocker(page: Page): Locator {
+  return page.locator(".blockUI.blockMsg").filter({ hasText: "Inserting chem files..." });
+}
+
+function pageBlocker(page: Page): Locator {
+  return page.locator(".blockUI.blockOverlay");
+}
+
+type TinyMceEditorHandle = { id: string; getContent: () => string };
+type TinyMceGlobal = {
+  init: (settings: Record<string, unknown>) => Promise<TinyMceEditorHandle[]>;
+  get: (id: string) => TinyMceEditorHandle;
+  setActive: (editor: TinyMceEditorHandle) => void;
+};
+
+const OTHER_EDITOR_ID = "rtf_other";
+
+/** Makes a second TinyMCE editor the active one, as if the user had moved to another field. */
+async function activateAnotherEditor(page: Page): Promise<void> {
+  await page.evaluate(async (id) => {
+    const { tinymce } = window as unknown as { tinymce: TinyMceGlobal };
+    const host = document.createElement("textarea");
+    host.id = id;
+    document.body.append(host);
+    const [editor] = await tinymce.init({ target: host, menubar: false, toolbar: false, plugins: [] });
+    tinymce.setActive(editor);
+  }, OTHER_EDITOR_ID);
+}
+
+function otherEditorContent(page: Page): Promise<string> {
+  return page.evaluate(
+    (id) => (window as unknown as { tinymce: TinyMceGlobal }).tinymce.get(id).getContent(),
+    OTHER_EDITOR_ID,
+  );
+}
 
 /** Creates a Basic Document and inserts aspirin into its "New List of Materials" field via Ketcher. */
 async function insertAspirinViaKetcher(
@@ -171,6 +234,79 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
 
     const field = await docEditor.getField("New List of Materials");
     await expect(field.chemistry.chemElement).toBeVisible();
+  });
+
+  test("As a user, dropping a chemistry file into a document keeps the editor blocked until its structure is inserted", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await pageWorkspace.open();
+    const docEditor = await pageWorkspace.createBasicDocument();
+    const field = await docEditor.getField("New List of Materials");
+    const conversions = await holdRequests(page, CREATE_CHEM_ELEMENT_URL);
+    const templates = await holdRequests(page, CHEM_ELEMENT_TEMPLATE_URL);
+
+    await field.dropFiles([chemdrawFile("Fluorescein1.cdx")]);
+    const conversion = await conversions.next();
+    await expect(insertingBlocker(page)).toBeVisible();
+
+    await conversion.continue();
+    const template = await templates.next();
+    await expect(insertingBlocker(page)).toBeVisible();
+    await expect(field.chemistry.chemElement).toHaveCount(0);
+
+    await template.continue();
+    await expect(field.chemistry.chemElement).toBeVisible();
+    await expect(pageBlocker(page)).toBeHidden();
+  });
+
+  test("As a user, a dropped chemistry file is not inserted into another field that became active while it was inserting", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await pageWorkspace.open();
+    const docEditor = await pageWorkspace.createBasicDocument();
+    const field = await docEditor.getField("New List of Materials");
+    const templates = await holdRequests(page, CHEM_ELEMENT_TEMPLATE_URL);
+
+    await field.dropFiles([chemdrawFile("Fluorescein1.cdx")]);
+    const template = await templates.next();
+    await activateAnotherEditor(page);
+
+    await template.continue();
+    await expect(page.getByText("There was a problem creating chemical: Fluorescein1.cdx")).toBeVisible();
+    await expect(pageBlocker(page)).toBeHidden();
+    await expect(field.chemistry.chemElement).toHaveCount(0);
+    expect(await otherEditorContent(page)).toBe("");
+  });
+
+  test("As a user, when some dropped chemistry files fail, the editor stays blocked until every file settles", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await pageWorkspace.open();
+    const docEditor = await pageWorkspace.createBasicDocument();
+    const field = await docEditor.getField("New List of Materials");
+    const conversions = await holdRequests(page, CREATE_CHEM_ELEMENT_URL);
+    const templates = await holdRequests(page, CHEM_ELEMENT_TEMPLATE_URL);
+
+    await field.dropFiles([chemdrawFile("Fluorescein1.cdx"), chemdrawFile("Fluorescein2.cdx")]);
+    const failedConversion = await conversions.next();
+    const conversion = await conversions.next();
+    await expect(insertingBlocker(page)).toBeVisible();
+
+    await failedConversion.fulfill({ json: { error: { errorMessages: ["Conversion failed"] } } });
+    await expect(page.getByText("There was a problem creating chemical: Fluorescein1.cdx")).toBeVisible();
+    await expect(insertingBlocker(page)).toBeVisible();
+
+    await conversion.continue();
+    await (await templates.next()).abort();
+    await expect(page.getByText("There was a problem creating chemical: Fluorescein2.cdx")).toBeVisible();
+    await expect(pageBlocker(page)).toBeHidden();
+    await expect(field.chemistry.chemElement).toHaveCount(0);
+
+    await field.typeAtEnd(" still editable");
+    await expect(field.body).toContainText("still editable");
   });
 
   test("As a user, viewing a Gallery-inserted chemical structure opens the Ketcher viewer in read-only mode", async ({

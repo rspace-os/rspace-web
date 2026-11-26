@@ -996,8 +996,12 @@ paths:
             type: boolean
             default: false
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The sample object returned by the delete operation. If deletion proceeds, the sample is marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sample"
   "/samples/{sampleId}/restore":
     put:
       summary: Restore deleted Sample
@@ -1709,8 +1713,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/subSampleIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The subsample marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubSample"
   "/subSamples/{subSampleId}/restore":
     put:
       summary: Restore deleted SubSample
@@ -2107,8 +2115,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/sampleTemplateIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The sample template marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleTemplate"
   "/sampleTemplates/{sampleTemplateId}/restore":
     put:
       summary: Restore deleted Sample Template
@@ -2490,8 +2502,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/containerIdParam"
       responses:
-        "204":
-          description: No content
+        "200":
+          description: The container marked as deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Container"
   "/containers/{containerId}/restore":
     put:
       summary: Restore deleted Container
@@ -3294,7 +3310,7 @@ paths:
         To map CSV column name to standard sample field set property of `fieldMappings` with a name of CSV column and a value being one of: `name`, `description`, `tags`, `source`, `expiry date`, `quantity`. To ignore CSV column set value to null.
 
 
-        The values from CSV columns not mentioned in `fieldMappings` will be imported into sample fields defined by the template, in the order of fields in the template (i.e. 1st CSV column into 1st sample field, 2nd into 2nd, etc.). The number of CSV columns mapped into sample fields has to exactly match the number of template fields, i.e. CSV file must have a column for every template field, in the right order.
+        The values from CSV columns not mentioned in `fieldMappings` will be imported into sample fields defined by the template, in the order of fields in the template (i.e. 1st CSV column into 1st sample field, 2nd into 2nd, etc.). A column whose header names a template field fills that field instead; matching ignores case, surrounding spaces and the CSV export's `(TYPE)`, `(TYPE, IT<n>)` or `(TYPE, NT<n>)` suffix. The remaining columns fill the remaining template fields in order. If two columns name the same template field, the import fails prevalidation. A radio or choice cell can hold one option or a JSON array of options (the CSV export's format), and a choice cell can also hold a comma-separated list of options. When the import creates the template from `templateInfo`, columns always fill its fields in order. The number of CSV columns mapped into sample fields has to exactly match the number of template fields, i.e. CSV file must have a column for every template field.
 
 
         Each imported sample will have, by default, a single subsample, placed in a new container created on user's Bench during import. To put a default subsample into one of the containers imported through containers CSV in the same import operation the sample CSV column can be mapped to `parent container import id`, with values corresponding to values in containers CSV mapped to `import identifier`. To put a default subsample into preexisting container put the global id of that container in sample CSV column mapped to `parent container global id`.
@@ -3327,7 +3343,7 @@ paths:
            * `fieldMappings` field that maps CSV columns to standard instrument fields (optional, apart from `name`), and marks CSV columns that should be ignored.
 
 
-        To map a CSV column name to a standard instrument field set a property of `fieldMappings` with the CSV column name as key and a value being one of: `name`, `description`, `tags`, `parent container global id`. To ignore a CSV column set the value to null. The values from CSV columns not mentioned in `fieldMappings` are imported into instrument fields defined by the template, in order; the number of mapped columns has to exactly match the number of template fields. Imported instruments are placed on the user's Workbench unless a `parent container global id` mapping is provided.
+        To map a CSV column name to a standard instrument field set a property of `fieldMappings` with the CSV column name as key and a value being one of: `name`, `description`, `tags`, `parent container global id`. To ignore a CSV column set the value to null. The values from CSV columns not mentioned in `fieldMappings` are imported into instrument fields defined by the template, in order. A column whose header names a template field fills that field instead; matching ignores case, surrounding spaces and the CSV export's `(TYPE)`, `(TYPE, IT<n>)` or `(TYPE, NT<n>)` suffix. The remaining columns fill the remaining template fields in order. If two columns name the same template field, the import fails prevalidation. A radio or choice cell can hold one option or a JSON array of options (the CSV export's format), and a choice cell can also hold a comma-separated list of options. When the import creates the template from `templateInfo`, columns always fill its fields in order. The number of mapped columns has to exactly match the number of template fields. Imported instruments are placed on the user's Workbench unless a `parent container global id` mapping is provided.
 
 
         ## Import results

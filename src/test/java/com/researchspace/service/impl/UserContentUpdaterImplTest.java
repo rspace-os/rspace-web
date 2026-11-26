@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.dao.FolderDao;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.RecordManager;
@@ -23,6 +24,7 @@ public class UserContentUpdaterImplTest {
   private UserContentUpdater testee;
   @Mock private UserFolderCreator userFolderCreatorMock;
   @Mock private RecordManager recordManagerMock;
+  @Mock private FolderDao folderDaoMock;
   @Mock private User userMock;
   @Mock private Folder userSnippetFolder;
   @Mock private Folder previouslyCreatedSnippetFolder;
@@ -32,14 +34,15 @@ public class UserContentUpdaterImplTest {
     testee = new UserContentUpdaterImpl();
     ReflectionTestUtils.setField(testee, "userFolderCreator", userFolderCreatorMock);
     ReflectionTestUtils.setField(testee, "recordManager", recordManagerMock);
+    ReflectionTestUtils.setField(testee, "folderDao", folderDaoMock);
     when(recordManagerMock.getGalleryMediaFolderForUser(eq(Folder.SNIPPETS_FOLDER), eq(userMock)))
         .thenReturn(userSnippetFolder);
   }
 
   @Test
   public void shouldCreateSharedSnippetFolderOnUserContentUpdateIfNotCreatedAlready() {
-    when(userSnippetFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
+    when(folderDaoMock.getSystemSubFolderByName(
+            userSnippetFolder, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
         .thenReturn(null);
     testee.doUserContentUpdates(userMock);
     verify(userFolderCreatorMock).createSharedSnippetFolder(eq(userMock), eq(userSnippetFolder));
@@ -47,8 +50,8 @@ public class UserContentUpdaterImplTest {
 
   @Test
   public void shouldNotCreateSharedSnippetFolderOnUserContentUpdateIfCreatedAlready() {
-    when(userSnippetFolder.getSystemSubFolderByName(
-            SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
+    when(folderDaoMock.getSystemSubFolderByName(
+            userSnippetFolder, SHARED_SNIPPETS_FOLDER_PREFIX + Folder.SHARED_FOLDER_NAME))
         .thenReturn(previouslyCreatedSnippetFolder);
     testee.doUserContentUpdates(userMock);
     verify(userFolderCreatorMock, never())

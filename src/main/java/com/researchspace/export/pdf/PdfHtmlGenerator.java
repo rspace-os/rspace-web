@@ -133,7 +133,7 @@ public class PdfHtmlGenerator {
   private Document stringToJsoupDoc(String html) {
     Document doc = Jsoup.parse(html);
     doc.outputSettings()
-        .syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        .syntax(Document.OutputSettings.Syntax.xml)
         .escapeMode(Entities.EscapeMode.xhtml)
         .charset("UTF-8");
     return doc;

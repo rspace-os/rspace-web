@@ -128,7 +128,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertThat(root.getChildren()).isNotEmpty();
+    assertThat(folderDao.getChildren(root)).isNotEmpty();
 
     logoutAndLoginAs(newUser);
 
@@ -215,7 +215,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     initialiseContentWithEmptyContent(newUser);
 
     Folder root = initialiseContentWithExampleContent(newUser);
-    assertTrue(!root.getChildren().isEmpty());
+    assertThat(folderDao.getChildren(root)).isNotEmpty();
 
     logoutAndLoginAs(newUser);
 
@@ -2002,7 +2002,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     // Modify the form
     RSForm formToEdit = formMgr.getForEditing(form.getId(), user, anySessionTracker());
     assertTrue(formToEdit.isTemporary());
-    StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<>("New String Field", "no", "abc");
+    StringFieldDTO<StringFieldForm> dto = new StringFieldDTO<>("New String Field", "abc");
     formMgr.createFieldForm(dto, formToEdit.getId(), user);
 
     // Update the form

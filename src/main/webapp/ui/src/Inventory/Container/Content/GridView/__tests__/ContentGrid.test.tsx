@@ -1,5 +1,4 @@
 import "@/stores/stores/RootStore";
-import "@/__tests__/__mocks__/resizeObserver";
 import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, within } from "@testing-library/react";
@@ -452,7 +451,7 @@ describe("ContentGrid", () => {
 
     it("hides after a few seconds", async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
       renderGrid(boxWithA1Taken());
       await user.tab();
       expect(screen.getByRole("note")).toBeInTheDocument();

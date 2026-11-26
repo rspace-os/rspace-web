@@ -183,6 +183,26 @@ export class TinyMceEditor {
     await this.body.getByRole("img", { name: `image ${fileName}` }).waitFor({ state: "visible" });
   }
 
+  /** Drops files from the computer onto this editor's Gallery drop zone. */
+  async dropFiles(files: { name: string; mimeType: string; buffer: Buffer }[]): Promise<void> {
+    await this.waitForReady();
+    await this.body.click();
+    const dataTransfer = await this.page.evaluateHandle(
+      (items) => {
+        const transfer = new DataTransfer();
+        for (const { name, mimeType, bytes } of items) {
+          transfer.items.add(new File([new Uint8Array(bytes)], name, { type: mimeType }));
+        }
+        return transfer;
+      },
+      files.map(({ name, mimeType, buffer }) => ({ name, mimeType, bytes: [...buffer] })),
+    );
+    // The legacy drop zone is a jQuery-rendered overlay with no role or label.
+    const editArea = this.container.locator(".tox-edit-area");
+    await editArea.dispatchEvent("dragover", { dataTransfer });
+    await editArea.locator(".drag-drop-gallery").dispatchEvent("drop", { dataTransfer });
+  }
+
   get imageElement(): Locator {
     return this.frame.locator('img[src*="sourceType=IMAGE"]');
   }

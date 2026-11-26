@@ -9,15 +9,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.inventory.FilestoreLinkingItem;
 import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import java.util.List;
@@ -160,5 +168,104 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
   public void findReferencingItemsRejectsMissingTarget() {
     User user = createInitAndLoginAnyUser();
     assertThrows(ApiRuntimeException.class, () -> linkManager.findReferencingItems("SA9999", user));
+  }
+
+  private NfsFileSystem savedFileSystem() {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createS3FileSystem(null);
+    nfsMgr.saveNfsFileSystem(fs);
+    return fs;
+  }
+
+  private ApiSampleWithFullSubSamples sampleLinking(
+      User owner, NfsFileStore store, String remotePath, String relation) {
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType(relation);
+    link.setFilestoreTarget(new ApiInventoryLinkFilestoreTarget(store.getId(), remotePath));
+    ApiExtraField field = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+    field.setName("Raw data");
+    field.setNewFieldRequest(true);
+    field.setLink(link);
+    ApiSample update = new ApiSample();
+    update.setId(sample.getId());
+    update.setExtraFields(List.of(field));
+    sampleApiMgr.updateApiSample(update, owner);
+    return sample;
+  }
+
+  @Test
+  public void findsTheItemsLinkingAFilestorePathAndHidesUnreadableOnesBehindTheirOwner() {
+    User owner = createInitAndLoginAnyUser();
+    NfsFileSystem fs = savedFileSystem();
+    // linked through a filestore rooted at /data, looked up by the absolute path
+    NfsFileStore store = nfsMgr.createAndSaveNewFileStore(fs.getId(), "data", "/data", owner);
+    ApiSampleWithFullSubSamples sample = sampleLinking(owner, store, "/XRD/run.dat", "IsSourceOf");
+    flushDatabaseState();
+
+    List<FilestoreLinkingItem> own =
+        linkManager.findItemsLinkingFilestorePaths(
+            fs, List.of("data/XRD", "data/XRD/run.dat"), owner);
+
+    assertEquals(1, own.size());
+    assertEquals(sample.getGlobalId(), own.get(0).globalId());
+    assertEquals("SAMPLE", own.get(0).type());
+    assertEquals("IsSourceOf", own.get(0).relationType());
+
+    User stranger = createInitAndLoginAnyUser();
+    List<FilestoreLinkingItem> hidden =
+        linkManager.findItemsLinkingFilestorePaths(fs, List.of("data/XRD/run.dat"), stranger);
+
+    assertEquals(1, hidden.size());
+    assertFalse(hidden.get(0).isReadable());
+    assertNull(hidden.get(0).name());
+    assertEquals(owner.getFullName(), hidden.get(0).ownerFullName());
+  }
+
+  @Test
+  public void ignoresOtherPathsAndTheSamePathOnAnotherFilesystem() {
+    User owner = createInitAndLoginAnyUser();
+    NfsFileSystem fs = savedFileSystem();
+    NfsFileSystem otherFs = savedFileSystem();
+    NfsFileStore store = nfsMgr.createAndSaveNewFileStore(fs.getId(), "data", "/data", owner);
+    sampleLinking(owner, store, "/XRD/run.dat", "IsSourceOf");
+    flushDatabaseState();
+
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("data/XRD/other.dat"), owner))
+        .isEmpty();
+    assertThat(
+            linkManager.findItemsLinkingFilestorePaths(otherFs, List.of("data/XRD/run.dat"), owner))
+        .isEmpty();
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of(), owner)).isEmpty();
+  }
+
+  @Test
+  public void aDeletedLinkNoLongerReportsItsItem() {
+    User owner = createInitAndLoginAnyUser();
+    NfsFileSystem fs = savedFileSystem();
+    NfsFileStore store = nfsMgr.createAndSaveNewFileStore(fs.getId(), "data", "/data", owner);
+    sampleLinking(owner, store, "/XRD/run.dat", "IsSourceOf");
+    InventoryLink link =
+        linkDao.getAll().stream()
+            .filter(saved -> store.getId().equals(saved.getFilestoreId()))
+            .findFirst()
+            .orElseThrow();
+    linkManager.deleteLink(link, owner);
+    flushDatabaseState();
+
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("data/XRD/run.dat"), owner))
+        .isEmpty();
+  }
+
+  @Test
+  public void aPathDifferingOnlyByATrailingSpaceIsAnotherItem() {
+    User owner = createInitAndLoginAnyUser();
+    NfsFileSystem fs = savedFileSystem();
+    NfsFileStore store = nfsMgr.createAndSaveNewFileStore(fs.getId(), "data", "/data", owner);
+    sampleLinking(owner, store, "/XRD/run.dat", "IsSourceOf");
+    flushDatabaseState();
+
+    // S3 keys keep trailing spaces, which the path column's collation ignores
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("data/XRD/run.dat "), owner))
+        .isEmpty();
   }
 }

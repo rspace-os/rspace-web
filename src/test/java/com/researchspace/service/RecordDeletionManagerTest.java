@@ -24,6 +24,7 @@ import com.researchspace.webapp.controller.GalleryController;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
@@ -146,14 +147,16 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
   public void testDeleteNotebook() throws Exception {
     Folder root = folderDao.getRootRecordForUser(user);
     Notebook nbk = createNotebookWithNEntries(root.getId(), "notebook", 2, user);
-    for (BaseRecord br : nbk.getChildrens()) {
+    List<BaseRecord> entries = folderDao.getChildren(nbk);
+    assertThat(entries).hasSize(2);
+    for (BaseRecord br : entries) {
       assertFalse(br.isDeletedForUser(user));
     }
     recordDeletionMgr.deleteFolder(root.getId(), nbk.getId(), user);
     Notebook deleted = folderMgr.getNotebook(nbk.getId());
     assertTrue(deleted.isDeleted());
     assertTrue(deleted.isDeletedForUser(user));
-    for (BaseRecord br : nbk.getChildrens()) {
+    for (BaseRecord br : entries) {
       assertTrue(br.isDeletedForUser(user));
     }
   }
@@ -170,10 +173,11 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteFolder(root.getId(), f.getId(), user);
 
     Folder deletedf1 = folderDao.get(f.getId());
-    assertThat(deletedf1.getChildren()).hasSize(1); // still is a child - reln is till there
+    // deleting a folder keeps its content edges
+    assertThat(folderDao.getChildren(deletedf1)).hasSize(1);
 
     Folder deletedf2 = folderDao.get(f2.getId());
-    assertThat(deletedf2.getChildren()).hasSize(1); // still is a child - reln is till there
+    assertThat(folderDao.getChildren(deletedf2)).hasSize(1);
     Record deletedsdoc = recordDao.get(sdoc.getId());
     assertTrue(deletedsdoc.isDeleted());
     assertTrue(deletedsdoc.getParents().iterator().next().isRecordInFolderDeleted());

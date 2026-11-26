@@ -13,6 +13,7 @@ import com.researchspace.archive.AbstractArchivalParserRef;
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
+import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalFileNotExistException;
 import com.researchspace.archive.ArchivalForm;
 import com.researchspace.archive.ArchivalGalleryMetaDataParserRef;
@@ -358,12 +359,14 @@ public class ArchiveParserImpl implements IArchiveParser {
       }
       parserRef.setName(folderName);
       parserRef.setPath(recordFolder);
+      parserRef.setArchiveRoot(rootFolder);
 
       // If this is a document, add to documentIdToParserRefs
       if (parserRef.isDocument()) {
         ArchivalDocumentParserRef archivalDocumentParserRef = (ArchivalDocumentParserRef) parserRef;
 
         if (archivalDocumentParserRef.getArchivalDocument() != null) {
+          checkFileNamesInsideArchive(archivalDocumentParserRef, report);
           documentIdToParserRefs.put(
               archivalDocumentParserRef.getArchivalDocument().getDocId(),
               archivalDocumentParserRef);
@@ -403,6 +406,28 @@ public class ArchiveParserImpl implements IArchiveParser {
     }
 
     return archiveModel;
+  }
+
+  /**
+   * Fails validation if the document XML names a file outside the extracted archive, so the import
+   * stops before anything is saved.
+   */
+  private void checkFileNamesInsideArchive(
+      ArchivalDocumentParserRef ref, ImportArchiveReport report) {
+    try {
+      ArchiveRecordFolder folder = new ArchiveRecordFolder(ref.getArchiveRoot(), ref.getPath());
+      for (ArchivalField field : ref.getArchivalDocument().getListFields()) {
+        folder.checkFileNames(field);
+      }
+    } catch (IOException e) {
+      log.warn("Rejected archive folder {}: {}", ref.getName(), e.getMessage());
+      report.setValidationResult(ImportValidationRule.FILE_NAMES_INSIDE_ARCHIVE, false);
+      report
+          .getErrorList()
+          .addErrorMsg(
+              messages.getMessage(
+                  "archiveImport.errors.fileOutsideArchive", new Object[] {ref.getName()}));
+    }
   }
 
   private AbstractArchivalParserRef generateParserRef(

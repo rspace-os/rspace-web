@@ -377,6 +377,26 @@ resolved during design. This file is a glossary only — no implementation detai
   entries are skipped as another server's.
   _Avoid_: dropped entry, lost link, failed link, unresolved identifier
 
+## Publications
+
+- **Publication** — an ELN document or notebook made viewable without signing
+  in, through its publication link. A notebook's publication covers all its
+  current and future entries. Every signed-in user can read any publication,
+  whichever kind it is.
+  _Avoid_: public share
+- **Publication link** — the unguessable token that addresses a publication's
+  public page; whoever holds it can view the publication. Distinct from the
+  Public link suffix of an Inventory identifier.
+  _Avoid_: public link, capability URL
+- **Internet publication** — a publication made with "Publish on the internet":
+  listed on RSpace's public list of published documents and open to search
+  engines, so its publication link is no secret.
+  _Avoid_: listed publication, public document
+- **Link-only publication** — a publication made with "Publish a link": not
+  listed, and search engines are told not to index it. RSpace never hands a
+  visitor who is not signed in its publication link by Global ID.
+  _Avoid_: unlisted publication, private publication
+
 ## Record version history
 
 - **Revision** — a single audit row: one recorded change to a record, identified
@@ -438,8 +458,9 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: link table, nfs link table
 - **Metadata sidecar** — the DataCite-style YAML record RSpace composes for the
   files of an S3 folder and can save next to them; the Gallery action that
-  creates it is labelled "Generate Data Record". It names the folder's Linked
-  documents by their Global ID page.
+  creates it is labelled "Generate Data Record". It names, by their Global ID
+  page, the folder's Linked documents and the Inventory items whose Link target
+  is the folder or one of its files.
   _Avoid_: data record (outside the UI label), sidecar file
 
 ## Inventory links

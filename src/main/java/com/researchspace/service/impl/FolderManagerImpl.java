@@ -1,11 +1,9 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.MediaUtils.GALLERY_MEDIA_FOLDERS;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.contains;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.MediaUtils;
@@ -14,7 +12,6 @@ import com.researchspace.dao.RecordDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.events.RecordCopyEvent;
@@ -37,6 +34,7 @@ import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.RecordContainerProcessor;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.views.RecordCopyResult;
@@ -55,9 +53,9 @@ import com.researchspace.service.UserManager;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -121,15 +119,6 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   public FolderManagerImpl() {}
-
-  @Override
-  public Folder getFolder(Long folderid, User user, SearchDepth depth) {
-    Folder folder = folderDao.get(folderid);
-    if (!SearchDepth.ZERO.equals(depth)) {
-      initSubFolderTree(folder, depth);
-    }
-    return folder;
-  }
 
   @Override
   public Folder getFolder(Long folderid, User user) {
@@ -214,15 +203,6 @@ public class FolderManagerImpl implements FolderManager {
     return notebook;
   }
 
-  private void initSubFolderTree(Folder rc, final SearchDepth depth) {
-    for (RecordToFolder subFlder : rc.getChildren()) {
-      subFlder.getClass(); // init;
-      if (subFlder.getRecord().isFolder() && SearchDepth.INFINITE.equals(depth)) {
-        initSubFolderTree((Folder) subFlder.getRecord(), depth); // recurse
-      }
-    }
-  }
-
   @Override
   public Folder save(Folder f, User user) {
     return folderDao.save(f);
@@ -249,7 +229,7 @@ public class FolderManagerImpl implements FolderManager {
       RecordCopyResult result) {
 
     // just copy top level folder basic info - a shallow copy
-    Folder copiedFolder = original.copy(u, false);
+    Folder copiedFolder = original.copy();
     setBasicAclPermissionsOnFolder(copiedFolder);
     result.add(original, copiedFolder);
     sleep();
@@ -265,10 +245,12 @@ public class FolderManagerImpl implements FolderManager {
     addChild(targetFolder.getId(), copiedFolder, u);
 
     // we copy the children, after sorting them by creation date and filtering out deleted records
-    // (RSPAC-916)
-    Set<BaseRecord> childrenSet = original.getChildrens(new FilterDeletedRecords(u));
-    List<BaseRecord> childrenList = new ArrayList<>(childrenSet);
-    childrenList.sort(BaseRecord.CREATION_DATE_COMPARATOR);
+    FilterDeletedRecords notDeleted = new FilterDeletedRecords(u);
+    List<BaseRecord> childrenList =
+        folderDao.getChildren(original).stream()
+            .filter(notDeleted::filter)
+            .sorted(BaseRecord.CREATION_DATE_COMPARATOR)
+            .collect(Collectors.toList());
 
     for (BaseRecord br : childrenList) {
       if (!br.isFolder()) {
@@ -327,29 +309,6 @@ public class FolderManagerImpl implements FolderManager {
     } // ensure all copied objects are unique
   }
 
-  @Override
-  public Folder setRecordFromFolderDeleted(Long toDeleteID, Long folderid, User user) {
-    Record r = recordDao.get(toDeleteID);
-    Folder parent = folderDao.get(folderid);
-    for (RecordToFolder rtf : parent.getChildren()) {
-      if (rtf.getRecord().equals(r)) {
-        rtf.markRecordInFolderDeleted(true);
-        folderDao.save(parent);
-        break;
-      }
-    }
-    return parent;
-  }
-
-  public Folder removeRecordFromFolder(Long toDeleteID, Long folderid, User user) {
-    Record r = recordDao.get(toDeleteID);
-    Folder parent = folderDao.get(folderid);
-    parent.removeChild(r);
-    folderDao.save(parent);
-    recordDao.save(r);
-    return parent;
-  }
-
   public Folder removeBaseRecordFromFolder(BaseRecord toDelete, Long parentfolderid) {
     return removeBaseRecordFromFolder(
         toDelete, parentfolderid, ACLPropagationPolicy.DEFAULT_POLICY);
@@ -359,8 +318,10 @@ public class FolderManagerImpl implements FolderManager {
   public Folder removeBaseRecordFromFolder(
       BaseRecord toDelete, Long parentfolderid, ACLPropagationPolicy aclPolicy) {
     Folder parent = folderDao.get(parentfolderid);
-    parent.removeChild(toDelete, aclPolicy);
-    folderDao.save(parent);
+    List<ACLElement> removedAcls = aclPolicy.aclsRemovedFromDescendants(parent, toDelete);
+    if (parent.removeChild(toDelete, aclPolicy)) {
+      updateAclOfDescendants(toDelete, removedAcls, ACLPropagationPolicy.NULL_POLICY);
+    }
     saveChild(toDelete);
     return parent;
   }
@@ -425,33 +386,52 @@ public class FolderManagerImpl implements FolderManager {
     Folder newParent = folderDao.get(target);
     Folder oldParent = folderDao.get(srcFolderId);
     Folder original = getFolder(toMove, user);
+    ACLPropagationPolicy aclPolicy = ACLPropagationPolicy.DEFAULT_POLICY;
+    List<ACLElement> removedAcls = aclPolicy.aclsRemovedFromDescendants(oldParent, original);
+    boolean wasInOldParent = original.getParentFolders().contains(oldParent);
     boolean moved;
     if (properties.isRsDevUnsafeMoveAllowed()) {
       moved = original.unsafeMove(oldParent, newParent, user);
     } else {
       moved = original.move(oldParent, newParent, user);
     }
-    recursiveSave(newParent);
-    folderDao.save(oldParent);
+    // move can remove the old edge and still fail to add the new one
+    boolean removed = wasInOldParent && !original.getParentFolders().contains(oldParent);
+    updateAclOfDescendants(
+        original,
+        removed ? removedAcls : List.of(),
+        moved ? aclPolicy : ACLPropagationPolicy.NULL_POLICY);
+    folderDao.save(original);
     return new ServiceOperationResult<Folder>(original, moved);
   }
 
-  /**
-   * Drilldown method that recursively saves all children so their lineage will be correct after a
-   * move action occurs
-   *
-   * @param doc
-   */
-  private void recursiveSave(BaseRecord parent) {
-    if (parent.isFolder()) {
-      Folder parentFolder = (Folder) parent;
-      folderDao.save(parentFolder);
-      for (BaseRecord child : parentFolder.getChildrens()) {
-        recursiveSave(child);
+  // one top-down pass, so each descendant gets its final ACL before a content query flushes it
+  private void updateAclOfDescendants(
+      BaseRecord parent, List<ACLElement> removedAcls, ACLPropagationPolicy addPolicy) {
+    updateAclOfDescendants(parent, removedAcls, addPolicy, new HashSet<>());
+  }
+
+  private void updateAclOfDescendants(
+      BaseRecord parent,
+      List<ACLElement> removedAcls,
+      ACLPropagationPolicy addPolicy,
+      Set<Long> removedFrom) {
+    boolean adds = addPolicy.propagatesToDescendants();
+    if (parent.isFolder() && (adds || !removedAcls.isEmpty())) {
+      List<BaseRecord> children = folderDao.getChildren((Folder) parent);
+      for (BaseRecord child : children) {
+        // removing on a later visit would drop elements another path has already added back
+        if (removedFrom.add(child.getId())) {
+          removedAcls.forEach(child.getSharingACL()::removeACLElement);
+        }
+        if (adds) {
+          addPolicy.onAddDescendant(parent, child);
+        }
       }
-    } else {
-      // must be a record save it now
-      recordDao.save((Record) parent);
+      // only after all siblings are final, as the subfolder's query flushes them
+      for (BaseRecord child : children) {
+        updateAclOfDescendants(child, removedAcls, addPolicy, removedFrom);
+      }
     }
   }
 
@@ -500,7 +480,7 @@ public class FolderManagerImpl implements FolderManager {
           f.getName());
       return f;
     }
-    folderDao.save(f);
+    updateAclOfDescendants(child, List.of(), aclPolicy);
     saveChild(child);
     return f;
   }
@@ -633,84 +613,15 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   @Override
-  public Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter) {
-    Folder targetRecord = getRootFolderForUser(user);
-    if (targetRecord == null) {
-      throw new IllegalStateException(format("No root folder for user %s", user.getUsername()));
+  public void process(Folder folder, RecordContainerProcessor processor) {
+    if (!processor.process(folder)) {
+      return;
     }
-
-    targetRecord = getTargetFolderFromPath(path, targetRecord, filter);
-    Folder target = (Folder) targetRecord;
-    // initialize collections within session
-    initFolderChildren(target, filter);
-
-    return targetRecord;
-  }
-
-  @Override
-  public Folder getInitialisedFolder(Long fId, User user, CollectionFilter<BaseRecord> filter) {
-    Folder f = getFolder(fId, user);
-    initFolderChildren(f, filter);
-    return f;
-  }
-
-  @Override
-  public Folder getMediaFolderFromURLPath(String path, User user) {
-    Folder targetRecord = folderDao.getGalleryRootFolderForUser(user);
-    if (targetRecord == null) {
-      throw new IllegalStateException(format("No root folder for user %s", user.getUsername()));
-    }
-
-    targetRecord = getTargetFolderFromPath(path, targetRecord, null);
-    Folder target = (Folder) targetRecord;
-    // initialize collections within session
-    initFolderChildren(target, null);
-
-    return targetRecord;
-  }
-
-  private void initFolderChildren(Folder target, CollectionFilter<BaseRecord> filter) {
-    if (target != null) {
-      // this runs 1 query per child, i.e an n+1 selects problem.
-      // we should do a join fetch here just to get the data we need from a single query, then
-      // filter.
-      for (RecordToFolder r2f : target.getChildren()) {
-        if (filter != null && filter.filter(r2f.getRecord())) {
-          r2f.getClass();
-        } else if (filter == null) {
-          r2f.getClass();
-        }
-      }
-    }
-  }
-
-  private Folder getTargetFolderFromPath(
-      String path, Folder targetRecord, CollectionFilter<BaseRecord> filter) {
-    // else return root record
-    if (!"/".equals(path)) {
-      String[] pathItems = path.split("/");
-      for (int i = 0; i < pathItems.length; i++) {
-        if (pathItems[i] != null && !"".equals(pathItems[i].trim())) {
-          Set<BaseRecord> children = targetRecord.getChildrens(filter);
-          targetRecord = null;
-          if (children != null && !children.isEmpty()) {
-            for (BaseRecord record : children) {
-              if (record.isFolder() && pathItems[i].equals(record.getName())) {
-                targetRecord = (Folder) record;
-                break;
-              }
-            }
-            if (targetRecord == null) {
-              throw new IllegalStateException(
-                  messageSourceUtils.getMessage(
-                      "folder.navigation.errors.pathNotAccessible",
-                      new Object[] {pathItems[i], path}));
-            }
-          }
-        }
-      }
-    }
-    return targetRecord;
+    List<BaseRecord> children = folderDao.getChildren(folder);
+    children.stream().filter(child -> !child.isFolder()).forEach(processor::process);
+    children.stream()
+        .filter(BaseRecord::isFolder)
+        .forEach(subfolder -> process((Folder) subfolder, processor));
   }
 
   @Override
@@ -811,7 +722,6 @@ public class FolderManagerImpl implements FolderManager {
         recordFactory.createSystemCreatedFolder(timeRotatedSubFolderName, subject);
     folderDao.save(apiInboxSubFolder);
     apiInbox.addChild(apiInboxSubFolder, subject);
-    folderDao.save(apiInbox);
     folderDao.save(apiInboxSubFolder);
     return apiInboxSubFolder;
   }
@@ -824,7 +734,7 @@ public class FolderManagerImpl implements FolderManager {
       User subject, Folder newContentFolder, Folder parent) {
     parent.addChild(
         newContentFolder, ChildAddPolicy.DEFAULT, subject, ACLPropagationPolicy.NULL_POLICY);
-    folderDao.save(parent);
+    folderDao.save(newContentFolder);
   }
 
   private Folder createAndSaveApiInbox(User subject) {

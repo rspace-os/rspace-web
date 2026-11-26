@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.NfsDao;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatComment;
@@ -27,6 +28,8 @@ import com.researchspace.model.dtos.RevisionSearchCriteria;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.netfiles.NfsFieldLink;
+import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.Folder;
@@ -57,6 +60,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class AuditManager2IT extends RealTransactionSpringTestBase {
 
   private @Autowired AuditManager auditMgr;
+  private @Autowired NfsDao nfsDao;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -314,7 +318,10 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     for (Folder original : children) {
       Folder refreshed = folderDao.get(original.getId());
       assertFalse(refreshed.isDeleted());
-      assertThat(refreshed.getChildren()).noneMatch(RecordToFolder::isRecordInFolderDeleted);
+      assertThat(folderDao.getChildren(refreshed))
+          .flatExtracting(BaseRecord::getParents)
+          .filteredOn(rtf -> rtf.getFolder().equals(refreshed))
+          .noneMatch(RecordToFolder::isRecordInFolderDeleted);
     }
     commitTransaction();
   }
@@ -341,6 +348,31 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     for (int i = 0; i < doc.getFieldCount(); i++) {
       assertEquals(i + "Rev2", restoredFirstRevisionDoc.getFields().get(i).getFieldData());
     }
+  }
+
+  @Test
+  public void restoringARevisionReindexesItsFilestoreLinks() throws Exception {
+    root = initUser(piUser);
+    logoutAndLoginAs(piUser);
+    NfsFileStore store = savedS3Store(piUser);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(piUser, "v1");
+    Long fieldId = doc.getFields().get(0).getId();
+    // each revision goes through autosave, so the index follows it
+    recordMgr.saveTemporaryDocument(fieldId, piUser, nfsLink(store, "/run.dat"));
+    recordMgr.saveStructuredDocument(doc.getId(), piUser.getUsername(), true, null);
+    Number linkedRevision = getNthRevisionForDocument(doc, 1);
+    recordMgr.saveTemporaryDocument(fieldId, piUser, nfsLink(store, "/other.dat"));
+    recordMgr.saveStructuredDocument(doc.getId(), piUser.getUsername(), true, null);
+    assertThat(indexedRelPaths(fieldId)).containsExactly("/other.dat");
+
+    auditMgr.restoreRevisionAsCurrent(linkedRevision, doc.getId());
+
+    assertThat(indexedRelPaths(fieldId)).containsExactly("/run.dat");
+  }
+
+  private List<String> indexedRelPaths(Long fieldId) throws Exception {
+    return doInTransaction(
+        () -> nfsDao.getFieldLinks(fieldId).stream().map(NfsFieldLink::getRelPath).toList());
   }
 
   @Test
@@ -380,6 +412,11 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     StructuredDocument newCurrent = (StructuredDocument) recordMgr.get(DOC_ID);
     assertUserVersionIncremented(doc, newCurrent);
     assertFalse(newCurrent.isDeleted());
+    assertThat(doc.getParentFolders()).isNotEmpty();
+    assertThat(newCurrent.getParentFolders())
+        .extracting(Folder::getId)
+        .containsExactlyInAnyOrderElementsOf(
+            doc.getParentFolders().stream().map(Folder::getId).toList());
 
     // now check that cannot restore from signed document
     newCurrent.setSigned(true);
@@ -600,8 +637,9 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     User other2 = userMgr.get(other.getId());
     grp = grpMgr.getGroup(grp.getId()); // refresh grp with shared folder id
     Folder labGrpFlder = folderDao.getSharedFolderForGroup(grp);
-    assertThat(labGrpFlder.getChildren()).hasSize(1);
-    BaseRecord shared = (BaseRecord) labGrpFlder.getChildren().iterator().next().getRecord();
+    List<BaseRecord> children = folderDao.getChildren(labGrpFlder);
+    assertThat(children).hasSize(1);
+    BaseRecord shared = children.get(0);
     commitTransaction();
     assertEquals(1, getTotalSearchHitsInFolder(labGrpFlder));
 
@@ -662,7 +700,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     other = userMgr.getUserByUsername(other.getUsername());
     grp = grpMgr.getGroup(grp.getId()); // update group from DB
     Folder shared = folderDao.getSharedFolderForGroup(grp);
-    assertThat(shared.getChildren()).hasSize(1);
+    assertThat(folderDao.getChildren(shared)).hasSize(1);
     commitTransaction();
 
     // now the owner deletes the top-level child folder:

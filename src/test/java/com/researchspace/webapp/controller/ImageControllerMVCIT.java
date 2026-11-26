@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,12 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
+import com.researchspace.model.FieldAttachment;
+import com.researchspace.model.Group;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
@@ -228,6 +232,105 @@ public class ImageControllerMVCIT extends MVCTestBase {
 
   private MockHttpServletRequestBuilder getImageToAnnotate(final Field fld, EcatImage image) {
     return get("/image/getImageToAnnotate/{id}/{unused}", fld.getId() + "-" + image.getId(), "any");
+  }
+
+  @Test
+  public void galleryListsSharedDocumentAfterImageIsAnnotatedBetweenAutosaves() throws Exception {
+    Group group = createGroupForUsersWithDefaultPi(testUser, other);
+    logoutAndLoginAs(testUser);
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(testUser, "");
+    Field field = document.getFields().get(0);
+    EcatImage source = addImageToGallery(testUser);
+    doAutosaveMVC(
+        field, richTextUpdater.generateRawImageElement(source, field.getId().toString()), testUser);
+
+    EcatImageAnnotation annotation =
+        postSaveImageAnnotation(
+            RSpaceTestUtils.getAnyAnnotationOrSketchJson(),
+            getBase64Image(),
+            source.getId(),
+            field.getId());
+    String annotatedImage =
+        richTextUpdater.generateAnnotatedImageElement(annotation, field.getId().toString());
+    doAutosaveAndSaveMVC(field, annotatedImage, testUser);
+    shareRecordWithGroup(testUser, group, document);
+
+    mockMvc
+        .perform(
+            get("/workspace/getRecordInformation")
+                .param("recordId", source.getId().toString())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.name").value(source.getName()));
+    mockMvc
+        .perform(
+            get("/gallery/ajax/getLinkedDocuments/{mediaId}", source.getId())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(1))
+        .andExpect(jsonPath("$.data[0].id").value(document.getId().intValue()));
+
+    List<FieldAttachment> sourceLinks =
+        fieldMgr.getFieldAttachments(field.getId()).stream()
+            .filter(link -> source.getId().equals(link.getMediaFile().getId()))
+            .toList();
+    assertEquals(1, sourceLinks.size());
+    assertFalse(sourceLinks.get(0).isDeleted());
+
+    logoutAndLoginAs(other);
+    mockMvc
+        .perform(getAnnotatedImageURL(annotation).principal(new MockPrincipal(other.getUsername())))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  public void annotatingOneImageWhileRemovingAnotherUnlinksOnlyTheRemovedImage() throws Exception {
+    logoutAndLoginAs(testUser);
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(testUser, "");
+    Field field = document.getFields().get(0);
+    String fieldId = field.getId().toString();
+    EcatImage annotated = addImageToGallery(testUser);
+    EcatImage removed = addImageToGallery(testUser);
+    doAutosaveAndSaveMVC(
+        field,
+        richTextUpdater.generateRawImageElement(annotated, fieldId)
+            + richTextUpdater.generateRawImageElement(removed, fieldId),
+        testUser);
+
+    EcatImageAnnotation annotation =
+        postSaveImageAnnotation(
+            RSpaceTestUtils.getAnyAnnotationOrSketchJson(),
+            getBase64Image(),
+            annotated.getId(),
+            field.getId());
+    doAutosaveMVC(
+        field, richTextUpdater.generateAnnotatedImageElement(annotation, fieldId), testUser);
+
+    mockMvc
+        .perform(
+            get("/gallery/ajax/getLinkedDocuments/{mediaId}", annotated.getId())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(1))
+        .andExpect(jsonPath("$.data[0].id").value(document.getId().intValue()));
+    mockMvc
+        .perform(
+            get("/gallery/ajax/getLinkedDocuments/{mediaId}", removed.getId())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(0));
+
+    // the removed image was in the saved field, so its link is kept for revision history
+    List<FieldAttachment> links = fieldMgr.getFieldAttachments(field.getId());
+    assertFalse(linkTo(links, annotated).isDeleted());
+    assertTrue(linkTo(links, removed).isDeleted());
+  }
+
+  private FieldAttachment linkTo(List<FieldAttachment> links, EcatImage image) {
+    List<FieldAttachment> matching =
+        links.stream().filter(link -> image.getId().equals(link.getMediaFile().getId())).toList();
+    assertEquals(1, matching.size());
+    return matching.get(0);
   }
 
   @Test

@@ -1,9 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
@@ -15,6 +13,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSPath;
+import com.researchspace.model.record.RecordContainerProcessor;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.TreeViewItem;
@@ -59,16 +58,6 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
-  public Folder setRecordFromFolderDeleted(Long toDeleteID, Long folderid, User user) {
-    return null;
-  }
-
-  @Override
-  public Folder removeRecordFromFolder(Long toDeleteID, Long folderid, User user) {
-    return null;
-  }
-
-  @Override
   public Folder createNewFolder(long parentId, String name, User u) {
     return null;
   }
@@ -80,11 +69,6 @@ public class FolderManagerStub implements FolderManager {
 
   @Override
   public List<Long> getFolderChildrenIds(Folder fd) {
-    return null;
-  }
-
-  @Override
-  public Folder getFolder(Long folderid, User user, SearchDepth depth) {
     return null;
   }
 
@@ -160,34 +144,12 @@ public class FolderManagerStub implements FolderManager {
   }
 
   @Override
-  public Folder getMediaFolderFromURLPath(String path, User user) {
-    return null;
-  }
-
-  @Override
   public List<Folder> getSubFolders(Folder rootFolder) {
     return Collections.emptyList();
   }
 
   @Override
-  public Folder getFromURLPath(String path, User user, CollectionFilter<BaseRecord> filter) {
-    Folder f = TestFactory.createAFolder("f1", user);
-    try {
-      Thread.sleep(1);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    f.setId(1L);
-    Folder f2 = TestFactory.createAFolder("f2", user);
-    f2.setId(2L);
-    f2.addChild(f, TestFactory.createAnyUser("XXXX"));
-    return f;
-  }
-
-  @Override
-  public Folder getInitialisedFolder(Long fId, User user, CollectionFilter<BaseRecord> filter) {
-    return null;
-  }
+  public void process(Folder folder, RecordContainerProcessor processor) {}
 
   @Override
   public Folder getTemplateFolderForUser(User user) {

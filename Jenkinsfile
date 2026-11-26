@@ -5,7 +5,8 @@
 // Standalone pnpm needs no Node.js; it downloads the runtime pinned in package.json devEngines.
 def withFrontendTools(Closure body) {
     def pnpmHome = "${env.WORKSPACE}/node/pnpm"
-    withEnv(["PNPM_HOME=${pnpmHome}", "PATH+PNPM=${pnpmHome}/bin"]) {
+    // One store for all branch workspaces; with only PNPM_HOME set, each workspace gets its own full store.
+    withEnv(["PNPM_HOME=${pnpmHome}", "PATH+PNPM=${pnpmHome}/bin", "pnpm_config_store_dir=${env.JENKINS_HOME}/pnpm-store"]) {
         sh '''
             if [ ! -x "$PNPM_HOME/bin/pnpm" ]; then
                 PNPM_VERSION=$(grep -o '"pnpm@[0-9][^"+]*' package.json | cut -d@ -f2)
@@ -64,7 +65,7 @@ pipeline {
         // part so the 63-char cap can never cut it, keeping names unique even for branches that sanitise or truncate alike
         HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
-        AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
+        AWS_TOMCAT_AMI = 'ami-0d132f0f6114279eb'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"

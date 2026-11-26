@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
 import ScopeField, { type Scope } from "../ScopeField";
@@ -9,7 +10,8 @@ describe("ScopeField", () => {
     ["apps:dmpIntegrations.scope.mine", "MINE"],
     ["apps:dmpIntegrations.scope.public", "PUBLIC"],
     ["apps:dmpIntegrations.scope.both", "BOTH"],
-  ])("getDMPs is called correctly when the scope key is %s", (key: string, scopeValue: string) => {
+  ])("getDMPs is called correctly when the scope key is %s", async (key: string, scopeValue: string) => {
+    const user = userEvent.setup();
     cleanup();
 
     const getDMPs = vi.fn<(scope: Scope) => void>();
@@ -18,7 +20,7 @@ describe("ScopeField", () => {
         <ScopeField getDMPs={getDMPs} />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: key }));
+    await user.click(screen.getByRole("radio", { name: key }));
     expect(getDMPs).toHaveBeenCalledTimes(1);
     expect(getDMPs).toHaveBeenCalledWith(scopeValue);
   });

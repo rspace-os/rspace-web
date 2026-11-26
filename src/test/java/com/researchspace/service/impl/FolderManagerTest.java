@@ -3,13 +3,17 @@ package com.researchspace.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
@@ -49,6 +53,20 @@ public class FolderManagerTest {
     parent.setId(1L);
     child = TestFactory.createAFolder("child", anyUser);
     child.setId(2L);
+  }
+
+  @Test
+  public void nullPolicyDoesNotLoadContentOfAddedOrRemovedFolder() {
+    // shared, so the default policy would remove it from the content
+    ACLElement shared =
+        new ACLElement(
+            "anyone", new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.READ));
+    parent.getSharingACL().addACLElement(shared);
+    child.getSharingACL().addACLElement(shared);
+    when(folderDao.get(1L)).thenReturn(parent);
+    folderManagerImpl.addChild(1L, child, anyUser, ACLPropagationPolicy.NULL_POLICY);
+    folderManagerImpl.removeBaseRecordFromFolder(child, 1L, ACLPropagationPolicy.NULL_POLICY);
+    verify(folderDao, never()).getChildren(any());
   }
 
   @Test

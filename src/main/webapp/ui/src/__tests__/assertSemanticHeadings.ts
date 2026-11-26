@@ -21,7 +21,7 @@ expect.extend({
    * doing so is difficult in Jest, but mostly becuase invisible headings are
    * used to meet this accessiblity requirement whilst hiding the headings from
    * sighted users. For more information on this requirement, see
-   * [Accessibility#Use headings semantically](../../../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md#Use-headings-semantically)
+   * [Accessibility: Design and implementation](../../../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md#design-and-implementation)
    *
    * For a page that has headings similar to the following,
    * ```

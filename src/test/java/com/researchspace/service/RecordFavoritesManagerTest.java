@@ -116,7 +116,7 @@ public class RecordFavoritesManagerTest extends SpringTransactionalTest {
   public void testNotebookDeleteFavorites() throws Exception {
     Notebook notebook =
         createNotebookWithNEntries(user.getRootFolder().getId(), "anynotebook", 3, user);
-    for (BaseRecord entry : notebook.getChildrens()) {
+    for (BaseRecord entry : folderDao.getChildren(notebook)) {
       recordFavoritesManager.saveFavoriteRecord(entry.getId(), user.getId());
     }
     assertTrue(recordFavoritesManager.getFavoriteRecordsByUser(user.getId()).size() > 1);

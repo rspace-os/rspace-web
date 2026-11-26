@@ -4,6 +4,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import java.util.Collection;
 import java.util.List;
 
 /** DAO for the InventoryLink table backing Inventory Link extra-fields. */
@@ -25,4 +26,16 @@ public interface InventoryLinkDao extends GenericDao<InventoryLink, Long> {
    */
   List<InventoryLinkField> findReferencingStructuredLinkFields(
       GlobalIdPrefix targetPrefix, Long targetDbId);
+
+  /**
+   * The record-level Link fields whose live link targets any of the normalised absolute paths on
+   * the filesystem, through any user's filestore. Soft-deleted fields and links are left out. An
+   * empty collection of paths gives an empty list without a query.
+   */
+  List<ExtraLinkField> findLinkFieldsTargetingFilestorePaths(
+      Long fileSystemId, Collection<String> absolutePaths);
+
+  /** Counterpart of {@link #findLinkFieldsTargetingFilestorePaths} for template-defined fields. */
+  List<InventoryLinkField> findStructuredLinkFieldsTargetingFilestorePaths(
+      Long fileSystemId, Collection<String> absolutePaths);
 }

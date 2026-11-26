@@ -31,6 +31,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.sort.DeletedRecordSort;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsFieldLinkManager;
 import com.researchspace.service.RestoreDeletedItemResult;
 import com.researchspace.service.UserManager;
 import java.time.Instant;
@@ -59,6 +60,7 @@ public class AuditManagerImpl implements AuditManager {
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired MessageSourceUtils messageSourceUtils;
+  private @Autowired NfsFieldLinkManager nfsFieldLinkManager;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -240,6 +242,8 @@ public class AuditManagerImpl implements AuditManager {
     AuditedRecord asd = auditDao.getDocumentForRevision(currentDoc, revision);
 
     StructuredDocument toRestore = asd.getRecordAsDocument();
+    // parents aren't audited; merging the revision's empty set would orphan-delete every edge
+    toRestore.setParents(currentDoc.getParents());
     // clear previous delta - this must be BEFORE we notify a new delta.
     toRestore.clearDelta();
     // now, we create our own delta, since a restored document is a notifiable change.
@@ -269,7 +273,9 @@ public class AuditManagerImpl implements AuditManager {
     }
 
     // now replace current with revision;
-    return (StructuredDocument) recordDao.save(toRestore);
+    StructuredDocument restoredDoc = (StructuredDocument) recordDao.save(toRestore);
+    restoredDoc.getTextFields().forEach(f -> nfsFieldLinkManager.reindex(f, f.getFieldData()));
+    return restoredDoc;
   }
 
   @Override
@@ -351,10 +357,10 @@ public class AuditManagerImpl implements AuditManager {
     folder.setRecordDeleted(false);
     markRecordUndeleted(folder, user);
 
-    for (RecordToFolder rtf : folder.getChildren()) {
-      doRestoreRecord(rtf.getRecord(), user, result);
-      if (rtf.getRecord().isFolder()) {
-        doRestore((Folder) rtf.getRecord(), user, result);
+    for (BaseRecord child : folderDao.getChildren(folder)) {
+      doRestoreRecord(child, user, result);
+      if (child.isFolder()) {
+        doRestore((Folder) child, user, result);
       }
     }
 

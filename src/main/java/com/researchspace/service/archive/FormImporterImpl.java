@@ -11,14 +11,17 @@ import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.IconImgDao;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
+import com.researchspace.model.dtos.AttachmentFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
 import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
+import com.researchspace.model.dtos.ReferenceFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
+import com.researchspace.model.dtos.UriFieldDTO;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.TextFieldForm;
@@ -88,10 +91,8 @@ public class FormImporterImpl implements FormImporter {
                   aff.isMandatory()));
           break;
         case STRING:
-          String tr = aff.isPassword() ? "yes" : "no";
           persistFieldForm(
-              form,
-              new StringFieldDTO<>(aff.getName(), aff.isMandatory(), tr, aff.getDefaultValue()));
+              form, new StringFieldDTO<>(aff.getName(), aff.isMandatory(), aff.getDefaultValue()));
           break;
         case RADIO:
           persistFieldForm(
@@ -135,6 +136,15 @@ public class FormImporterImpl implements FormImporter {
                   aff.getDateFormat(),
                   aff.getName(),
                   aff.isMandatory()));
+          break;
+        case URI:
+          persistFieldForm(form, new UriFieldDTO(aff.getName(), aff.isMandatory()));
+          break;
+        case REFERENCE:
+          persistFieldForm(form, new ReferenceFieldDTO(aff.getName(), aff.isMandatory()));
+          break;
+        case ATTACHMENT:
+          persistFieldForm(form, new AttachmentFieldDTO(aff.getName(), aff.isMandatory()));
           break;
 
         default: // Text

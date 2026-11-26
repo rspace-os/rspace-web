@@ -508,11 +508,16 @@ RS.blockingProgressBar = (function () {
   my.hide = function () {
     $('#blockprogressBar').css('width', '0%');
     RS.unblockPage();
-    $.each(my._timerId, function (i, v) {
-      clearInterval(v);
-    });
-    //clearInterval(my._timerId);
-    //console.log("Stopping timer " + my._timerId);
+    _stopProgressUpdates();
+  };
+  /*
+   * Keeps the page blocked, but replaces the progress meter and Cancel button with a message
+   */
+  my.showMessageOnly = function (message) {
+    _stopProgressUpdates();
+    $('#blockprogressBar').css('width', '0%');
+    $('#blockUICancel').hide();
+    my.message(message);
   };
   /*
    * A custom message indicating progress
@@ -528,8 +533,21 @@ RS.blockingProgressBar = (function () {
   };
 
 
+  // Responses to progress requests sent before the updates stopped are ignored
+  var _progressGeneration = 0;
+  var _stopProgressUpdates = function () {
+    _progressGeneration++;
+    $.each(my._timerId, function (i, v) {
+      clearInterval(v);
+    });
+  };
+
   var _updateProgress = function () {
+    var generation = _progressGeneration;
     $.get('/progress/' + my._progressType, function (progress) {
+      if (generation !== _progressGeneration) {
+        return;
+      }
       $('#blockUICustomMsg').html();
       RS.blockingProgressBar.showProgress(progress.percentComplete);
       RS.blockingProgressBar.message(progress.description);
@@ -1075,7 +1093,7 @@ RS.ajaxFailed = function (action, pageWasBlocked, jqxhr, showAsToast) {
  * Boolean test for whether the given fileExtension can be handled by jw player
  */
 function isPlayableOnJWPlayer(extension) {
-  if (typeof extension !== 'undefined' && (extension == 'mp4' || extension == 'flv' || extension == 'acc' ||
+  if (typeof extension !== 'undefined' && (extension == 'mp4' || extension == 'acc' ||
     extension == 'mp3' || extension == 'ogg')) {
     return true;
   } else {
@@ -1103,7 +1121,7 @@ function getMediaPlayerHTML(id, name, extension) {
  * Given an id,name and extension, creates a JD media player
  * @param id - a DB id of an ECatVideo or EcatAudio
  * @param name - the file name of the media file to play
- * @param extension - the file extension - currently mp4,flv,acc,mp3,ogg are supported
+ * @param extension - the file extension - currently mp4,acc,mp3,ogg are supported
  * @returns the HTML for the player, that can be inserted where appropriate by the calling code.
  */
 function setUpJWMediaPlayer(id, name, extension) {
@@ -1147,26 +1165,37 @@ function setUpJWMediaPlayer(id, name, extension) {
  * @param ed tinyMCEeditor
  *            The tinyMCE editor reference (optional, usually it is accessible from global.js)
  * @param callback
- *            Calls the callback after the request has been finished (optional)
+ *            Calls the callback after the request has been finished (optional),
+ *            with true if the template was inserted and false if the request or insertion failed
+ * @param canInsert
+ *            Called when the template arrives, just before insertion (optional). If it returns
+ *            false, nothing is inserted and the callback receives false.
  */
-RS.insertTemplateIntoTinyMCE = function (templateId, json, ed, callback) {
+RS.insertTemplateIntoTinyMCE = function (templateId, json, ed, callback, canInsert) {
   if (templateId.indexOf('#') === 0) {
     templateId = templateId.substr(1);
   }
   var jqxhr = $.get("/fieldTemplates/ajax/" + templateId,
     function (elementTemplate) {
-      var html = Mustache.render(elementTemplate, json);
-      if (html !== "") {
-        RS.tinymceInsertContent(html, ed);
-      }
-      if (callback !== undefined) {
-        callback();
+      var inserted = false;
+      try {
+        if (canInsert === undefined || canInsert()) {
+          var html = Mustache.render(elementTemplate, json);
+          if (html !== "") {
+            RS.tinymceInsertContent(html, ed);
+          }
+          inserted = true;
+        }
+      } finally {
+        if (callback !== undefined) {
+          callback(inserted);
+        }
       }
     });
   jqxhr.fail(function (e) {
     console.log("failed " + e);
     if (callback !== undefined) {
-      callback();
+      callback(false);
     }
   });
 };

@@ -3,15 +3,13 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
+import { setMockScannedBarcode } from "@/__tests__/__mocks__/barcode-detection-api";
 import NavigateContext from "../../../../stores/contexts/Navigate";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
 import Searchbar from "../Searchbar";
-
-import "@/__tests__/__mocks__/resizeObserver";
-import { setMockScannedBarcode } from "@/__tests__/__mocks__/barcode-detection-api";
 
 function renderSearchbar({
   search,

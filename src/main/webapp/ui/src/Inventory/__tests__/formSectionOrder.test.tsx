@@ -35,12 +35,6 @@ import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 
-class ResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-
 vi.mock("../Sample/Content/SubsampleListing", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -170,8 +164,6 @@ function getSectionNames(reactComponent: React.ReactNode, rootStore: MakeRootSto
 }
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
-    window.ResizeObserver = ResizeObserver;
-
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     window.scrollTo = vi.fn() as any;

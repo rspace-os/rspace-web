@@ -24,6 +24,32 @@ function setUpFileUpload(config) {
   // This variable is loaded from JSPs
   const maxFileSize = RS_MAX_FILE_SIZE;
 
+  // Insertions returned by postDone (e.g. chemistry conversions) that have not settled yet
+  var pendingInsertions = [];
+  var transfersActive = false;
+
+  // Keeps the page blocked until every started insertion settles.
+  function finishUploads() {
+    transfersActive = false;
+    _resetFileUploader();
+    if (pendingInsertions.length > 0) {
+      progressBar.showMessageOnly(RS.msg("legacyjs.gallery.insertingChemFiles"));
+    } else {
+      progressBar.hide();
+    }
+  }
+
+  function trackInsertion(insertion) {
+    pendingInsertions.push(insertion);
+    var settle = function () {
+      pendingInsertions.splice(pendingInsertions.indexOf(insertion), 1);
+      if (!transfersActive && pendingInsertions.length === 0) {
+        progressBar.hide();
+      }
+    };
+    insertion.then(settle, settle);
+  }
+
   $(document).on("click", cancelButtonId, function (e) {
     RS.confirm(RS.msg("legacyjs.gallery.uploadCancellationAttempted"), "success", 3000);
     cancelRequested = true;
@@ -31,8 +57,7 @@ function setUpFileUpload(config) {
     for (var i = 0; i < toCancel.length; i++) {
       toCancel[i].abort();
     }
-    progressBar.hide();
-    _resetFileUploader();
+    finishUploads();
   });
 
   $(fileUploadId).fileupload({
@@ -47,7 +72,7 @@ function setUpFileUpload(config) {
           );
       }
       if (uploadErrors.length > 0) {
-        _hideProgressIfAllError(progressBar);
+        _hideProgressIfAllError(finishUploads);
         RS.confirm(uploadErrors.join("\n"), "error", 5000);
       } else if (!cancelRequested) {
         console.log("Submitting file " + data.files[0].name);
@@ -56,6 +81,7 @@ function setUpFileUpload(config) {
           showCancel: "true",
           progressType: "any",
         }); // just show if at least 1 file can be submitted
+        transfersActive = true;
         currFileJxQr = data.submit();
         toCancel.push(currFileJxQr);
       } else {
@@ -67,14 +93,9 @@ function setUpFileUpload(config) {
     formData: formData,
     // at end of all uploads
     stop: function (e) {
-      progressBar.hide();
-      if (e.target.className == "chemFromLocalComputer") {
-        RS.blockPage(RS.msg("legacyjs.gallery.insertingChemFiles"));
-      } else {
-        RS.confirm(RS.msg("legacyjs.gallery.filesUploaded", fileCount), "success", 4000);
-      }
+      RS.confirm(RS.msg("legacyjs.gallery.filesUploaded", fileCount), "success", 4000);
       postStop(e);
-      _resetFileUploader();
+      finishUploads();
     },
     // after each upload
     done: function (e, data) {
@@ -90,13 +111,16 @@ function setUpFileUpload(config) {
           "error",
           6000
         );
-        _hideProgressIfAllError(progressBar);
+        _hideProgressIfAllError(finishUploads);
       }
-      postDone(data);
+      var insertion = postDone(data);
+      if (insertion && typeof insertion.then === "function") {
+        trackInsertion(insertion);
+      }
     },
     // on each fail
     fail: function (e, data) {
-      _hideProgressIfAllError(progressBar);
+      _hideProgressIfAllError(finishUploads);
       if (data.textStatus === "abort") {
         console.info("File upload cancelled");
       } else {
@@ -119,12 +143,11 @@ function setUpFileUpload(config) {
   });
 }
 
-function _hideProgressIfAllError(progressBar) {
+function _hideProgressIfAllError(onAllFailed) {
   errorCount++;
   if (errorCount >= totalFiles) {
     console.info("all files are errors, resetting");
-    progressBar.hide();
-    _resetFileUploader();
+    onAllFailed();
   }
 }
 
@@ -198,6 +221,8 @@ function initDragDropAreaHandling(
   uploadChemFileCallback
 ) {
   $(document).on("dragover", function (e) {
+    // An inner drop target (e.g. Ketcher's Open dialog) accepted the drag; keep its dropEffect.
+    var acceptedByInnerTarget = e.originalEvent.defaultPrevented;
     e.preventDefault();
     e.stopPropagation();
     markAreaDroppable(areaSelector);
@@ -211,7 +236,7 @@ function initDragDropAreaHandling(
       $target.parent().is("span.drag-drop-chem");
     if (insideDragDropAreaGallery || insideDragDropAreaChem) {
       e.originalEvent.dataTransfer.dropEffect = "copy";
-    } else {
+    } else if (!acceptedByInnerTarget) {
       e.originalEvent.dataTransfer.dropEffect = "none";
     }
 

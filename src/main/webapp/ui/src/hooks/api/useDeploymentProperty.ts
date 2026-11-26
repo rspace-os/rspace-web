@@ -1,22 +1,7 @@
-import React, { type Context } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "@/common/axios";
 import type * as FetchingData from "../../util/fetchingData";
-import * as MapUtils from "../../util/MapUtils";
-
-/**
- * This context acts as a cache for the fetched deployment properties so that
- * they need not be fetched more than once each per page load. If the same
- * deployment property is used in multiple components, or in a single component
- * is that un-mounted and re-mounted, then only the first call to
- * useDeploymentProperty will trigger a network call.
- *
- * Whilst this context is exported, there is no need to instantiate it on most
- * pages with the DeploymentPropertyContext.Provider component; the default
- * value of an empty Map suffices as a page-wide cache. However each test of
- * any component that uses this hook should be wrapped my this context to
- * ensure that test don't pollute one another with the shared state.
- */
-export const DeploymentPropertyContext: Context<Map<string, unknown>> = React.createContext(new Map<string, unknown>());
+import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "./deploymentPropertyQueryClient";
 
 /**
  * The RSpace product has a wide variety of configuration options that allow
@@ -28,6 +13,13 @@ export const DeploymentPropertyContext: Context<Map<string, unknown>> = React.cr
  * the value of a given deployment property. It makes a network request to get
  * the value when the component from which it is called is first rendered and
  * returns the value wrapped in a [`Fetched`]{@link ../util/fetchingData} type.
+ *
+ * Each property is fetched at most once per page load and shared by every
+ * component and React island on the page, through
+ * `deploymentPropertyQueryClient`. A failed request is retried the next time
+ * a component using that property mounts. The error is shared too, so while
+ * that retry is in flight every component using the property shows loading
+ * again instead of the earlier error.
  *
  * @returns The current value of the deployment property wrapped in a
  *          `Fetched`. The wrapped value could be any JSON value so further
@@ -82,32 +74,24 @@ export const DeploymentPropertyContext: Context<Map<string, unknown>> = React.cr
  *   }
  */
 export function useDeploymentProperty(name: string): FetchingData.Fetched<unknown> {
-  const map = React.useContext(DeploymentPropertyContext);
-  const [value, setValue] = React.useState<FetchingData.Fetched<unknown>>(
-    MapUtils.get<string, unknown>(map, name)
-      .map((v) => ({ tag: "success" as const, value: v }))
-      .orElse({ tag: "loading" }),
-  );
-
-  React.useEffect(() => {
-    if (map.has(name)) {
-      setValue({ tag: "success", value: map.get(name) });
-      return;
-    }
-    void (async () => {
-      try {
+  const query = useQuery(
+    {
+      queryKey: deploymentPropertyQueryKeys.property(name),
+      // The abort signal is deliberately not passed to axios: if the last
+      // consumer unmounts mid-flight, the request completes and fills the cache.
+      queryFn: async () => {
         const { data } = await axios.get<unknown>(`/deploymentproperties/ajax/property`, {
           params: new URLSearchParams({ name }),
         });
-        setValue({ tag: "success", value: data });
-        map.set(name, data);
-      } catch (error) {
-        if (error instanceof Error) {
-          setValue({ tag: "error", error: error.message });
-        }
-      }
-    })();
-  }, []);
-
-  return value;
+        return data;
+      },
+      staleTime: Infinity,
+      gcTime: Infinity,
+      retry: false,
+    },
+    deploymentPropertyQueryClient,
+  );
+  if (query.isPending) return { tag: "loading" };
+  if (query.isError) return { tag: "error", error: query.error.message };
+  return { tag: "success", value: query.data };
 }

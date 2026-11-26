@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -33,13 +33,14 @@ const lastMessage = (spy: PostMessageSpy): DialogMessage | undefined =>
   spy.mock.calls.at(-1)?.[0] as DialogMessage | undefined;
 /** Stands in for the plugin clicking Insert, which asks the dialog for its table. */
 const requestTable = () => {
-  fireEvent(
-    window,
-    new MessageEvent("message", {
-      data: { mceAction: "clustermarket-insert" },
-      origin: window.location.origin,
-    }),
-  );
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { mceAction: "clustermarket-insert" },
+        origin: window.location.origin,
+      }),
+    );
+  });
 };
 const tableSentToPlugin = (spy: PostMessageSpy): string | null => {
   const reply = spy.mock.calls

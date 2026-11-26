@@ -363,6 +363,14 @@ function updateAttachmentDivs($attachmentDivs) {
   $attachmentDivs.each(function () {
     var $thisDiv = $(this);
 
+    // FLV can't be played by any browser, so it is offered as a download (RSDEV-1405).
+    // Its audio/video markup has no a.attachmentLinked and may hold a legacy Flash player.
+    const avFileName = $thisDiv.find('p.attachmentP a').first().text().trim();
+    const isFlvAttachment = $thisDiv.find('a.attachmentLinked').length === 0 && /\.flv$/i.test(avFileName);
+    if (isFlvAttachment) {
+      $thisDiv.find('.mediaDiv').remove();
+    }
+
     const isAudioVideo = $thisDiv.find('.mediaDiv').length > 0;
     if (isAudioVideo) {
       /* for audio/videos we repackage the content into 'attachmentPanel' div,
@@ -388,10 +396,12 @@ function updateAttachmentDivs($attachmentDivs) {
     }
 
     var id = getAttachmentIdFrom$Div($thisDiv);
-    var revision = $thisDiv.find('a.attachmentLinked').data('rsrevision');
+    var revision = isFlvAttachment
+      ? $thisDiv.find('img.attachmentIcon').data('rsrevision')
+      : $thisDiv.find('a.attachmentLinked').data('rsrevision');
     var $attachmentLink = $thisDiv.find('.attachmentLinked');
     var attachmentType = $attachmentLink.data('type');
-    var fileName = $attachmentLink.text();
+    var fileName = isFlvAttachment ? avFileName : $attachmentLink.text();
     var extension = fileName.substring(fileName.lastIndexOf('.') + 1);
     var oldIconSrc = $thisDiv.find(".attachmentIcon").attr('src');
     var thumbnailId = _getThumbnailIdFromAttachmentIconSrc(oldIconSrc, id);
@@ -1982,6 +1992,8 @@ function initGalleryFileUpload() {
       }
       // otherwise standard edit mode upload
       var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
+      // postDone receives this options object, so the file is inserted into the field it was uploaded to
+      this.destinationFieldId = fieldId;
       return [{ name: 'fieldId', value: fieldId }];
     },
     postDone: function (data) {
@@ -1997,9 +2009,11 @@ function initGalleryFileUpload() {
       }
 
       // insert new file into editor
-      var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
       var result = data.result.data;
-      insertContentAfterFileUpload(fieldId, result);
+      if (!result) {
+        return;
+      }
+      return insertContentAfterFileUpload(data.destinationFieldId, result);
     }
   });
 }
@@ -2057,8 +2071,24 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
           fieldId: data.fieldId,
           tstamp: milliseconds
         };
-        RS.insertTemplateIntoTinyMCE("chemElementLink", json);
-        result.resolve();
+        // the template is inserted into the active editor, which must still be the requested field,
+        // both now and when the template arrives
+        var isDestinationActive = function () {
+          var activeEditor = tinyMCE.activeEditor;
+          return !!activeEditor && !activeEditor.removed
+              && String(getFieldIdFromTextFieldId(activeEditor.id)) === String(fieldId);
+        };
+        if (!isDestinationActive()) {
+          handleChemistryInsertionFailure(fileName, result);
+          return;
+        }
+        RS.insertTemplateIntoTinyMCE("chemElementLink", json, undefined, function (inserted) {
+          if (inserted) {
+            result.resolve();
+          } else {
+            handleChemistryInsertionFailure(fileName, result);
+          }
+        }, isDestinationActive);
       } else if (response.error) {
         handleChemistryError(response, fileName);
         result.reject();
@@ -2075,8 +2105,12 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
   return result;
 }
 
+function handleChemistryInsertionFailure(fileName, result) {
+  handleChemistryError({ error: { errorMessages: [RS.msg("legacyjs.workspace.coreEditor.requestFailed")] } }, fileName);
+  result.reject();
+}
+
 function handleChemistryError(response, fileName) {
-  RS.unblockPage();
   console.error(response.error.errorMessages);
   var detail = (response.error && response.error.errorMessages[0].includes('Index 0 out of bounds for length 0'))
     ? RS.msg("legacyjs.workspace.coreEditor.markushNotSupported")

@@ -30,6 +30,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class RepositoryDepositHandlerTest {
@@ -152,7 +153,7 @@ public class RepositoryDepositHandlerTest {
     UserAppConfig appCfg =
         SystemPropertyTestFactory.createAnyAppWithConfigElements(anyUser, App.APP_DATAVERSE);
     AppConfigElementSet set = appCfg.getAppConfigElementSets().iterator().next();
-    org.springframework.test.util.ReflectionTestUtils.setField(set, "id", 42L);
+    ReflectionTestUtils.setField(set, "id", 42L);
     UserConnection connection =
         new UserConnection(
             new UserConnectionId(anyUser.getUsername(), "DATAVERSE", "42"), "secret");

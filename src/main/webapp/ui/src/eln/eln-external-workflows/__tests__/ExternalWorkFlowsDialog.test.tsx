@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test } from "vitest";
 import axios from "@/common/axios";
@@ -29,12 +30,13 @@ describe("Renders with table of  data", () => {
   });
 
   test("displays WorkFlow Data table headers", async () => {
+    const user = userEvent.setup();
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
       name: "apps:externalWorkflows.showWorkflowsLabel",
     });
     expect(toggleButton).toBeEnabled();
-    fireEvent.click(toggleButton);
+    await user.click(toggleButton);
     expect(await screen.findByText("apps:externalWorkflows.dialogTitle")).toBeInTheDocument();
     expect(await screen.findByText("apps:externalWorkflows.columns.dataUploaded")).toBeInTheDocument();
     expect(await screen.findByText("apps:externalWorkflows.columns.container")).toBeInTheDocument();
@@ -43,13 +45,14 @@ describe("Renders with table of  data", () => {
     expect(await screen.findByText("apps:externalWorkflows.columns.created")).toBeInTheDocument();
   });
   test("displays WorkFlow Data", async () => {
+    const user = userEvent.setup();
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
       name: "apps:externalWorkflows.showWorkflowsLabel",
     });
     expect(toggleButton).toBeEnabled();
     expect(toggleButton).toBeInTheDocument();
-    fireEvent.click(toggleButton);
+    await user.click(toggleButton);
     expect(await screen.findByText("apps:externalWorkflows.dialogTitle")).toBeInTheDocument();
     const gridCells = screen.getAllByRole("gridcell");
     expect(gridCells[0]).toHaveTextContent("Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg");

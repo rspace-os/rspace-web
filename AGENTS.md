@@ -2,6 +2,8 @@
 
 RSpace is a Java/Spring application (built for Java 17, runs on 17 or 21) with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
+RSpace runs as a single application server against one database. Don't add handling, tests, or deployment steps for multiple application nodes. Concurrency within one server (several tabs, users, or transactions) still applies.
+
 Applies repository-wide; nested `AGENTS.md` files take precedence.
 
 ## Project map
@@ -72,6 +74,8 @@ Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> 
 - Other services may use `@Transactional`; `TransactionAdviceStartupCheck` verifies advice at startup.
 - DAOs require an active transaction.
 - Keep imports consistent with this downward dependency flow.
+- Add, remove or move folders and notebooks that have content through `FolderManager`; `Folder.addChild`/`removeChild` update only the child's own ACL.
+- Load and change each record in one pass: queries flush the session and a loaded document usually counts as changed, so a document loaded before a query and changed after it is written twice (see `DevDocs/DeveloperNotes/Transactions.md`).
 </important>
 
 <important if="changing frontend code">

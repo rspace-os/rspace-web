@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -228,7 +228,7 @@ describe("DMPDialog", () => {
           { timeout: 2000 },
         );
 
-        fireEvent.mouseDown(screen.getByRole("combobox"));
+        await user.click(screen.getByRole("combobox"));
         await user.click(within(screen.getByRole("listbox")).getByRole("option", { name: "5" }));
         const plansRequests = mockAxios.history.get.filter(({ url }) => /\/apps\/argos\/plans/.test(url ?? ""));
         expect(plansRequests.length).toBe(2);
@@ -286,12 +286,8 @@ describe("DMPDialog", () => {
           }),
         );
         // first type in the label filter, and then press enter
-        fireEvent.input(screen.getByRole("textbox"), {
-          target: { value: "Foo" },
-        });
-        fireEvent.submit(screen.getByRole("textbox"), {
-          target: { value: "" },
-        });
+        await user.type(screen.getByRole("textbox"), "Foo");
+        await user.keyboard("{Enter}");
         await waitFor(() => {
           expect(screen.getByText("Foo")).toBeVisible();
         });

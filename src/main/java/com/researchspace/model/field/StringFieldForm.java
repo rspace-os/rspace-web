@@ -24,7 +24,6 @@ public class StringFieldForm extends FieldForm {
   private static final long serialVersionUID = -1027880121882290768L;
 
   private String defaultStringValue = "";
-  private boolean ifPassword;
 
   public String getDefaultStringValue() {
     return defaultStringValue;
@@ -34,29 +33,15 @@ public class StringFieldForm extends FieldForm {
     this.defaultStringValue = defaultStringValue;
   }
 
-  public boolean isIfPassword() {
-    return ifPassword;
-  }
-
-  public void setIfPassword(boolean ifPassword) {
-    this.ifPassword = ifPassword;
-  }
-
   @Override
   public String toString() {
-    return "StringFieldTemplate [defaultStringValue="
-        + defaultStringValue
-        + ", ifPassword="
-        + ifPassword
-        + "]"
-        + super.toString();
+    return "StringFieldTemplate [defaultStringValue=" + defaultStringValue + "]" + super.toString();
   }
 
   public StringFieldForm shallowCopy() {
     StringFieldForm nft = new StringFieldForm();
     copyPropertiesToCopy(nft);
     nft.defaultStringValue = defaultStringValue;
-    nft.ifPassword = ifPassword;
     return nft;
   }
 
@@ -67,13 +52,9 @@ public class StringFieldForm extends FieldForm {
 
   @Transient
   public String getSummary() {
-    StringBuffer sb = new StringBuffer();
     String def =
         StringUtils.isEmpty(getDefaultStringValue()) ? "Unspecified" : getDefaultStringValue();
-    sb.append("Type: [" + getType() + "], ")
-        .append("Is password: [" + isIfPassword() + "], ")
-        .append("Default : [" + def + "] ");
-    return sb.toString();
+    return "Type: [" + getType() + "], Default : [" + def + "] ";
   }
 
   @Override

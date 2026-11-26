@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
 import { describe, expect, test } from "vitest";
@@ -15,6 +16,7 @@ import "@/__tests__/__mocks__/matchMedia";
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {
+      const user = userEvent.setup();
       render(
         <MSTeams
           integrationState={{
@@ -31,7 +33,7 @@ describe("MSTeams", () => {
         />,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
       const table = screen.getByRole("table");
       expect(
         await findTableCell(table, {
@@ -41,6 +43,7 @@ describe("MSTeams", () => {
       ).toHaveTextContent("foo");
     });
     test("Remove button should make the right API call.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -67,9 +70,9 @@ describe("MSTeams", () => {
         </Alerts>,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
 
@@ -85,6 +88,7 @@ describe("MSTeams", () => {
       expect(integrationState.credentials.length).toBe(0);
     });
     test("Add button should make the right API call.", async () => {
+      const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/saveAppOptions").reply(200, {
         success: true,
@@ -110,22 +114,21 @@ describe("MSTeams", () => {
         </Alerts>,
       );
 
-      fireEvent.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       await waitFor(() => {
         expect(screen.queryByRole("button", { name: "common:actions.add" })).not.toBeInTheDocument();
       });
-      fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.channelName" }), {
-        target: { value: "new name" },
-      });
+      const channelNameInput = screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.channelName" });
+      await user.clear(channelNameInput);
+      await user.type(channelNameInput, "new name");
       const webhookField = screen.getByLabelText("apps:integrations.msteams.fields.webhookUrl");
       expect(webhookField).toHaveAttribute("type", "password");
-      fireEvent.change(webhookField, {
-        target: { value: "example.com" },
-      });
+      await user.clear(webhookField);
+      await user.type(webhookField, "example.com");
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.save" }));
       expect(await screen.findByRole("alert", { name: "apps:integrations.msteams.alerts.addSuccess" })).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
