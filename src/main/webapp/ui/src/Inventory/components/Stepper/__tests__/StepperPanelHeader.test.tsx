@@ -7,7 +7,6 @@ import Collapse from "@mui/material/Collapse";
 import { ThemeProvider } from "@mui/material/styles";
 import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
-import { action, makeObservable, observable } from "mobx";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import materialTheme from "../../../../theme";
@@ -27,13 +26,7 @@ class DummyResult {
   editing: boolean = true;
 
   globalId: GlobalId | null = null;
-  constructor() {
-    makeObservable(this, {
-      editing: observable,
-      globalId: observable,
-      setEditing: action,
-    });
-  }
+
   setEditing(editing: boolean): void {
     this.editing = editing;
   }

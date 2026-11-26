@@ -2,27 +2,24 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { observable, runInAction } from "mobx";
 import { useEffect, useState } from "react";
 import { describe, expect, test } from "vitest";
 import { mkValidator, type Validator } from "../Validator";
 
 function Child1({ validator }: { validator: Validator }) {
-  const [state] = useState(observable({ text: "" }));
+  const [text, setText] = useState("");
   useEffect(() => {
     validator.setValidFunc(() => {
-      return Promise.resolve(state.text.length > 2);
+      return Promise.resolve(text.length > 2);
     });
-  }, [state.text.length, validator]);
+  }, [text.length, validator]);
   return (
     <>
       <h1>{"Child 1"}</h1>
       <TextField
-        value={state.text}
+        value={text}
         onChange={({ target: { value } }) => {
-          runInAction(() => {
-            state.text = value;
-          });
+          setText(value);
         }}
       />
     </>
