@@ -1,4 +1,5 @@
-import { format } from "date-fns";
+import { Temporal } from "@js-temporal/polyfill";
+import { instantToWire, parseInstant } from "@/modules/common/time/instant";
 import { Input } from "@/modules/common/ui/input";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
@@ -7,15 +8,21 @@ import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
 function toInputValue(value: unknown): string {
   if (typeof value !== "string" || value === "") return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value.slice(0, 16);
-  return format(date, "yyyy-MM-dd'T'HH:mm");
+  const instant = parseInstant(value);
+  if (instant === null) return value.slice(0, 16);
+  return instant.toZonedDateTimeISO(Temporal.Now.timeZoneId()).toPlainDateTime().toString({ smallestUnit: "minute" });
 }
 
 function fromInputValue(value: string, nullable: boolean | undefined): string | null | undefined {
   if (value === "") return emptyNullableValue(nullable);
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  try {
+    const local = Temporal.PlainDateTime.from(value);
+    return instantToWire(
+      local.toZonedDateTime(Temporal.Now.timeZoneId(), { disambiguation: "compatible" }).toInstant(),
+    );
+  } catch {
+    return value;
+  }
 }
 
 function DateTimeFieldControl<TDocument>(props: ControlProps<TDocument, "dateTime">) {
