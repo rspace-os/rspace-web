@@ -14,6 +14,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
@@ -308,7 +309,7 @@ public class StoichiometryServiceImplTest {
   void getMoleculeInfo_whenInfoPresent_returnsMappedMolecule() {
     ElementalAnalysisDTO analysis = mock(ElementalAnalysisDTO.class);
     MoleculeInfoDTO mol = mock(MoleculeInfoDTO.class);
-    when(mol.getRole()).thenReturn(com.researchspace.model.stoichiometry.MoleculeRole.REACTANT);
+    when(mol.getRole()).thenReturn(MoleculeRole.REACTANT);
     when(mol.getSmiles()).thenReturn("C2H6O");
     when(mol.getMass()).thenReturn(46.07);
     when(mol.getFormula()).thenReturn("C2H6O");
@@ -321,7 +322,7 @@ public class StoichiometryServiceImplTest {
     assertEquals("C2H6O", result.getFormula());
     assertEquals(46.07, result.getMolecularWeight());
     assertEquals(Boolean.FALSE, result.getLimitingReagent());
-    assertEquals(com.researchspace.model.stoichiometry.MoleculeRole.REACTANT, result.getRole());
+    assertEquals(MoleculeRole.REACTANT, result.getRole());
   }
 
   @Test

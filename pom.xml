@@ -453,6 +453,7 @@
           <configuration>
               <java>
                   <toggleOffOn/>
+                  <shortenFullyQualifiedTypes/>
                   <removeUnusedImports/>
                   <googleJavaFormat>
                       <version>1.28.0</version>

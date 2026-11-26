@@ -17,7 +17,7 @@ public class CoreTestUtils {
 
   public static StringAppenderForTestLogging configureStringLogger(
       org.apache.logging.log4j.Logger log) {
-    LoggerContext ctx = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     Configuration configuration = ctx.getConfiguration();
     StringAppenderForTestLogging stringAppender =
         new StringAppenderForTestLogging(STRING_APPENDER, null, null, false, null);

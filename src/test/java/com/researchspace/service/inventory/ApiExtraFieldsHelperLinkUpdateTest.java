@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
@@ -160,8 +161,8 @@ class ApiExtraFieldsHelperLinkUpdateTest {
     List<ApiExtraField> apiFields = List.of(apiField);
     List<ExtraField> dbFields = List.of(selfField);
 
-    org.junit.jupiter.api.Assertions.assertThrows(
-        com.researchspace.api.v1.auth.ApiRuntimeException.class,
+    Assertions.assertThrows(
+        ApiRuntimeException.class,
         () -> helper.applyExistingLinkFieldChanges(apiFields, dbFields, user));
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
     verify(inventoryLinkManager, never()).createLink(any(), any());
@@ -191,12 +192,11 @@ class ApiExtraFieldsHelperLinkUpdateTest {
     List<ApiExtraField> apiFields = List.of(apiField);
     List<ExtraField> dbFields = List.of(dbField);
 
-    com.researchspace.api.v1.auth.ApiRuntimeException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
-            com.researchspace.api.v1.auth.ApiRuntimeException.class,
+    ApiRuntimeException ex =
+        Assertions.assertThrows(
+            ApiRuntimeException.class,
             () -> helper.applyExistingLinkFieldChanges(apiFields, dbFields, user));
-    org.junit.jupiter.api.Assertions.assertEquals(
-        "errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
+    Assertions.assertEquals("errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
     verify(inventoryLinkManager, never()).createLink(any(), any());
   }

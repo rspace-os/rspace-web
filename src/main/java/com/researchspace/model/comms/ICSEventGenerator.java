@@ -25,8 +25,7 @@ public class ICSEventGenerator {
     calendar.setTime(date);
 
     // initialise as an all-day event..
-    VEvent deadline =
-        new VEvent(new net.fortuna.ical4j.model.DateTime(calendar.getTime()), summary);
+    VEvent deadline = new VEvent(new DateTime(calendar.getTime()), summary);
 
     Description des = new Description(mor.getMessage());
     deadline.getProperties().add(des);
@@ -50,10 +49,7 @@ public class ICSEventGenerator {
     VEvent deadline;
     if (event.getEndTime() != null) {
       deadline =
-          new VEvent(
-              startDatetime,
-              new net.fortuna.ical4j.model.DateTime(event.getEndTime().getTime()),
-              event.getTitle());
+          new VEvent(startDatetime, new DateTime(event.getEndTime().getTime()), event.getTitle());
     } else {
       deadline = new VEvent(startDatetime, event.getTitle());
     }

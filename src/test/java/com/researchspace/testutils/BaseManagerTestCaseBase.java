@@ -154,6 +154,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.Session;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -423,7 +424,7 @@ public abstract class BaseManagerTestCaseBase {
    * @param user
    */
   private void addUserAsSessionAttribute(User user) {
-    org.apache.shiro.session.Session session = SecurityUtils.getSubject().getSession();
+    Session session = SecurityUtils.getSubject().getSession();
     session.setAttribute(SessionAttributeUtils.USER, user);
   }
 
