@@ -681,7 +681,8 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     session.flush();
     session.clear();
 
-    // the login counters must stay scalar count queries, not ID-list loads
+    // the login counters must stay count queries (one for notifications, one grouped by message
+    // type), not ID-list loads
     Statistics stats = sessionFactory.getStatistics();
     boolean statsWereEnabled = stats.isStatisticsEnabled();
     stats.setStatisticsEnabled(true);
@@ -689,11 +690,12 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     NotificationStatus status;
     try {
       status = dao.getNotificationStatus(target);
-      assertEquals(3, stats.getPrepareStatementCount());
-      assertEquals(3, stats.getQueryExecutionCount());
+      assertEquals(2, stats.getPrepareStatementCount());
+      assertEquals(2, stats.getQueryExecutionCount());
       assertThat(stats.getQueries())
           .isNotEmpty()
-          .allMatch(hql -> hql.startsWith("select count(distinct "));
+          .allMatch(hql -> hql.contains("count(distinct "))
+          .noneMatch(hql -> hql.startsWith("select distinct "));
     } finally {
       stats.setStatisticsEnabled(statsWereEnabled);
     }
