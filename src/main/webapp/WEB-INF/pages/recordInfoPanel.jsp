@@ -211,8 +211,8 @@
           <td>
             <textarea class="infoPanel-captionTextArea" aria-labelledby="infoCaptionLabelCell" maxlength="250"></textarea>
             <div class="infoPanelCaptionButtons">
-              <a class="infoPanelCancelCaptionBtn smallBtn closeIcon" href="#"><spring:message code="common:actions.cancel"/></a>
-              <a class="infoPanelSaveCaptionBtn smallBtn createIcon" href="#"><spring:message code="common:actions.save"/></a>
+              <a class="infoPanelCancelCaptionBtn smallBtn closeIcon" href="#"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.cancel"/></a>
+              <a class="infoPanelSaveCaptionBtn smallBtn createIcon" href="#"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/createDocumentIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.save"/></a>
             </div>
           </td>
         </tr>

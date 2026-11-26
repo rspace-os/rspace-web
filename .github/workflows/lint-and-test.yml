@@ -181,6 +181,12 @@ jobs:
           pnpm run i18n:check
           pnpm run i18n:lint
 
+      # The legacy pages' dark-mode overrides are generated from their
+      # stylesheets; fail if a stylesheet changed without regenerating them.
+      - name: Legacy dark-mode CSS check
+        if: ${{ !cancelled() }}
+        run: pnpm run css:legacy-dark:check
+
   backend-checks:
     runs-on: ubuntu-latest
     needs: changed-files

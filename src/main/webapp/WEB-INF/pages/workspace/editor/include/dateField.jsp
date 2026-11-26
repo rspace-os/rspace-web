@@ -8,7 +8,7 @@
             <div class="fieldHeaderName">
               ${field.name}
               <c:if test="${field.mandatory eq true}">
-                <span style="color: red">*</span>
+                <span class="rs-required-marker">*</span>
               </c:if>
             </div>
             <span class="fieldNotification"></span>
@@ -25,8 +25,8 @@
         <tr>
           <td class="field-value-inner">
             <input id="${field.id}"  name="dateField_${field.id}" type="text" autocomplete="off"
-              class ="inputField ${field.id} datepicker" value="${field.fieldData}"
-              onchange="checkAndMarkField(this)" style="color:black;"/>
+              class ="inputField ${field.id} datepicker dateFieldInput" value="${field.fieldData}"
+              onchange="checkAndMarkField(this)"/>
             <p class="plainTextField ${field.id} singleLineFieldInDocViewMode" id="plainText_${field.id}">
               ${field.fieldData}
             </p>

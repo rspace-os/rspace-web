@@ -233,6 +233,11 @@
   padding: 3px 7px 2px;
 }
 
+/* viewGroupPublic.jsp: where .groupEditButton put its background */
+.exportUsersWorkButtonBgIcon {
+  object-position: 5px center;
+}
+
 .exportUsersWorkButtonIcon {
   display: block;
   width: 45px;

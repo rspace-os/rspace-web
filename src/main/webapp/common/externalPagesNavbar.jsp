@@ -22,7 +22,7 @@
       <c:if test="${fn:contains(pageContext.request.servletPath,'/signup')}">
       <c:if test="${fn:length(applicationScope['RS_DEPLOY_PROPS']['customSignupContent']) > 0}">
         <li class="rs-navbar__item rs-navbar__item--pull-left">
-          <p class="rs-navbar__item rs-navbar__tab" style="border: 1px solid black">
+          <p class="rs-navbar__item rs-navbar__tab rs-navbar__tab--bordered">
            ${applicationScope['RS_DEPLOY_PROPS']['customSignupContent']}
           <p/>
         </li>

@@ -100,9 +100,7 @@ button:focus {
   border-color: #AFAFAF;
   margin: 0 9px 0 0 !important;
   background: transparent;
-  background-image: url("/images/icons/editIcon.png");
-  background-repeat: no-repeat;
-  background-position: top left;
+  position: relative;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer;

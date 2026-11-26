@@ -2,12 +2,12 @@
 <%@ include file="/common/meta.jsp"%>
 
 <head>
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
-  <link media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
+  <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+  <axt:stylesheet href="/styles/simplicity/theme.css"/>
   <link media="print" href="<rst:assetUrl value='/styles/simplicity/print.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet" />
+  <axt:stylesheet href="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css"/>
+  <axt:stylesheet href="/scripts/bower_components/Apprise-v2/apprise-v2.css"/>
+  <axt:stylesheet href="/styles/rs-global.css"/>
   
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
@@ -17,7 +17,7 @@
   <script src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
+  <axt:stylesheet href="/styles/jquery.toastmessage.css"/>
   
   <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
   
@@ -37,7 +37,7 @@
   <meta name="heading" content="<spring:message code='groups.shared.title'/>"/>
   <meta name="robots" content="noarchive, nosnippet"/>
   <meta name="menu" content="MainMenu"/>
-  <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
+  <axt:stylesheet href="/styles/simplicity/theme.css"/>
 
 </head>
 

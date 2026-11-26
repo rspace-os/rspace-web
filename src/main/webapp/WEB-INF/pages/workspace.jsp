@@ -21,24 +21,22 @@
 
 <head>
   <meta name="heading" content="<spring:message code='common:appBar.sections.workspace.title'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
+  <axt:stylesheet href="/styles/pages/workspace/workspace.css"/>
 
   <!-- moved to default.jsp -->
-  <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+  <!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
 
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/dropbox.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/journal.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-widgets.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-toolbar.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/fontello.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
-  <%@ include file="/common/legacyDarkMode.jsp"%>
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dark.css'/>" />
+  <axt:stylesheet href="/styles/dropbox.css"/>
+  <axt:stylesheet href="/styles/journal.css"/>
+  <axt:stylesheet href="/scripts/jqueryFileTree/jqueryFileTree.css"/>
+  <axt:stylesheet href="/styles/pages/workspace/workspace-widgets.css"/>
+  <axt:stylesheet href="/styles/pages/workspace/workspace-toolbar.css"/>
+  <axt:stylesheet href="/styles/fontello.css"/>
+  <axt:stylesheet href="/styles/pages/workspace/workspace-extra-icons.css"/>
+  <axt:stylesheet href="/styles/pages/workspace/workspace-dialogs.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css"/>
+  <axt:stylesheet href="/styles/tags/fileTreeBrowser.css"/>
 
   <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>

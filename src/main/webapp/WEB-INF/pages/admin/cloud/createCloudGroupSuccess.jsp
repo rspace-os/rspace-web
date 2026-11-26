@@ -32,7 +32,7 @@
 	</c:choose>
 	<br>
 	<c:if test="${not empty emails}">
-		<div id="inviteesList" style="min-height:2em;width:457px;border:1px solid #DDDDDD;line-height:1.5em;">
+		<div id="inviteesList" style="min-height:2em;width:457px;line-height:1.5em;">
 		<ul style="list-style-type:none;font-size: 1em;">
 			<c:forEach items="${emails}" var="email">
 				<li><c:out value="${email}"/></li>

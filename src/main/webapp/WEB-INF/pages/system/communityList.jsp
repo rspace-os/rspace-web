@@ -6,9 +6,9 @@
 <title><spring:message code="system.communityList.button.label"/></title>
 
 <!-- moved to default.jsp -->
-<!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+<!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
 
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+<axt:stylesheet href="/styles/system.css"/>
 <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/system/communityList.js'/>"></script>
 </head>
@@ -21,10 +21,10 @@
 <shiro:hasRole name="ROLE_SYSADMIN">
   <div class="crudopsTopPanel" style="margin-bottom: 10px">
     <ul>
-      <a class="link" href="/system/createCommunity" id="createCommunityButton" >
+      <a class="link" href="/system/createCommunity" id="createCommunityButton" ><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/createCommIcon.png" alt="" aria-hidden="true">
         <span><spring:message code="system.createCommunity.button.label"/></span>
       </a>
-      <a id="removeCommunity" class="link commcrudops" href="#"><spring:message code="system.communityList.removeCommunityLink"/></a>
+      <a id="removeCommunity" class="link commcrudops" href="#"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/removeCommIcon.png" alt="" aria-hidden="true"><spring:message code="system.communityList.removeCommunityLink"/></a>
     </ul>
   </div>
 </shiro:hasRole>

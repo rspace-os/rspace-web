@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp" %>
-<link href="<rst:assetUrl value='/scripts/bower_components/select2/dist/css/select2.min.css'/>" rel="stylesheet" />
+<axt:stylesheet href="/scripts/bower_components/select2/dist/css/select2.min.css"/>
 <script src="<rst:assetUrl value='/scripts/bower_components/select2/dist/js/select2.min.js' />"></script>
 <script>
 	$(document).ready(function() {

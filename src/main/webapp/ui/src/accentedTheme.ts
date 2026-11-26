@@ -35,7 +35,7 @@ import { deepmerge } from "@mui/utils";
 import { getDataGridUtilityClass, gridClasses } from "@mui/x-data-grid";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { darkModeAvailable } from "./colorScheme";
-import baseTheme, { colorSchemes as baseColorSchemes } from "./theme";
+import baseTheme, { colorSchemes as baseColorSchemes, legibleDisabledItem } from "./theme";
 import { type HslColor, hslContrast, hslString, matchLuminance, solveLightness } from "./util/contrast";
 
 /**
@@ -1030,7 +1030,9 @@ function accentComponents(prefersMoreContrast: boolean, prefersReducedMotion: bo
     },
     MuiListItemButton: {
       styleOverrides: {
-        root: slot((t) => ({
+        // Replaces the base theme's override, so it repeats the disabled style.
+        root: slot((t, theme) => ({
+          ...legibleDisabledItem(theme),
           border: t.accentedBorder,
           borderRadius: 8,
           background: t.secondaryBackground,

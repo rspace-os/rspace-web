@@ -6,7 +6,7 @@
     <title><spring:message code="revisionHistory.pageTitle"/></title>
 
     <!-- moved to default.jsp -->
-    <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+    <!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
     
 	<script src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
 	<script src="<rst:assetUrl value='/scripts/pages/workspace/revisionHistory.js'/>"></script>

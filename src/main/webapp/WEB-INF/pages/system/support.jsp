@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title><spring:message code="system.support.button.label" /></title>
 
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
+    <axt:stylesheet href="/styles/system.css"/>
+    <axt:stylesheet href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css"/>
 
     <script src="<rst:assetUrl value='/scripts/pages/system/support.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
+    <axt:stylesheet href="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"/>
     <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
     <script src="<rst:assetUrl value='/scripts/pages/system/maintenance_mod.js'/>"></script>
@@ -31,15 +31,15 @@
 </div>
 <div class="buttonsBelowTopBar">
     <shiro:hasRole name="ROLE_SYSADMIN">
-	    <a href="#" class="topSectionTextIconBtn" id="viewServerLogsLink" style="padding-left:68px;background-image:url('/images/icons/logButtonIconView.png');">
+	    <a href="#" class="topSectionTextIconBtn" id="viewServerLogsLink" style="padding-left:68px;"><img class="rs-bg-icon" src="/images/icons/logButtonIconView.png" alt="" aria-hidden="true">
 	             <spring:message code="system.support.serverLogs.view" /></a>
-	    <a href="#" class="topSectionTextIconBtn" id="mailServerLogsLink" style="padding-left:82px;background-image:url('/images/icons/logButtonIconSend.png');">
+	    <a href="#" class="topSectionTextIconBtn" id="mailServerLogsLink" style="padding-left:82px;"><img class="rs-bg-icon" src="/images/icons/logButtonIconSend.png" alt="" aria-hidden="true">
 	            <spring:message code="system.support.serverLogs.mailLabel" /></a>
-        <a href="#" class="topSectionTextIconBtn" id="scheduleMaintenanceLink" style="padding-left:65px;background-image:url('/images/icons/scheduleDowntime.png');">
+        <a href="#" class="topSectionTextIconBtn" id="scheduleMaintenanceLink" style="padding-left:65px;"><img class="rs-bg-icon" src="/images/icons/scheduleDowntime.png" alt="" aria-hidden="true">
                <spring:message code="system.downtime.button.label" /></a>
-         <a href="#" class="topSectionTextIconBtn" id="forceRefreshLicenseLink" style="padding-left:25px;background-image:url('/images/icons/license2.png');">
+         <a href="#" class="topSectionTextIconBtn" id="forceRefreshLicenseLink" style="padding-left:25px;"><img class="rs-bg-icon" src="/images/icons/license2.png" alt="" aria-hidden="true">
                    <spring:message code="system.forceRefreshLicense.button.label" /></a>
-          <a href="#" class="topSectionTextIconBtn" id="showLicenseLink" style="padding-left:25px;background-image:url('/images/icons/license2.png');">
+          <a href="#" class="topSectionTextIconBtn" id="showLicenseLink" style="padding-left:25px;"><img class="rs-bg-icon" src="/images/icons/license2.png" alt="" aria-hidden="true">
                    <spring:message code="system.showLicense.button.label" /></a>
 
     </shiro:hasRole>

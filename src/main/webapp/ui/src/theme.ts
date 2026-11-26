@@ -5,6 +5,7 @@ import {
   createTheme,
   type ThemeOptions as MuiThemeOptions,
   type PaletteColorOptions,
+  type Theme,
   type Transitions,
 } from "@mui/material/styles";
 import { fontFamily } from "@/fonts";
@@ -493,6 +494,21 @@ const baseTheme = createTheme({
 });
 
 /**
+ * Disabled menu and list items keep legible text, secondary text at full
+ * opacity, rather than MUI's 38% fade. Legacy menus match it in rs-global.css
+ * and bootstrap-custom-flat.css.
+ */
+export const legibleDisabledItem = (theme: Theme) => ({
+  "&.Mui-disabled": {
+    opacity: 1,
+    color: theme.palette.text.secondary,
+    "& .MuiTypography-root, & .MuiListItemIcon-root": {
+      color: "inherit",
+    },
+  },
+});
+
+/**
  * The standard theme used across the application.
  */
 export default createTheme({
@@ -519,6 +535,16 @@ export default createTheme({
         asterisk: ({ theme }) => ({
           color: theme.palette.error.main,
         }),
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: ({ theme }) => legibleDisabledItem(theme),
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: ({ theme }) => legibleDisabledItem(theme),
       },
     },
     MuiButtonBase: {

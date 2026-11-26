@@ -4,7 +4,7 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
-<link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
+<axt:stylesheet href="/styles/messages.css"/>
 
 <%-- Reusable tag for incorporating a 'my requests' dialog into a page. --%>
 <div class="bootstrap-custom-flat">

@@ -6,18 +6,19 @@
 <%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
-<link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
+<axt:stylesheet href="/styles/messages.css"/>
 
+<%-- Scripts load this listing into .messageList; :where keeps the specificity of bare a rules. --%>
 <style>
-    a,a:link a:active {
+    :where(.messageList) a {
         color: #1465b7;
         text-decoration: none;
     }
-    a:visited {
+    :where(.messageList) a:visited {
         color: #1465b7;
         background-color: transparent;
     }
-    a:hover {
+    :where(.messageList) a:hover {
         color: #cc0000;
         text-decoration: none;
     }
@@ -156,7 +157,7 @@
                           <c:choose>
                             <c:when test="${message.statefulRequest}">
                                 <input type="hidden" class="currentStatus" value="${message.status}" />
-                                <span style="color:#C1C1C1;"><spring:message code="messages.setStatus.label"/></span>
+                                <span class="messageStatusLabel"><spring:message code="messages.setStatus.label"/></span>
                                 <br/>
                                 <select class="messageStatusChooser" name="messageStatus" data-yes-no="${message.messageType.yesNoMessage}" style="margin-top:4px;">
                                     <option value="${message.status}" selected="selected"><spring:message code="${rst:communicationStatusMessageKey(message.status)}"/></option>

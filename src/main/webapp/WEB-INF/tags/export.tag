@@ -1,9 +1,10 @@
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
+<%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/export.js'/>"></script>
 
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+<axt:stylesheet href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css"/>
+<axt:stylesheet href="/styles/pages/workspace/workspace-dialogs.css"/>
 <style>
     .exportDialogButton {
         border-style:solid;

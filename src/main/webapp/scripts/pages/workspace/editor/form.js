@@ -276,9 +276,9 @@ function setUpPublishButtons() {
 
 function stylePublishStatus(statusString) {
   if (statusString == 'PUBLISHED') {
-    $('#publishingStatus').css('color', 'green');
+    $('#publishingStatus').removeClass('publishingStatus--unpublished').addClass('publishingStatus--published');
   } else if (statusString == 'UNPUBLISHED') {
-    $('#publishingStatus').css('color', 'red');
+    $('#publishingStatus').removeClass('publishingStatus--published').addClass('publishingStatus--unpublished');
   }
 }
 
@@ -301,6 +301,7 @@ function initReadOnlyTinyMCE(textareas) {
     textareas$.tinymce({
       selector: "",
       theme: "silver",
+      skin: RS.tinymceSkin(),
       width: "800px",
       plugins: [
         "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
@@ -353,6 +354,7 @@ function initSoftTinyMCE() {
   $('textarea.tempform').tinymce({
     selector: "",
     theme: "silver",
+    skin: RS.tinymceSkin(),
     width: "800px",
     plugins: [
       "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
@@ -379,6 +381,7 @@ function initSpecificTinyMCE(id) {
 
     $(objt).tinymce({
       theme: "silver",
+      skin: RS.tinymceSkin(),
       width: "800px",
       plugins: [
         "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
@@ -1018,7 +1021,7 @@ function saveEditedNumberField(fieldId) {
  */
 function editNumberCode(data) {
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   $(fieldCode).find("input[name='fieldData']").val(data.defaultNumberValue);
@@ -1072,7 +1075,7 @@ function addStringCode(data) {
 function editStringCode(data) {
 
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   $(fieldCode).find("input[name='fieldData']").val(data.defaultStringValue);
@@ -1160,7 +1163,7 @@ function saveEditedTextField(fieldId) {
 
 function editTextCode(data) {
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   var textArea$ = $(fieldCode).find("textarea[name='fieldRtfData']");
@@ -1253,7 +1256,7 @@ function saveEditedRadioField(fieldId) {
 }
 const updateUIWithRadioOrPicklistAfterSave = (data) => {
   const fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.showAsPickList ? RS.msg("legacyjs.workspace.form.fieldNamePicklist", data.name) : RS.msg("legacyjs.workspace.form.fieldNameRadio", data.name));
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
 }
@@ -1362,7 +1365,7 @@ function saveEditedChoiceField(fieldId) {
 function editChoiceCode(data) {
 
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   var ulChoice = $(fieldCode).find("#choiceFieldsFinal");
@@ -1463,7 +1466,7 @@ function saveEditedDateField(fieldId) {
 
 function editDateCode(data) {
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   $(fieldCode).find("input[name='dateField_" + data.id + "']").val(data.defaultDateAsString);
@@ -1558,7 +1561,7 @@ function saveEditedTimeField(fieldId) {
 function editTimeCode(data) {
 
   var fieldCode = $("#field_" + data.id);
-  const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
+  const mandatoryAsterisk = data.mandatory ? " <span class=\"rs-required-marker\">*</span>" : "";
   $(fieldCode).find("td[name='fieldName']").text(data.name);
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   $(fieldCode).find("input[name='dateField_" + data.id + "']").val(data.defaultTime);

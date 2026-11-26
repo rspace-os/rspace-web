@@ -348,14 +348,12 @@ tr.spaceUnder > td {
   border-width: 1px 1px 1px 1px;
   border-color: #afafaf;
   background: white;
-  background-image: url("/images/icons/groupLinkIcon.png");
-  background-repeat: no-repeat;
-  background-position: center left;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer;
   width: 200px;
-  display: inline; }
+  display: inline;
+  position: relative; }
 
 .searchMechanismContainer {
   float: right;
@@ -842,16 +840,35 @@ div .searchButton {
     display: inline-block;
     position: absolute; }
 
+/*
+ * An icon <img> in the padding that a background image used to fill. It
+ * covers its parent's padding box and draws the icon at its natural size
+ * where the background was (object-position takes background-position
+ * values), so the parent keeps its size. Being an <img>, it gets the
+ * dark-mode icon filter in dark/legacy-dark.css without the filter touching
+ * the parent's text. The parent must be positioned.
+ */
+.rs-bg-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+  pointer-events: none; }
+.rs-bg-icon--middle {
+  object-position: left center; }
+
 .smallBtn,
 .crudopsTopPanel li,
 .crudopsTopPanel a.link {
+  position: relative;
   display: inline-block;
   border: 1px solid #2196f3;
   border-radius: 3px;
   background-color: transparent;
   line-height: 20px;
-  background-position: left center;
-  background-repeat: no-repeat;
   color: #666;
   cursor: pointer;
   padding-top: 3px;
@@ -870,103 +887,31 @@ div .searchButton {
   .smallBtn a,
   .crudopsTopPanel li a,
   .crudopsTopPanel a.link a {
-    background-repeat: no-repeat;
     padding: 0 0 0 5px;
-    background-position: center left;
     font-size: 12.5px;
     color: inherit !important;
     border: none;
     outline: none !important; }
-  .smallBtn.closeIcon,
-  .crudopsTopPanel li.closeIcon,
-  .crudopsTopPanel a.link.closeIcon {
-    background-image: url(/images/icons/closeIcon.png); }
   .smallBtn.createIcon,
   .crudopsTopPanel li.createIcon,
   .crudopsTopPanel a.link.createIcon {
-    background-image: url(/images/icons/createDocumentIcon.png);
     padding-left: 28px; }
   .linkShare {
     cursor: pointer;
   }
-  .linkShare.copyIcon,
-  .largeBtn.copyIcon,
-  .smallBtn.copyIcon,
-  .crudopsTopPanel li.copyIcon,
-  .crudopsTopPanel a.link.copyIcon {
-    background-image: url("/images/icons/copyIcon.png"); }
-  .crudopsTopPanel li.tagIcon,
-  .crudopsTopPanel a.link.tagIcon {
-    background-image: url("/images/icons/tagIcon.png");
-  }
-  .smallBtn.moveIcon,
-  .crudopsTopPanel li.moveIcon,
-  .crudopsTopPanel a.link.moveIcon {
-    background-image: url("/images/icons/moveIcon.png"); }
-  .smallBtn.renameIcon,
-  .crudopsTopPanel li.renameIcon,
-  .crudopsTopPanel a.link.renameIcon {
-    background-image: url("/images/icons/renameIcon.png"); }
-  .smallBtn.deleteIcon,
-  .crudopsTopPanel li.deleteIcon,
-  .crudopsTopPanel a.link.deleteIcon {
-    background-image: url("/images/icons/deleteIcon.png"); }
-  .smallBtn.exportIcon,
-  .crudopsTopPanel li.exportIcon,
-  .crudopsTopPanel a.link.exportIcon {
-    background-image: url("/images/icons/zipExportIcon.png"); }
-  .smallBtn.revisionsIcon,
-  .crudopsTopPanel li.revisionsIcon,
-  .crudopsTopPanel a.link.revisionsIcon {
-    background-image: url("/images/icons/revisionsIcon.png"); }
-  .smallBtn.favoritesIcon,
-  .crudopsTopPanel li.favoritesIcon,
-  .crudopsTopPanel a.link.favoritesIcon {
-    background-image: url("/images/icons/addToFavouritesIcon.png"); }
-  .smallBtn.removeFavoritesIcon,
-  .crudopsTopPanel li.removeFavoritesIcon,
-  .crudopsTopPanel a.link.removeFavoritesIcon {
-    background-image: url("/images/icons/removeFromFavouritesIcon.png"); }
-  .publishButton {
-    background-image: url("/images/icons/html.png");
-    background-size: 20px 20px;}
-  .smallBtn.shareIcon,
-  .crudopsTopPanel li.shareIcon,
-  .crudopsTopPanel a.link.shareIcon {
-    background-image: url("/images/icons/shareIcon.png"); }
-  .smallBtn.sendToIcon,
-  .crudopsTopPanel li.sendToIcon,
-  .crudopsTopPanel a.link.sendToIcon {
-    background-image: url(/images/icons/publishIcon.png); }
-  .smallBtn.publishIcon,
-  .crudopsTopPanel li.publishIcon,
-  .crudopsTopPanel a.link.publishIcon {
-    background-image: url(/images/icons/publishForm.png); }
-  .smallBtn.unpublishIcon,
-  .crudopsTopPanel li.unpublishIcon,
-  .crudopsTopPanel a.link.unpublishIcon {
-    background-image: url(/images/icons/unpublishForm.png); }
-  .smallBtn.permissionsIcon,
-  .crudopsTopPanel li.permissionsIcon,
-  .crudopsTopPanel a.link.permissionsIcon {
-    background-image: url(/images/icons/formPermissions.png); }
-  .smallBtn.copyFormIcon,
-  .crudopsTopPanel li.copyFormIcon,
-  .crudopsTopPanel a.link.copyFormIcon {
-    background-image: url(/images/icons/copyForm.png); }
-  .smallBtn.deleteFormIcon,
-  .crudopsTopPanel li.deleteFormIcon,
-  .crudopsTopPanel a.link.deleteFormIcon {
-    background-image: url(/images/icons/deleteForm.png); }
+  /* html.png is 128px square, drawn at 20px */
+  .publishButton > .rs-bg-icon {
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    object-fit: fill; }
   .smallBtn.removeFromMenuIcon,
   .crudopsTopPanel li.removeFromMenuIcon,
-  .crudopsTopPanel a.link.removeFromMenuIcon {
-    background-image: url(/images/icons/removeFromMenu.png);
-    padding-left: 40px !important; }
+  .crudopsTopPanel a.link.removeFromMenuIcon,
   .smallBtn.addToMenuIcon,
   .crudopsTopPanel li.addToMenuIcon,
   .crudopsTopPanel a.link.addToMenuIcon {
-    background-image: url(/images/icons/addToMenu.png);
     padding-left: 40px !important; }
 
 
@@ -1202,4 +1147,149 @@ label:hover {
 
 .createGroup-Modal div div[role="progressbar"] {
   overflow: hidden;
+}
+
+/*
+ * Colours that templates and scripts used to set in style attributes. As
+ * stylesheet rules they get dark-mode overrides from
+ * scripts/generate-legacy-dark-css.mjs, and scripts toggle these classes
+ * instead of writing colours into style attributes.
+ */
+.rs-required-marker,
+.rs-error-text {
+  color: red;
+}
+
+.rs-link-color {
+  color: #1465b7;
+}
+
+.rs-subheading {
+  color: #444;
+}
+
+/* blockUI progress bar; public.css has the same rule for external pages */
+#blockprogressBar {
+  background: green;
+}
+
+.header-info.header-info--run-as {
+  background-color: #e4e8ee;
+}
+
+a.createSDFromFormLink,
+a.templateSharingForm_help_hide {
+  color: blue;
+}
+
+a.folderChooser-createLink {
+  color: #337ab7;
+}
+
+#movefolder-tree {
+  background-color: white;
+  border-color: black;
+}
+
+#calendar_file_tree {
+  background-color: white;
+}
+
+.publishNotice {
+  border: 1px solid #b6b6b6;
+}
+
+#inviteesList {
+  border: 1px solid #dddddd;
+}
+
+.accountPasswordNote {
+  color: darkblue;
+}
+
+th.batchRegistrationActionsHeader {
+  background-color: white;
+}
+
+.messageStatusLabel {
+  color: #c1c1c1;
+}
+
+#publishingStatus.publishingStatus--published {
+  color: green;
+}
+
+#publishingStatus.publishingStatus--unpublished {
+  color: red;
+}
+
+#revisionSearch,
+#search_dateButton,
+#clearSearch {
+  color: #fff;
+  background-color: #6389a8;
+  border: 1px solid #6389a8;
+}
+
+#search_dateButton,
+#clearSearch {
+  box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.6) inset;
+}
+
+tr.revisionHistoryRow > td {
+  border-bottom: 2px solid #fff;
+}
+
+/* structured document fields, comments, attachments and tags */
+input.dateFieldInput {
+  color: black;
+}
+
+#tablecomments {
+  background-color: #efeded;
+}
+
+.commentHeading {
+  color: black;
+  font-weight: bold;
+  background-color: #ccc;
+}
+
+.commentText {
+  color: black;
+  background-color: white;
+}
+
+.linkedRecordServer {
+  color: red;
+}
+
+img.attachmentIcon.attachmentThumbnail {
+  background-color: white;
+}
+
+ul.tagit li.tagit-choice.tagit-choice--free-text,
+ul.tagit li.tagit-choice.tagit-choice--free-text:hover,
+ul.tagit li.tagit-choice.tagit-choice--free-text.remove {
+  color: #6389a8;
+  background-color: #c0e2fc;
+}
+
+/* TinyMCE video plugin: URL validation message */
+#rspace-video-url-feedback.videoUrlFeedback--valid {
+  color: #2e7d32;
+}
+
+#rspace-video-url-feedback.videoUrlFeedback--invalid {
+  color: #c62828;
+}
+
+/*
+ * Disabled jQuery UI menu items keep legible text instead of fading to 35%,
+ * like the MUI theme's disabled items (legibleDisabledItem in ui/src/theme.ts).
+ */
+.ui-menu .ui-menu-item.ui-state-disabled,
+.ui-menu .ui-menu-item .ui-state-disabled {
+  opacity: 1;
+  color: #666;
 }

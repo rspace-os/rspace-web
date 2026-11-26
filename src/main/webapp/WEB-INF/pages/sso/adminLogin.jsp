@@ -5,13 +5,13 @@
 
     <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
-    <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/sign-in-up-common.css"/>
+    <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+    <axt:stylesheet href="/styles/simplicity/header.css"/>
+    <axt:stylesheet href="/styles/authentication/login.css"/>
 
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
-    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/fontello-key/css/fontello.css"/>
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 

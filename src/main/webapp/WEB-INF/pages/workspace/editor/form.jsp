@@ -5,9 +5,9 @@
 <script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/form.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
+<axt:stylesheet href="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"/>
+<axt:stylesheet href="/styles/structuredDocument.css"/>
+<axt:stylesheet href="/styles/tinymce_rs.css"/>
 
 <title><spring:message code="menu.templates.formEditor"/></title>
 <head>

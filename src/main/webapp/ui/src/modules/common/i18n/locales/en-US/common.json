@@ -136,6 +136,7 @@
     "apps": "Apps",
     "brandingAlt": "branding",
     "closeSidebar": "close sidebar",
+    "darkModeNeedsNewerBrowser": "This page needs a newer browser",
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
     "goTo": "Go to...",

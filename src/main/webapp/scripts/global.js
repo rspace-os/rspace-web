@@ -56,6 +56,26 @@ RS.withCacheVersion = function (url) {
 };
 
 /**
+ * The TinyMCE UI skin for the current colour mode. Editor content keeps the
+ * light skin in both modes, like other user-authored rich text.
+ */
+RS.tinymceSkin = function () {
+  return document.documentElement.classList.contains("dark") ? "oxide-dark" : "oxide";
+};
+
+/*
+ * Open editors load their skin once, so when the mode changes the skin's
+ * stylesheet is swapped for the other one.
+ */
+new MutationObserver(function () {
+  var skin = RS.tinymceSkin();
+  var other = skin === "oxide" ? "/skins/ui/oxide-dark/" : "/skins/ui/oxide/";
+  document.querySelectorAll('link[href*="' + other + '"]').forEach(function (link) {
+    link.href = link.getAttribute("href").replace(other, "/skins/ui/" + skin + "/");
+  });
+}).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+/**
  * BEGINNING OF EXPERIMENTAL BOOTSTRAP DIALOGS (RSPAC-1287)
  */
 

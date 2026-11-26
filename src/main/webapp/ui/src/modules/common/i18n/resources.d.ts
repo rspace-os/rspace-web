@@ -891,6 +891,7 @@ export default interface Resources {
       "apps": "Apps",
       "brandingAlt": "branding",
       "closeSidebar": "close sidebar",
+      "darkModeNeedsNewerBrowser": "This page needs a newer browser",
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
@@ -8898,6 +8899,12 @@ export default interface Resources {
           "google": "Or sign up with Google"
         }
       }
+    },
+    "colorMode": {
+      "dark": "Dark",
+      "label": "Theme",
+      "light": "Light",
+      "system": "System"
     },
     "company": {
       "name": "ResearchSpace",

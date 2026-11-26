@@ -1,5 +1,9 @@
 var tinymcesetup = {
 	theme: "silver",
+	// A getter, because this file loads before the dark-mode class is set.
+	get skin() {
+		return RS.tinymceSkin();
+	},
 	width: "100%",
 	height: "580px",
 	menu: {

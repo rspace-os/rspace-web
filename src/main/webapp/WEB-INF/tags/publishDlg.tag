@@ -53,11 +53,11 @@
 				</div>
 		</div>
 
-		<div id="publishFooter" style="border: 1px solid #B6B6B6; padding: 5px; line-height: 1.4em">
+		<div id="publishFooter" class="publishNotice" style="padding: 5px; line-height: 1.4em">
 			<img src="/images/notice.png" style="height: 14px; vertical-align: text-top;"/>
 			<spring:message code="publish.notice.manage.sharedDocument"/>
 		</div>
-		<div  style="border: 1px solid #B6B6B6; padding: 5px; line-height: 1.4em">
+		<div class="publishNotice" style="padding: 5px; line-height: 1.4em">
 			<img src="/images/notice.png" style="height: 14px; vertical-align: text-top;"/>
 			<spring:message code="publish.notice.documentationLinkText" var="publishDocumentationLinkText"/>
 			<spring:message code="common:help.publicationOfDocuments" var="publicationOfDocumentsHelpSlug"/>

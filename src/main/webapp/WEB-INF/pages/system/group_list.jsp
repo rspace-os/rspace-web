@@ -6,9 +6,9 @@
   <meta name="menu" content="MainMenu" />
 
   <!-- moved to default.jsp -->
-  <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+  <!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
 
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <axt:stylesheet href="/styles/system.css"/>
   <script src="<rst:assetUrl value='/scripts/pages/system/groupList.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 </head>
@@ -19,17 +19,17 @@
   <div class="crudopsTopPanel" style="margin-bottom: 10px;">
     <c:url value='/groups/admin/?new' var="newgroup" />
     <ul>
-      <a id="createGroupButton" class="link" href="${newgroup}">
+      <a id="createGroupButton" class="link" href="${newgroup}"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/createGroupIcon.png" alt="" aria-hidden="true">
         <span>
           <spring:message code="system.createGroup.button.label" /></span>
       </a>
-      <a id="showAll" class="link" href="/system/groups/list?sortOrder=ASC&orderBy=displayName&resultsPerPage=100000">
+      <a id="showAll" class="link" href="/system/groups/list?sortOrder=ASC&orderBy=displayName&resultsPerPage=100000"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/showAllIcon.png" alt="" aria-hidden="true">
         <span><spring:message code="system.groupList.showAllLink"/></span>
       </a>
-      <li id="deleteGroup" class="c_action">
+      <li id="deleteGroup" class="c_action"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/deleteUserIcon.png" alt="" aria-hidden="true">
         <a href="#"><spring:message code="system.groupList.deleteLink"/></a>
       </li>
-      <li id="exportGroupRecord" class="c_action">
+      <li id="exportGroupRecord" class="c_action"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/exportAllGroupIcon.png" alt="" aria-hidden="true">
         <a href="#" class="exportGroup">
           <spring:message code="common:actions.export" /></a>
       </li>

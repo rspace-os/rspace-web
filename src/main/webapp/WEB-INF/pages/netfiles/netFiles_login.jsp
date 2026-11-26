@@ -29,5 +29,5 @@
         </rst:hasDeploymentProperty>
     </table>
 
-    <div class="nfsError" style="margin-left:10px; margin-top: 5px; color:red;"></div>
+    <div class="nfsError rs-error-text" style="margin-left:10px; margin-top: 5px;"></div>
 </div>

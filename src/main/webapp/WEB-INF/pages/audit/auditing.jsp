@@ -6,7 +6,7 @@
     <meta name="menu" content="MainMenu"/>
     <script src="<rst:assetUrl value='/scripts/pages/audit.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-	<link rel="stylesheet" href="<rst:assetUrl value='/styles/audit.css'/>" />
+	<axt:stylesheet href="/styles/audit.css"/>
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <p style="visibility:hidden;" aria-hidden="true">Text</p>

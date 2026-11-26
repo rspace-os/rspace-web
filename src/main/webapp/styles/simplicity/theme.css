@@ -991,6 +991,10 @@ span.drag-drop-chem p.title, span.drag-drop-gallery.chem-enabled p.title {
   text-decoration: none;
   outline: none; }
 
+/* a tab that holds deployment-specific content rather than a link */
+.rs-navbar__tab.rs-navbar__tab--bordered {
+  border-color: black; }
+
 .rs-navbar__item--active .rs-navbar__tab {
   color: #2196f3;
   border-top-color: #ddd;

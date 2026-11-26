@@ -3,7 +3,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <title><spring:message code="system.communityList.button.label" /></title>
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+    <axt:stylesheet href="/styles/system.css"/>
     <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/community.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/community_settings_mod.js'/>"></script>
@@ -40,8 +40,8 @@
             </tr>
             <tr>
                 <td width="12%"><form:hidden path="id" /></td>
-                <td><input id='editProfileSubmit' type='submit' value='<spring:message code="common:actions.save"/>' class="systemButton systemSaveButton">
-                    <a id='editProfileCancel' href='#' class="systemButton systemCancelButton"><spring:message code="common:actions.cancel"/></a></td>
+                <td><button id='editProfileSubmit' type='submit' class="systemButton systemSaveButton"><img class="rs-bg-icon" src="/images/icons/saveIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.save"/></button>
+                    <a id='editProfileCancel' href='#' class="systemButton systemCancelButton"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.cancel"/></a></td>
             </tr>
         </table>
     </form:form>
@@ -68,9 +68,9 @@
 <br>
 
 <c:if test="${canEdit}">
-    <a href="#" id="editCommunityProps" class="systemButton systemEditButton"><spring:message code="common:actions.edit"/></a>
+    <a href="#" id="editCommunityProps" class="systemButton systemEditButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.edit"/></a>
     <c:if test="${community.id != -1}"> <%-- i.e. not a default 'All Groups' community --%>
-        <a href="#" id="editCommunityAppsSettings" class="systemButton systemEditButton"><spring:message code="community.appsSettingsLinkLabel"/></a>
+        <a href="#" id="editCommunityAppsSettings" class="systemButton systemEditButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="community.appsSettingsLinkLabel"/></a>
     </c:if>
 </c:if>
 
@@ -85,10 +85,10 @@
                     <shiro:hasRole name="ROLE_SYSADMIN">
                         <c:if test="${community.id ne -1}">
                             <%--only sysadmin can remove a group from a community --%>
-                            <a id="removeGroup" class="crudops systemButton systemRemoveButton" href="#"><spring:message code="community.removeGroupLinkLabel"/></a>
-                            <a id="addGroup" class="systemButton systemAddLabGroupButton" href="#"><spring:message code="community.addGroupLinkLabel"/></a>
+                            <a id="removeGroup" class="crudops systemButton systemRemoveButton" href="#"><img class="rs-bg-icon" src="/images/icons/removeGroupIcon.png" alt="" aria-hidden="true"><spring:message code="community.removeGroupLinkLabel"/></a>
+                            <a id="addGroup" class="systemButton systemAddLabGroupButton" href="#"><img class="rs-bg-icon" src="/images/icons/addGroupIcon.png" alt="" aria-hidden="true"><spring:message code="community.addGroupLinkLabel"/></a>
                         </c:if>
-                        <a id="moveGroup" class="crudops systemButton systemMoveButton" href="#"><spring:message code="community.moveGroupLinkLabel"/></a>
+                        <a id="moveGroup" class="crudops systemButton systemMoveButton" href="#"><img class="rs-bg-icon" src="/images/icons/moveIcon.png" alt="" aria-hidden="true"><spring:message code="community.moveGroupLinkLabel"/></a>
                     </shiro:hasRole>
                 </div>
                 <div class="communityViewInnerList">
@@ -124,7 +124,7 @@
         <div id="adminsList">
             <div class="topGreyBar">
                 <c:if test="${canEdit}">
-                    <a href="#" id="addAdminLink" class="systemButton systemAddAdminButton"><spring:message code="community.addAdminLinkLabel"/></a>
+                    <a href="#" id="addAdminLink" class="systemButton systemAddAdminButton"><img class="rs-bg-icon" src="/images/icons/addAdminIcon.png" alt="" aria-hidden="true"><spring:message code="community.addAdminLinkLabel"/></a>
                 </c:if>
             </div>
             <div class="communityViewInnerList">

@@ -4,8 +4,8 @@
 <div id="labGroupForm">
 <form id="moveCommunityForm">
 <div class="topGreyBar"> <spring:message code="community.choose.label"/>
-  <a id="moveSubmit" class="systemButton systemGoButton" href="#"><spring:message code="community.actions.go"/></a>
-  <a class="cancel systemButton systemCancelButton" id="moveCancel" href="#"><spring:message code="common:actions.cancel"/></a>
+  <a id="moveSubmit" class="systemButton systemGoButton" href="#"><img class="rs-bg-icon" src="/images/icons/goIcon.png" alt="" aria-hidden="true"><spring:message code="community.actions.go"/></a>
+  <a class="cancel systemButton systemCancelButton" id="moveCancel" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.cancel"/></a>
   <input  id="groupIds" type="hidden" name="ids" value=""/>
 </div>
 <div id="communityList" class="communityViewInnerList">

@@ -229,7 +229,7 @@ export default function NewLabGroup() {
                 <Grid container>
                   <Typography sx={{ margin: "20px 0px 10px 0px" }} variant="subtitle1" gutterBottom color="inherit">
                     {t("fields.selectMembers")}{" "}
-                    <Typography variant="inherit" component="span" sx={{ color: "grey" }}>
+                    <Typography variant="inherit" component="span" sx={{ color: "text.secondary" }}>
                       {t("fields.optional")}
                     </Typography>
                   </Typography>

@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/signingProcess.css'/>" />
+<axt:stylesheet href="/styles/signingProcess.css"/>
 
 <script src="<rst:assetUrl value='/scripts/pages/signingProcess.js'/>"></script>
 

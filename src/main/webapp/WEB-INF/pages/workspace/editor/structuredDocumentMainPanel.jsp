@@ -7,22 +7,22 @@
     <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['jakarta.servlet.forward.servlet_path']}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 </head>
-<link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+<axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css"/>
 
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-toolbar.css'/>">
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-widgets.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+<axt:stylesheet href="/styles/pages/workspace/workspace.css"/>
+<axt:stylesheet href="/styles/pages/workspace/workspace-toolbar.css"/>
+<axt:stylesheet href="/styles/pages/workspace/workspace-widgets.css"/>
+<axt:stylesheet href="/styles/pages/workspace/workspace-extra-icons.css"/>
+<axt:stylesheet href="/styles/pages/workspace/workspace-dialogs.css"/>
 
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/messages.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/plugins/autocomplete.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
+<axt:stylesheet href="/styles/structuredDocument.css"/>
+<axt:stylesheet href="/scripts/jqueryFileTree/jqueryFileTree.css"/>
+<axt:stylesheet href="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"/>
+<axt:stylesheet href="/styles/messages.css"/>
+<axt:stylesheet href="/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css"/>
+<axt:stylesheet href="/styles/tinymce_rs.css"/>
+<axt:stylesheet href="/styles/plugins/autocomplete.css"/>
+<axt:stylesheet href="/scripts/bower_components/font-awesome/css/font-awesome.min.css"/>
 <rst:bundle bundle="tinymceGalleryUtils" />
 <script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>

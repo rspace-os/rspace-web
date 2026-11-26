@@ -8,6 +8,7 @@
   <rst:bundle bundle="ketcherViewer" />
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+  <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 <body>
 <input type="hidden" class="fieldId" data-id=""/>

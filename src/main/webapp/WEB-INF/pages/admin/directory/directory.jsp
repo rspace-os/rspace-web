@@ -15,16 +15,16 @@
 </script>
 
 <div id="selectDirectoryListSection" style="margin-top: 20px;"> 
-	<a class="publicListButton" id="userListButton" style="padding:11px 7px 9px 67px;background-image:url('/images/icons/usersListIcon.png');" tabindex="0"> 
+	<a class="publicListButton" id="userListButton" style="padding:11px 7px 9px 67px;" tabindex="0"><img class="rs-bg-icon" src="/images/icons/usersListIcon.png" alt="" aria-hidden="true"> 
 	 <spring:message code="system:usersPage.title"/>
   </a> 
-	<a class="publicListButton" id="groupListButton" style="padding:11px 7px 9px 78px;background-image:url('/images/icons/groupsListIcon.png');" tabindex="0">
+	<a class="publicListButton" id="groupListButton" style="padding:11px 7px 9px 78px;" tabindex="0"><img class="rs-bg-icon" src="/images/icons/groupsListIcon.png" alt="" aria-hidden="true">
 	  <spring:message code="userProfile.sectionLabel.labGroups"/>
   </a>
-	<a class="publicListButton" id="communityListButton" style="padding:11px 7px 9px 83px;background-image:url('/images/icons/communitiesListIcon.png');" tabindex="0">
+	<a class="publicListButton" id="communityListButton" style="padding:11px 7px 9px 83px;" tabindex="0"><img class="rs-bg-icon" src="/images/icons/communitiesListIcon.png" alt="" aria-hidden="true">
 	 <spring:message code="community.communities.title"/>
   </a>
-	<a class="publicListButton" id="projectGroupListButton" style="padding:11px 7px 9px 83px;background-image:url('/images/icons/projectGroupsListIcon.png');" tabindex="0">
+	<a class="publicListButton" id="projectGroupListButton" style="padding:11px 7px 9px 83px;" tabindex="0"><img class="rs-bg-icon" src="/images/icons/projectGroupsListIcon.png" alt="" aria-hidden="true">
 	 <spring:message code="directory.projectGroups.title"/>
   </a>
 </div>

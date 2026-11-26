@@ -2,19 +2,39 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { isDarkModePath, MUI_MODE_STORAGE_KEY } from "@/colorScheme";
 
 describe("isDarkModePath", () => {
-  it.each(["/gallery", "/inventory/search", "/apps", "/workspace", "/workspace/", "/workspace/123"])(
-    "allows %s",
-    (path) => {
-      expect(isDarkModePath(path)).toBe(true);
-    },
-  );
+  it.each(["/gallery", "/inventory/search", "/apps", "/about"])("allows %s", (path) => {
+    expect(isDarkModePath(path)).toBe(true);
+  });
 
-  it.each(["/workspace/editor/structuredDocument/32", "/workspace/trash/list", "/userform", "/apps/foo"])(
-    "keeps %s light",
-    (path) => {
-      expect(isDarkModePath(path)).toBe(false);
-    },
-  );
+  it.each(["/workspace", "/userform", "/apps/foo"])("leaves %s to the JSP decorator", (path) => {
+    expect(isDarkModePath(path)).toBe(false);
+  });
+});
+
+describe("darkModeAvailable", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+    document.documentElement.removeAttribute("data-dark-mode");
+    vi.resetModules();
+  });
+
+  it("reports a JSP page in a browser without @scope as unsupported", async () => {
+    window.history.pushState({}, "", "/userform");
+    document.documentElement.setAttribute("data-dark-mode-unsupported", "");
+    vi.resetModules();
+    expect((await import("@/colorScheme")).darkModeUnsupported).toBe(true);
+    document.documentElement.removeAttribute("data-dark-mode-unsupported");
+  });
+
+  it("follows the marker the JSP decorator sets", async () => {
+    window.history.pushState({}, "", "/userform");
+    vi.resetModules();
+    expect((await import("@/colorScheme")).darkModeAvailable).toBe(false);
+
+    document.documentElement.setAttribute("data-dark-mode", "");
+    vi.resetModules();
+    expect((await import("@/colorScheme")).darkModeAvailable).toBe(true);
+  });
 });
 
 describe("setColorMode", () => {
@@ -40,5 +60,71 @@ describe("setColorMode", () => {
     expect(document.documentElement).toHaveClass("dark");
     window.dispatchEvent(new StorageEvent("storage", { key: MUI_MODE_STORAGE_KEY, newValue: "light" }));
     expect(document.documentElement).toHaveClass("light");
+  });
+});
+
+describe("legacy pages", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+    delete (window as Window & { rsDarkMode?: unknown }).rsDarkMode;
+    vi.resetModules();
+    document.documentElement.className = "";
+  });
+
+  it("stores the mode in the cookie the server renders dark stylesheets from", async () => {
+    window.history.pushState({}, "", "/gallery");
+    vi.resetModules();
+    const { setColorMode } = await import("@/colorScheme");
+
+    setColorMode("dark");
+
+    expect(document.cookie).toContain("rs-color-mode=dark");
+  });
+
+  it("switches once the legacy page's dark stylesheets have loaded", async () => {
+    window.history.pushState({}, "", "/gallery");
+    vi.resetModules();
+    const { setColorMode } = await import("@/colorScheme");
+    let ready: () => void = () => {};
+    (window as Window & { rsDarkMode?: unknown }).rsDarkMode = {
+      whenReady: (_mode: string, callback: () => void) => {
+        ready = callback;
+      },
+    };
+
+    setColorMode("dark");
+    expect(document.documentElement).not.toHaveClass("dark");
+
+    ready();
+    expect(document.documentElement).toHaveClass("dark");
+  });
+});
+
+describe("printing", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+    window.localStorage.clear();
+    vi.resetModules();
+    document.documentElement.className = "";
+  });
+
+  it("prints light without changing the stored mode", async () => {
+    window.history.pushState({}, "", "/gallery");
+    window.localStorage.setItem(MUI_MODE_STORAGE_KEY, "dark");
+    vi.resetModules();
+    (await import("@/colorScheme")).initColorMode();
+    const events: Array<string | null> = [];
+    const record = (event: StorageEvent) => events.push(event.newValue);
+    window.addEventListener("storage", record);
+
+    window.dispatchEvent(new Event("beforeprint"));
+    expect(document.documentElement).toHaveClass("light");
+    expect(events).toContain("light");
+    expect(window.localStorage.getItem(MUI_MODE_STORAGE_KEY)).toBe("dark");
+
+    window.dispatchEvent(new Event("afterprint"));
+    expect(document.documentElement).toHaveClass("dark");
+    expect(window.localStorage.getItem(MUI_MODE_STORAGE_KEY)).toBe("dark");
+    window.removeEventListener("storage", record);
   });
 });

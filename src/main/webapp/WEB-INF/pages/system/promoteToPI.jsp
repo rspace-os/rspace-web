@@ -19,7 +19,7 @@
 </div>
 <form:form method="POST" modelAttribute="userRoleChangeCmnd">
 <%-- this hods any validation errors returning from controller --%>
-<span style="color:red;">
+<span class="rs-error-text">
 <form:errors path="*"></form:errors>
 </span>
 <p/>

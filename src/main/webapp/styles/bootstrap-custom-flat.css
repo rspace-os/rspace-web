@@ -3551,10 +3551,11 @@
   outline: 0;
   background-color: #2196f3;
 }
+/* Legible like the MUI theme's disabled items (legibleDisabledItem in ui/src/theme.ts). */
 .bootstrap-custom-flat .dropdown-menu > .disabled > a,
 .bootstrap-custom-flat .dropdown-menu > .disabled > a:focus,
 .bootstrap-custom-flat .dropdown-menu > .disabled > a:hover {
-  color: #bbb;
+  color: #666;
 }
 .bootstrap-custom-flat .dropdown-menu > .disabled > a:focus,
 .bootstrap-custom-flat .dropdown-menu > .disabled > a:hover {

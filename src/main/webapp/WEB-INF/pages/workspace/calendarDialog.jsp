@@ -185,7 +185,7 @@
     </div>
     <div id="file_tree_frame">
         <h3><spring:message code="dialogs.createCalendarEntry.treeHeading"/></h3>
-        <div id="calendar_file_tree" style="height: 320px; width: 100%; background-color: white; overflow: auto;"></div>
+        <div id="calendar_file_tree" style="height: 320px; width: 100%; overflow: auto;"></div>
     </div>
     <div id="linkData">
         <fieldset id="linksFieldset" class="links">

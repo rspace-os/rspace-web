@@ -1,4 +1,5 @@
-<%-- isErrorPage makes Jasper set 500 whenever the request carries an error
+
+<%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %><%-- isErrorPage makes Jasper set 500 whenever the request carries an error
      attribute, which is what every page rendering this view relies on for its
      status. A handler wanting a different status needs its own view. --%>
 <%@ page language="java" isErrorPage="true" %>
@@ -14,7 +15,7 @@
 <html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
     <title><spring:message code="errorPage.title"/></title>
-    <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
+    <axt:stylesheet href="/styles/simplicity/theme.css"/>
 </head>
 
 <body id="error">

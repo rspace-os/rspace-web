@@ -6,8 +6,9 @@
     <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
     
-    <link rel="stylesheet" type="text/css" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
+    <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
 
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <style>

@@ -40,6 +40,7 @@ import Popover from "@mui/material/Popover";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
+import { alpha } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -1204,7 +1205,7 @@ const SelectionActions = ({
               sx={{
                 ml: 0.5,
                 p: 0,
-                color: selectedIds.length > 0 ? "initial" : "grey",
+                color: selectedIds.length > 0 ? "text.primary" : "text.secondary",
               }}
             >
               {selectedIds.length > 0
@@ -1680,11 +1681,11 @@ export const UsersPage = (): React.ReactNode => {
       <ErrorBoundary topOfViewport>
         <Alerts>
           <Box
-            sx={{
+            sx={(theme) => ({
               width: "calc(100% - 16px)",
-              backgroundColor: "#f5f5f5",
+              backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.default : "#f5f5f5",
               padding: "8px",
-            }}
+            })}
           >
             <Card
               sx={{
@@ -1729,7 +1730,8 @@ export const UsersPage = (): React.ReactNode => {
                       size="small"
                       sx={(theme) => ({
                         [`& .${tableCellClasses.root}`]: {
-                          backgroundColor: "#edf7fc",
+                          backgroundColor:
+                            theme.palette.mode === "dark" ? alpha(theme.palette.primary.main, 0.12) : "#edf7fc",
                           padding: "4px 12px",
                           borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
                         },

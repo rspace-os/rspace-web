@@ -180,6 +180,21 @@ const AccentMenuItem = React.forwardRef<typeof MenuItem, AccentMenuItemArgs>(
             fontSize: "1rem",
             fontWeight: 500,
           },
+          /*
+           * The theme keeps a disabled item's text legible (legibleDisabledItem);
+           * a muted background and avatar mark it as disabled.
+           */
+          [`&.${menuItemClasses.disabled}`]: {
+            backgroundColor: prefersMoreContrast ? "#fff" : theme.palette.action.hover,
+            [`& .${cardHeaderClasses.avatar}`]: {
+              borderColor: theme.palette.action.disabledBackground,
+              backgroundColor: theme.palette.action.disabledBackground,
+            },
+            [`& .${svgIconClasses.root}`]: {
+              background: theme.palette.action.disabledBackground,
+              color: theme.palette.text.secondary,
+            },
+          },
         };
       }}
     >

@@ -3,7 +3,7 @@
 	<td name="fieldName" class="field-name">${field.name}
 	<span class="field-type-enum"> (${field.type.type})</span>
 	<c:if test="${field.mandatory eq true}">
-		<span style="color: red">*</span>
+		<span class="rs-required-marker">*</span>
 	</c:if>
 	</td>
 	<td class="field-value">

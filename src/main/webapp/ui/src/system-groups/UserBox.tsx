@@ -101,7 +101,7 @@ export default function main(props: any) {
         borderRadius: "4px",
         display: "flex",
         width: "100%",
-        backgroundColor: "rgb(245, 245, 245) !important",
+        backgroundColor: (theme) => `${theme.palette.action.hover} !important`,
       }}
     >
       <UserList

@@ -17,7 +17,7 @@
       <td width="15%"></td>
       <td width="20%"></td>
       <td width="15%" colspan="2" align="right">
-        <input id="revisionSearch" style="height:20px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;font-weight:normal;border-radius:3px;cursor:pointer;margin:0 30px 4px 0;" value="<spring:message code='revisionHistory.searchButtonValue'/>" type="button"></input>
+        <input id="revisionSearch" style="height:20px;font-weight:normal;border-radius:3px;cursor:pointer;margin:0 30px 4px 0;" value="<spring:message code='revisionHistory.searchButtonValue'/>" type="button"></input>
       </td>
     </tr>
     <tr class="table_cell spaceOver">
@@ -50,8 +50,8 @@
            </select>
          </c:if>
       </td>
-      <td class="search_bar_cell" width="5%"><input id="search_dateButton" style="height:24px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;background: -moz-linear-gradient(center top , #6389A8, #6389A8 100%) repeat scroll 0% 0% transparent;box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.6) inset;font-weight:normal;"  value="<spring:message code='dialogs.createFromTemplate.goButton'/>" type="button"></input></td>
-      <td class="search_bar_cell" width="10%"><input id="clearSearch" style="height:24px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;background: -moz-linear-gradient(center top , #6389A8, #6389A8 100%) repeat scroll 0% 0% transparent;box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.6) inset;font-weight:normal;border-radius:3px;cursor:pointer;"  value="<spring:message code='common:actions.clear'/>" type="button"></input></td>
+      <td class="search_bar_cell" width="5%"><input id="search_dateButton" style="height:24px;font-weight:normal;"  value="<spring:message code='dialogs.createFromTemplate.goButton'/>" type="button"></input></td>
+      <td class="search_bar_cell" width="10%"><input id="clearSearch" style="height:24px;font-weight:normal;border-radius:3px;cursor:pointer;"  value="<spring:message code='common:actions.clear'/>" type="button"></input></td>
     </tr>
     <tr><td height="10px"></td></tr>
     <tr class="table_cell">
@@ -65,15 +65,15 @@
       <th></th>
     </tr>
     <c:forEach var="auditedDoc" items="${history}">
-      <tr class="table_cell">
-        <td style="border-bottom:2px solid #FFF;">${auditedDoc.record.name}</td>
-        <td style="border-bottom:2px solid #FFF;">${auditedDoc.record.userVersion.version}</td>
-        <td style="border-bottom:2px solid #FFF;">
+      <tr class="table_cell revisionHistoryRow">
+        <td>${auditedDoc.record.name}</td>
+        <td>${auditedDoc.record.userVersion.version}</td>
+        <td>
            <a href="/globalId/${auditedDoc.record.oidWithVersion}">${auditedDoc.record.oidWithVersion}</a>
         </td>
-        <td style="border-bottom:2px solid #FFF;">${auditedDoc.record.modifiedBy}</td>
-        <td style="border-bottom:2px solid #FFF;"><fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${auditedDoc.record.modificationDateAsDate}"/></td>
-        <td class="delta-msg" style="border-bottom:2px solid #FFF;">
+        <td>${auditedDoc.record.modifiedBy}</td>
+        <td><fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss" value="${auditedDoc.record.modificationDateAsDate}"/></td>
+        <td class="delta-msg">
            <c:choose>
              <c:when test="${auditedDoc.revisionTypeString eq 'MOD'}">
                      ${auditedDoc.record.deltaStr}
@@ -85,9 +85,9 @@
         </td>
         <c:url value="/workspace/editor/structuredDocument/audit/view?recordId=${auditedDoc.record.id}&revision=${auditedDoc.revision}&settingsKey=${settingsKey}"
                      var="viewDocument"></c:url>
-        <td style="border-bottom:2px solid #FFF;"><a href="${viewDocument}"><spring:message code="workspace.list.view.header"/></a></td>
+        <td><a href="${viewDocument}"><spring:message code="workspace.list.view.header"/></a></td>
 
-        <td style="border-bottom:2px solid #FFF;">
+        <td>
           <%-- only allow restore if document not signed and has edit permission--%>
           <rs:chkRecordPermssns record="${auditedDoc.record}" user="${user}" action="WRITE">
             <c:if test="${isSigned eq false and auditedDoc.record.deltaStr ne 'DELETED'}">

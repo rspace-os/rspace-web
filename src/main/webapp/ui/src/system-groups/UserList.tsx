@@ -108,7 +108,7 @@ export default function UserList({ listTitle, onSelect, selected, users }: UserL
         }}
       />
       {visibleUsers.length === 0 && (
-        <Box sx={{ color: "grey" }} data-test-id={`${listTitleId}-empty`}>
+        <Box sx={{ color: "text.secondary" }} data-test-id={`${listTitleId}-empty`}>
           {t("userBox.noUsersFound")}
         </Box>
       )}

@@ -88,7 +88,7 @@
       </shiro:authenticated>
 
       <rs:isRunAs>
-        <span style="background-color:#E4E8EE;" class="header-info header-info--right">
+        <span class="header-info header-info--right header-info--run-as">
           <c:set var="runAsPrincipal"><shiro:principal/></c:set>
           <spring:message code="header.runAs.activeBanner">
             <spring:argument value="${runAsPrincipal}"/>

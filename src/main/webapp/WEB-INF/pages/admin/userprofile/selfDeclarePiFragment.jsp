@@ -4,7 +4,7 @@
 
 <hr/>
 
-<div style="font-size:1.5em; color: #444; margin-bottom: 10px;">
+<div class="rs-subheading" style="font-size:1.5em; margin-bottom: 10px;">
   <spring:message code="userProfile.selfDeclarePi.heading"/>
 </div>
 
@@ -27,7 +27,7 @@
       <spring:message code="userProfile.selfDeclarePi.notPi"/>
     </span>
     <div class="pull-right" style="text-align:right;">
-      <a href="#" class="profileEditButton ${user.allowedPiRole ? "" : "disabled"}" id="promoteToPiButton">
+      <a href="#" class="profileEditButton ${user.allowedPiRole ? "" : "disabled"}" id="promoteToPiButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
         <spring:message code="userProfile.selfDeclarePi.addPiRole"/>
       </a>
     </div>
@@ -38,7 +38,7 @@
       <spring:message code="userProfile.selfDeclarePi.isPi"/>
     </span>
     <div class="pull-right" style="text-align:right;">
-      <a href="#" class="profileEditButton" id="demoteFromPiButton">
+      <a href="#" class="profileEditButton" id="demoteFromPiButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
         <spring:message code="userProfile.selfDeclarePi.removePiRole"/>
       </a>
     </div>

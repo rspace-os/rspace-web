@@ -9,12 +9,11 @@
 		</title>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css'/>" rel="stylesheet" />
-		<link href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>"
-			rel="stylesheet" />
-		<link media="all" href="<rst:assetUrl value='/styles/simplicity/tools.css'/>" rel="stylesheet" />
-		<link media="all" href="<rst:assetUrl value='/styles/simplicity/layout.css'/>" rel="stylesheet" />
-		<link media="all" href="<rst:assetUrl value='/styles/public.css'/>" rel="stylesheet" />
+		<axt:stylesheet href="/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+		<axt:stylesheet href="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css"/>
+		<axt:stylesheet href="/styles/simplicity/tools.css"/>
+		<axt:stylesheet href="/styles/simplicity/layout.css"/>
+		<axt:stylesheet href="/styles/public.css"/>
 		<script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
 		<script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
 		<script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
@@ -29,6 +28,7 @@
 		</script>
 		<rst:i18nMessages />
 		<sitemesh:write property='head'/>
+		<%@ include file="/common/legacyDarkMode.jsp"%>
 	</head>
 
 	<jsp:include page="/scripts/templates/blockUI.html"/>
@@ -52,6 +52,11 @@
 						${applicationScope['RS_DEPLOY_PROPS']['copyrightYear']}&nbsp;<a href="<spring:message code='company.url'/>"
 						target="_blank">
 						<spring:message code="company.name"/></a>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-12" style="text-align:center;">
+						<%@ include file="/common/colorModeSwitch.jsp"%>
 					</div>
 				</div>
 			</div>

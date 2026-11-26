@@ -55,6 +55,12 @@
       }
     }
   },
+  "colorMode": {
+    "dark": "Dark",
+    "label": "Theme",
+    "light": "Light",
+    "system": "System"
+  },
   "company": {
     "name": "ResearchSpace",
     "url": "https://www.researchspace.com/"

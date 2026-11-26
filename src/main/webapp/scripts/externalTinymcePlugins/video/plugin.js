@@ -185,7 +185,8 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       return;
     }
     feedback.textContent = message;
-    feedback.style.color = isValid ? "#2e7d32" : "#c62828";
+    feedback.classList.toggle("videoUrlFeedback--valid", isValid);
+    feedback.classList.toggle("videoUrlFeedback--invalid", !isValid);
   }
 
   function syncDialogValidation(dialogApi) {

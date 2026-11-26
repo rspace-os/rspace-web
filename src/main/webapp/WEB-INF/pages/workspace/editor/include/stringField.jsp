@@ -8,7 +8,7 @@
             <div class="fieldHeaderName">
               ${field.name}
               <c:if test="${field.mandatory eq true}">
-                <span style="color: red">*</span>
+                <span class="rs-required-marker">*</span>
               </c:if>
             </div>
             <span class="fieldNotification"></span>

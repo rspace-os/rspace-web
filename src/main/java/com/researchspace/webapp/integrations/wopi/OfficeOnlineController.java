@@ -63,6 +63,7 @@ public class OfficeOnlineController extends RspaceOnlineController {
     // set attributes for current action
     String actionUrl = getWopiActionUrlForMediaFile(wopiAction, mediaFile, user, requestParams);
     model.addAttribute("actionUrl", actionUrl);
+    model.addAttribute("themeSupported", supportsTheme(wopiAction));
 
     WopiAccessToken wopiToken = accessTokenHandler.createAccessToken(user, fileId);
     model.addAttribute("msAccessToken", wopiToken.getAccessToken());
@@ -84,6 +85,14 @@ public class OfficeOnlineController extends RspaceOnlineController {
         "convertActionUrl", wopiUtils.getUrlToOfficeOnlineViewPage(mediaFile, "convert"));
 
     return "connect/msoffice/officeView";
+  }
+
+  /**
+   * Whether the action takes the WOPI THEME_ID placeholder (`thm`: 1 for a light theme, 2 for a
+   * dark one). The page adds it in the browser, where the user's colour mode is known.
+   */
+  static boolean supportsTheme(WopiAction action) {
+    return action.getUrlsrc().contains("THEME_ID");
   }
 
   /**

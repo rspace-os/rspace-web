@@ -5,9 +5,9 @@
   <meta name="heading" content="<spring:message code='groups.heading'/>"/>
   <meta name="menu" content="MainMenu"/>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+  <axt:stylesheet href="/styles/pages/groups/viewGroup.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/jquery.tagit.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css"/>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
   <script type="text/javascript">
     $(document).ready(function() {
@@ -219,8 +219,9 @@
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon2.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
-                      href="#" data-username="${ug.user.username}"></a>
+                    <spring:message code="groups.view.exportWork.label" var="exportWorkLabel"/>
+                    <a class="exportUsersWorkButton groupEditButton" style="padding:4px 7px 3px 40px;"
+                      href="#" data-username="${ug.user.username}" title="${exportWorkLabel}"><img class="rs-bg-icon exportUsersWorkButtonBgIcon" src="/images/icons/exportIcon2.png" alt="${exportWorkLabel}"></a>
                   </c:if>
                 </td>
               </c:if>

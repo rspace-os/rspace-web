@@ -6,7 +6,7 @@
 	</title>
 	<meta name="heading" content="<spring:message code='userProfile.heading'/>" />
 	<meta name="menu" content="UserMenu" />
-	<link rel="stylesheet" href="<rst:assetUrl value='/styles/userform.css'/>" />
+	<axt:stylesheet href="/styles/userform.css"/>
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
 	<script src="<rst:assetUrl value='/scripts/pages/userform.js'/>"></script>
 </head>
@@ -68,7 +68,7 @@
 			<div class="col-xs-12 profileGreyBlocks">
 				<c:if test="${canEdit == true}">
 					<div class="profileEditBar pull-right col-xs-5">
-						<a href="#" class="profileEditButton pull-right" id="userEditProfileButton">
+						<a href="#" class="profileEditButton pull-right rs-link-color" id="userEditProfileButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 							<spring:message code="common:actions.edit"/>
 						</a>
 					</div>
@@ -78,10 +78,10 @@
 
 			<c:if test="${canEditVerificationPassword == true && isVerificationPasswordSet == true}">
 				<div class="profileGreyBlocks" style="text-align:right;padding:10px;">
-					<a href="#" class="profileEditButton" id="userChangeVerificationPasswordButton">
+					<a href="#" class="profileEditButton" id="userChangeVerificationPasswordButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 						<spring:message code="userProfile.pageLinks.changeVerificationPassword"/>
 					</a>
-					<a href="#" class="profileEditButton" id="userForgotVerificationPasswordButton">
+					<a href="#" class="profileEditButton" id="userForgotVerificationPasswordButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 						<spring:message code="userProfile.pageLinks.forgotVerificationPassword"/>
 					</a>
 				</div>
@@ -89,7 +89,7 @@
 
 			<c:if test="${canEditVerificationPassword == true && isVerificationPasswordSet == false}">
 				<div class="profileGreyBlocks" style="text-align:right;padding:10px;">
-					<a href="#" class="profileEditButton" id="userSetVerificationPasswordButton">
+					<a href="#" class="profileEditButton" id="userSetVerificationPasswordButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 						<spring:message code="userProfile.pageLinks.setVerificationPassword"/>
 					</a>
 				</div>
@@ -103,14 +103,14 @@
 					<span id="userEmail" style="flex-grow: 1"> ${user.email}</span>
 					<c:if test="${canEditPassword == true}">
 						<div class="pull-right change-password" style="text-align:right;">
-							<a href="#" class="profileEditButton" id="userChangePasswordButton">
+							<a href="#" class="profileEditButton" id="userChangePasswordButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 								<spring:message code="userProfile.pageLinks.changePassword"/>
 							</a>
 						</div>
 					</c:if>
 					<c:if test="${canEditEmail == true}">
 						<div class="profileEditBar pull-right">
-							<a href="#" class="profileEditButton" id="userChangeEmailButton">
+							<a href="#" class="profileEditButton" id="userChangeEmailButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 								<spring:message code="common:actions.edit"/></a>
 						</div>
 					</c:if>
@@ -182,7 +182,7 @@
 								<spring:message code="userProfile.pageLinks.setOrcidId"/>
 							</a>
 							<a href="#" id="deleteOrcidIdButton" class="myProfileButton" data-orcidoptionsid="${orcidOptionsId}"
-								style="display:none">
+								style="display:none"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true">
 								<spring:message code="userProfile.pageLinks.deleteOrcidId"/>
 							</a>
 						</div>
@@ -195,7 +195,7 @@
 			</c:if>
 
 			<rst:hasDeploymentProperty name="fileStoreType" value="EGNYTE">
-				<div style="font-size: 1.5em; margin-bottom: 15px; color: #444;">
+				<div class="rs-subheading" style="font-size: 1.5em; margin-bottom: 15px;">
 					<spring:message code="userform.egnyte.setupHeading"/>
 				</div>
 				<div class="profileGreyBlocks col-xs-12"">
@@ -204,7 +204,7 @@
 						<spring:message code="userform.egnyte.connectedNotice"/>
 					</div>
 					<div class="pull-right">
-						<a id="egnyteDisconnectBtn" href="#" class="myProfileButton"><spring:message code="userform.egnyte.disconnectButton"/></a>
+						<a id="egnyteDisconnectBtn" href="#" class="myProfileButton"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="userform.egnyte.disconnectButton"/></a>
 					</div>
 				</div>
 				<div id="egnyteDisonnectedDiv" style="display:none">
@@ -226,7 +226,7 @@
 						<c:if test="${grp.groupType == 'COLLABORATION_GROUP'}">
 							<c:url value="/groups/view/${grp.id}" var="groupURL"></c:url>
 							<div class="profileGreyBlocks" style="line-height: 2.5em !important; vertical-align: center; margin-top: 6px;">
-								<div class="groupsListLink" style="margin: 8px 20px 0 20px;">
+								<div class="groupsListLink" style="margin: 8px 20px 0 20px;"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/groupLinkIcon.png" alt="" aria-hidden="true">
 									<a href="${groupURL}"> ${grp.displayName}</a>
 								</div>
 									<spring:message code="system:usersPage.columns.role"/>:
@@ -247,7 +247,7 @@
                         <c:if test="${grp.groupType == 'PROJECT_GROUP'}">
                             <c:url value="/groups/view/${grp.id}" var="groupURL"></c:url>
                             <div class="profileGreyBlocks" style="line-height: 2.5em !important; vertical-align: center; margin-top: 6px;">
-                                <div class="groupsListLink" style="margin: 8px 20px 0 20px;">
+                                <div class="groupsListLink" style="margin: 8px 20px 0 20px;"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/groupLinkIcon.png" alt="" aria-hidden="true">
                                     <a href="${groupURL}"> ${grp.displayName}</a>
                                 </div>
                                 <spring:message code="system:usersPage.columns.role"/>:
@@ -267,7 +267,7 @@
 				</div>
 				<c:if test="${canEdit == true}">
 					<div class="portraitEditBar">
-						<a href="#" class="profileUploadButton" id="userUploadImageButton">
+						<a href="#" class="profileUploadButton" id="userUploadImageButton"><img class="rs-bg-icon" src="/images/icons/uploadImageIcon.png" alt="" aria-hidden="true">
 							<spring:message code="userProfile.pageLinks.uploadImage"/></a>
 					</div>
 				</c:if>
@@ -592,14 +592,14 @@
     <div class="api-menu__buttons pull-right">
        {{#regenerable}}
          <div class="api-menu__edit">
-           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">
+           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
             {{#revokable}}<spring:message code="userform.apiKey.regenerateKeyButton"/>{{/revokable}}{{^revokable}}<spring:message code="userform.apiKey.generateKeyButton"/>{{/revokable}}</a>
          </div>
          <br>
        {{/regenerable}}
        {{#revokable}}
          <div class="api-menu__edit">
-           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRevokeBtn"><spring:message code="userform.apiKey.revokeKeyButton"/></a>
+           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRevokeBtn"><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="userform.apiKey.revokeKeyButton"/></a>
          </div>
        {{/revokable}}
     </div>
@@ -618,10 +618,9 @@
 		<td>{{scope}}</td>
 		<td class="text-right" style="padding-right: 0px">
 			<button
-				class="profileEditButton pull-right"
-				style="color: #1465b7"
+				class="profileEditButton pull-right rs-link-color"
 				data-id='{{clientId}}'
-			>
+			><img class="rs-bg-icon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">
 				<spring:message code="common:actions.remove"/>
 			</button>
 		</td>

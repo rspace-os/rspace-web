@@ -64,10 +64,7 @@
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer;
-  background-repeat: no-repeat;
-}
-.profileEditButton {
-  background-image: url("/images/icons/editIcon.png");
+  position: relative;
 }
 
 .profileEditButton.disabled, .profileEditButton.disabled:hover, .profileEditButton.disabled:focus {
@@ -79,14 +76,8 @@
 
 #setOrcidIdButton {
   background-image: url('/images/integrations/orcid-small.png');
+  background-repeat: no-repeat;
   background-position: 2px; }
-
-#deleteOrcidIdButton {
-  background-image: url('/images/icons/closeIcon.png');}
-
-.myProfileButton {
-  background-image: url('/images/icons/editIcon.png');
-}
 
 .profileUploadBar {
   padding: 10px 0 0 0; }
@@ -103,9 +94,7 @@
   border-width: 1px 1px 1px 1px;
   border-color: #AFAFAF;
   background: transparent;
-  background-image: url("/images/icons/uploadImageIcon.png");
-  background-repeat: no-repeat;
-  background-position: top left;
+  position: relative;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer; }
