@@ -32,6 +32,7 @@
     "i18n:status": "cd src/main/webapp/ui && i18next-cli status",
     "i18n:lint": "cd src/main/webapp/ui && i18next-cli lint",
     "i18n:types": "cd src/main/webapp/ui && i18next-cli types",
+    "i18n:types:check": "cd src/main/webapp/ui && i18next-cli types --ci",
     "test-e2e": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts",
     "test-e2e:ui": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --ui --project=chromium",
     "test-e2e:api": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --project=api",
