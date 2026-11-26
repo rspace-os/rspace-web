@@ -969,7 +969,7 @@
   :scope .bootstrap-custom-flat .dropdown-menu > .disabled > a,
   :scope .bootstrap-custom-flat .dropdown-menu > .disabled > a:focus,
   :scope .bootstrap-custom-flat .dropdown-menu > .disabled > a:hover {
-    color: #bbbbbb;
+    color: #bfbfbf;
   }
 
   :scope .bootstrap-custom-flat .dropdown-menu > .disabled > a:focus,

@@ -5,9 +5,8 @@
          first-<head>-wins nesting, a second in-body <head> is silently dropped, which
          would drop photoswipe.js and leave populatePhotoswipeImageArray undefined.
          Body-level <link>/<script>/<style> survive inlining and load before document.ready. --%>
-        <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
-        <link rel="stylesheet"
-            href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
+        <axt:stylesheet href="/scripts/bower_components/photoswipe/dist/photoswipe.css"/>
+        <axt:stylesheet href="/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css"/>
 
     <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>

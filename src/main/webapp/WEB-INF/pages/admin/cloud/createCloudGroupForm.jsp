@@ -17,8 +17,8 @@
 		}
 	</style>
 
-	<link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
-    <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+	<axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/jquery.tagit.css"/>
+    <axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css"/>
     <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/rspace/cloudGroupCreation.js'/>"></script>
 </head>

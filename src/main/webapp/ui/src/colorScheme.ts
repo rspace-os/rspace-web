@@ -95,6 +95,18 @@ function applyToDocument(resolved: "light" | "dark") {
   }
 }
 
+/**
+ * The server renders the legacy pages' dark stylesheets from this cookie
+ * (WEB-INF/tags/stylesheet.tag), so it follows the stored mode.
+ */
+function saveModeCookie(mode: ColorMode) {
+  // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is asynchronous, and the cookie must be set before the next navigation
+  document.cookie = `rs-color-mode=${mode}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+/** Set by scripts/darkMode.js on pages that React does not render. */
+type LegacyDarkMode = { whenReady(mode: ColorMode, callback: () => void): void };
+
 export function setColorMode(mode: ColorMode): void {
   currentMode = mode;
   try {
@@ -102,8 +114,16 @@ export function setColorMode(mode: ColorMode): void {
   } catch {
     // storage unavailable; roots still update through the event below
   }
-  applyToDocument(resolveColorMode(mode));
-  window.dispatchEvent(new StorageEvent("storage", { key: MUI_MODE_STORAGE_KEY, newValue: mode }));
+  saveModeCookie(mode);
+  const show = () => {
+    applyToDocument(resolveColorMode(mode));
+    window.dispatchEvent(new StorageEvent("storage", { key: MUI_MODE_STORAGE_KEY, newValue: mode }));
+  };
+  // A legacy page switches once its dark stylesheets have loaded, so its
+  // React roots wait for the same moment.
+  const legacy = (window as Window & { rsDarkMode?: LegacyDarkMode }).rsDarkMode;
+  if (legacy) legacy.whenReady(mode, show);
+  else show();
 }
 
 /**
@@ -141,6 +161,7 @@ let initialised = false;
 export function initColorMode(): void {
   if (initialised || !darkModeAvailable) return;
   initialised = true;
+  saveModeCookie(readMode());
   applyToDocument(resolveColorMode());
   if (typeof window.matchMedia === "function") {
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
@@ -150,6 +171,7 @@ export function initColorMode(): void {
   window.addEventListener("storage", (event) => {
     if (event.key !== MUI_MODE_STORAGE_KEY || printing) return;
     currentMode = parseMode(event.newValue);
+    saveModeCookie(currentMode);
     applyToDocument(resolveColorMode(currentMode));
   });
   window.addEventListener("beforeprint", () => {

@@ -3,7 +3,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta charset="UTF-8">
   <title><spring:message code="system.communityList.button.label"/></title>
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <axt:stylesheet href="/styles/system.css"/>
   <script>
     RS.communityId=${community.id};
     var view =${view};

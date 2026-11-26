@@ -3,7 +3,7 @@
     <title><spring:message code="signup.title"/></title>
     <meta name="heading" content="<spring:message code='signup.heading'/>"/>
     <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
-    <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
+    <axt:stylesheet href="/scripts/bower_components/Apprise-v2/apprise-v2.css"/>
     <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
@@ -26,11 +26,11 @@
       <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
-    <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/sign-in-up-common.css"/>
+    <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+    <axt:stylesheet href="/styles/simplicity/header.css"/>
+    <axt:stylesheet href="/styles/authentication/login.css"/>
+    <axt:stylesheet href="/styles/fontello-key/css/fontello.css"/>
 </head>
 
 <div class="page">

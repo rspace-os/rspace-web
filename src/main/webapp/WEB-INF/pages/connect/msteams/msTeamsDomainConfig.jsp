@@ -3,8 +3,8 @@
 <head>
     <title><spring:message code="connect.msteams.domainConfig.title"/></title>
     
-    <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
-    <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsDomainConfig.css'/>" rel="stylesheet" />
+    <axt:stylesheet href="/styles/pages/connect/msteams/msTeamsThemes.css"/>
+    <axt:stylesheet href="/styles/pages/connect/msteams/msTeamsDomainConfig.css"/>
 
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>

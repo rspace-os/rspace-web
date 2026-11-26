@@ -6,9 +6,9 @@
   <meta name="menu" content="MainMenu" />
 
   <!-- moved to default.jsp -->
-  <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+  <!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
 
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <axt:stylesheet href="/styles/system.css"/>
   <script src="<rst:assetUrl value='/scripts/pages/system/groupList.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 </head>

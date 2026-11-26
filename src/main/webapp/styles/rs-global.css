@@ -1283,3 +1283,13 @@ ul.tagit li.tagit-choice.tagit-choice--free-text.remove {
 #rspace-video-url-feedback.videoUrlFeedback--invalid {
   color: #c62828;
 }
+
+/*
+ * Disabled jQuery UI menu items keep legible text instead of fading to 35%,
+ * like the MUI theme's disabled items (legibleDisabledItem in ui/src/theme.ts).
+ */
+.ui-menu .ui-menu-item.ui-state-disabled,
+.ui-menu .ui-menu-item .ui-state-disabled {
+  opacity: 1;
+  color: #666;
+}

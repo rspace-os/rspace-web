@@ -7,7 +7,7 @@
     <spring:message code="system.createAccount.button.label" />
   </title>
 
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <axt:stylesheet href="/styles/system.css"/>
   <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/system/createAccount.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/system/batchUserRegistration.js'/>"></script>

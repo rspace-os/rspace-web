@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<link href="<rst:assetUrl value='/styles/preferences.css'/>" rel="stylesheet" />
+<axt:stylesheet href="/styles/preferences.css"/>
 <script src="<rst:assetUrl value='/scripts/pages/rspace/preferences.js'/>"></script>
 
 <head>

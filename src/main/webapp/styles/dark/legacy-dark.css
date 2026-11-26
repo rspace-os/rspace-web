@@ -116,6 +116,10 @@ html.dark .journalPageContent {
     color: var(--rs-dark-text);
     border-color: var(--rs-dark-border-strong);
   }
+  /* Invalid fields in batch registration (batchUserRegistration.jsp) keep their red border. */
+  :scope #batchCreateForm :is(input, select):is(:invalid, .invalidField) {
+    border-color: #cc0000;
+  }
   :scope .pagination > li > a,
   :scope .pagination > li > span {
     background: var(--rs-dark-panel);

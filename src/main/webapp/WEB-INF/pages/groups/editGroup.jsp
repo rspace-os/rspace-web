@@ -7,7 +7,7 @@
   <meta name="heading" content="<spring:message code='groups.heading'/>" />
   <meta name="menu" content="MainMenu" />
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+  <axt:stylesheet href="/styles/system.css"/>
   <style>
     .error {
       color: red;

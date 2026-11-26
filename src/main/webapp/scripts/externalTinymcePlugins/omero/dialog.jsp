@@ -11,7 +11,8 @@
   <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
   <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
   <rst:bundle bundle="tinymceOmero" />
-  <link rel="stylesheet" type="text/css" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
+  <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+  <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <body>

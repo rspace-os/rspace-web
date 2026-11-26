@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <style>
-    input:invalid, select:invalid, .invalidField {
+    :where(#batchCreateForm) input:invalid, :where(#batchCreateForm) select:invalid, .invalidField {
       border: 2px solid #cc0000;
     }
     .removeBatchRowLnk {

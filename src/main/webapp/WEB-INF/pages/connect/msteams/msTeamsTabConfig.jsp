@@ -3,10 +3,10 @@
 <head>
   <title><spring:message code="connect.msteams.tabConfig.title"/></title>
 
-  <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/styles/pages/searchableRecordPicker.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" rel="stylesheet" />
+  <axt:stylesheet href="/scripts/bower_components/Apprise-v2/apprise-v2.css"/>
+  <axt:stylesheet href="/styles/pages/connect/msteams/msTeamsThemes.css"/>
+  <axt:stylesheet href="/styles/pages/searchableRecordPicker.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css"/>
 
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>

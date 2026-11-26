@@ -2,7 +2,7 @@
 
 <head>
     <title><spring:message code="requestUsernameReminder.title"/></title>
-    <link href="<rst:assetUrl value='/styles/pages/public/passwordReset.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/pages/public/passwordReset.css"/>
 </head>
 
 <div class="container passwordResetContainer">

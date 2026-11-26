@@ -6,18 +6,19 @@
 <%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
-<link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
+<axt:stylesheet href="/styles/messages.css"/>
 
+<%-- Scripts load this listing into .messageList; :where keeps the specificity of bare a rules. --%>
 <style>
-    a,a:link a:active {
+    :where(.messageList) a {
         color: #1465b7;
         text-decoration: none;
     }
-    a:visited {
+    :where(.messageList) a:visited {
         color: #1465b7;
         background-color: transparent;
     }
-    a:hover {
+    :where(.messageList) a:hover {
         color: #cc0000;
         text-decoration: none;
     }

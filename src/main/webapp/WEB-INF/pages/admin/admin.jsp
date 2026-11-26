@@ -11,7 +11,7 @@
      applyAffiliationAutocomplete at init). Body <script>/<link> tags survive fragment inlining and
      run before document.ready, which is when the menu init and those callers execute. The standalone
      /admin page still gets its <title> from the head above. --%>
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
+<axt:stylesheet href="/styles/admin.css"/>
 <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 

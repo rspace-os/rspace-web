@@ -14,9 +14,10 @@
  * Each stylesheet's rules go to styles/dark/generated/<its path>, wrapped in
  *   @scope (html.dark) to (<user content>)
  * so they apply only in dark mode and never inside user-authored rich text,
- * which stays light. scripts/darkMode.js loads them in dark mode for the
- * stylesheets the page links, before the hand-written
- * styles/dark/legacy-dark.css, which fine-tunes them.
+ * which stays light. <axt:stylesheet> (WEB-INF/tags/stylesheet.tag) links
+ * each one straight after its stylesheet unless the mode is light, and
+ * scripts/darkMode.js adds those the server could not know about. The
+ * hand-written styles/dark/legacy-dark.css comes last and fine-tunes them.
  *
  * Usage: node scripts/generate-legacy-dark-css.mjs [--check]
  *   --check  exit non-zero if the committed files are out of date.
@@ -30,8 +31,7 @@ const WEBAPP = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "main"
 /**
  * Output: one file per source stylesheet at the same path under OUTPUT_DIR,
  * one for <style> blocks, and a manifest listing the stylesheets that have
- * one. scripts/darkMode.js loads, in dark mode only, the files for the
- * stylesheets a page links.
+ * one, which scripts/darkMode.js reads.
  */
 const OUTPUT_DIR = "styles/dark/generated";
 const TEMPLATES_OUTPUT = `${OUTPUT_DIR}/templates.css`;
@@ -59,6 +59,8 @@ const TEMPLATES = [
     cwd: WEBAPP,
     exclude: (path) => /^(ui|scripts\/(bower_components|tinymce)|node_modules)(\/|$)/.test(path),
   })
+    // Fontello's generated icon preview, not an RSpace page.
+    .filter((path) => path !== "styles/fontello-key/demo.html")
     .filter((path) => !DECORATORS.includes(path))
     .sort(),
 ];

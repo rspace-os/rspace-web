@@ -11,7 +11,7 @@
     </c:choose>
   <meta name="heading" content="<spring:message code='groups.shared.title'/>"/>
   <meta name="menu" content="MainMenu"/>
-  <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
+  <axt:stylesheet href="/styles/simplicity/theme.css"/>
   <script src="<rst:assetUrl value='/scripts/pages/rspace/sharedRecordsList.js'/>"></script>
 	<script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>   
 </head>

@@ -5,9 +5,9 @@
   <meta name="heading" content="<spring:message code='groups.heading'/>"/>
   <meta name="menu" content="MainMenu"/>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
-  <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+  <axt:stylesheet href="/styles/pages/groups/viewGroup.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/jquery.tagit.css"/>
+  <axt:stylesheet href="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css"/>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
   <script type="text/javascript">
     $(document).ready(function() {

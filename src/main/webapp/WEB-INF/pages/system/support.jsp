@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title><spring:message code="system.support.button.label" /></title>
 
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
+    <axt:stylesheet href="/styles/system.css"/>
+    <axt:stylesheet href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css"/>
 
     <script src="<rst:assetUrl value='/scripts/pages/system/support.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
+    <axt:stylesheet href="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"/>
     <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
     <script src="<rst:assetUrl value='/scripts/pages/system/maintenance_mod.js'/>"></script>

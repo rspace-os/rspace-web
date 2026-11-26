@@ -10,9 +10,9 @@
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/connect/msoffice/officeView.js'/>"></script>
     
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" />
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/connect/msoffice/officeView.css'/>" />
+    <axt:stylesheet href="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css"/>
+    <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+    <axt:stylesheet href="/styles/pages/connect/msoffice/officeView.css"/>
 
     <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>

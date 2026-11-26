@@ -63,6 +63,43 @@ describe("setColorMode", () => {
   });
 });
 
+describe("legacy pages", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+    delete (window as Window & { rsDarkMode?: unknown }).rsDarkMode;
+    vi.resetModules();
+    document.documentElement.className = "";
+  });
+
+  it("stores the mode in the cookie the server renders dark stylesheets from", async () => {
+    window.history.pushState({}, "", "/gallery");
+    vi.resetModules();
+    const { setColorMode } = await import("@/colorScheme");
+
+    setColorMode("dark");
+
+    expect(document.cookie).toContain("rs-color-mode=dark");
+  });
+
+  it("switches once the legacy page's dark stylesheets have loaded", async () => {
+    window.history.pushState({}, "", "/gallery");
+    vi.resetModules();
+    const { setColorMode } = await import("@/colorScheme");
+    let ready: () => void = () => {};
+    (window as Window & { rsDarkMode?: unknown }).rsDarkMode = {
+      whenReady: (_mode: string, callback: () => void) => {
+        ready = callback;
+      },
+    };
+
+    setColorMode("dark");
+    expect(document.documentElement).not.toHaveClass("dark");
+
+    ready();
+    expect(document.documentElement).toHaveClass("dark");
+  });
+});
+
 describe("printing", () => {
   afterEach(() => {
     window.history.pushState({}, "", "/");

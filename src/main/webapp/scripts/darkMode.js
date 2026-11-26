@@ -6,12 +6,19 @@
  * and after styles/dark/generated/sheets.js.
  *
  * - Applies the stored mode (`mui-mode`, shared with ui/src/colorScheme.ts)
- *   before first paint, then follows changes made in other documents (storage
- *   events), by this page's React roots, and to the system setting.
- * - In dark mode, loads the generated dark rules for each stylesheet the page
- *   links, including stylesheets linked later, then legacy-dark.css. Light
- *   mode loads none of them.
- * - Marks <html> with data-dark-mode, so the page's React roots follow too.
+ *   before first paint, and copies it to the `rs-color-mode` cookie, from
+ *   which the server renders the dark stylesheets (<axt:stylesheet>).
+ * - Adds any dark stylesheet the server could not know about: for stylesheets
+ *   linked by scripts, on pages without a server (frames), or when the mode
+ *   differs from the cookie. Each goes straight after its source stylesheet;
+ *   the rules for <style> blocks and the hand-written legacy-dark.css stay
+ *   after every other stylesheet.
+ * - Switches to dark only once those stylesheets have loaded, so the page
+ *   never shows light panels under dark text. React roots on the page wait
+ *   for the same moment through window.rsDarkMode.whenReady.
+ * - Follows changes made in other documents (storage events), by this page's
+ *   React roots, and to the system setting, and marks <html> with
+ *   data-dark-mode so the page's React roots follow too.
  *
  * The dark rules are @scope rules. A browser without @scope keeps the page
  * light and marks it data-dark-mode-unsupported instead.
@@ -30,10 +37,7 @@
   // The webapp root, including any context path.
   var base = new URL("..", src).pathname;
   var sheets = window.RS_DARK_SHEETS || [];
-  var loaded = {};
-  // The rules for <style> blocks and then the hand-written rules come after
-  // those for every stylesheet, as they did before the page linked more.
-  var after = null;
+  var LAST = ["generated/templates.css", "legacy-dark.css"];
 
   function storedMode() {
     try {
@@ -43,68 +47,158 @@
     }
   }
 
-  function systemDark() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  function isDark(mode) {
+    return mode === "dark" || (mode !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
 
-  /* Adds a dark stylesheet: through the parser while the page loads, so it
-   * blocks rendering like the page's own links, otherwise before the rules
-   * for <style> blocks and the hand-written ones, so those still come last. */
-  function addLink(path) {
-    var href = base + "styles/dark/" + path + query;
-    if (document.readyState === "loading" && document.currentScript) {
-      document.write('<link rel="stylesheet" media="screen" data-dark-mode-sheet href="' + href + '">');
-      return;
-    }
+  function saveCookie(mode) {
+    var value = mode === "light" || mode === "dark" ? mode : "system";
+    document.cookie = "rs-color-mode=" + value + "; path=/; max-age=31536000; SameSite=Lax";
+  }
+
+  function pathOf(link) {
+    var path = new URL(link.href, location.href).pathname;
+    return path.indexOf(base) === 0 ? path.slice(base.length) : null;
+  }
+
+  function darkLink(path, last) {
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.media = "screen";
-    link.href = href;
+    link.href = base + "styles/dark/" + path + query;
     link.setAttribute("data-dark-mode-sheet", "");
-    if (after && after.parentNode) after.parentNode.insertBefore(link, after);
-    else document.head.appendChild(link);
+    if (last) link.setAttribute("data-dark-mode-last", "");
+    return link;
   }
 
-  function loadDarkSheets() {
-    var links = document.querySelectorAll('link[rel~="stylesheet"][href]:not([data-dark-mode-sheet])');
+  /*
+   * Makes sure every dark stylesheet the page needs exists and applies to the
+   * screen, and returns the ones still loading.
+   */
+  function ensureDarkSheets() {
+    var have = {};
+    var dark = document.querySelectorAll("link[data-dark-mode-sheet]");
+    for (var i = 0; i < dark.length; i++) {
+      dark[i].media = "screen";
+      have[pathOf(dark[i])] = dark[i];
+    }
+    var sources = document.querySelectorAll('link[rel~="stylesheet"][href]:not([data-dark-mode-sheet])');
+    for (var j = 0; j < sources.length; j++) {
+      var path = pathOf(sources[j]);
+      if (path === null || sheets.indexOf(path) === -1) continue;
+      var darkPath = "styles/dark/generated/" + path;
+      if (!have[darkPath]) {
+        have[darkPath] = darkLink("generated/" + path, false);
+        sources[j].after(have[darkPath]);
+      }
+    }
+    var others = document.querySelectorAll('link[rel~="stylesheet"]:not([data-dark-mode-last])');
+    var tail = others.length ? others[others.length - 1] : document.head.lastChild;
+    for (var k = 0; k < LAST.length; k++) {
+      var lastPath = "styles/dark/" + LAST[k];
+      var link = have[lastPath] || darkLink(LAST[k], true);
+      have[lastPath] = link;
+      // Keep the <style>-block and hand-written rules after every stylesheet.
+      if (!link.parentNode || link.compareDocumentPosition(tail) & Node.DOCUMENT_POSITION_FOLLOWING) {
+        tail.after(link);
+      }
+      tail = link;
+    }
+    var pending = [];
+    for (var key in have) {
+      if (!have[key].sheet) pending.push(have[key]);
+    }
+    return pending;
+  }
+
+  /* Calls back once the links have loaded (or failed), or after 3 seconds. */
+  function whenLoaded(links, callback) {
+    var left = links.length;
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      callback();
+    }
+    if (!left) return finish();
     for (var i = 0; i < links.length; i++) {
-      var path = new URL(links[i].href, location.href).pathname;
-      if (path.indexOf(base) !== 0) continue;
-      path = path.slice(base.length);
-      if (loaded[path] || sheets.indexOf(path) === -1) continue;
-      loaded[path] = true;
-      addLink("generated/" + path);
+      links[i].addEventListener("load", function () {
+        if (--left === 0) finish();
+      });
+      links[i].addEventListener("error", function () {
+        if (--left === 0) finish();
+      });
     }
-    if (!after) {
-      addLink("generated/templates.css");
-      addLink("legacy-dark.css");
-      after = document.querySelector('link[data-dark-mode-sheet][href*="/styles/dark/generated/templates.css"]');
-    }
+    setTimeout(finish, 3000);
   }
 
-  function apply(mode) {
-    var dark = mode === "dark" || (mode !== "light" && systemDark());
+  function setDark(dark) {
     root.classList.toggle("dark", dark);
     root.classList.toggle("light", !dark);
-    if (dark) loadDarkSheets();
   }
 
-  apply(storedMode());
+  /* Applies a mode. In dark mode, the class changes once the styles are ready. */
+  function apply(mode, callback) {
+    if (!isDark(mode)) {
+      setDark(false);
+      if (callback) callback();
+      return;
+    }
+    whenLoaded(ensureDarkSheets(), function () {
+      setDark(true);
+      if (callback) callback();
+    });
+  }
+
+  window.rsDarkMode = {
+    /** Calls back once `mode` can be shown without light panels flashing. */
+    whenReady: function (mode, callback) {
+      if (isDark(mode)) whenLoaded(ensureDarkSheets(), callback);
+      else callback();
+    },
+  };
+
+  var mode = storedMode();
+  saveCookie(mode);
+  if (isDark(mode)) {
+    // Stylesheets the server rendered block rendering by themselves; any the
+    // page has to add do not, so it stays hidden until all have loaded.
+    setDark(true);
+    var pending = ensureDarkSheets();
+    if (pending.length) {
+      root.style.visibility = "hidden";
+      whenLoaded(pending, function () {
+        root.style.visibility = "";
+      });
+    }
+  } else {
+    setDark(false);
+  }
 
   window.addEventListener("storage", function (event) {
-    if (event.key === "mui-mode") apply(event.newValue);
+    if (event.key !== "mui-mode") return;
+    saveCookie(event.newValue);
+    apply(event.newValue);
   });
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
-    var mode = storedMode();
-    if (mode !== "light" && mode !== "dark") apply(mode);
+    var current = storedMode();
+    if (current !== "light" && current !== "dark") apply(current);
   });
-  // Stylesheets linked after this script runs, by the parser or by scripts.
+  // Stylesheets the parser links later come with the server's dark links,
+  // which follow them; once parsing ends, the <style>-block and hand-written
+  // rules move after them all.
+  document.addEventListener("DOMContentLoaded", function () {
+    if (root.classList.contains("dark")) ensureDarkSheets();
+  });
+  // Stylesheets that scripts link later.
   new MutationObserver(function (records) {
-    if (!root.classList.contains("dark")) return;
+    if (document.readyState === "loading" || !root.classList.contains("dark")) return;
     for (var i = 0; i < records.length; i++) {
       var added = records[i].addedNodes;
       for (var j = 0; j < added.length; j++) {
-        if (added[j].nodeName === "LINK") return loadDarkSheets();
+        if (added[j].nodeName === "LINK" && !added[j].hasAttribute("data-dark-mode-sheet")) {
+          ensureDarkSheets();
+          return;
+        }
       }
     }
   }).observe(document, { childList: true, subtree: true });

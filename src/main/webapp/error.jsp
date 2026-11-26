@@ -6,14 +6,14 @@
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst"%>
 <%@ page import="com.axiope.webapp.jsp.EscapeXml,java.util.*,org.apache.commons.lang3.exception.ExceptionUtils,
    com.researchspace.core.util.*" %>
+<%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <%-- Default error page for errors in filters/ jsp etc outside spring  --%>
 <html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
 <title><spring:message code="errorPage.title" /></title>
-<link rel="stylesheet" media="all"
-	href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
-	<link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet">
+<axt:stylesheet href="/styles/simplicity/theme.css"/>
+	<axt:stylesheet href="/styles/rs-global.css"/>
     <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 

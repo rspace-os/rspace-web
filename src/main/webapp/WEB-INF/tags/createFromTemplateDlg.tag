@@ -1,13 +1,14 @@
-<%--
+
+<%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %><%--
 	Dialog that lists templates
 --%>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/createFromTemplateDlg.js'/>"></script>
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/createFromTemplateDlg.css'/>" />
+<axt:stylesheet href="/styles/tags/createFromTemplateDlg.css"/>
 
-<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
+<axt:stylesheet href="/scripts/bootstrap-namespace/bootstrap-namespace.min.css"/>
 
 <div id="createFromTemplateDlg" style="display: none">
 

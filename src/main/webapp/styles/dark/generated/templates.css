@@ -16,6 +16,19 @@
 
   /* WEB-INF/pages/dashboard/messages_ajax.jsp */
 
+  :scope :where(.messageList) a {
+    color: #9ac7f4;
+  }
+
+  :scope :where(.messageList) a:visited {
+    color: #9ac7f4;
+    background-color: transparent;
+  }
+
+  :scope :where(.messageList) a:hover {
+    color: #f79797;
+  }
+
   :scope a.morOrderBy {
     color: #8282f5;
   }
@@ -68,6 +81,8 @@
 
   /* WEB-INF/pages/system/batchUserRegistration.jsp */
 
+  :scope :where(#batchCreateForm) input:invalid,
+  :scope :where(#batchCreateForm) select:invalid,
   :scope .invalidField {
     border-color: #cc0000;
   }
@@ -140,11 +155,19 @@
 
   /* scripts/externalTinymcePlugins/handsontable/dialog.html */
 
+  :scope .pluginDialogBody {
+    color: #cbcbcb;
+  }
+
   :scope .hotInfoBox {
     border-color: #4e4e4e;
   }
 
   /* scripts/externalTinymcePlugins/mathjax/dialog.html */
+
+  :scope .pluginDialogBody {
+    color: #cbcbcb;
+  }
 
   :scope #preview {
     color: #e3e3e3;
@@ -193,24 +216,5 @@
   :scope .anim {
     background-color: #00597a;
     background-image: none;
-  }
-
-  /* styles/fontello-key/demo.html */
-
-  :scope .header {
-    background-color: #161b1d;
-    border-bottom-color: #3e3e3e;
-  }
-
-  :scope .footer {
-    color: #dddddd;
-  }
-
-  :scope .footer a {
-    color: #cccccc;
-  }
-
-  :scope .switch {
-    color: #bfbfbf;
   }
 }

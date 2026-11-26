@@ -124,7 +124,7 @@ function StepperPanelHeader_({
             id={id}
             sx={{
               wordBreak: "break-word",
-              color: showErrorIndicator ? theme.palette.error.main : "initial",
+              color: showErrorIndicator ? theme.palette.error.main : theme.palette.text.primary,
             }}
           >
             {icon && (
@@ -133,7 +133,7 @@ function StepperPanelHeader_({
                   recordTypeLabel: "",
                   iconName: icon,
                 }}
-                color="black"
+                color={theme.palette.text.primary}
                 style={{
                   transform: "scale(1)",
                   opacity: 0.8,

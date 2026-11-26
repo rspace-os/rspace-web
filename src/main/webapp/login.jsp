@@ -20,18 +20,18 @@
       <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
       <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-      <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
+      <axt:stylesheet href="/scripts/bower_components/Apprise-v2/apprise-v2.css"/>
       <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
       <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
-    <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
-    <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/sign-in-up-common.css"/>
+    <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/>
+    <axt:stylesheet href="/styles/simplicity/header.css"/>
+    <axt:stylesheet href="/styles/authentication/login.css"/>
 
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
-    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
+    <axt:stylesheet href="/styles/fontello-key/css/fontello.css"/>
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 

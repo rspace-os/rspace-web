@@ -6,9 +6,9 @@
 <title><spring:message code="system.communityList.button.label"/></title>
 
 <!-- moved to default.jsp -->
-<!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
+<!-- <axt:stylesheet href="/styles/bootstrap-custom-flat.css"/> -->
 
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+<axt:stylesheet href="/styles/system.css"/>
 <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/system/communityList.js'/>"></script>
 </head>

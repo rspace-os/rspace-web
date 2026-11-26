@@ -181,15 +181,11 @@ const AccentMenuItem = React.forwardRef<typeof MenuItem, AccentMenuItemArgs>(
             fontWeight: 500,
           },
           /*
-           * MUI fades a disabled item to 38% opacity, which leaves its text
-           * too faint to read; muted colours mark it instead.
+           * The theme keeps a disabled item's text legible (legibleDisabledItem);
+           * a muted background and avatar mark it as disabled.
            */
           [`&.${menuItemClasses.disabled}`]: {
-            opacity: 1,
             backgroundColor: prefersMoreContrast ? "#fff" : theme.palette.action.hover,
-            [`& .${typographyClasses.root}`]: {
-              color: prefersMoreContrast ? "#000" : theme.palette.text.secondary,
-            },
             [`& .${cardHeaderClasses.avatar}`]: {
               borderColor: theme.palette.action.disabledBackground,
               backgroundColor: theme.palette.action.disabledBackground,
