@@ -9,7 +9,6 @@ import Stack from "@mui/material/Stack";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
 import type { GridRowId } from "@mui/x-data-grid";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -601,4 +600,4 @@ function DMPDialog({ open, setOpen, onImport }: DMPDialogArgs): React.ReactNode 
     </DMPDialogThemeProvider>
   );
 }
-export default observer(DMPDialog);
+export default DMPDialog;

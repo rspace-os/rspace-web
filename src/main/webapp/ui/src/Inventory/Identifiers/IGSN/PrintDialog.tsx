@@ -11,7 +11,6 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import React, { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
@@ -363,4 +362,4 @@ function PrintDialog({
   );
 }
 
-export default observer(PrintDialog);
+export default PrintDialog;

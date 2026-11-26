@@ -1,6 +1,5 @@
 import Grid from "@mui/material/Grid";
 import { delay } from "es-toolkit";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { incrementForever, take } from "../../../util/iterators";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
@@ -49,4 +48,4 @@ function LoadingList({ onVisible, count, placeholder, pageNumber, loading }: Loa
   );
 }
 
-export default observer(LoadingList);
+export default LoadingList;

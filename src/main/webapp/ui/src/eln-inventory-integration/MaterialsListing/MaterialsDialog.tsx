@@ -10,7 +10,7 @@ import Portal from "@mui/material/Portal";
 import Slide from "@mui/material/Slide";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { Observer, observer } from "mobx-react-lite";
+import { observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -83,27 +83,23 @@ const CardWrapper = forwardRef<React.ElementRef<typeof Grid>, CardWrapperArgs & 
     const isSingleColumnLayout = useIsSingleColumnLayout();
 
     return (
-      <Observer>
-        {() => (
-          <Grid
-            {...gridProps}
-            sx={{
-              position: "absolute",
-              right: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: 100,
-              width: "100%",
-            }}
-            className={className}
-            ref={ref}
-            onClick={preventEventBubbling()}
-            size={isSingleColumnLayout ? 12 : 9}
-          >
-            {children}
-          </Grid>
-        )}
-      </Observer>
+      <Grid
+        {...gridProps}
+        sx={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          bottom: 0,
+          zIndex: 100,
+          width: "100%",
+        }}
+        className={className}
+        ref={ref}
+        onClick={preventEventBubbling()}
+        size={isSingleColumnLayout ? 12 : 9}
+      >
+        {children}
+      </Grid>
     );
   },
 );

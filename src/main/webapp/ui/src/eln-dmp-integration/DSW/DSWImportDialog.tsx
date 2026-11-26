@@ -7,7 +7,6 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
-import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
@@ -367,4 +366,4 @@ function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): Re
   );
 }
 
-export default observer(DSWImportDialog);
+export default DSWImportDialog;
