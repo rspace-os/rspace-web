@@ -20,11 +20,13 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
+import com.researchspace.testutils.TestGroup;
 import java.util.Iterator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -308,6 +310,33 @@ public class PublicStructuredDocumentControllerIT extends MVCTestBase {
     shareRecordWithGroup(setup.user, setup.group, entry);
     // precondition: sharing gives the entry a second parent, so getParent() is null
     assertNull(recordMgr.get(entryId).getParent());
+    logoutCurrentUser();
+    mockMvc
+        .perform(get("/public/publishedView/publiclink").param("globalId", "SD" + entryId))
+        .andExpect(status().isOk())
+        .andExpect(content().string(notebookLink + "?initialRecordToDisplay=" + entryId));
+  }
+
+  @Test
+  public void anonymousCallerGetsOwnersNotebookLinkForEntrySharedIntoAnotherNotebook()
+      throws Exception {
+    TestGroup testGroup = createTestGroup(1);
+    User pi = testGroup.getPi();
+    User owner = testGroup.getUserByPrefix("u1");
+    logoutAndLoginAs(pi);
+    Notebook piNotebook =
+        createNotebookWithNEntries(getRootFolderForUser(pi).getId(), "piNotebook", 0, pi);
+    shareNotebookWithGroup(pi, piNotebook, testGroup.getGroup(), "write");
+    logoutAndLoginAs(owner);
+    Notebook notebook =
+        createNotebookWithNEntries(getRootFolderForUser(owner).getId(), "notebook", 1, owner);
+    publishDocumentForUser(owner, notebook.getId(), true, false, "");
+    String notebookLink = recShareMgr.getRecordSharingInfo(notebook.getId()).get(0).getPublicLink();
+    Long entryId = folderMgr.getFolderChildrenIds(notebook).iterator().next();
+    publishDocumentForUser(owner, entryId);
+    shareRecordIntoGroupNotebook(recordMgr.get(entryId), piNotebook, testGroup.getGroup(), owner);
+    // precondition: the entry now sits in two notebooks, its owner's and the PI's
+    assertEquals(2, recordMgr.get(entryId).getParentNotebooks().size());
     logoutCurrentUser();
     mockMvc
         .perform(get("/public/publishedView/publiclink").param("globalId", "SD" + entryId))

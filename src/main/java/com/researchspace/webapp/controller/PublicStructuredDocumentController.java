@@ -9,7 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordSharingManager;
@@ -124,11 +124,11 @@ public class PublicStructuredDocumentController extends BaseController {
     if (publicLink.isEmpty()) {
       if (recordManager.exists(id)) {
         Record data = recordManager.get(id);
-        // sharing adds a second parent, and getParent() is null for more than one
-        Folder parent =
-            data.getParent() != null ? data.getParent() : data.getOwnerParent().orElse(null);
-        if (parent != null) {
-          publicLink = getPublicLinkForRecord(parent.getId(), signedIn);
+        // the notebook the public notebook page shows the entry in, when it sits in several
+        Notebook notebook =
+            data.isStructuredDocument() ? data.asStrucDoc().getParentNotebook() : null;
+        if (notebook != null) {
+          publicLink = getPublicLinkForRecord(notebook.getId(), signedIn);
           if (!publicLink.isEmpty()) {
             publicLink += "?initialRecordToDisplay=" + data.getId();
           }
