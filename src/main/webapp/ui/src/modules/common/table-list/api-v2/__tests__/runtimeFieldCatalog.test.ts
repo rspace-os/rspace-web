@@ -9,6 +9,7 @@ import {
   mapRuntimeFieldSearch,
   registeredRuntimeFieldCatalog,
   registeredRuntimeFieldSearches,
+  soleRuntimeFieldSearch,
 } from "../runtimeFieldCatalog";
 
 const namespace = {
@@ -89,6 +90,17 @@ describe("runtime field search binding", () => {
       "/api/v2/instruments/fields",
       { q: "cab", namespace: ["customFields", "extraFields"] },
     ]);
+  });
+
+  it("rejects sources served by more than one resource", () => {
+    const search = { resourceName: "instruments", namespaces: [], queryKey: () => [], request: async () => ({}) };
+    expect(soleRuntimeFieldSearch([])).toBeUndefined();
+    expect(() =>
+      soleRuntimeFieldSearch([
+        { search, sources: [] },
+        { search: { ...search, resourceName: "users" }, sources: [] },
+      ]),
+    ).toThrow("instruments, users");
   });
 
   it("decodes each requested namespace, including a truncated catalog", () => {

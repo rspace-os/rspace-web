@@ -145,6 +145,20 @@ export function registeredRuntimeFieldSearches<S extends RuntimeFieldCatalogName
   });
 }
 
+/**
+ * The only search among these, if any. A picker's sources share one relationship path, which one resource serves, so
+ * a second search means the sources were grouped wrongly.
+ */
+export function soleRuntimeFieldSearch<S>(
+  searches: readonly { search: RuntimeFieldSearch; sources: readonly S[] }[],
+): { search: RuntimeFieldSearch; sources: readonly S[] } | undefined {
+  if (searches.length > 1) {
+    const names = searches.map(({ search }) => search.resourceName).join(", ");
+    throw new Error(`Runtime field sources span more than one resource: ${names}`);
+  }
+  return searches.at(0);
+}
+
 /** Each requested namespace's catalog page; a namespace missing from the response fails decoding. */
 export function mapRuntimeFieldSearch(
   body: unknown,

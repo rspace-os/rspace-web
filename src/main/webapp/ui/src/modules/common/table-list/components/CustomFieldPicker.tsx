@@ -1,5 +1,5 @@
 import { useDebouncedState } from "@tanstack/react-pacer";
-import { useQueries } from "@tanstack/react-query";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RelationshipLabel, RuntimeNamespaceSummary } from "@/modules/common/collection/config";
@@ -10,6 +10,7 @@ import {
   type RuntimeFieldDefinition,
   registeredRuntimeFieldSearches,
   runtimeFieldCatalogNamespace,
+  soleRuntimeFieldSearch,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import {
   Combobox,
@@ -71,34 +72,27 @@ export function CustomFieldPicker({
   const [open, setOpen] = useState(false);
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
-  // One request per resource; each catalog in the response answers every source that maps to it.
-  const searches = registeredRuntimeFieldSearches(sources);
-  // Plain useQueries: searches only while the picker is open and keeps the input typable.
-  const queries = useQueries({
-    queries: searches.map(({ search, sources: answered }) => {
-      const params = { q: term.trim(), limit: SEARCH_LIMIT };
-      return {
-        queryKey: search.queryKey(params),
-        queryFn: ({ signal }: { signal: AbortSignal }) => search.request(params, { signal, redirect: "error" }),
-        select: (body: unknown) => {
-          const catalogs = mapRuntimeFieldSearch(body, search.namespaces);
-          return answered.flatMap((source) =>
-            (catalogs.get(runtimeFieldCatalogNamespace(source.namespace))?.fields ?? []).map((definition) => ({
-              namespace: source.namespace,
-              definition,
-            })),
-          );
-        },
-        enabled: open && narrowed,
-        staleTime: 60_000,
-      };
-    }),
+  const runtimeSearch = soleRuntimeFieldSearch(registeredRuntimeFieldSearches(sources));
+  const params = { q: term.trim(), limit: SEARCH_LIMIT };
+  // Not a suspense query, so a new term does not suspend the input.
+  const query = useQuery({
+    queryKey: runtimeSearch?.search.queryKey(params) ?? ["runtimeFieldSearch", "unavailable"],
+    queryFn:
+      runtimeSearch && open && narrowed
+        ? ({ signal }) => runtimeSearch.search.request(params, { signal, redirect: "error" })
+        : skipToken,
+    select: (body): readonly RuntimeFieldOption[] => {
+      if (!runtimeSearch) return [];
+      const catalogs = mapRuntimeFieldSearch(body, runtimeSearch.search.namespaces);
+      return runtimeSearch.sources.flatMap((source) =>
+        (catalogs.get(runtimeFieldCatalogNamespace(source.namespace))?.fields ?? []).map((definition) => ({
+          namespace: source.namespace,
+          definition,
+        })),
+      );
+    },
+    staleTime: 60_000,
   });
-  const query = {
-    data: queries.flatMap((result) => result.data ?? []),
-    isFetching: queries.some((result) => result.isFetching),
-    isError: queries.some((result) => result.isError),
-  };
 
   const sourceNames = new Set(sources.map((source) => source.namespace));
   const loaded = known
