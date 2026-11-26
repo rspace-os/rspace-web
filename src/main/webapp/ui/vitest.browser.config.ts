@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { msw } from "msw/vite";
+import type { Frame } from "playwright-core";
 import type { Alias, Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 
@@ -40,6 +41,20 @@ const TINYMCE_MIME: Record<string, string> = {
   ".json": "application/json",
   ".html": "text/html",
 };
+
+/** Maps a point in the test iframe's viewport to the page, so Playwright's real mouse presses inside the iframe. */
+async function pagePoint(frame: () => Promise<Frame>, x: number, y: number): Promise<{ x: number; y: number }> {
+  const iframe = await (await frame()).frameElement();
+  const box = await iframe.boundingBox();
+  if (!box) throw new Error("The test iframe has no layout box");
+  const { left, top, width } = await iframe.evaluate((node) => {
+    const element = node as HTMLIFrameElement;
+    return { left: element.clientLeft, top: element.clientTop, width: element.offsetWidth };
+  });
+  // The iframe may be scaled to fit the page, so convert CSS pixels inside it to page pixels.
+  const scale = box.width / width;
+  return { x: box.x + (left + x) * scale, y: box.y + (top + y) * scale };
+}
 
 function tinymceAssetsPlugin(): Plugin {
   const prefix = "/tinymce/";
@@ -168,6 +183,20 @@ export default defineConfig({
     reporters: process.env.CI ? ["default", "junit"] : ["default"],
     outputFile: process.env.CI ? { junit: `browser-junit-${browsers.join("-")}.xml` } : undefined,
     browser: {
+      commands: {
+        async mouseDown({ page, frame }, x: number, y: number) {
+          const point = await pagePoint(frame, x, y);
+          await page.mouse.move(point.x, point.y);
+          await page.mouse.down();
+        },
+        async mouseMove({ page, frame }, x: number, y: number) {
+          const point = await pagePoint(frame, x, y);
+          await page.mouse.move(point.x, point.y);
+        },
+        async mouseUp({ page }) {
+          await page.mouse.up();
+        },
+      },
       enabled: true,
       headless: true,
       screenshotFailures: false,

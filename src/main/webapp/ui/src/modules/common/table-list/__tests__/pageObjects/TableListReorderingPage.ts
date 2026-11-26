@@ -1,4 +1,13 @@
-import { type Locator, page, userEvent } from "vitest/browser";
+import { commands, type Locator, page, userEvent } from "vitest/browser";
+
+declare module "vitest/browser" {
+  interface BrowserCommands {
+    /** Presses Playwright's real mouse at a point in the test iframe's viewport. */
+    mouseDown(x: number, y: number): Promise<void>;
+    mouseMove(x: number, y: number): Promise<void>;
+    mouseUp(): Promise<void>;
+  }
+}
 
 type Point = { x: number; y: number };
 
@@ -11,17 +20,6 @@ function itemFor(handle: Locator): HTMLElement {
   const item = handle.element().closest<HTMLElement>('li, [data-slot="badge"]');
   if (!item) throw new Error(`No sortable item contains ${handle.toString()}`);
   return item;
-}
-
-function mouseEvent(type: string, point: Point): MouseEvent {
-  return new MouseEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    button: 0,
-    buttons: type === "mouseup" ? 0 : 1,
-    clientX: point.x,
-    clientY: point.y,
-  });
 }
 
 function touch(target: EventTarget, point: Point): Touch {
@@ -242,9 +240,10 @@ export class TableListReorderingPage {
   }
 
   async startMouseColumnResize(label: string): Promise<void> {
-    const handle = this.resizeHandle(label).element();
-    const start = center(handle);
-    handle.dispatchEvent(mouseEvent("mousedown", start));
+    // Hovering scrolls the handle and the test iframe into view, since the real mouse only presses what is on screen.
+    await userEvent.hover(this.resizeHandle(label));
+    const start = center(this.resizeHandle(label).element());
+    await commands.mouseDown(start.x, start.y);
     this.resizePosition = start;
     await nextFrame();
   }
@@ -252,13 +251,13 @@ export class TableListReorderingPage {
   async moveMouseColumnResize(delta: number): Promise<void> {
     if (!this.resizePosition) throw new Error("No column resize is active");
     this.resizePosition = { x: this.resizePosition.x + delta, y: this.resizePosition.y };
-    document.dispatchEvent(mouseEvent("mousemove", this.resizePosition));
+    await commands.mouseMove(this.resizePosition.x, this.resizePosition.y);
     await nextFrame();
   }
 
   async finishMouseColumnResize(): Promise<void> {
     if (!this.resizePosition) throw new Error("No column resize is active");
-    document.dispatchEvent(mouseEvent("mouseup", this.resizePosition));
+    await commands.mouseUp();
     this.resizePosition = null;
     await nextFrame();
   }
@@ -282,9 +281,9 @@ export class TableListReorderingPage {
 
   async startMouseDrag(handle: Locator): Promise<void> {
     const start = center(handle.element());
-    handle.element().dispatchEvent(mouseEvent("mousedown", start));
+    await commands.mouseDown(start.x, start.y);
     this.mousePosition = { x: start.x, y: start.y + 8 };
-    document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
+    await commands.mouseMove(this.mousePosition.x, this.mousePosition.y);
     await nextFrame();
   }
 
@@ -292,7 +291,7 @@ export class TableListReorderingPage {
     const element = target.element();
     const point = center(element);
     this.mousePosition = { x: point.x, y: point.y + yOffset };
-    document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
+    await commands.mouseMove(this.mousePosition.x, this.mousePosition.y);
     await nextFrame();
   }
 
@@ -303,23 +302,23 @@ export class TableListReorderingPage {
       x: this.mousePosition.x,
       y: section === "shown" ? rect.bottom - 5 : rect.top + 5,
     };
-    document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
+    await commands.mouseMove(this.mousePosition.x, this.mousePosition.y);
     await nextFrame();
   }
 
   async moveMouseNearFilterBottom(): Promise<void> {
     const rect = this.filterList.element().getBoundingClientRect();
     this.mousePosition = { x: rect.left + rect.width / 2, y: rect.bottom - 8 };
-    document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
+    await commands.mouseMove(this.mousePosition.x, this.mousePosition.y);
     await nextFrame();
     this.mousePosition = { x: rect.left + rect.width / 2, y: rect.bottom - 2 };
-    document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
+    await commands.mouseMove(this.mousePosition.x, this.mousePosition.y);
     await nextFrame();
   }
 
   async finishMouseDrag(): Promise<void> {
     if (!this.mousePosition) throw new Error("No mouse drag is active");
-    document.dispatchEvent(mouseEvent("mouseup", this.mousePosition));
+    await commands.mouseUp();
     this.mousePosition = null;
     await nextFrame();
     await nextFrame();
@@ -329,6 +328,8 @@ export class TableListReorderingPage {
 
   async cancelMouseDrag(): Promise<void> {
     await userEvent.keyboard("{Escape}");
+    // Release the real button too, so the next drag starts from a clean pointer.
+    await commands.mouseUp();
     this.mousePosition = null;
     await nextFrame();
   }
