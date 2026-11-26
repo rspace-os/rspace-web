@@ -6,7 +6,7 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
-import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
+import { TableList, type TableListProps, type TableListRuntimeFields } from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/types";
 import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -71,9 +71,8 @@ export function BookingEventsCalendar({
   eventFilterExpression = null,
   itemFilterIssue,
   eventFilterIssue,
-  eventRuntimeFieldDefinitions,
-  eventRuntimeFieldAuthScope,
-  onSelectEventRuntimeField,
+  eventRuntimeFields,
+  eventAuthScope,
   onEventFilterChange,
   myItemsOnly = false,
   onMyItemsChange,
@@ -116,14 +115,10 @@ export function BookingEventsCalendar({
     namespace: string;
     definitions: readonly RuntimeFieldDefinition[];
   }[];
-  eventRuntimeFieldDefinitions?: readonly {
-    namespace: string;
-    definitions: readonly RuntimeFieldDefinition[];
-  }[];
   itemRuntimeFieldAuthScope?: string | number;
-  eventRuntimeFieldAuthScope?: string | number;
   onSelectItemRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  onSelectEventRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  eventRuntimeFields?: TableListRuntimeFields;
+  eventAuthScope?: string | number;
   onItemFilterChange?: (expression: FilterExpression<BookingConfiguration> | null) => void;
   onEventFilterChange?: (expression: FilterExpression<BookingListDocument> | null) => void;
   myItemsOnly?: boolean;
@@ -219,9 +214,8 @@ export function BookingEventsCalendar({
         debounceSearch={true}
         headingClassName="text-2xl font-semibold"
         createAction={creationAction}
-        onSelectRuntimeField={onSelectEventRuntimeField}
-        runtimeFieldDefinitions={eventRuntimeFieldDefinitions}
-        runtimeFieldAuthScope={eventRuntimeFieldAuthScope}
+        runtimeFields={eventRuntimeFields}
+        authScope={eventAuthScope}
         filterButtons={{
           legend: t("calendar.quickFilters.legend"),
           controlsOnSeparateRow: true,

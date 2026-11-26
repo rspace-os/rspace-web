@@ -72,11 +72,13 @@ export function CalendarContent() {
         itemFilterIssue={itemIssue}
         eventFilterIssue={eventIssue}
         itemRuntimeFieldDefinitions={itemRuntimeFields.runtimeFields}
-        eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
         itemRuntimeFieldAuthScope={itemRuntimeFields.scope}
-        eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
+        eventAuthScope={eventRuntimeFields.scope}
         onSelectItemRuntimeField={itemRuntimeFields.selectRuntimeField}
-        onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
+        eventRuntimeFields={{
+          definitions: eventRuntimeFields.runtimeFields,
+          onSelect: eventRuntimeFields.selectRuntimeField,
+        }}
         onItemFilterChange={onItemFiltersChange}
         onEventFilterChange={onEventFiltersChange}
         searchControl={{
