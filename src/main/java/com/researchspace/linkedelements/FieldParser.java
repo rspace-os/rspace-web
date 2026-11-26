@@ -1,6 +1,7 @@
 package com.researchspace.linkedelements;
 
 import com.researchspace.model.field.Field;
+import java.util.Set;
 import org.jsoup.select.Elements;
 
 /**
@@ -79,4 +80,14 @@ public interface FieldParser {
    */
   FieldContents findFieldElementsInContentForCssClass(
       FieldContents fieldContents, String content, String cssClass);
+
+  /**
+   * Finds the Gallery image ids of annotated images, i.e. <code>img.imageDropped</code> elements
+   * with <code>data-type="annotation"</code>. The image id is the second part of the composite
+   * element id (<code>fieldId-imageId</code>); elements whose id doesn't parse are ignored.
+   *
+   * @param content text field HTML
+   * @return image ids in document order, without duplicates
+   */
+  Set<Long> findAnnotatedImageIds(String content);
 }

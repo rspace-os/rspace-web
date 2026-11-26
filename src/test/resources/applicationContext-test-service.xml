@@ -49,6 +49,8 @@
                  InventoryOperationTransactionRuleTest. -->
             <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
+            <tx:method name="findFieldIdsWithAnnotatedImages" read-only="true"/>
+            <tx:method name="reportAnnotatedImagesInField" read-only="true"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>
