@@ -1886,13 +1886,16 @@ paths:
       summary: List the ELN documents linking a filestore item
       description: >-
         Returns the current, non-deleted ELN documents whose text links the file or folder at
-        `remotePath` (relative to the filestore root, with or without its leading slash), through
-        any user's filestore of the same filesystem; on filesystems with per-user logins
-        only through the caller's own filestores, since two logins can see different files at
-        one path, and except on SMB a link whose full path (the filestore's own path followed by
-        the item's path) starts without a slash is kept apart from one that starts with a slash,
-        as SFTP and iRODS can read the two as different files. Documents the caller cannot read
-        are returned as owner-only placeholders (no `id`, `globalId` or `name`).
+        `remotePath` (relative to the filestore root), through any user's filestore of the same
+        filesystem; on filesystems with per-user logins only through the caller's own
+        filestores, since two logins can see different files at one path, and only where the
+        filesystem's client reads the item's full path and the link's (each the filestore's own
+        path followed by the item's path) as the same file by their leading slashes: SFTP, iRODS
+        and SMB under a server URL's folder can read a full path with a leading slash apart from
+        one without, and SMBJ reads a first folder named like the share as the share unless two
+        slashes precede it. `remotePath` is taken as sent, except that a missing leading slash is
+        added under a filestore path that does not end with one. Documents the caller cannot
+        read are returned as owner-only placeholders (no `id`, `globalId` or `name`).
         Requires read access to the filesystem. On filesystems with per-user logins the user must
         also be logged into the filesystem (see /login endpoint), and that login must be able to
         read the item: list it if it is a folder, open it if it is a file. Any filestore type.
