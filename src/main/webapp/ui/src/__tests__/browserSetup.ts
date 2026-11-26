@@ -1,5 +1,5 @@
 import { afterEach, beforeAll } from "vitest";
-import { cdp, server } from "vitest/browser";
+import { cdp, type Locator, locators, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
@@ -9,6 +9,19 @@ import {
   setApiV2TokenProvider,
 } from "@/modules/common/api/v2/tokenProvider";
 import i18n from "@/modules/common/i18n";
+
+declare module "vitest/browser" {
+  interface LocatorSelectors {
+    /** For wrappers with no accessible query handle; prefer role, label and text locators. */
+    getByCSS(selector: string): Locator;
+  }
+}
+
+locators.extend({
+  getByCSS(selector: string) {
+    return `css=${selector}`;
+  },
+});
 
 // Browser specs mint REST API v2 tokens through their mocked token route, as a page's entry point would.
 setApiV2TokenProvider(new SessionTokenProvider(defaultApiV2SessionHandlers));
