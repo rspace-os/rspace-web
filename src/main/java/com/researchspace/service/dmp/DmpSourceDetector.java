@@ -49,8 +49,12 @@ public class DmpSourceDetector {
     }
   }
 
-  // DMPTool saves its API response, DMPonline the inner dmp object, Argos its own plan details
+  // DMPTool saves its API response; DMPonline saves its plan list (perPage, totalItems), or the
+  // inner dmp object before 7ef01f9b8b; Argos saves its own plan details
   private static DMPSource fromJsonLayout(JsonNode root) {
+    if (root.has("perPage") || root.has("totalItems")) {
+      return DMPSource.DMP_ONLINE;
+    }
     if (root.path("items").path(0).has("dmp")) {
       return DMPSource.DMP_TOOL;
     }

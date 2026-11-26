@@ -55,6 +55,7 @@ class DmpSourceDetectorTest {
   @CsvSource({
     "dmptool-plan.json, DMP_TOOL",
     "dmponline-plan.json, DMP_ONLINE",
+    "dmponline-plan-list.json, DMP_ONLINE",
     "argos-plan.json, ARGOS",
   })
   void jsonLayoutGivesItsPlatform(String fileName, DMPSource expected) throws Exception {
