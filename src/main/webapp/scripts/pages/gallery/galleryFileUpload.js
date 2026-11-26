@@ -198,6 +198,8 @@ function initDragDropAreaHandling(
   uploadChemFileCallback
 ) {
   $(document).on("dragover", function (e) {
+    // An inner drop target (e.g. Ketcher's Open dialog) accepted the drag; keep its dropEffect.
+    var acceptedByInnerTarget = e.originalEvent.defaultPrevented;
     e.preventDefault();
     e.stopPropagation();
     markAreaDroppable(areaSelector);
@@ -211,7 +213,7 @@ function initDragDropAreaHandling(
       $target.parent().is("span.drag-drop-chem");
     if (insideDragDropAreaGallery || insideDragDropAreaChem) {
       e.originalEvent.dataTransfer.dropEffect = "copy";
-    } else {
+    } else if (!acceptedByInnerTarget) {
       e.originalEvent.dataTransfer.dropEffect = "none";
     }
 
