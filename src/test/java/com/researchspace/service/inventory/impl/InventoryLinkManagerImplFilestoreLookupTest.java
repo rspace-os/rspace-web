@@ -36,6 +36,8 @@ import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -218,10 +220,12 @@ class InventoryLinkManagerImplFilestoreLookupTest {
         .containsExactly("IC3", "SA2", "SA10");
   }
 
-  @Test
-  void onSftpOnlyTheActorsFilestoresWithAMatchingBaseAreSearched() {
-    NfsFileSystem sftp = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
-    sftp.setClientType(NfsClientType.SFTP);
+  @ParameterizedTest
+  @EnumSource(names = {"SFTP", "IRODS"})
+  void whereAHomeCanPrefixAPathOnlyTheActorsFilestoresWithAMatchingBaseAreSearched(
+      NfsClientType clientType) {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+    fs.setClientType(clientType);
     ExtraLinkField fromRoot =
         extraField(
             readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
@@ -242,14 +246,16 @@ class InventoryLinkManagerImplFilestoreLookupTest {
 
     assertThat(
             manager.findItemsLinkingFilestorePaths(
-                sftp, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+                fs, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
         .extracting(FilestoreLinkingItem::globalId)
         .containsExactly("SA1", "SA2");
   }
 
-  @Test
-  void withoutALoginHomeOnlyTheActorsFilestoresAreSearchedWhateverTheSlash() {
-    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+  @ParameterizedTest
+  @EnumSource(names = {"SAMBA", "SMBJ"})
+  void onSmbOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(NfsClientType clientType) {
+    NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+    smb.setClientType(clientType);
     ExtraLinkField own =
         extraField(
             readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
@@ -261,7 +267,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
 
     assertThat(
             manager.findItemsLinkingFilestorePaths(
-                irods, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+                smb, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
         .extracting(FilestoreLinkingItem::globalId)
         .containsExactly("SA1");
   }

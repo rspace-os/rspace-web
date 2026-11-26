@@ -150,11 +150,12 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       addItemsLinking(linking, fileSystem, absolutePaths, null, null);
-    } else if (NfsClientType.SFTP != fileSystem.getClientType()) {
+    } else if (NfsClientType.SMBJ == fileSystem.getClientType()
+        || NfsClientType.SAMBA == fileSystem.getClientType()) {
       // two logins can see different files at one path: ADR 0015 point 2
       addItemsLinking(linking, fileSystem, absolutePaths, actor, null);
     } else {
-      // and on SFTP a path without a leading slash starts at the login's home
+      // and elsewhere a login's home can prefix a path, depending on its leading slash
       absolutePaths.stream()
           .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
           .forEach(

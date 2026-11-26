@@ -37,6 +37,8 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -229,10 +231,12 @@ class NfsFieldLinkManagerImplTest {
     assertEquals("SD11", result.get(0).getOid().getIdString());
   }
 
-  @Test
-  void onSftpOnlyTheCallersFilestoresWithAMatchingBaseAreSearched() {
-    NfsFileSystem sftp = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
-    sftp.setClientType(NfsClientType.SFTP);
+  @ParameterizedTest
+  @EnumSource(names = {"SFTP", "IRODS"})
+  void whereAHomeCanPrefixAPathOnlyTheCallersFilestoresWithAMatchingBaseAreSearched(
+      NfsClientType clientType) {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+    fs.setClientType(clientType);
     StructuredDocument fromRoot = TestFactory.createAnySD();
     fromRoot.setId(11L);
     StructuredDocument fromHome = TestFactory.createAnySD();
@@ -246,14 +250,16 @@ class NfsFieldLinkManagerImplTest {
         .thenReturn(true);
 
     List<RecordInformation> result =
-        manager.getLinkedDocuments(sftp, List.of("/upload/hello.txt", "upload/other.txt"), user);
+        manager.getLinkedDocuments(fs, List.of("/upload/hello.txt", "upload/other.txt"), user);
 
     assertEquals(List.of(11L, 12L), result.stream().map(RecordInformation::getId).toList());
   }
 
-  @Test
-  void withoutALoginHomeOnlyTheCallersFilestoresAreSearchedWhateverTheSlash() {
-    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+  @ParameterizedTest
+  @EnumSource(names = {"SAMBA", "SMBJ"})
+  void onSmbOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(NfsClientType clientType) {
+    NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+    smb.setClientType(clientType);
     StructuredDocument own = TestFactory.createAnySD();
     own.setId(11L);
     when(nfsDao.getDocumentsLinkingTo(
@@ -262,7 +268,7 @@ class NfsFieldLinkManagerImplTest {
     when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
 
     List<RecordInformation> result =
-        manager.getLinkedDocuments(irods, List.of("/upload/hello.txt", "upload/other.txt"), user);
+        manager.getLinkedDocuments(smb, List.of("/upload/hello.txt", "upload/other.txt"), user);
 
     assertEquals(List.of(11L), result.stream().map(RecordInformation::getId).toList());
   }

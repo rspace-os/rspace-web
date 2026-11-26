@@ -105,11 +105,12 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     Stream<StructuredDocument> linking;
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       linking = documentsLinking(fileSystem, absolutePaths, null, null);
-    } else if (NfsClientType.SFTP != fileSystem.getClientType()) {
+    } else if (NfsClientType.SMBJ == fileSystem.getClientType()
+        || NfsClientType.SAMBA == fileSystem.getClientType()) {
       // two logins can see different files at one path: ADR 0015 point 2
       linking = documentsLinking(fileSystem, absolutePaths, user, null);
     } else {
-      // and on SFTP a path without a leading slash starts at the login's home
+      // and elsewhere a login's home can prefix a path, depending on its leading slash
       linking =
           absolutePaths.stream()
               .collect(Collectors.partitioningBy(path -> path.startsWith("/")))

@@ -452,9 +452,10 @@ resolved during design. This file is a glossary only — no implementation detai
   for local Gallery items; for a Filestore item the metadata sidecar and the
   filestores API report the same thing. On a file system where each user signs
   in with their own login, only links made through the user's own filestores
-  count, since two logins can see different files at one path, and on SFTP a
-  filestore path without a leading slash (relative to the login's home) is kept
-  apart from one with it; the same holds for the Inventory items linking the item.
+  count, since two logins can see different files at one path, and except on SMB
+  a filestore path without a leading slash (on SFTP and iRODS, possibly resolved
+  under the login's home) is kept apart from one with it; the same holds for the
+  Inventory items linking the item.
   _Avoid_: linking document, referencing document
 - **Filestore link index** — RSpace's own record of every Filestore link in
   current document content, kept in step with the documents so that the Linked
