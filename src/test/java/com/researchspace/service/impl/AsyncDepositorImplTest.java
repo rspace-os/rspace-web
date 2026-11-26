@@ -22,7 +22,6 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
-import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
@@ -33,7 +32,6 @@ import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.SubmissionMetadata;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DMPManager;
-import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
@@ -81,7 +79,6 @@ public class AsyncDepositorImplTest {
   @Mock CommunicationManager comm;
   private @Mock RaIDServiceClientAdapter mockRaidServiceClientAdapter;
   private @Mock DMPUpdateHandler dmpUpdateHandler;
-  private @Mock IntegrationsHandler integrationsHandler;
   private @Mock DMPManager dmpManager;
   private @Mock FileStore fileStore;
   private @Mock IRepository repository;
@@ -871,45 +868,12 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
-  void argosAndDmpToolBothOnStillFailTheDeposit() throws Exception {
-    wireDepositor();
-    givenIntegration(IntegrationsHandler.ARGOS_APP_NAME, true);
-    givenIntegration(IntegrationsHandler.DMPTOOL_APP_NAME, true);
-
-    assertDepositFails();
-  }
-
-  @Test
-  void argosPlanWithoutDoiStillFailsTheDepositWhenArgosIsOn() throws Exception {
-    wireDepositor();
-    when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(plan(1L, DMPSource.ARGOS)));
-    givenIntegration(IntegrationsHandler.ARGOS_APP_NAME, true);
-    givenIntegration(IntegrationsHandler.DMPTOOL_APP_NAME, false);
+  void argosPlanWithoutDoiIsDepositedWithoutPlanIdentifier() throws Exception {
+    givenDepositorWithPlans(plan(1L, DMPSource.ARGOS));
     givenPlanFile("argos-plan-without-doi.json");
+    givenDepositSucceeds();
 
-    assertDepositFails();
-  }
-
-  private void givenIntegration(String name, boolean on) {
-    IntegrationInfo info = new IntegrationInfo();
-    info.setAvailable(on);
-    info.setEnabled(on);
-    when(integrationsHandler.getIntegration(anyUser, name)).thenReturn(info);
-  }
-
-  private void assertDepositFails() throws Exception {
-    RepositoryOperationResult result =
-        depositor
-            .depositArchive(
-                new App(APP_ZENODO, "Zenodo", true),
-                anyUser,
-                repository,
-                depositConfigWithPlans(APP_ZENODO, 1L),
-                null,
-                CompletableFuture.completedFuture(new ArchiveResult()))
-            .get();
-    assertFalse(result.isSucceeded());
-    Mockito.verifyNoInteractions(repository);
+    assertTrue(depositedMetadata(APP_ZENODO).getDmpDoi().isEmpty());
   }
 
   private void givenPlanFile(String fileName) throws Exception {
@@ -936,14 +900,11 @@ public class AsyncDepositorImplTest {
   }
 
   private void givenDepositorWithPlans(DMPUser... plans) {
-    when(integrationsHandler.getIntegration(anyUser, IntegrationsHandler.ARGOS_APP_NAME))
-        .thenReturn(new IntegrationInfo());
     when(dmpManager.findDMPsForUser(anyUser)).thenReturn(List.of(plans));
     wireDepositor();
   }
 
   private void wireDepositor() {
-    ReflectionTestUtils.setField(depositor, "integrationsHandler", integrationsHandler);
     ReflectionTestUtils.setField(depositor, "dmpManager", dmpManager);
     ReflectionTestUtils.setField(depositor, "fileStore", fileStore);
   }

@@ -19,7 +19,6 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
-import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepoDepositTag;
@@ -35,7 +34,6 @@ import com.researchspace.repository.spi.SubmissionMetadata;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IAsyncArchiveDepositor;
-import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
@@ -86,7 +84,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   private @Autowired UserExternalIdResolver extIdResolver;
   private @Autowired UserManager userManager;
 
-  private @Autowired IntegrationsHandler integrationsHandler;
   private @Autowired DMPManager dmpManager;
 
   @Setter(value = AccessLevel.PROTECTED) /* test purposes */
@@ -552,20 +549,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   /**
    * Sets the ticked plan's identifier on the deposit metadata, read from the plan's stored file by
    * the plan's own platform, whatever is switched on. Only Zenodo reads it, so several ticked plans
-   * are refused there and set nothing elsewhere. A file that cannot be read sets nothing.
+   * are refused there and set nothing elsewhere. A plan without a readable identifier sets nothing.
    */
   private SubmissionMetadata setPlanIdentifierOnSubmissionMetadata(
       User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig) {
     if (!archiveConfig.hasDMPs()) {
       return metadata;
-    }
-    boolean argosOn = isEnabledAndAvailable(subject, IntegrationsHandler.ARGOS_APP_NAME);
-    if (argosOn
-        && integrationsHandler
-            .getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME)
-            .isEnabled()) {
-      throw new IllegalStateException(
-          messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
     }
     List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
     List<DMPUser> selected =
@@ -580,12 +569,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       log.info("{} plans selected, so no plan identifier is set on the deposit", selected.size());
       return metadata;
     }
-    readPlanIdentifier(selected.get(0), argosOn)
+    readPlanIdentifier(selected.get(0))
         .ifPresent(identifier -> metadata.setDmpDoi(Optional.of(identifier)));
     return metadata;
   }
 
-  private Optional<String> readPlanIdentifier(DMPUser plan, boolean argosOn) {
+  private Optional<String> readPlanIdentifier(DMPUser plan) {
     DMPSource source = plan.getSource();
     if (source != DMPSource.DMP_TOOL
         && source != DMPSource.DMP_ONLINE
@@ -608,18 +597,10 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           e.getClass().getSimpleName());
       return Optional.empty();
     }
-    if (identifier.isEmpty() && source == DMPSource.ARGOS && argosOn) {
-      throw new NoSuchElementException("DMP doesn't have a DOI");
-    }
     if (identifier.isEmpty()) {
       log.warn("Plan {} has no identifier to attach to the deposit", plan.getId());
     }
     return identifier;
-  }
-
-  private boolean isEnabledAndAvailable(User subject, String integrationName) {
-    IntegrationInfo info = integrationsHandler.getIntegration(subject, integrationName);
-    return info != null && info.isEnabled() && info.isAvailable();
   }
 
   // DMPonline saves the plan's dmp object, DMPTool its API response holding the plan

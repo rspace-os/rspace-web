@@ -5623,7 +5623,6 @@ export default interface Resources {
       },
       "dmp": {
         "errors": {
-          "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
           "import": "Couldn't import DMP",
           "invalidLicenseUrl": "{0} is not a valid URL",
           "list": "Couldn't list DMPs"
