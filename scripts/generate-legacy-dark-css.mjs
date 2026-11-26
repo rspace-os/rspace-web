@@ -268,19 +268,31 @@ const BORDER_PROPS = /^border(-(top|right|bottom|left|block|inline)(-(start|end)
 const TEXT_PROPS = new Set(["color", "fill", "stroke", "caret-color", "-webkit-text-fill-color"]);
 const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|url\(\s*(['"]?)[^)]*?\1\s*\)/gi;
 
-/** Rewrites a relative url() in `file` so it resolves from the generated file. */
-function absoluteUrl(token, file) {
+/**
+ * Rewrites a relative url() in `file` so it resolves from the generated file.
+ * The result stays relative, so it keeps any context path the app runs under.
+ */
+function relocateUrl(token, file) {
   return token.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/i, (whole, quote, path) => {
     if (/^(data:|https?:|\/|#)/i.test(path)) return whole;
-    return `url(${quote}${posix.join("/", posix.dirname(file), path)}${quote})`;
+    const target = posix.join(posix.dirname(file), path);
+    return `url(${quote}${posix.relative(posix.dirname(OUTPUT), target)}${quote})`;
   });
+}
+
+const VENDOR_PREFIXED = /^-(webkit|moz|o|ms)-/i;
+
+/** Whether the value's only images are vendor-prefixed gradients. */
+function onlyPrefixedImages(value) {
+  const images = value.match(IMAGE_RE) ?? [];
+  return images.length > 0 && images.every((token) => VENDOR_PREFIXED.test(token));
 }
 
 /** The background-image layers of a `background` shorthand, mapped. */
 function backgroundImages(value, file) {
   const images = (value.match(IMAGE_RE) ?? [])
-    .filter((token) => !/^-(webkit|moz|o|ms)-/i.test(token))
-    .map((token) => (/^url\(/i.test(token) ? absoluteUrl(token, file) : mapColors(token, darkSurface)));
+    .filter((token) => !VENDOR_PREFIXED.test(token))
+    .map((token) => (/^url\(/i.test(token) ? relocateUrl(token, file) : mapColors(token, darkSurface)));
   return images.length ? images.join(", ") : "none";
 }
 
@@ -292,12 +304,17 @@ function backgroundImages(value, file) {
 function darkDeclarations(prop, value, important, file) {
   const imp = important ? " !important" : "";
   const decl = (p, v) => [`${p}: ${v}${imp}`];
+  // Old IE hacks (`#000\9`) are invalid in current browsers, so ignored there.
+  if (/\\9\s*$/.test(value)) return [];
   if (TEXT_PROPS.has(prop)) return decl(prop, mapColors(value, lightText));
   if (prop === "background-color") return decl(prop, mapColors(value, darkSurface));
   if (prop === "background-image") {
+    // A prefixed gradient is a fallback the browser may use; leave it alone.
+    if (onlyPrefixedImages(value)) return [];
     return decl(prop, /^\s*none\s*$/i.test(value) ? "none" : backgroundImages(value, file));
   }
   if (prop === "background") {
+    if (onlyPrefixedImages(value) && !value.replace(IMAGE_RE, " ").match(COLOR_RE)) return [];
     if (/^\s*(inherit|initial|unset)\s*$/i.test(value)) return [...decl("background-color", value), ...decl("background-image", value)];
     const rest = value.replace(IMAGE_RE, " ");
     const colour = rest.match(COLOR_RE)?.[0] ?? (/\btransparent\b/i.test(rest) ? "transparent" : null);
@@ -332,6 +349,11 @@ function scopeSelector(sel) {
   if (/^:root\b/.test(sel)) return sel.replace(/^:root/, ":scope");
   if (/^html\b/.test(sel)) return sel.replace(/^html/, ":scope");
   return `:scope ${sel}`;
+}
+
+/** Drops repeated declarations, keeping the last one, which is the one that applies. */
+function keepLast(declarations) {
+  return declarations.filter((d, i) => declarations.lastIndexOf(d) === i);
 }
 
 const ELEMENT_ONLY = /^[a-z0-9*\s>+~:()-]+$/i;
@@ -371,7 +393,7 @@ function convertRules(css, file, skipElementOnly, stats) {
     });
     if (!selectors.length) continue;
     stats.rules++;
-    out.push(`${selectors.map(scopeSelector).join(",\n")} {\n${[...new Set(dark)].map((d) => `  ${d};`).join("\n")}\n}`);
+    out.push(`${selectors.map(scopeSelector).join(",\n")} {\n${keepLast(dark).map((d) => `  ${d};`).join("\n")}\n}`);
   }
   return out;
 }
@@ -392,9 +414,25 @@ const limit = `to (${USER_CONTENT.join(", ")})`;
 const stats = { rules: 0, skipped: new Set() };
 const sections = [];
 
+/** A stylesheet's rules, with those of its local @imports first, as they load. */
+function sheetRules(file, seen = new Set()) {
+  if (seen.has(file)) return [];
+  seen.add(file);
+  const css = stripComments(readFileSync(join(WEBAPP, file), "utf8"));
+  const imported = [...css.matchAll(/@import\s+(?:url\(\s*)?['"]?([^'")\s;]+)['"]?\s*\)?[^;]*;/gi)]
+    .map((m) => m[1])
+    .filter((path) => !/^(https?:|\/\/)/i.test(path))
+    .flatMap((path) => {
+      const target = path.startsWith("/") ? path.slice(1) : posix.join(posix.dirname(file), path);
+      if (!existsSync(join(WEBAPP, target))) throw new Error(`${file} imports a missing stylesheet: ${path}`);
+      return sheetRules(target, seen);
+    });
+  return [...imported, ...convertRules(css, file, false, stats)];
+}
+
 const sheets = linkedStylesheets();
 for (const file of sheets) {
-  const rules = convertRules(stripComments(readFileSync(join(WEBAPP, file), "utf8")), file, false, stats);
+  const rules = sheetRules(file);
   if (rules.length) {
     sections.push(`/* ${file} */\n@scope (html.dark[data-stylesheets*="/${file} "]) ${limit} {\n${indent(rules.join("\n\n"))}\n}`);
   }

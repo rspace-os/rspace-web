@@ -43,7 +43,9 @@
       root.setAttribute("data-stylesheets", paths.join(""));
     }
     listStylesheets();
-    // Tags can link stylesheets in the body, after this script runs.
+    // Tags can link stylesheets in the body, after this script runs; their
+    // overrides apply from DOMContentLoaded. A stylesheet a script adds later
+    // is not listed, so its rules get no dark overrides.
     document.addEventListener("DOMContentLoaded", listStylesheets);
   })();
 </script>

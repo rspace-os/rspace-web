@@ -1107,15 +1107,6 @@
     }
   }
 
-  :scope .bootstrap-custom-flat .progress-bar-striped,
-  :scope .bootstrap-custom-flat .progress-striped .progress-bar,
-  :scope .bootstrap-custom-flat .progress-striped .progress-bar-danger,
-  :scope .bootstrap-custom-flat .progress-striped .progress-bar-info,
-  :scope .bootstrap-custom-flat .progress-striped .progress-bar-success,
-  :scope .bootstrap-custom-flat .progress-striped .progress-bar-warning {
-    background-image: none;
-  }
-
   :scope .bootstrap-custom-flat .navbar-form {
     border-top-color: transparent;
     border-bottom-color: transparent;
@@ -2155,12 +2146,10 @@
   }
 
   :scope .bootstrap-custom-flat .carousel-control.left {
-    background-image: none;
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0, rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .bootstrap-custom-flat .carousel-control.right {
-    background-image: none;
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.5) 100%);
   }
 
@@ -2171,7 +2160,6 @@
 
   :scope .bootstrap-custom-flat .carousel-indicators li {
     border-color: #303030;
-    background-color: #000000\9;
     background-color: transparent;
   }
 
@@ -2215,7 +2203,6 @@
 
   :scope .bootstrap-custom-flat .btn-default:active {
     background-color: #262f32;
-    background-image: none;
     background-image: radial-gradient(circle, #262f32 10%, #161b1d 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2231,7 +2218,6 @@
 
   :scope .bootstrap-custom-flat .btn-primary:active {
     background-color: #064272;
-    background-image: none;
     background-image: radial-gradient(circle, #064272 10%, #074e86 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2247,7 +2233,6 @@
 
   :scope .bootstrap-custom-flat .btn-success:active {
     background-color: #204921;
-    background-image: none;
     background-image: radial-gradient(circle, #204921 10%, #275a29 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2263,7 +2248,6 @@
 
   :scope .bootstrap-custom-flat .btn-info:active {
     background-color: #701c7e;
-    background-image: none;
     background-image: radial-gradient(circle, #701c7e 10%, #5f186b 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2279,7 +2263,6 @@
 
   :scope .bootstrap-custom-flat .btn-warning:active {
     background-color: #663d00;
-    background-image: none;
     background-image: radial-gradient(circle, #663d00 10%, #7f4c00 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2295,7 +2278,6 @@
 
   :scope .bootstrap-custom-flat .btn-danger:active {
     background-color: #b0141a;
-    background-image: none;
     background-image: radial-gradient(circle, #b0141a 10%, #820f13 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2311,7 +2293,6 @@
 
   :scope .bootstrap-custom-flat .btn-link:active {
     background-color: #262f32;
-    background-image: none;
     background-image: radial-gradient(circle, #262f32 10%, #161b1d 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2972,23 +2953,23 @@
   :scope .tab a:link,
   :scope .tab a:visited {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
     color: #bfbfbf;
   }
 
   :scope .tab a span {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
   }
 
   :scope .tab a:hover {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
   }
 
   :scope .tab a:hover span {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
   }
 
   :scope .active a:link,
@@ -2996,20 +2977,19 @@
   :scope .active a:visited,
   :scope .active a:hover {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
   }
 
   :scope .active a span,
   :scope .active a:hover span {
     background-color: transparent;
-    background-image: url(/styles/simplicity/images/tab-round.png);
+    background-image: url(../simplicity/images/tab-round.png);
   }
 
   :scope #menu {
     background-color: #014464;
-    background-image: none;
-    background-color: transparent;
     background-color: #014260;
+    background-image: none;
     border-color: #002232;
     box-shadow: inset 0px 0px 1px #11242d;
   }
@@ -3018,7 +2998,6 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
-    background-color: transparent;
   }
 
   :scope #menu li a {
@@ -3033,12 +3012,12 @@
 
   :scope #menu li .drop {
     background-color: transparent;
-    background-image: url("/styles/simplicity/images/drop.png");
+    background-image: url("../simplicity/images/drop.png");
   }
 
   :scope #menu li:hover .drop {
     background-color: transparent;
-    background-image: url("/styles/simplicity/images/drop.png");
+    background-image: url("../simplicity/images/drop.png");
   }
 
   :scope .dropdown_1column,
@@ -3048,9 +3027,8 @@
   :scope .dropdown_5columns {
     border-color: #777777;
     background-color: #1c2225;
-    background-image: none;
-    background-color: transparent;
     background-color: #1f2629;
+    background-image: none;
   }
 
   :scope #menu p,
@@ -3358,10 +3336,10 @@
     color: #cfe4f0;
     border-color: #7096ab;
     background-color: #1f2729;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: transparent;
-    background-image: none;
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
     background-color: #1b3848;
+    background-image: none;
+    background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: none;
   }
@@ -3415,35 +3393,35 @@
   }
 
   :scope .ui-widget-header .ui-icon {
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_222222_256x240.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_222222_256x240.png);
   }
 
   :scope .ui-state-default .ui-icon {
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
   }
 
   :scope .ui-state-hover .ui-icon,
   :scope .ui-state-focus .ui-icon {
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
   }
 
   :scope .ui-state-active .ui-icon {
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
   }
 
   :scope .ui-state-highlight .ui-icon {
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/ui-icons_ffffff_256x240.png);
   }
 
   :scope .ui-state-error .ui-icon,
   :scope .ui-state-error-text .ui-icon {
     background-color: transparent !important;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png) !important;
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png) !important;
   }
 
   :scope .ui-icon-info {
     background-color: transparent !important;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png) !important;
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png) !important;
   }
 
   :scope .ui-widget-overlay {
@@ -3482,10 +3460,10 @@
     color: #cfe4f0;
     border-color: #7096ab;
     background-color: #1f2729;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: transparent;
-    background-image: none;
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
     background-color: #1b3848;
+    background-image: none;
+    background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(22, 27, 29, 0.8) inset;
   }
@@ -3502,10 +3480,10 @@
 
   :scope .ui-buttonset .ui-button.ui-state-active {
     background-color: #1f2729;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: transparent;
-    background-image: none;
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
     background-color: #1b3848;
+    background-image: none;
+    background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: none;
   }
@@ -3542,7 +3520,7 @@
 
   :scope .ui-slider .ui-slider-handle {
     background-color: transparent;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/slider_handles.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/slider_handles.png);
     box-shadow: none;
   }
 
@@ -3606,7 +3584,7 @@
   :scope .ui-datepicker .ui-datepicker-prev span,
   :scope .ui-datepicker .ui-datepicker-next span {
     background-color: transparent;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/icon_sprite.png);
   }
 
   :scope .ui-datepicker .ui-datepicker-title {
@@ -3646,12 +3624,12 @@
 
   :scope .ui-progressbar {
     background-color: #161b1d;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/progress_bar.gif);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/progress_bar.gif);
   }
 
   :scope .ui-progressbar .ui-progressbar-value {
     background-color: transparent;
-    background-image: url(/scripts/bower_components/jquery-ui/themes/researchspace/images/progress_bar.gif);
+    background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/progress_bar.gif);
   }
 
   :scope .ui-form textarea,
@@ -4310,8 +4288,6 @@
   :scope .ui-accordion-header,
   :scope .accordion .ui-state-active {
     color: #ffffff;
-    background-color: transparent;
-    background-image: none;
   }
 
   :scope .ui-accordion-header,
@@ -4399,27 +4375,27 @@
 
   :scope .toast-item-close {
     background-color: transparent;
-    background-image: url(/images/transparent10x10.png);
+    background-image: url(../../images/transparent10x10.png);
   }
 
   :scope .toast-item-image-notice {
     background-color: transparent;
-    background-image: url(/images/notice.png);
+    background-image: url(../../images/notice.png);
   }
 
   :scope .toast-item-image-success {
     background-color: transparent;
-    background-image: url(/images/success.png);
+    background-image: url(../../images/success.png);
   }
 
   :scope .toast-item-image-warning {
     background-color: transparent;
-    background-image: url(/images/warning.png);
+    background-image: url(../../images/warning.png);
   }
 
   :scope .toast-item-image-error {
     background-color: transparent;
-    background-image: url(/images/error.png);
+    background-image: url(../../images/error.png);
   }
 
   :scope .toast-type-notice {
@@ -6147,7 +6123,6 @@
 
   :scope .progress-bar-striped,
   :scope .progress-striped .progress-bar {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6156,7 +6131,6 @@
   }
 
   :scope .progress-striped .progress-bar-success {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6165,7 +6139,6 @@
   }
 
   :scope .progress-striped .progress-bar-info {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6174,7 +6147,6 @@
   }
 
   :scope .progress-striped .progress-bar-warning {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6183,7 +6155,6 @@
   }
 
   :scope .progress-striped .progress-bar-danger {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6748,7 +6719,6 @@
   }
 
   :scope .carousel-indicators li {
-    background-color: #000000\9;
     background-color: rgba(0, 0, 0, 0);
     border-color: #303030;
   }
@@ -7540,342 +7510,342 @@
 
   :scope .jqueryFileTree LI.directory {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/directory.png);
+    background-image: url(../../scripts/jqueryFileTree/images/directory.png);
   }
 
   :scope .jqueryFileTree LI.expanded {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/folder_open.png);
+    background-image: url(../../scripts/jqueryFileTree/images/folder_open.png);
   }
 
   :scope .jqueryFileTree LI.file {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/file.png);
+    background-image: url(../../scripts/jqueryFileTree/images/file.png);
   }
 
   :scope .jqueryFileTree LI.notebook.collapsed {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/notebook.png);
+    background-image: url(../../scripts/jqueryFileTree/images/notebook.png);
   }
 
   :scope .jqueryFileTree LI.notebook.expanded {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/notebook-alt.png);
+    background-image: url(../../scripts/jqueryFileTree/images/notebook-alt.png);
   }
 
   :scope .jqueryFileTree LI.record {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/record.png);
+    background-image: url(../../scripts/jqueryFileTree/images/record.png);
   }
 
   :scope .jqueryFileTree LI.wait {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/spinner.gif);
+    background-image: url(../../scripts/jqueryFileTree/images/spinner.gif);
   }
 
   :scope .jqueryFileTree LI.error {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/error.png);
+    background-image: url(../../scripts/jqueryFileTree/images/error.png);
   }
 
   :scope .jqueryFileTree LI.ext_3gp {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_afp {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_afpa {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_asp {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_aspx {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_avi {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_bat {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/application.png);
+    background-image: url(../../scripts/jqueryFileTree/images/application.png);
   }
 
   :scope .jqueryFileTree LI.ext_bmp {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/picture.png);
+    background-image: url(../../scripts/jqueryFileTree/images/picture.png);
   }
 
   :scope .jqueryFileTree LI.ext_c {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_cfm {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_cgi {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_com {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/application.png);
+    background-image: url(../../scripts/jqueryFileTree/images/application.png);
   }
 
   :scope .jqueryFileTree LI.ext_cpp {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_css {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/css.png);
+    background-image: url(../../scripts/jqueryFileTree/images/css.png);
   }
 
   :scope .jqueryFileTree LI.ext_doc {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/doc.png);
+    background-image: url(../../scripts/jqueryFileTree/images/doc.png);
   }
 
   :scope .jqueryFileTree LI.ext_exe {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/application.png);
+    background-image: url(../../scripts/jqueryFileTree/images/application.png);
   }
 
   :scope .jqueryFileTree LI.ext_gif {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/gif.png);
+    background-image: url(../../scripts/jqueryFileTree/images/gif.png);
   }
 
   :scope .jqueryFileTree LI.ext_fla {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/flash.png);
+    background-image: url(../../scripts/jqueryFileTree/images/flash.png);
   }
 
   :scope .jqueryFileTree LI.ext_flv {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/flash.png);
+    background-image: url(../../scripts/jqueryFileTree/images/flash.png);
   }
 
   :scope .jqueryFileTree LI.ext_h {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_htm {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/html.png);
+    background-image: url(../../scripts/jqueryFileTree/images/html.png);
   }
 
   :scope .jqueryFileTree LI.ext_html {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/html.png);
+    background-image: url(../../scripts/jqueryFileTree/images/html.png);
   }
 
   :scope .jqueryFileTree LI.ext_jar {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/java.png);
+    background-image: url(../../scripts/jqueryFileTree/images/java.png);
   }
 
   :scope .jqueryFileTree LI.ext_java {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/java.png);
+    background-image: url(../../scripts/jqueryFileTree/images/java.png);
   }
 
   :scope .jqueryFileTree LI.ext_jpg {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/jpg.png);
+    background-image: url(../../scripts/jqueryFileTree/images/jpg.png);
   }
 
   :scope .jqueryFileTree LI.ext_jpeg {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/jpg.png);
+    background-image: url(../../scripts/jqueryFileTree/images/jpg.png);
   }
 
   :scope .jqueryFileTree LI.ext_js {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/script.png);
+    background-image: url(../../scripts/jqueryFileTree/images/script.png);
   }
 
   :scope .jqueryFileTree LI.ext_lasso {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_log {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/txt.png);
+    background-image: url(../../scripts/jqueryFileTree/images/txt.png);
   }
 
   :scope .jqueryFileTree LI.ext_m4p {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/music.png);
+    background-image: url(../../scripts/jqueryFileTree/images/music.png);
   }
 
   :scope .jqueryFileTree LI.ext_mov {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_mp3 {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/music.png);
+    background-image: url(../../scripts/jqueryFileTree/images/music.png);
   }
 
   :scope .jqueryFileTree LI.ext_mp4 {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_mpg {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_mpeg {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_ogg {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/music.png);
+    background-image: url(../../scripts/jqueryFileTree/images/music.png);
   }
 
   :scope .jqueryFileTree LI.ext_pcx {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/picture.png);
+    background-image: url(../../scripts/jqueryFileTree/images/picture.png);
   }
 
   :scope .jqueryFileTree LI.ext_pdf {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/pdf.png);
+    background-image: url(../../scripts/jqueryFileTree/images/pdf.png);
   }
 
   :scope .jqueryFileTree LI.ext_php {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/php.png);
+    background-image: url(../../scripts/jqueryFileTree/images/php.png);
   }
 
   :scope .jqueryFileTree LI.ext_png {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/png.png);
+    background-image: url(../../scripts/jqueryFileTree/images/png.png);
   }
 
   :scope .jqueryFileTree LI.ext_ppt {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/ppt.png);
+    background-image: url(../../scripts/jqueryFileTree/images/ppt.png);
   }
 
   :scope .jqueryFileTree LI.ext_psd {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/psd.png);
+    background-image: url(../../scripts/jqueryFileTree/images/psd.png);
   }
 
   :scope .jqueryFileTree LI.ext_pl {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/script.png);
+    background-image: url(../../scripts/jqueryFileTree/images/script.png);
   }
 
   :scope .jqueryFileTree LI.ext_py {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/script.png);
+    background-image: url(../../scripts/jqueryFileTree/images/script.png);
   }
 
   :scope .jqueryFileTree LI.ext_rb {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/ruby.png);
+    background-image: url(../../scripts/jqueryFileTree/images/ruby.png);
   }
 
   :scope .jqueryFileTree LI.ext_rbx {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/ruby.png);
+    background-image: url(../../scripts/jqueryFileTree/images/ruby.png);
   }
 
   :scope .jqueryFileTree LI.ext_rhtml {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/ruby.png);
+    background-image: url(../../scripts/jqueryFileTree/images/ruby.png);
   }
 
   :scope .jqueryFileTree LI.ext_rpm {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/linux.png);
+    background-image: url(../../scripts/jqueryFileTree/images/linux.png);
   }
 
   :scope .jqueryFileTree LI.ext_ruby {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/ruby.png);
+    background-image: url(../../scripts/jqueryFileTree/images/ruby.png);
   }
 
   :scope .jqueryFileTree LI.ext_sql {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/db.png);
+    background-image: url(../../scripts/jqueryFileTree/images/db.png);
   }
 
   :scope .jqueryFileTree LI.ext_swf {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/flash.png);
+    background-image: url(../../scripts/jqueryFileTree/images/flash.png);
   }
 
   :scope .jqueryFileTree LI.ext_tif {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/picture.png);
+    background-image: url(../../scripts/jqueryFileTree/images/picture.png);
   }
 
   :scope .jqueryFileTree LI.ext_tiff {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/picture.png);
+    background-image: url(../../scripts/jqueryFileTree/images/picture.png);
   }
 
   :scope .jqueryFileTree LI.ext_txt {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/txt.png);
+    background-image: url(../../scripts/jqueryFileTree/images/txt.png);
   }
 
   :scope .jqueryFileTree LI.ext_vb {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_wav {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/music.png);
+    background-image: url(../../scripts/jqueryFileTree/images/music.png);
   }
 
   :scope .jqueryFileTree LI.ext_wmv {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/film.png);
+    background-image: url(../../scripts/jqueryFileTree/images/film.png);
   }
 
   :scope .jqueryFileTree LI.ext_xls {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/xls.png);
+    background-image: url(../../scripts/jqueryFileTree/images/xls.png);
   }
 
   :scope .jqueryFileTree LI.ext_xml {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/code.png);
+    background-image: url(../../scripts/jqueryFileTree/images/code.png);
   }
 
   :scope .jqueryFileTree LI.ext_zip {
     background-color: transparent;
-    background-image: url(/scripts/jqueryFileTree/images/zip.png);
+    background-image: url(../../scripts/jqueryFileTree/images/zip.png);
   }
 }
 
@@ -8108,7 +8078,6 @@
   :scope #search_submit.search.ui-button.ui-widget.ui-state-default {
     background-color: #33495b;
     background-image: none;
-    background-color: transparent;
   }
 
   :scope input:focus {
@@ -8139,9 +8108,8 @@
   :scope .adders,
   :scope .addCont {
     border-color: #4e4e4e;
-    background-color: transparent;
-    background-image: none;
     background-color: #1f2729;
+    background-image: none;
   }
 
   :scope .removeIt {
@@ -8158,9 +8126,8 @@
   :scope .removeCont {
     color: #e6c0b1;
     border-color: #4e4e4e;
-    background-color: transparent;
-    background-image: none;
     background-color: #1f2729;
+    background-image: none;
   }
 
   :scope .orderButtonClass {
@@ -8319,6 +8286,63 @@
   }
 }
 
+/* styles/pages/workspace/workspace-toolbar.css */
+@scope (html.dark[data-stylesheets*="/styles/pages/workspace/workspace-toolbar.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
+  :scope .rs-open-dialog-link {
+    color: #b2dbfb;
+  }
+
+  :scope #openMessageDlgLink .rs-extra-icon:after,
+  :scope #msgDlgLink .rs-extra-icon:after,
+  :scope #createRequest .rs-extra-icon:after {
+    background-color: #074e86;
+  }
+
+  :scope #toolbar .rs-items-count {
+    background-color: #940025;
+  }
+
+  :scope .leftInfo {
+    background-color: #232c2f;
+  }
+
+  :scope .mainMessage a {
+    color: #9ac7f4;
+  }
+
+  :scope .mainMessage a:visited {
+    color: #9ac7f4;
+  }
+
+  :scope .mainMessage a:hover {
+    color: #f79797;
+  }
+
+  :scope .mainMessage a:active {
+    color: #f79797;
+  }
+
+  :scope .messageTable {
+    border-color: #3b3b3b;
+  }
+
+  :scope #notification_linkMenu a {
+    color: #9ac7f4;
+  }
+
+  :scope #notification_linkMenu a:visited {
+    color: #9ac7f4;
+  }
+
+  :scope #notification_linkMenu a:hover {
+    color: #f79797;
+  }
+
+  :scope #notification_linkMenu a:active {
+    color: #f79797;
+  }
+}
+
 /* scripts/bower_components/photoswipe/dist/photoswipe.css */
 @scope (html.dark[data-stylesheets*="/scripts/bower_components/photoswipe/dist/photoswipe.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .pswp__bg {
@@ -8352,14 +8376,14 @@
   :scope .pswp__button--arrow--left:before,
   :scope .pswp__button--arrow--right:before {
     background-color: transparent;
-    background-image: url(/scripts/bower_components/photoswipe/dist/default-skin/default-skin.png);
+    background-image: url(../../scripts/bower_components/photoswipe/dist/default-skin/default-skin.png);
   }
 
   @media (-webkit-min-device-pixel-ratio: 1.1), (-webkit-min-device-pixel-ratio: 1.09375), (min-resolution: 105dpi), (min-resolution: 1.1dppx) {
     :scope .pswp--svg .pswp__button,
     :scope .pswp--svg .pswp__button--arrow--left:before,
     :scope .pswp--svg .pswp__button--arrow--right:before {
-      background-image: url(/scripts/bower_components/photoswipe/dist/default-skin/default-skin.svg);
+      background-image: url(../../scripts/bower_components/photoswipe/dist/default-skin/default-skin.svg);
     }
     :scope .pswp--svg .pswp__button--arrow--left,
     :scope .pswp--svg .pswp__button--arrow--right {
@@ -8444,7 +8468,7 @@
 
   :scope .pswp__preloader--active .pswp__preloader__icn {
     background-color: transparent;
-    background-image: url(/scripts/bower_components/photoswipe/dist/default-skin/preloader.gif);
+    background-image: url(../../scripts/bower_components/photoswipe/dist/default-skin/preloader.gif);
   }
 
   :scope .pswp--css_animation .pswp__preloader__icn {
@@ -10500,7 +10524,6 @@
 
   :scope .bootstrap-namespace .progress-bar-striped,
   :scope .bootstrap-namespace .progress-striped .progress-bar {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10509,7 +10532,6 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-success {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10518,7 +10540,6 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-info {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10527,7 +10548,6 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-warning {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10536,7 +10556,6 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-danger {
-    background-image: none;
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -11063,7 +11082,6 @@
   }
 
   :scope .bootstrap-namespace .carousel-indicators li {
-    background-color: #000000\9;
     background-color: rgba(0, 0, 0, 0);
     border-color: #303030;
   }
@@ -11194,7 +11212,7 @@
 
   :scope #dropbox .uploaded {
     background-color: rgba(22, 27, 29, 0.5);
-    background-image: url('/styles/img/done.png');
+    background-image: url('../img/done.png');
   }
 
   :scope #dropbox .progressHolder {
@@ -11229,7 +11247,7 @@
   }
 
   :scope ul.fancytree-connectors.fancytree-container li {
-    background-image: url(/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/vline.gif);
+    background-image: url(../../scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/vline.gif);
   }
 
   :scope .fancytree-loading span.fancytree-expander,
@@ -11274,7 +11292,7 @@
   }
 
   :scope ul.fancytree-container.fancytree-rtl.fancytree-connectors li {
-    background-image: url(/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/vline-rtl.gif);
+    background-image: url(../../scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/vline-rtl.gif);
   }
 
   :scope ul.fancytree-container.fancytree-rtl li.fancytree-lastsib,
@@ -11851,7 +11869,6 @@
   :scope .select2-container--classic .select2-selection--single {
     background-color: #1a2023;
     border-color: #aaaaaa;
-    background-image: none;
     background-image: linear-gradient(to bottom, #161b1d 50%, #1f2629 100%);
   }
 
@@ -11870,7 +11887,6 @@
   :scope .select2-container--classic .select2-selection--single .select2-selection__arrow {
     background-color: #273134;
     border-left-color: #aaaaaa;
-    background-image: none;
     background-image: linear-gradient(to bottom, #1f2629 50%, #303c40 100%);
   }
 
@@ -11896,12 +11912,10 @@
   }
 
   :scope .select2-container--classic.select2-container--open.select2-container--above .select2-selection--single {
-    background-image: none;
     background-image: linear-gradient(to bottom, #161b1d 0%, #1f2629 50%);
   }
 
   :scope .select2-container--classic.select2-container--open.select2-container--below .select2-selection--single {
-    background-image: none;
     background-image: linear-gradient(to bottom, #1f2629 50%, #161b1d 100%);
   }
 
@@ -12245,9 +12259,9 @@
   }
 
   :scope .handsontable td.area {
-    background-color: transparent;
-    background-image: none;
     background-color: rgba(26, 42, 69, 0.34);
+    background-image: none;
+    background-color: transparent;
     background-image: linear-gradient(to bottom,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
     background-color: #161b1d;
   }

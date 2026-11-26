@@ -84,5 +84,5 @@ pre-commit:
     # Keep styles/dark/legacy-generated.css in step with the legacy
     # stylesheets and JSP <style> blocks it is generated from.
     legacy-dark-css:
-      glob: "{src/main/webapp/styles/**/*.css,src/main/webapp/scripts/**/*.css,src/main/webapp/WEB-INF/**/*.{jsp,tag,jspf},src/main/webapp/common/**/*.jsp,scripts/generate-legacy-dark-css.mjs}"
+      glob: "{src/main/webapp/**/*.{css,jsp,tag,jspf,html},scripts/generate-legacy-dark-css.mjs}"
       run: pnpm run css:legacy-dark:check
