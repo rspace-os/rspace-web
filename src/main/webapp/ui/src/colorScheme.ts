@@ -11,6 +11,8 @@
  * newApp pages and the MUI pages agree.
  */
 
+import { flushSync } from "react-dom";
+
 export type ColorMode = "light" | "dark" | "system";
 
 /**
@@ -35,6 +37,15 @@ export function isDarkModePath(pathname: string): boolean {
 export const darkModeAvailable: boolean =
   typeof window !== "undefined" &&
   (isDarkModePath(window.location.pathname) || document.documentElement.hasAttribute("data-dark-mode"));
+
+/**
+ * A JSP page in a browser without CSS `@scope`, which the legacy dark styles
+ * need; legacyDarkMode.jsp keeps such pages light.
+ */
+export const darkModeUnsupported: boolean =
+  typeof window !== "undefined" &&
+  !darkModeAvailable &&
+  document.documentElement.hasAttribute("data-dark-mode-unsupported");
 
 export const MUI_MODE_STORAGE_KEY = "mui-mode";
 const DS_THEME_STORAGE_KEY = "rspace-ds-theme";
@@ -94,6 +105,32 @@ export function setColorMode(mode: ColorMode): void {
   window.dispatchEvent(new StorageEvent("storage", { key: MUI_MODE_STORAGE_KEY, newValue: mode }));
 }
 
+/**
+ * Printouts are always light. Before printing, every root switches to light
+ * synchronously, so the print snapshot sees it, and switches back afterwards.
+ * MUI saves a mode change as it applies it, so storage writes of the mode are
+ * dropped meanwhile; the stored choice and other tabs are left alone.
+ */
+let printing = false;
+
+/** Colour transitions would otherwise still be fading when the page is printed. */
+let noTransitions: HTMLStyleElement | null = null;
+
+function showModeWithoutSaving(mode: ColorMode) {
+  const setItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (this: Storage, key: string, value: string) {
+    if (key !== MUI_MODE_STORAGE_KEY && key !== DS_THEME_STORAGE_KEY) setItem.call(this, key, value);
+  };
+  try {
+    flushSync(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: MUI_MODE_STORAGE_KEY, newValue: mode }));
+    });
+    applyToDocument(resolveColorMode(mode));
+  } finally {
+    Storage.prototype.setItem = setItem;
+  }
+}
+
 let initialised = false;
 
 /**
@@ -110,8 +147,23 @@ export function initColorMode(): void {
     });
   }
   window.addEventListener("storage", (event) => {
-    if (event.key !== MUI_MODE_STORAGE_KEY) return;
+    if (event.key !== MUI_MODE_STORAGE_KEY || printing) return;
     currentMode = parseMode(event.newValue);
     applyToDocument(resolveColorMode(currentMode));
+  });
+  window.addEventListener("beforeprint", () => {
+    if (printing || resolveColorMode() === "light") return;
+    printing = true;
+    noTransitions = document.createElement("style");
+    noTransitions.textContent = "*, *::before, *::after { transition: none !important; }";
+    document.head.appendChild(noTransitions);
+    showModeWithoutSaving("light");
+  });
+  window.addEventListener("afterprint", () => {
+    if (!printing) return;
+    printing = false;
+    showModeWithoutSaving(readMode());
+    noTransitions?.remove();
+    noTransitions = null;
   });
 }

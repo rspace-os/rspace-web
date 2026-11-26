@@ -229,13 +229,80 @@ html.dark .journalPageContent {
     border-color: var(--rs-dark-link);
   }
 
-  /* My RSpace section tiles: the icons are bitmaps drawn on white. */
+  /*
+   * UI icons that are drawn on white, or are dark grey glyphs, are inverted;
+   * hue-rotate keeps their accent colours. The list comes from sampling each
+   * file's pixels, including the My RSpace tile icons; coloured icons and
+   * third-party logos are left as they are. The toolbar plugin's icons are
+   * all monochrome.
+   */
 
-  :scope #menuMover .menuInnerPanelIcon {
+  :scope img[src*="/scripts/externalTinymcePlugins/toolbar/img/"],
+
+  :scope img[src*="/images/icons/GitHub-Mark-64px.png"],
+  :scope img[src*="/images/icons/archiveImport.png"],
+  :scope img[src*="/images/icons/arrow-left.png"],
+  :scope img[src*="/images/icons/audioIcon.png"],
+  :scope img[src*="/images/icons/auditing.png"],
+  :scope img[src*="/images/icons/auditingTrail.png"],
+  :scope img[src*="/images/icons/camera.png"],
+  :scope img[src*="/images/icons/chemistry-file.png"],
+  :scope img[src*="/images/icons/chrome-icon.png"],
+  :scope img[src*="/images/icons/deletedDocuments.png"],
+  :scope img[src*="/images/icons/directory.png"],
+  :scope img[src*="/images/icons/dna-file.svg"],
+  :scope img[src*="/images/icons/door.png"],
+  :scope img[src*="/images/icons/exportImportN2.png"],
+  :scope img[src*="/images/icons/file-tree-icon-small.png"],
+  :scope img[src*="/images/icons/file-tree-icon.png"],
+  :scope img[src*="/images/icons/firefox-icon.png"],
+  :scope img[src*="/images/icons/groups.png"],
+  :scope img[src*="/images/icons/ie-icon.png"],
+  :scope img[src*="/images/icons/instrumentTemplate.png"],
+  :scope img[src*="/images/icons/leavecollaboration.png"],
+  :scope img[src*="/images/icons/listForms.png"],
+  :scope img[src*="/images/icons/logButtonIconSend.png"],
+  :scope img[src*="/images/icons/logButtonIconView.png"],
+  :scope img[src*="/images/icons/manageShared.png"],
+  :scope img[src*="/images/icons/messageSettings.png"],
+  :scope img[src*="/images/icons/mp4.png"],
+  :scope img[src*="/images/icons/myLabGroup.png"],
+  :scope img[src*="/images/icons/myProfile.png"],
+  :scope img[src*="/images/icons/newForm.png"],
+  :scope img[src*="/images/icons/newGroup.png"],
+  :scope img[src*="/images/icons/nonEditableIcon.png"],
+  :scope img[src*="/images/icons/photo.png"],
+  :scope img[src*="/images/icons/plus_thin.png"],
+  :scope img[src*="/images/icons/projectGroupsListIcon.png"],
+  :scope img[src*="/images/icons/projectgroup.png"],
+  :scope img[src*="/images/icons/safari-icon.png"],
+  :scope img[src*="/images/icons/sampleTemplate.png"],
+  :scope img[src*="/images/icons/scheduleDowntime.png"],
+  :scope img[src*="/images/icons/settings.png"],
+  :scope img[src*="/images/icons/templatex.jpg"],
+  :scope img[src*="/images/icons/tiffNoPreview.png"],
+  :scope img[src*="/images/icons/unlock.png"] {
     filter: invert(0.9) hue-rotate(180deg);
   }
 
-  /* The date field's input sets black text inline. */
+  /*
+   * The RSpace wordmark is dark blue, so on dark pages it sits on a white
+   * plate, as it does in the app bar. The spread shadow pads it without
+   * changing the layout.
+   */
+
+  :scope img.rs-navbar__icon,
+  :scope .biggerLogoDiv img,
+  :scope img[src*="/images/mainLogo"] {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 0 0 6px #fff;
+  }
+
+  /*
+   * The date field's input sets black text inline, and scripts rewrite its
+   * style attribute, so the generated exact-match rule misses it.
+   */
 
   :scope input.datepicker {
     color: var(--rs-dark-text) !important;
@@ -253,13 +320,6 @@ html.dark .journalPageContent {
   }
   :scope .bootstrap-custom-flat input[type="checkbox"]:checked::before {
     border-color: var(--rs-dark-on-link);
-  }
-
-  /* Revision history search button: its colours are set inline. */
-
-  :scope #revisionSearch {
-    background-color: #3d5a73 !important;
-    border-color: #3d5a73 !important;
   }
 
   /* Workspace */

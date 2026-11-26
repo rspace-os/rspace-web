@@ -30,6 +30,8 @@
     }
     if (typeof window.CSSScopeRule === "undefined") {
       document.documentElement.classList.add("light");
+      // The account menu explains why the dark mode switch is unavailable.
+      document.documentElement.setAttribute("data-dark-mode-unsupported", "");
       return;
     }
     var dark =

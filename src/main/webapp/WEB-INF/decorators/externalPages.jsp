@@ -55,6 +55,11 @@
 						<spring:message code="company.name"/></a>
 					</div>
 				</div>
+				<div class="row">
+					<div class="col-md-12" style="text-align:center;">
+						<%@ include file="/common/colorModeSwitch.jsp"%>
+					</div>
+				</div>
 			</div>
 		</div>
 	</body>

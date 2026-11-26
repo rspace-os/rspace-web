@@ -3007,7 +3007,7 @@
   :scope #menu {
     background-color: #014464;
     background-image: none;
-    background-image: -moz-linear-gradient(top, #014260, #013953);
+    background: -moz-linear-gradient(top, #014260, #013953);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#014260), to(#013953));
     border-color: #002232;
@@ -3018,7 +3018,7 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
-    background-image: -moz-linear-gradient(top, #1c2225, #1f2629);
+    background: -moz-linear-gradient(top, #1c2225, #1f2629);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1c2225), to(#1f2629));
   }
@@ -3051,7 +3051,7 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
-    background-image: -moz-linear-gradient(top, #1f2629, #39464c);
+    background: -moz-linear-gradient(top, #1f2629, #39464c);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1f2629), to(#39464c));
   }
@@ -3362,7 +3362,7 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
+    background: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -3487,7 +3487,7 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
+    background: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -3508,7 +3508,7 @@
   :scope .ui-buttonset .ui-button.ui-state-active {
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
+    background: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -8146,8 +8146,7 @@
   :scope .adders,
   :scope .addCont {
     border-color: #4e4e4e;
-    background-color: transparent;
-    background-image: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
+    background: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
     background-color: #1f2729;
     background-image: none;
   }
@@ -8166,8 +8165,7 @@
   :scope .removeCont {
     color: #e6c0b1;
     border-color: #4e4e4e;
-    background-color: transparent;
-    background-image: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
+    background: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
     background-color: #1f2729;
     background-image: none;
   }
@@ -12316,7 +12314,7 @@
   }
 
   :scope .handsontable td.area {
-    background-image: -moz-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%, rgba(26, 42, 69, 0.34) 100%);
+    background: -moz-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%, rgba(26, 42, 69, 0.34) 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(26, 42, 69, 0.34)), color-stop(100%,rgba(26, 42, 69, 0.34)));
     background-image: -webkit-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
     background-color: transparent;
@@ -12914,5 +12912,126 @@
 
   :scope .switch {
     color: #bfbfbf;
+  }
+}
+
+/* style attributes in templates */
+@scope (html.dark) to (.textFieldViewModeDiv, .journalPageContent) {
+  :scope [style="min-height:2em;width:457px;border:1px solid #DDDDDD;line-height:1.5em;"] {
+    border-color: #3e3e3e !important;
+  }
+
+  :scope [style="font-size:1.5em; color: #444; margin-bottom: 10px;"] {
+    color: #cbcbcb !important;
+  }
+
+  :scope [style="background-color:#EFEDED; margin-top:6px;"] {
+    background-color: #1f2629 !important;
+  }
+
+  :scope [style="background-color: white"] {
+    background-color: #161b1d !important;
+  }
+
+  :scope [style="outline:none; color: #1465b7"] {
+    color: #9ac7f4 !important;
+  }
+
+  :scope [style="color:darkblue;"] {
+    color: #b8b8f9 !important;
+  }
+
+  :scope [style="font-size: 1.5em; margin-bottom: 15px; color: #444;"] {
+    color: #cbcbcb !important;
+  }
+
+  :scope [style="color: #1465b7"] {
+    color: #9ac7f4 !important;
+  }
+
+  :scope [style="height: 320px; width: 100%; background-color: white; overflow: auto;"] {
+    background-color: #161b1d !important;
+  }
+
+  :scope [style="font-size: 75%;color:blue"] {
+    color: #7d7df4 !important;
+  }
+
+  :scope [style="font-size: 75%; color:blue"] {
+    color: #7d7df4 !important;
+  }
+
+  :scope [style="color:black;"] {
+    color: #e3e3e3 !important;
+  }
+
+  :scope [style="height:20px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;font-weight:normal;border-radius:3px;cursor:pointer;margin:0 30px 4px 0;"] {
+    background-color: #33495b !important;
+  }
+
+  :scope [style="height:24px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;background: -moz-linear-gradient(center top , #6389A8, #6389A8 100%) repeat scroll 0% 0% transparent;box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.6) inset;font-weight:normal;"] {
+    background-color: #33495b !important;
+    background: -moz-linear-gradient(center top , #33495b, #33495b 100%) repeat scroll 0% 0% transparent !important;
+    box-shadow: 0px 0px 0px rgba(22, 27, 29, 0.6) inset !important;
+  }
+
+  :scope [style="height:24px;color:#FFF;background-color:#6389A8;border:1px solid #6389A8;background: -moz-linear-gradient(center top , #6389A8, #6389A8 100%) repeat scroll 0% 0% transparent;box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.6) inset;font-weight:normal;border-radius:3px;cursor:pointer;"] {
+    background-color: #33495b !important;
+    background: -moz-linear-gradient(center top , #33495b, #33495b 100%) repeat scroll 0% 0% transparent !important;
+    box-shadow: 0px 0px 0px rgba(22, 27, 29, 0.6) inset !important;
+  }
+
+  :scope [style="border-bottom:2px solid #FFF;"] {
+    border-bottom-color: #303030 !important;
+  }
+
+  :scope [style="color:blue;"] {
+    color: #7d7df4 !important;
+  }
+
+  :scope [style="height: 350px; background: white; overflow: scroll; border-style: solid; border-width: 1px; border-color: black; padding: 3px;"] {
+    background-color: #161b1d !important;
+    background-image: none !important;
+    border-color: #595959 !important;
+  }
+
+  :scope [style="color:#337ab7;padding-left:1px"] {
+    color: #9ac1e3 !important;
+  }
+
+  :scope [style="border: 1px solid #B6B6B6; padding: 5px; line-height: 1.4em"] {
+    border-color: #4e4e4e !important;
+  }
+
+  :scope [style="border: 1px solid black"] {
+    border-color: #595959 !important;
+  }
+
+  :scope [style="background-color:#E4E8EE;"] {
+    background-color: #1e252f !important;
+  }
+
+  :scope [style="color:black; font-weight: bold; background-color:#CCC; padding: 12px;"] {
+    color: #e3e3e3 !important;
+    background-color: #303c40 !important;
+  }
+
+  :scope [style="color:black; background-color:#CCC;"] {
+    color: #e3e3e3 !important;
+    background-color: #303c40 !important;
+  }
+
+  :scope [style="color:black; background-color:#FFF; width: 516px; padding: 12px;"] {
+    color: #e3e3e3 !important;
+    background-color: #161b1d !important;
+  }
+
+  :scope [style="border: 1px;color: black;font-size: 16px;"] {
+    color: #e3e3e3 !important;
+  }
+
+  :scope [style="background: green;width:0%;height:3px;margin:0 0 15px 0;border:0;"] {
+    background-color: #004800 !important;
+    background-image: none !important;
   }
 }

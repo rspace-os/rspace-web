@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Generates styles/dark/legacy-generated.css: dark-mode colour overrides for
- * every stylesheet a JSP page or tag links, and for the <style> blocks in
- * JSP pages and tags.
+ * every stylesheet a JSP page or tag links, and for the <style> blocks and
+ * static style attributes in JSP pages and tags.
  *
  * For each rule it keeps only the colour declarations and remaps the colours:
  * light surfaces and borders become dark, dark text becomes light, and
@@ -208,10 +208,20 @@ function darkBorder(c) {
   return c;
 }
 
+/**
+ * Hand-picked dark colours that replace the formulas' results, keyed by the
+ * mapping and the source colour, for example
+ *   ["darkSurface:#6389a8", "#3d5a73"]
+ * so a colour can be tuned everywhere it is used, without selector overrides
+ * in legacy-dark.css.
+ */
+const COLOUR_OVERRIDES = new Map();
+
 function mapColors(value, fn) {
   return value.replace(COLOR_RE, (m) => {
     const c = parseColor(m);
-    return c ? format(fn(c)) : m;
+    if (!c) return m;
+    return COLOUR_OVERRIDES.get(`${fn.name}:${format(c)}`) ?? format(fn(c));
   });
 }
 
@@ -288,9 +298,9 @@ const IMAGE_RE = new RegExp(
 function relocateUrl(token, file) {
   return token.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/i, (whole, quote, path) => {
     if (/^(data:|https?:|\/|#)/i.test(path)) return whole;
-    // A <style> block's relative urls resolve against the page URL, which
-    // the generator cannot know.
-    if (!file.endsWith(".css")) throw new Error(`${file}: relative url() in a <style> block: ${path}`);
+    // Outside a stylesheet, relative urls resolve against the page URL,
+    // which the generator cannot know.
+    if (!file.endsWith(".css")) throw new Error(`${file}: relative url() outside a stylesheet: ${path}`);
     const target = posix.join(posix.dirname(file), path);
     return `url(${quote}${posix.relative(posix.dirname(OUTPUT), target)}${quote})`;
   });
@@ -307,6 +317,16 @@ const VENDOR_PREFIXED = /^-(o|ms)-/i;
 function onlyPrefixedImages(value) {
   const images = value.match(IMAGE_RE) ?? [];
   return images.length > 0 && images.every((token) => VENDOR_PREFIXED.test(token));
+}
+
+/** A whole `background` shorthand with its colours mapped and its urls relocated. */
+function backgroundShorthand(value, file) {
+  const images = [];
+  const rest = value.replace(IMAGE_RE, (token) => {
+    images.push(/^url\(/i.test(token) ? relocateUrl(token, file) : mapColors(token, darkSurface));
+    return `\0${images.length - 1}\0`;
+  });
+  return mapColors(rest, darkSurface).replace(/\0(\d+)\0/g, (_, i) => images[Number(i)]);
 }
 
 /** The background-image layers of a `background` shorthand, mapped. */
@@ -337,6 +357,12 @@ function darkDeclarations(prop, value, important, file, focus) {
   if (prop === "background") {
     if (onlyPrefixedImages(value) && !value.replace(IMAGE_RE, " ").match(COLOR_RE)) return [];
     if (/^\s*(inherit|initial|unset)\s*$/i.test(value)) return [...decl("background-color", value), ...decl("background-image", value)];
+    // Chromium and Safari drop a shorthand with a -moz- layer and keep the
+    // declaration before it. Split into longhands, the colour would apply
+    // there and replace that fallback, so the shorthand stays whole.
+    if ((value.match(IMAGE_RE) ?? []).some((token) => /^-moz-/i.test(token))) {
+      return decl("background", backgroundShorthand(value, file));
+    }
     const rest = value.replace(IMAGE_RE, " ");
     const colour = rest.match(COLOR_RE)?.[0] ?? (/\btransparent\b/i.test(rest) ? "transparent" : null);
     return [
@@ -431,6 +457,47 @@ function inlineStyles(file) {
     .join("\n");
 }
 
+/**
+ * The static `style` attributes of a template. Attributes built from JSP
+ * expressions, or holding entities or line breaks, are skipped.
+ */
+function styleAttributes(file) {
+  const source = readFileSync(join(WEBAPP, file), "utf8").replace(/<%--[\s\S]*?--%>/g, "");
+  return [...source.matchAll(/\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)]
+    .map((m) => (m[1] ?? m[2]).trim())
+    .filter((value) => value && !/\$\{|<%|[&<>\n\\]/.test(value));
+}
+
+/**
+ * Rules for colours set in `style` attributes. Each matches its attribute
+ * exactly, and marks its colours !important to beat the inline style. An
+ * inline style already wins the cascade, so only changed colours are emitted.
+ * A script that changes an element's style rewrites the attribute, so such
+ * elements need a rule in legacy-dark.css instead.
+ */
+function styleAttributeRules(values) {
+  const colours = (text) =>
+    (text.match(COLOR_RE) ?? [])
+      .map((c) => parseColor(c))
+      .filter(Boolean)
+      .map(format)
+      .join(" ");
+  return values.flatMap((value) => {
+    const dark = splitTopLevel(value, ";").flatMap((d) => {
+      const colon = d.indexOf(":");
+      if (colon === -1) return [];
+      const prop = d.slice(0, colon).trim().toLowerCase();
+      const original = d.slice(colon + 1).replace(/!\s*important\s*$/i, "").trim();
+      return darkDeclarations(prop, original, false, "style attribute", false)
+        .filter((dd) => colours(dd.slice(dd.indexOf(":") + 1)) !== colours(original))
+        .map((dd) => `${dd} !important`);
+    });
+    if (!dark.length) return [];
+    stats.rules++;
+    return [`:scope [style="${value.replace(/"/g, '\\"')}"] {\n${keepLast(dark).map((d) => `  ${d};`).join("\n")}\n}`];
+  });
+}
+
 const indent = (text) => text.replace(/^(?=.)/gm, "  ");
 const limit = `to (${USER_CONTENT.join(", ")})`;
 const stats = { rules: 0, skipped: new Set() };
@@ -470,6 +537,11 @@ const inline = TEMPLATES.flatMap((file) => {
   return rules.length ? [`/* ${file} */\n\n${rules.join("\n\n")}`] : [];
 });
 if (inline.length) sections.push(`/* <style> blocks in templates */\n@scope (html.dark) ${limit} {\n${indent(inline.join("\n\n"))}\n}`);
+// Like <style> blocks, style attributes apply on every page.
+const attributeRules = styleAttributeRules([...new Set(TEMPLATES.flatMap(styleAttributes))]);
+if (attributeRules.length) {
+  sections.push(`/* style attributes in templates */\n@scope (html.dark) ${limit} {\n${indent(attributeRules.join("\n\n"))}\n}`);
+}
 
 const output = `/*
  * GENERATED by scripts/generate-legacy-dark-css.mjs. Do not edit; change the
@@ -502,5 +574,5 @@ if (process.argv.includes("--check")) {
   console.log(`${OUTPUT} is up to date.`);
 } else {
   writeFileSync(target, output);
-  console.log(`Wrote ${OUTPUT}: ${stats.rules} rules from ${sheets.length} stylesheets and ${inline.length} templates; skipped ${stats.skipped.size} element-only selectors in <style> blocks.`);
+  console.log(`Wrote ${OUTPUT}: ${stats.rules} rules from ${sheets.length} stylesheets, ${inline.length} templates' <style> blocks and ${attributeRules.length} style attributes; skipped ${stats.skipped.size} element-only selectors in <style> blocks.`);
 }
