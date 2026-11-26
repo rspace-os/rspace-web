@@ -71,8 +71,8 @@ public interface NfsDao {
    * @param filestoreOwner null for links through any user's filestore; otherwise only links through
    *     this user's filestores
    * @param rootedBase with an owner, only links whose filestore base and link path together start
-   *     with a slash (true) or without one (false), which SFTP and iRODS can read as different
-   *     files; null for either. Ignored without an owner
+   *     with a slash (true) or without one (false), which SFTP, iRODS and SMB under a server URL's
+   *     folder can read as different files; null for either. Ignored without an owner
    */
   List<StructuredDocument> getDocumentsLinkingTo(
       Long fileSystemId, Collection<String> absolutePaths, User filestoreOwner, Boolean rootedBase);

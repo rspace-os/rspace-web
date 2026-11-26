@@ -218,6 +218,25 @@ public class NfsFactory {
     return null;
   }
 
+  /**
+   * Whether the file system's client reads a path the same file with or without its leading slash.
+   * Only SMB clients reading from the share root do: the SMBJ client puts a folder that the server
+   * URL names after the share in front of a path without a separator, and jcifs doubles the slash
+   * when the server URL ends with one.
+   */
+  public boolean readsPathsAlikeWithOrWithoutLeadingSlash(NfsFileSystem fileSystem) {
+    if (NfsClientType.SMBJ.equals(fileSystem.getClientType())) {
+      return SmbjClient.readsPathsFromTheShareRoot(
+          fileSystem.getUrl(), fileSystem.getClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME));
+    }
+    if (NfsClientType.SAMBA.equals(fileSystem.getClientType())) {
+      return !StringUtils.endsWith(fileSystem.getUrl(), "/")
+          && (!Boolean.TRUE.equals(smbjDownload)
+              || SmbjClient.readsPathsFromTheShareRoot(fileSystem.getUrl(), smbjShareName));
+    }
+    return false;
+  }
+
   private void verifyFileSystemProperties(NfsFileSystem fileSystem) {
 
     if (fileSystem.getClientType() == null) {

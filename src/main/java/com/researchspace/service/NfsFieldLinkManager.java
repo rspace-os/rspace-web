@@ -32,10 +32,11 @@ public interface NfsFieldLinkManager {
   /**
    * Linked documents of any of the absolute paths on the filesystem, as the overload above: each
    * document once, oldest first. On a filesystem with per-user logins only links through the user's
-   * own filestores count, and except on SMB a path with a leading slash is kept apart from one
-   * without, as SFTP and iRODS can resolve one of them under the login's home. So pass paths as
-   * {@link com.researchspace.model.netfiles.NfsFileStore#getAbsolutePath} builds them; they are
-   * normalised here.
+   * own filestores count, and except on SMB reading from the share root a path with a leading slash
+   * is kept apart from one without, as SFTP, iRODS and SMB under a server URL's folder can read the
+   * two as different files. So pass paths as {@link
+   * com.researchspace.model.netfiles.NfsFileStore#getAbsolutePath} builds them; they are normalised
+   * here.
    */
   List<RecordInformation> getLinkedDocuments(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User user);

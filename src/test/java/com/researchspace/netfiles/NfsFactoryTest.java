@@ -2,6 +2,7 @@ package com.researchspace.netfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +13,7 @@ import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
@@ -21,6 +23,7 @@ import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class NfsFactoryTest {
 
@@ -164,5 +167,38 @@ public class NfsFactoryTest {
     assertNotNull(s3NfsClient);
     assertEquals(testUsername, s3NfsClient.getUsername());
     Mockito.verify(s3UtilitiesFactoryMock).createS3UtilitiesForNfsConnector(testFileSystem);
+  }
+
+  @Test
+  public void onlySmbReadingFromTheShareRootReadsAPathAlikeWithOrWithoutItsLeadingSlash() {
+    testFileSystem.setClientType(NfsClientType.SMBJ);
+    testFileSystem.setClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME, "share");
+    testFileSystem.setUrl("smb://host");
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    testFileSystem.setUrl("smb://host/share");
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    // SMBJ puts the folder after the share in front of a path without a separator
+    testFileSystem.setUrl("smb://host/share/project");
+    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    testFileSystem.setUrl("smb://host/share/");
+    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+
+    testFileSystem.setClientType(NfsClientType.SAMBA);
+    testFileSystem.setUrl("smb://host/share/project");
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    // jcifs doubles the slash after a URL ending with one
+    testFileSystem.setUrl("smb://host/share/");
+    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    // downloads handed to SMBJ
+    ReflectionTestUtils.setField(factory, "smbjDownload", true);
+    ReflectionTestUtils.setField(factory, "smbjShareName", "share");
+    testFileSystem.setUrl("smb://host/share");
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    testFileSystem.setUrl("smb://host/share/project");
+    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+
+    testFileSystem.setClientType(NfsClientType.SFTP);
+    testFileSystem.setUrl("sftp://host");
+    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
   }
 }

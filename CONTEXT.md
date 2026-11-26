@@ -453,8 +453,9 @@ resolved during design. This file is a glossary only — no implementation detai
   filestores API report the same thing. On a file system where each user signs
   in with their own login, only links made through the user's own filestores
   count, since two logins can see different files at one path, and except on SMB
-  a filestore path without a leading slash is kept apart from one with it, as
-  SFTP and iRODS can read the two as different files; the same holds for the
+  reading from the share root a filestore path without a leading slash is kept
+  apart from one with it, as SFTP, iRODS and SMB under a server URL's folder can
+  read the two as different files; the same holds for the
   Inventory items linking the item.
   _Avoid_: linking document, referencing document
 - **Filestore link index** — RSpace's own record of every Filestore link in

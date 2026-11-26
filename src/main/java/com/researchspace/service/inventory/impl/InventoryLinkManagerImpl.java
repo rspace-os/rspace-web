@@ -14,10 +14,10 @@ import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
-import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.FilestoreLinkingItem;
@@ -59,6 +59,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Autowired private LinkTargetResolver linkTargetResolver;
   @Autowired private LinkTargetSnapshotResolver snapshotResolver;
   @Autowired private FilestoreAclChecker aclChecker;
+  @Autowired private NfsFactory nfsFactory;
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
@@ -150,12 +151,12 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       addItemsLinking(linking, fileSystem, absolutePaths, null, null);
-    } else if (NfsClientType.SMBJ == fileSystem.getClientType()
-        || NfsClientType.SAMBA == fileSystem.getClientType()) {
+    } else if (nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(fileSystem)) {
       // two logins can see different files at one path: ADR 0015 point 2
       addItemsLinking(linking, fileSystem, absolutePaths, actor, null);
     } else {
-      // and elsewhere a login's home can prefix a path, depending on its leading slash
+      // and elsewhere a login's home or the server URL's folder can prefix a path, depending on
+      // its leading slash
       absolutePaths.stream()
           .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
           .forEach(

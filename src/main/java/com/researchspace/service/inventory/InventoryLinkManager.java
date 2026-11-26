@@ -80,9 +80,9 @@ public interface InventoryLinkManager {
    * the actor's read access to the filesystem is asserted. On a filesystem with one shared login
    * (authentication none), links through any user's filestore count. On a filesystem with per-user
    * logins (any authentication but none), where two logins can see different files at one path,
-   * only links through the actor's own filestores count, and except on SMB a path with a leading
-   * slash is kept apart from one without, as SFTP and iRODS can resolve one of them under the
-   * login's home. So pass paths as {@link
+   * only links through the actor's own filestores count, and except on SMB reading from the share
+   * root a path with a leading slash is kept apart from one without, as SFTP, iRODS and SMB under a
+   * server URL's folder can read the two as different files. So pass paths as {@link
    * com.researchspace.model.netfiles.NfsFileStore#getAbsolutePath} builds them; they are normalised
    * here. One row per item and relation type, ordered by Global ID (prefix, then number), then
    * relation. Items in the trash and templates are left out. An item the actor cannot read in full

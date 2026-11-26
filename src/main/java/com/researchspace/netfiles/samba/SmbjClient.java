@@ -87,7 +87,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       sambaHost = serverURL.getHost();
       this.shareName = shareName == null ? "" : removeLeadingPathSeparator(shareName);
       this.withDfsEnabled = withDfsEnabled;
-      afterShareNamePath = calculateAfterShareNamePath(serverURL.getPath());
+      afterShareNamePath = calculateAfterShareNamePath(serverURL.getPath(), this.shareName);
       this.sambaNameMustMatchPath = sambaNameMustMatchPath;
     } catch (MalformedURLException e) {
       log.error("couldn't parse SMB serverUrl: {}", serverUrl, e);
@@ -350,7 +350,23 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
 
   private static final String SMBJ_PATH_SEPARATOR = "/";
 
-  private String calculateAfterShareNamePath(String serverPath) {
+  /**
+   * Whether the server URL names no folder after the share, so that a path is read from the share
+   * root whether or not it starts with a slash. False for a URL that cannot be parsed.
+   */
+  public static boolean readsPathsFromTheShareRoot(String serverUrl, String shareName) {
+    try {
+      String share =
+          shareName == null ? "" : StringUtils.removeStart(shareName, SMBJ_PATH_SEPARATOR);
+      return calculateAfterShareNamePath(SambaUtils.parseSambaUrl(serverUrl).getPath(), share)
+          .isEmpty();
+    } catch (MalformedURLException e) {
+      log.warn("couldn't parse SMB serverUrl: {}", serverUrl, e);
+      return false;
+    }
+  }
+
+  private static String calculateAfterShareNamePath(String serverPath, String shareName) {
     String path = serverPath;
     if (path != null && !StringUtils.isEmpty(shareName)) {
       int shareNameIndexOf = path.indexOf(shareName);
@@ -387,14 +403,8 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       path = path.substring(shareName.length()); // removing share bit
     } else if (path.startsWith("\\" + shareName + afterShareNamePath)) {
       path = path.substring(("\\" + shareName).length()); // removing share bit
-    } else if (path.isEmpty()) {
-      path = afterShareNamePath;
     } else {
-      // one separator, whether or not the path or the server URL brings its own
-      path =
-          StringUtils.removeEnd(afterShareNamePath, "\\")
-              + "\\"
-              + StringUtils.removeStart(path, "\\");
+      path = afterShareNamePath + path;
     }
     if (path.startsWith("\\")) {
       path = path.substring(1);
@@ -426,7 +436,7 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
     return path;
   }
 
-  private String changeCannonicalPathToFilenamePath(String path) {
+  private static String changeCannonicalPathToFilenamePath(String path) {
     return path == null ? "" : path.replace(SMBJ_PATH_SEPARATOR, "\\");
   }
 

@@ -7,7 +7,6 @@ import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
-import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -16,6 +15,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFieldLinkManager;
@@ -46,6 +46,7 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
   private final IPermissionUtils permUtils;
   private final FilestoreAclChecker aclChecker;
   private final MessageSourceUtils messages;
+  private final NfsFactory nfsFactory;
 
   @Override
   public void reindex(Field field, String content) {
@@ -105,12 +106,12 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     Stream<StructuredDocument> linking;
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       linking = documentsLinking(fileSystem, absolutePaths, null, null);
-    } else if (NfsClientType.SMBJ == fileSystem.getClientType()
-        || NfsClientType.SAMBA == fileSystem.getClientType()) {
+    } else if (nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(fileSystem)) {
       // two logins can see different files at one path: ADR 0015 point 2
       linking = documentsLinking(fileSystem, absolutePaths, user, null);
     } else {
-      // and elsewhere a login's home can prefix a path, depending on its leading slash
+      // and elsewhere a login's home or the server URL's folder can prefix a path, depending on
+      // its leading slash
       linking =
           absolutePaths.stream()
               .collect(Collectors.partitioningBy(path -> path.startsWith("/")))

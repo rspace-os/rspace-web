@@ -25,6 +25,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.inventory.FilestoreLinkingItem;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -52,6 +53,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
   @Mock private LinkTargetResolver linkTargetResolver;
   @Mock private LinkTargetSnapshotResolver snapshotResolver;
   @Mock private FilestoreAclChecker aclChecker;
+  @Mock private NfsFactory nfsFactory;
   @InjectMocks private InventoryLinkManagerImpl manager;
 
   private final User actor = new User("viewer");
@@ -221,8 +223,8 @@ class InventoryLinkManagerImplFilestoreLookupTest {
   }
 
   @ParameterizedTest
-  @EnumSource(names = {"SFTP", "IRODS"})
-  void whereAHomeCanPrefixAPathOnlyTheActorsFilestoresWithAMatchingBaseAreSearched(
+  @EnumSource(names = {"SFTP", "IRODS", "SMBJ"})
+  void whereTheSlashCanNameAnotherFileOnlyTheActorsFilestoresWithAMatchingBaseAreSearched(
       NfsClientType clientType) {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
     fs.setClientType(clientType);
@@ -238,7 +240,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
         .thenReturn(List.of(fromRoot));
     when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, rooted, actor, true))
         .thenReturn(List.of());
-    // a path without a leading slash starts at the login's home
+    // a path without a leading slash can start at the login's home or the server URL's folder
     when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
         .thenReturn(List.of(fromHome));
     when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, underHome, actor, false))
@@ -253,9 +255,11 @@ class InventoryLinkManagerImplFilestoreLookupTest {
 
   @ParameterizedTest
   @EnumSource(names = {"SAMBA", "SMBJ"})
-  void onSmbOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(NfsClientType clientType) {
+  void onSmbReadingFromTheShareRootOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(
+      NfsClientType clientType) {
     NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
     smb.setClientType(clientType);
+    when(nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(smb)).thenReturn(true);
     ExtraLinkField own =
         extraField(
             readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));

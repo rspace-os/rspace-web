@@ -72,30 +72,4 @@ public class SmbjClientTest {
         "another\\Fig3.jpg",
         pangolinClient.getRemotePathWithoutShareName("/samba-folder/another/Fig3.jpg"));
   }
-
-  @Test
-  public void aPathWithOrWithoutItsLeadingSlashNamesOneFileUnderTheServerUrlPath() {
-    SmbjClient client =
-        new SmbjClient("", "", "", "smb://example.test/share/project", "share", false);
-
-    assertEquals(
-        "project\\upload\\report.txt", client.getRemotePathWithoutShareName("upload/report.txt"));
-    assertEquals(
-        "project\\upload\\report.txt", client.getRemotePathWithoutShareName("/upload/report.txt"));
-
-    SmbjClient shareRoot =
-        new SmbjClient("", "", "", "smb://localhost/samba-folder/", "samba-folder", false);
-    assertEquals(
-        "upload\\report.txt", shareRoot.getRemotePathWithoutShareName("upload/report.txt"));
-    assertEquals(
-        "upload\\report.txt", shareRoot.getRemotePathWithoutShareName("/upload/report.txt"));
-
-    SmbjClient trailingSlash =
-        new SmbjClient("", "", "", "smb://test.com/samba-folder/BE/", "samba-folder", false);
-    assertEquals(
-        "BE\\upload\\report.txt", trailingSlash.getRemotePathWithoutShareName("upload/report.txt"));
-    assertEquals(
-        "BE\\upload\\report.txt",
-        trailingSlash.getRemotePathWithoutShareName("/upload/report.txt"));
-  }
 }

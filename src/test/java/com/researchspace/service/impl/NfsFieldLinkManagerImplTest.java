@@ -26,6 +26,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
@@ -52,6 +53,7 @@ class NfsFieldLinkManagerImplTest {
   @Mock IPermissionUtils permUtils;
   @Mock FilestoreAclChecker aclChecker;
   @Mock MessageSourceUtils messages;
+  @Mock NfsFactory nfsFactory;
   @InjectMocks NfsFieldLinkManagerImpl manager;
 
   private final User user = TestFactory.createAnyUser("any");
@@ -232,8 +234,8 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @ParameterizedTest
-  @EnumSource(names = {"SFTP", "IRODS"})
-  void whereAHomeCanPrefixAPathOnlyTheCallersFilestoresWithAMatchingBaseAreSearched(
+  @EnumSource(names = {"SFTP", "IRODS", "SMBJ"})
+  void whereTheSlashCanNameAnotherFileOnlyTheCallersFilestoresWithAMatchingBaseAreSearched(
       NfsClientType clientType) {
     NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
     fs.setClientType(clientType);
@@ -243,7 +245,7 @@ class NfsFieldLinkManagerImplTest {
     fromHome.setId(12L);
     when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/hello.txt"), user, true))
         .thenReturn(List.of(fromRoot));
-    // a path without a leading slash starts at the login's home
+    // a path without a leading slash can start at the login's home or the server URL's folder
     when(nfsDao.getDocumentsLinkingTo(2L, List.of("upload/other.txt"), user, false))
         .thenReturn(List.of(fromHome));
     when(permUtils.isPermitted(any(StructuredDocument.class), eq(PermissionType.READ), eq(user)))
@@ -257,9 +259,11 @@ class NfsFieldLinkManagerImplTest {
 
   @ParameterizedTest
   @EnumSource(names = {"SAMBA", "SMBJ"})
-  void onSmbOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(NfsClientType clientType) {
+  void onSmbReadingFromTheShareRootOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(
+      NfsClientType clientType) {
     NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
     smb.setClientType(clientType);
+    when(nfsFactory.readsPathsAlikeWithOrWithoutLeadingSlash(smb)).thenReturn(true);
     StructuredDocument own = TestFactory.createAnySD();
     own.setId(11L);
     when(nfsDao.getDocumentsLinkingTo(
