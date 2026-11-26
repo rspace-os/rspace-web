@@ -481,7 +481,10 @@ RS.blockingProgressBar = (function () {
   var my = {};
   my._progressType = "";
   my._checkingInterval;
-  my._timerId = [];
+  my._timerId = null;
+  var inFlight = null;
+  var active = false;
+  var lifecycle = 0;
 
   /*
    * Blocks the page, with optional cancel button showing (default is false).
@@ -495,12 +498,27 @@ RS.blockingProgressBar = (function () {
    */
   my.show = function (config) {
     my._progressType = config.progressType;
-    showCancel = config.showCancel || false;
-    msg = config.msg || RS.msg("legacyjs.core.progress.starting");
-    my._checkingInterval = config.checkingInterval || 3000;
+    var showCancel = config.showCancel || false;
+    var msg = config.msg || RS.msg("legacyjs.core.progress.starting");
+    var checkingInterval = config.checkingInterval || 3000;
+    var intervalChanged = my._checkingInterval !== checkingInterval;
+    my._checkingInterval = checkingInterval;
     RS.blockPage(msg, showCancel);
-    my._timerId.push(setInterval(_updateProgress, my._checkingInterval));
-    console.log("Timer id  for msg " + msg + " is " + my._timerId);
+    if (!active) {
+      active = true;
+      var showLifecycle = lifecycle;
+      if (inFlight) {
+        inFlight.always(function () {
+          _scheduleProgress(showLifecycle);
+        });
+      } else {
+        _scheduleProgress(showLifecycle);
+      }
+    } else if (intervalChanged && my._timerId !== null) {
+      clearTimeout(my._timerId);
+      my._timerId = null;
+      _scheduleProgress(lifecycle);
+    }
   };
   /*
    * Removes blockPage and sets progress to 0, stops the update timer
@@ -508,11 +526,10 @@ RS.blockingProgressBar = (function () {
   my.hide = function () {
     $('#blockprogressBar').css('width', '0%');
     RS.unblockPage();
-    $.each(my._timerId, function (i, v) {
-      clearInterval(v);
-    });
-    //clearInterval(my._timerId);
-    //console.log("Stopping timer " + my._timerId);
+    clearTimeout(my._timerId);
+    my._timerId = null;
+    active = false;
+    lifecycle++;
   };
   /*
    * A custom message indicating progress
@@ -528,14 +545,32 @@ RS.blockingProgressBar = (function () {
   };
 
 
+  var _scheduleProgress = function (pollLifecycle) {
+    if (active && pollLifecycle === lifecycle && my._timerId === null) {
+      my._timerId = setTimeout(_updateProgress, my._checkingInterval);
+    }
+  };
+
   var _updateProgress = function () {
-    $.get('/progress/' + my._progressType, function (progress) {
+    my._timerId = null;
+    if (!active || inFlight) {
+      return;
+    }
+    var requestLifecycle = lifecycle;
+    inFlight = $.get('/progress/' + my._progressType, function (progress) {
+      if (!active || requestLifecycle !== lifecycle) {
+        return;
+      }
       $('#blockUICustomMsg').html();
       RS.blockingProgressBar.showProgress(progress.percentComplete);
       RS.blockingProgressBar.message(progress.description);
       if (progress.done) {
         RS.blockingProgressBar.message(RS.msg("legacyjs.core.progress.completed"));
       }
+    });
+    inFlight.always(function () {
+      inFlight = null;
+      _scheduleProgress(requestLifecycle);
     });
 
   };
