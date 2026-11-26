@@ -21,11 +21,12 @@ import {
   ComboboxList,
   ComboboxStatus,
 } from "@/modules/common/ui/combobox";
+import { namespaceForSentinel } from "../utils/filterDrafts";
 
 const SEARCH_LIMIT = 20;
 const MINIMUM_TERM = 2;
 
-type RuntimeFieldSourceGroup = {
+export type RuntimeFieldSourceGroup = {
   key: string;
   via?: RelationshipLabel;
   sources: readonly RuntimeNamespaceSummary[];
@@ -42,6 +43,18 @@ export function groupRuntimeFieldSources(
     via: group.find((source) => source.via !== undefined)?.via,
     sources: group,
   }));
+}
+
+/** The group a filter rule is picking from: a sentinel's group, else the group serving the chosen field's namespace. */
+export function runtimeFieldGroupKey(
+  groups: readonly RuntimeFieldSourceGroup[],
+  field: string,
+  namespace: string | null,
+): string | null {
+  const sentinelNamespace = namespaceForSentinel(field);
+  if (sentinelNamespace !== null) return sentinelNamespace;
+  if (namespace === null) return null;
+  return groups.find((group) => group.sources.some((source) => source.namespace === namespace))?.key ?? null;
 }
 
 type RuntimeFieldOption = {

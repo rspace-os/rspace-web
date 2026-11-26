@@ -1,12 +1,11 @@
 import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { Namespace } from "i18next";
+import type { Namespace, TFunction } from "i18next";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
-import type { FilterOperator } from "@/modules/common/collection/filterOperators";
+import type { ResolvedCollectionConfig, ResolvedFieldConfig, SearchSelector } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
@@ -20,29 +19,14 @@ import {
   type DraftRule,
   defaultOperator,
   isActive,
-  namespaceForSentinel,
   parsedValue,
   sentinelFor,
-  valueForOperator,
 } from "../utils/filterDrafts";
-import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
-import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
-import { FilterValueInput } from "./FilterValueInput";
-import { SortableControlRow } from "./SortableControlRow";
+import { groupRuntimeFieldSources, type RuntimeFieldSourceGroup } from "./CustomFieldPicker";
+import { FilterRuleRow } from "./FilterRuleRow";
+import type { FilterSelectOption } from "./FilterSelect";
 
-const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${FilterOperator}`> = {
-  equals: "tableList.filters.operators.equals",
-  notEquals: "tableList.filters.operators.notEquals",
-  greaterThan: "tableList.filters.operators.greaterThan",
-  greaterThanOrEqual: "tableList.filters.operators.greaterThanOrEqual",
-  lessThan: "tableList.filters.operators.lessThan",
-  lessThanOrEqual: "tableList.filters.operators.lessThanOrEqual",
-  in: "tableList.filters.operators.in",
-  notIn: "tableList.filters.operators.notIn",
-  contains: "tableList.filters.operators.contains",
-  matches: "tableList.filters.operators.matches",
-  exists: "tableList.filters.operators.exists",
-};
+type FieldLabels = ReturnType<typeof useFieldLabels>;
 
 function topLevelNodes<TDocument>(
   expression: FilterExpression<TDocument> | null,
@@ -56,6 +40,42 @@ function fieldGroupKey(via: { name: string } | undefined, groupLabelKey: string 
   if (via) return `relationship:${via.name}`;
   if (groupLabelKey) return `builtin:${groupLabelKey}`;
   return "ungrouped";
+}
+
+function filterFieldOptions<TDocument>(
+  fields: readonly ResolvedFieldConfig<TDocument>[],
+  groups: readonly RuntimeFieldSourceGroup[],
+  { t, text, fieldOptionLabel }: { t: TFunction<Namespace> } & Pick<FieldLabels, "text" | "fieldOptionLabel">,
+): FilterSelectOption[] {
+  return [
+    ...fields
+      .filter((candidate) => candidate.origin?.namespace === undefined)
+      .map((candidate): FilterSelectOption => {
+        const via = candidate.origin?.via;
+        const groupLabelKey = via ? null : (candidate.origin?.groupLabelKey ?? null);
+        return {
+          value: candidate.name,
+          label: fieldOptionLabel(candidate),
+          groupKey: fieldGroupKey(via, groupLabelKey),
+          groupLabelKey,
+          groupLabel: via ? text(via.label) : undefined,
+        };
+      }),
+    ...groups.map((group): FilterSelectOption => {
+      const viaLabel = group.via ? text(group.via.label) : "";
+      return {
+        value: sentinelFor(group.key),
+        label: t("tableList.filters.customField.option"),
+        selectedLabel:
+          viaLabel === ""
+            ? t("tableList.filters.customField.option")
+            : t("tableList.filters.customField.optionVia", { via: viaLabel }),
+        groupKey: group.via ? `relationship:${group.via.name}` : "builtin:tableList.fieldGroups.customFields",
+        groupLabelKey: viaLabel === "" ? "tableList.fieldGroups.customFields" : null,
+        groupLabel: viaLabel || undefined,
+      };
+    }),
+  ];
 }
 
 export function TableListFilters<TDocument>({
@@ -105,45 +125,7 @@ export function TableListFilters<TDocument>({
   const dragAccessibility = useTableListDragAccessibility((id) =>
     t("tableList.dragAndDrop.filterRule", { number: rules.findIndex((rule) => rule.id === id) + 1 }),
   );
-  const fieldOptions: FilterSelectOption[] = fields
-    .filter((candidate) => candidate.origin?.namespace === undefined)
-    .map((candidate) => {
-      const via = candidate.origin?.via;
-      const groupLabelKey = via ? null : (candidate.origin?.groupLabelKey ?? null);
-      return {
-        value: candidate.name,
-        label: fieldOptionLabel(candidate),
-        groupKey: fieldGroupKey(via, groupLabelKey),
-        groupLabelKey,
-        groupLabel: via ? text(via.label) : undefined,
-      };
-    });
-  for (const group of runtimeSourceGroups) {
-    const viaLabel = group.via ? text(group.via.label) : "";
-    fieldOptions.push({
-      value: sentinelFor(group.key),
-      label: t("tableList.filters.customField.option"),
-      selectedLabel:
-        viaLabel === ""
-          ? t("tableList.filters.customField.option")
-          : t("tableList.filters.customField.optionVia", { via: viaLabel }),
-      groupKey: group.via ? `relationship:${group.via.name}` : "builtin:tableList.fieldGroups.customFields",
-      groupLabelKey: viaLabel === "" ? "tableList.fieldGroups.customFields" : null,
-      groupLabel: viaLabel || undefined,
-    });
-  }
-  const fieldSelectLabels = {
-    placeholder: t("tableList.filters.fieldSearch.placeholder"),
-    noMatch: t("tableList.filters.fieldSearch.noMatch"),
-    clear: t("tableList.filters.fieldSearch.clear"),
-    trigger: t("tableList.filters.fieldSearch.trigger"),
-  };
-  const operatorSelectLabels = {
-    placeholder: t("tableList.filters.operatorSearch.placeholder"),
-    noMatch: t("tableList.filters.operatorSearch.noMatch"),
-    clear: t("tableList.filters.operatorSearch.clear"),
-    trigger: t("tableList.filters.operatorSearch.trigger"),
-  };
+  const fieldOptions = filterFieldOptions(fields, runtimeSourceGroups, { t, text, fieldOptionLabel });
 
   const updateRule = (id: number, update: Partial<DraftRule<TDocument>>) => {
     setRules((current) => current.map((rule) => (rule.id === id ? { ...rule, ...update } : rule)));
@@ -206,126 +188,22 @@ export function TableListFilters<TDocument>({
             aria-label={t("tableList.filters.title")}
             className={cn("mt-4 grid max-h-72 list-none gap-x-2 gap-y-2 overflow-y-auto p-0", rowColumns)}
           >
-            {rules.map((rule, index) => {
-              const chosen = fields.find((candidate) => candidate.name === rule.field);
-              const selectedNamespace = chosen?.origin?.namespace ?? null;
-              const sentinelNamespace = namespaceForSentinel(String(rule.field));
-              const pickingGroup =
-                sentinelNamespace ??
-                (selectedNamespace === null
-                  ? null
-                  : (runtimeSourceGroups.find((group) =>
-                      group.sources.some((source) => source.namespace === selectedNamespace),
-                    )?.key ?? null));
-              const sourceGroup = runtimeSourceGroups.find((candidate) => candidate.key === pickingGroup) ?? null;
-              const field = chosen ?? fields[0];
-              const awaitingDefinition = sentinelNamespace !== null;
-              if (!field) return null;
-              const operatorControl = awaitingDefinition ? null : (
-                <FilterSelect
-                  ariaLabel={t("tableList.filters.operator", { number: index + 1 })}
-                  options={field.capabilities.filterOperators.map((operator) => ({
-                    value: operator,
-                    label: t(operatorKeys[operator]),
-                    groupLabelKey: null,
-                  }))}
-                  value={rule.operator}
-                  labels={operatorSelectLabels}
-                  onChange={(next) => {
-                    const operator = next as FilterOperator;
-                    updateRule(rule.id, {
-                      operator,
-                      value: valueForOperator(rule.value, rule.operator, operator),
-                    });
-                  }}
-                />
-              );
-              const valueControl = awaitingDefinition ? null : (
-                <FilterValueInput
-                  field={field}
-                  sources={config.relationshipSources}
-                  authScope={authScope}
-                  operator={rule.operator}
-                  value={rule.value}
-                  number={index + 1}
-                  onChange={(value) => updateRule(rule.id, { value })}
-                />
-              );
-              const runtimeFieldPicker = sourceGroup !== null && runtimeFields && (
-                <CustomFieldPicker
-                  key={sourceGroup.key}
-                  sources={sourceGroup.sources}
-                  ariaLabel={
-                    sourceGroup.via === undefined
-                      ? t("tableList.filters.customField.searchLabel", { number: index + 1 })
-                      : t("tableList.filters.customField.searchLabelVia", {
-                          number: index + 1,
-                          via: text(sourceGroup.via.label),
-                        })
-                  }
-                  chosenLabel={awaitingDefinition ? undefined : fieldOptionLabel(field)}
-                  chosenSelector={awaitingDefinition ? undefined : String(rule.field)}
-                  known={runtimeFields.definitions}
-                  onSelect={(namespace, definition) => {
-                    runtimeFields.onSelect(namespace, definition);
-                    const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
-                    updateRule(rule.id, { field: selector, operator: "equals", value: "" });
-                  }}
-                />
-              );
-              return (
-                <SortableControlRow
-                  className="sm:col-span-full sm:grid-cols-subgrid"
-                  key={rule.id}
-                  id={rule.id}
-                  moveLabel={t("tableList.actions.moveFilter", { number: index + 1 })}
-                >
-                  <FilterSelect
-                    ariaLabel={t("tableList.filters.field", { number: index + 1 })}
-                    options={fieldOptions}
-                    labels={fieldSelectLabels}
-                    value={pickingGroup === null ? String(rule.field) : sentinelFor(pickingGroup)}
-                    onChange={(next) => {
-                      const namespace = namespaceForSentinel(next);
-                      if (namespace !== null) {
-                        updateRule(rule.id, { field: sentinelFor(namespace) as SearchSelector<TDocument>, value: "" });
-                        return;
-                      }
-                      const nextField = fields.find((candidate) => String(candidate.name) === next);
-                      if (nextField)
-                        updateRule(rule.id, { field: nextField.name, operator: defaultOperator(nextField), value: "" });
-                    }}
-                  />
-                  {sourceGroup === null ? operatorControl : <div className="sm:col-span-2">{runtimeFieldPicker}</div>}
-                  {sourceGroup === null ? valueControl : null}
-                  {offersColumns && field.list !== false && !awaitingDefinition ? (
-                    <label className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        className="size-3.5"
-                        checked={shownColumns.has(String(field.name))}
-                        onChange={(event) => onShowColumn?.(field.name, event.target.checked)}
-                      />
-                      {t("tableList.filters.alsoShowAsColumn")}
-                    </label>
-                  ) : null}
-                  <Button
-                    aria-label={t("tableList.actions.removeFilter", { number: index + 1 })}
-                    size="icon-xs"
-                    variant="ghost"
-                    onClick={() => setRules((current) => current.filter((candidate) => candidate.id !== rule.id))}
-                  >
-                    <Trash2Icon aria-hidden="true" />
-                  </Button>
-                  {sourceGroup !== null && !awaitingDefinition ? (
-                    <div className="grid gap-2 sm:col-start-2 sm:col-span-3 sm:grid-cols-[minmax(7.5rem,auto)_minmax(10rem,1fr)]">
-                      {operatorControl}
-                      {valueControl}
-                    </div>
-                  ) : null}
-                </SortableControlRow>
-              );
-            })}
+            {rules.map((rule, index) => (
+              <FilterRuleRow
+                key={rule.id}
+                rule={rule}
+                index={index}
+                fields={fields}
+                fieldOptions={fieldOptions}
+                runtimeSourceGroups={runtimeSourceGroups}
+                relationshipSources={config.relationshipSources}
+                runtimeFields={runtimeFields}
+                authScope={authScope}
+                columnToggle={offersColumns ? { shown: shownColumns, onChange: onShowColumn } : undefined}
+                onChange={(update) => updateRule(rule.id, update)}
+                onRemove={() => setRules((current) => current.filter((candidate) => candidate.id !== rule.id))}
+              />
+            ))}
           </ol>
         </SortableContext>
       </DndContext>
