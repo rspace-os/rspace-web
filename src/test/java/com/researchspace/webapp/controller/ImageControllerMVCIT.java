@@ -278,6 +278,56 @@ public class ImageControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void annotatingOneImageWhileRemovingAnotherUnlinksOnlyTheRemovedImage() throws Exception {
+    logoutAndLoginAs(testUser);
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(testUser, "");
+    Field field = document.getFields().get(0);
+    String fieldId = field.getId().toString();
+    EcatImage annotated = addImageToGallery(testUser);
+    EcatImage removed = addImageToGallery(testUser);
+    doAutosaveAndSaveMVC(
+        field,
+        richTextUpdater.generateRawImageElement(annotated, fieldId)
+            + richTextUpdater.generateRawImageElement(removed, fieldId),
+        testUser);
+
+    EcatImageAnnotation annotation =
+        postSaveImageAnnotation(
+            RSpaceTestUtils.getAnyAnnotationOrSketchJson(),
+            getBase64Image(),
+            annotated.getId(),
+            field.getId());
+    doAutosaveMVC(
+        field, richTextUpdater.generateAnnotatedImageElement(annotation, fieldId), testUser);
+
+    mockMvc
+        .perform(
+            get("/gallery/ajax/getLinkedDocuments/{mediaId}", annotated.getId())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(1))
+        .andExpect(jsonPath("$.data[0].id").value(document.getId().intValue()));
+    mockMvc
+        .perform(
+            get("/gallery/ajax/getLinkedDocuments/{mediaId}", removed.getId())
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.length()").value(0));
+
+    // the removed image was in the saved field, so its link is kept for revision history
+    List<FieldAttachment> links = fieldMgr.getFieldAttachments(field.getId());
+    assertFalse(linkTo(links, annotated).isDeleted());
+    assertTrue(linkTo(links, removed).isDeleted());
+  }
+
+  private FieldAttachment linkTo(List<FieldAttachment> links, EcatImage image) {
+    List<FieldAttachment> matching =
+        links.stream().filter(link -> image.getId().equals(link.getMediaFile().getId())).toList();
+    assertEquals(1, matching.size());
+    return matching.get(0);
+  }
+
+  @Test
   public void loadRevisionAfterCancelRSPAC_939() throws Exception {
     // follow steps of this bug report and check revision can be retrieved
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
