@@ -4,6 +4,7 @@ import Stack from "@mui/material/Stack";
 import { lighten, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useParams } from "react-router";
@@ -59,7 +60,7 @@ import { GallerySelection, useGallerySelection } from "./useGallerySelection";
  */
 const EMPTY_PATH = Object.freeze([]) as ReadonlyArray<GalleryFile>;
 
-const WholePage = ({
+const WholePageContent = ({
   listingOf,
   setSelectedSection,
   setPath,
@@ -134,17 +135,21 @@ const WholePage = ({
   const { isViewportSmall } = useViewportDimensions();
 
   const selection = useGallerySelection();
+  /*
+   * Keyed on the listing's array rather than the `galleryListing` wrapper,
+   * which is rebuilt every render: otherwise any re-render (a resize, a
+   * sidebar toggle) would add the URL's file back to the user's selection.
+   */
+  const autoSelectableList = decoratedList ?? liveList;
   React.useEffect(() => {
+    if (!autoSelectableList) return;
     try {
-      FetchingData.getSuccessValue(galleryListing).do((listing) => {
-        if (listing.tag === "empty") return;
-        for (const f of new RsSet(listing.list).intersectionMap(
-          ({ id }) => idToString(id).elseThrow(),
-          new RsSet(autoSelect ?? []).map((id) => `${id}`),
-        )) {
-          selection.append(f);
-        }
-      });
+      for (const f of new RsSet(autoSelectableList).intersectionMap(
+        ({ id }) => idToString(id).elseThrow(),
+        new RsSet(autoSelect ?? []).map((id) => `${id}`),
+      )) {
+        selection.append(f);
+      }
     } catch {
       /*
        * This will throw when processing files from external filestores that
@@ -152,7 +157,7 @@ const WholePage = ({
        * encoded in the URL and so cannot be autoselected.
        */
     }
-  }, [autoSelect, galleryListing]);
+  }, [autoSelect, autoSelectableList]);
 
   const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
     PREFERENCES.GALLERY_SIDEBAR_OPEN,
@@ -161,6 +166,14 @@ const WholePage = ({
     },
   );
   const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] = React.useState(false);
+  /*
+   * On a small viewport the drawer floats over the page, so it starts closed
+   * whenever the viewport becomes small. This closes the small-viewport state
+   * directly, never the larger-viewport preference, so it cannot persist it.
+   */
+  React.useEffect(() => {
+    if (isViewportSmall) setSmallViewportSidebarOpenState(false);
+  }, [isViewportSmall]);
   const drawerOpen = isViewportSmall ? smallViewportSidebarOpenState : largerViewportSidebarOpenState;
   const setDrawerOpen = isViewportSmall ? setSmallViewportSidebarOpenState : setLargerViewportSidebarOpenState;
 
@@ -312,6 +325,13 @@ const WholePage = ({
     </Box>
   );
 };
+
+/*
+ * Observes the MobX-backed viewport so that, when the window crosses the small
+ * breakpoint, the page re-renders and hands the Sidebar the matching drawer
+ * state setter.
+ */
+const WholePage = observer(WholePageContent);
 
 /**
  * This component is responsible for rendering the gallery when no folder is

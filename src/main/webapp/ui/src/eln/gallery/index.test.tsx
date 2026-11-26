@@ -4,7 +4,7 @@ import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
@@ -313,6 +313,47 @@ describe("Gallery", () => {
         ),
         { numRuns: 5 },
       );
+    });
+  });
+
+  describe("Shrinking the viewport", () => {
+    const originalWidth = window.innerWidth;
+    afterEach(() => {
+      window.innerWidth = originalWidth;
+    });
+
+    test("closes the small-viewport drawer without saving the larger-viewport preference", async () => {
+      window.innerWidth = 1600;
+      render(<GalleryStory />);
+      await waitFor(() => {
+        expect(document.title).toBe("gallery:pageTitleWithContext");
+      });
+      const sidebarToggle = () => screen.getByRole("button", { name: /appBar\.(open|close)Sidebar/ });
+      await waitFor(() => {
+        expect(sidebarToggle()).toHaveAttribute("aria-expanded", "true");
+      });
+      const preferenceSaves = () => mockAxios.history.post.filter(({ url }) => url === "/userform/ajax/preference");
+      const savesBeforeResize = preferenceSaves().length;
+
+      act(() => {
+        window.innerWidth = 500;
+        window.dispatchEvent(new Event("resize"));
+      });
+      await waitFor(() => {
+        expect(sidebarToggle()).toHaveAttribute("aria-expanded", "false");
+      });
+
+      act(() => {
+        window.innerWidth = 1600;
+        window.dispatchEvent(new Event("resize"));
+      });
+      await waitFor(() => {
+        expect(sidebarToggle()).toHaveAttribute("aria-expanded", "true");
+      });
+
+      // A save would first re-fetch the preferences, so give that time to happen before asserting it did not.
+      await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+      expect(preferenceSaves()).toHaveLength(savesBeforeResize);
     });
   });
 
