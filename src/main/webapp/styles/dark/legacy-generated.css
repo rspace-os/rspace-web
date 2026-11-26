@@ -8,7 +8,7 @@
  */
 
 /* styles/bootstrap-custom-flat.css */
-@scope (html.dark:has(link[href*="/styles/bootstrap-custom-flat.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/bootstrap-custom-flat.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .bootstrap-custom-flat a {
     background-color: transparent;
   }
@@ -2637,7 +2637,7 @@
 }
 
 /* styles/simplicity/theme.css */
-@scope (html.dark:has(link[href*="/styles/simplicity/theme.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/simplicity/theme.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .replace {
     background-color: transparent;
   }
@@ -3314,7 +3314,7 @@
 }
 
 /* scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .ui-widget-content {
     border-color: #4e4e4e;
     background-color: #161b1d;
@@ -3704,7 +3704,7 @@
 }
 
 /* scripts/bower_components/Apprise-v2/apprise-v2.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/Apprise-v2/apprise-v2.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/Apprise-v2/apprise-v2.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .apprise-overlay {
     background-color: rgba(0, 0, 0, 0.25);
   }
@@ -3767,7 +3767,7 @@
 }
 
 /* styles/rs-global.css */
-@scope (html.dark:has(link[href*="/styles/rs-global.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/rs-global.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .modal-backdrop {
     background-color: #000000;
   }
@@ -4389,7 +4389,7 @@
 }
 
 /* styles/jquery.toastmessage.css */
-@scope (html.dark:has(link[href*="/styles/jquery.toastmessage.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/jquery.toastmessage.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .toast-item {
     background-color: #333333;
     background-image: none;
@@ -4442,7 +4442,7 @@
 }
 
 /* scripts/bower_components/bootstrap/dist/css/bootstrap.min.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/bootstrap/dist/css/bootstrap.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope a {
     background-color: transparent;
   }
@@ -6774,7 +6774,7 @@
 }
 
 /* styles/simplicity/tools.css */
-@scope (html.dark:has(link[href*="/styles/simplicity/tools.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/simplicity/tools.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .replace {
     background-color: transparent;
   }
@@ -6785,7 +6785,7 @@
 }
 
 /* styles/simplicity/layout.css */
-@scope (html.dark:has(link[href*="/styles/simplicity/layout.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/simplicity/layout.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope div#header.impersonating {
     background-color: #161b1d;
     background-image: url("/images/greyedbgz.jpg");
@@ -6810,7 +6810,7 @@
 }
 
 /* styles/admin.css */
-@scope (html.dark:has(link[href*="/styles/admin.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/admin.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .publicList {
     border-color: #3e3e3e;
   }
@@ -6861,7 +6861,7 @@
 }
 
 /* scripts/bower_components/jquery-tagit/css/jquery.tagit.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/jquery-tagit/css/jquery.tagit.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/jquery-tagit/css/jquery.tagit.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope ul.tagit input[type="text"] {
     box-shadow: none;
     background-color: inherit;
@@ -6869,7 +6869,7 @@
 }
 
 /* scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope ul.tagit {
     border-color: #474747;
     background-color: inherit;
@@ -6933,7 +6933,7 @@
 }
 
 /* styles/system.css */
-@scope (html.dark:has(link[href*="/styles/system.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/system.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #showAll {
     background-image: url("/images/icons/showAllIcon.png");
   }
@@ -7172,14 +7172,14 @@
 }
 
 /* styles/preferences.css */
-@scope (html.dark:has(link[href*="/styles/preferences.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/preferences.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope span.prefsGroupLabel {
     color: #e3e3e3;
   }
 }
 
 /* styles/audit.css */
-@scope (html.dark:has(link[href*="/styles/audit.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/audit.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .remover {
     background-color: transparent;
     background-image: none;
@@ -7217,7 +7217,7 @@
 }
 
 /* styles/pages/connect/msteams/msTeamsThemes.css */
-@scope (html.dark:has(link[href*="/styles/pages/connect/msteams/msTeamsThemes.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/connect/msteams/msTeamsThemes.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope body.ms_theme_default,
   :scope body.ms_theme_default input {
     color: #cbcbcb;
@@ -7432,7 +7432,7 @@
 }
 
 /* styles/pages/connect/msteams/msTeamsDocView.css */
-@scope (html.dark:has(link[href*="/styles/pages/connect/msteams/msTeamsDocView.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/connect/msteams/msTeamsDocView.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #loggedUserSimpleDocPanel {
     color: #bfbfbf;
   }
@@ -7453,7 +7453,7 @@
 }
 
 /* styles/pages/searchableRecordPicker.css */
-@scope (html.dark:has(link[href*="/styles/pages/searchableRecordPicker.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/searchableRecordPicker.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #insertInternalLink-button button:disabled,
   :scope #insertInternalLink-button button[disabled] {
     color: rgba(227, 227, 227, 0.26);
@@ -7483,7 +7483,7 @@
 }
 
 /* styles/pages/messaging/dashboard.css */
-@scope (html.dark:has(link[href*="/styles/pages/messaging/dashboard.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/messaging/dashboard.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #importFormError {
     color: #ff0000;
   }
@@ -7528,7 +7528,7 @@
 }
 
 /* scripts/jqueryFileTree/jqueryFileTree.css */
-@scope (html.dark:has(link[href*="/scripts/jqueryFileTree/jqueryFileTree.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/jqueryFileTree/jqueryFileTree.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope UL.jqueryFileTree A {
     color: #d1d1d1;
   }
@@ -7880,7 +7880,7 @@
 }
 
 /* styles/messages.css */
-@scope (html.dark:has(link[href*="/styles/messages.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/messages.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .optionalMessageTooLong {
     background-color: #3a1616;
   }
@@ -7935,7 +7935,7 @@
 }
 
 /* styles/pages/groups/viewGroup.css */
-@scope (html.dark:has(link[href*="/styles/pages/groups/viewGroup.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/groups/viewGroup.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .error {
     color: #ff0000;
   }
@@ -8033,7 +8033,7 @@
 }
 
 /* styles/pages/workspace/workspace.css */
-@scope (html.dark:has(link[href*="/styles/pages/workspace/workspace.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/pages/workspace/workspace.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope a.templateInfo {
     color: #7d7df4;
   }
@@ -8320,7 +8320,7 @@
 }
 
 /* scripts/bower_components/photoswipe/dist/photoswipe.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/photoswipe/dist/photoswipe.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/photoswipe/dist/photoswipe.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .pswp__bg {
     background-color: #000000;
     background-image: none;
@@ -8341,7 +8341,7 @@
 }
 
 /* scripts/bower_components/photoswipe/dist/default-skin/default-skin.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .pswp__button {
     background-color: transparent;
     background-image: none;
@@ -8477,7 +8477,7 @@
 }
 
 /* scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .ui-tpicker-grid-label {
     background-color: transparent;
     background-image: none;
@@ -8485,7 +8485,7 @@
 }
 
 /* scripts/bower_components/font-awesome/css/font-awesome.min.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/font-awesome/css/font-awesome.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/font-awesome/css/font-awesome.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .fa-border {
     border-color: #373737;
   }
@@ -8496,7 +8496,7 @@
 }
 
 /* scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css */
-@scope (html.dark:has(link[href*="/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope code[class*="language-"],
   :scope pre[class*="language-"] {
     color: #e3e3e3;
@@ -8587,7 +8587,7 @@
 }
 
 /* styles/journal.css */
-@scope (html.dark:has(link[href*="/styles/journal.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/journal.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #nextEntryButton_mobile,
   :scope #prevEntryButton_mobile {
     background-color: rgba(0, 89, 122, 0.5);
@@ -8712,7 +8712,7 @@
 }
 
 /* styles/sign-in-up-common.css */
-@scope (html.dark:has(link[href*="/styles/sign-in-up-common.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/sign-in-up-common.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .rs-block--primary-color {
     background-color: #074e86;
     color: #ffffff;
@@ -8754,7 +8754,7 @@
 }
 
 /* styles/simplicity/header.css */
-@scope (html.dark:has(link[href*="/styles/simplicity/header.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/simplicity/header.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   @media (max-width: 767px) {
     :scope .rs-navbar__tab--xs {
       border-color: #3e3e3e;
@@ -8824,7 +8824,7 @@
 }
 
 /* styles/authentication/login.css */
-@scope (html.dark:has(link[href*="/styles/authentication/login.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/authentication/login.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .rs-dropdown__divider {
     background-color: #273134;
   }
@@ -8895,7 +8895,7 @@
 }
 
 /* scripts/bootstrap-namespace/bootstrap-namespace.min.css */
-@scope (html.dark:has(link[href*="/scripts/bootstrap-namespace/bootstrap-namespace.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bootstrap-namespace/bootstrap-namespace.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .bootstrap-namespace a {
     background-color: transparent;
   }
@@ -11089,7 +11089,7 @@
 }
 
 /* styles/userform.css */
-@scope (html.dark:has(link[href*="/styles/userform.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/userform.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #profileBlockMiddle {
     color: #e3e3e3 !important;
   }
@@ -11176,7 +11176,7 @@
 }
 
 /* styles/dropbox.css */
-@scope (html.dark:has(link[href*="/styles/dropbox.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/dropbox.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #dropbox {
     background-color: #273134;
     background-image: none;
@@ -11209,7 +11209,7 @@
 }
 
 /* scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope ul.fancytree-container {
     background-color: #161b1d;
     border-color: #808080;
@@ -11478,7 +11478,7 @@
 }
 
 /* styles/tags/fileTreeBrowser.css */
-@scope (html.dark:has(link[href*="/styles/tags/fileTreeBrowser.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/tags/fileTreeBrowser.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .fileTreeButtons.navbar {
     box-shadow: none;
   }
@@ -11678,7 +11678,7 @@
 }
 
 /* styles/structuredDocument.css */
-@scope (html.dark:has(link[href*="/styles/structuredDocument.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/structuredDocument.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .structuredDocumentTable {
     border-color: #3e3e3e;
   }
@@ -11731,7 +11731,7 @@
 }
 
 /* styles/tinymce_rs.css */
-@scope (html.dark:has(link[href*="/styles/tinymce_rs.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/tinymce_rs.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .mce-txt,
   :scope .mce-text {
     color: #d1d1d1 !important;
@@ -11764,7 +11764,7 @@
 }
 
 /* scripts/bower_components/select2/dist/css/select2.min.css */
-@scope (html.dark:has(link[href*="/scripts/bower_components/select2/dist/css/select2.min.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/bower_components/select2/dist/css/select2.min.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .select2-dropdown {
     background-color: #161b1d;
     border-color: #aaaaaa;
@@ -11959,7 +11959,7 @@
 }
 
 /* styles/signingProcess.css */
-@scope (html.dark:has(link[href*="/styles/signingProcess.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/signingProcess.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #statementSection label {
     color: #d3d3d3;
   }
@@ -11998,7 +11998,7 @@
 }
 
 /* styles/ownCloud.css */
-@scope (html.dark:has(link[href*="/styles/ownCloud.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/ownCloud.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #owncloudDialogTree .fancytree-container {
     background-color: transparent;
     background-image: none;
@@ -12065,7 +12065,7 @@
 }
 
 /* styles/plugins/autocomplete.css */
-@scope (html.dark:has(link[href*="/styles/plugins/autocomplete.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/plugins/autocomplete.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .rte-autocomplete {
     background-color: #161b1d;
     border-color: #454545;
@@ -12120,7 +12120,7 @@
 }
 
 /* styles/tags/createFromTemplateDlg.css */
-@scope (html.dark:has(link[href*="/styles/tags/createFromTemplateDlg.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/styles/tags/createFromTemplateDlg.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #templateDlgTabs {
     background-color: transparent;
     background-image: none;
@@ -12141,7 +12141,7 @@
 }
 
 /* scripts/handsontableCE/handsontable.full.css */
-@scope (html.dark:has(link[href*="/scripts/handsontableCE/handsontable.full.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/handsontableCE/handsontable.full.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope .handsontable th,
   :scope .handsontable td {
     border-right-color: #454545;
@@ -12572,7 +12572,7 @@
 }
 
 /* scripts/handsontable-ruleJS/handsontable.formula.css */
-@scope (html.dark:has(link[href*="/scripts/handsontable-ruleJS/handsontable.formula.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/handsontable-ruleJS/handsontable.formula.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope td.formula {
     background-color: #5a5a22;
   }
@@ -12583,7 +12583,7 @@
 }
 
 /* scripts/externalTinymcePlugins/protocols_io/css/protocols_io.css */
-@scope (html.dark:has(link[href*="/scripts/externalTinymcePlugins/protocols_io/css/protocols_io.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/externalTinymcePlugins/protocols_io/css/protocols_io.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope div.document {
     background-color: #122130;
     border-color: #595959;
@@ -12591,7 +12591,7 @@
 }
 
 /* scripts/externalTinymcePlugins/sketch/css/sketch.css */
-@scope (html.dark:has(link[href*="/scripts/externalTinymcePlugins/sketch/css/sketch.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/externalTinymcePlugins/sketch/css/sketch.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #template-nav {
     background-color: #1c2225;
     background-image: none;
@@ -12609,7 +12609,7 @@
 }
 
 /* scripts/externalTinymcePlugins/toolbar/styles/main.css */
-@scope (html.dark:has(link[href*="/scripts/externalTinymcePlugins/toolbar/styles/main.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/externalTinymcePlugins/toolbar/styles/main.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #current_toolbar table td {
     border-color: #3a3a3a;
   }
@@ -12630,7 +12630,7 @@
 }
 
 /* scripts/externalTinymcePlugins/tools/css/dilution-calc.css */
-@scope (html.dark:has(link[href*="/scripts/externalTinymcePlugins/tools/css/dilution-calc.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/externalTinymcePlugins/tools/css/dilution-calc.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #dilutionCalculatorDiv * {
     color: #bfbfbf !important;
   }
@@ -12641,7 +12641,7 @@
 }
 
 /* scripts/externalTinymcePlugins/tools/css/master-mix.css */
-@scope (html.dark:has(link[href*="/scripts/externalTinymcePlugins/tools/css/master-mix.css"])) to (.textFieldViewModeDiv, .journalPageContent) {
+@scope (html.dark[data-stylesheets*="/scripts/externalTinymcePlugins/tools/css/master-mix.css "]) to (.textFieldViewModeDiv, .journalPageContent) {
   :scope #mastermixCalculatorDiv * {
     color: #bfbfbf !important;
   }

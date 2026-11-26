@@ -12,9 +12,10 @@
  * whose colour needs no change still beats its generated base rule.
  *
  * Each stylesheet's rules are wrapped in
- *   @scope (html.dark:has(link[href*="<sheet>"])) to (<user content>)
- * so they apply only on pages that link that sheet, only in dark mode, and
- * never inside user-authored rich text, which stays light. The hand-written
+ *   @scope (html.dark[data-stylesheets*="<sheet> "]) to (<user content>)
+ * so they apply only in dark mode, only on pages that link that sheet, and
+ * never inside user-authored rich text, which stays light.
+ * common/legacyDarkMode.jsp lists the page's stylesheets in that attribute. The hand-written
  * styles/dark/legacy-dark.css loads after this file and fine-tunes it.
  *
  * Usage: node scripts/generate-legacy-dark-css.mjs [--check]
@@ -395,7 +396,7 @@ const sheets = linkedStylesheets();
 for (const file of sheets) {
   const rules = convertRules(stripComments(readFileSync(join(WEBAPP, file), "utf8")), file, false, stats);
   if (rules.length) {
-    sections.push(`/* ${file} */\n@scope (html.dark:has(link[href*="/${file}"])) ${limit} {\n${indent(rules.join("\n\n"))}\n}`);
+    sections.push(`/* ${file} */\n@scope (html.dark[data-stylesheets*="/${file} "]) ${limit} {\n${indent(rules.join("\n\n"))}\n}`);
   }
 }
 // <style> blocks cannot be tied to the pages that render them, so they apply

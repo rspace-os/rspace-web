@@ -27,8 +27,24 @@
     var dark =
       mode === "dark" ||
       (mode !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    document.documentElement.classList.add(dark ? "dark" : "light");
-    document.documentElement.setAttribute("data-dark-mode", "");
+    var root = document.documentElement;
+    root.classList.add(dark ? "dark" : "light");
+    root.setAttribute("data-dark-mode", "");
+
+    // legacy-generated.css scopes each stylesheet's overrides to pages that
+    // link it, by matching this list. :has(link) would do the same but costs
+    // far more on every style recalculation.
+    function listStylesheets() {
+      var paths = [];
+      var links = document.querySelectorAll('link[rel~="stylesheet"][href]');
+      for (var i = 0; i < links.length; i++) {
+        paths.push(links[i].getAttribute("href").split("?")[0] + " ");
+      }
+      root.setAttribute("data-stylesheets", paths.join(""));
+    }
+    listStylesheets();
+    // Tags can link stylesheets in the body, after this script runs.
+    document.addEventListener("DOMContentLoaded", listStylesheets);
   })();
 </script>
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/dark/legacy-generated.css'/>" />
