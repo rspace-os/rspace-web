@@ -2,6 +2,7 @@ import { afterEach, beforeAll } from "vitest";
 import { cdp, type Locator, locators, server } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
+import { registerTemporalEquality } from "@/__tests__/helpers/temporalEquality";
 import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
 import {
   defaultApiV2SessionHandlers,
@@ -16,6 +17,8 @@ declare module "vitest/browser" {
     getByCSS(selector: string): Locator;
   }
 }
+
+registerTemporalEquality();
 
 locators.extend({
   getByCSS(selector: string) {
