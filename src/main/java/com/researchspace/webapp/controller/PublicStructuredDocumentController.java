@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordSharingManager;
@@ -118,13 +119,16 @@ public class PublicStructuredDocumentController extends BaseController {
       @RequestParam(value = "globalId", required = true) String globalId) {
     Object caller = SecurityUtils.getSubject().getPrincipal();
     boolean signedIn = caller != null && !RecordGroupSharing.ANONYMOUS_USER.equals(caller);
-    String publicLink = getPublicLinkForRecord(new GlobalIdentifier(globalId).getDbId(), signedIn);
+    long id = new GlobalIdentifier(globalId).getDbId();
+    String publicLink = getPublicLinkForRecord(id, signedIn);
     if (publicLink.isEmpty()) {
-      long id = new GlobalIdentifier(globalId).getDbId();
       if (recordManager.exists(id)) {
         Record data = recordManager.get(id);
-        if (data.getParent() != null) {
-          publicLink = getPublicLinkForRecord(data.getParent().getId(), signedIn);
+        // sharing adds a second parent, and getParent() is null for more than one
+        Folder parent =
+            data.getParent() != null ? data.getParent() : data.getOwnerParent().orElse(null);
+        if (parent != null) {
+          publicLink = getPublicLinkForRecord(parent.getId(), signedIn);
           if (!publicLink.isEmpty()) {
             publicLink += "?initialRecordToDisplay=" + data.getId();
           }

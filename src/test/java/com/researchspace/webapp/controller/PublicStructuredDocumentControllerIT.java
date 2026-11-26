@@ -3,6 +3,8 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -282,8 +284,7 @@ public class PublicStructuredDocumentControllerIT extends MVCTestBase {
     // a link-only publication of the entry itself, inside the internet notebook
     publishDocumentForUser(setup.user, entryWithOwnLink);
     // precondition: without the entry's own withheld link, the second assertion repeats the first
-    Assertions.assertNotNull(
-        recShareMgr.getRecordSharingInfo(entryWithOwnLink).get(0).getPublicLink());
+    assertNotNull(recShareMgr.getRecordSharingInfo(entryWithOwnLink).get(0).getPublicLink());
     logoutCurrentUser();
     assertEquals(
         notebookLink + "?initialRecordToDisplay=" + plainEntry,
@@ -291,6 +292,27 @@ public class PublicStructuredDocumentControllerIT extends MVCTestBase {
     assertEquals(
         notebookLink + "?initialRecordToDisplay=" + entryWithOwnLink,
         controller.getPublicDocForRecordOrParentOfRecord("SD" + entryWithOwnLink));
+  }
+
+  @Test
+  public void anonymousCallerGetsInternetNotebookLinkForEntrySharedWithGroup() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, true, 1);
+    publishDocumentForUser(setup.user, setup.notebook.getId(), true, false, "");
+    String notebookLink =
+        recShareMgr.getRecordSharingInfo(setup.notebook.getId()).get(0).getPublicLink();
+    Long entryId = folderMgr.getFolderChildrenIds(setup.notebook).iterator().next();
+    publishDocumentForUser(setup.user, entryId);
+    StructuredDocument entry = (StructuredDocument) recordMgr.get(entryId);
+    shareRecordWithGroup(setup.user, setup.group, entry);
+    // precondition: sharing gives the entry a second parent, so getParent() is null
+    assertNull(recordMgr.get(entryId).getParent());
+    logoutCurrentUser();
+    mockMvc
+        .perform(get("/public/publishedView/publiclink").param("globalId", "SD" + entryId))
+        .andExpect(status().isOk())
+        .andExpect(content().string(notebookLink + "?initialRecordToDisplay=" + entryId));
   }
 
   @Test
