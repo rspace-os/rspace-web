@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.dao.BaseDaoTestCase;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
-import com.researchspace.model.comms.Notification;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Sample;
@@ -24,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Guards the id-generation layout for TABLE-strategy entities: each entity allocates from its own
- * row in hibernate_sequences, keyed by its physical table name, except the two TABLE_PER_CLASS
- * hierarchies whose sibling tables must share one counter. A bare {@code @GeneratedValue(strategy =
- * TABLE)} without a named generator would silently allocate from a shared "default" segment
- * instead, interleaving ids across unrelated tables.
+ * row in hibernate_sequences, keyed by its physical table name, except the user/group
+ * TABLE_PER_CLASS hierarchy whose sibling tables must share one counter. A bare
+ * {@code @GeneratedValue(strategy = TABLE)} without a named generator would silently allocate from
+ * a shared "default" segment instead, interleaving ids across unrelated tables.
  */
 public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
 
@@ -64,7 +63,6 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
   public void tablePerClassHierarchiesShareOneCounterAcrossSiblingTables() {
     assertEquals("AbstractUserOrGroupImpl", segmentOf(User.class));
     assertEquals("AbstractUserOrGroupImpl", segmentOf(Group.class));
-    assertEquals("Communication", segmentOf(Notification.class));
   }
 
   @Test
