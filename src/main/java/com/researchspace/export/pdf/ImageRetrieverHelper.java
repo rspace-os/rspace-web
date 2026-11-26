@@ -13,4 +13,10 @@ public interface ImageRetrieverHelper {
    */
   byte[] getImageBytesFromImgSrc(String imgSrcValue, ExportToFileConfig exportConfig)
       throws IOException;
+
+  /**
+   * @return the image exported in place of one that cannot be retrieved, or {@code null} if even
+   *     that cannot be loaded
+   */
+  byte[] getPlaceholderImage();
 }

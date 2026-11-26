@@ -2,6 +2,7 @@ package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.setupVelocityWithTextFieldTemplates;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -43,6 +46,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class MSWordProcessorTest {
+
+  private static final String ONE_PIXEL_PNG =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
   public static final String STOICHIOMETRY_HTML =
       "<html><div data-stoichiometry-table=\"{\"id\":1, \"revision\":null}\"></div></html>";
@@ -100,7 +106,7 @@ public class MSWordProcessorTest {
         () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
     verify(imageRetriever, Mockito.never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, never()).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, never()).convert(any(Convertible.class), eq("docx"), eq(outfile));
   }
 
   @NotNull
@@ -114,7 +120,20 @@ public class MSWordProcessorTest {
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     Mockito.verify(imageRetriever, never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("docx"), eq(outfile));
+  }
+
+  @Test
+  public void testMakeExportPropagatesLogicalConversionError() {
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile)))
+        .thenReturn(new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code()));
+
+    DocumentConversionException error =
+        assertThrows(
+            DocumentConversionException.class,
+            () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
+
+    assertEquals(DocumentConversionError.OUTPUT_INVALID, error.error());
   }
 
   @Test
@@ -127,7 +146,7 @@ public class MSWordProcessorTest {
   }
 
   private void returnSuccesfullExport(File outfile, ConversionResult success) {
-    Mockito.when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile)))
+    Mockito.when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile)))
         .thenReturn(success);
   }
 
@@ -165,13 +184,58 @@ public class MSWordProcessorTest {
   @Test
   public void testMakeExportWithImages() throws IOException {
     input = createAnyHTMLWithImage();
-    when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile))).thenReturn(success);
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
     when(imageRetriever.getImageBytesFromImgSrc(Mockito.anyString(), eq(cfg)))
-        .thenReturn(new byte[] {1, 2, 3, 4});
+        .thenReturn(java.util.Base64.getDecoder().decode(ONE_PIXEL_PNG));
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     verify(imageRetriever, atMost(1))
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("docx"), eq(outfile));
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    assertTrue(
+        FileUtils.readFileToString(htmlInput, "UTF-8")
+            .contains("data:image/png;base64," + ONE_PIXEL_PNG));
+  }
+
+  @Test
+  public void testMakeExportReplacesRemoteImagesWithPlaceholderWithoutRetrieval()
+      throws IOException {
+    input =
+        new ExportProcessorInput(
+            "<html><img src='http://169.254.169.254/latest/meta-data/'></html>",
+            Collections.emptyList(),
+            null,
+            null,
+            null);
+    when(imageRetriever.getPlaceholderImage())
+        .thenReturn(java.util.Base64.getDecoder().decode(ONE_PIXEL_PNG));
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
+
+    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+
+    verify(imageRetriever, never())
+        .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    String html = FileUtils.readFileToString(htmlInput, "UTF-8");
+    assertTrue(html.contains("data:image/png;base64," + ONE_PIXEL_PNG));
+    assertFalse(html.contains("169.254.169.254"));
+  }
+
+  @Test
+  public void testMakeExportReplacesUnsupportedImageTypesWithPlaceholder() throws IOException {
+    input = createAnyHTMLWithImage();
+    when(imageRetriever.getImageBytesFromImgSrc(Mockito.anyString(), eq(cfg)))
+        .thenReturn("<svg xmlns='http://www.w3.org/2000/svg'/>".getBytes());
+    when(imageRetriever.getPlaceholderImage())
+        .thenReturn(java.util.Base64.getDecoder().decode(ONE_PIXEL_PNG));
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
+
+    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    assertTrue(
+        FileUtils.readFileToString(htmlInput, "UTF-8")
+            .contains("data:image/png;base64," + ONE_PIXEL_PNG));
   }
 
   private ExportProcessorInput createAnyHTMLWithImage() {

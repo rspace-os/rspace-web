@@ -3,7 +3,7 @@ import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import type { URL } from "../../util/types";
-import { supportedAsposeFile } from "./components/CallableAsposePreview";
+import { supportedPreviewFile } from "./components/CallableDocumentPreview";
 import useCollabora from "./useCollabora";
 import { chemistryFilePreview, type GalleryFile } from "./useGalleryListing";
 import useOfficeOnline from "./useOfficeOnline";
@@ -11,9 +11,9 @@ import useOfficeOnline from "./useOfficeOnline";
 const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd", "embl", "ab1"];
 
 /**
- * Aspose, `/molbiol/dna/png` and the chemistry preview URL are all keyed on the live record, so a
- * pinned file gets no preview rather than the wrong one, as its thumbnail already does. Images and
- * PDFs are exempt: they resolve through the version-aware `downloadHref`.
+ * Document conversion, `/molbiol/dna/png` and the chemistry preview URL are all keyed on the live
+ * record, so a pinned file gets no preview rather than the wrong one, as its thumbnail already
+ * does. Images and PDFs are exempt: they resolve through the version-aware `downloadHref`.
  */
 function previewCanAddressTheVersion(file: GalleryFile): Result<null> {
   if (typeof file.pinnedVersion !== "number") return Result.Ok(null);
@@ -132,17 +132,17 @@ export function usePdfPreviewOfGalleryFile(): (file: GalleryFile) => Result<() =
 
 /**
  * Hook that returns a function that can be used to check if a file can be
- * previewed by having Aspose generate a PDF.
+ * previewed by converting it to PDF.
  */
-export function useAsposePreviewOfGalleryFile(): (file: GalleryFile) => Result<null> {
-  const asposeEnabled = useDeploymentProperty("aspose.enabled");
+export function useDocumentPreviewOfGalleryFile(): (file: GalleryFile) => Result<null> {
+  const conversionEnabled = useDeploymentProperty("conversion.enabled");
   return (file) => {
-    return FetchingData.getSuccessValue(asposeEnabled)
+    return FetchingData.getSuccessValue(conversionEnabled)
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
-      .mapError(() => new Error("Aspose is not enabled"))
+      .mapError(() => new Error("Document conversion is not enabled"))
       .flatMap(() => previewCanAddressTheVersion(file))
-      .flatMap(() => supportedAsposeFile(file));
+      .flatMap(() => supportedPreviewFile(file));
   };
 }
 
@@ -168,7 +168,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   | { tag: "collabora"; url: string }
   | { tag: "officeonline"; url: string }
   | { tag: "pdf"; downloadHref: () => Promise<URL> }
-  | { tag: "aspose" }
+  | { tag: "documentPreview" }
   | { tag: "snapgene"; file: GalleryFile }
   | { tag: "snippet" }
 > {
@@ -176,7 +176,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewDocument = useDocumentPreviewOfGalleryFile();
   const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
   const canShowSnippet = useShowSnippet();
 
@@ -222,5 +222,5 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
           file,
         })),
       )
-      .orElseTry(() => canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const })));
+      .orElseTry(() => canPreviewDocument(file).map(() => ({ tag: "documentPreview" as const })));
 }

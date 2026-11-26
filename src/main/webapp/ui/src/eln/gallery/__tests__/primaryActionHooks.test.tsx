@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { galleryFile } from "../components/VersionHistoryDialog.story";
 import { HistoricalGalleryFile } from "../historicalGalleryFile";
-import usePrimaryAction from "../primaryActionHooks";
+import usePrimaryAction, { useDocumentPreviewOfGalleryFile } from "../primaryActionHooks";
 import { CollaboraContext } from "../useCollabora";
 import type { GalleryFile } from "../useGalleryListing";
 import { OfficeOnlineContext } from "../useOfficeOnline";
@@ -25,6 +25,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
           ["collabora.wopi.enabled", true],
           ["msoffice.wopi.enabled", true],
           ["snapgene.available", "ALLOWED"],
+          ["conversion.enabled", true],
         ])
       }
     >
@@ -89,5 +90,30 @@ describe("usePrimaryAction", () => {
     const action = primaryActionFor(pinnedVersionOf(dna()));
 
     expect(action.isError).toBe(true);
+  });
+
+  test("offers conversion preview for every supported document format", () => {
+    const previewDocument = renderHook(() => useDocumentPreviewOfGalleryFile(), { wrapper }).result.current;
+
+    for (const extension of [
+      "csv",
+      "doc",
+      "docx",
+      "md",
+      "odt",
+      "rtf",
+      "txt",
+      "xls",
+      "xlsx",
+      "ods",
+      "pdf",
+      "ppt",
+      "pptx",
+      "odp",
+    ]) {
+      const preview = previewDocument(galleryFile({ name: `document.${extension}`, extension }));
+
+      expect(preview.isOk, extension).toBe(true);
+    }
   });
 });

@@ -8,9 +8,12 @@ import com.researchspace.documentconversion.ext.AsposeWebAppClient;
 import com.researchspace.documentconversion.ext.AsyncDocConverterService;
 import com.researchspace.documentconversion.ext.AsyncDocumentConverterService;
 import com.researchspace.documentconversion.ext.ConversionChecker;
+import com.researchspace.documentconversion.ext.ConversionSidecarClientFactory;
+import com.researchspace.documentconversion.ext.PdfConversionClient;
 import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.service.impl.DummyConversionService;
+import com.researchspace.service.impl.PdfThenPngConverter;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -23,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -33,6 +37,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * ApplicationContext for the entire application.
  */
 @Configuration
+@Import(ConversionSidecarClientFactory.Settings.class)
 @Profile({"prod", "prod-test"})
 @EnableAsync
 public class DocConverterProdConfig {
@@ -58,7 +63,12 @@ public class DocConverterProdConfig {
   @Value("${aspose.enabled:true}")
   private boolean asposeEnabled;
 
-  @Value("${aspose.use.dummy.converter:false}")
+  @Value("${conversion.url:}")
+  private String conversionUrl;
+
+  @Autowired private ConversionSidecarClientFactory.Settings conversionSettings;
+
+  @Value("${conversion.use.dummy.converter:${aspose.use.dummy.converter:false}}")
   private boolean useDummyConverter;
 
   @Autowired DocConverterBaseConfig baseCfg;
@@ -135,6 +145,14 @@ public class DocConverterProdConfig {
     String licensePath = getLicensePath();
     if (useDummyConverter) {
       delegates.add(dummyOrNullService());
+    } else if (!StringUtils.isBlank(conversionUrl)) {
+      ConversionSidecarClientFactory.Clients clients =
+          ConversionSidecarClientFactory.create(conversionUrl, conversionSettings);
+      PdfConversionClient pdfClient = clients.pdf();
+      delegates.add(new PdfThenPngConverter(pdfClient, baseCfg.pdfToImageConverter()));
+      delegates.add(pdfClient);
+      delegates.add(clients.word());
+      log.info("Using the configured Gotenberg and JODConverter sidecar.");
     } else if (asposeEnabled) {
       if (!StringUtils.isBlank(asposeWebAppUrl)) {
         delegates.add(asposeWebAppService());

@@ -163,7 +163,7 @@ public class NotebookEditorController extends BaseController {
         notebookId.equals(grandParentId) ? notebookId : bcrumb.getParentFolderId();
     model.addAttribute("workspaceFolderId", workspaceFolderId);
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(user));
-    model.addAttribute("asposeEnabled", isAsposeEnabled());
+    model.addAttribute("conversionEnabled", isConversionEnabled());
     model.addAttribute("isPublished", notebook.isPublished());
     model.addAttribute("enforce_ontologies", anyGroupEnforcesOntologies(user));
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));

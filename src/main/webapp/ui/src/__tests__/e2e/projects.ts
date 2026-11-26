@@ -15,6 +15,9 @@ const browserProjects: BrowserProject[] = [
 
 const NON_BROWSER_SELECTIONS = ["api", "setup"];
 
+// Opt-in only: its specs need the Docker conversion stack.
+const conversionProject: BrowserProject = { name: "conversion", browserName: "chromium", appUser: USERS.user6f };
+
 /** `E2E_BROWSER` accepts a comma-separated list, e.g. `mobile,api`; empty selects every project. */
 export function parseProjectSelection(selection: string): string[] {
   return selection
@@ -26,15 +29,16 @@ export function parseProjectSelection(selection: string): string[] {
 /** Shared by the runner and authentication setup so each selected user has login state. */
 export function selectBrowserProjects(selection: string, { cloud }: { cloud: boolean }): BrowserProject[] {
   const available = cloud ? browserProjects.filter(({ name }) => name !== "mobile") : browserProjects;
+  const selectable = cloud ? available : [...available, conversionProject];
   const names = parseProjectSelection(selection);
   if (names.length === 0) return available;
   return names
     .filter((name) => !NON_BROWSER_SELECTIONS.includes(name))
     .map((name) => {
-      const project = available.find((candidate) => candidate.name === name);
+      const project = selectable.find((candidate) => candidate.name === name);
       if (!project) {
         throw new Error(
-          `Unknown E2E_BROWSER "${name}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${available.map(({ name }) => name).join(", ")}, api, or setup.`,
+          `Unknown E2E_BROWSER "${name}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${selectable.map(({ name }) => name).join(", ")}, api, or setup.`,
         );
       }
       return project;

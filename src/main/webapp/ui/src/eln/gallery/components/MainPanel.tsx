@@ -75,7 +75,7 @@ import { type Destination, folderDestination, rootDestination, useGalleryActions
 import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import ActionsMenu from "./ActionsMenu";
-import { useAsposePreview } from "./CallableAsposePreview";
+import { useDocumentPreview } from "./CallableDocumentPreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
@@ -812,7 +812,7 @@ const GridView = observer(
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
-    const { openAsposePreview } = useAsposePreview();
+    const { openDocumentPreview } = useDocumentPreview();
     const { openSnapGenePreview } = useSnapGenePreview();
     const { openFolder } = useFolderOpen();
     const { openSnippetPreview } = useSnippetPreview();
@@ -1087,8 +1087,8 @@ const GridView = observer(
                             });
                             return;
                           }
-                          if (action.tag === "aspose") {
-                            void openAsposePreview(file);
+                          if (action.tag === "documentPreview") {
+                            void openDocumentPreview(file);
                           }
                           if (action.tag === "snapgene") {
                             void openSnapGenePreview(file);

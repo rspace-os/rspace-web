@@ -88,9 +88,16 @@ public class ImageRetrieverHelperImpl implements ImageRetrieverHelper {
       LOG.warn("icon with path {} cannot be loaded", imgSrcValue);
     } else {
       imageData = new byte[(int) icon.contentLength()];
-      IOUtils.read(icon.getInputStream(), imageData);
+      try (var input = icon.getInputStream()) {
+        IOUtils.read(input, imageData);
+      }
     }
     return imageData;
+  }
+
+  @Override
+  public byte[] getPlaceholderImage() {
+    return getUnknown();
   }
 
   byte[] getUnknown() {

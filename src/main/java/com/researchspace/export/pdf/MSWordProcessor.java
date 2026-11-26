@@ -2,6 +2,8 @@ package com.researchspace.export.pdf;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 
+import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
@@ -12,15 +14,16 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.service.UserLocaleService;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.tika.Tika;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
@@ -34,6 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 public class MSWordProcessor extends AbstractExportProcessor implements ExportProcessor {
+
+  private static final long MAX_INLINE_IMAGE_BYTES = 10_000_000;
+  private static final long MAX_TOTAL_INLINE_IMAGE_BYTES = 50_000_000;
+  private static final Set<String> INLINE_IMAGE_TYPES =
+      Set.of("image/png", "image/jpeg", "image/gif");
 
   Logger log = LoggerFactory.getLogger(MSWordProcessor.class);
 
@@ -101,26 +109,27 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
               "This method supports %s export, not %s export",
               ExportFormat.WORD, exportConfig.getExportFormat()));
     }
-    // this puts html and images in the same folder.
-    File htmlInput =
-        extractImagesAndReplaceSrcLinks(tempExportFile, exportInput, exportConfig, strucDoc);
+    File htmlInput = inlineImages(tempExportFile, exportInput, exportConfig, strucDoc);
     Convertible toconvert = new ConvertibleFile(htmlInput);
-    ConversionResult result = docConverter.convert(toconvert, "doc", tempExportFile);
+    ConversionResult result = docConverter.convert(toconvert, "docx", tempExportFile);
     if (!result.isSuccessful()) {
-      log.error("Couldn't convert {} to doc format", toconvert);
+      log.error("Couldn't convert {} to DOCX format", toconvert);
+      throw new DocumentConversionException(
+          DocumentConversionError.fromCode(result.getErrorMsg())
+              .orElse(DocumentConversionError.FAILED));
     }
   }
 
-  private File extractImagesAndReplaceSrcLinks(
+  private File inlineImages(
       File tempExportFile,
       ExportProcessorInput exportInput,
       ExportToFileConfig exportConfig,
       IRSpaceDoc strucDoc)
-      throws IOException, FileNotFoundException {
+      throws IOException {
     String html = exportInput.getDocumentAsHtml();
     Document jsoup = Jsoup.parse(html);
     Elements images = jsoup.getElementsByTag("img");
-    extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
+    inlineImageSources(exportConfig, images);
 
     html = jsoup.html();
     if (html.contains("data-stoichiometry-table")) {
@@ -178,18 +187,60 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     return doc;
   }
 
-  private void extractImageFileAndUpdateLinkFromImages(
-      File tempExportFile, ExportToFileConfig exportConfig, Elements images)
-      throws IOException, FileNotFoundException {
-    for (int i = 0; i < images.size(); i++) {
-      Element img = images.get(i);
-      byte[] imgData = imageHelper.getImageBytesFromImgSrc(img.attr("src"), exportConfig);
-      String imageName = RandomStringUtils.randomAlphabetic(10) + ".png";
-      File outfile = new File(tempExportFile.getParentFile(), imageName);
-      img.attr("src", imageName); // replace image name
-      try (FileOutputStream fos = new FileOutputStream(outfile)) {
-        IOUtils.write(imgData, fos);
+  /**
+   * Inlines each image as a data URI. An image that cannot be inlined (a remote or invalid source,
+   * an unsupported type, or one past the size limits) becomes the placeholder image, as in other
+   * exports, rather than failing the whole export.
+   */
+  private void inlineImageSources(ExportToFileConfig exportConfig, Elements images)
+      throws IOException {
+    long totalBytes = 0;
+    Tika tika = new Tika();
+    for (Element img : images) {
+      String source = img.attr("src");
+      byte[] imgData =
+          isInternalImageSource(source)
+              ? imageHelper.getImageBytesFromImgSrc(source, exportConfig)
+              : null;
+      String mediaType = imgData == null ? null : tika.detect(imgData).toLowerCase(Locale.ROOT);
+      if (imgData == null
+          || imgData.length == 0
+          || imgData.length > MAX_INLINE_IMAGE_BYTES
+          || totalBytes + imgData.length > MAX_TOTAL_INLINE_IMAGE_BYTES
+          || !INLINE_IMAGE_TYPES.contains(mediaType)) {
+        imgData = imageHelper.getPlaceholderImage();
+        mediaType = imgData == null ? null : tika.detect(imgData).toLowerCase(Locale.ROOT);
+        if (imgData == null
+            || !INLINE_IMAGE_TYPES.contains(mediaType)
+            || totalBytes + imgData.length > MAX_TOTAL_INLINE_IMAGE_BYTES) {
+          log.warn("Dropping an image that cannot be inlined in Word export");
+          img.remove();
+          continue;
+        }
+        log.warn("Exporting a placeholder for an image that cannot be inlined in Word export");
       }
+      totalBytes += imgData.length;
+      img.attr(
+          "src", "data:" + mediaType + ";base64," + Base64.getEncoder().encodeToString(imgData));
+    }
+  }
+
+  private boolean isInternalImageSource(String source) {
+    if (source == null
+        || source.isBlank()
+        || source.startsWith("//")
+        || source.indexOf('\\') >= 0) {
+      return false;
+    }
+    try {
+      URI uri = URI.create(source);
+      String path = uri.getPath();
+      return !uri.isAbsolute()
+          && uri.getAuthority() == null
+          && path != null
+          && !java.nio.file.Path.of(path).normalize().startsWith("..");
+    } catch (IllegalArgumentException e) {
+      return false;
     }
   }
 }

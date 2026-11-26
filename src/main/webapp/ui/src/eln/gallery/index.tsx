@@ -30,7 +30,7 @@ import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
 import { GALLERY_SECTION, type GallerySection, SELECTED_OR_FOCUS_BLUE, translateGallerySectionLabel } from "./common";
-import { CallableAsposePreview } from "./components/CallableAsposePreview";
+import { CallableDocumentPreview } from "./components/CallableDocumentPreview";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableSnapGenePreview } from "./components/CallableSnapGenePreview";
@@ -208,7 +208,7 @@ const WholePage = ({
       {pageTitle !== null && <title>{pageTitle}</title>}
       <CallableImagePreview>
         <CallablePdfPreview>
-          <CallableAsposePreview>
+          <CallableDocumentPreview>
             <CallableSnapGenePreview>
               <CallableSnippetPreview>
                 <OpenFolderProvider
@@ -306,7 +306,7 @@ const WholePage = ({
                 </OpenFolderProvider>
               </CallableSnippetPreview>
             </CallableSnapGenePreview>
-          </CallableAsposePreview>
+          </CallableDocumentPreview>
         </CallablePdfPreview>
       </CallableImagePreview>
     </Box>
