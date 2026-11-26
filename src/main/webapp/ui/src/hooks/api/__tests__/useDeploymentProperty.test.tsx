@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
@@ -54,6 +55,20 @@ describe("useDeploymentProperty", () => {
       JSON.stringify({ tag: "success", value: "ALLOWED" }),
     );
     expect(requested).toEqual(["snapgene.available", "snapgene.available"]);
+  });
+
+  test("a request made while the browser reports offline is still sent", async () => {
+    const requested = countRequests(() => HttpResponse.json(true));
+    onlineManager.setOnline(false);
+    try {
+      render(<Consumer name="deployment.cloud" />);
+      expect(await screen.findByText(/"tag":"success"/)).toHaveTextContent(
+        JSON.stringify({ tag: "success", value: true }),
+      );
+    } finally {
+      onlineManager.setOnline(true);
+    }
+    expect(requested).toEqual(["deployment.cloud"]);
   });
 
   test("changing the property name fetches the new property", async () => {

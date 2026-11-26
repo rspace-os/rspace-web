@@ -17,7 +17,9 @@ import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "./de
  * Each property is fetched at most once per page load and shared by every
  * component and React island on the page, through
  * `deploymentPropertyQueryClient`. A failed request is retried the next time
- * a component using that property mounts.
+ * a component using that property mounts. The error is shared too, so while
+ * that retry is in flight every component using the property shows loading
+ * again instead of the earlier error.
  *
  * @returns The current value of the deployment property wrapped in a
  *          `Fetched`. The wrapped value could be any JSON value so further

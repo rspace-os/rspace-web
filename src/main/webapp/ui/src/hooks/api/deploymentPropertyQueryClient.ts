@@ -11,8 +11,10 @@ import { QueryClient } from "@tanstack/react-query";
  * a test file's `vi.mock` calls take effect.
  */
 export const deploymentPropertyQueryClient = new QueryClient({
-  // a failed property has no data and so counts as stale; do not refetch it on every focus or reconnect
-  defaultOptions: { queries: { refetchOnWindowFocus: false, refetchOnReconnect: false } },
+  // No QueryClientProvider mounts this client, so it never hears online events
+  // and would never resume a request paused while the browser reports offline.
+  // Send every request, as the plain axios call did, and let it fail instead.
+  defaultOptions: { queries: { networkMode: "always" } },
 });
 
 export const deploymentPropertyQueryKeys = {
