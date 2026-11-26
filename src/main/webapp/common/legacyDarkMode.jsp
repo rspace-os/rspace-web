@@ -11,7 +11,15 @@
   The overrides are written as @scope rules. A browser without @scope would
   ignore them and show light panels under dark page text, so such a browser
   keeps the page, and its React roots, light.
+
+  The stylesheets apply to the screen only, so printed pages stay light. The
+  print style overrides the color-scheme that colorScheme.ts sets inline.
 --%>
+<style media="print">
+  html {
+    color-scheme: light !important;
+  }
+</style>
 <script>
   (function () {
     var mode = null;
@@ -49,5 +57,5 @@
     document.addEventListener("DOMContentLoaded", listStylesheets);
   })();
 </script>
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/dark/legacy-generated.css'/>" />
-<link rel="stylesheet" href="<rst:assetUrl value='/styles/dark/legacy-dark.css'/>" />
+<link rel="stylesheet" media="screen" href="<rst:assetUrl value='/styles/dark/legacy-generated.css'/>" />
+<link rel="stylesheet" media="screen" href="<rst:assetUrl value='/styles/dark/legacy-dark.css'/>" />

@@ -183,6 +183,14 @@ function darkShadow(c) {
   return luminance(c) >= 0.45 ? darkSurface(c) : c;
 }
 
+/**
+ * The legacy pages show keyboard focus as a dark grey glow, which vanishes on
+ * a dark surface, so in focus rules dark greys become light.
+ */
+function focusShadow(c) {
+  return luminance(c) < 0.2 && rgbToHsl(c).s < 0.15 ? lightText(c) : darkShadow(c);
+}
+
 /** Dark text becomes light; light and mid-tone text stays. */
 function lightText(c) {
   if (luminance(c) >= 0.2) return c;
@@ -312,9 +320,9 @@ function backgroundImages(value, file) {
 /**
  * Returns the dark declarations for one original declaration: every colour
  * it sets, remapped or unchanged, so the generated rules keep the originals'
- * cascade.
+ * cascade. `focus` marks a rule whose selectors all match focused elements.
  */
-function darkDeclarations(prop, value, important, file) {
+function darkDeclarations(prop, value, important, file, focus) {
   const imp = important ? " !important" : "";
   const decl = (p, v) => [`${p}: ${v}${imp}`];
   // Old IE hacks (`#000\9`) are invalid in current browsers, so ignored there.
@@ -336,7 +344,7 @@ function darkDeclarations(prop, value, important, file) {
       ...decl("background-image", backgroundImages(value, file)),
     ];
   }
-  if (prop === "text-shadow" || prop === "box-shadow") return decl(prop, mapColors(value, darkShadow));
+  if (prop === "text-shadow" || prop === "box-shadow") return decl(prop, mapColors(value, focus ? focusShadow : darkShadow));
   if (BORDER_PROPS.test(prop)) {
     const colourProp = prop.endsWith("-color") ? prop : `${prop}-color`;
     if (/^\s*(none|0|hidden)\s*$/i.test(value)) return [];
@@ -394,7 +402,8 @@ function convertRules(css, file, skipElementOnly, stats) {
         return { prop: d.slice(0, colon).trim().toLowerCase(), value, important };
       })
       .filter(Boolean);
-    const dark = decls.flatMap(({ prop, value, important }) => darkDeclarations(prop, value, important, file));
+    const focus = splitTopLevel(prelude, ",").every((s) => /:focus/.test(s));
+    const dark = decls.flatMap(({ prop, value, important }) => darkDeclarations(prop, value, important, file, focus));
     if (!dark.length) continue;
     const selectors = splitTopLevel(prelude, ",").filter((s) => {
       if (/::?-(moz|ms|webkit)-/.test(s)) return false; // vendor pseudos invalidate whole rule lists

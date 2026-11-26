@@ -235,6 +235,26 @@ html.dark .journalPageContent {
     filter: invert(0.9) hue-rotate(180deg);
   }
 
+  /* The date field's input sets black text inline. */
+
+  :scope input.datepicker {
+    color: var(--rs-dark-text) !important;
+  }
+
+  /*
+   * Bootstrap checkboxes draw the box and tick in CSS. The generated rules
+   * darken the blue box and the white tick, so a ticked box barely differs
+   * from an empty one; use the bright accent with a dark tick instead.
+   */
+
+  :scope .bootstrap-custom-flat input[type="checkbox"]:checked::after {
+    background-color: var(--rs-dark-link);
+    border-color: var(--rs-dark-link);
+  }
+  :scope .bootstrap-custom-flat input[type="checkbox"]:checked::before {
+    border-color: var(--rs-dark-on-link);
+  }
+
   /* Revision history search button: its colours are set inline. */
 
   :scope #revisionSearch {

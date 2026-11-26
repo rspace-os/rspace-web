@@ -460,7 +460,7 @@
 
   :scope .bootstrap-custom-flat .form-control:focus {
     border-color: #66afe9;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
   }
 
   :scope .bootstrap-custom-flat .has-success .checkbox,
@@ -3795,11 +3795,11 @@
   :scope input[type="submit"]:focus,
   :scope input[type="file"]:focus,
   :scope select:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .ui-tabs-nav li[role="tab"]:focus {
-    box-shadow: -1px -2px 5px -1px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: -1px -2px 5px -1px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .rs-navbar__tab:focus {
@@ -3858,7 +3858,7 @@
   }
 
   :scope #menuScrollContainer #menuFixer #menuMover .menuInnerPanel a:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #menuScrollContainer .menuScrollButton {
@@ -3982,7 +3982,7 @@
   }
 
   :scope .pagination.new li a:focus {
-    text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    text-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .pagination.new li.active a,
@@ -4043,7 +4043,7 @@
 
   :scope .crudopsTopPanel ul li:focus-within,
   :scope .crudopsTopPanel ul a.link:focus-within {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .crudopsTopPanel ul li a,
@@ -4053,7 +4053,7 @@
 
   :scope .crudopsTopPanel ul li a:focus,
   :scope .crudopsTopPanel ul a.link a:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #searchModePanel {
@@ -4157,7 +4157,7 @@
   :scope .smallBtn:focus,
   :scope .crudopsTopPanel li:focus,
   :scope .crudopsTopPanel a.link:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .smallBtn a,
@@ -4890,7 +4890,7 @@
 
   :scope .form-control:focus {
     border-color: #66afe9;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 8px rgba(102, 175, 233, 0.6);
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 8px rgba(102, 175, 233, 0.6);
   }
 
   :scope .form-control[disabled],
@@ -4919,7 +4919,7 @@
 
   :scope .has-success .form-control:focus {
     border-color: #2b542c;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #67b168;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #67b168;
   }
 
   :scope .has-success .input-group-addon {
@@ -4952,7 +4952,7 @@
 
   :scope .has-warning .form-control:focus {
     border-color: #66512c;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #c0a16b;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #c0a16b;
   }
 
   :scope .has-warning .input-group-addon {
@@ -4985,7 +4985,7 @@
 
   :scope .has-error .form-control:focus {
     border-color: #843534;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #ce8483;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #ce8483;
   }
 
   :scope .has-error .input-group-addon {
@@ -6849,7 +6849,7 @@
   }
 
   :scope .publicListButton:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .formAction {
@@ -7122,7 +7122,7 @@
   }
 
   :scope .pageTopButton:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #communitiesList,
@@ -7149,7 +7149,7 @@
   }
 
   :scope #topBar a:focus {
-    text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    text-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #topBar .divider:after {
@@ -7508,7 +7508,7 @@
   }
 
   :scope .dashboardOptions:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope .dashboardOptions .badge {
@@ -8065,7 +8065,7 @@
   }
 
   :scope #dropper dt a:focus .ui-button-text {
-    text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    text-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #dropper dt a span {
@@ -8105,7 +8105,7 @@
 
   :scope #search_submit:focus {
     box-shadow: none !important;
-    text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    text-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #search_submit .glyphicon:hover {
@@ -9393,7 +9393,7 @@
 
   :scope .bootstrap-namespace .form-control:focus {
     border-color: #66afe9;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 8px rgba(102, 175, 233, 0.6);
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 8px rgba(102, 175, 233, 0.6);
   }
 
   :scope .bootstrap-namespace .form-control[disabled],
@@ -9422,7 +9422,7 @@
 
   :scope .bootstrap-namespace .has-success .form-control:focus {
     border-color: #2b542c;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #67b168;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #67b168;
   }
 
   :scope .bootstrap-namespace .has-success .input-group-addon {
@@ -9455,7 +9455,7 @@
 
   :scope .bootstrap-namespace .has-warning .form-control:focus {
     border-color: #66512c;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #c0a16b;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #c0a16b;
   }
 
   :scope .bootstrap-namespace .has-warning .input-group-addon {
@@ -9488,7 +9488,7 @@
 
   :scope .bootstrap-namespace .has-error .form-control:focus {
     border-color: #843534;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),0 0 6px #ce8483;
+    box-shadow: inset 0 1px 1px rgba(227, 227, 227, 0.075),0 0 6px #ce8483;
   }
 
   :scope .bootstrap-namespace .has-error .input-group-addon {
@@ -11202,7 +11202,7 @@
   :scope .groupsListLink:focus,
   :scope .profileEditButton:focus,
   :scope .profileUploadButton:focus {
-    box-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important;
+    box-shadow: 0px 0px 5px rgba(209, 209, 209, 0.8) !important;
   }
 
   :scope #setOrcidIdButton {
