@@ -1,5 +1,5 @@
 import { type Locator, page } from "vitest/browser";
-import { bookableItemHeading, bookableItemTarget, css } from "../../bookable-items/pageObjects/bookableItemLocators";
+import { bookableItemHeading, bookableItemTarget } from "../../bookable-items/pageObjects/bookableItemLocators";
 
 export class CalendarAvailabilityPage {
   get instrumentName(): Locator {
@@ -26,11 +26,12 @@ export class CalendarAvailabilityPage {
   }
 
   get tableElement(): Locator {
-    return css('[data-slot="table"][aria-label="All items table"]');
+    // The table and card wrappers have no useful accessible query handle.
+    return page.getByCSS('[data-slot="table"][aria-label="All items table"]');
   }
 
   get cards(): Locator {
-    return css('[data-slot="table-list-card-view"][aria-label="All items cards"]');
+    return page.getByCSS('[data-slot="table-list-card-view"][aria-label="All items cards"]');
   }
 
   get search(): Locator {
@@ -45,7 +46,7 @@ export class CalendarAvailabilityPage {
   get filtersPanel(): Locator {
     const id = this.filtersButton.element().getAttribute("aria-controls");
     if (!id) throw new Error("The Filters button controls no panel");
-    return css(`#${CSS.escape(id)}`);
+    return page.getByCSS(`#${CSS.escape(id)}`);
   }
 
   get resetTable(): Locator {
