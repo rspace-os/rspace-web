@@ -306,14 +306,14 @@ importers:
         specifier: 7.5.0
         version: 7.5.0
       '@tanstack/query-core':
-        specifier: 5.108.3
-        version: 5.108.3
+        specifier: 5.108.4
+        version: 5.108.4
       '@tanstack/react-form':
         specifier: 1.33.5
         version: 1.33.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
       '@tanstack/react-query':
-        specifier: 5.108.3
-        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
+        specifier: 5.108.4
+        version: 5.108.4(@types/react@19.3.0)(react@19.3.1)
       '@tinymce/tinymce-react':
         specifier: 6.3.1
         version: 6.3.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(tinymce@8.10.2)
@@ -342,8 +342,8 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       i18next:
-        specifier: 27.2.5
-        version: 27.2.5(typescript@7.0.2)
+        specifier: 27.2.6
+        version: 27.2.6(typescript@7.0.2)
       i18next-icu:
         specifier: 2.7.1
         version: 2.7.1(intl-messageformat@12.2.1)
@@ -390,8 +390,8 @@ importers:
         specifier: 5.4.4
         version: 5.4.4
       posthog-js:
-        specifier: 1.454.0
-        version: 1.454.0(@types/react@19.3.0)(react@19.3.1)
+        specifier: 1.454.1
+        version: 1.454.1(@types/react@19.3.0)(react@19.3.1)
       pretty-bytes:
         specifier: 7.2.0
         version: 7.2.0
@@ -412,7 +412,7 @@ importers:
         version: 19.3.1(@types/react@19.3.0)(react@19.3.1)
       react-i18next:
         specifier: 18.0.3
-        version: 18.0.3(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react@19.3.1)(typescript@7.0.2)
+        version: 18.0.3(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react@19.3.1)(typescript@7.0.2)
       react-image-crop:
         specifier: 11.1.2
         version: 11.1.2(@types/react@19.3.0)(react@19.3.1)
@@ -559,8 +559,8 @@ importers:
         specifier: 4.13.21
         version: 4.13.21
       i18next-cli:
-        specifier: 1.94.1
-        version: 1.94.1(@swc/helpers@0.5.23)(@types/node@26.6.6)(@types/react@19.3.0)(react@19.3.1)(typescript@7.0.2)
+        specifier: 1.94.2
+        version: 1.94.2(@swc/helpers@0.5.23)(@types/node@26.6.6)(@types/react@19.3.0)(react@19.3.1)(typescript@7.0.2)
       jsdom:
         specifier: 31.0.1
         version: 31.0.1
@@ -3168,8 +3168,8 @@ packages:
     resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
     engines: {node: '>=18'}
 
-  '@tanstack/query-core@5.108.3':
-    resolution: {integrity: sha512-Lh8fyLDlHOdZXfUB+G1M5bKxfQ1Y0/mfydFP+pMjFKweAU4OUiC4MyIBTcW7Ck+Iwt6K3/pzvADrJi2Dc1lwuQ==}
+  '@tanstack/query-core@5.108.4':
+    resolution: {integrity: sha512-2Ks5dlLWz4eXJrthOyG0qW3SLt3xx0RrQmAmN0rnmogiaaOYuWiAe6HAm9KE2b2v8nig+vraNz8fsfZ6fF6zFg==}
 
   '@tanstack/react-form@1.33.5':
     resolution: {integrity: sha512-LlRB28qJwO/QCGaHvWnbdh4haBgTFiZVmzA2uzxSBS3YA7/IqrQ6HOBK70CkFQ+DbflZ7NawsmSln13h5iIdTA==}
@@ -3183,8 +3183,8 @@ packages:
       '@types/react':
         optional: true
 
-  '@tanstack/react-query@5.108.3':
-    resolution: {integrity: sha512-dd9eDuqr6hvoTycO+wwuIgdA10S9gRA5EYsJCByhiATp/Xy0D51XgJUCRYJONgKs3URKApbBfNl8mgAe5wI0+Q==}
+  '@tanstack/react-query@5.108.4':
+    resolution: {integrity: sha512-GlTa94kfEKTVsbzXe58rFA3GZ0ZE7N1aFtbZAfOS3XxMv8YNn4C+8rsz40LorHLazdm5PsqCroWaYAR+ZkMXMQ==}
     peerDependencies:
       '@types/react': ^18 || ^19
       react: ^18 || ^19
@@ -4811,8 +4811,8 @@ packages:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
 
-  i18next-cli@1.94.1:
-    resolution: {integrity: sha512-29ywlzRMJDYTewnHfJ5ORQXZlY8dy0J+7Zg5wb1v76zrV4hWxvK2O5TrOT/VO449RvQtTpK/2AEVz+hi5yhIzQ==}
+  i18next-cli@1.94.2:
+    resolution: {integrity: sha512-Cgij4Y+ofJlbhb0VJYIFZfc0fw2oilcYbI4kyOBvhmo8qxg0FQvW+cPOHMJnMZhKvcDCct99sHHRa8y7Z5NoDA==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -4855,8 +4855,8 @@ packages:
       typescript:
         optional: true
 
-  i18next@27.2.5:
-    resolution: {integrity: sha512-hzw6DP/OV8u9LPLFRNLxoDbehhbEeMwpjQanJv5sRLsYUVYsgqftUSRfWJUbQN5lodGIiFjV9e+lA6M2UILt2g==}
+  i18next@27.2.6:
+    resolution: {integrity: sha512-ScRHHL/oAHaEgi78K770XIDQmOiq3BLjD4zxEoDeva4NLXXLPb83mzeSjFw7SefkwCEpLNC+560Pg0Q3BnCLsA==}
     engines: {node: '>=22'}
     peerDependencies:
       '@types/typescript': '*'
@@ -5996,8 +5996,8 @@ packages:
     resolution: {integrity: sha512-LJlKCCAUFKOuZxipUdYw1NzIITEsPcgyOG9LkvRJvuKj/bRzbuRY0ARXvL0pWGpsZvn8jku+LMep2eU0seHp8g==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-js@1.454.0:
-    resolution: {integrity: sha512-QvONcXcNAbmoAxJml9/asWUDkNJJC7BAp9dtq/zT7hsIlFBTVzwt7XIGBlIdMY5e9WH359xOchqOGPnk0wDYcA==}
+  posthog-js@1.454.1:
+    resolution: {integrity: sha512-Wm82/w7adJGma73SlCwDcdSdnze7a8+rXeI5mbTDbVrvwZyUO5HGIJYRdne3NQR7eB7Xx/kdlhA2vqxuzYT5TQ==}
     peerDependencies:
       '@types/react': '>=16.8.0'
       react: '>=16.8.0'
@@ -10088,7 +10088,7 @@ snapshots:
 
   '@tanstack/pacer-lite@0.1.1': {}
 
-  '@tanstack/query-core@5.108.3': {}
+  '@tanstack/query-core@5.108.4': {}
 
   '@tanstack/react-form@1.33.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)':
     dependencies:
@@ -10101,9 +10101,9 @@ snapshots:
       - '@types/react-dom'
       - react-dom
 
-  '@tanstack/react-query@5.108.3(@types/react@19.3.0)(react@19.3.1)':
+  '@tanstack/react-query@5.108.4(@types/react@19.3.0)(react@19.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.108.3
+      '@tanstack/query-core': 5.108.4
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
@@ -11655,7 +11655,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  i18next-cli@1.94.1(@swc/helpers@0.5.23)(@types/node@26.6.6)(@types/react@19.3.0)(react@19.3.1)(typescript@7.0.2):
+  i18next-cli@1.94.2(@swc/helpers@0.5.23)(@types/node@26.6.6)(@types/react@19.3.0)(react@19.3.1)(typescript@7.0.2):
     dependencies:
       '@croct/json5-parser': 0.2.2
       '@formatjs/icu-messageformat-parser': 3.5.23
@@ -11719,7 +11719,7 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
-  i18next@27.2.5(typescript@7.0.2):
+  i18next@27.2.6(typescript@7.0.2):
     optionalDependencies:
       typescript: 7.0.2
 
@@ -11945,7 +11945,7 @@ snapshots:
       - react
       - react-dom
 
-  ketcher-macromolecules@3.21.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(supports-color@7.2.0)(typescript@7.0.2)(yjs@13.6.31):
+  ketcher-macromolecules@3.21.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(supports-color@7.2.0)(typescript@7.0.2)(yjs@13.6.31):
     dependencies:
       '@babel/runtime': 7.29.7
       '@emotion/react': 11.14.0(@types/react@19.3.0)(react@19.3.1)(supports-color@7.2.0)
@@ -11962,7 +11962,7 @@ snapshots:
       react-contexify: 6.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
       react-dom: 19.3.1(@types/react@19.3.0)(react@19.3.1)
       react-dropzone: 11.7.1(@types/react@19.3.0)(react@19.3.1)
-      react-i18next: 17.1.13(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
+      react-i18next: 17.1.13(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
       react-intersection-observer: 9.16.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
       react-redux: 9.3.0(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1)
       redux: 5.0.1
@@ -12006,7 +12006,7 @@ snapshots:
       intl-messageformat: 10.7.18
       jsonschema: 1.5.0
       ketcher-core: 3.21.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
-      ketcher-macromolecules: 3.21.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(supports-color@7.2.0)(typescript@7.0.2)(yjs@13.6.31)
+      ketcher-macromolecules: 3.21.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(supports-color@7.2.0)(typescript@7.0.2)(yjs@13.6.31)
       lexical: 0.40.0
       lodash: 4.18.1
       miew-react: 0.12.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
@@ -12970,7 +12970,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.4
 
-  posthog-js@1.454.0(@types/react@19.3.0)(react@19.3.1):
+  posthog-js@1.454.1(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       '@posthog/browser-common': 0.13.0
       '@posthog/core': 1.69.2
@@ -13140,11 +13140,11 @@ snapshots:
       react-dom: 19.3.1(@types/react@19.3.0)(react@19.3.1)
       typescript: 7.0.2
 
-  react-i18next@17.1.13(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(typescript@7.0.2):
+  react-i18next@17.1.13(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react-dom@19.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)(typescript@7.0.2):
     dependencies:
       '@babel/runtime': 7.29.7
       html-parse-stringify: 4.0.1
-      i18next: 27.2.5(typescript@7.0.2)
+      i18next: 27.2.6(typescript@7.0.2)
       react: 19.3.1
       use-sync-external-store: 1.7.0(@types/react@19.3.0)(react@19.3.1)
     optionalDependencies:
@@ -13161,10 +13161,10 @@ snapshots:
       '@types/react': 19.3.0
       typescript: 7.0.2
 
-  react-i18next@18.0.3(@types/react@19.3.0)(i18next@27.2.5(typescript@7.0.2))(react@19.3.1)(typescript@7.0.2):
+  react-i18next@18.0.3(@types/react@19.3.0)(i18next@27.2.6(typescript@7.0.2))(react@19.3.1)(typescript@7.0.2):
     dependencies:
       html-parse-stringify: 4.0.1
-      i18next: 27.2.5(typescript@7.0.2)
+      i18next: 27.2.6(typescript@7.0.2)
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
