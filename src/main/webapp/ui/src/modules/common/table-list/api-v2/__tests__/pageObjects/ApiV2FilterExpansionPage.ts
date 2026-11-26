@@ -1,3 +1,4 @@
+import { escapeRegExp } from "es-toolkit";
 import { type Locator, page, userEvent } from "vitest/browser";
 
 export class ApiV2FilterExpansionPage {
@@ -76,8 +77,4 @@ export class ApiV2FilterExpansionPage {
     await page.getByRole("option", { name: new RegExp(`^${escapeRegExp(name)}(?:\\s|$)`) }).findElement();
     await userEvent.keyboard("{ArrowDown}{Enter}");
   }
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
