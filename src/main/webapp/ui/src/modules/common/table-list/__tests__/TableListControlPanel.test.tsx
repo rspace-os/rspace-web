@@ -44,7 +44,7 @@ describe("TableList control panel", () => {
   it("searches custom and extra fields together and preserves the selected namespace", async () => {
     const user = userEvent.setup();
     const onColumnsChange = vi.fn();
-    const onSelectRuntimeField = vi.fn();
+    const selectRuntimeField = vi.fn();
     const extraDefinition: RuntimeFieldDefinition = {
       id: "XFt436162696e6574",
       selector: "extraFields.XFt436162696e6574",
@@ -98,8 +98,7 @@ describe("TableList control panel", () => {
           config={runtimeConfig}
           rows={records}
           getRowId={(row) => row.id}
-          runtimeFieldDefinitions={[]}
-          onSelectRuntimeField={onSelectRuntimeField}
+          runtimeFields={{ definitions: [], onSelect: selectRuntimeField }}
           features={{
             filtering: false,
             sorting: false,
@@ -116,7 +115,7 @@ describe("TableList control panel", () => {
       await screen.findByRole("option", { name: "Cabinetcommon:tableList.filters.customField.types.text" }),
     );
 
-    expect(onSelectRuntimeField).toHaveBeenCalledWith("extraFields", extraDefinition);
+    expect(selectRuntimeField).toHaveBeenCalledWith("extraFields", extraDefinition);
     expect(searches).toHaveLength(1);
     expect(searches[0].getAll("namespace")).toEqual(["customFields", "extraFields"]);
     expect(searches[0].get("q")).toBe("cab");

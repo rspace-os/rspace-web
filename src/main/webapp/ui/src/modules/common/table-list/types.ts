@@ -195,13 +195,19 @@ export type TableListRestoredViewIssue = {
   remove: () => void;
 };
 
+/** Runtime fields the filter and column panels can add, and the callback that loads a chosen definition. */
+export type TableListRuntimeFields = {
+  definitions: readonly RuntimeFieldCatalogForNamespace[];
+  onSelect: (namespace: string, definition: RuntimeFieldDefinition) => void;
+};
+
 export type TableListProps<TDocument extends Record<string, unknown>> = {
   restoredViewIssue?: TableListRestoredViewIssue;
   /** Imperative access for an owner that reports action results outside TableList context. */
   alertsRef?: Ref<TableListAlertsApi>;
-  runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
-  onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  runtimeFields?: TableListRuntimeFields;
+  /** The caller's query scope for searches the filter panel makes. */
+  authScope?: string | number;
   config: ResolvedCollectionConfig<TDocument>;
   rows: readonly TDocument[];
   getRowId: (row: TDocument) => string;

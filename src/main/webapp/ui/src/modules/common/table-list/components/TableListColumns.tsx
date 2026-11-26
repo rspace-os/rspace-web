@@ -15,14 +15,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
-import type {
-  RuntimeFieldCatalogForNamespace,
-  RuntimeFieldDefinition,
-} from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { useTableListDragAccessibility } from "../hooks/useTableListDragAccessibility";
 import { useTableListDragSensors } from "../hooks/useTableListDragSensors";
+import type { TableListRuntimeFields } from "../types";
 import { ColumnChip } from "./ColumnChip";
 import { ColumnDropZone, type ColumnPlacement, columnDropZoneIds } from "./ColumnDropZone";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
@@ -56,8 +53,7 @@ export function TableListColumns<TDocument>({
   config,
   visibleFields,
   onChange,
-  onSelectRuntimeField,
-  runtimeFieldDefinitions,
+  runtimeFields,
   onClose,
 }: {
   /** Unique per table, so several tables on one page have distinct panel ids. */
@@ -65,15 +61,14 @@ export function TableListColumns<TDocument>({
   config: ResolvedCollectionConfig<TDocument>;
   visibleFields: readonly FieldName<TDocument>[];
   onChange: (fields: readonly FieldName<TDocument>[]) => void;
-  onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
+  runtimeFields?: TableListRuntimeFields;
   onClose: () => void;
 }) {
   const { t } = useTranslation<Namespace>("common");
   const { text, fieldLabel, fieldOptionLabel } = useFieldLabels();
   const availableFields = config.fields.filter((field) => field.list !== false);
   const runtimeSources =
-    onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.columnSelectable);
+    runtimeFields === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.columnSelectable);
   const runtimeSourceGroups = groupRuntimeFieldSources(runtimeSources);
   const shown = visibleFields.filter((name) => availableFields.some((field) => field.name === name));
   const propsLayout: Layout<TDocument> = {
@@ -217,7 +212,7 @@ export function TableListColumns<TDocument>({
           ) : null}
         </DragOverlay>
       </DndContext>
-      {runtimeSourceGroups.length > 0 && onSelectRuntimeField ? (
+      {runtimeSourceGroups.length > 0 && runtimeFields ? (
         <div className="mt-4 space-y-3 border-t pt-3">
           <h3 className="text-xs font-semibold tracking-wide uppercase">{t("tableList.fieldGroups.customFields")}</h3>
           {runtimeSourceGroups.map((group) => (
@@ -229,10 +224,10 @@ export function TableListColumns<TDocument>({
                   ? t("tableList.filters.customField.option")
                   : t("tableList.filters.customField.optionVia", { via: text(group.via.label) })
               }
-              known={runtimeFieldDefinitions ?? []}
+              known={runtimeFields.definitions}
               isDefinitionAvailable={(definition) => definition.columnSelectable}
               onSelect={(namespace, definition) => {
-                onSelectRuntimeField(namespace, definition);
+                runtimeFields.onSelect(namespace, definition);
                 const selector = `${namespace}.${definition.id}` as FieldName<TDocument>;
                 if (!draft.shown.includes(selector)) onChange([...draft.shown, selector]);
               }}

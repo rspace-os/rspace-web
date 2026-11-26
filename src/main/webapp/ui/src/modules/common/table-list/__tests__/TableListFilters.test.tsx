@@ -88,7 +88,7 @@ describe("TableList filters", () => {
         config={relatedConfig}
         expression={{ kind: "comparison", field: "owner", operator: "contains", value: "Microscope" }}
         onApply={onApply}
-        onSelectRuntimeField={vi.fn()}
+        runtimeFields={{ definitions: [], onSelect: vi.fn() }}
         onClose={() => undefined}
       />,
     );
@@ -111,7 +111,7 @@ describe("TableList filters", () => {
 
   it("returns the complete loaded definition when reusing a runtime field", async () => {
     const user = userEvent.setup();
-    const onSelectRuntimeField = vi.fn();
+    const selectRuntimeField = vi.fn();
     const definition: RuntimeFieldDefinition = {
       id: "SF104",
       selector: "customFields.SF104",
@@ -174,11 +174,13 @@ describe("TableList filters", () => {
           config={runtimeConfig}
           rows={records}
           getRowId={(row) => row.id}
-          runtimeFieldDefinitions={[
-            { namespace: "customFields", definitions: [definition] },
-            { namespace: "extraFields", definitions: [] },
-          ]}
-          onSelectRuntimeField={onSelectRuntimeField}
+          runtimeFields={{
+            definitions: [
+              { namespace: "customFields", definitions: [definition] },
+              { namespace: "extraFields", definitions: [] },
+            ],
+            onSelect: selectRuntimeField,
+          }}
           features={{
             filtering: { value: emptyFilters, onChange: vi.fn() },
             sorting: false,
@@ -197,7 +199,7 @@ describe("TableList filters", () => {
       await screen.findByRole("option", { name: "Hazard classcommon:tableList.filters.customField.sourceAndId" }),
     );
 
-    expect(onSelectRuntimeField).toHaveBeenCalledWith("customFields", definition);
+    expect(selectRuntimeField).toHaveBeenCalledWith("customFields", definition);
   });
 
   it("does not commit draft changes until Apply filters is selected", async () => {

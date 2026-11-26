@@ -333,8 +333,8 @@ Runtime definition loading blocks collection requests. A network failure offers 
 or unavailable fields preserve the encoded view and offer an explicit reset. Navigation into an
 unresolved rule cannot overwrite the saved view or issue an unfiltered request. Custom route-owned
 pages must apply the same gating using `pending`, `error`, and `missing` from the runtime hook and
-pass `restoredViewIssue` to the table. Pass `runtimeFieldAuthScope` with runtime definitions and the
-selection callback so picker searches use the same caller scope.
+pass `restoredViewIssue` to the table. Pass `runtimeFields` (the definitions and the selection callback)
+and `authScope`, so filter value searches use the caller's scope.
 
 Custom remote sources can use `dataSource.enabled`, including a state predicate, to defer a query
 until their route state is ready. `dataScope` prevents `keepPreviousData` from displaying the previous
