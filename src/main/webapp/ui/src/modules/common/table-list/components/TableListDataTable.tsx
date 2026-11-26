@@ -383,7 +383,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const renderCards = (): ReactNode =>
     renderBodyState(bodyStateFor(status, rowModel.rows.length, false), {
       loading: () => (
-        <section aria-label={cardViewLabel} aria-busy="true" className="py-3">
+        <section aria-label={cardViewLabel} aria-busy="true" data-slot="table-list-card-view" className="py-3">
           <div aria-hidden="true" className="grid grid-cols-1 gap-3 @3xl/table-list:grid-cols-2">
             {Array.from({ length: 4 }, (_, index) => (
               <Skeleton key={index} className="h-28 w-full rounded-md" />
