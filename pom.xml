@@ -1985,7 +1985,7 @@
     <dependency>
       <groupId>org.xhtmlrenderer</groupId>
       <artifactId>flying-saucer-pdf</artifactId>
-      <version>9.7.1</version>
+      <version>9.13.4</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>
