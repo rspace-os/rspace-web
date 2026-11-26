@@ -266,7 +266,12 @@ function splitTopLevel(text, sep) {
 
 const BORDER_PROPS = /^border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-color)?$|^outline(-color)?$|^column-rule(-color)?$/;
 const TEXT_PROPS = new Set(["color", "fill", "stroke", "caret-color", "-webkit-text-fill-color"]);
-const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|-webkit-gradient\((?:[^()]|\([^()]*\))*\)|url\(\s*(['"]?)[^)]*?\1\s*\)/gi;
+/* Gradient arguments nest up to two levels, as in from(rgba(...)). */
+const ARGS = "\\((?:[^()]|\\((?:[^()]|\\([^()]*\\))*\\))*\\)";
+const IMAGE_RE = new RegExp(
+  `(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient${ARGS}|-webkit-gradient${ARGS}|url\\(\\s*(['"]?)[^)]*?\\1\\s*\\)`,
+  "gi",
+);
 
 /**
  * Rewrites a relative url() in `file` so it resolves from the generated file.
@@ -284,10 +289,11 @@ function relocateUrl(token, file) {
 }
 
 /**
- * Gradients with a prefix current browsers ignore. `-webkit-` gradients still
- * render in Chromium, Firefox and Safari, so they are remapped like any other.
+ * Gradients with a prefix no current browser renders. `-webkit-` gradients
+ * render in Chromium, Firefox and Safari, and Firefox may still render
+ * `-moz-` ones, so both are remapped like any other.
  */
-const VENDOR_PREFIXED = /^-(moz|o|ms)-/i;
+const VENDOR_PREFIXED = /^-(o|ms)-/i;
 
 /** Whether the value's only images are gradients with an ignored prefix. */
 function onlyPrefixedImages(value) {

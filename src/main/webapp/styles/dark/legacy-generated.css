@@ -3007,6 +3007,7 @@
   :scope #menu {
     background-color: #014464;
     background-image: none;
+    background-image: -moz-linear-gradient(top, #014260, #013953);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#014260), to(#013953));
     border-color: #002232;
@@ -3017,6 +3018,7 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
+    background-image: -moz-linear-gradient(top, #1c2225, #1f2629);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1c2225), to(#1f2629));
   }
@@ -3049,6 +3051,7 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
+    background-image: -moz-linear-gradient(top, #1f2629, #39464c);
     background-color: transparent;
     background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1f2629), to(#39464c));
   }
@@ -3359,6 +3362,7 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
+    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -3483,6 +3487,7 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
+    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -3503,6 +3508,7 @@
   :scope .ui-buttonset .ui-button.ui-state-active {
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
+    background-image: -moz-linear-gradient(top, #1b3848 0%, #274f66 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
     background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
@@ -6734,13 +6740,13 @@
 
   :scope .carousel-control.left {
     background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
-    background-image: none;
+    background-image: -webkit-gradient(linear,left top,right top,from(rgba(0, 0, 0, 0.5)),to(rgba(0, 0, 0, 0)));
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .carousel-control.right {
     background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
-    background-image: none;
+    background-image: -webkit-gradient(linear,left top,right top,from(rgba(0, 0, 0, 0)),to(rgba(0, 0, 0, 0.5)));
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
   }
 
@@ -8140,6 +8146,8 @@
   :scope .adders,
   :scope .addCont {
     border-color: #4e4e4e;
+    background-color: transparent;
+    background-image: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
     background-color: #1f2729;
     background-image: none;
   }
@@ -8158,6 +8166,8 @@
   :scope .removeCont {
     color: #e6c0b1;
     border-color: #4e4e4e;
+    background-color: transparent;
+    background-image: -moz-linear-gradient(top, #1f2729 0%, #344145 100%);
     background-color: #1f2729;
     background-image: none;
   }
@@ -11105,13 +11115,13 @@
 
   :scope .bootstrap-namespace .carousel-control.left {
     background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
-    background-image: none;
+    background-image: -webkit-gradient(linear,left top,right top,from(rgba(0, 0, 0, 0.5)),to(rgba(0, 0, 0, 0)));
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .bootstrap-namespace .carousel-control.right {
     background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
-    background-image: none;
+    background-image: -webkit-gradient(linear,left top,right top,from(rgba(0, 0, 0, 0)),to(rgba(0, 0, 0, 0.5)));
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
   }
 
@@ -12158,6 +12168,7 @@
   :scope .rte-autocomplete:focus > a {
     color: #ffffff;
     background-color: #00476b;
+    background-image: -moz-linear-gradient(top,#00496e,#004264);
     background-image: -webkit-gradient(linear,0 0,0 100%,from(#00496e),to(#004264));
     background-image: -webkit-linear-gradient(top,#00496e,#004264);
     background-image: linear-gradient(to bottom,#00496e,#004264);
@@ -12168,6 +12179,7 @@
   :scope .rte-autocomplete > .active > a:focus {
     color: #ffffff;
     background-color: #00476b;
+    background-image: -moz-linear-gradient(top,#00496e,#004264);
     background-image: -webkit-gradient(linear,0 0,0 100%,from(#00496e),to(#004264));
     background-image: -webkit-linear-gradient(top,#00496e,#004264);
     background-image: linear-gradient(to bottom,#00496e,#004264);
@@ -12304,8 +12316,8 @@
   }
 
   :scope .handsontable td.area {
-    background-color: rgba(26, 42, 69, 0.34);
-    background-image: none;
+    background-image: -moz-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%, rgba(26, 42, 69, 0.34) 100%);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(26, 42, 69, 0.34)), color-stop(100%,rgba(26, 42, 69, 0.34)));
     background-image: -webkit-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
     background-color: transparent;
     background-image: linear-gradient(to bottom,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
