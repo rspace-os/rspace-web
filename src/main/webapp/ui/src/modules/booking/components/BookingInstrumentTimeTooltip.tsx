@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -54,9 +55,13 @@ export function BookingInstrumentTimeTooltip({
   const dateTime =
     time ??
     (start && end
-      ? formatInstantRange(formatter, new Date(start), new Date(end))
+      ? formatInstantRange(
+          formatter,
+          Temporal.Instant.from(start).epochMilliseconds,
+          Temporal.Instant.from(end).epochMilliseconds,
+        )
       : start
-        ? formatter.format(new Date(start))
+        ? formatter.format(Temporal.Instant.from(start).epochMilliseconds)
         : "");
   const tooltipTrigger = trigger ?? (
     <button

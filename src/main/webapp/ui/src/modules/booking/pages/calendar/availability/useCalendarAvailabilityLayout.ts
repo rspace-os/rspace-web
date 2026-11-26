@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,9 +45,10 @@ export function useCalendarAvailabilityLayout({
   );
   const preferences = useBookingDisplayPreferences();
   const minute = useAlignedMinute();
-  const userToday = todayInTimeZone(preferences.timeZone, new Date(minute));
+  const minuteInstant = Temporal.Instant.fromEpochMilliseconds(minute);
+  const userToday = todayInTimeZone(preferences.timeZone, minuteInstant);
   const today = todayAvailabilityWindow(
-    new Date(minute),
+    minuteInstant,
     preferences.timeZone,
     preferences.availabilityWindow.start,
     preferences.availabilityWindow.end,

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
@@ -62,12 +63,12 @@ const sourced = (
   sourceEndsAt = endsAt,
 ) => ({
   kind,
-  startsAt: new Date(startsAt),
-  endsAt: new Date(endsAt),
+  startsAt: Temporal.Instant.from(startsAt),
+  endsAt: Temporal.Instant.from(endsAt),
   source: {
     id,
-    startsAt: new Date(sourceStartsAt),
-    endsAt: new Date(sourceEndsAt),
+    startsAt: Temporal.Instant.from(sourceStartsAt),
+    endsAt: Temporal.Instant.from(sourceEndsAt),
     ...(kind === "booking"
       ? {
           booking: {
@@ -86,7 +87,7 @@ const sourced = (
 });
 
 const closureId = (globalId: string, startsAt: string, endsAt: string) =>
-  `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
+  `opening-hours:${globalId}:${Temporal.Instant.from(startsAt).toString({ fractionalSecondDigits: 3 })}:${Temporal.Instant.from(endsAt).toString({ fractionalSecondDigits: 3 })}`;
 
 // Later pages always request page 1 and continue after the last row: `;(start=gt=S,(start==S;id=gt=ID))`.
 const keysetAfterId = (request: Request) =>
@@ -145,8 +146,8 @@ describe("calendar availability", () => {
     expect(result.get("IN1")).toEqual([
       expect.objectContaining({
         kind: "blockout",
-        startsAt: new Date(eventKind === "MAINTENANCE" ? "2026-08-17T10:00:00Z" : "2026-08-17T09:50:00Z"),
-        endsAt: new Date(eventKind === "MAINTENANCE" ? "2026-08-17T11:00:00Z" : "2026-08-17T11:10:00Z"),
+        startsAt: Temporal.Instant.from(eventKind === "MAINTENANCE" ? "2026-08-17T10:00:00Z" : "2026-08-17T09:50:00Z"),
+        endsAt: Temporal.Instant.from(eventKind === "MAINTENANCE" ? "2026-08-17T11:00:00Z" : "2026-08-17T11:10:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
@@ -414,7 +415,14 @@ describe("calendar availability", () => {
 
     const result = await loadCalendarAvailability([row], interval, new AbortController().signal);
 
-    expect(result.get("IN1")?.map(({ startsAt, endsAt }) => [startsAt.toISOString(), endsAt.toISOString()])).toEqual([
+    expect(
+      result
+        .get("IN1")
+        ?.map(({ startsAt, endsAt }) => [
+          startsAt.toString({ fractionalSecondDigits: 3 }),
+          endsAt.toString({ fractionalSecondDigits: 3 }),
+        ]),
+    ).toEqual([
       ["2026-08-17T00:00:00.000Z", "2026-08-17T09:00:00.000Z"],
       ["2026-08-17T17:00:00.000Z", "2026-08-18T10:00:00.000Z"],
       ["2026-08-18T16:00:00.000Z", "2026-08-19T00:00:00.000Z"],
@@ -450,12 +458,16 @@ describe("calendar availability", () => {
       { wrapper, initialProps: { end: "17:00" } },
     );
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T17:00:00.000Z");
+    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toString({ fractionalSecondDigits: 3 })).toBe(
+      "2026-08-17T17:00:00.000Z",
+    );
 
     rerender({ end: "18:00" });
 
     await waitFor(() =>
-      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T18:00:00.000Z"),
+      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toString({ fractionalSecondDigits: 3 })).toBe(
+        "2026-08-17T18:00:00.000Z",
+      ),
     );
   });
 

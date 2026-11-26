@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
@@ -44,8 +45,8 @@ describe("Booking display preferences", () => {
 
   it("supports 24:00 and computes today in an explicit zone", () => {
     expect(minuteOfDay("24:00")).toBe(1440);
-    expect(todayInTimeZone("Pacific/Auckland", new Date("2026-08-28T12:30:00Z"))).toBe("2026-08-29");
-    expect(todayInTimeZone("America/New_York", new Date("2026-08-28T02:30:00Z"))).toBe("2026-08-27");
+    expect(todayInTimeZone("Pacific/Auckland", Temporal.Instant.from("2026-08-28T12:30:00Z"))).toBe("2026-08-29");
+    expect(todayInTimeZone("America/New_York", Temporal.Instant.from("2026-08-28T02:30:00Z"))).toBe("2026-08-27");
   });
 
   it("always includes required timezone identifiers in the options", () => {

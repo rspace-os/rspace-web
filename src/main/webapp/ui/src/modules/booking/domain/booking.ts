@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
 import {
@@ -17,16 +18,15 @@ import type { BookingsRead } from "@/modules/common/api/v2/generated/models/book
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
 import type { InstrumentsRead } from "@/modules/common/api/v2/generated/models/instrumentsRead";
 import { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { parseInstant } from "@/modules/common/time/instant";
 import { requireBookingValue as required } from "./bookingMapping";
 
 export class BookingUnavailableError extends Error {}
 
 export function checkBookingInterval(booking: { start: string; end: string }): void {
-  if (
-    !Number.isFinite(Date.parse(booking.start)) ||
-    !Number.isFinite(Date.parse(booking.end)) ||
-    Date.parse(booking.end) <= Date.parse(booking.start)
-  )
+  const start = parseInstant(booking.start);
+  const end = parseInstant(booking.end);
+  if (start === null || end === null || Temporal.Instant.compare(end, start) <= 0)
     throw new BookingUnavailableError("Booking end must follow start");
 }
 

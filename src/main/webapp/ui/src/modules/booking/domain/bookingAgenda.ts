@@ -65,8 +65,6 @@ export function formatBookingAgendaTimeRange(
 ): string {
   const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
   const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
-  const startDate = new Date(start);
-  const endDate = new Date(end);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: timeFormat === "H24" ? "2-digit" : "numeric",
@@ -74,7 +72,7 @@ export function formatBookingAgendaTimeRange(
     hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
-  const range = formatInstantRange(formatter, startDate, endDate);
+  const range = formatInstantRange(formatter, startZoned.epochMilliseconds, endZoned.epochMilliseconds);
   const startLocalDate = startZoned.toPlainDate();
   const endLocalDate = endZoned.toPlainDate();
   if (startLocalDate.equals(endLocalDate)) return range;
@@ -95,7 +93,7 @@ export function formatBookingAgendaDateTime(
   locale: string,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const date = new Date(value);
+  const epochMilliseconds = Temporal.Instant.from(value).epochMilliseconds;
   const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
   const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
   if (!needsOffset(startZoned, endZoned, timeZone)) {
@@ -104,7 +102,7 @@ export function formatBookingAgendaDateTime(
       timeStyle: "short",
       hourCycle: bookingHourCycle(timeFormat),
       timeZone,
-    }).format(date);
+    }).format(epochMilliseconds);
   }
   return new Intl.DateTimeFormat(locale, {
     timeZone,
@@ -115,5 +113,5 @@ export function formatBookingAgendaDateTime(
     minute: "2-digit",
     hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",
-  }).format(date);
+  }).format(epochMilliseconds);
 }

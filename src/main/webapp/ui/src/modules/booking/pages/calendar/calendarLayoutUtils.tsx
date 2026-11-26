@@ -13,6 +13,7 @@ import {
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { firstDayOfWeek } from "@/modules/common/i18n/localeFormat";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { BookingActions } from "./BookingEventActions";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda", "availability"] as const;
@@ -35,8 +36,9 @@ export function resourceLocation(resource: BookingCalendarResource) {
   return typeof parent === "object" && parent !== null ? parent : undefined;
 }
 
-export function utcDate(date: string): Date {
-  return new Date(`${date}T12:00:00Z`);
+/** Epoch milliseconds at noon UTC on `date`, for formatting a calendar date with `timeZone: "UTC"`. */
+function utcNoon(date: string): number {
+  return Temporal.PlainDate.from(date).toZonedDateTime({ timeZone: "UTC", plainTime: "12:00" }).epochMilliseconds;
 }
 
 export function firstOfMonth(date: string): string {
@@ -126,7 +128,10 @@ export function shiftDate(date: string, view: CalendarView, delta: number): stri
 
 export function occursOn(event: BookingListDocument, date: string, timezone: string): boolean {
   const bounds = zonedDayBounds(date, timezone);
-  return Date.parse(event.start) < Date.parse(bounds.end) && Date.parse(event.end) > Date.parse(bounds.start);
+  return (
+    epochMillisecondsOf(event.start) < epochMillisecondsOf(bounds.end) &&
+    epochMillisecondsOf(event.end) > epochMillisecondsOf(bounds.start)
+  );
 }
 
 export function eventsOn(
@@ -154,7 +159,7 @@ export function timelineEditorPositions(
 }
 
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat(bookingDisplayLocale(), { ...options, timeZone: "UTC" }).format(utcDate(date));
+  return new Intl.DateTimeFormat(bookingDisplayLocale(), { ...options, timeZone: "UTC" }).format(utcNoon(date));
 }
 
 export function scrollCalendarWithArrowKeys(event: React.KeyboardEvent<HTMLElement>) {

@@ -1,9 +1,11 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingAgenda } from "@/modules/booking/components/BookingAgenda";
 import { upcomingDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
+import { instantToWire } from "@/modules/common/time/instant";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { DashboardEmpty, DashboardError } from "./DashboardFeedback";
@@ -37,7 +39,7 @@ export function UpcomingBookingsWidget({
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
-  const asOfIso = new Date(asOf).toISOString();
+  const asOfIso = instantToWire(Temporal.Instant.fromEpochMilliseconds(asOf));
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<number>>(() => new Set());
   // Plain useQuery: rows stay while each minute re-reads, and a failed refresh shows Retry without losing expansion.
   const query = useQuery({

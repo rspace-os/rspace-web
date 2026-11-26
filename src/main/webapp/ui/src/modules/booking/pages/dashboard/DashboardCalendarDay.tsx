@@ -1,6 +1,7 @@
 import { type ComponentProps, createContext, type SetStateAction, useContext, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { plainDateFromPicker } from "@/modules/booking/bookingDates";
 import { BookingSummaryList } from "@/modules/booking/components/BookingSummaryList";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Badge } from "@/modules/common/ui/badge";
@@ -8,7 +9,7 @@ import { Button } from "@/modules/common/ui/button";
 import { CalendarDayButton } from "@/modules/common/ui/calendar";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
-import { calendarDateKey, formatCalendarDate } from "./dashboardHelpers";
+import { formatCalendarDate } from "./dashboardHelpers";
 
 export type DashboardCalendarContextValue = {
   bookingsByDay: ReadonlyMap<string, readonly BookingListDocument[]>;
@@ -26,7 +27,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
   if (!context) throw new Error("DashboardCalendarDay must be rendered inside DashboardCalendarContext");
   const { bookingsByDay, timeZone, locale, openDayKey, setOpenDayKey } = context;
   const { day, children, modifiers, className, ...buttonProps } = props;
-  const dateKey = calendarDateKey(day.date);
+  const dateKey = plainDateFromPicker(day.date, timeZone).toString();
   const bookings = bookingsByDay.get(dateKey) ?? [];
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
@@ -85,7 +86,12 @@ describe("availability quick filters", () => {
 
   it("describes today in the display time zone, whatever the page shows", () => {
     // 23:30Z on 2026-08-16 is already 2026-08-17 in Berlin.
-    const today = todayAvailabilityWindow(new Date("2026-08-16T23:30:00Z"), "Europe/Berlin", "08:00", "18:00");
+    const today = todayAvailabilityWindow(
+      Temporal.Instant.from("2026-08-16T23:30:00Z"),
+      "Europe/Berlin",
+      "08:00",
+      "18:00",
+    );
     expect(today).toMatchObject({
       date: "2026-08-17",
       start: "2026-08-17T06:00:00Z",
@@ -133,7 +139,7 @@ describe("availability quick filters", () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children);
-    const today = todayAvailabilityWindow(new Date("2026-08-17T09:00:00Z"), "UTC", "08:00", "18:00");
+    const today = todayAvailabilityWindow(Temporal.Instant.from("2026-08-17T09:00:00Z"), "UTC", "08:00", "18:00");
 
     const { result } = renderHook(
       () =>
@@ -172,7 +178,7 @@ describe("availability quick filters", () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children);
-    const today = todayAvailabilityWindow(new Date("2026-08-17T09:00:00Z"), "UTC", "00:00", "24:00");
+    const today = todayAvailabilityWindow(Temporal.Instant.from("2026-08-17T09:00:00Z"), "UTC", "00:00", "24:00");
 
     const { result } = renderHook(() => useAvailabilityCounts({}, today, false), { wrapper });
 
@@ -215,12 +221,12 @@ describe("the availability oracle", () => {
     updatedAt: start,
   });
   const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
-    const today = todayAvailabilityWindow(new Date(now), "UTC", "00:00", "24:00");
+    const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");
     return classifyCurrentDayAvailability(
       rowAvailabilityIntervals(candidate, today.bounds, bookings),
-      new Date(today.start),
-      new Date(today.end),
-      new Date(now),
+      Temporal.Instant.from(today.start),
+      Temporal.Instant.from(today.end),
+      Temporal.Instant.from(now),
     );
   };
 

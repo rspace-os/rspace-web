@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import {
@@ -8,6 +9,7 @@ import {
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { togglePreset, withoutPresets } from "@/modules/common/table-list/presets";
 import type { FilterExpression } from "@/modules/common/table-list/types";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { BookingConfiguration } from "../../bookable-items/bookingConfiguration";
 
 export type AvailabilityQuickFilter = CatalogueAvailability;
@@ -103,14 +105,15 @@ export type TodayAvailabilityWindow = CatalogueAvailabilityWindow & {
  * filters always describe today, whatever date the page shows.
  */
 export function todayAvailabilityWindow(
-  now: Date,
+  now: Temporal.Instant,
   displayTimeZone: string,
   windowStart: string,
   windowEnd: string,
 ): TodayAvailabilityWindow {
-  const date = currentWallClock(now.toISOString(), displayTimeZone).date;
+  const nowText = instantToWire(now);
+  const date = currentWallClock(nowText, displayTimeZone).date;
   const bounds = displayInterval(date, displayTimeZone, windowStart, windowEnd);
-  return { date, bounds, start: bounds.start, end: bounds.end, now: now.toISOString() };
+  return { date, bounds, start: bounds.start, end: bounds.end, now: nowText };
 }
 
 /**

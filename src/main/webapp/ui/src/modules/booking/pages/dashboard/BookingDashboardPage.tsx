@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -35,7 +36,7 @@ function BookingDashboardContent() {
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
   const asOf = useAlignedMinute();
-  const today = todayInTimeZone(preferences.timeZone, new Date(asOf));
+  const today = todayInTimeZone(preferences.timeZone, Temporal.Instant.fromEpochMilliseconds(asOf));
 
   return (
     <main className={dashboardPagePadding}>

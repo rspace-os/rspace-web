@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "@/modules/booking/domain/availability";
 import { todayAvailabilityWindow } from "../../pages/calendar/availability/availabilityQuickFilters";
@@ -10,12 +11,12 @@ import {
 } from "../availability";
 import type { Booking } from "../booking";
 
-const start = new Date("2026-08-17T00:00:00Z");
-const end = new Date("2026-08-18T00:00:00Z");
+const start = Temporal.Instant.from("2026-08-17T00:00:00Z");
+const end = Temporal.Instant.from("2026-08-18T00:00:00Z");
 const occupied = (from: string, to: string, kind: AvailabilityInterval["kind"] = "booking") => ({
   kind,
-  startsAt: new Date(from),
-  endsAt: new Date(to),
+  startsAt: Temporal.Instant.from(from),
+  endsAt: Temporal.Instant.from(to),
 });
 
 /**
@@ -52,12 +53,12 @@ describe("the availability oracle", () => {
     updatedAt: start,
   });
   const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
-    const today = todayAvailabilityWindow(new Date(now), "UTC", "00:00", "24:00");
+    const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");
     return classifyCurrentDayAvailability(
       rowAvailabilityIntervals(candidate, today.bounds, bookings),
-      new Date(today.start),
-      new Date(today.end),
-      new Date(now),
+      Temporal.Instant.from(today.start),
+      Temporal.Instant.from(today.end),
+      Temporal.Instant.from(now),
     );
   };
 
@@ -89,8 +90,8 @@ describe("the availability oracle", () => {
           allowDoubleBooking: doubleBooking,
         }),
         {
-          start: start.toISOString(),
-          end: end.toISOString(),
+          start: start.toString(),
+          end: end.toString(),
           elapsedMinutes: 1440,
           date: "2026-08-17",
           timeZone: "UTC",
@@ -98,7 +99,7 @@ describe("the availability oracle", () => {
         [stored],
       );
       const blocked = intervals.some(
-        (interval) => interval.startsAt.getTime() < from + 3600000 && interval.endsAt.getTime() > from,
+        (interval) => interval.startsAt.epochMilliseconds < from + 3600000 && interval.endsAt.epochMilliseconds > from,
       );
       expect(blocked).toBe(inside && !(doubleBooking && requested === "BOOKING" && existing === "BOOKING"));
     },
@@ -185,8 +186,8 @@ describe("availability", () => {
   it("deduplicates booking sources and excludes the booking being edited", () => {
     const source = (id: number) => ({
       id: `booking:${id}`,
-      startsAt: new Date("2026-08-17T10:00:00Z"),
-      endsAt: new Date("2026-08-17T11:00:00Z"),
+      startsAt: Temporal.Instant.from("2026-08-17T10:00:00Z"),
+      endsAt: Temporal.Instant.from("2026-08-17T11:00:00Z"),
       booking: {
         id,
         kind: "BOOKING" as const,
@@ -209,22 +210,22 @@ describe("availability", () => {
   it("marks conflicts where only the buffer, not the event itself, reaches the draft", () => {
     const source = (id: number, from: string, to: string) => ({
       id: `booking:${id}`,
-      startsAt: new Date(from),
-      endsAt: new Date(to),
+      startsAt: Temporal.Instant.from(from),
+      endsAt: Temporal.Instant.from(to),
       booking: { id, kind: "BOOKING" as const, privacy: "full" as const, purpose: null, bookedBy: null },
     });
     // Draft 11:00-12:00 with 15-minute buffers: #42 ends as the draft starts, #43 starts inside it.
     const intervals = [
       {
         kind: "booking" as const,
-        startsAt: new Date("2026-08-17T11:00:00Z"),
-        endsAt: new Date("2026-08-17T11:15:00Z"),
+        startsAt: Temporal.Instant.from("2026-08-17T11:00:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T11:15:00Z"),
         source: source(42, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
       },
       {
         kind: "booking" as const,
-        startsAt: new Date("2026-08-17T11:15:00Z"),
-        endsAt: new Date("2026-08-17T12:00:00Z"),
+        startsAt: Temporal.Instant.from("2026-08-17T11:15:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T12:00:00Z"),
         source: source(43, "2026-08-17T11:30:00Z", "2026-08-17T13:00:00Z"),
       },
     ];
@@ -237,39 +238,39 @@ describe("availability", () => {
 
   it("classifies half-open current and future availability", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T09:00:00Z"))).toBe(
       "free-later-today",
     );
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T10:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T10:00:00Z"))).toBe(
       "available-now",
     );
   });
 
   it("does not claim future availability when occupied through day end", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-18T01:00:00Z")];
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T09:00:00Z"))).toBe(
       "unavailable-today",
     );
   });
 
   it("classifies times before and after the displayed availability window", () => {
-    const windowStart = new Date("2026-08-17T08:00:00Z");
-    const windowEnd = new Date("2026-08-17T18:00:00Z");
-    expect(classifyCurrentDayAvailability([], windowStart, windowEnd, new Date("2026-08-17T07:00:00Z"))).toBe(
-      "free-later-today",
-    );
+    const windowStart = Temporal.Instant.from("2026-08-17T08:00:00Z");
+    const windowEnd = Temporal.Instant.from("2026-08-17T18:00:00Z");
+    expect(
+      classifyCurrentDayAvailability([], windowStart, windowEnd, Temporal.Instant.from("2026-08-17T07:00:00Z")),
+    ).toBe("free-later-today");
     expect(
       classifyCurrentDayAvailability(
         [occupied("2026-08-17T08:00:00Z", "2026-08-17T18:00:00Z")],
         windowStart,
         windowEnd,
-        new Date("2026-08-17T07:00:00Z"),
+        Temporal.Instant.from("2026-08-17T07:00:00Z"),
       ),
     ).toBe("unavailable-today");
     expect(classifyCurrentDayAvailability([], windowStart, windowEnd, windowEnd)).toBe("unavailable-today");
-    expect(classifyCurrentDayAvailability([], windowStart, windowEnd, new Date("2026-08-17T19:00:00Z"))).toBe(
-      "unavailable-today",
-    );
+    expect(
+      classifyCurrentDayAvailability([], windowStart, windowEnd, Temporal.Instant.from("2026-08-17T19:00:00Z")),
+    ).toBe("unavailable-today");
   });
 
   it("retains every contributor when bookings overlap or touch", () => {
@@ -307,8 +308,8 @@ describe("availability", () => {
   it("clips occupied bounds while preserving source metadata", () => {
     const source = {
       id: "booking:42",
-      startsAt: new Date("2026-08-16T22:00:00Z"),
-      endsAt: new Date("2026-08-17T02:00:00Z"),
+      startsAt: Temporal.Instant.from("2026-08-16T22:00:00Z"),
+      endsAt: Temporal.Instant.from("2026-08-17T02:00:00Z"),
     };
     const interval = { ...occupied("2026-08-16T23:00:00Z", "2026-08-17T01:00:00Z"), source };
 
@@ -318,7 +319,7 @@ describe("availability", () => {
       {
         ...interval,
         startsAt: start,
-        endsAt: new Date("2026-08-17T01:00:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T01:00:00Z"),
       },
     ]);
     expect(bookingSlice?.intervals[0].source).toBe(source);
@@ -332,11 +333,10 @@ describe("availability", () => {
     );
   });
 
-  it("rejects invalid dates, periods, and intervals", () => {
+  it("rejects inverted periods and intervals", () => {
     expect(() => buildAvailabilitySegments([], end, start)).toThrow(RangeError);
     expect(() =>
       buildAvailabilitySegments([occupied("2026-08-17T10:00:00Z", "2026-08-17T09:00:00Z")], start, end),
     ).toThrow(RangeError);
-    expect(() => classifyCurrentDayAvailability([], start, end, new Date("invalid"))).toThrow(RangeError);
   });
 });

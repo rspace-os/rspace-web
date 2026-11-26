@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { isNil } from "es-toolkit";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
@@ -113,7 +114,7 @@ function requestError(error: unknown): RequestError | null {
 export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
   const { t } = useTranslation("booking");
 
-  const [today] = useState(() => new Date());
+  const [today] = useState(() => Temporal.Now.plainDateISO("UTC"));
   const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
   const [applied, setApplied] = useState<AuditDateRange>(draft);
   const [search, setSearch] = useState("");
@@ -215,7 +216,11 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
     return draft.from === range.from && draft.to === range.to;
   });
   const resultDate = audit.data
-    ? new Date(new Date(audit.data.endExclusive).getTime() - 86400000).toISOString().slice(0, 10)
+    ? Temporal.Instant.from(audit.data.endExclusive)
+        .toZonedDateTimeISO("UTC")
+        .subtract({ days: 1 })
+        .toPlainDate()
+        .toString()
     : undefined;
   const stableEmpty = resultDate !== undefined && applied.from > resultDate;
   // The daily snapshot ends before today, so a range reaching past it cannot show the newest changes yet.
@@ -224,7 +229,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
     resultDate === undefined
       ? null
       : new Intl.DateTimeFormat(bookingDisplayLocale(), { dateStyle: "medium", timeZone: "UTC" }).format(
-          new Date(`${resultDate}T00:00:00Z`),
+          Temporal.PlainDate.from(resultDate).toZonedDateTime("UTC").epochMilliseconds,
         );
   const truncatedText = audit.data?.truncated
     ? t("bookableItemDetails.audit.truncated", {

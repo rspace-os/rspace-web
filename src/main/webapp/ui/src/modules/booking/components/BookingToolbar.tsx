@@ -1,8 +1,8 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { dateInTimeZone } from "@/modules/booking/bookingDates";
-import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { pickerDate, plainDateFromPicker } from "@/modules/booking/bookingDates";
 import { bookingDisplayLocale } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
@@ -41,9 +41,10 @@ export function BookingDateControls({
 }) {
   const { t } = useTranslation("booking");
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
-  const selectedDate = dateInTimeZone(date, timeZone);
+  const selectedPlainDate = Temporal.PlainDate.from(date);
+  const selectedDate = pickerDate(selectedPlainDate, timeZone);
   const selectedDateLabel = new Intl.DateTimeFormat(bookingDisplayLocale(), { dateStyle: "medium", timeZone }).format(
-    selectedDate,
+    selectedPlainDate.toZonedDateTime(timeZone).epochMilliseconds,
   );
 
   return (
@@ -86,7 +87,7 @@ export function BookingDateControls({
             noonSafe
             onSelect={(selected) => {
               if (!selected) return;
-              onDateChange(todayInTimeZone(timeZone, selected));
+              onDateChange(plainDateFromPicker(selected, timeZone).toString());
               setDatePickerOpen(false);
             }}
           />

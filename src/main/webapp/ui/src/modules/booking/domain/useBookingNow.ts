@@ -41,7 +41,7 @@ export function elapsedNowMinute(now: Temporal.Instant, date: string, timezone: 
 }
 /** Week columns use a fixed wall-clock axis rather than elapsed minutes. */
 export function pastWallClockMinutes(now: Temporal.Instant, date: string, timezone: string) {
-  const today = todayInTimeZone(timezone, new Date(now.epochMilliseconds));
+  const today = todayInTimeZone(timezone, now);
   if (date < today) return 1440;
   if (date > today) return 0;
   const time = now.toZonedDateTimeISO(timezone);

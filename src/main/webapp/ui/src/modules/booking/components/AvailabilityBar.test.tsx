@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
 
@@ -37,7 +38,7 @@ const { BookingSummaryAccordion } = await import("./BookingSummaryAccordion");
 
 const resources = { booking: bookingEnglish };
 
-const periodStart = new Date("2026-08-12T00:00:00.000Z");
+const periodStart = Temporal.Instant.from("2026-08-12T00:00:00.000Z");
 const item = {
   name: "Confocal microscope",
   globalId: "IN123",
@@ -54,12 +55,12 @@ const sourced = (
   booking?: AvailabilitySource["booking"],
 ) => ({
   kind,
-  startsAt: new Date(startsAt),
-  endsAt: new Date(endsAt),
+  startsAt: Temporal.Instant.from(startsAt),
+  endsAt: Temporal.Instant.from(endsAt),
   source: {
     id,
-    startsAt: new Date(sourceStartsAt),
-    endsAt: new Date(sourceEndsAt),
+    startsAt: Temporal.Instant.from(sourceStartsAt),
+    endsAt: Temporal.Instant.from(sourceEndsAt),
     ...(booking ? { booking } : {}),
   },
 });
@@ -98,12 +99,12 @@ describe("AvailabilityBar", () => {
       rerender(
         availabilityBar({
           intervals,
-          periodStart: new Date(periodStart),
+          periodStart: Temporal.Instant.from(periodStart),
           item: { ...item, location: { ...item.location } },
         }),
       );
       expect(buildSlices).not.toHaveBeenCalled();
-      rerender(availabilityBar({ intervals, now: new Date("2026-08-12T11:00:00Z") }));
+      rerender(availabilityBar({ intervals, now: Temporal.Instant.from("2026-08-12T11:00:00Z") }));
       expect(buildSlices).toHaveBeenCalled();
     } finally {
       buildSlices.mockRestore();
@@ -185,7 +186,7 @@ describe("AvailabilityBar", () => {
   it("keeps clock-change offsets in a same-day accessible range", async () => {
     await renderAvailabilityBar({
       timeZone: "Europe/London",
-      periodStart: new Date("2026-10-25T00:00:00Z"),
+      periodStart: Temporal.Instant.from("2026-10-25T00:00:00Z"),
       intervals: [sourced("clock-change", "2026-10-25T00:30:00Z", "2026-10-25T01:30:00Z")],
     });
     expect(
@@ -224,8 +225,8 @@ describe("AvailabilityBar", () => {
     async ({ timeZone, start, end, bookingStart, bookingEnd, expected }) => {
       await renderAvailabilityBar({
         timeZone,
-        periodStart: new Date(start),
-        periodEnd: new Date(end),
+        periodStart: Temporal.Instant.from(start),
+        periodEnd: Temporal.Instant.from(end),
         intervals: [sourced("buffered", start, end, "booking", bookingStart, bookingEnd)],
       });
       expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
@@ -269,8 +270,8 @@ describe("AvailabilityBar", () => {
 
   it("labels and describes a buffered booking with its own interval", async () => {
     await renderRoutedAvailabilityBar({
-      periodStart: new Date("2026-08-12T08:00:00Z"),
-      periodEnd: new Date("2026-08-12T18:00:00Z"),
+      periodStart: Temporal.Instant.from("2026-08-12T08:00:00Z"),
+      periodEnd: Temporal.Instant.from("2026-08-12T18:00:00Z"),
       intervals: [
         sourced(
           "booking:1",
@@ -594,7 +595,7 @@ describe("AvailabilityBar", () => {
 
   it("uses an explicitly supplied arbitrary period", async () => {
     await renderAvailabilityBar({
-      periodEnd: new Date("2026-08-15T00:00:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-15T00:00:00.000Z"),
       intervals: [sourced("fixture:8", "2026-08-14T20:00:00.000Z", "2026-08-14T22:00:00.000Z", "booking")],
     });
 
@@ -605,8 +606,8 @@ describe("AvailabilityBar", () => {
 
   it("optionally shows the period start and end times", async () => {
     const { rerender } = await renderAvailabilityBar({
-      periodStart: new Date("2026-08-12T08:00:00.000Z"),
-      periodEnd: new Date("2026-08-12T18:00:00.000Z"),
+      periodStart: Temporal.Instant.from("2026-08-12T08:00:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-12T18:00:00.000Z"),
     });
 
     expect(screen.queryByText("08:00")).not.toBeInTheDocument();
@@ -614,8 +615,8 @@ describe("AvailabilityBar", () => {
 
     rerender(
       availabilityBar({
-        periodStart: new Date("2026-08-12T08:00:00.000Z"),
-        periodEnd: new Date("2026-08-12T18:00:00.000Z"),
+        periodStart: Temporal.Instant.from("2026-08-12T08:00:00.000Z"),
+        periodEnd: Temporal.Instant.from("2026-08-12T18:00:00.000Z"),
         showPeriodLabels: true,
       }),
     );
@@ -630,8 +631,8 @@ describe("AvailabilityBar", () => {
         <AvailabilityBar
           item={item}
           intervals={[]}
-          periodStart={new Date("2026-08-12T08:00:00.000Z")}
-          periodEnd={new Date("2026-08-12T18:00:00.000Z")}
+          periodStart={Temporal.Instant.from("2026-08-12T08:00:00.000Z")}
+          periodEnd={Temporal.Instant.from("2026-08-12T18:00:00.000Z")}
           showPeriodLabels
           timeZone="UTC"
         />
@@ -645,9 +646,9 @@ describe("AvailabilityBar", () => {
 
   it("positions and labels the current-time marker in the display timezone", async () => {
     await renderAvailabilityBar({
-      now: new Date("2026-08-12T10:00:00.000Z"),
-      periodStart: new Date("2026-08-11T22:00:00.000Z"),
-      periodEnd: new Date("2026-08-12T22:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-12T10:00:00.000Z"),
+      periodStart: Temporal.Instant.from("2026-08-11T22:00:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-12T22:00:00.000Z"),
       timeZone: "Europe/Berlin",
     });
 
@@ -663,11 +664,11 @@ describe("AvailabilityBar", () => {
   it.each([
     {
       expected: "Available until 10:00",
-      now: new Date("2026-08-12T08:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-12T08:00:00.000Z"),
     },
     {
       expected: "Not available · Available from 11:00",
-      now: new Date("2026-08-12T10:30:00.000Z"),
+      now: Temporal.Instant.from("2026-08-12T10:30:00.000Z"),
     },
   ])("optionally shows the current availability as '$expected'", async ({ expected, now }) => {
     await renderAvailabilityBar({
@@ -683,14 +684,14 @@ describe("AvailabilityBar", () => {
     {
       expected: "Available",
       intervals: [],
-      now: new Date("2026-08-12T08:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-12T08:00:00.000Z"),
       periodEnd: undefined,
     },
     {
       expected: "Not available",
       intervals: [sourced("fixture:10", "2026-08-12T23:00:00.000Z", "2026-08-13T01:00:00.000Z")],
-      now: new Date("2026-08-12T23:30:00.000Z"),
-      periodEnd: new Date("2026-08-14T00:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-12T23:30:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-14T00:00:00.000Z"),
     },
   ])("omits the transition time and shows '$expected'", async ({ expected, intervals, now, periodEnd }) => {
     await renderAvailabilityBar({ intervals, now, periodEnd, showCurrentAvailability: true });
@@ -700,9 +701,9 @@ describe("AvailabilityBar", () => {
 
   it("clamps the current time to the edge when it is after the display period", async () => {
     await renderAvailabilityBar({
-      now: new Date("2026-08-13T06:00:00.000Z"),
-      periodStart: new Date("2026-08-11T16:00:00.000Z"),
-      periodEnd: new Date("2026-08-12T16:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-13T06:00:00.000Z"),
+      periodStart: Temporal.Instant.from("2026-08-11T16:00:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-12T16:00:00.000Z"),
       timeZone: "Asia/Singapore",
     });
 
@@ -713,9 +714,9 @@ describe("AvailabilityBar", () => {
 
   it("clamps the current time to the edge when it is before the display period", async () => {
     await renderAvailabilityBar({
-      now: new Date("2026-08-11T06:00:00.000Z"),
-      periodStart: new Date("2026-08-11T16:00:00.000Z"),
-      periodEnd: new Date("2026-08-12T16:00:00.000Z"),
+      now: Temporal.Instant.from("2026-08-11T06:00:00.000Z"),
+      periodStart: Temporal.Instant.from("2026-08-11T16:00:00.000Z"),
+      periodEnd: Temporal.Instant.from("2026-08-12T16:00:00.000Z"),
       timeZone: "Asia/Singapore",
     });
 

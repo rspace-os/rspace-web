@@ -57,7 +57,7 @@ export function formatIsoWeekday(
   locale = bookingLocale(),
 ): string {
   return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
-    new Date(Date.UTC(2024, 0, dayOfWeek)),
+    Temporal.PlainDate.from({ year: 2024, month: 1, day: dayOfWeek }).toZonedDateTime("UTC").epochMilliseconds,
   );
 }
 

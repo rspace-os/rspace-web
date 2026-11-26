@@ -1,8 +1,8 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { dateInTimeZone } from "@/modules/booking/bookingDates";
+import { pickerDate, plainDateFromPicker } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDateTimeLocale, bookingDisplayLocale } from "@/modules/booking/domain/bookingTime";
 import {
@@ -19,13 +19,7 @@ import {
   groupDashboardBookingsByDay,
   TooManyDashboardBookingsError,
 } from "./dashboardBookings";
-import {
-  calendarDateKey,
-  dashboardBooking,
-  formatCalendarDate,
-  formatDayPickerDate,
-  monthStartForTimeZone,
-} from "./dashboardHelpers";
+import { dashboardBooking, formatCalendarDate, formatDayPickerDate, monthStartForTimeZone } from "./dashboardHelpers";
 
 export function AtAGlanceWidget({
   requesterId,
@@ -56,10 +50,9 @@ export function AtAGlanceWidget({
     [interval.dates, query.data, query.isSuccess, timeZone],
   );
   const displayLocale = bookingDisplayLocale();
-  const monthLabel = new Intl.DateTimeFormat(displayLocale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
-    new Date(Date.UTC(month.getFullYear(), month.getMonth(), 1)),
-  );
-  const todayDate = useMemo(() => dateInTimeZone(today, timeZone), [today, timeZone]);
+  const monthLabel = formatDayPickerDate(month, displayLocale, { month: "long", year: "numeric" });
+  const todayDate = useMemo(() => pickerDate(Temporal.PlainDate.from(today), timeZone), [today, timeZone]);
+  const monthDate = useMemo(() => pickerDate(month, timeZone), [month, timeZone]);
   const tooMany = query.error instanceof TooManyDashboardBookingsError;
   const retryLabel = commonT("actions.retry");
   // Calendar creates its Root override on render. Keep the grid mounted while
@@ -68,13 +61,13 @@ export function AtAGlanceWidget({
     () => (
       <Calendar
         mode="single"
-        month={month}
+        month={monthDate}
         today={todayDate}
         timeZone={timeZone}
         noonSafe
         onMonthChange={(nextMonth) => {
           setOpenDayKey(null);
-          setMonth(new TZDate(nextMonth.getFullYear(), nextMonth.getMonth(), 1, timeZone));
+          setMonth(plainDateFromPicker(nextMonth, timeZone).with({ day: 1 }));
         }}
         // Day Picker counts weekdays from Sunday (0); ISO counts from Monday (1) to Sunday (7).
         weekStartsOn={(weekStart % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6}
@@ -82,12 +75,16 @@ export function AtAGlanceWidget({
         className="w-full max-md:[&_.rdp-today]:bg-transparent max-md:[&_[role=gridcell]]:flex max-md:[&_[role=gridcell]]:h-8 max-md:[&_[role=gridcell]]:aspect-auto max-md:[&_[role=gridcell]]:items-center max-md:[&_[role=gridcell]]:justify-center max-md:[&_[role=gridcell]]:rounded-sm max-md:[&_button[data-day]]:h-full max-md:[&_button[data-day]]:w-full max-md:[&_button[data-day]]:aspect-auto max-md:[&_button[data-day]]:rounded-sm max-md:[&_button[data-day]]:py-0"
         formatters={{
           formatCaption: (captionDate) =>
-            formatDayPickerDate(captionDate, displayLocale, { month: "long", year: "numeric" }),
-          formatWeekdayName: (weekdayDate) => formatDayPickerDate(weekdayDate, displayLocale, { weekday: "short" }),
+            formatDayPickerDate(plainDateFromPicker(captionDate, timeZone), displayLocale, {
+              month: "long",
+              year: "numeric",
+            }),
+          formatWeekdayName: (weekdayDate) =>
+            formatDayPickerDate(plainDateFromPicker(weekdayDate, timeZone), displayLocale, { weekday: "short" }),
         }}
         labels={{
           labelDayButton: (date, modifiers) => {
-            const dateLabel = formatCalendarDate(calendarDateKey(date), displayLocale);
+            const dateLabel = formatCalendarDate(plainDateFromPicker(date, timeZone).toString(), displayLocale);
             return modifiers.today ? t("dashboard.calendar.todayLabel", { date: dateLabel }) : dateLabel;
           },
           labelNext: () => t("dashboard.calendar.nextMonth"),
@@ -96,7 +93,7 @@ export function AtAGlanceWidget({
         components={{ DayButton: DashboardCalendarDay }}
       />
     ),
-    [month, todayDate, timeZone, displayLocale, weekStart, t],
+    [monthDate, todayDate, timeZone, displayLocale, weekStart, t],
   );
 
   return (

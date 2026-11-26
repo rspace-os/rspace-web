@@ -4,6 +4,7 @@ import { bookingConflicts, calendarAvailabilityRow } from "@/modules/booking/dom
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 import type { BookingEventKind } from "@/modules/common/api/v2/generated/models/bookingEventKind";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 
 function sameInstant(left: string, right: string): boolean {
   try {
@@ -51,7 +52,7 @@ export function useBookingDraftAvailability({
         ...window,
         date: formState?.draft.startDate ?? "",
         timeZone: target?.timezone ?? displayTimezone,
-        elapsedMinutes: (Date.parse(window.end) - Date.parse(window.start)) / 60_000,
+        elapsedMinutes: (epochMillisecondsOf(window.end) - epochMillisecondsOf(window.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: displayTimezone, elapsedMinutes: 0 };
   const availability = useCalendarAvailability(row && intervalChanged ? [{ ...row, eventKind }] : [], interval);

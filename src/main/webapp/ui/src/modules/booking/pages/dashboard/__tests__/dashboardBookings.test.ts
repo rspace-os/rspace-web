@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
@@ -11,7 +12,6 @@ import {
   groupDashboardBookingsByDay,
   TooManyDashboardBookingsError,
 } from "../dashboardBookings";
-import { calendarDateKey } from "../dashboardHelpers";
 import { bookingTarget, collectionResponse, dashboardBookingFixture } from "../mocks/bookingDashboardMocks";
 
 const testBookingOverrides: Partial<BookingListDocument> = {
@@ -319,24 +319,24 @@ describe("dashboard booking data", () => {
   });
 
   it("keeps month boundaries and grouping in the requested timezone", () => {
-    const interval = dashboardMonthInterval(new Date(2026, 7, 15), "Europe/Berlin", 1);
+    const interval = dashboardMonthInterval(Temporal.PlainDate.from("2026-08-15"), "Europe/Berlin", 1);
     expect(interval.dates).toHaveLength(42);
     expect(interval.dates[0]).toBe("2026-07-27");
     expect(interval.dates.at(-1)).toBe("2026-09-06");
     expect(interval.start).toBe("2026-07-26T22:00:00Z");
     expect(interval.end).toBe("2026-09-06T22:00:00Z");
 
-    const autumn = dashboardMonthInterval(new Date(2026, 9, 15), "Europe/Berlin", 1);
+    const autumn = dashboardMonthInterval(Temporal.PlainDate.from("2026-10-15"), "Europe/Berlin", 1);
     expect(autumn.dates[0]).toBe("2026-09-28");
     expect(autumn.dates.at(-1)).toBe("2026-11-08");
     expect(autumn.start).toBe("2026-09-27T22:00:00Z");
     expect(autumn.end).toBe("2026-11-08T23:00:00Z");
 
-    const yearBoundary = dashboardMonthInterval(new Date(2027, 0, 15), "Europe/Berlin", 1);
+    const yearBoundary = dashboardMonthInterval(Temporal.PlainDate.from("2027-01-15"), "Europe/Berlin", 1);
     expect(yearBoundary.dates[0]).toBe("2026-12-28");
     expect(yearBoundary.dates.at(-1)).toBe("2027-02-07");
 
-    const sundayFirst = dashboardMonthInterval(new Date(2026, 7, 15), "Europe/Berlin", 7);
+    const sundayFirst = dashboardMonthInterval(Temporal.PlainDate.from("2026-08-15"), "Europe/Berlin", 7);
     expect(sundayFirst.dates[0]).toBe("2026-07-26");
     expect(sundayFirst.dates.at(-1)).toBe("2026-09-05");
 
@@ -357,7 +357,6 @@ describe("dashboard booking data", () => {
     );
     expect(grouped.get("2026-03-29")?.map(({ id }) => id)).toEqual([1, 2]);
     expect(grouped.get("2026-03-30")?.map(({ id }) => id)).toEqual([1]);
-    expect(calendarDateKey(new Date(2026, 7, 3, 23, 30))).toBe("2026-08-03");
   });
 });
 

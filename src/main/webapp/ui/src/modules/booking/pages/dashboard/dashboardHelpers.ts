@@ -1,21 +1,20 @@
-import { dateInTimeZone } from "@/modules/booking/bookingDates";
+import { Temporal } from "@js-temporal/polyfill";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 
-export function monthStartForTimeZone(timeZone: string): Date {
-  return dateInTimeZone(`${todayInTimeZone(timeZone).slice(0, 7)}-01`, timeZone);
+/** The first day of the current month in `timeZone`. */
+export function monthStartForTimeZone(timeZone: string): Temporal.PlainDate {
+  return Temporal.PlainDate.from(todayInTimeZone(timeZone)).with({ day: 1 });
 }
 
-export function calendarDateKey(date: Date): string {
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+const utcMidnight = (date: Temporal.PlainDate) => date.toZonedDateTime("UTC").epochMilliseconds;
 
-export function formatDayPickerDate(date: Date, locale: string, options: Intl.DateTimeFormatOptions): string {
-  const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(new Date(`${dateKey}T00:00:00Z`));
+export function formatDayPickerDate(
+  date: Temporal.PlainDate,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(utcMidnight(date));
 }
 
 export function formatCalendarDate(dateKey: string, locale: string): string {
@@ -25,7 +24,7 @@ export function formatCalendarDate(dateKey: string, locale: string): string {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(`${dateKey}T00:00:00Z`));
+  }).format(utcMidnight(Temporal.PlainDate.from(dateKey)));
 }
 
 /** Busy responses are intentionally reduced before passing them to any display component. */

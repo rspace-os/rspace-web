@@ -358,8 +358,7 @@ export function clockChangeOffsetLabel(time: Temporal.ZonedDateTime, day = time.
 }
 
 function zonedDateTime(value: string, timeZone: string): Temporal.ZonedDateTime {
-  // Parsed as Date parses it, so any value the formatters accept also gets its offset.
-  return Temporal.Instant.fromEpochMilliseconds(new Date(value).getTime()).toZonedDateTimeISO(timeZone);
+  return Temporal.Instant.from(value).toZonedDateTimeISO(timeZone);
 }
 
 function dateTimeFormatter(
@@ -392,7 +391,7 @@ export function formatBookingDateTime(
     locale ?? bookingDisplayLocale(timeFormat),
     timeFormat,
     options.timeStyle,
-  ).format(new Date(value));
+  ).format(Temporal.Instant.from(value).epochMilliseconds);
   const offset = clockChangeOffsetLabel(zonedDateTime(value, timeZone)).trim();
   return offset
     ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
@@ -420,7 +419,7 @@ export function formatBookingPeriod(
       timeZone: timezone,
       timeStyle: "short",
       hourCycle: bookingHourCycle(timeFormat),
-    }).format(new Date(end));
+    }).format(endZoned.epochMilliseconds);
     const offset = clockChangeOffsetLabel(endZoned).trim();
     endLabel = offset
       ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
@@ -436,7 +435,7 @@ export function formatBookingPeriod(
 }
 
 /** Format both endpoints without Intl range elision or added date fields. */
-export function formatInstantRange(formatter: Intl.DateTimeFormat, start: Date | number, end: Date | number): string {
+export function formatInstantRange(formatter: Intl.DateTimeFormat, start: number, end: number): string {
   const values = { start: formatter.format(start), end: formatter.format(end), lng: bookingLocale() };
   return i18n.t("booking:time.range", values);
 }
@@ -462,15 +461,15 @@ export function formatAgendaPeriod(
     hour: "2-digit",
     timeZoneName: "shortOffset",
   });
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const offset = (date: Date) =>
-    offsetFormatter.formatToParts(date).find((part) => part.type === "timeZoneName")?.value;
-  const startOffset = offset(startDate);
-  const endOffset = offset(endDate);
+  const startMilliseconds = Temporal.Instant.from(start).epochMilliseconds;
+  const endMilliseconds = Temporal.Instant.from(end).epochMilliseconds;
+  const offset = (epochMilliseconds: number) =>
+    offsetFormatter.formatToParts(epochMilliseconds).find((part) => part.type === "timeZoneName")?.value;
+  const startOffset = offset(startMilliseconds);
+  const endOffset = offset(endMilliseconds);
 
   if (startOffset && startOffset === endOffset) {
-    return formatInstantRange(timeFormatter, startDate, endDate);
+    return formatInstantRange(timeFormatter, startMilliseconds, endMilliseconds);
   }
 
   const withOffset = bookingDateTimeFormatter(resolvedLocale, {
@@ -480,15 +479,16 @@ export function formatAgendaPeriod(
     minute: "2-digit",
     timeZoneName: "shortOffset",
   });
-  return formatInstantRange(withOffset, startDate, endDate);
+  return formatInstantRange(withOffset, startMilliseconds, endMilliseconds);
 }
 
 export function bookingAddedNoticeValues(start: string, end: string, timeZone: string, timeFormat: BookingTimeFormat) {
   const locale = bookingDisplayLocale(timeFormat);
   const clock = bookingDateTimeFormatter(locale, { timeZone, hour: "numeric", minute: "2-digit" });
+  const startMilliseconds = Temporal.Instant.from(start).epochMilliseconds;
   return {
-    date: bookingDateTimeFormatter(locale, { timeZone, dateStyle: "medium" }).format(new Date(start)),
-    start: clock.format(new Date(start)),
-    end: clock.format(new Date(end)),
+    date: bookingDateTimeFormatter(locale, { timeZone, dateStyle: "medium" }).format(startMilliseconds),
+    start: clock.format(startMilliseconds),
+    end: clock.format(Temporal.Instant.from(end).epochMilliseconds),
   };
 }

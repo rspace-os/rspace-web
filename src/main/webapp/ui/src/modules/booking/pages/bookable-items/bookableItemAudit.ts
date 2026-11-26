@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { isNil } from "es-toolkit";
 import * as v from "valibot";
 import { formatIsoWeekday, formatOpeningRange, mapOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
@@ -18,10 +19,10 @@ import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generate
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
+import { instantToWire, parseInstant } from "@/modules/common/time/instant";
 
 const AUDIT_EVENT_ID = /^[0-9a-f]{64}$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_MILLISECONDS = 86_400_000;
 const MAX_AUDIT_DAYS = 183;
 
 // The mapped form only lets the generated interface satisfy useTableList's Record<string, unknown> row constraint.
@@ -30,7 +31,7 @@ export type AuditDateRange = { from: string; to: string };
 export type AuditDateField = "from" | "to";
 export type AuditDateError = "required" | "invalid" | "inverted" | "tooWide";
 type AuditDateValidation =
-  | { valid: true; range: AuditDateRange; dates: { from: Date; to: Date } }
+  | { valid: true; range: AuditDateRange; dates: { from: Temporal.PlainDate; to: Temporal.PlainDate } }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
 
 /**
@@ -51,38 +52,34 @@ export function auditEventKind(event: Pick<ApiV2AuditEvent, "action" | "payload"
   return null;
 }
 
-function utcDate(value: string): Date | null {
+function plainDate(value: string): Temporal.PlainDate | null {
   if (!ISO_DATE.test(value)) return null;
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day ? date : null;
+  try {
+    return Temporal.PlainDate.from(value);
+  } catch {
+    return null;
+  }
 }
 
-function plainUtcDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-export function auditPresetRange(days: 7 | 30 | 90, today = new Date()): AuditDateRange {
-  const to = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-  const from = new Date(to);
-  from.setUTCDate(from.getUTCDate() - (days - 1));
-  return { from: plainUtcDate(from), to: plainUtcDate(to) };
+/** The last `days` days up to `today`, a UTC calendar date. */
+export function auditPresetRange(days: 7 | 30 | 90, today = Temporal.Now.plainDateISO("UTC")): AuditDateRange {
+  return { from: today.subtract({ days: days - 1 }).toString(), to: today.toString() };
 }
 
 export function validateAuditDateRange(range: AuditDateRange): AuditDateValidation {
   const fields: Partial<Record<AuditDateField, AuditDateError>> = {};
-  const from = range.from === "" ? null : utcDate(range.from);
-  const to = range.to === "" ? null : utcDate(range.to);
+  const from = range.from === "" ? null : plainDate(range.from);
+  const to = range.to === "" ? null : plainDate(range.to);
   if (range.from === "") fields.from = "required";
   else if (from === null) fields.from = "invalid";
   if (range.to === "") fields.to = "required";
   else if (to === null) fields.to = "invalid";
   if (from === null || to === null) return { valid: false, fields };
 
-  if (from.getTime() > to.getTime()) {
+  if (Temporal.PlainDate.compare(from, to) > 0) {
     return { valid: false, fields: { from: "inverted", to: "inverted" } };
   }
-  const inclusiveDays = (to.getTime() - from.getTime()) / DAY_MILLISECONDS + 1;
+  const inclusiveDays = from.until(to, { largestUnit: "days" }).days + 1;
   if (inclusiveDays > MAX_AUDIT_DAYS) {
     return { valid: false, fields: { from: "tooWide", to: "tooWide" } };
   }
@@ -94,8 +91,8 @@ export function auditRangeToQuery(range: AuditDateRange): { start: string; end: 
   if (!validation.valid) throw new RangeError("Invalid audit date range");
   const { from, to } = validation.dates;
   return {
-    start: from.toISOString(),
-    end: new Date(to.getTime() + DAY_MILLISECONDS).toISOString(),
+    start: instantToWire(from.toZonedDateTime("UTC").toInstant()),
+    end: instantToWire(to.add({ days: 1 }).toZonedDateTime("UTC").toInstant()),
   };
 }
 
@@ -207,6 +204,16 @@ function wordValue(key: string, value: unknown, words: RecordedValueWords): stri
   return undefined;
 }
 
+/** A recorded start or end, given as an ISO 8601 instant or epoch milliseconds. */
+function auditInstant(value: number | string): Temporal.Instant | null {
+  if (typeof value === "string") return parseInstant(value);
+  try {
+    return Temporal.Instant.fromEpochMilliseconds(value);
+  } catch {
+    return null;
+  }
+}
+
 /** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
 export function recordedValues(
   payload: ApiV2AuditEvent["payload"],
@@ -218,11 +225,11 @@ export function recordedValues(
     .filter(([key, value]) => !(key === "cancellationReason" && value === null))
     .map(([key, value]) => {
       if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
-        const date = new Date(value);
-        if (Number.isFinite(date.getTime())) {
+        const instant = auditInstant(value);
+        if (instant !== null) {
           return [
             key,
-            formatBookingDateTime(date.toISOString(), "UTC", bookingDisplayLocale(timeFormat), timeFormat, {
+            formatBookingDateTime(instantToWire(instant), "UTC", bookingDisplayLocale(timeFormat), timeFormat, {
               timeStyle: "long",
             }),
           ];

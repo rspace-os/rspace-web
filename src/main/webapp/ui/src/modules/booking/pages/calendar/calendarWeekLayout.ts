@@ -3,6 +3,7 @@ import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { layoutVerticalTimelineEvents } from "@/modules/booking/components/verticalTimelineLayout";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { instantToWallClockMinute } from "@/modules/booking/domain/bookingTime";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { eventsOn } from "./calendarLayoutUtils";
 
 export const WEEK_GRID_DAY_MINUTES = 24 * 60;
@@ -41,7 +42,7 @@ export function layoutWeekGridDay(
       const endMinute =
         wallEndMinute > startMinute
           ? wallEndMinute
-          : startMinute + (Date.parse(position.end) - Date.parse(position.start)) / 60_000;
+          : startMinute + (epochMillisecondsOf(position.end) - epochMillisecondsOf(position.start)) / 60_000;
       return [event.id, { booking, event, startMinute, endMinute }] as const;
     }),
   );

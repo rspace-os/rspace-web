@@ -1,4 +1,5 @@
 import { Form, useField, useForm } from "@formisch/react";
+import { Temporal } from "@js-temporal/polyfill";
 import { Link } from "@tanstack/react-router";
 import type { TFunction } from "i18next";
 import { CheckIcon, SaveIcon } from "lucide-react";
@@ -42,6 +43,7 @@ import {
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { ActionBar } from "@/modules/common/ui/action-bar";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
@@ -336,13 +338,18 @@ export function BookingForm(props: BookingFormProps) {
       endOccurrence: undefined,
     }));
   };
-  const hasPastStart = () =>
-    window !== undefined &&
-    Date.parse(window.start) <= Date.now() &&
-    (props.mode === "add" ||
-      (Date.parse(props.booking.start) > Date.now() &&
-        (Date.parse(window.start) !== Date.parse(props.booking.start) ||
-          Date.parse(window.end) !== Date.parse(props.booking.end))));
+  const hasPastStart = () => {
+    if (window === undefined) return false;
+    const now = Temporal.Now.instant().epochMilliseconds;
+    const start = epochMillisecondsOf(window.start);
+    return (
+      start <= now &&
+      (props.mode === "add" ||
+        (epochMillisecondsOf(props.booking.start) > now &&
+          (start !== epochMillisecondsOf(props.booking.start) ||
+            epochMillisecondsOf(window.end) !== epochMillisecondsOf(props.booking.end))))
+    );
+  };
   const submit = async (input: PurposeInput) => {
     // Commit validation attributes before looking up the first invalid field.
     flushSync(() => setAttemptedAt(Date.now()));

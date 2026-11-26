@@ -1,4 +1,5 @@
 import { Tabs } from "@base-ui/react/tabs";
+import { Temporal } from "@js-temporal/polyfill";
 import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
@@ -9,6 +10,7 @@ import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDi
 import { BookingLocalNotices } from "@/modules/booking/feedback/BookingNotices";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { instantToWire } from "@/modules/common/time/instant";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
@@ -109,7 +111,7 @@ export function LoadedBookableItemPage({
     conflictVersion,
     discardConflictedDraft,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab });
-  const [cutoff] = useState(() => new Date().toISOString());
+  const [cutoff] = useState(() => instantToWire(Temporal.Now.instant()));
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
   const target = configuration.target;

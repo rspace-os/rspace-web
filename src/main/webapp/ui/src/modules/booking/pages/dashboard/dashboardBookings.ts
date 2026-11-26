@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import type { Temporal } from "@js-temporal/polyfill";
 import { queryOptions } from "@tanstack/react-query";
 import { uniqBy } from "es-toolkit";
 import {
@@ -11,6 +11,7 @@ import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2S
 import type { ApiV2WhereObject } from "@/modules/common/api/v2/apiV2Where";
 import { getListBookingsQueryKey, listBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { upcomingBookingWhere } from "../my-bookings/bookingCountFilter";
 
 export const DASHBOARD_BOOKING_FIELDS = [...BOOKING_READ_FIELDS, "requester"] as const;
@@ -93,13 +94,21 @@ function dashboardParameters(where: BookingsWhere, page: number, limit = 100) {
   };
 }
 
-function compareBookings(left: BookingListDocument, right: BookingListDocument): number {
-  const byStart = Date.parse(left.start) - Date.parse(right.start);
-  return byStart || left.id - right.id;
+type TimedBooking = { booking: BookingListDocument; start: number; end: number };
+
+/** Each booking with its bounds parsed once, in start then ID order. */
+function timedBookings(bookings: readonly BookingListDocument[]): TimedBooking[] {
+  return bookings
+    .map((booking) => ({
+      booking,
+      start: epochMillisecondsOf(booking.start),
+      end: epochMillisecondsOf(booking.end),
+    }))
+    .sort((left, right) => left.start - right.start || left.booking.id - right.booking.id);
 }
 
 function deduplicateAndSort(bookings: readonly BookingListDocument[]): BookingListDocument[] {
-  return uniqBy(bookings, (booking) => booking.id).sort(compareBookings);
+  return timedBookings(uniqBy(bookings, (booking) => booking.id)).map(({ booking }) => booking);
 }
 
 function validatePage(page: DashboardBookingPage, requestedPage: number): number | null {
@@ -154,7 +163,7 @@ export async function fetchMonthlyDashboardBookings({
  * take from the browser region with `firstDayOfWeek(bookingDateTimeLocale())`.
  */
 export function dashboardMonthInterval(
-  month: Date,
+  month: Temporal.PlainDate,
   timeZone: string,
   weekStart: number,
 ): {
@@ -162,11 +171,7 @@ export function dashboardMonthInterval(
   end: string;
   dates: string[];
 } {
-  const firstOfMonth = Temporal.PlainDate.from({
-    year: month.getFullYear(),
-    month: month.getMonth() + 1,
-    day: 1,
-  });
+  const firstOfMonth = month.with({ day: 1 });
   const firstVisibleDate = firstOfMonth.subtract({ days: (firstOfMonth.dayOfWeek - weekStart + 7) % 7 });
   const dates = Array.from({ length: 42 }, (_, index) => firstVisibleDate.add({ days: index }).toString());
   return {
@@ -184,19 +189,16 @@ export function groupDashboardBookingsByDay(
   const grouped = new Map<string, BookingListDocument[]>(dates.map((date) => [date, []]));
   const bounds = dates.map((date) => {
     const day = zonedDayBounds(date, timeZone);
-    return { date, start: Date.parse(day.start), end: Date.parse(day.end) };
+    return { date, start: epochMillisecondsOf(day.start), end: epochMillisecondsOf(day.end) };
   });
 
-  for (const booking of bookings) {
-    const bookingStart = Date.parse(booking.start);
-    const bookingEnd = Date.parse(booking.end);
+  // Sorted once up front, so each day's list fills in order.
+  for (const { booking, start, end } of timedBookings(bookings)) {
     for (const day of bounds) {
-      if (bookingStart >= day.end || bookingEnd <= day.start) continue;
+      if (start >= day.end || end <= day.start) continue;
       grouped.get(day.date)?.push(booking);
     }
   }
-
-  for (const dayBookings of grouped.values()) dayBookings.sort(compareBookings);
   return grouped;
 }
 

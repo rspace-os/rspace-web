@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
@@ -16,6 +17,7 @@ import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { usePersistedApiV2TableList } from "@/modules/common/table-list/hooks/useApiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import { instantToWire } from "@/modules/common/time/instant";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
@@ -83,12 +85,12 @@ export type UserBookingsPageProps = {
 
 export async function fetchUpcomingBookingCount(
   requesterId: number,
-  asOf: Date,
+  asOf: Temporal.Instant,
   signal?: AbortSignal,
 ): Promise<ApiV2CountResult & { totalDocs: number }> {
   const result = await countBookings(
     {
-      where: upcomingBookingWhere(requesterId, asOf.toISOString()),
+      where: upcomingBookingWhere(requesterId, instantToWire(asOf)),
       max: 100,
     },
     { signal },
@@ -122,14 +124,17 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     [preferences.timeFormat, preferences.timeZone],
   );
   const asOf = useAlignedMinute();
-  const asOfDate = new Date(asOf);
+  const asOfInstant = Temporal.Instant.fromEpochMilliseconds(asOf);
   const baseFilter: ApiV2WhereObject<"Bookings"> = {
     [requesterValueField]: requesterId,
     kind: "BOOKING",
     // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
     ...(period === "cancelled"
       ? { state: "CANCELLED" }
-      : { state: "CONFIRMED", end: period === "upcoming" ? { greaterThan: asOfDate.toISOString() } : { lessThanOrEqual: asOfDate.toISOString() } }),
+      : {
+          state: "CONFIRMED",
+          end: period === "upcoming" ? { greaterThan: asOfInstant } : { lessThanOrEqual: asOfInstant },
+        }),
   };
   const request = {
     authScope: currentUser.id,
@@ -148,7 +153,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   });
   // Plain useQuery: the optional upcoming count must not hide the bookings table.
   const upcomingCount = useQuery({
-    ...upcomingBookingCountQuery(requesterId, asOfDate),
+    ...upcomingBookingCountQuery(requesterId, asOfInstant),
   });
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
@@ -261,9 +266,9 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
   );
 }
 
-export const upcomingBookingCountQuery = (requesterId: number, asOf: Date) =>
+export const upcomingBookingCountQuery = (requesterId: number, asOf: Temporal.Instant) =>
   getCountBookingsQueryOptions(
-    { where: upcomingBookingWhere(requesterId, asOf.toISOString()), max: 100 },
+    { where: upcomingBookingWhere(requesterId, instantToWire(asOf)), max: 100 },
     {
       query: {
         select: (result) => {

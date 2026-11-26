@@ -11,6 +11,7 @@ import { proposeDragRange, timelinePolicy } from "@/modules/booking/creation/tim
 import { closedDayRanges } from "@/modules/booking/domain/availability";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -130,13 +131,13 @@ export function CalendarResourceSchedule({
     const index = new Map<string, BookingListDocument[]>();
     const boundsByDate = dates.map((day) => {
       const bounds = zonedDayBounds(day, timezone);
-      return { day, start: Date.parse(bounds.start), end: Date.parse(bounds.end) };
+      return { day, start: epochMillisecondsOf(bounds.start), end: epochMillisecondsOf(bounds.end) };
     });
     for (const event of events) {
       if (!event.target) continue;
       const occurrence = editorPositions?.get(event.id) ?? event;
-      const eventStart = Date.parse(occurrence.start);
-      const eventEnd = Date.parse(occurrence.end);
+      const eventStart = epochMillisecondsOf(occurrence.start);
+      const eventEnd = epochMillisecondsOf(occurrence.end);
       for (const { day, start, end } of boundsByDate) {
         if (!(eventStart < end && eventEnd > start)) continue;
         const key = `${event.target.globalId}|${day}`;

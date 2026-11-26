@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
@@ -226,13 +227,15 @@ describe("fetchBookingConfigurationAudit", () => {
 
 describe("audit UTC date ranges", () => {
   it("makes preset labels inclusive", () => {
-    const today = new Date("2026-08-27T22:30:00-05:00");
-    expect(auditPresetRange(7, today)).toEqual({ from: "2026-08-22", to: "2026-08-28" });
-    expect(auditPresetRange(30, new Date("2024-03-01T12:00:00Z"))).toEqual({
+    expect(auditPresetRange(7, Temporal.PlainDate.from("2026-08-28"))).toEqual({
+      from: "2026-08-22",
+      to: "2026-08-28",
+    });
+    expect(auditPresetRange(30, Temporal.PlainDate.from("2024-03-01"))).toEqual({
       from: "2024-02-01",
       to: "2024-03-01",
     });
-    expect(auditPresetRange(90, new Date("2026-08-27T00:00:00Z"))).toEqual({
+    expect(auditPresetRange(90, Temporal.PlainDate.from("2026-08-27"))).toEqual({
       from: "2026-05-30",
       to: "2026-08-27",
     });
@@ -262,8 +265,8 @@ describe("audit UTC date ranges", () => {
       valid: true,
       range: { from: "2026-02-26", to: "2026-08-27" },
       dates: {
-        from: new Date("2026-02-26T00:00:00.000Z"),
-        to: new Date("2026-08-27T00:00:00.000Z"),
+        from: Temporal.PlainDate.from("2026-02-26"),
+        to: Temporal.PlainDate.from("2026-08-27"),
       },
     });
     expect(validateAuditDateRange({ from: "2026-02-25", to: "2026-08-27" })).toEqual({

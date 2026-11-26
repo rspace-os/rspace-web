@@ -192,8 +192,8 @@ export function useResetBookingDisplayPreferences() {
     onSuccess: (data) => options.setQueryData(getGetMyBookingPreferencesQueryKey(), data),
   });
 }
-export function todayInTimeZone(timeZone: string, now = new Date()): string {
-  return Temporal.Instant.fromEpochMilliseconds(now.getTime()).toZonedDateTimeISO(timeZone).toPlainDate().toString();
+export function todayInTimeZone(timeZone: string, now = Temporal.Now.instant()): string {
+  return now.toZonedDateTimeISO(timeZone).toPlainDate().toString();
 }
 
 export function bookingTimeZoneOptions(...required: Array<string | null | undefined>): string[] {
