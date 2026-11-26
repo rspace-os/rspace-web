@@ -1,10 +1,5 @@
 import { type Locator, page } from "vitest/browser";
 
-function summariesWithin(root: Locator): Locator {
-  // Vitest Browser does not expose native <summary> as a role locator in Chromium.
-  return (root as unknown as { locator(selector: string): Locator }).locator("css=summary");
-}
-
 export class BookingDashboardPageObject {
   get heading(): Locator {
     return page.getByRole("heading", { name: "Dashboard", exact: true });
@@ -23,7 +18,8 @@ export class BookingDashboardPageObject {
   }
 
   upcomingInstrument(name: string): Locator {
-    return summariesWithin(this.upcoming).filter({ hasText: name });
+    // Vitest Browser does not expose native <summary> as a role locator in Chromium.
+    return this.upcoming.getByCSS("summary").filter({ hasText: name });
   }
 
   upcomingDetailsLink(name: string): Locator {
