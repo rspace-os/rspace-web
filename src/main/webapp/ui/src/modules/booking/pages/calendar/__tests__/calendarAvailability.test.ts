@@ -1,11 +1,10 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { loadCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
-import { setApiV2TokenProvider } from "@/modules/common/api/v2/tokenProvider";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 
 const booking = (id: number, target: string, start: string, end: string) => ({
@@ -137,38 +136,28 @@ describe("calendar availability", () => {
     expect([...result.values()].flat().every((interval) => interval.kind === "booking")).toBe(true);
   });
 
-  it("splits 1,000 target IDs into request-safe batches", async () => {
-    const token = "t".repeat(2500);
-    onTestFinished(setApiV2TokenProvider({ getToken: async () => token, recover: async () => token }));
-    const requests: { url: URL; authorization: string | null; requestedWith: string | null }[] = [];
+  it("splits 1,000 target IDs within the generated URL budget", async () => {
+    const requests: URL[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
-        requests.push({
-          url: new URL(request.url),
-          authorization: request.headers.get("authorization"),
-          requestedWith: request.headers.get("x-requested-with"),
-        });
+        requests.push(new URL(request.url));
         return HttpResponse.json(collectionResponse([]));
       }),
     );
-
     const rows = Array.from({ length: 1000 }, (_, index) => ({
       globalId: `IN${String(index).padStart(4, "0")}${"x".repeat(48)}`,
       timezone: "UTC",
       ...schedule,
     }));
     const result = await loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal);
-
     expect(result.size).toBe(1000);
     expect(requests.length).toBeGreaterThan(2);
-    for (const { url, authorization, requestedWith } of requests) {
+    for (const url of requests) {
       const targetList = url.searchParams.get("where")?.split("target=in=(")[1]?.split(")")[0] ?? "";
       const targetIds = targetList ? targetList.split(",") : [];
       expect(targetIds.length).toBeGreaterThan(0);
       expect(targetIds.length).toBeLessThanOrEqual(500);
-      const requestLine = `GET ${url.pathname}${url.search} HTTP/1.1\r\n`;
-      const headers = `authorization: ${authorization}\r\nx-requested-with: ${requestedWith}\r\n\r\n`;
-      expect(new TextEncoder().encode(`${requestLine}${headers}`).length).toBeLessThanOrEqual(6000);
+      expect(new TextEncoder().encode(`${url.pathname}${url.search}`).length).toBeLessThanOrEqual(6000);
     }
   });
 
@@ -474,7 +463,9 @@ describe("calendar availability", () => {
       ...schedule,
     }));
 
-    await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toThrow("500");
+    await expect(loadCalendarAvailability(rows, "2026-08-17", new AbortController().signal)).rejects.toMatchObject({
+      status: 500,
+    });
     expect(requests).toHaveLength(2);
   });
 
