@@ -1,6 +1,5 @@
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import type MenuItem from "@mui/material/MenuItem";
-import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -43,26 +42,22 @@ const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionA
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={onClick}
-            icon={<AddBoxIcon />}
-            label={t("common:actions.create")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          >
-            <CreateDialog
-              // the key causes the local state to be cleared when closing
-              key={openCreateDialog ? 1 : 0}
-              open={openCreateDialog}
-              onClose={onCloseHandler}
-              existingRecord={selectedResults[0]}
-            />
-          </ContextMenuAction>
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={onClick}
+        icon={<AddBoxIcon />}
+        label={t("common:actions.create")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      >
+        <CreateDialog
+          // the key causes the local state to be cleared when closing
+          key={openCreateDialog ? 1 : 0}
+          open={openCreateDialog}
+          onClose={onCloseHandler}
+          existingRecord={selectedResults[0]}
+        />
+      </ContextMenuAction>
     );
   },
 );

@@ -26,7 +26,6 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
@@ -760,4 +759,4 @@ export const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): Re
   );
 };
 
-export default observer(IdentifierPublicPage);
+export default IdentifierPublicPage;

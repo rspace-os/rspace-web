@@ -1,6 +1,5 @@
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import GlobalIdLink from "../../../components/GlobalId";
@@ -20,4 +19,4 @@ function GlobalId({ record }: GlobalIdArgs): React.ReactNode {
   );
 }
 
-export default observer(GlobalId);
+export default GlobalId;

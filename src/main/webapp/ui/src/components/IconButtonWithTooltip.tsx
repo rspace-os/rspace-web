@@ -1,6 +1,5 @@
 import IconButton from "@mui/material/IconButton";
 import type { SxProps, Theme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import CustomTooltip from "./CustomTooltip";
 
@@ -46,4 +45,4 @@ IconButtonWithTooltip.displayName = "IconButtonWithTooltip";
  * This components provided a clickable icon button with a tooltip. The tooltip
  * is then used as the aria-label for the button.
  */
-export default observer(IconButtonWithTooltip);
+export default IconButtonWithTooltip;

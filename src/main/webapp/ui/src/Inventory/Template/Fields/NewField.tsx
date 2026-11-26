@@ -1,6 +1,5 @@
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
@@ -41,4 +40,4 @@ function NewField({ record }: NewFieldArgs): React.ReactNode {
   );
 }
 
-export default observer(NewField);
+export default NewField;

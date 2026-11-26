@@ -14,7 +14,6 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import { runInAction } from "mobx";
-import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
@@ -260,4 +259,4 @@ const StoichiometryTableInventoryLinkCell = ({
   );
 };
 
-export default observer(StoichiometryTableInventoryLinkCell);
+export default StoichiometryTableInventoryLinkCell;

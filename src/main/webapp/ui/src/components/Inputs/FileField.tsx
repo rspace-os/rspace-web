@@ -5,7 +5,6 @@ import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import InputBase from "@mui/material/InputBase";
-import { observer } from "mobx-react-lite";
 import React, { forwardRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -219,4 +218,4 @@ function FileField({
   );
 }
 
-export default observer(FileField);
+export default FileField;

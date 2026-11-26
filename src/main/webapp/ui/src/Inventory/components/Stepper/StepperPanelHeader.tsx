@@ -4,7 +4,6 @@ import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import Slide from "@mui/material/Slide";
 import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,7 +53,7 @@ type StepperPanelHeaderArgs = {
   icon?: string;
 };
 
-function StepperPanelHeader_({
+function StepperPanelHeader({
   onToggle,
   open,
   title,
@@ -160,4 +159,4 @@ function StepperPanelHeader_({
   );
 }
 
-export const StepperPanelHeader = observer(StepperPanelHeader_);
+export { StepperPanelHeader };

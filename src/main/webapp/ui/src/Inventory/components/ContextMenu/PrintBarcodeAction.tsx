@@ -1,5 +1,4 @@
 import PrintIcon from "@mui/icons-material/Print";
-import { Observer } from "mobx-react-lite";
 import React, { type ComponentType, forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -46,27 +45,23 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef<
   };
 
   return (
-    <Observer>
-      {() => (
-        <ContextMenuAction
-          onClick={handleOpen}
-          icon={<PrintIcon />}
-          label={t("contextMenu.actions.printBarcode")}
-          disabledHelp={disabledHelp}
-          as={as}
-          ref={ref}
-        >
-          {showPrintDialog && (
-            <PrintDialog
-              showPrintDialog={showPrintDialog}
-              onClose={() => setShowPrintDialog(false)}
-              itemsToPrint={selectedResults}
-              closeMenu={closeMenu}
-            />
-          )}
-        </ContextMenuAction>
+    <ContextMenuAction
+      onClick={handleOpen}
+      icon={<PrintIcon />}
+      label={t("contextMenu.actions.printBarcode")}
+      disabledHelp={disabledHelp}
+      as={as}
+      ref={ref}
+    >
+      {showPrintDialog && (
+        <PrintDialog
+          showPrintDialog={showPrintDialog}
+          onClose={() => setShowPrintDialog(false)}
+          itemsToPrint={selectedResults}
+          closeMenu={closeMenu}
+        />
       )}
-    </Observer>
+    </ContextMenuAction>
   );
 });
 

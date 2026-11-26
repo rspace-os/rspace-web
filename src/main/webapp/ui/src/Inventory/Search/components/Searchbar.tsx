@@ -208,4 +208,4 @@ function Searchbar({ handleSearch, inputRef }: SearchbarArgs): React.ReactNode {
   );
 }
 
-export default observer(Searchbar);
+export default Searchbar;

@@ -6,7 +6,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
@@ -116,4 +115,4 @@ function InitialScreen(): React.ReactNode {
   );
 }
 
-export default observer(InitialScreen);
+export default InitialScreen;

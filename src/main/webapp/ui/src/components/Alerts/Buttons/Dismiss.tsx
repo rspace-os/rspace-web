@@ -1,5 +1,4 @@
 import CloseIcon from "@mui/icons-material/Close";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
@@ -26,4 +25,4 @@ function Dismiss({ onClose }: DismissArgs): React.ReactNode {
 /**
  * The dismiss button for the alert toasts.
  */
-export default observer(Dismiss);
+export default Dismiss;

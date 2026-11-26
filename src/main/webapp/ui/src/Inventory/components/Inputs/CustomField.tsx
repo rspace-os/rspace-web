@@ -1,5 +1,4 @@
 import { omit } from "es-toolkit";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import ChoiceField, { type ChoiceFieldArgs } from "../../../components/Inputs/ChoiceField";
 import DateField, { type DateFieldArgs } from "../../../components/Inputs/DateField";
@@ -137,4 +136,4 @@ function CustomField<T extends string>(props: CustomFieldArgs<T>): React.ReactNo
   return <InputWrapper {...wrapperProps}>{field}</InputWrapper>;
 }
 
-export default observer(CustomField);
+export default CustomField;

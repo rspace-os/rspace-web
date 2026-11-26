@@ -5,7 +5,6 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
@@ -180,7 +179,7 @@ function RadioField<OptionValue extends string>({
   );
 }
 
-export default observer(RadioField);
+export default RadioField;
 
 /*
  * These two components are for defining complex labels, where there is a pithy

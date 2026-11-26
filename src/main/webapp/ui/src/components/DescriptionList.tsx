@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import React from "react";
 
 type DescriptionListArgs = {
@@ -110,4 +109,4 @@ function DescriptionList({ content, dividers = false, sx }: DescriptionListArgs)
  *
  * This component MUST ONLY have a dependency on this directory and ../util.
  */
-export default observer(DescriptionList);
+export default DescriptionList;

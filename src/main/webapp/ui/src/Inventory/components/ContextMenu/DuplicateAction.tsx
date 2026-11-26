@@ -1,5 +1,4 @@
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,21 +38,17 @@ const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, D
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={() => {
-              void search.duplicateRecords(selectedResults);
-              closeMenu();
-            }}
-            icon={<AddToPhotosIcon />}
-            label={t("common:actions.duplicate")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          />
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={() => {
+          void search.duplicateRecords(selectedResults);
+          closeMenu();
+        }}
+        icon={<AddToPhotosIcon />}
+        label={t("common:actions.duplicate")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      />
     );
   },
 );

@@ -9,7 +9,6 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import TextField from "@mui/material/TextField";
-import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
@@ -214,4 +213,4 @@ function AttachmentField<
   );
 }
 
-export default observer(AttachmentField);
+export default AttachmentField;

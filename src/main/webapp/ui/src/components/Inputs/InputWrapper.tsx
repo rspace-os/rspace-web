@@ -1,5 +1,4 @@
 import FormHelperText from "@mui/material/FormHelperText";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import FormControl from "./FormControl";
 
@@ -73,4 +72,4 @@ function InputWrapper({
   );
 }
 
-export default observer(InputWrapper);
+export default InputWrapper;

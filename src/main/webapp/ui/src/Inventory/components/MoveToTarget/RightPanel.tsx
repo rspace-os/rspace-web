@@ -82,4 +82,4 @@ function RightPanel() {
     </Card>
   );
 }
-export default observer(RightPanel);
+export default RightPanel;

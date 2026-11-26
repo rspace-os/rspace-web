@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -77,4 +76,4 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
   );
 }
 
-export default observer(PermalinkRouter);
+export default PermalinkRouter;

@@ -1,5 +1,4 @@
 import GetApp from "@mui/icons-material/GetApp";
-import { Observer } from "mobx-react-lite";
 import React, { forwardRef, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -40,31 +39,27 @@ const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Expo
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={handleOpen}
-            icon={<GetApp />}
-            label={t("common:actions.export")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          >
-            {openExportDialog && (
-              <ExportDialog
-                openExportDialog={openExportDialog}
-                setOpenExportDialog={setOpenExportDialog}
-                onExport={(exportOptions) => {
-                  void search.exportRecords(exportOptions, selectedResults);
-                }}
-                exportType="contextMenu"
-                closeMenu={closeMenu}
-                selectedResults={selectedResults}
-              />
-            )}
-          </ContextMenuAction>
+      <ContextMenuAction
+        onClick={handleOpen}
+        icon={<GetApp />}
+        label={t("common:actions.export")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      >
+        {openExportDialog && (
+          <ExportDialog
+            openExportDialog={openExportDialog}
+            setOpenExportDialog={setOpenExportDialog}
+            onExport={(exportOptions) => {
+              void search.exportRecords(exportOptions, selectedResults);
+            }}
+            exportType="contextMenu"
+            closeMenu={closeMenu}
+            selectedResults={selectedResults}
+          />
         )}
-      </Observer>
+      </ContextMenuAction>
     );
   },
 );

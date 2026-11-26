@@ -4,7 +4,6 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type TemplateModel from "@/stores/models/TemplateModel";
@@ -154,4 +153,4 @@ function TemplateStep({
   );
 }
 
-export default observer(TemplateStep);
+export default TemplateStep;

@@ -1,5 +1,4 @@
 import OpenWithIcon from "@mui/icons-material/OpenWith";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,18 +40,14 @@ const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveAc
       [() => true, ""],
     ])();
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={handleOpen}
-            icon={<OpenWithIcon />}
-            label={t("common:actions.move")}
-            as={as}
-            ref={ref}
-            disabledHelp={disabledHelp}
-          />
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={handleOpen}
+        icon={<OpenWithIcon />}
+        label={t("common:actions.move")}
+        as={as}
+        ref={ref}
+        disabledHelp={disabledHelp}
+      />
     );
   },
 );

@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { Heading } from "@/components/DynamicHeadingLevel";
 
@@ -68,4 +67,4 @@ function TitledBox({ title, children, allowOverflow = true, border = false }: Ti
  * useful in laying out pages that have multiple sections that the user should
  * browse sequentially.
  */
-export default observer(TitledBox);
+export default TitledBox;

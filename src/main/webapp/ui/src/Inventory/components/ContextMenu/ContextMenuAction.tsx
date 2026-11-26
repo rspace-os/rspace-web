@@ -1,7 +1,6 @@
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
 import EventBoundary from "../../../components/EventBoundary";
@@ -41,55 +40,43 @@ const ContextMenuAction = forwardRef<React.ElementRef<typeof MenuItem>, ContextM
     }: ContextMenuActionsArgs,
     ref,
   ) => {
-    return (
-      <Observer>
-        {() =>
-          as === "button" ? (
-            options && options.length > 0 ? (
-              <>
-                <ContextMenuSplitButton options={options} icon={icon} disabledHelp={disabledHelp} />
-                {children}
-              </>
-            ) : (
-              <>
-                <ContextMenuButton
-                  onClick={onClick}
-                  icon={icon}
-                  label={label}
-                  disabledHelp={disabledHelp}
-                  active={active}
-                />
-                {children}
-              </>
-            )
-          ) : (
-            <MenuItem
-              ref={ref}
-              onClick={onClick}
-              disabled={disabledHelp !== ""}
-              aria-disabled={disabledHelp !== ""}
-              sx={{
-                my: 0.5,
-                py: 1,
-              }}
-            >
-              <ListItemIcon>{icon}</ListItemIcon>
-              <ListItemText
-                primary={label}
-                secondary={disabledHelp}
-                slotProps={{
-                  secondary: {
-                    style: {
-                      whiteSpace: "break-spaces",
-                    },
-                  },
-                }}
-              />
-              {Boolean(children) && <EventBoundary>{children ?? null}</EventBoundary>}
-            </MenuItem>
-          )
-        }
-      </Observer>
+    return as === "button" ? (
+      options && options.length > 0 ? (
+        <>
+          <ContextMenuSplitButton options={options} icon={icon} disabledHelp={disabledHelp} />
+          {children}
+        </>
+      ) : (
+        <>
+          <ContextMenuButton onClick={onClick} icon={icon} label={label} disabledHelp={disabledHelp} active={active} />
+          {children}
+        </>
+      )
+    ) : (
+      <MenuItem
+        ref={ref}
+        onClick={onClick}
+        disabled={disabledHelp !== ""}
+        aria-disabled={disabledHelp !== ""}
+        sx={{
+          my: 0.5,
+          py: 1,
+        }}
+      >
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText
+          primary={label}
+          secondary={disabledHelp}
+          slotProps={{
+            secondary: {
+              style: {
+                whiteSpace: "break-spaces",
+              },
+            },
+          }}
+        />
+        {Boolean(children) && <EventBoundary>{children ?? null}</EventBoundary>}
+      </MenuItem>
     );
   },
 );

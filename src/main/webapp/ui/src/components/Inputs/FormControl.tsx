@@ -8,7 +8,6 @@ import { selectClasses } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { type SxProps, type Theme, useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useId } from "react";
 import { Heading } from "../DynamicHeadingLevel";
@@ -130,4 +129,4 @@ function CustomFormControl({
   );
 }
 
-export default observer(CustomFormControl);
+export default CustomFormControl;

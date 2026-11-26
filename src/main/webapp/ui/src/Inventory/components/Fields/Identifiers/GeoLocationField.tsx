@@ -15,7 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { type ComponentType, lazy, type ReactNode, Suspense, useState } from "react";
+import React, { lazy, type ReactNode, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import type GeoLocationModel from "../../../../stores/models/GeoLocationModel";
@@ -177,7 +177,7 @@ const GeoLocationField = ({
     );
   });
 
-  const PointEditor = observer((): ReactNode => {
+  const PointEditor = (): ReactNode => {
     return (
       <Grid>
         <CustomFieldset>
@@ -193,7 +193,7 @@ const GeoLocationField = ({
         </CustomFieldset>
       </Grid>
     );
-  });
+  };
 
   const PlaceEditor = observer((): ReactNode => {
     const { geoLocationPlace } = geoLocation;
@@ -385,25 +385,27 @@ const GeoLocationField = ({
     },
   );
 
-  const GeoLocationEditor = observer(
-    ({ setOpenPolygonDialog }: { setOpenPolygonDialog: (open: boolean) => void }): ReactNode => {
-      return (
-        <Card variant="outlined">
-          <CardContent>
-            <Alert severity="info">{t("fields.identifiers.geoLocationField.alert")}</Alert>
-            <FormControl sx={{ width: "100%" }}>
-              <Stack spacing={1}>
-                <PointEditor />
-                <PlaceEditor />
-                <BoxEditor />
-                <PolygonBlock setOpenPolygonDialog={setOpenPolygonDialog} />
-              </Stack>
-            </FormControl>
-          </CardContent>
-        </Card>
-      );
-    },
-  );
+  const GeoLocationEditor = ({
+    setOpenPolygonDialog,
+  }: {
+    setOpenPolygonDialog: (open: boolean) => void;
+  }): ReactNode => {
+    return (
+      <Card variant="outlined">
+        <CardContent>
+          <Alert severity="info">{t("fields.identifiers.geoLocationField.alert")}</Alert>
+          <FormControl sx={{ width: "100%" }}>
+            <Stack spacing={1}>
+              <PointEditor />
+              <PlaceEditor />
+              <BoxEditor />
+              <PolygonBlock setOpenPolygonDialog={setOpenPolygonDialog} />
+            </Stack>
+          </FormControl>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const GeoLocationPreview = observer(
     ({ setOpenPolygonDialog }: { setOpenPolygonDialog: (open: boolean) => void }): ReactNode => {
@@ -556,4 +558,4 @@ const GeoLocationField = ({
   );
 };
 
-export default observer(GeoLocationField) as ComponentType<GeoLocationFieldArgs>;
+export default GeoLocationField;

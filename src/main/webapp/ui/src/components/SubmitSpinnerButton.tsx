@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import type { SxProps, Theme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { mergeSx } from "@/modules/common/utils/styles";
 import { ariaValueMax, ariaValueMin, ariaValueNow, asPercentageString, type Progress } from "@/util/progress";
@@ -83,4 +82,4 @@ function SubmitSpinnerButton({
 /**
  * This is a submit button that shows a spinner when loading.
  */
-export default observer(SubmitSpinnerButton);
+export default SubmitSpinnerButton;

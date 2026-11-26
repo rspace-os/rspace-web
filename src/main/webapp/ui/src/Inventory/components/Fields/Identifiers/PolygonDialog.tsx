@@ -4,8 +4,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import { observer } from "mobx-react-lite";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { GeoLocation } from "../../../../stores/definitions/GeoLocation";
 import PolygonCard from "./PolygonCard";
@@ -54,4 +53,4 @@ function PolygonDialog({
   );
 }
 
-export default observer(PolygonDialog) as ComponentType<PolygonDialogArgs>;
+export default PolygonDialog;

@@ -1,5 +1,4 @@
 import PostAddIcon from "@mui/icons-material/PostAdd";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,27 +30,23 @@ const AddToBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAction>,
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={handleOpen}
-            icon={<PostAddIcon />}
-            label={t("contextMenu.actions.addToBasket")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          >
-            {openAddToBasketDialog && (
-              <AddToBasketDialog
-                openAddToBasketDialog={openAddToBasketDialog}
-                setOpenAddToBasketDialog={setOpenAddToBasketDialog}
-                closeMenu={closeMenu}
-                selectedResults={selectedResults}
-              />
-            )}
-          </ContextMenuAction>
+      <ContextMenuAction
+        onClick={handleOpen}
+        icon={<PostAddIcon />}
+        label={t("contextMenu.actions.addToBasket")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      >
+        {openAddToBasketDialog && (
+          <AddToBasketDialog
+            openAddToBasketDialog={openAddToBasketDialog}
+            setOpenAddToBasketDialog={setOpenAddToBasketDialog}
+            closeMenu={closeMenu}
+            selectedResults={selectedResults}
+          />
         )}
-      </Observer>
+      </ContextMenuAction>
     );
   },
 );

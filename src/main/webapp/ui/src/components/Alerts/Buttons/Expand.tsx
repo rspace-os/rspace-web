@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import ExpandCollapseIcon from "../../ExpandCollapseIcon";
@@ -30,4 +29,4 @@ function ExpandButton({ ariaLabel, expanded, setExpanded, size = "medium" }: Exp
  * The button on the alert toasts for expanding and collapsing the details
  * section.
  */
-export default observer(ExpandButton);
+export default ExpandButton;

@@ -16,7 +16,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { observer } from "mobx-react-lite";
 import { default as React, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
@@ -157,4 +156,4 @@ function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
   );
 }
 
-export default observer(ConfirmProvider);
+export default ConfirmProvider;

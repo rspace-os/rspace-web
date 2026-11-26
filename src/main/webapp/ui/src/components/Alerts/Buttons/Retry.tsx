@@ -1,7 +1,6 @@
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,4 +36,4 @@ function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
 /**
  * The retry button for the alert toasts.
  */
-export default observer(Retry);
+export default Retry;

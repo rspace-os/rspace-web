@@ -1,4 +1,3 @@
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -45,20 +44,14 @@ const RemoveFromBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAct
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <>
-            <ContextMenuAction
-              onClick={handleOpen}
-              icon={<RemoveFromBasketIcon />}
-              label={t("contextMenu.actions.removeFromThisBasket")}
-              disabledHelp={disabledHelp}
-              as={as}
-              ref={ref}
-            />
-          </>
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={handleOpen}
+        icon={<RemoveFromBasketIcon />}
+        label={t("contextMenu.actions.removeFromThisBasket")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      />
     );
   },
 );

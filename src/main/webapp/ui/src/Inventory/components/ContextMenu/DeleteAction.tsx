@@ -1,5 +1,4 @@
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,21 +31,17 @@ const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Dele
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={() => {
-              void search.deleteRecords(selectedResults);
-              closeMenu();
-            }}
-            icon={<DeleteOutlineOutlinedIcon />}
-            label={t("common:actions.trash")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          />
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={() => {
+          void search.deleteRecords(selectedResults);
+          closeMenu();
+        }}
+        icon={<DeleteOutlineOutlinedIcon />}
+        label={t("common:actions.trash")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      />
     );
   },
 );
