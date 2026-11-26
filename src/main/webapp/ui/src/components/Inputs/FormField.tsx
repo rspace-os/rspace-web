@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import type { SxProps, Theme } from "@mui/material/styles";
@@ -312,15 +313,22 @@ export default function FormField<T>({
       {...(typeof explanation !== "undefined" ? { "aria-describedby": explanationId } : {})}
       {...(asFieldset && !disabled ? { component: "fieldset" } : {})}
     >
-      <FieldLabel
-        id={labelId}
-        disabled={disabled}
-        asFieldset={asFieldset}
-        htmlFor={doNotAttachIdToLabel ? undefined : inputId}
-        sx={hideLabel ? VISUALLY_HIDDEN : undefined}
-      >
-        {label}
-      </FieldLabel>
+      {hideLabel && disabled ? (
+        // A hidden label only names the group; rendered as a heading it would repeat the visible section heading.
+        <Box component="span" id={labelId} sx={VISUALLY_HIDDEN}>
+          {label}
+        </Box>
+      ) : (
+        <FieldLabel
+          id={labelId}
+          disabled={disabled}
+          asFieldset={asFieldset}
+          htmlFor={doNotAttachIdToLabel ? undefined : inputId}
+          sx={hideLabel ? VISUALLY_HIDDEN : undefined}
+        >
+          {label}
+        </FieldLabel>
+      )}
       {Boolean(explanation) && (
         <Typography id={explanationId} variant="body2" sx={{ mb: 0.5 }}>
           {explanation}

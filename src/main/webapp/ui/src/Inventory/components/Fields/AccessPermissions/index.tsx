@@ -71,8 +71,8 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
         notEditable && <Alert severity="info">{t("fields.accessPermissions.editFirst")}</Alert>
       )}
       <FormControl
-        aria-label={t("fields.accessPermissions.label")}
-        label=""
+        label={t("formSections.accessPermissions")}
+        hideLabel
         explanation={
           <>
             <TransRichText i18nKey="inventory:fields.accessPermissions.explanation" />

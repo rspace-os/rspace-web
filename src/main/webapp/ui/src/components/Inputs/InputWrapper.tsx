@@ -17,6 +17,7 @@ export type InputWrapperArgs = {
   "data-test-id"?: string;
   required?: boolean;
   flexWrap?: "nowrap" | "wrap" | "wrap-reverse" | "initial" | "inherit";
+  hideLabel?: boolean;
 };
 
 function InputWrapper({
@@ -33,6 +34,7 @@ function InputWrapper({
   "data-test-id": dataTestId,
   required,
   flexWrap,
+  hideLabel,
 }: InputWrapperArgs): React.ReactNode {
   /*
    * We pass `value` as `mightBeString`, rather than pulling from props, so
@@ -54,6 +56,7 @@ function InputWrapper({
       explanation={explanation}
       flexWrap={flexWrap}
       disabled={disabled}
+      hideLabel={hideLabel}
     >
       {children}
       {!error && showCharacterCount(value) && (

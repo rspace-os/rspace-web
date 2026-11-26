@@ -200,6 +200,11 @@ const FilesCard = observer(
     useEffect(() => {
       setOpen(attachments.length > 0);
     }, [attachments]);
+    const toggleTitle = match<void, string>([
+      [() => attachments.length === 0, t("fields.attachments.toggle.none")],
+      [() => open, t("fields.attachments.toggle.hide")],
+      [() => true, t("fields.attachments.toggle.show")],
+    ])();
     return (
       <Card variant="outlined">
         <CardHeader
@@ -212,14 +217,8 @@ const FilesCard = observer(
           }}
           subheader={t("fields.attachments.summary")}
           action={
-            <CustomTooltip
-              title={match<void, string>([
-                [() => attachments.length === 0, t("fields.attachments.toggle.none")],
-                [() => open, t("fields.attachments.toggle.hide")],
-                [() => true, t("fields.attachments.toggle.show")],
-              ])()}
-            >
-              <IconButton onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
+            <CustomTooltip title={toggleTitle}>
+              <IconButton aria-label={toggleTitle} onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
                 <Badge color="primary" badgeContent={attachments.length}>
                   <ExpandCollapseIcon open={open} />
                 </Badge>
@@ -253,10 +252,12 @@ function Attachments<
   const {
     searchStore: { activeResult },
   } = useStores();
+  const { t } = useTranslation("inventory");
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   return (
     <InputWrapper
-      label=""
+      label={t("formSections.attachments")}
+      hideLabel
       error={false}
       explanation={
         activeResult.isFieldEditable("attachments") ? (
