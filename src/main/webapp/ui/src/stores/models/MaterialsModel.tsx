@@ -298,7 +298,6 @@ export class ListOfMaterials {
       setEditingMode: action,
       setName: action,
       setDescription: action,
-      setMetadata: action,
       addMaterials: action,
       removeMaterial: action,
       trackInventoryRecordsUpdate: action,
@@ -395,11 +394,6 @@ export class ListOfMaterials {
   }
 
   setDescription(description: string) {
-    this.description = description;
-  }
-
-  setMetadata(name: string, description: string) {
-    this.name = name;
     this.description = description;
   }
 

@@ -1,4 +1,4 @@
-import { computed, makeObservable } from "mobx";
+import { makeObservable } from "mobx";
 import { Optional } from "./optional";
 import { filterMap } from "./Util";
 
@@ -8,13 +8,10 @@ import { filterMap } from "./Util";
  * Array (map, filter, etc.) as well as the standard collection of set
  * operations (intersection, union, etc.), and other useful functionality.
  *
- * This class should not be used wherever it is intended that the contents will
- * be observed, as the capability to make the super class's properties (e.g.
- * the actual content of the set) observable is only found in future versions
- * of the mobx library. For now, use a regular Set instead. To resolve, either
- * the library should be updated (a large amount of work) or this class should
- * implement all of Set's functionality rather than extend it, with those
- * properties then being made observable.
+ * The contents of this set are not observable: MobX does not track native Set
+ * state, so adding to or deleting from an RsSet in place will not trigger a
+ * re-render. Replace the whole set instead, or use a regular Set (which MobX
+ * converts into an observable set) where the contents must be observed.
  *
  * This class should also not be used where memory usage is a concern as it has
  * a slightly higher memory footprint than the standard Set data structure, of
@@ -29,12 +26,12 @@ export default class RsSet<A> extends Set<A> {
    */
   constructor(init?: Iterable<A> | null) {
     super(init);
-    makeObservable(this, {
-      isEmpty: computed,
-      first: computed,
-      last: computed,
-      only: computed,
-    });
+    /*
+     * No members are annotated, but registering the instance with MobX stops
+     * it being converted into a plain ObservableSet, losing these methods,
+     * when assigned to a deeply observable property.
+     */
+    makeObservable(this, {});
   }
 
   /**

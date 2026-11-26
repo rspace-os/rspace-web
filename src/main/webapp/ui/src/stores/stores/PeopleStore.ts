@@ -1,4 +1,4 @@
-import { action, makeObservable, observable, runInAction } from "mobx";
+import { makeObservable, observable, runInAction } from "mobx";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
@@ -23,8 +23,6 @@ export default class PeopleStore {
     makeObservable(this, {
       currentUser: observable,
       groupMembers: observable,
-      currentUsersGroups: observable,
-      fetchCurrentUsersGroups: action,
     });
   }
 

@@ -39,7 +39,6 @@ export class PersistedBarcode implements BarcodeRecord {
       description: observable,
       imageUrl: observable,
       image: observable,
-      markAsDeleted: action,
       setDescription: action,
       paramsForBackend: computed,
       isDeleted: computed,
@@ -78,10 +77,6 @@ export class PersistedBarcode implements BarcodeRecord {
   fetchImage(): Promise<File> {
     if (!this.imageUrl) return Promise.reject();
     return fetchImage(this.imageUrl, this.description);
-  }
-
-  markAsDeleted(): void {
-    this.deleteBarcodeRequest = true;
   }
 
   deletedCopy(): BarcodeRecord | null {
@@ -154,10 +149,6 @@ export class GeneratedBarcode implements BarcodeRecord {
   fetchImage(): Promise<File> {
     if (!this.imageUrl) return Promise.reject();
     return fetchImage(this.imageUrl, this.description);
-  }
-
-  markAsDeleted(): void {
-    throw new Error("Cannot deleted generated barcodes");
   }
 
   deletedCopy(): BarcodeRecord | null {

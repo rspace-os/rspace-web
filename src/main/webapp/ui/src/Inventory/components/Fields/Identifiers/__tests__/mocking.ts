@@ -98,7 +98,6 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
 
     doiTypeLabel: "Material Sample",
     isValid: true, // computed based on Identifier data
-    anyRecommendedGiven: true, // computed based on Identifier data
     requiredFields: [],
     recommendedFields: [],
     customFieldsOnPublicPage: false,

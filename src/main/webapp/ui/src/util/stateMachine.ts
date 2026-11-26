@@ -1,16 +1,7 @@
-import { action, computed, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
 import RsSet from "./set";
 
 type TransitionMapping<T extends string> = { [state in T]: Set<T> };
-type TransitionCallbackReturn<T> = {
-  state: T;
-  data: unknown;
-};
-type TransitionCallback<T> = {
-  before: Set<T>;
-  after: Set<T>;
-  callback: (oldState: TransitionCallbackReturn<T>, newState: TransitionCallbackReturn<T>) => void;
-};
 
 /**
  * This class implements a simple finite state automata (state machine).
@@ -24,13 +15,8 @@ type TransitionCallback<T> = {
  * }, "one", x => x);
  *
  *                                 // currentState is initially "one"
- * SM.addTransitionCallback(
- *   new Set([]),
- *   new Set(["two"]),
- *   () => console.log("now two")
- * );                              // setup a transition callback for moving to "two"
  * SM.isCurrentState("one");       // true
- * SM.transitionTo("two");         // currentState is now "two", also logged "now two"
+ * SM.transitionTo("two");         // currentState is now "two"
  * SM.isCurrentState("two");       // true
  * SM.isCurrentState("three");     // false
  * SM.transitionTo("one");         // ERROR: Cannot transition from "two" to "one".
@@ -49,13 +35,6 @@ export default class StateMachine<T extends string> {
   showFn: (currentState: T) => string;
   enableLogging: boolean;
 
-  /*
-   * Callbacks registered against the transitioning into and out
-   * of particular states will be invoked upon that transition.
-   */
-  transitionCallbacks: Map<number, TransitionCallback<T>>;
-  transitionCallbacksNextId: number;
-
   constructor(
     transitionMapping: TransitionMapping<T>,
     initialState: T,
@@ -66,9 +45,6 @@ export default class StateMachine<T extends string> {
       currentState: observable,
       data: observable,
       transitionTo: action,
-      addTransitionCallback: action,
-      removeTransitionCallback: action,
-      states: computed,
     });
     this.transitionMapping = transitionMapping;
     if (!this.states.has(initialState)) {
@@ -78,8 +54,6 @@ export default class StateMachine<T extends string> {
     this.showFn = showFn;
     this.data = initialData;
     this.enableLogging = false;
-    this.transitionCallbacks = new Map();
-    this.transitionCallbacksNextId = 0;
   }
 
   get states(): RsSet<T> {
@@ -116,27 +90,9 @@ export default class StateMachine<T extends string> {
     if (!this.transitionMapping[this.currentState].has(state)) {
       throw new Error(`Cannot transition from '${this.showFn(this.currentState)}' to '${this.showFn(state)}'.`);
     }
-    const before = { state: this.currentState, data: this.data };
-
     // data must be set before currentState because once currentState changes,
     // react and mobx will re-render
     this.data = dataFn(this.data);
     this.currentState = state;
-
-    for (const [, tc] of this.transitionCallbacks) {
-      const { before: beforeSet, after: afterSet, callback }: TransitionCallback<T> = tc;
-      if (beforeSet.has(before.state) || afterSet.has(state))
-        callback(before, { state: this.currentState, data: this.data });
-    }
-  }
-
-  addTransitionCallback(callback: TransitionCallback<T>): number {
-    const id = this.transitionCallbacksNextId++;
-    this.transitionCallbacks.set(id, callback);
-    return id;
-  }
-
-  removeTransitionCallback(id: number) {
-    this.transitionCallbacks.delete(id);
   }
 }

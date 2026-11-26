@@ -1,4 +1,4 @@
-import { makeObservable, observable, override, runInAction } from "mobx";
+import { makeObservable, override, runInAction } from "mobx";
 import type { Factory } from "../../definitions/Factory";
 import type { InventoryRecord } from "../../definitions/InventoryRecord";
 import type { CacheFetcher as CacheFetcherInterface, CoreFetcherArgs } from "../../definitions/Search";
@@ -11,8 +11,6 @@ export default class CacheFetcher extends CoreFetcher implements CacheFetcherInt
   constructor(factory: Factory, params: CoreFetcherArgs | null) {
     super(factory, params);
     makeObservable(this, {
-      cachedResults: observable,
-      cachedPageSize: observable,
       setPage: override,
       performInitialSearch: override,
       search: override,

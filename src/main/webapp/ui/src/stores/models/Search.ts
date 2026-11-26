@@ -214,15 +214,12 @@ export default class Search implements SearchInterface {
       activeResult: observable,
       processingContextActions: observable,
       error: observable,
-      tree: observable,
       searchView: observable,
       dynamicFetcher: observable,
       staticFetcher: observable,
       cacheFetcher: observable,
       alwaysFilterOut: observable,
-      canEditActiveResult: observable,
       uiConfig: observable,
-      overrideSearchOnFilter: observable,
       batchEditingRecords: observable,
       editLoading: observable,
       setActiveResult: action,
@@ -253,8 +250,6 @@ export default class Search implements SearchInterface {
       count: computed,
       fetcher: computed,
       selectedResults: computed,
-      allSelectedAvailable: computed,
-      allSelectedDeleted: computed,
       mixedSelectedStatus: computed,
       globalIdsOfSearchResults: computed,
       enableAdvancedOptions: computed,
@@ -335,14 +330,6 @@ export default class Search implements SearchInterface {
 
   get selectedResults(): Array<InventoryRecord> {
     return this.filteredResults.filter((r) => r.selected);
-  }
-
-  get allSelectedAvailable(): boolean {
-    return this.selectedResults.every((r) => !r.deleted);
-  }
-
-  get allSelectedDeleted(): boolean {
-    return this.selectedResults.every((r) => r.deleted);
   }
 
   get mixedSelectedStatus(): boolean {

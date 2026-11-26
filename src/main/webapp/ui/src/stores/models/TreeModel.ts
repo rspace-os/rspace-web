@@ -21,10 +21,7 @@ export default class TreeModel implements HasChildren, TreeView {
 
   constructor(params: TreeAttrs) {
     makeObservable(this, {
-      treeHolder: observable,
       expanded: observable,
-      filteredTypes: observable,
-      setAttributes: action,
       setExpanded: action,
       setSelected: action,
       selected: computed,

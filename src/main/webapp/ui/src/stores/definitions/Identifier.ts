@@ -249,7 +249,6 @@ export interface Identifier {
   readonly isValid: boolean;
   readonly requiredFields: Array<IdentifierField>;
   readonly recommendedFields: Array<IdentifierField>;
-  readonly anyRecommendedGiven: boolean;
 
   publish({
     confirm,

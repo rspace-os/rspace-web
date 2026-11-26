@@ -260,9 +260,6 @@ export default class SampleModel
       recordDetails: override,
       supportsBatchEditing: override,
       fieldNamesInUse: override,
-      minTempValue: computed,
-      maxTempValue: computed,
-      tempUnitId: computed,
       hasSelectedSubsample: computed,
       enforceMandatoryFields: computed,
       canSetRequestable: computed,
@@ -387,18 +384,6 @@ export default class SampleModel
   // ability, both broader than who may actually toggle requestable.
   get canSetRequestable(): boolean {
     return this.permittedActions.has("CHANGE_REQUESTABLE");
-  }
-
-  get minTempValue(): number | null {
-    return this.storageTempMin ? this.storageTempMin.numericValue : null;
-  }
-
-  get maxTempValue(): number | null {
-    return this.storageTempMax ? this.storageTempMax.numericValue : null;
-  }
-
-  get tempUnitId(): number | null {
-    return this.storageTempMax ? this.storageTempMax.unitId : null;
   }
 
   /*

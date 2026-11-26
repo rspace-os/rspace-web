@@ -150,9 +150,7 @@ describe("method: importFile", () => {
       const uploadModel = new ImportModel("SAMPLES");
 
       const addAlertSpy = vi.fn();
-      runInAction(() => {
-        getRootStore().uiStore.addAlert = addAlertSpy;
-      });
+      getRootStore().uiStore.addAlert = addAlertSpy;
 
       vi.spyOn(uploadModel.state, "transitionTo").mockImplementation(() => {});
       await uploadModel.importFiles();

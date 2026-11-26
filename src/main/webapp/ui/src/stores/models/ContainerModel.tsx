@@ -232,7 +232,6 @@ export default class ContainerModel
       canStoreRecordsFromInfoData: computed,
       availableLocations: computed,
       canStore: computed,
-      dimensions: computed,
       selectedLocations: computed,
       selectedResults: computed,
       rows: computed,
@@ -417,10 +416,6 @@ export default class ContainerModel
       ...(this.canStoreSamples ? ["samples" as const] : []),
       ...(this.canStoreInstruments ? ["instruments" as const] : []),
     ];
-  }
-
-  get dimensions(): [number | "", number | ""] | null {
-    return this.gridLayout ? [this.gridLayout.columnsNumber, this.gridLayout.rowsNumber] : null;
   }
 
   get selectedLocations(): Array<Location> | null {

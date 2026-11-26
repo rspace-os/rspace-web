@@ -48,7 +48,7 @@ function MoveInstructions(): React.ReactNode {
         action?: boolean;
       }
     >([
-      [() => moveStore.loading || container.loading, { message: t("moveToTarget.loadingEllipsis"), severity: "info" }],
+      [() => container.loading, { message: t("moveToTarget.loadingEllipsis"), severity: "info" }],
       [
         () => container.movingIntoItself,
         {

@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import { makeObservable, observable, runInAction } from "mobx";
 import i18n from "@/modules/common/i18n";
 import ElnApiService from "../../common/ElnApiService";
 import type { RootStore } from "./RootStore";
@@ -24,11 +24,6 @@ export default class UnitStore {
     makeObservable(this, {
       loading: observable,
       units: observable,
-      fetchUnits: action,
-      temperatureUnits: computed,
-      massUnits: computed,
-      volumeUnits: computed,
-      allCategories: computed,
     });
     this.rootStore = rootStore;
   }
@@ -44,18 +39,6 @@ export default class UnitStore {
     } catch {
       console.error("Could not fetch units");
     }
-  }
-
-  get temperatureUnits(): Array<Unit> {
-    return this.unitsOfCategory(["temperature"]);
-  }
-
-  get massUnits(): Array<Unit> {
-    return this.unitsOfCategory(["mass"]);
-  }
-
-  get volumeUnits(): Array<Unit> {
-    return this.unitsOfCategory(["volume"]);
   }
 
   unitsOfCategory(categories: Array<string>): Array<Unit> {
@@ -74,9 +57,5 @@ export default class UnitStore {
 
   persistUnits(): void {
     localStorage.setItem("units", JSON.stringify(this.units));
-  }
-
-  get allCategories(): Array<string> {
-    return [...new Set(this.units.map((u) => u.category))];
   }
 }

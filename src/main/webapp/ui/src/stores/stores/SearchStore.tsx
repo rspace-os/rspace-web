@@ -7,7 +7,7 @@ import { showToastWhilstPending } from "../../util/alerts";
 import type { emptyObject } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
-import type { Basket, BasketAttrs } from "../definitions/Basket";
+import type { BasketAttrs } from "../definitions/Basket";
 import type { Container } from "../definitions/Container";
 import type { Factory } from "../definitions/Factory";
 import type { Group } from "../definitions/Group";
@@ -78,17 +78,11 @@ export default class SearchStore {
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
-      search: observable,
       savedSearches: observable,
       savedBaskets: observable,
       saveSearch: action,
       deleteSearch: action,
-      getBaskets: action,
-      getBasket: action,
-      createBasket: action,
-      deleteBasket: action,
       createNew: action,
-      results: computed,
       fetcher: computed,
       activeResult: computed,
       searchIsSaved: computed,
@@ -104,10 +98,6 @@ export default class SearchStore {
     this.search.canEditActiveResult = true;
     this.savedSearches = normaliseSavedSearches(SAVED_SEARCHES ?? []);
     this.savedBaskets = [];
-  }
-
-  get results(): Array<InventoryRecord> {
-    return this.search.filteredResults;
   }
 
   get fetcher(): CoreFetcher {
@@ -172,25 +162,6 @@ export default class SearchStore {
       uiStore.addAlert(
         mkAlert({
           title: i18n.t("inventory:baskets.alerts.fetchFailed"),
-          message: (e as Error).message || "",
-          variant: "error",
-          isInfinite: true,
-        }),
-      );
-    }
-  }
-
-  async getBasket(id: Id): Promise<Basket | undefined> {
-    const { uiStore } = this.rootStore;
-    try {
-      if (id) {
-        const { data } = await ApiService.get<BasketAttrs>(`baskets/${id}`);
-        if (data) return new BasketModel(data);
-      } else throw new Error("Cannot retrieve Basket without id");
-    } catch (e) {
-      uiStore.addAlert(
-        mkAlert({
-          title: i18n.t("inventory:baskets.alerts.fetchOneFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,

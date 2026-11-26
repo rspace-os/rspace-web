@@ -33,7 +33,6 @@ export default class BasketModel implements Basket {
       _links: observable,
       loading: observable,
       setLoading: action,
-      getItems: action,
       addItems: action,
       removeItems: action,
       updateDetails: action,
@@ -48,27 +47,6 @@ export default class BasketModel implements Basket {
 
   setLoading(value: boolean) {
     this.loading = value;
-  }
-
-  async getItems(): Promise<void> {
-    const { uiStore, searchStore } = getRootStore();
-    try {
-      this.setLoading(true);
-      const fullBasket = await searchStore.getBasket(this.id);
-      if (fullBasket) {
-        this.items = fullBasket.items;
-        this.itemCount = fullBasket.itemCount;
-      }
-    } catch {
-      uiStore.addAlert(
-        mkAlert({
-          message: i18n.t("inventory:baskets.alerts.getContentsFailed"),
-          variant: "error",
-        }),
-      );
-    } finally {
-      this.setLoading(false);
-    }
   }
 
   async addItems(itemIds: Array<GlobalId>): Promise<void> {
