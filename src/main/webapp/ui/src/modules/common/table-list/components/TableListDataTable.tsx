@@ -26,22 +26,6 @@ import { TableListSelectionBar } from "./TableListSelectionBar";
 import { TableListEmptyState, TableListErrorState } from "./TableListStates";
 
 const noUiColumns = [] as const;
-const loadingCardItems: readonly TableListCardItem[] = Array.from({ length: 4 }, (_, index) => ({
-  id: `loading-${index}`,
-  title: <Skeleton className="h-5 w-2/3 rounded-sm" />,
-  fields: [
-    {
-      id: "first",
-      label: <Skeleton className="h-3 w-16 rounded-sm" />,
-      value: <Skeleton className="h-5 w-full rounded-sm" />,
-    },
-    {
-      id: "second",
-      label: <Skeleton className="h-3 w-16 rounded-sm" />,
-      value: <Skeleton className="h-5 w-full rounded-sm" />,
-    },
-  ],
-}));
 
 function presentationClass(visibility: Exclude<TableListPresentationVisibility, false>): string | undefined {
   if (visibility === "narrow") return "@3xl/table-list:hidden";
@@ -291,19 +275,19 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     return rowModel.rows.map((row) => {
       const cells = row.getVisibleCells();
       const titleCell = row.getAllCells().find((cell) => cell.column.id === config.useAsTitle);
-      const footerCells = cells.filter((cell) => cell.column.columnDef.meta?.card?.placement === "footer");
+      const footerCells = cells.filter((cell) => cell.column.columnDef.meta?.item?.placement === "footer");
       const fields = cells
         .filter(
           (cell) =>
             cell.column.id !== selectionColumnId &&
             cell.column.id !== config.useAsTitle &&
-            cell.column.columnDef.meta?.card?.placement !== "footer",
+            cell.column.columnDef.meta?.item?.placement !== "footer",
         )
         .map((cell) => ({
           id: cell.column.id,
-          label: cell.column.columnDef.meta?.cardLabel ?? cell.column.id,
+          label: cell.column.columnDef.meta?.item?.label ?? cell.column.id,
           value: <FlexRender cell={cell} />,
-          fullWidth: cell.column.columnDef.meta?.card?.fullWidth,
+          fullWidth: cell.column.columnDef.meta?.item?.fullWidth,
         }));
 
       return {
@@ -343,89 +327,91 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const colSpan = Math.max(visibleColumns.length, 1);
   const columnResizing = table.atoms.columnResizing.get();
 
-  const renderCustomRows = (render: (rows: readonly TDocument[]) => ReactNode): ReactNode => {
-    switch (bodyStateFor(status, visibleRows.length, renderRowsWhenEmpty)) {
+  const renderBodyState = (
+    state: BodyState,
+    view: {
+      loading: () => ReactNode;
+      rows: () => ReactNode;
+      message: (notice: ReactNode, state: "error" | "empty") => ReactNode;
+    },
+  ): ReactNode => {
+    switch (state) {
       case "loading":
-        return (
-          <div className="space-y-3 py-3">
-            {Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="h-12 w-full rounded-sm" />
-            ))}
-          </div>
-        );
-      case "error":
-        return <TableListErrorState error={error} />;
-      case "empty":
-        return <TableListEmptyState description={emptyDescription} />;
+        return view.loading();
       case "rows":
-        return render(visibleRows);
+        return view.rows();
+      case "error":
+        return view.message(<TableListErrorState error={error} />, "error");
+      case "empty":
+        return view.message(<TableListEmptyState description={emptyDescription} />, "empty");
     }
   };
 
-  const renderTableBody = (): ReactNode => {
-    switch (bodyStateFor(status, rowModel.rows.length, false)) {
-      case "loading":
-        return Array.from({ length: 5 }, (_, index) => (
+  const renderCustomRows = (render: (rows: readonly TDocument[]) => ReactNode): ReactNode =>
+    renderBodyState(bodyStateFor(status, visibleRows.length, renderRowsWhenEmpty), {
+      loading: () => (
+        <div className="space-y-3 py-3">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-12 w-full rounded-sm" />
+          ))}
+        </div>
+      ),
+      rows: () => render(visibleRows),
+      message: (notice) => notice,
+    });
+
+  const renderTableBody = (): ReactNode =>
+    renderBodyState(bodyStateFor(status, rowModel.rows.length, false), {
+      loading: () =>
+        Array.from({ length: 5 }, (_, index) => (
           <TableRow key={index}>
             <TableCell colSpan={colSpan}>
               <Skeleton className="h-5 w-full rounded-sm" />
             </TableCell>
           </TableRow>
-        ));
-      case "error":
-        return (
-          <TableRow>
-            <TableCell colSpan={colSpan} className="h-40">
-              <TableListErrorState error={error} />
-            </TableCell>
-          </TableRow>
-        );
-      case "empty":
-        return (
-          <TableRow>
-            <TableCell colSpan={colSpan} className={reserveEmptyRows ? "h-90" : "h-40"}>
-              <TableListEmptyState description={emptyDescription} />
-            </TableCell>
-          </TableRow>
-        );
-      case "rows":
-        return renderedDataRows;
-    }
-  };
+        )),
+      rows: () => renderedDataRows,
+      message: (notice, state) => (
+        <TableRow>
+          <TableCell colSpan={colSpan} className={state === "empty" && reserveEmptyRows ? "h-90" : "h-40"}>
+            {notice}
+          </TableCell>
+        </TableRow>
+      ),
+    });
 
-  const renderCards = (): ReactNode => {
-    const cardState = bodyStateFor(status, rowModel.rows.length, false);
-    switch (cardState) {
-      case "error":
-      case "empty":
-        return (
-          <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
-            {cardState === "error" ? (
-              <TableListErrorState error={error} />
-            ) : (
-              <TableListEmptyState description={emptyDescription} />
-            )}
-          </section>
-        );
-      case "loading":
-      case "rows":
-        return (
-          <TableListCardGrid
-            label={cardViewLabel}
-            items={status === "loading" ? loadingCardItems : renderedCardItems}
-            busy={status === "loading" || status === "refreshing"}
-            selectionControl={
-              selection && status !== "loading" ? (
-                <>
-                  {selectAllPage}
-                  <span aria-hidden="true">{t("tableList.selection.selectAllPage")}</span>
-                </>
-              ) : undefined
-            }
-          />
-        );
-    }
-  };
+  const renderCards = (): ReactNode =>
+    renderBodyState(bodyStateFor(status, rowModel.rows.length, false), {
+      loading: () => (
+        <section aria-label={cardViewLabel} aria-busy="true" className="py-3">
+          <div aria-hidden="true" className="grid grid-cols-1 gap-3 @3xl/table-list:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-28 w-full rounded-md" />
+            ))}
+          </div>
+        </section>
+      ),
+      rows: () => (
+        <TableListCardGrid
+          label={cardViewLabel}
+          items={renderedCardItems}
+          busy={status === "refreshing"}
+          selectionControl={
+            selection ? (
+              <>
+                {selectAllPage}
+                <span aria-hidden="true">{t("tableList.selection.selectAllPage")}</span>
+              </>
+            ) : undefined
+          }
+        />
+      ),
+      message: (notice) => (
+        <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
+          {notice}
+        </section>
+      ),
+    });
 
   return (
     <div

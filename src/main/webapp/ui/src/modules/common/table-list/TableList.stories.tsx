@@ -220,7 +220,7 @@ export const CardsWithFullWidthField: Story = {
           {
             id: "summary",
             label: "Summary",
-            card: { fullWidth: true },
+            item: { fullWidth: true },
             renderCell: (row) => `${row.owner} last modified this record on ${row.modifiedAt}.`,
           },
         ]}

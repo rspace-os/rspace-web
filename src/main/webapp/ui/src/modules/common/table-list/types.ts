@@ -128,10 +128,11 @@ export type TableListPresentations = {
   cards?: TableListPresentationVisibility;
 };
 
-export type TableListCardFieldLayout = {
-  /** Stack the label above the value and span the complete card body. */
+/** Layout of this field in item presentations such as cards. */
+export type TableListItemFieldLayout = {
+  /** Stack the label above the value and span the complete item body. */
   fullWidth?: boolean;
-  /** Card footer is intended for compact row controls such as actions. */
+  /** `footer` holds compact row controls such as actions. */
   placement?: "field" | "footer";
 };
 
@@ -162,7 +163,7 @@ export type TableListUiColumn<TDocument> = {
   width?: number;
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
-  card?: TableListCardFieldLayout;
+  item?: TableListItemFieldLayout;
   renderCell: (row: TDocument) => ReactNode;
 };
 

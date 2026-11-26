@@ -55,9 +55,9 @@ export type FieldListConfig<TDocument> = {
   /** Raw source metadata for a locale-sensitive value rendered by the table presentation. */
   valueSource?: FieldValueSource<TDocument>;
   dependencies?: readonly FieldName<TDocument>[];
-  /** Card-presentation layout for this field. */
-  card?: {
-    /** Stack the label above the value and span the complete card body. */
+  /** Layout of this field in item presentations such as cards. */
+  item?: {
+    /** Stack the label above the value and span the complete item body. */
     fullWidth?: boolean;
   };
 };
