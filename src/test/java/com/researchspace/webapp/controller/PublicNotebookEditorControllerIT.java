@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,14 +12,12 @@ import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.Constants;
 import com.researchspace.model.RecordGroupSharing;
-import com.researchspace.model.SearchDepth;
 import com.researchspace.model.User;
-import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.Folder;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.List;
 import org.apache.shiro.SecurityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -79,9 +78,10 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
         setUpNotebookWith2EntriesAndGroupAndPublishRecordWithPublisherHavingRole(
             "standardUser", Constants.USER_ROLE);
 
-    Folder f = folderMgr.getFolder(setup.notebook.getId(), setup.user, SearchDepth.INFINITE);
-    for (BaseRecord notebookEntry : f.getChildrens()) {
-      assertFalse(notebookEntry.isPublished());
+    List<Long> entryIds = folderMgr.getFolderChildrenIds(setup.notebook);
+    assertThat(entryIds).hasSize(2);
+    for (Long entryId : entryIds) {
+      assertFalse(recordMgr.get(entryId).isPublished());
     }
     RecordGroupSharing rgs = recShareMgr.getSharedRecordsForUser(setup.user).get(0);
     User anonymous = userMgr.getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
@@ -137,18 +137,17 @@ public class PublicNotebookEditorControllerIT extends RealTransactionSpringTestB
         setUpNotebookWith2EntriesAndGroupAndPublishRecordWithPublisherHavingRole(
             "standardUser", Constants.USER_ROLE);
     RecordGroupSharing noteBookRgs = recShareMgr.getSharedRecordsForUser(setup.user).get(0);
-    Folder f = folderMgr.getFolder(setup.notebook.getId(), setup.user, SearchDepth.INFINITE);
-    for (BaseRecord notebookEntry : f.getChildrens()) {
-      publishDocumentForUser(setup.user, notebookEntry.getId());
+    List<Long> entryIds = folderMgr.getFolderChildrenIds(setup.notebook);
+    assertThat(entryIds).hasSize(2);
+    for (Long entryId : entryIds) {
+      publishDocumentForUser(setup.user, entryId);
     }
-    f = folderMgr.getFolder(setup.notebook.getId(), setup.user, SearchDepth.INFINITE);
-    for (BaseRecord notebookEntry : f.getChildrens()) {
-      assertTrue(notebookEntry.isPublished());
+    for (Long entryId : entryIds) {
+      assertTrue(recordMgr.get(entryId).isPublished());
     }
     unPublishDocumentForUser(setup.user, noteBookRgs.getId());
-    f = folderMgr.getFolder(setup.notebook.getId(), setup.user, SearchDepth.INFINITE);
-    for (BaseRecord notebookEntry : f.getChildrens()) {
-      assertTrue(notebookEntry.isPublished());
+    for (Long entryId : entryIds) {
+      assertTrue(recordMgr.get(entryId).isPublished());
     }
   }
 

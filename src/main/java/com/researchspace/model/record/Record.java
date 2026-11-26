@@ -17,7 +17,6 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Transient;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.envers.Audited;
@@ -71,16 +70,6 @@ public abstract class Record extends BaseRecord implements Serializable, Uniquel
     boolean fieldAdded = mediaFile.getLinkedRecords().add(link);
     boolean mediaAdded = linkedMediaFiles.add(link);
     return fieldAdded && mediaAdded;
-  }
-
-  /**
-   * Always returns empty list since Records don't have children; this method is present just so
-   * that getChildren can be called recursively while descending a folder tree without testing for
-   * the type of BaseRecord.
-   */
-  @Transient
-  public final Set<BaseRecord> getChildrens() {
-    return Collections.<BaseRecord>emptySet();
   }
 
   @Transient

@@ -30,9 +30,9 @@ class LinkedFolderTest {
 
   @Test
   void BasicCyclePrevented() {
-    u1homeFolder.addChild(u2HomeFolder, u1, true);
+    u1homeFolder.addChild(u2HomeFolder, u1);
     Assertions.assertThrows(
-        IllegalAddChildOperation.class, () -> u2HomeFolder.addChild(u1homeFolder, u2, true));
+        IllegalAddChildOperation.class, () -> u2HomeFolder.addChild(u1homeFolder, u2));
   }
 
   @Test
@@ -48,7 +48,6 @@ class LinkedFolderTest {
     assertTrue(u1homeFolder.getSharingACL().isPermitted(u2, PermissionType.READ));
     assertTrue(u2HomeFolder.getSharingACL().isPermitted(u1, PermissionType.READ));
     assertEquals(u2HomeFolder, linked1.getParent());
-    assertEquals(linked1, u2HomeFolder.getChildrens().iterator().next());
 
     u1homeFolder.removeChild(linked2);
     u2HomeFolder.removeChild(linked1);

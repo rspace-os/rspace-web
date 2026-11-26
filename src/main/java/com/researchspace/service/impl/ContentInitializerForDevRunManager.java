@@ -19,7 +19,6 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.ACLPropagationPolicy;
-import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
@@ -470,9 +469,10 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
     contentInitialiserUtils.addChild(
         folders.getUserRoot(), importsInbox, subject, ACLPropagationPolicy.NULL_POLICY);
     Folder imagesAPIInbox = createApiInbox(subject);
-    Optional<BaseRecord> imgFolderOpt = getImageGalleryFolder(folders);
-    if (imgFolderOpt.isPresent()) {
-      Folder imageFolder = (Folder) imgFolderOpt.get();
+    Folder imageFolder =
+        folderDao.getSystemSubFolderByName(
+            folders.getMediaRoot(), MediaUtils.IMAGES_MEDIA_FLDER_NAME);
+    if (imageFolder != null) {
       contentInitialiserUtils.addChild(
           imageFolder, imagesAPIInbox, subject, ACLPropagationPolicy.NULL_POLICY);
     }
@@ -488,11 +488,5 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
     Folder importsInbox = recordFactory.createImportsFolder(subject);
     permFactory.setUpAclForIndividualInboxFolder(importsInbox, subject);
     return importsInbox;
-  }
-
-  private Optional<BaseRecord> getImageGalleryFolder(UserFolderSetup folders) {
-    return folders.getMediaRoot().getChildrens().stream()
-        .filter(f -> MediaUtils.IMAGES_MEDIA_FLDER_NAME.equals(f.getName()))
-        .findFirst();
   }
 }

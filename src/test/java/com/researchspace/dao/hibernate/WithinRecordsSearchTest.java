@@ -95,21 +95,21 @@ public class WithinRecordsSearchTest extends SearchSpringTestBase {
     StructuredDocument doc3 = createBasicDocumentInFolder(user, c, "I think protein is awesome.");
     StructuredDocument entry1 =
         (StructuredDocument)
-            notebook.getChildrens().stream()
+            folderDao.getChildren(notebook).stream()
                 .filter(r -> r.getName().equals("entry_1"))
                 .findFirst()
                 .orElseThrow();
     entry1.getFields().get(0).setFieldData("I think protein is awesome");
     StructuredDocument entry2 =
         (StructuredDocument)
-            notebook.getChildrens().stream()
+            folderDao.getChildren(notebook).stream()
                 .filter(r -> r.getName().equals("entry_2"))
                 .findFirst()
                 .orElseThrow();
     entry2.getFields().get(0).setFieldData("I think protein is awesome");
     StructuredDocument entry3 =
         (StructuredDocument)
-            notebook.getChildrens().stream()
+            folderDao.getChildren(notebook).stream()
                 .filter(r -> r.getName().equals("entry_3"))
                 .findFirst()
                 .orElseThrow();

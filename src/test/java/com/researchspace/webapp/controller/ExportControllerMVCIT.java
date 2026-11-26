@@ -324,12 +324,6 @@ public class ExportControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi1, "any text in project");
     sharingHandler.shareIntoSharedFolderOrNotebook(pi1, sharedSubFolder, doc.getId(), null);
 
-    openTransaction();
-    sharedSubFolder = folderMgr.getFolder(sharedSubFolder.getId(), pi1);
-    sharedSubFolder.addChild(doc, pi1, false);
-    folderMgr.save(sharedSubFolder, pi1);
-    commitTransaction();
-
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
     grpMgr.addUserToGroup(pi1.getUsername(), projectGroup.getId(), RoleInGroup.DEFAULT);

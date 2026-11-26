@@ -110,7 +110,7 @@ public abstract class AbstractContentInitializer
     }
     // load a default selection of files if empty
     UserFolderSetup folders = null;
-    if (rootForUser.getChildrens().size() == 0) {
+    if (!folderDao.hasChildren(rootForUser)) {
       Long formCount = formDao.getCount();
       RSForm basicDocument = formDao.getBasicDocumentForm();
       log.info("There are {} forms", formCount);

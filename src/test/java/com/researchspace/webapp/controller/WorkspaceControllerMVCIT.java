@@ -66,7 +66,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
-import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
@@ -241,9 +240,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
           Folder userRoot = folderDao.getRootRecordForUser(piUser);
           Folder otherRoot = folderDao.getRootRecordForUser(setup.user);
 
-          assertThat(folderDao.getLabGroupFolderForUser(setup.user).getChildrens())
+          assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(setup.user)))
               .doesNotContain(userRoot);
-          assertThat(folderDao.getLabGroupFolderForUser(piUser).getChildrens())
+          assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(piUser)))
               .doesNotContain(otherRoot);
         });
   }
@@ -742,10 +741,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
    */
   private int addTextToAllDocsInFolder(Folder root, String SEARCHTEXT) throws Exception {
     int count = 0;
-    for (RecordToFolder r2f : root.getChildren()) {
-      if (r2f.getRecord().isStructuredDocument()) {
-        StructuredDocument sd =
-            recordMgr.getRecordWithFields(r2f.getRecord().getId(), piUser).asStrucDoc();
+    for (BaseRecord child : folderDao.getChildren(root)) {
+      if (child.isStructuredDocument()) {
+        StructuredDocument sd = recordMgr.getRecordWithFields(child.getId(), piUser).asStrucDoc();
         sd.getFields().get(0).setFieldData(SEARCHTEXT);
         recordMgr.save(sd, piUser);
         count++;
@@ -1097,7 +1095,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder rootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> orgChildren = rootFolder.getChildrens();
+    List<BaseRecord> orgChildren = folderDao.getChildren(rootFolder);
     commitTransaction();
 
     String testName = "newTestFolder";
@@ -1112,7 +1110,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> newChildren = refreshedRootFolder.getChildrens();
+    List<BaseRecord> newChildren = folderDao.getChildren(refreshedRootFolder);
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
@@ -1137,7 +1135,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder rootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> orgChildren = rootFolder.getChildrens();
+    List<BaseRecord> orgChildren = folderDao.getChildren(rootFolder);
     commitTransaction();
 
     String NESTED_FOLDER_PATH = "a/b//c";
@@ -1155,7 +1153,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     List<String> EXPECTED_SUBFOLDER_NAMES = toList("a", "b", "c");
     openTransaction();
     Folder currentFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> currentFolderChildren = currentFolder.getChildrens();
+    List<BaseRecord> currentFolderChildren = folderDao.getChildren(currentFolder);
     currentFolderChildren.removeAll(orgChildren);
     commitTransaction();
 
@@ -1169,7 +1167,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
       openTransaction();
       currentFolder = folderDao.get(newRecord.getId());
-      currentFolderChildren = currentFolder.getChildrens();
+      currentFolderChildren = folderDao.getChildren(currentFolder);
       commitTransaction();
     }
 
@@ -1189,7 +1187,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder rootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> orgChildren = rootFolder.getChildrens();
+    List<BaseRecord> orgChildren = folderDao.getChildren(rootFolder);
     commitTransaction();
 
     String testName = "newTestNotebook";
@@ -1203,7 +1201,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> newChildren = refreshedRootFolder.getChildrens();
+    List<BaseRecord> newChildren = folderDao.getChildren(refreshedRootFolder);
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
@@ -1259,7 +1257,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     openTransaction();
     Long sharedFolderId = group.getGroup().getCommunalGroupFolderId();
     Folder sharedFolder = folderDao.get(sharedFolderId);
-    Set<BaseRecord> orgChildren = folderDao.getRootRecordForUser(user).getChildrens();
+    List<BaseRecord> orgChildren = folderDao.getChildren(folderDao.getRootRecordForUser(user));
     commitTransaction();
 
     String testName = "newTestNotebook";
@@ -1273,10 +1271,10 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedSharedFolder = folderDao.get(sharedFolderId);
-    Set<BaseRecord> newSharedChildren = refreshedSharedFolder.getChildrens();
+    List<BaseRecord> newSharedChildren = folderDao.getChildren(refreshedSharedFolder);
 
     Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> newRootChildren = refreshedRootFolder.getChildrens();
+    List<BaseRecord> newRootChildren = folderDao.getChildren(refreshedRootFolder);
     newRootChildren.removeAll(orgChildren);
     commitTransaction();
 
@@ -1314,7 +1312,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedSharedFolder = folderDao.get(sharedFolderId);
-    Set<BaseRecord> newSharedChildren = refreshedSharedFolder.getChildrens();
+    List<BaseRecord> newSharedChildren = folderDao.getChildren(refreshedSharedFolder);
     Notebook sharedNotebook = (Notebook) (newSharedChildren.toArray())[0];
     commitTransaction();
     logoutCurrentUser();
@@ -1392,7 +1390,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder rootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> orgChildren = rootFolder.getChildrens();
+    List<BaseRecord> orgChildren = folderDao.getChildren(rootFolder);
     commitTransaction();
 
     MvcResult defaultNotebook =
@@ -1417,7 +1415,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedRootFolder = folderDao.getRootRecordForUser(user);
-    Set<BaseRecord> newChildren = refreshedRootFolder.getChildrens();
+    List<BaseRecord> newChildren = folderDao.getChildren(refreshedRootFolder);
     newChildren.removeAll(orgChildren);
     commitTransaction();
 

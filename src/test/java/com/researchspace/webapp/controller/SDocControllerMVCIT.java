@@ -701,7 +701,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
     openTransaction();
     Folder refreshedNotebook = folderMgr.getNotebook(notebook.getId());
-    List<BaseRecord> createdEntries = new ArrayList<>(refreshedNotebook.getChildrens());
+    List<BaseRecord> createdEntries = new ArrayList<>(folderDao.getChildren(refreshedNotebook));
     commitTransaction();
     assertThat(createdEntries).allMatch(BaseRecord::isNotebookEntry);
     Collections.sort(createdEntries, BaseRecord.CREATION_DATE_COMPARATOR);

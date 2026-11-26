@@ -41,7 +41,7 @@ public class FolderToDisplayInMoveDialogFilterTest {
     root.addType(RecordType.ROOT);
     root.addChild(shared, user);
 
-    assertFalse(filter.filter(root.getChildrens().iterator().next()));
+    assertFalse(filter.filter(shared));
     root.addChild(f2, user);
     f2.removeType(RecordType.ROOT_MEDIA);
     assertTrue(filter.filter(f2.getParents().iterator().next().getRecord()));
