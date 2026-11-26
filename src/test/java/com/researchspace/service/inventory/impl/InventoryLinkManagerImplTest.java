@@ -21,6 +21,7 @@ import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
@@ -255,8 +256,10 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void onAPerUserLoginFilesystemABaseUnderTheLoginsHomeIsAnotherFileThanOneAtTheRoot() {
-    NfsFileSystem fs = savedPerUserLoginFileSystem();
+  public void onSftpABaseUnderTheLoginsHomeIsAnotherFileThanOneAtTheRoot() {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem();
+    fs.setClientType(NfsClientType.SFTP);
+    nfsMgr.saveNfsFileSystem(fs);
     User alice = createInitAndLoginAnyUser();
     NfsFileStore rooted = nfsMgr.createAndSaveNewFileStore(fs.getId(), "rooted", "/upload", alice);
     NfsFileStore noBase = nfsMgr.createAndSaveNewFileStore(fs.getId(), "no base", "", alice);

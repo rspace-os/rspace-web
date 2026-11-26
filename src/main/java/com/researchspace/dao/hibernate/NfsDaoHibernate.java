@@ -164,9 +164,12 @@ public class NfsDaoHibernate implements NfsDao {
     Set<String> exactPaths = Set.copyOf(absolutePaths);
     String where = " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)";
     if (filestoreOwner != null) {
-      where +=
-          " and l.fileStore.user = :owner and concat(coalesce(l.fileStore.path, ''), l.relPath)"
-              + (rootedBase ? " like '/%'" : " not like '/%'");
+      where += " and l.fileStore.user = :owner";
+      if (rootedBase != null) {
+        where +=
+            " and concat(coalesce(l.fileStore.path, ''), l.relPath)"
+                + (rootedBase ? " like '/%'" : " not like '/%'");
+      }
     }
     var query =
         sessionFactory

@@ -29,11 +29,13 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    *Amended 2026-11-25:* on a filesystem with per-user logins (any authentication but none) the
    same path can name a different file for each login, through a chroot or a filestore path
    relative to the login's home, and RSpace cannot tell when two logins see the same file. There a
-   lookup counts only links made through the caller's own filestores, removed ones included. It
-   also keeps a path (base plus link path) that starts with a slash apart from one that does not,
-   which SFTP reads under the login's home; the stored path drops that slash, so the query reads it
-   from the filestore's base and the link's own path. Where the slash changes nothing (SMB, iRODS,
-   a login chrooted to its home) this fails closed: a user's own links through a relative and an
+   lookup counts only links made through the caller's own filestores, removed ones included. On
+   SFTP it also keeps a path (base plus link path) that starts with a slash apart from one that
+   does not, which SFTP reads under the login's home; the stored path drops that slash, so the
+   query reads it from the filestore's base and the link's own path. SMB and iRODS have no login
+   home, and an SMB server that returns no name for the share root makes the Gallery write links
+   without the slash, so there both spellings match. Where the slash changes nothing on SFTP (a
+   login chrooted to its home) this fails closed: a user's own links through a relative and an
    absolute base no longer meet, nor do document links that older Gallery versions wrote without
    the slash through a filestore with no base. A filesystem reached with one shared login (S3)
    still matches across every user's filestore.

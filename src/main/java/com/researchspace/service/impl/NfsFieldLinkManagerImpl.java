@@ -7,6 +7,7 @@ import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -104,8 +105,11 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     Stream<StructuredDocument> linking;
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       linking = documentsLinking(fileSystem, absolutePaths, null, null);
-    } else {
+    } else if (NfsClientType.SFTP != fileSystem.getClientType()) {
       // two logins can see different files at one path: ADR 0015 point 2
+      linking = documentsLinking(fileSystem, absolutePaths, user, null);
+    } else {
+      // and on SFTP a path without a leading slash starts at the login's home
       linking =
           absolutePaths.stream()
               .collect(Collectors.partitioningBy(path -> path.startsWith("/")))

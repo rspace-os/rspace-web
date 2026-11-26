@@ -17,6 +17,7 @@ import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -176,13 +177,14 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @Test
-  void lookupByFilestoreOnAPerUserLoginFilesystemSearchesFromWhereTheFilestoreBaseStarts() {
-    NfsFileStore irodsStore =
-        GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(3L, "irods", user);
-    irodsStore.setPath("/upload");
+  void lookupByFilestoreOnSftpSearchesFromWhereTheFilestoreBaseStarts() {
+    NfsFileStore sftpStore =
+        GalleryFilestoreTestUtils.createIrodsFileSystemAndFileStore(3L, "sftp", user);
+    sftpStore.getFileSystem().setClientType(NfsClientType.SFTP);
+    sftpStore.setPath("/upload");
     StructuredDocument own = TestFactory.createAnySD();
     own.setId(11L);
-    when(nfsDao.getNfsFileStore(3L)).thenReturn(irodsStore);
+    when(nfsDao.getNfsFileStore(3L)).thenReturn(sftpStore);
     when(nfsDao.getDocumentsLinkingTo(3L, List.of("upload/hello.txt"), user, true))
         .thenReturn(List.of(own));
     when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
@@ -228,8 +230,9 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @Test
-  void onAPerUserLoginFilesystemOnlyTheCallersFilestoresWithAMatchingBaseAreSearched() {
-    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+  void onSftpOnlyTheCallersFilestoresWithAMatchingBaseAreSearched() {
+    NfsFileSystem sftp = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+    sftp.setClientType(NfsClientType.SFTP);
     StructuredDocument fromRoot = TestFactory.createAnySD();
     fromRoot.setId(11L);
     StructuredDocument fromHome = TestFactory.createAnySD();
@@ -243,9 +246,25 @@ class NfsFieldLinkManagerImplTest {
         .thenReturn(true);
 
     List<RecordInformation> result =
-        manager.getLinkedDocuments(irods, List.of("/upload/hello.txt", "upload/other.txt"), user);
+        manager.getLinkedDocuments(sftp, List.of("/upload/hello.txt", "upload/other.txt"), user);
 
     assertEquals(List.of(11L, 12L), result.stream().map(RecordInformation::getId).toList());
+  }
+
+  @Test
+  void withoutALoginHomeOnlyTheCallersFilestoresAreSearchedWhateverTheSlash() {
+    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
+    StructuredDocument own = TestFactory.createAnySD();
+    own.setId(11L);
+    when(nfsDao.getDocumentsLinkingTo(
+            2L, List.of("upload/hello.txt", "upload/other.txt"), user, null))
+        .thenReturn(List.of(own));
+    when(permUtils.isPermitted(own, PermissionType.READ, user)).thenReturn(true);
+
+    List<RecordInformation> result =
+        manager.getLinkedDocuments(irods, List.of("/upload/hello.txt", "upload/other.txt"), user);
+
+    assertEquals(List.of(11L), result.stream().map(RecordInformation::getId).toList());
   }
 
   @Test

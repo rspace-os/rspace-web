@@ -14,6 +14,7 @@ import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -149,8 +150,11 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     List<Pair<InventoryRecord, InventoryLink>> linking = new ArrayList<>();
     if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
       addItemsLinking(linking, fileSystem, absolutePaths, null, null);
-    } else {
+    } else if (NfsClientType.SFTP != fileSystem.getClientType()) {
       // two logins can see different files at one path: ADR 0015 point 2
+      addItemsLinking(linking, fileSystem, absolutePaths, actor, null);
+    } else {
+      // and on SFTP a path without a leading slash starts at the login's home
       absolutePaths.stream()
           .collect(Collectors.partitioningBy(path -> path.startsWith("/")))
           .forEach(

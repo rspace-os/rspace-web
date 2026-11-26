@@ -29,7 +29,7 @@ that resolves, and Inventory items now refer to one through the same Link field.
    read access to the filesystem, as ADR 0015 point 2 decides for documents.
    *Amended 2026-11-25:* items are matched as documents are (ADR 0015 point 2): on a filesystem
    with per-user logins only links through the caller's own filestores count, whoever holds the
-   item now, and a path with a leading slash is kept apart from one without. The endpoint hands
+   item now, and on SFTP a path with a leading slash is kept apart from one without. The endpoint hands
    the item lookup that path before normalisation, so its leading slash survives.
 3. Only the owner of a filestore can link through it, and only the owner is told its name by the
    link target summary; anyone else, and an unknown filestore, get the identical redacted answer

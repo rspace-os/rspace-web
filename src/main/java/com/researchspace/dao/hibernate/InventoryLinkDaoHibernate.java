@@ -122,8 +122,10 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
     if (filestoreOwner != null) {
       hql +=
           " and l.filestoreId in (select s.id from NfsFileStore s where s.user = :owner"
-              + " and concat(coalesce(s.path, ''), l.targetRemotePath)"
-              + (rootedBase ? " like '/%')" : " not like '/%')");
+              + (rootedBase == null
+                  ? ")"
+                  : " and concat(coalesce(s.path, ''), l.targetRemotePath)"
+                      + (rootedBase ? " like '/%')" : " not like '/%')"));
     }
     var query =
         sessionFactory

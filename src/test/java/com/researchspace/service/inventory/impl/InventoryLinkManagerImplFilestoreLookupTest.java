@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.inventory.FilestoreLinkingItem;
@@ -218,8 +219,9 @@ class InventoryLinkManagerImplFilestoreLookupTest {
   }
 
   @Test
-  void onAPerUserLoginFilesystemOnlyTheActorsFilestoresWithAMatchingBaseAreSearched() {
-    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+  void onSftpOnlyTheActorsFilestoresWithAMatchingBaseAreSearched() {
+    NfsFileSystem sftp = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+    sftp.setClientType(NfsClientType.SFTP);
     ExtraLinkField fromRoot =
         extraField(
             readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
@@ -240,9 +242,28 @@ class InventoryLinkManagerImplFilestoreLookupTest {
 
     assertThat(
             manager.findItemsLinkingFilestorePaths(
-                irods, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+                sftp, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
         .extracting(FilestoreLinkingItem::globalId)
         .containsExactly("SA1", "SA2");
+  }
+
+  @Test
+  void withoutALoginHomeOnlyTheActorsFilestoresAreSearchedWhateverTheSlash() {
+    NfsFileSystem irods = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
+    ExtraLinkField own =
+        extraField(
+            readable("SA1", "Run", InventoryRecordType.SAMPLE, "Viewer"), link("IsSourceOf"));
+    List<String> paths = List.of("data/XRD/run.dat", "data/XRD/rerun.dat");
+    when(linkDao.findLinkFieldsTargetingFilestorePaths(8L, paths, actor, null))
+        .thenReturn(List.of(own));
+    when(linkDao.findStructuredLinkFieldsTargetingFilestorePaths(8L, paths, actor, null))
+        .thenReturn(List.of());
+
+    assertThat(
+            manager.findItemsLinkingFilestorePaths(
+                irods, List.of("/data/XRD/run.dat", "data/XRD/rerun.dat"), actor))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactly("SA1");
   }
 
   @Test

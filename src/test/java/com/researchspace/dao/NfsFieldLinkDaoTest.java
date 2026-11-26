@@ -151,6 +151,10 @@ public class NfsFieldLinkDaoTest extends SpringTransactionalTest {
     assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, false))
         .extracting(StructuredDocument::getId)
         .containsExactly(viaHome.getId(), viaNoBaseNoSlash.getId());
+    assertThat(nfsDao.getDocumentsLinkingTo(fs.getId(), path, u, null))
+        .extracting(StructuredDocument::getId)
+        .containsExactly(
+            viaRooted.getId(), viaHome.getId(), viaNoBase.getId(), viaNoBaseNoSlash.getId());
   }
 
   @Test

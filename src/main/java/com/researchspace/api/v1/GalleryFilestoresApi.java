@@ -62,7 +62,7 @@ public interface GalleryFilestoresApi {
    * Returns the ELN documents linking the filestore item, oldest first, then the Inventory items
    * whose Link field targets it, by Global ID, each once, through any user's filestore of the same
    * filesystem; where each user signs in with their own login, only through the caller's own
-   * filestores, and a filestore path without a leading slash (relative to the login's home on SFTP)
+   * filestores, and on SFTP a filestore path without a leading slash (relative to the login's home)
    * is kept apart from one with it. Every row carries its {@code type}: {@code DOCUMENT} or the
    * kind of item. Documents and items the user cannot read in full are placeholders with only the
    * type and the owner's name. Requires read access; works for every filestore type.
