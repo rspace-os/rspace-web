@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
@@ -36,6 +37,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -273,7 +275,19 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
         getMsgFromResourceBundler("errors.ajax.unauthenticated.refreshRequired"),
         resp.getContentAsString());
     assertEquals(HttpStatus.FORBIDDEN.value(), resp.getStatus());
-    assertEquals("ended", resp.getHeader("X-RSpace-Session"));
+  }
+
+  @Test
+  public void deniedAjaxRequestAcceptingProblemDetailsGetsSessionEndedProblem() throws Exception {
+    req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
+    req.addHeader("Accept", "application/json, application/problem+json;q=0.5, */*;q=0.01");
+    req.setLocalAddr("");
+    assertFalse(filter.onAccessDenied(req, resp));
+    assertEquals(HttpStatus.FORBIDDEN.value(), resp.getStatus());
+    assertThat(resp.getContentType()).startsWith(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    assertEquals(
+        SessionProblem.SESSION_ENDED.getType().toString(),
+        JsonPath.read(resp.getContentAsString(), "$.type"));
   }
 
   @Test

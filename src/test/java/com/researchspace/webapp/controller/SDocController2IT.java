@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatImage;
@@ -51,6 +52,7 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.webapp.filter.SessionProblem;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -63,6 +65,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
@@ -421,7 +424,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
               .andReturn()
               .getResponse();
       assertEquals(403, response.getStatus(), action);
-      assertEquals("ended", response.getHeader("X-RSpace-Session"), action);
+      assertEditorAccountChangedProblem(response, action);
     }
     StructuredDocument unchanged = recordMgr.getRecordWithFields(documentId, piUser).asStrucDoc();
     assertEquals(document.getName(), unchanged.getName());
@@ -459,7 +462,16 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     assertEquals(currentEditor, recordEditorTracker.getEditingUserForRecord(documentId));
     assertEquals(403, response.getStatus());
-    assertEquals("ended", response.getHeader("X-RSpace-Session"));
+    assertEditorAccountChangedProblem(response, "unlockrecord");
+  }
+
+  private void assertEditorAccountChangedProblem(MockHttpServletResponse response, String action)
+      throws Exception {
+    assertEquals(MediaType.APPLICATION_PROBLEM_JSON_VALUE, response.getContentType(), action);
+    assertEquals(
+        SessionProblem.EDITOR_ACCOUNT_CHANGED.getType().toString(),
+        JsonPath.read(response.getContentAsString(), "$.type"),
+        action);
   }
 
   @Test

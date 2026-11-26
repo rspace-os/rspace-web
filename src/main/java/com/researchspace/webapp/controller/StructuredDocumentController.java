@@ -9,7 +9,6 @@ import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_P
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.researchspace.core.util.RequestUtil;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.document.importer.ExternalFileImporter;
@@ -65,6 +64,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import com.researchspace.webapp.filter.SessionProblem;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +85,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -737,10 +736,8 @@ public class StructuredDocumentController extends BaseController {
   private static class EditorAccountChangedException extends RuntimeException {}
 
   @ExceptionHandler(EditorAccountChangedException.class)
-  ResponseEntity<Void> editorAccountChanged() {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        .header(RequestUtil.RSPACE_SESSION_HEADER, RequestUtil.RSPACE_SESSION_ENDED)
-        .build();
+  ResponseEntity<String> editorAccountChanged() {
+    return SessionProblem.EDITOR_ACCOUNT_CHANGED.toResponseEntity();
   }
 
   /**

@@ -10,9 +10,6 @@ public final class RequestUtil {
   /** Checkstyle rule: utility classes should not have public constructor */
   private RequestUtil() {}
 
-  public static final String RSPACE_SESSION_HEADER = "X-RSpace-Session";
-  public static final String RSPACE_SESSION_ENDED = "ended";
-
   /** */
   public static final String AJAX_REQUEST_HEADER_NAME = "X-Requested-With";
 

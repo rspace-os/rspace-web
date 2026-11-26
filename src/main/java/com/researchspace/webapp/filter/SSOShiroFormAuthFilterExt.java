@@ -203,10 +203,10 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
     }
 
     if (RequestUtil.isAjaxRequest(request)
+        && SessionProblem.isAcceptedBy(WebUtils.toHttp(request))
         && !response.isCommitted()
         && !isResponseAlreadyRedirected(response)) {
-      WebUtils.toHttp(response)
-          .setHeader(RequestUtil.RSPACE_SESSION_HEADER, RequestUtil.RSPACE_SESSION_ENDED);
+      SessionProblem.SESSION_ENDED.write(WebUtils.toHttp(response));
     }
 
     /* if it's an SSO request, we've got here because isAccessAllowed returned false.

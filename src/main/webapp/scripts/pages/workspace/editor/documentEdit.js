@@ -89,8 +89,41 @@ function _removeSelections() {
   }
 }
 
+const SESSION_PROBLEM_TYPES = [
+  "https://researchspace.com/problems/session-ended",
+  "https://researchspace.com/problems/editor-account-changed",
+];
+
+// Requests whose failures go through handleEditorSessionExpiry. They list RFC 9457 problem
+// details in Accept, so the server reports an ended session or changed account as a problem
+// instead of its plain-text error.
+const SESSION_AWARE_EDITOR_REQUEST =
+  /\/workspace\/editor\/structuredDocument\/ajax\/(requestEdit|getUpdatedFields|autosaveField|cancelAutosavedEdits|saveStructuredDocument|saveCopyStructuredDocument|saveNewStructuredDocument|rename|unlockrecord)(\?|$)/;
+
+$.ajaxPrefilter(function (options) {
+  if (SESSION_AWARE_EDITOR_REQUEST.test(options.url)) {
+    options.accepts = Object.fromEntries(
+      Object.entries(options.accepts).map(([dataType, accept]) => [
+        dataType,
+        accept + ", application/problem+json;q=0.5",
+      ])
+    );
+  }
+});
+
+function isSessionProblem(jqxhr) {
+  if (!/^application\/problem\+json\b/.test(jqxhr.getResponseHeader("Content-Type") ?? "")) {
+    return false;
+  }
+  try {
+    return SESSION_PROBLEM_TYPES.includes(JSON.parse(jqxhr.responseText).type);
+  } catch {
+    return false;
+  }
+}
+
 function handleEditorSessionExpiry(jqxhr, retrying = false) {
-  if (jqxhr.getResponseHeader("X-RSpace-Session") !== "ended") {
+  if (!isSessionProblem(jqxhr)) {
     return false;
   }
 
@@ -335,8 +368,7 @@ function updateFieldsContentFromServer(forceUpdate) {
     data
   );
   jqxhr.done(function (data) {
-    if ((editable === "EDIT_MODE" && handleEditorSessionExpiry(jqxhr)) ||
-        !data || editSessionExpired || _wasAnyFieldChanged()) {
+    if (!data || editSessionExpired || _wasAnyFieldChanged()) {
       return;
     }
     _updateFields(data.data);

@@ -61,7 +61,12 @@ test("Document edits survive expiry and can be saved after signing in again", as
   await page.getByRole("button", { name: "Ok", exact: true }).click();
 
   requests.length = 0;
+  // The editor also lists problem details in Accept; successful responses must stay plain JSON.
+  const relockResponse = page.waitForResponse(
+    (response) => response.url().endsWith("/ajax/requestEdit") && response.ok(),
+  );
   await document.editToolbar.saveAndView();
+  expect.soft(await (await relockResponse).headerValue("content-type")).toMatch(/^application\/json/);
   await pageDocument.isLoaded();
   await expect(await pageDocument.getFieldViewContent("", 0)).toHaveText(unsavedText);
   const lockRequest = requests.indexOf("requestEdit");
@@ -102,6 +107,10 @@ test("An expired session prompts sign-in when requesting the edit lock", async (
   const response = await failedLock;
   const lockParams = new URLSearchParams(response.request().postData() ?? "");
   expect.soft(lockParams.get("expectedUsername")).toBe(appUser.username);
+  expect.soft(await response.request().headerValue("accept")).toContain("application/problem+json");
+  expect
+    .soft(await response.json())
+    .toMatchObject({ type: "https://researchspace.com/problems/session-ended", status: 403 });
   const prompt = page.getByRole("alertdialog", { name: "Your session has expired" });
   await expect(prompt.getByRole("button", { name: "Sign in" })).toBeFocused();
 });
@@ -111,7 +120,16 @@ test("An inline title stays pending when the signed-in account changes", async (
   const document = await pageWorkspace.createBasicDocument();
   await page.route(
     "**/ajax/rename",
-    (route) => route.fulfill({ status: 403, headers: { "X-RSpace-Session": "ended" } }),
+    (route) =>
+      route.fulfill({
+        status: 403,
+        contentType: "application/problem+json",
+        body: JSON.stringify({
+          type: "https://researchspace.com/problems/editor-account-changed",
+          title: "Signed in as a different user",
+          status: 403,
+        }),
+      }),
     { times: 1 },
   );
 
