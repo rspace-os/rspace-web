@@ -60,8 +60,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
+import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -938,6 +940,38 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void changeApiContainerOwner_ofAContainerInsideAnotherContainer_recordsTheActor() {
+    ApiContainer parent = createBasicContainerForUser(testUser, "parent");
+    ApiContainer child = createBasicContainerForUser(testUser, "child");
+    ApiContainer moveIntoParent = new ApiContainer();
+    moveIntoParent.setId(child.getId());
+    moveIntoParent.setParentContainer(parent);
+    containerApiMgr.updateApiContainer(moveIntoParent, testUser);
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    initialiseContentWithEmptyContent(newOwner);
+    User actor = createAndSaveUserIfNotExists(getRandomAlphabeticString("actor"));
+
+    ApiContainer transfer = new ApiContainer();
+    transfer.setId(child.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    containerApiMgr.changeApiContainerOwner(transfer, testUser, actor);
+
+    ApiContainer transferred = containerApiMgr.getApiContainerById(child.getId(), newOwner);
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    // stored in a normal container, so it stays where it is
+    assertEquals(parent.getId(), transferred.getParentContainer().getId());
+    ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+    Mockito.verify(mockPublisher, Mockito.atLeastOnce()).publishEvent(events.capture());
+    InventoryTransferEvent event =
+        events.getAllValues().stream()
+            .filter(InventoryTransferEvent.class::isInstance)
+            .map(InventoryTransferEvent.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(actor, event.getTransferringUser());
+  }
+
+  @Test
   public void moveContainerIntoAnotherContainer() throws Exception {
 
     int expectedCreatedEventsCount = 0;
@@ -1659,5 +1693,32 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ApiInventorySharingMode.OWNER_GROUPS,
         containerApiMgr.getApiContainerById(created.getId(), testUser).getSharingMode());
+  }
+
+  @Test
+  public void changeApiContainerOwner_rechecksTheOwnerReadUnderTheRowLock() {
+    ApiContainer container = createBasicContainerForUser(testUser, "taken");
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(other);
+    changeOwnerBehindTheSession(Container.class, container.getId(), other);
+
+    ApiContainer transfer = new ApiContainer();
+    transfer.setId(container.getId());
+    transfer.setOwner(new ApiUser(testUser));
+    assertThrows(
+        NotFoundException.class, () -> containerApiMgr.changeApiContainerOwner(transfer, testUser));
+  }
+
+  /** Changes the owner in the database while the session keeps the instance it already loaded. */
+  private void changeOwnerBehindTheSession(
+      Class<? extends InventoryRecord> type, Long id, User owner) {
+    Session session = sessionFactory.getCurrentSession();
+    session.get(type, id);
+    session
+        .createMutationQuery(
+            "update " + type.getSimpleName() + " set owner = :owner where id = :id")
+        .setParameter("owner", owner)
+        .setParameter("id", id)
+        .executeUpdate();
   }
 }

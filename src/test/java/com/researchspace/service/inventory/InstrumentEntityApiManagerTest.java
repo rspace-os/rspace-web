@@ -49,6 +49,7 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.record.StructuredDocument;
@@ -58,9 +59,11 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -1540,5 +1543,52 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         () -> instrumentApiMgr.createNewApiInstrument(fromLimitedReadTemplate, testUser));
     assertEquals(instrumentCount, getCountOfEntityTable("Instrument"));
     assertEquals(templateCount, getCountOfEntityTable("InstrumentTemplate"));
+  }
+
+  @Test
+  public void changeApiInstrumentTemplateOwner_recordsTheActor() {
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("ntOwner"));
+    initialiseContentWithEmptyContent(newOwner);
+    User actor = createAndSaveUserIfNotExists(getRandomAlphabeticString("actor"));
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    template.setOwner(new ApiUser(newOwner));
+    instrumentApiMgr.changeApiInstrumentTemplateOwner(template, testUser, actor);
+
+    ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+    verify(mockPublisher, Mockito.atLeastOnce()).publishEvent(events.capture());
+    InventoryTransferEvent event =
+        events.getAllValues().stream()
+            .filter(InventoryTransferEvent.class::isInstance)
+            .map(InventoryTransferEvent.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(actor, event.getTransferringUser());
+  }
+
+  @Test
+  public void changeApiInstrumentTemplateOwner_rechecksTheOwnerReadUnderTheRowLock() {
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(other);
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    changeOwnerBehindTheSession(InstrumentTemplate.class, template.getId(), other);
+
+    template.setOwner(new ApiUser(testUser));
+    assertThrows(
+        NotFoundException.class,
+        () -> instrumentApiMgr.changeApiInstrumentTemplateOwner(template, testUser));
+  }
+
+  /** Changes the owner in the database while the session keeps the instance it already loaded. */
+  private void changeOwnerBehindTheSession(
+      Class<? extends InventoryRecord> type, Long id, User owner) {
+    Session session = sessionFactory.getCurrentSession();
+    session.get(type, id);
+    session
+        .createMutationQuery(
+            "update " + type.getSimpleName() + " set owner = :owner where id = :id")
+        .setParameter("owner", owner)
+        .setParameter("id", id)
+        .executeUpdate();
   }
 }

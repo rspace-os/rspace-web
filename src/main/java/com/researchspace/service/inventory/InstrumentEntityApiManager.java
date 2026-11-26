@@ -144,6 +144,13 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
       ApiInstrumentTemplate apiTemplate, User user);
 
+  /**
+   * Changes the owner of the instrument template for {@code subject}, recording {@code actor} as
+   * the user who performed the transfer.
+   */
+  ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
+      ApiInstrumentTemplate apiTemplate, User subject, User actor);
+
   /** Creates a copy of the instrument. */
   ApiInstrument duplicateInstrument(Long instrumentId, User user);
 

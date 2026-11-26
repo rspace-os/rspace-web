@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.sort.InventorySort;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import jakarta.persistence.LockModeType;
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +24,19 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
   public InventoryDaoHibernate(Class<T> persistentClass) {
     super(persistentClass);
+  }
+
+  /**
+   * Reloads the record's current state with a locking read, keeping the instance the session
+   * already holds. The record's row, and the rows its eager associations join, stay locked until
+   * the transaction ends, so a concurrent change committed after the record was first read is seen
+   * and none can overtake this transaction. Refresh cascades into associations already loaded in
+   * the session, such as a container's locations, so call it before loading those.
+   */
+  public void refreshForUpdate(T record) {
+    // refresh would drop unflushed changes, and fails for a record not yet inserted
+    getSession().flush();
+    getSession().refresh(record, LockModeType.PESSIMISTIC_WRITE);
   }
 
   protected String getOwnedByAndPermittedItemsSqlQueryFragment(

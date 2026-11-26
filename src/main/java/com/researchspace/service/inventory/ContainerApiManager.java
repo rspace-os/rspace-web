@@ -176,6 +176,12 @@ public interface ContainerApiManager extends InventoryApiManager<Container> {
   ApiContainer changeApiContainerOwner(ApiContainer apiContainer, User user);
 
   /**
+   * Changes the owner of the container for {@code subject}, recording {@code actor} as the user who
+   * performed the transfer.
+   */
+  ApiContainer changeApiContainerOwner(ApiContainer apiContainer, User subject, User actor);
+
+  /**
    * Mark container as deleted - it will no longer be included in standard listings.
    *
    * @return deleted container

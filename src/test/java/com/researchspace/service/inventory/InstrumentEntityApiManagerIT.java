@@ -13,14 +13,22 @@ import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 
@@ -229,6 +237,113 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
                     created, userMgr.getUserByUsername(piUser.getUsername())));
 
     assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_keepsAnEditCommittedAfterTheTransferReadTheInstrument()
+      throws Exception {
+    User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(owner);
+    User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(newOwner);
+    ApiInstrument created = createBasicInstrumentForUser(owner, "before-rename");
+    CountDownLatch read = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    try {
+      Future<?> transfer =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            instrumentApiMgr.getApiInstrumentById(created.getId(), owner);
+                            read.countDown();
+                            awaitOrFail(release);
+                            ApiInstrument toNewOwner = new ApiInstrument();
+                            toNewOwner.setId(created.getId());
+                            toNewOwner.setOwner(new ApiUser(newOwner));
+                            instrumentApiMgr.changeApiInstrumentOwner(toNewOwner, owner);
+                          }));
+      assertTrue(read.await(30, TimeUnit.SECONDS));
+      ApiInstrument rename = new ApiInstrument();
+      rename.setId(created.getId());
+      rename.setName("after-rename");
+      doInTransaction(() -> instrumentApiMgr.updateApiInstrument(rename, owner));
+      release.countDown();
+      transfer.get(60, TimeUnit.SECONDS);
+
+      ApiInstrument after =
+          doInTransaction(() -> instrumentApiMgr.getApiInstrumentById(created.getId(), newOwner));
+      assertEquals(newOwner.getUsername(), after.getOwner().getUsername());
+      assertEquals("after-rename", after.getName());
+    } finally {
+      release.countDown();
+      pool.shutdownNow();
+    }
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_refusesAPiWhoseAuthorityEndedAfterTheTransferBegan()
+      throws Exception {
+    setUpUserWithoutCustomContent(piUser);
+    User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(owner);
+    User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(newOwner);
+    Group group = createGroupForPiAndUsers(piUser, new User[] {piUser, owner});
+    ApiInstrument created = createBasicInstrumentForUser(owner, "pi-loses-authority");
+    CountDownLatch snapshotTaken = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    try {
+      Future<?> transfer =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            User pi = userMgr.getUserByUsername(piUser.getUsername());
+                            instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), pi);
+                            snapshotTaken.countDown();
+                            awaitOrFail(release);
+                            ApiInstrument toNewOwner = new ApiInstrument();
+                            toNewOwner.setId(created.getId());
+                            toNewOwner.setOwner(new ApiUser(newOwner));
+                            instrumentApiMgr.changeApiInstrumentOwner(toNewOwner, pi);
+                          }));
+      assertTrue(snapshotTaken.await(30, TimeUnit.SECONDS));
+      // committed after the transfer's snapshot: only a locking read of the membership sees it
+      logoutAndLoginAs(piUser);
+      doInTransaction(() -> grpMgr.removeUserFromGroup(owner.getUsername(), group.getId(), piUser));
+      release.countDown();
+
+      ExecutionException refused =
+          assertThrows(ExecutionException.class, () -> transfer.get(60, TimeUnit.SECONDS));
+      assertTrue(
+          refused.getCause() instanceof IllegalArgumentException,
+          () -> "unexpected refusal: " + refused.getCause());
+      assertEquals(
+          owner.getUsername(),
+          doInTransaction(() -> instrumentApiMgr.getApiInstrumentById(created.getId(), owner))
+              .getOwner()
+              .getUsername());
+    } finally {
+      release.countDown();
+      pool.shutdownNow();
+    }
+  }
+
+  /** Fails the race rather than letting it run in the wrong order when the other side is late. */
+  private static void awaitOrFail(CountDownLatch latch) {
+    try {
+      if (!latch.await(30, TimeUnit.SECONDS)) {
+        throw new AssertionError("timed out waiting for the other transaction");
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError("interrupted waiting for the other transaction", e);
+    }
   }
 
   @Test

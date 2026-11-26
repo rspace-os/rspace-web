@@ -11,6 +11,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
@@ -34,6 +35,7 @@ public class ContainersApiController extends BaseApiInventoryController implemen
   @Autowired private ContainerApiPostValidator apiContainerPostValidator;
   @Autowired private ContainerApiPutValidator apiContainerPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired private UserManager userManager;
 
   @Data
   @AllArgsConstructor
@@ -199,14 +201,23 @@ public class ContainersApiController extends BaseApiInventoryController implemen
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeContainerOwner(
+        id, incomingContainer, errors, user, userManager.getOriginalUserForOperateAs(user));
+  }
 
+  /**
+   * Transfers the container with the permissions of {@code subject} and records {@code actor}, the
+   * original sysadmin when operating as another user, as the transferring user.
+   */
+  public ApiContainer changeContainerOwner(
+      Long id, ApiContainer incomingContainer, BindingResult errors, User subject, User actor)
+      throws BindException {
     // update incoming object's id which could be omitted
     incomingContainer.setIdIfNotSet(id);
-    containerApiMgr.assertUserCanTransferContainer(id, user);
+    containerApiMgr.assertUserCanTransferContainer(id, subject);
 
-    // update container
     ApiContainer updatedContainer =
-        containerApiMgr.changeApiContainerOwner(incomingContainer, user);
+        containerApiMgr.changeApiContainerOwner(incomingContainer, subject, actor);
     buildAndAddInventoryRecordLinks(updatedContainer);
 
     return updatedContainer;

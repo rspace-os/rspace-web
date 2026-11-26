@@ -7,4 +7,10 @@ public interface InstrumentEntityDao<T extends InstrumentEntity> extends Generic
 
   /** Should be only called in unit tests (I think). Sets stored default template owner to null. */
   void resetDefaultTemplateOwner();
+
+  /**
+   * Reloads the record's current state under its row lock, keeping the session's instance; see
+   * {@code InventoryDaoHibernate#refreshForUpdate}.
+   */
+  void refreshForUpdate(T record);
 }

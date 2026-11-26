@@ -55,6 +55,13 @@ public interface SampleRequestApiManager {
   ApiSampleRequest fulfilByTransfer(Long id, String sampleToTransferGlobalId, User user);
 
   /**
+   * As {@link #fulfilByTransfer(Long, String, User)}, recording {@code actor}, the original
+   * sysadmin when operating as another user, as the user who transferred the sample.
+   */
+  ApiSampleRequest fulfilByTransfer(
+      Long id, String sampleToTransferGlobalId, User user, User actor);
+
+  /**
    * Page of requests involving the user, on the given side of the request.
    *
    * @param role REQUESTER for requests the user raised, OWNER for requests they received as the

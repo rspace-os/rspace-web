@@ -22,6 +22,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,6 +50,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired SampleTemplatePostValidator postValidator;
+  private @Autowired UserManager userManager;
   private @Autowired SampleTemplatePutValidator putValidator;
 
   @Override
@@ -253,14 +255,23 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeSampleTemplateOwner(
+        id, incomingTemplate, errors, user, userManager.getOriginalUserForOperateAs(user));
+  }
 
+  /**
+   * Transfers the template with the permissions of {@code subject} and records {@code actor}, the
+   * original sysadmin when operating as another user, as the transferring user.
+   */
+  public ApiSampleTemplate changeSampleTemplateOwner(
+      Long id, ApiSampleTemplate incomingTemplate, BindingResult errors, User subject, User actor)
+      throws BindException {
     // update incoming object's id which could be omitted
     incomingTemplate.setIdIfNotSet(id);
-    sampleApiMgr.assertUserCanEditSampleTemplate(id, user);
+    sampleApiMgr.assertUserCanEditSampleTemplate(id, subject);
 
-    // updated sample
     ApiSampleTemplate updatedTemplate =
-        (ApiSampleTemplate) sampleApiMgr.changeApiSampleOwner(incomingTemplate, user);
+        (ApiSampleTemplate) sampleApiMgr.changeApiSampleOwner(incomingTemplate, subject, actor);
     buildAndAddInventoryRecordLinks(updatedTemplate);
 
     return updatedTemplate;

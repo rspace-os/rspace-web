@@ -49,7 +49,9 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -67,9 +69,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -1587,5 +1591,55 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   private void setSampleRequestsAvailable(HierarchicalPermission permission) {
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE, permission, getSysAdminUser());
+  }
+
+  @Test
+  public void changeApiSampleOwner_ofATemplate_locksTheTemplateAndRecordsTheActor() {
+    ApiSampleTemplate template = createBasicSampleTemplate(testUser);
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    initialiseContentWithEmptyContent(newOwner);
+    User actor = createAndSaveUserIfNotExists(getRandomAlphabeticString("actor"));
+    ApiSampleInfo transfer = new ApiSampleInfo();
+    transfer.setId(template.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    ApiSample transferred = sampleApiMgr.changeApiSampleOwner(transfer, testUser, actor);
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+    Mockito.verify(mockPublisher, Mockito.atLeastOnce()).publishEvent(events.capture());
+    InventoryTransferEvent event =
+        events.getAllValues().stream()
+            .filter(InventoryTransferEvent.class::isInstance)
+            .map(InventoryTransferEvent.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(actor, event.getTransferringUser());
+  }
+
+  @Test
+  public void changeApiSampleOwner_ofATemplate_rechecksTheOwnerReadUnderTheRowLock() {
+    ApiSampleTemplate template = createBasicSampleTemplate(testUser);
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    initialiseContentWithEmptyContent(other);
+    changeOwnerBehindTheSession(SampleTemplate.class, template.getId(), other);
+
+    ApiSampleInfo transfer = new ApiSampleInfo();
+    transfer.setId(template.getId());
+    transfer.setOwner(new ApiUser(testUser));
+    assertThrows(
+        NotFoundException.class, () -> sampleApiMgr.changeApiSampleOwner(transfer, testUser));
+  }
+
+  /** Changes the owner in the database while the session keeps the instance it already loaded. */
+  private void changeOwnerBehindTheSession(
+      Class<? extends InventoryRecord> type, Long id, User owner) {
+    Session session = sessionFactory.getCurrentSession();
+    session.get(type, id);
+    session
+        .createMutationQuery(
+            "update " + type.getSimpleName() + " set owner = :owner where id = :id")
+        .setParameter("owner", owner)
+        .setParameter("id", id)
+        .executeUpdate();
   }
 }

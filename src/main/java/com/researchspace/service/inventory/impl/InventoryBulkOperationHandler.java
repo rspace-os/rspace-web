@@ -113,7 +113,7 @@ public class InventoryBulkOperationHandler {
         return runOperationForEachRecordFromBulkList(
             bulkOpConfig,
             (record, user) -> changeInventoryRecordOwner(record, user, bulkOpConfig.getActor()),
-            instrumentsInIdOrder(bulkOpConfig.getRecords()));
+            recordsInLockOrder(bulkOpConfig.getRecords()));
       default:
         throw new IllegalStateException("unhandled operation for type: " + operationType);
     }
@@ -126,28 +126,28 @@ public class InventoryBulkOperationHandler {
   }
 
   /**
-   * Request order, except that instrument records are visited in ascending id order across the
-   * positions they occupy. Each instrument transfer takes a row lock held until the batch commits,
-   * so two overlapping batches that lock in id order cannot deadlock.
+   * Request order, except that records with an id are visited in (type, id) order across the
+   * positions they occupy. Each transfer takes its record's row lock until the batch commits, so
+   * two overlapping batches take those row locks in the same order. Workbench rows that transfers
+   * move items between are not ordered.
    */
-  private static List<Integer> instrumentsInIdOrder(List<ApiInventoryRecordInfo> records) {
+  private static List<Integer> recordsInLockOrder(List<ApiInventoryRecordInfo> records) {
     if (records == null) {
       return null;
     }
     List<Integer> order = new ArrayList<>(IntStream.range(0, records.size()).boxed().toList());
-    List<Integer> instrumentPositions =
+    List<Integer> lockedPositions =
         order.stream()
-            .filter(
-                i ->
-                    records.get(i).getType() == ApiInventoryRecordType.INSTRUMENT
-                        && records.get(i).getId() != null)
+            .filter(i -> records.get(i).getType() != null && records.get(i).getId() != null)
             .toList();
-    List<Integer> instrumentsById =
-        instrumentPositions.stream()
-            .sorted(Comparator.comparing(i -> records.get(i).getId()))
+    List<Integer> lockedInOrder =
+        lockedPositions.stream()
+            .sorted(
+                Comparator.comparing((Integer i) -> records.get(i).getType())
+                    .thenComparing(i -> records.get(i).getId()))
             .toList();
-    for (int k = 0; k < instrumentPositions.size(); k++) {
-      order.set(instrumentPositions.get(k), instrumentsById.get(k));
+    for (int k = 0; k < lockedPositions.size(); k++) {
+      order.set(lockedPositions.get(k), lockedInOrder.get(k));
     }
     return order;
   }
@@ -388,19 +388,19 @@ public class InventoryBulkOperationHandler {
       switch (recInfoType) {
         case SAMPLE:
           return samplesApiController.changeSampleOwner(
-              recInfo.getId(), (ApiSampleWithFullSubSamples) recInfo, errors, user);
+              recInfo.getId(), (ApiSampleWithFullSubSamples) recInfo, errors, user, actor);
         case SAMPLE_TEMPLATE:
           return templatesApiController.changeSampleTemplateOwner(
-              recInfo.getId(), (ApiSampleTemplate) recInfo, errors, user);
+              recInfo.getId(), (ApiSampleTemplate) recInfo, errors, user, actor);
         case CONTAINER:
           return containersApiController.changeContainerOwner(
-              recInfo.getId(), (ApiContainer) recInfo, errors, user);
+              recInfo.getId(), (ApiContainer) recInfo, errors, user, actor);
         case INSTRUMENT:
           return instrumentsApiController.changeInstrumentOwner(
               recInfo.getId(), (ApiInstrument) recInfo, errors, user, actor);
         case INSTRUMENT_TEMPLATE:
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
-              recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
+              recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user, actor);
         default:
           throw new LocalizedIllegalArgumentException(
               "errors.inventory.bulk.ownerChangeUnsupportedType", recInfo.getType());

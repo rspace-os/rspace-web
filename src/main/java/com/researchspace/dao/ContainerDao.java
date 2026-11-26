@@ -65,4 +65,10 @@ public interface ContainerDao extends GenericDao<Container, Long> {
   Long getWorkbenchIdForUser(User user);
 
   List<Container> getAllUsingImage(FileProperty fileProperty);
+
+  /**
+   * Reloads the record's current state under its row lock, keeping the session's instance; see
+   * {@code InventoryDaoHibernate#refreshForUpdate}.
+   */
+  void refreshForUpdate(Container record);
 }

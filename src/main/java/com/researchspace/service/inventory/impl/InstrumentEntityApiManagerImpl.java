@@ -569,15 +569,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
     boolean temporaryLock = lockItemForEdit(dbInstrument, subject);
     try {
-      dbInstrument =
-          instrumentDao
-              .lockById(dbInstrument.getId())
-              .orElseThrow(() -> new NotFoundException("Instrument not found"));
+      instrumentDao.refreshForUpdate(dbInstrument);
+      assertStillTransferable(dbInstrument, subject);
       User originalOwner = dbInstrument.getOwner();
-      boolean hasCurrentGroupAuthority =
-          instrumentDao.hasLockedTransferAuthority(subject, originalOwner);
-      invPermissions.assertUserCanTransferInventoryRecord(
-          dbInstrument, subject, hasCurrentGroupAuthority);
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
         Validate.isTrue(
@@ -867,14 +861,21 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   @Override
   public ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
       ApiInstrumentTemplate apiTemplate, User user) {
+    return changeApiInstrumentTemplateOwner(apiTemplate, user, user);
+  }
+
+  @Override
+  public ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
+      ApiInstrumentTemplate apiTemplate, User subject, User actor) {
     Validate.notNull(apiTemplate.getOwner(), "'owner' field not present");
     Validate.notNull(apiTemplate.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrumentTemplate(apiTemplate.getId(), user);
+    assertUserCanTransferInstrumentTemplate(apiTemplate.getId(), subject);
     InstrumentTemplate dbTemplate = (InstrumentTemplate) getIfExists(apiTemplate.getId());
-    boolean temporaryLock = lockItemForEdit(dbTemplate, user);
+    boolean temporaryLock = lockItemForEdit(dbTemplate, subject);
     try {
-      dbTemplate = (InstrumentTemplate) getIfExists(dbTemplate.getId());
+      instrumentTemplateDao.refreshForUpdate(dbTemplate);
+      assertStillTransferable(dbTemplate, subject);
       User originalOwner = dbTemplate.getOwner();
       String newOwnerUsername = apiTemplate.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
@@ -885,14 +886,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         dbTemplate.setOwner(newOwner);
         instrumentTemplateDao.save(dbTemplate);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbTemplate, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbTemplate, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbTemplate, user);
+        unlockItemAfterEdit(dbTemplate, subject);
       }
     }
-    return getApiInstrumentTemplateById(dbTemplate.getId(), user);
+    return getApiInstrumentTemplateById(dbTemplate.getId(), subject);
   }
 
   @Override

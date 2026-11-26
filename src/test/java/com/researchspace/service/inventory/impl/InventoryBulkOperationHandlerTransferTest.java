@@ -8,8 +8,10 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.controller.ContainersApiController;
 import com.researchspace.api.v1.controller.InstrumentsApiController;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
@@ -27,6 +29,7 @@ import org.springframework.validation.BindException;
 class InventoryBulkOperationHandlerTransferTest {
 
   @Mock private InstrumentsApiController instrumentsApiController;
+  @Mock private ContainersApiController containersApiController;
   @InjectMocks private InventoryBulkOperationHandler handler;
 
   @Test
@@ -50,29 +53,54 @@ class InventoryBulkOperationHandlerTransferTest {
   }
 
   @Test
-  void instrumentTransfersLockInIdOrderButReportInRequestOrder() throws BindException {
+  void transfersLockInTypeAndIdOrderButReportInRequestOrder() throws BindException {
     User subject = new User("subject");
-    List<ApiInstrument> requested = List.of(instrument(30L), instrument(10L), instrument(20L));
-    for (ApiInstrument instrument : requested) {
+    ApiInstrument instrument30 = instrument(30L);
+    ApiContainer container50 = container(50L);
+    ApiInstrument instrument10 = instrument(10L);
+    ApiContainer container20 = container(20L);
+    for (ApiInstrument instrument : List.of(instrument30, instrument10)) {
       when(instrumentsApiController.changeInstrumentOwner(
               eq(instrument.getId()), same(instrument), any(), same(subject), same(subject)))
           .thenReturn(instrument);
+    }
+    for (ApiContainer container : List.of(container50, container20)) {
+      when(containersApiController.changeContainerOwner(
+              eq(container.getId()), same(container), any(), same(subject), same(subject)))
+          .thenReturn(container);
     }
 
     ApiInventoryBulkOperationResult result =
         handler.runBulkOperation(
             new InventoryBulkOperationConfig(
-                BulkApiOperationType.CHANGE_OWNER, List.copyOf(requested), true, subject));
+                BulkApiOperationType.CHANGE_OWNER,
+                List.of(instrument30, container50, instrument10, container20),
+                true,
+                subject));
 
-    InOrder lockOrder = inOrder(instrumentsApiController);
-    for (long id : new long[] {10L, 20L, 30L}) {
-      lockOrder
-          .verify(instrumentsApiController)
-          .changeInstrumentOwner(eq(id), any(), any(), same(subject), same(subject));
-    }
+    // CONTAINER precedes INSTRUMENT in ApiInventoryRecordType
+    InOrder lockOrder = inOrder(containersApiController, instrumentsApiController);
+    lockOrder
+        .verify(containersApiController)
+        .changeContainerOwner(eq(20L), any(), any(), same(subject), same(subject));
+    lockOrder
+        .verify(containersApiController)
+        .changeContainerOwner(eq(50L), any(), any(), same(subject), same(subject));
+    lockOrder
+        .verify(instrumentsApiController)
+        .changeInstrumentOwner(eq(10L), any(), any(), same(subject), same(subject));
+    lockOrder
+        .verify(instrumentsApiController)
+        .changeInstrumentOwner(eq(30L), any(), any(), same(subject), same(subject));
     assertEquals(
-        List.of(30L, 10L, 20L),
+        List.of(30L, 50L, 10L, 20L),
         result.getResults().stream().map(r -> r.getRecord().getId()).toList());
+  }
+
+  private static ApiContainer container(Long id) {
+    ApiContainer container = new ApiContainer();
+    container.setId(id);
+    return container;
   }
 
   private static ApiInstrument instrument(Long id) {

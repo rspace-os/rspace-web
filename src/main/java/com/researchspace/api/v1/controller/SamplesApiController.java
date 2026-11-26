@@ -19,6 +19,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.SampleApiPostFullValidator;
 import jakarta.validation.Valid;
@@ -48,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class SamplesApiController extends BaseApiInventoryController implements SamplesApi {
 
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired private UserManager userManager;
 
   @Autowired private SampleApiPostValidator sampleApiPostValidator;
   @Autowired private SampleApiPutValidator sampleApiPutValidator;
@@ -342,11 +344,25 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeSampleOwner(
+        id, incomingSample, errors, user, userManager.getOriginalUserForOperateAs(user));
+  }
 
+  /**
+   * Transfers the sample with the permissions of {@code subject} and records {@code actor}, the
+   * original sysadmin when operating as another user, as the transferring user.
+   */
+  public ApiSample changeSampleOwner(
+      Long id,
+      ApiSampleWithFullSubSamples incomingSample,
+      BindingResult errors,
+      User subject,
+      User actor)
+      throws BindException {
     incomingSample.setIdIfNotSet(id);
-    sampleApiMgr.assertUserCanTransferSample(id, user);
+    sampleApiMgr.assertUserCanTransferSample(id, subject);
 
-    ApiSample updatedSample = sampleApiMgr.changeApiSampleOwner(incomingSample, user);
+    ApiSample updatedSample = sampleApiMgr.changeApiSampleOwner(incomingSample, subject, actor);
     buildAndAddInventoryRecordLinks(updatedSample);
 
     return updatedSample;

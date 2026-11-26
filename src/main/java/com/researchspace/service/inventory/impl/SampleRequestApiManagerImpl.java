@@ -175,6 +175,12 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest fulfilByTransfer(Long id, String sampleToTransferGlobalId, User user) {
+    return fulfilByTransfer(id, sampleToTransferGlobalId, user, user);
+  }
+
+  @Override
+  public ApiSampleRequest fulfilByTransfer(
+      Long id, String sampleToTransferGlobalId, User user, User actor) {
     SampleRequest request = lockRequestForParty(id, user);
     permittedTransitionOrThrow(request, SampleRequestStatus.FULFILLED, user);
     Sample sample =
@@ -200,7 +206,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     ApiSample transfer = new ApiSample();
     transfer.setId(sample.getId());
     transfer.setOwner(new ApiUser(requester));
-    sampleApiManager.changeApiSampleOwner(transfer, user);
+    sampleApiManager.changeApiSampleOwner(transfer, user, actor);
     return toDetail(saved, user);
   }
 
