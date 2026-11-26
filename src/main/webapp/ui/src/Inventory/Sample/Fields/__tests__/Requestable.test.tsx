@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "@/hooks/api/deploymentPropertyQueryClient";
 import { makeMockSample } from "@/stores/models/__tests__/SampleModel/mocking";
 import { SampleCollection } from "@/stores/models/SampleModel";
 import materialTheme from "@/theme";
@@ -16,16 +16,18 @@ vi.mock("@/common/InvApiService", () => ({ default: {} }));
 
 const CAN_SET_REQUESTABLE = ["READ", "UPDATE", "CHANGE_OWNER", "CHANGE_REQUESTABLE"] as const;
 
-function deploymentProperties(available: boolean) {
-  return new Map<string, unknown>([["inventory.sampleRequests.available", available ? "ALLOWED" : "DENIED"]]);
+function seedDeploymentProperties(available: boolean) {
+  deploymentPropertyQueryClient.setQueryData(
+    deploymentPropertyQueryKeys.property("inventory.sampleRequests.available"),
+    available ? "ALLOWED" : "DENIED",
+  );
 }
 
 function renderFor(collection: SampleCollection, { available = true }: { available?: boolean } = {}) {
+  seedDeploymentProperties(available);
   return render(
     <ThemeProvider theme={materialTheme}>
-      <DeploymentPropertyContext.Provider value={deploymentProperties(available)}>
-        <Requestable collection={collection} />
-      </DeploymentPropertyContext.Provider>
+      <Requestable collection={collection} />
     </ThemeProvider>,
   );
 }

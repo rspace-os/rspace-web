@@ -2,7 +2,6 @@ import { act, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
-import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
 import { mkValidator } from "../../util/Validator";
 import FormatChoice from "../FormatChoice";
 
@@ -99,24 +98,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["NORMAL"],
+              exportNames: ["foo"],
+              exportIds: ["1"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       const wordElement = screen.getByText("workspace:export.format.chooser.formats.docHeading");
@@ -126,24 +123,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, false);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["NORMAL"],
+              exportNames: ["foo"],
+              exportIds: ["1"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       const wordElement = screen.queryAllByText("workspace:export.format.chooser.formats.docHeading");
@@ -160,24 +155,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL", "NORMAL"],
-                exportNames: ["foo", "bar"],
-                exportIds: ["1", "2"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["NORMAL", "NORMAL"],
+              exportNames: ["foo", "bar"],
+              exportIds: ["1", "2"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       expect(
@@ -190,24 +183,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["FOLDER"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["FOLDER"],
+              exportNames: ["foo"],
+              exportIds: ["1"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       expect(
@@ -220,24 +211,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NOTEBOOK"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["NOTEBOOK"],
+              exportNames: ["foo"],
+              exportIds: ["1"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       expect(
@@ -250,24 +239,22 @@ describe("FormatChoice", () => {
       mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
       await act(() =>
         render(
-          <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["MEDIA_FILE"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
-              }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
-          </DeploymentPropertyContext.Provider>,
+          <FormatChoice
+            exportSelection={{
+              type: "selection",
+              exportTypes: ["MEDIA_FILE"],
+              exportNames: ["foo"],
+              exportIds: ["1"],
+            }}
+            exportConfigUpdate={() => {}}
+            archiveType={""}
+            allowFileStores={false}
+            repoSelected={false}
+            fileStoresSelected={false}
+            allVersions={false}
+            updateFileStores={() => {}}
+            validator={mkValidator()}
+          />,
         ),
       );
       expect(
