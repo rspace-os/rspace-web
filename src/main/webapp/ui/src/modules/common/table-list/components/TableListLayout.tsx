@@ -43,9 +43,8 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
   variant = "card",
   hideHeader = false,
   reserveEmptyRows,
-  onSelectRuntimeField,
-  runtimeFieldDefinitions,
-  runtimeFieldAuthScope,
+  runtimeFields,
+  authScope,
   restoredViewIssue,
   alertsRef,
   persistenceIdentity,
@@ -151,9 +150,8 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
                   onReset={() => setActivePanel(null)}
                 />
                 <TableListControlPanel
-                  onSelectRuntimeField={onSelectRuntimeField}
-                  runtimeFieldDefinitions={runtimeFieldDefinitions}
-                  runtimeFieldAuthScope={runtimeFieldAuthScope}
+                  runtimeFields={runtimeFields}
+                  authScope={authScope}
                   activePanel={activePanel}
                   controlPanelId={controlPanelId}
                   config={config}

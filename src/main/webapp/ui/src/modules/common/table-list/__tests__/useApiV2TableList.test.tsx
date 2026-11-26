@@ -624,7 +624,7 @@ it("shows the custom-column limit for an edit over it, without requesting or thr
     selector: `customFields.${id}`,
   }));
   act(() => {
-    for (const definition of definitions) result.current.tableProps.onSelectRuntimeField?.("customFields", definition);
+    for (const definition of definitions) result.current.tableProps.runtimeFields?.onSelect("customFields", definition);
   });
   const requested = requests.length;
   act(() => result.current.setVisibleFields(["name", ...definitions.map(({ selector }) => selector as never)]));

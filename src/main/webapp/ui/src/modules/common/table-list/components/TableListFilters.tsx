@@ -10,11 +10,10 @@ import type { FilterOperator } from "@/modules/common/collection/filterOperators
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
 import { useTableListDragAccessibility } from "../hooks/useTableListDragAccessibility";
 import { useTableListDragSensors } from "../hooks/useTableListDragSensors";
 import { serializeRsqlExpression } from "../rsql";
-import type { FilterExpression } from "../types";
+import type { FilterExpression, TableListRuntimeFields } from "../types";
 import { allOf } from "../utils/expressions";
 import {
   comparisonNodes,
@@ -66,9 +65,8 @@ export function TableListFilters<TDocument>({
   visibleFields,
   onApply,
   onShowColumn,
-  onSelectRuntimeField,
-  runtimeFieldDefinitions,
-  runtimeFieldAuthScope,
+  runtimeFields,
+  authScope,
   onClose,
 }: {
   /** Unique per table, so several tables on one page have distinct panel ids. */
@@ -78,9 +76,9 @@ export function TableListFilters<TDocument>({
   visibleFields?: readonly SearchSelector<TDocument>[];
   onApply: (expression: FilterExpression<TDocument> | null) => void;
   onShowColumn?: (field: SearchSelector<TDocument>, shown: boolean) => void;
-  onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
+  runtimeFields?: TableListRuntimeFields;
+  /** The caller's query scope for relationship value suggestions. */
+  authScope?: string | number;
   onClose: () => void;
 }) {
   const { t } = useTranslation<Namespace>("common");
@@ -90,7 +88,7 @@ export function TableListFilters<TDocument>({
     (field) => field.capabilities.filterOperators.length > 0 && (field.list !== false || field.form === false),
   );
   const runtimeSources =
-    onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.filterable);
+    runtimeFields === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.filterable);
   const runtimeSourceGroups = groupRuntimeFieldSources(runtimeSources);
   const shownColumns = new Set<string>(visibleFields ?? []);
   const offersColumns = onShowColumn !== undefined && visibleFields !== undefined;
@@ -246,14 +244,14 @@ export function TableListFilters<TDocument>({
                 <FilterValueInput
                   field={field}
                   sources={config.relationshipSources}
-                  authScope={runtimeFieldAuthScope}
+                  authScope={authScope}
                   operator={rule.operator}
                   value={rule.value}
                   number={index + 1}
                   onChange={(value) => updateRule(rule.id, { value })}
                 />
               );
-              const runtimeFieldPicker = sourceGroup !== null && onSelectRuntimeField && (
+              const runtimeFieldPicker = sourceGroup !== null && runtimeFields && (
                 <CustomFieldPicker
                   key={sourceGroup.key}
                   sources={sourceGroup.sources}
@@ -267,9 +265,9 @@ export function TableListFilters<TDocument>({
                   }
                   chosenLabel={awaitingDefinition ? undefined : fieldOptionLabel(field)}
                   chosenSelector={awaitingDefinition ? undefined : String(rule.field)}
-                  known={runtimeFieldDefinitions ?? []}
+                  known={runtimeFields.definitions}
                   onSelect={(namespace, definition) => {
-                    onSelectRuntimeField(namespace, definition);
+                    runtimeFields.onSelect(namespace, definition);
                     const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
                     updateRule(rule.id, { field: selector, operator: "equals", value: "" });
                   }}

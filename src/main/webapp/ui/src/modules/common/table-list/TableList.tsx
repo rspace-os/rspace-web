@@ -9,6 +9,7 @@ export type {
   TableListPresentationVisibility,
   TableListProps,
   TableListRowActions,
+  TableListRuntimeFields,
   TableListSelection,
   TableListSelectionContext,
 } from "./types";

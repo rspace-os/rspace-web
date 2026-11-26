@@ -1,6 +1,5 @@
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";
-import type { TableListFeatures } from "../types";
+import type { TableListFeatures, TableListRuntimeFields } from "../types";
 import { toFirstPage } from "../utils/features";
 import { TableListColumns } from "./TableListColumns";
 import { TableListFilters } from "./TableListFilters";
@@ -12,18 +11,16 @@ export function TableListControlPanel<TDocument>({
   controlPanelId,
   config,
   features,
-  onSelectRuntimeField,
-  runtimeFieldDefinitions,
-  runtimeFieldAuthScope,
+  runtimeFields,
+  authScope,
   onClose,
 }: {
   activePanel: ControlPanel | null;
   controlPanelId: string;
   config: ResolvedCollectionConfig<TDocument>;
   features: TableListFeatures<TDocument>;
-  onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
-  runtimeFieldAuthScope?: string | number;
-  runtimeFieldDefinitions?: readonly RuntimeFieldCatalogForNamespace[];
+  runtimeFields?: TableListRuntimeFields;
+  authScope?: string | number;
   onClose: () => void;
 }) {
   const { filtering, sorting, columns, pagination } = features;
@@ -51,9 +48,8 @@ export function TableListControlPanel<TDocument>({
                   if (next !== current) columns.onChange(next);
                 }
           }
-          onSelectRuntimeField={onSelectRuntimeField}
-          runtimeFieldDefinitions={runtimeFieldDefinitions}
-          runtimeFieldAuthScope={runtimeFieldAuthScope}
+          runtimeFields={runtimeFields}
+          authScope={authScope}
           onApply={(expression) => {
             filtering.onChange({ ...filtering.value, expression });
             toFirstPage(pagination);
@@ -69,8 +65,7 @@ export function TableListControlPanel<TDocument>({
           config={config}
           visibleFields={columns.value}
           onChange={columns.onChange}
-          onSelectRuntimeField={onSelectRuntimeField}
-          runtimeFieldDefinitions={runtimeFieldDefinitions}
+          runtimeFields={runtimeFields}
           onClose={onClose}
         />
       );

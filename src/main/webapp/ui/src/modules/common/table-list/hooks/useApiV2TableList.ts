@@ -308,9 +308,8 @@ function useApiV2TableListFromStore<
             },
           }
         : {}),
-      onSelectRuntimeField: selectRuntimeField,
-      runtimeFieldDefinitions: runtimeFields,
-      runtimeFieldAuthScope: fields.scope,
+      runtimeFields: { definitions: runtimeFields, onSelect: selectRuntimeField },
+      authScope: fields.scope,
     },
     adapter,
   };
