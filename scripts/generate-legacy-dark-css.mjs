@@ -1,80 +1,70 @@
 #!/usr/bin/env node
 /**
  * Generates styles/dark/legacy-generated.css: dark-mode colour overrides for
- * every stylesheet the JSP pages link, and for the <style> blocks in JSP
- * pages and tags.
+ * every stylesheet a JSP page or tag links, and for the <style> blocks in
+ * JSP pages and tags.
  *
- * For each rule in those stylesheets it keeps only the colour declarations,
- * remaps the colours (light backgrounds and borders become dark, dark text
- * becomes light, saturated accents stay), and scopes the rule to `html.dark`.
- * The hand-written styles/dark/legacy-dark.css loads after this file and
- * fine-tunes the result.
+ * For each rule it keeps only the colour declarations and remaps the colours:
+ * light surfaces and borders become dark, dark text becomes light, and
+ * saturated mid-tone surfaces (the brand blues) are darkened until light text
+ * on them reaches 4.5:1. Every colour declaration is emitted, changed or not,
+ * so the generated rules keep the cascade of the originals: a hover rule
+ * whose colour needs no change still beats its generated base rule.
+ *
+ * Each stylesheet's rules are wrapped in
+ *   @scope (html.dark:has(link[href*="<sheet>"])) to (<user content>)
+ * so they apply only on pages that link that sheet, only in dark mode, and
+ * never inside user-authored rich text, which stays light. The hand-written
+ * styles/dark/legacy-dark.css loads after this file and fine-tunes it.
  *
  * Usage: node scripts/generate-legacy-dark-css.mjs [--check]
  *   --check  exit non-zero if the committed file is out of date.
  */
-import { globSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { transform } from "lightningcss";
 
 const WEBAPP = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "main", "webapp");
 const OUTPUT = "styles/dark/legacy-generated.css";
 
+/** Linked stylesheets that must not be converted. */
+const IGNORED = [
+  "styles/dark/legacy-generated.css",
+  "styles/dark/legacy-dark.css",
+  "styles/simplicity/print.css", // linked with media="print"
+];
+
 /**
- * Stylesheets linked by decorated JSP pages. Sheets in `GLOBAL` load on every
- * page, so their element-only selectors (such as `th`) are kept; for the
- * others such selectors are skipped, since this output loads on every page.
+ * JSP pages, tags and HTML templates that link stylesheets or hold <style>
+ * blocks. The decorators come first: their stylesheets load before a page's
+ * own, and the generated blocks keep that order so ties resolve as they do
+ * in light mode.
  */
-const GLOBAL = [
-  "styles/bootstrap-custom-flat.css",
-  "styles/simplicity/theme.css",
-  "styles/rs-global.css",
-  "scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css",
-  "scripts/bower_components/Apprise-v2/apprise-v2.css",
-  "styles/jquery.toastmessage.css",
-  "scripts/bower_components/bootstrap/dist/css/bootstrap.min.css",
-  "styles/simplicity/tools.css",
-  "styles/simplicity/layout.css",
-  "styles/public.css",
+const DECORATORS = ["WEB-INF/decorators/default.jsp", "WEB-INF/decorators/externalPages.jsp"];
+const TEMPLATES = [
+  ...DECORATORS,
+  ...globSync("**/*.{jsp,tag,jspf,html}", {
+    cwd: WEBAPP,
+    exclude: (path) => /^(ui|scripts\/(bower_components|tinymce)|node_modules)(\/|$)/.test(path),
+  })
+    .filter((path) => !DECORATORS.includes(path))
+    .sort(),
 ];
-const PAGE = [
-  "styles/system.css",
-  "styles/messages.css",
-  "scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css",
-  "scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css",
-  "scripts/bower_components/jquery-tagit/css/jquery.tagit.css",
-  "styles/pages/workspace/workspace-dialogs.css",
-  "styles/pages/public/passwordReset.css",
-  "styles/simplicity/header.css",
-  "styles/sign-in-up-common.css",
-  "styles/pages/workspace/workspace.css",
-  "styles/pages/workspace/workspace-widgets.css",
-  "styles/pages/workspace/workspace-toolbar.css",
-  "styles/pages/workspace/workspace-extra-icons.css",
-  "styles/authentication/login.css",
-  "scripts/jqueryFileTree/jqueryFileTree.css",
-  "scripts/bootstrap-namespace/bootstrap-namespace.min.css",
-  "styles/tinymce_rs.css",
-  "styles/tags/fileTreeBrowser.css",
-  "styles/structuredDocument.css",
-  "styles/signingProcess.css",
-  "styles/pages/searchableRecordPicker.css",
-  "styles/pages/groups/viewGroup.css",
-  "styles/journal.css",
-  "scripts/bower_components/photoswipe/dist/default-skin/default-skin.css",
-  "scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css",
-  "styles/userform.css",
-  "styles/tags/createFromTemplateDlg.css",
-  "styles/preferences.css",
-  "styles/plugins/autocomplete.css",
-  "styles/pages/messaging/dashboard.css",
-  "styles/ownCloud.css",
-  "styles/dropbox.css",
-  "styles/audit.css",
-  "styles/admin.css",
-  "scripts/bower_components/select2/dist/css/select2.min.css",
-];
+
+/** Every stylesheet the templates link, as webapp-relative paths, in first-linked order. */
+function linkedStylesheets() {
+  const sheets = new Set();
+  for (const file of TEMPLATES) {
+    const source = readFileSync(join(WEBAPP, file), "utf8");
+    for (const m of source.matchAll(/(?:assetUrl value=|href=|url value=)['"]\/([^'"?]+\.css)['"]/g)) {
+      if (!IGNORED.includes(m[1])) sheets.add(m[1]);
+    }
+  }
+  const missing = [...sheets].filter((sheet) => !existsSync(join(WEBAPP, sheet)));
+  if (missing.length) throw new Error(`Linked stylesheets not found: ${missing.join(", ")}`);
+  return [...sheets];
+}
 
 /* Dark palette, matching ui/src/theme.ts and styles/dark/legacy-dark.css. */
 const PANEL = { h: 197, s: 0.14, l: 0.1 };
@@ -164,19 +154,32 @@ function darkSurface(c) {
   const { h, s, l } = rgbToHsl(c);
   if (y >= 0.45) {
     const neutral = s < 0.15;
-    const nl = PANEL.l + (1 - l) * 0.6;
-    return { ...hslToRgb(neutral ? PANEL.h : h, neutral ? PANEL.s : Math.min(s, 0.45), nl), a: c.a };
+    if (neutral) return { ...hslToRgb(PANEL.h, PANEL.s, PANEL.l + (1 - l) * 0.6), a: c.a };
+    return { ...darkenTo(h, Math.min(s, 0.45), PANEL.l + (1 - l) * 0.6), a: c.a };
   }
   if (y > ACCENT_MAX_LUMINANCE && s > 0.25) {
-    let nl = l;
-    let rgb = hslToRgb(h, s, nl);
-    while (luminance(rgb) > ACCENT_MAX_LUMINANCE && nl > 0.05) {
-      nl -= 0.01;
-      rgb = hslToRgb(h, s, nl);
-    }
-    return { ...rgb, a: c.a };
+    // Map 0.1..0.45 onto 0.04..0.1 rather than clamping, so a hover shade
+    // stays distinct from its base colour.
+    const target = 0.04 + (ACCENT_MAX_LUMINANCE - 0.04) * ((y - ACCENT_MAX_LUMINANCE) / (0.45 - ACCENT_MAX_LUMINANCE));
+    return { ...darkenTo(h, s, l, target), a: c.a };
   }
   return c;
+}
+
+/** Lowers the lightness until the luminance is at most `target`. */
+function darkenTo(h, s, l, target = ACCENT_MAX_LUMINANCE) {
+  let nl = l;
+  let rgb = hslToRgb(h, s, nl);
+  while (luminance(rgb) > target && nl > 0.03) {
+    nl -= 0.005;
+    rgb = hslToRgb(h, s, nl);
+  }
+  return rgb;
+}
+
+/** Light shadows (highlights) become dark; dark and coloured ones stay. */
+function darkShadow(c) {
+  return luminance(c) >= 0.45 ? darkSurface(c) : c;
 }
 
 /** Dark text becomes light; light and mid-tone text stays. */
@@ -197,15 +200,10 @@ function darkBorder(c) {
 }
 
 function mapColors(value, fn) {
-  let changed = false;
-  const out = value.replace(COLOR_RE, (m) => {
+  return value.replace(COLOR_RE, (m) => {
     const c = parseColor(m);
-    if (!c) return m;
-    const mapped = format(fn(c));
-    if (mapped !== format(c)) changed = true;
-    return mapped;
+    return c ? format(fn(c)) : m;
   });
-  return changed ? out : null;
 }
 
 // ---------------------------------------------------------------- parsing
@@ -266,59 +264,65 @@ function splitTopLevel(text, sep) {
 }
 
 const BORDER_PROPS = /^border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-color)?$|^outline(-color)?$|^column-rule(-color)?$/;
+const TEXT_PROPS = new Set(["color", "fill", "stroke", "caret-color", "-webkit-text-fill-color"]);
+const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|url\(\s*(['"]?)[^)]*?\1\s*\)/gi;
 
-/** Returns the dark declarations for one original declaration, or []. */
-function darkDeclarations(prop, value, important) {
+/** Rewrites a relative url() in `file` so it resolves from the generated file. */
+function absoluteUrl(token, file) {
+  return token.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/i, (whole, quote, path) => {
+    if (/^(data:|https?:|\/|#)/i.test(path)) return whole;
+    return `url(${quote}${posix.join("/", posix.dirname(file), path)}${quote})`;
+  });
+}
+
+/** The background-image layers of a `background` shorthand, mapped. */
+function backgroundImages(value, file) {
+  const images = (value.match(IMAGE_RE) ?? [])
+    .filter((token) => !/^-(webkit|moz|o|ms)-/i.test(token))
+    .map((token) => (/^url\(/i.test(token) ? absoluteUrl(token, file) : mapColors(token, darkSurface)));
+  return images.length ? images.join(", ") : "none";
+}
+
+/**
+ * Returns the dark declarations for one original declaration: every colour
+ * it sets, remapped or unchanged, so the generated rules keep the originals'
+ * cascade.
+ */
+function darkDeclarations(prop, value, important, file) {
   const imp = important ? " !important" : "";
-  if (/\b(inherit|initial|unset|currentcolor)\b/i.test(value) && !COLOR_RE.test(value)) return [];
-  COLOR_RE.lastIndex = 0;
-  if (prop === "color" || prop === "fill" || prop === "stroke" || prop === "caret-color" || prop === "-webkit-text-fill-color") {
-    const v = mapColors(value, lightText);
-    return v ? [`${prop}: ${v}${imp}`] : [];
+  const decl = (p, v) => [`${p}: ${v}${imp}`];
+  if (TEXT_PROPS.has(prop)) return decl(prop, mapColors(value, lightText));
+  if (prop === "background-color") return decl(prop, mapColors(value, darkSurface));
+  if (prop === "background-image") {
+    return decl(prop, /^\s*none\s*$/i.test(value) ? "none" : backgroundImages(value, file));
   }
-  if (prop === "background-color") {
-    const v = mapColors(value, darkSurface);
-    return v ? [`background-color: ${v}${imp}`] : [];
+  if (prop === "background") {
+    if (/^\s*(inherit|initial|unset)\s*$/i.test(value)) return [...decl("background-color", value), ...decl("background-image", value)];
+    const rest = value.replace(IMAGE_RE, " ");
+    const colour = rest.match(COLOR_RE)?.[0] ?? (/\btransparent\b/i.test(rest) ? "transparent" : null);
+    return [
+      ...decl("background-color", colour ? mapColors(colour, darkSurface) : "transparent"),
+      ...decl("background-image", backgroundImages(value, file)),
+    ];
   }
-  if (prop === "background" || prop === "background-image") {
-    const out = [];
-    const gradients = value.match(/(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)/gi);
-    if (gradients) {
-      const standard = gradients.find((g) => !/^-/.test(g));
-      if (standard) {
-        const v = mapColors(standard, darkSurface);
-        if (v) out.push(`background-image: ${v}${imp}`);
-      }
-    }
-    if (prop === "background") {
-      const rest = value.replace(/(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|url\([^)]*\)/gi, " ");
-      const colour = rest.match(COLOR_RE)?.[0];
-      COLOR_RE.lastIndex = 0;
-      if (colour) {
-        const v = mapColors(colour, darkSurface);
-        if (v) out.push(`background-color: ${v}${imp}`);
-      }
-    }
-    return out;
-  }
+  if (prop === "text-shadow" || prop === "box-shadow") return decl(prop, mapColors(value, darkShadow));
   if (BORDER_PROPS.test(prop)) {
     const colourProp = prop.endsWith("-color") ? prop : `${prop}-color`;
+    if (/^\s*(none|0|hidden)\s*$/i.test(value)) return [];
+    if (prop.endsWith("-color")) return decl(colourProp, mapColors(value, darkBorder));
     const colours = value.match(COLOR_RE);
-    COLOR_RE.lastIndex = 0;
-    if (!colours) return [];
-    const mapped = colours.map((c) => format(darkBorder(parseColor(c) ?? { r: 0, g: 0, b: 0, a: 1 })));
-    if (mapped.every((m, i) => m === format(parseColor(colours[i]) ?? { r: 0, g: 0, b: 0, a: 1 }))) return [];
-    return [`${colourProp}: ${prop.endsWith("-color") || prop === "border-color" ? mapped.join(" ") : mapped[0]}${imp}`];
+    const keyword = value.match(/\b(transparent|currentcolor|inherit|initial|unset)\b/i)?.[0];
+    if (!colours) return decl(colourProp, keyword ?? "currentcolor");
+    const mapped = colours.map((c) => mapColors(c, darkBorder));
+    return decl(colourProp, prop === "border-color" ? mapped.join(" ") : mapped[0]);
   }
   return [];
 }
 
 /**
  * Containers of user-authored rich text. They stay light in dark mode, like
- * paper, because their content carries its own colours. The whole output is
- * wrapped in `@scope (html.dark) to (...)` with these as the lower boundary,
- * so no generated rule reaches them or their content. Must match
- * USER_CONTENT in styles/dark/legacy-dark.css.
+ * paper, because their content carries its own colours; every @scope block
+ * stops at them. Must match the boundary in styles/dark/legacy-dark.css.
  */
 const USER_CONTENT = [".textFieldViewModeDiv", ".journalPageContent"];
 
@@ -331,15 +335,15 @@ function scopeSelector(sel) {
 
 const ELEMENT_ONLY = /^[a-z0-9*\s>+~:()-]+$/i;
 
-function convertRules(css, isGlobal, stats) {
+function convertRules(css, file, skipElementOnly, stats) {
   const out = [];
   for (const { prelude, body } of parseBlocks(css)) {
     if (prelude.startsWith("@")) {
       if (/^@media\b/i.test(prelude) && !/\bprint\b/i.test(prelude)) {
-        const inner = convertRules(body, isGlobal, stats);
+        const inner = convertRules(body, file, skipElementOnly, stats);
         if (inner.length) out.push(`${prelude} {\n${inner.map((l) => `  ${l.replace(/\n/g, "\n  ")}`).join("\n")}\n}`);
       } else if (/^@supports\b/i.test(prelude)) {
-        const inner = convertRules(body, isGlobal, stats);
+        const inner = convertRules(body, file, skipElementOnly, stats);
         if (inner.length) out.push(`${prelude} {\n${inner.map((l) => `  ${l.replace(/\n/g, "\n  ")}`).join("\n")}\n}`);
       }
       continue;
@@ -354,11 +358,11 @@ function convertRules(css, isGlobal, stats) {
         return { prop: d.slice(0, colon).trim().toLowerCase(), value, important };
       })
       .filter(Boolean);
-    const dark = decls.flatMap(({ prop, value, important }) => darkDeclarations(prop, value, important));
+    const dark = decls.flatMap(({ prop, value, important }) => darkDeclarations(prop, value, important, file));
     if (!dark.length) continue;
     const selectors = splitTopLevel(prelude, ",").filter((s) => {
       if (/::?-(moz|ms|webkit)-/.test(s)) return false; // vendor pseudos invalidate whole rule lists
-      if (!isGlobal && ELEMENT_ONLY.test(s)) {
+      if (skipElementOnly && ELEMENT_ONLY.test(s)) {
         stats.skipped.add(s);
         return false;
       }
@@ -373,7 +377,7 @@ function convertRules(css, isGlobal, stats) {
 
 // ---------------------------------------------------------------- main
 
-/** The <style> blocks of a JSP page or tag, with JSP comments and EL removed. */
+/** The <style> blocks of a template, skipping any that use JSP expressions. */
 function inlineStyles(file) {
   const source = readFileSync(join(WEBAPP, file), "utf8").replace(/<%--[\s\S]*?--%>/g, "");
   return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
@@ -382,30 +386,36 @@ function inlineStyles(file) {
     .join("\n");
 }
 
-const JSP_FILES = globSync("{WEB-INF,common}/**/*.{jsp,tag,jspf}", { cwd: WEBAPP }).sort();
-
+const indent = (text) => text.replace(/^(?=.)/gm, "  ");
+const limit = `to (${USER_CONTENT.join(", ")})`;
 const stats = { rules: 0, skipped: new Set() };
 const sections = [];
-const sources = [
-  ...[...GLOBAL, ...PAGE].map((file) => [file, readFileSync(join(WEBAPP, file), "utf8")]),
-  ...JSP_FILES.map((file) => [file, inlineStyles(file)]),
-];
-for (const [file, source] of sources) {
-  const rules = convertRules(stripComments(source), GLOBAL.includes(file), stats);
-  if (rules.length) sections.push(`/* ${file} */\n\n${rules.join("\n\n")}`);
+
+const sheets = linkedStylesheets();
+for (const file of sheets) {
+  const rules = convertRules(stripComments(readFileSync(join(WEBAPP, file), "utf8")), file, false, stats);
+  if (rules.length) {
+    sections.push(`/* ${file} */\n@scope (html.dark:has(link[href*="/${file}"])) ${limit} {\n${indent(rules.join("\n\n"))}\n}`);
+  }
 }
-const indent = (text) => text.replace(/^(?=.)/gm, "  ");
+// <style> blocks cannot be tied to the pages that render them, so they apply
+// on every page; their element-only selectors (such as \`th\`) are skipped.
+const inline = TEMPLATES.flatMap((file) => {
+  const rules = convertRules(stripComments(inlineStyles(file)), file, true, stats);
+  return rules.length ? [`/* ${file} */\n\n${rules.join("\n\n")}`] : [];
+});
+if (inline.length) sections.push(`/* <style> blocks in templates */\n@scope (html.dark) ${limit} {\n${indent(inline.join("\n\n"))}\n}`);
+
 const output = `/*
  * GENERATED by scripts/generate-legacy-dark-css.mjs. Do not edit; change the
  * script or override in legacy-dark.css, then run \`pnpm run css:legacy-dark\`.
  *
- * Dark-mode colour overrides for the legacy stylesheets. They apply under
- * html.dark and stop at user-authored rich text, which stays light.
+ * Dark-mode colour overrides for the legacy stylesheets. Each block applies
+ * in dark mode on pages that link its source stylesheet, and stops at
+ * user-authored rich text, which stays light.
  */
 
-@scope (html.dark) to (${USER_CONTENT.join(", ")}) {
-${indent(sections.join("\n\n"))}
-}
+${sections.join("\n\n")}
 `;
 
 // Fail loudly if the output is not valid CSS.
@@ -427,5 +437,5 @@ if (process.argv.includes("--check")) {
   console.log(`${OUTPUT} is up to date.`);
 } else {
   writeFileSync(target, output);
-  console.log(`Wrote ${OUTPUT}: ${stats.rules} rules; skipped ${stats.skipped.size} element-only selectors from page sheets.`);
+  console.log(`Wrote ${OUTPUT}: ${stats.rules} rules from ${sheets.length} stylesheets and ${inline.length} templates; skipped ${stats.skipped.size} element-only selectors in <style> blocks.`);
 }

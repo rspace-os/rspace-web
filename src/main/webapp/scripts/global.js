@@ -56,11 +56,6 @@ RS.withCacheVersion = function (url) {
 };
 
 /**
- * BEGINNING OF EXPERIMENTAL BOOTSTRAP DIALOGS (RSPAC-1287)
- */
-
-// Change to 'true' for Bootstrap dialogs in Workspace > Create > Folder
-/**
  * The TinyMCE UI skin for the current colour mode. Editor content keeps the
  * light skin in both modes, like other user-authored rich text.
  */
@@ -68,6 +63,11 @@ RS.tinymceSkin = function () {
   return document.documentElement.classList.contains("dark") ? "oxide-dark" : "oxide";
 };
 
+/**
+ * BEGINNING OF EXPERIMENTAL BOOTSTRAP DIALOGS (RSPAC-1287)
+ */
+
+// Change to 'true' for Bootstrap dialogs in Workspace > Create > Folder
 RS.useBootstrapModals = false;
 var bootstrapModalHandles = [];
 var activeBootstrapModals = [undefined];

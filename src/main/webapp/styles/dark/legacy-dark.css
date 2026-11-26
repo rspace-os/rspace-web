@@ -7,6 +7,9 @@
  *
  * The colours match the dark MUI palette in ui/src/theme.ts. Some legacy
  * rules use !important, so the overrides for those properties must too.
+ *
+ * Like the generated rules, the overrides sit in an @scope block that stops
+ * at user-authored rich text, which stays light.
  */
 
 html.dark {
@@ -25,18 +28,6 @@ html.dark {
   color-scheme: dark;
 }
 
-/* Page */
-
-html.dark body {
-  background: var(--rs-dark-page);
-  color: var(--rs-dark-text);
-}
-/* MUI elements embedded in the page style themselves, so element rules skip them. */
-html.dark a[href]:not([class*="Mui"], :where(.textFieldViewModeDiv, .journalPageContent) *),
-html.dark div#footer a {
-  color: var(--rs-dark-link);
-}
-
 /*
  * User-authored rich text stays light, like paper, because its content
  * carries its own colours (text pasted from Word is often explicitly black).
@@ -48,191 +39,235 @@ html.dark .journalPageContent {
   color: #444;
   color-scheme: light;
 }
-html.dark #footer,
-html.dark #footer .version {
-  color: var(--rs-dark-text-secondary);
-}
 
-/* Bootstrap */
+@scope (html.dark) to (.textFieldViewModeDiv, .journalPageContent) {
+  /* Page */
 
-html.dark .bootstrap-custom-flat {
-  background-color: var(--rs-dark-panel);
-}
+  :scope body {
+    background: var(--rs-dark-page);
+    color: var(--rs-dark-text);
+  }
+  /* MUI elements embedded in the page style themselves, so element rules skip them. */
+  :scope a[href]:not([class*="Mui"]),
+  :scope div#footer a {
+    color: var(--rs-dark-link);
+  }
 
-html.dark .panel,
-html.dark .panel-default,
-html.dark .table,
-html.dark .well,
-html.dark .modal-content,
-html.dark .dropdown-menu,
-html.dark .popover,
-html.dark .list-group-item {
-  background: var(--rs-dark-panel);
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border);
-}
-html.dark .panel-heading,
-html.dark .modal-header,
-html.dark .modal-footer,
-html.dark .popover-title {
-  background: var(--rs-dark-band);
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border);
-}
-html.dark .table > thead > tr > th,
-html.dark .table > tbody > tr > td,
-html.dark .table > tbody > tr > th {
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border);
-}
-html.dark .table-striped > tbody > tr:nth-of-type(odd) {
-  background: var(--rs-dark-panel-alt);
-}
-html.dark .table-hover > tbody > tr:hover,
-html.dark .dropdown-menu > li > a:hover,
-html.dark .dropdown-menu > li > a:focus {
-  background: var(--rs-dark-hover);
-}
-html.dark .dropdown-menu > li > a,
-html.dark .control-label,
-html.dark label:not([class*="Mui"]) {
-  color: var(--rs-dark-text);
-}
-html.dark .form-control,
-html.dark input[type="text"]:not(.MuiInputBase-input),
-html.dark input[type="search"]:not(.MuiInputBase-input),
-html.dark input[type="number"]:not(.MuiInputBase-input),
-html.dark input[type="email"]:not(.MuiInputBase-input),
-html.dark input[type="password"]:not(.MuiInputBase-input),
-html.dark textarea:not(.MuiInputBase-input),
-html.dark select:not(.MuiInputBase-input) {
-  background-color: var(--rs-dark-panel);
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border-strong);
-}
-html.dark .pagination > li > a,
-html.dark .pagination > li > span {
-  background: var(--rs-dark-panel);
-  color: var(--rs-dark-text-secondary);
-  border-color: var(--rs-dark-border);
-}
-html.dark .pagination > .active > a,
-html.dark .pagination > .active > span {
-  background: var(--rs-dark-link);
-  color: var(--rs-dark-on-link);
-  border-color: var(--rs-dark-link);
-}
-html.dark .close {
-  color: var(--rs-dark-text);
-  opacity: 0.8;
-}
+  :scope #footer,
+  :scope #footer .version {
+    color: var(--rs-dark-text-secondary);
+  }
 
-/* jQuery UI */
+  /* Bootstrap */
 
-html.dark .ui-widget-content,
-html.dark .ui-dialog,
-html.dark .ui-dialog .ui-dialog-content,
-html.dark .ui-dialog .ui-dialog-buttonpane {
-  background: var(--rs-dark-panel);
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border);
-}
-html.dark .ui-widget-header,
-html.dark .ui-dialog .ui-dialog-titlebar {
-  background-color: var(--rs-dark-band) !important;
-  color: var(--rs-dark-text);
-  border-color: var(--rs-dark-border);
-}
-/* The close button draws a dark sprite. */
-html.dark .ui-dialog .ui-dialog-titlebar-close {
-  filter: invert(1);
-}
-html.dark .ui-dialog .ui-dialog-title {
-  color: var(--rs-dark-text);
-}
-html.dark .ui-dialog-buttonset button[type="button"] {
-  background-color: var(--rs-dark-link);
-  color: var(--rs-dark-on-link) !important;
-  border-color: var(--rs-dark-link) !important;
-}
-html.dark .ui-widget-content a[href] {
-  color: var(--rs-dark-link);
-}
-html.dark .ui-widget-overlay {
-  background: #000;
-  opacity: 0.6;
-}
+  :scope .bootstrap-custom-flat {
+    background-color: var(--rs-dark-panel);
+  }
 
-/* Fancytree */
+  :scope .panel,
+  :scope .panel-default,
+  :scope .table,
+  :scope .well,
+  :scope .modal-content,
+  :scope .dropdown-menu,
+  :scope .popover,
+  :scope .list-group-item {
+    background: var(--rs-dark-panel);
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  :scope .panel-heading,
+  :scope .modal-header,
+  :scope .modal-footer,
+  :scope .popover-title {
+    background: var(--rs-dark-band);
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  :scope .table > thead > tr > th,
+  :scope .table > tbody > tr > td,
+  :scope .table > tbody > tr > th {
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  :scope .table-striped > tbody > tr:nth-of-type(odd) {
+    background: var(--rs-dark-panel-alt);
+  }
+  :scope .table-hover > tbody > tr:hover,
+  :scope .dropdown-menu > li > a:hover,
+  :scope .dropdown-menu > li > a:focus {
+    background: var(--rs-dark-hover);
+  }
+  :scope .dropdown-menu > li > a,
+  :scope .control-label,
+  :scope label:not([class*="Mui"]) {
+    color: var(--rs-dark-text);
+  }
+  :scope .form-control,
+  :scope input[type="text"]:not(.MuiInputBase-input),
+  :scope input[type="search"]:not(.MuiInputBase-input),
+  :scope input[type="number"]:not(.MuiInputBase-input),
+  :scope input[type="email"]:not(.MuiInputBase-input),
+  :scope input[type="password"]:not(.MuiInputBase-input),
+  :scope textarea:not(.MuiInputBase-input),
+  :scope select:not(.MuiInputBase-input) {
+    background-color: var(--rs-dark-panel);
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border-strong);
+  }
+  :scope .pagination > li > a,
+  :scope .pagination > li > span {
+    background: var(--rs-dark-panel);
+    color: var(--rs-dark-text-secondary);
+    border-color: var(--rs-dark-border);
+  }
+  :scope .pagination > .active > a,
+  :scope .pagination > .active > span {
+    background: var(--rs-dark-link);
+    color: var(--rs-dark-on-link);
+    border-color: var(--rs-dark-link);
+  }
+  :scope .close {
+    color: var(--rs-dark-text);
+    opacity: 0.8;
+  }
 
-html.dark span.fancytree-title {
-  color: var(--rs-dark-text);
-}
-html.dark span.fancytree-title:hover,
-html.dark .fileTreeBrowserPanel .fancytree-node.fancytree-selected .fancytree-title {
-  background: var(--rs-dark-hover);
-}
-html.dark .fileTreeBrowserPanel .fancytree-node .fancytree-expander {
-  filter: invert(1);
-}
-/* The generated rules darken the blue behind the active entry. */
-html.dark span.fancytree-active span.fancytree-title,
-html.dark .fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
-  color: #fff;
-}
+  /* jQuery UI */
 
-/* jqueryFileTree (the Move dialog's folder picker sets its background inline) */
+  :scope .ui-widget-content,
+  :scope .ui-dialog,
+  :scope .ui-dialog .ui-dialog-content,
+  :scope .ui-dialog .ui-dialog-buttonpane {
+    background: var(--rs-dark-panel);
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  :scope .ui-widget-header,
+  :scope .ui-dialog .ui-dialog-titlebar {
+    background-color: var(--rs-dark-band) !important;
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  /* The close button draws a dark sprite. */
+  :scope .ui-dialog .ui-dialog-titlebar-close {
+    filter: invert(1);
+  }
+  :scope .ui-dialog .ui-dialog-title {
+    color: var(--rs-dark-text);
+  }
+  :scope .ui-dialog-buttonset button[type="button"] {
+    background-color: var(--rs-dark-link);
+    color: var(--rs-dark-on-link) !important;
+    border-color: var(--rs-dark-link) !important;
+  }
+  :scope .ui-widget-content a[href] {
+    color: var(--rs-dark-link);
+  }
+  :scope .ui-widget-overlay {
+    background: #000;
+    opacity: 0.6;
+  }
 
-html.dark #movefolder-tree {
-  background: var(--rs-dark-panel) !important;
-  border-color: var(--rs-dark-border-strong) !important;
-}
-html.dark ul.jqueryFileTree a {
-  color: var(--rs-dark-text);
-}
-html.dark ul.jqueryFileTree a:hover {
-  background: var(--rs-dark-hover);
-}
+  /* Fancytree */
 
-/*
- * Small action buttons (.smallBtn, .crudopsTopPanel) draw dark grey PNG icons
- * as background images. Inverting each button lightens its icon; the text and
- * border colours below are chosen so they come out light after the inversion.
- * On hover the filter is dropped and the dark icon sits on the light accent.
- */
+  :scope span.fancytree-title {
+    color: var(--rs-dark-text);
+  }
+  :scope span.fancytree-title:hover,
+  :scope .fileTreeBrowserPanel .fancytree-node.fancytree-selected .fancytree-title {
+    background: var(--rs-dark-hover);
+  }
+  :scope .fileTreeBrowserPanel .fancytree-node .fancytree-expander {
+    filter: invert(1);
+  }
+  /* The generated rules darken the blue behind the active entry. */
+  :scope span.fancytree-active span.fancytree-title,
+  :scope .fancytree-container span.fancytree-node.fancytree-active span.fancytree-title {
+    color: #fff;
+  }
 
-html.dark .crudopsTopPanel {
-  border-color: var(--rs-dark-border);
-}
-html.dark .smallBtn,
-html.dark .crudopsTopPanel li,
-html.dark .crudopsTopPanel a.link,
-html.dark .crudopsTopPanel ul li,
-html.dark .crudopsTopPanel ul a.link {
-  filter: invert(1) hue-rotate(180deg);
-  color: #1c1c1c;
-  border-color: #0e6aa8;
-}
-html.dark .smallBtn:hover,
-html.dark .crudopsTopPanel li:hover,
-html.dark .crudopsTopPanel a.link:hover,
-html.dark .crudopsTopPanel ul li:hover,
-html.dark .crudopsTopPanel ul a.link:hover {
-  filter: none;
-  background-color: var(--rs-dark-link);
-  color: var(--rs-dark-on-link);
-  border-color: var(--rs-dark-link);
-}
+  /* jqueryFileTree (the Move dialog's folder picker sets its background inline) */
 
-/* My RSpace section tiles: the icons are bitmaps drawn on white. */
+  :scope #movefolder-tree {
+    background: var(--rs-dark-panel) !important;
+    border-color: var(--rs-dark-border-strong) !important;
+  }
+  :scope ul.jqueryFileTree a {
+    color: var(--rs-dark-text);
+  }
+  :scope ul.jqueryFileTree a:hover {
+    background: var(--rs-dark-hover);
+  }
 
-html.dark #menuMover .menuInnerPanelIcon {
-  filter: invert(0.9) hue-rotate(180deg);
-}
+  /*
+   * Small action buttons (.smallBtn, .crudopsTopPanel) draw dark grey PNG icons
+   * as background images. Inverting each button lightens its icon; the text and
+   * border colours below are chosen so they come out light after the inversion.
+   * On hover the filter is dropped and the dark icon sits on the light accent.
+   */
 
-/* Revision history search button: its colours are set inline. */
+  :scope .crudopsTopPanel {
+    border-color: var(--rs-dark-border);
+  }
+  :scope .smallBtn,
+  :scope .crudopsTopPanel li,
+  :scope .crudopsTopPanel a.link,
+  :scope .crudopsTopPanel ul li,
+  :scope .crudopsTopPanel ul a.link {
+    filter: invert(1) hue-rotate(180deg);
+    color: #1c1c1c;
+    border-color: #0e6aa8;
+  }
+  :scope .smallBtn:hover,
+  :scope .crudopsTopPanel li:hover,
+  :scope .crudopsTopPanel a.link:hover,
+  :scope .crudopsTopPanel ul li:hover,
+  :scope .crudopsTopPanel ul a.link:hover {
+    filter: none;
+    background-color: var(--rs-dark-link);
+    color: var(--rs-dark-on-link);
+    border-color: var(--rs-dark-link);
+  }
 
-html.dark #revisionSearch {
-  background-color: #3d5a73 !important;
-  border-color: #3d5a73 !important;
+  /* My RSpace section tiles: the icons are bitmaps drawn on white. */
+
+  :scope #menuMover .menuInnerPanelIcon {
+    filter: invert(0.9) hue-rotate(180deg);
+  }
+
+  /* Revision history search button: its colours are set inline. */
+
+  :scope #revisionSearch {
+    background-color: #3d5a73 !important;
+    border-color: #3d5a73 !important;
+  }
+
+  /* Workspace */
+
+  :scope #record_list_frame,
+  :scope #file_table {
+    background: var(--rs-dark-panel);
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-border);
+  }
+  :scope #file_table > thead > tr > th {
+    background: var(--rs-dark-band);
+    color: var(--rs-dark-text-secondary);
+  }
+  :scope #file_table > tbody > tr:hover {
+    background: var(--rs-dark-hover);
+  }
+  :scope .rs-record-info-panel {
+    background: var(--rs-dark-panel);
+    color: var(--rs-dark-text);
+  }
+  :scope .numRecordsForm .form-group .control-label {
+    color: var(--rs-dark-text-secondary);
+  }
+  :scope .breadcrumb {
+    border-color: var(--rs-dark-border);
+  }
+  :scope .bootstrap-custom-flat .breadcrumbElems #recordNameInBreadcrumb {
+    color: var(--rs-dark-text-secondary);
+  }
 }
