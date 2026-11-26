@@ -181,58 +181,57 @@ public class FieldLinksEntitySyncImpl implements FieldLinksEntitiesSynchronizer 
 
   private void updateFieldAttachments(
       final Field persistentField, User subject, FieldContentDelta delta, String newFieldData) {
-    FieldContents addedContent = delta.getAdded();
-    if (addedContent.hasAnyElements()) {
-      for (EcatMediaFile emf : addedContent.getAllMediaFiles().getElements()) {
-        fieldManager.addMediaFileLink(emf.getId(), subject, persistentField.getId(), false);
-      }
+    List<EcatMediaFile> addedMediaFiles = delta.getAdded().getAllMediaFiles().getElements();
+    for (EcatMediaFile emf : addedMediaFiles) {
+      fieldManager.addMediaFileLink(emf.getId(), subject, persistentField.getId(), false);
     }
     FieldContents removedContent = delta.getRemoved();
-    if (removedContent.hasAnyElements()) {
+    if (!removedContent.hasAnyElements()) {
+      return;
+    }
+    List<EcatMediaFile> removedemfsFromField = removedContent.getAllMediaFiles().getElements();
+    // set of candidates for deletion. This is in a separate collection so we can remove items
+    // from this set
+    // while iterating over removedemfs. Items remaining in candidatesToRemoveFromDb
+    // after examining whole document for links are then mark as deleted or removed from db.
+    Set<EcatMediaFile> candidatesToRemoveFromDb = new HashSet<>(removedemfsFromField);
+    // Annotating an image changes its URL while still referencing the same Gallery image.
+    candidatesToRemoveFromDb.removeAll(addedMediaFiles);
+    if (candidatesToRemoveFromDb.isEmpty()) {
+      return;
+    }
 
-      // are the removed links in the persistent field?
-      FieldContentDelta newChangesRelativeToFixedField =
-          fieldParser.findFieldElementChanges(persistentField.getFieldData(), newFieldData);
+    // are the removed links in the persistent field?
+    FieldContentDelta newChangesRelativeToFixedField =
+        fieldParser.findFieldElementChanges(persistentField.getFieldData(), newFieldData);
 
-      List<EcatMediaFile> removedemfsFromField = removedContent.getAllMediaFiles().getElements();
-      // set of candidates for deletion. This is in a separate collection so we can remove items
-      // from this set
-      // while iterating over removedemfs. Items remaining in candidatesToRemoveFromDb
-      // after examining whole document for links are then mark as deleted or removed from db.
-      Set<EcatMediaFile> candidatesToRemoveFromDb = new HashSet<>(removedemfsFromField);
+    String data =
+        persistentField.getTempField() != null
+            ? persistentField.getTempField().getFieldData()
+            : persistentField.getFieldData();
 
-      String data =
-          persistentField.getTempField() != null
-              ? persistentField.getTempField().getFieldData()
-              : persistentField.getFieldData();
-
-      FieldContents remainingElementsInField = fieldParser.findFieldElementsInContent(data);
-      List<EcatMediaFile> remainingemfsInField =
-          remainingElementsInField.getAllMediaFiles().getElements(); // check here
-      if (!candidatesToRemoveFromDb.isEmpty()) {
-        for (EcatMediaFile removedFromField : removedemfsFromField) {
-
-          if (someMoreemfsRemainInField(
-              removedemfsFromField, remainingemfsInField, removedFromField)) {
-            candidatesToRemoveFromDb.remove(removedFromField);
-          }
-        }
+    FieldContents remainingElementsInField = fieldParser.findFieldElementsInContent(data);
+    List<EcatMediaFile> remainingemfsInField =
+        remainingElementsInField.getAllMediaFiles().getElements(); // check here
+    for (EcatMediaFile removedFromField : removedemfsFromField) {
+      if (someMoreemfsRemainInField(removedemfsFromField, remainingemfsInField, removedFromField)) {
+        candidatesToRemoveFromDb.remove(removedFromField);
       }
-      for (EcatMediaFile emf : candidatesToRemoveFromDb) {
-        // if the attachment was already saved into the fixed,persistent field
-        // (rather than autosaved into temp field), we jsut mark it as deleted, so
-        // revision history still works
-        if (removedItemIsInFixedField(newChangesRelativeToFixedField, emf)) {
-          persistentField.setMediaFileLinkDeleted(emf, true);
-          // else the association was just a temporary one in the temp field, we can
-          // delete it.
-        } else {
-          persistentField
-              .removeMediaFileLink(emf)
-              .ifPresent(fa -> fieldDao.deleteFieldAttachment(fa));
-        }
-        fieldDao.save(persistentField);
+    }
+    for (EcatMediaFile emf : candidatesToRemoveFromDb) {
+      // if the attachment was already saved into the fixed,persistent field
+      // (rather than autosaved into temp field), we jsut mark it as deleted, so
+      // revision history still works
+      if (removedItemIsInFixedField(newChangesRelativeToFixedField, emf)) {
+        persistentField.setMediaFileLinkDeleted(emf, true);
+        // else the association was just a temporary one in the temp field, we can
+        // delete it.
+      } else {
+        persistentField
+            .removeMediaFileLink(emf)
+            .ifPresent(fa -> fieldDao.deleteFieldAttachment(fa));
       }
+      fieldDao.save(persistentField);
     }
   }
 
