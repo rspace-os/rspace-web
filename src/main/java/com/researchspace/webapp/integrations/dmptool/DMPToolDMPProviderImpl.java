@@ -67,8 +67,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, user);
   }
 
-  @Override
-  public ServiceOperationResult<String> addRelatedIdentifierToDMP(
+  ServiceOperationResult<String> addRelatedIdentifierToDMP(
       String dmpId, String type, String identifier, String accessToken) {
     var relatedIdentifier = new RelatedIdentifier("documents", "dataset", type, identifier);
     try {

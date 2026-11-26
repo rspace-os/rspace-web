@@ -47,7 +47,7 @@ public class DMPManagerImpl extends GenericManagerImpl<DMPUser, Long> implements
   public List<DMPUser> detectMissingSources(User subject) {
     List<DMPUser> plans = dmpDao.findDMPsForUser(subject);
     for (DMPUser plan : plans) {
-      if (plan.getSource() == null || plan.getSource() == DMPSource.UNKNOWN) {
+      if (!plan.hasKnownSource()) {
         adoptDetectedSource(plan);
       }
     }

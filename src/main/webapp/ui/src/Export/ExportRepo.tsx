@@ -16,17 +16,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DEFAULT_STATE } from "@/Export/constants";
+import type { DMPUserInternalId, Plan } from "@/eln-dmp-integration/linkedPlan";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
 import { mapNullable } from "../util/Util";
 import type { Validator } from "../util/Validator";
-import {
-  type DMPUserInternalId,
-  type Person,
-  type Plan,
-  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
-  type Repo,
-  type RepoDetails,
-} from "./repositories/common";
+import { type Person, REPOS_WITHOUT_PEOPLE_OR_SUBJECT, type Repo, type RepoDetails } from "./repositories/common";
 import DataverseRepo from "./repositories/DataverseRepo";
 import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";

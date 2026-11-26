@@ -79,7 +79,7 @@ public class DMPUpdateHandler {
     List<LinkedDMP> linkable = new ArrayList<>();
     for (DMPUser plan : dmpManager.detectMissingSources(user)) {
       String platformName =
-          isUnknownSource(plan)
+          !plan.hasKnownSource()
               ? ""
               : messages.getMessage(DmpPlatformStatusResolver.platformNameKey(plan.getSource()));
       String writeBackStatus =
@@ -99,7 +99,7 @@ public class DMPUpdateHandler {
    */
   private Optional<PlanReportStatus> noWriteBackReason(
       DMPUser plan, User user, Map<DMPSource, PlatformStatus> statusByPlatform) {
-    if (isUnknownSource(plan)) {
+    if (!plan.hasKnownSource()) {
       return Optional.of(PlanReportStatus.UNKNOWN_SOURCE);
     }
     DMPSource platform = plan.getSource();
@@ -115,10 +115,6 @@ public class DMPUpdateHandler {
       return Optional.of(PlanReportStatus.NOT_CONNECTED);
     }
     return Optional.empty();
-  }
-
-  private static boolean isUnknownSource(DMPUser plan) {
-    return plan.getSource() == null || plan.getSource() == DMPSource.UNKNOWN;
   }
 
   private Optional<DmpReporter> reporterFor(DMPSource platform) {
@@ -167,7 +163,7 @@ public class DMPUpdateHandler {
       DepositReport deposit,
       User subject,
       Map<DMPSource, PlatformStatus> statusByPlatform) {
-    DMPSource platform = isUnknownSource(plan) ? DMPSource.UNKNOWN : plan.getSource();
+    DMPSource platform = plan.hasKnownSource() ? plan.getSource() : DMPSource.UNKNOWN;
     try {
       Optional<PlanReportStatus> noWriteBack = noWriteBackReason(plan, subject, statusByPlatform);
       if (noWriteBack.isPresent()) {

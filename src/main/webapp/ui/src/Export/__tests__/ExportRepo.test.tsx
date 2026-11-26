@@ -14,10 +14,11 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_STATE } from "@/Export/constants";
+import type { Plan } from "@/eln-dmp-integration/linkedPlan";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
-import { DEFAULT_REPO_CONFIG, type Plan, type RepoDetails } from "../repositories/common";
+import { DEFAULT_REPO_CONFIG, type RepoDetails } from "../repositories/common";
 import type { Tag } from "../repositories/Tags";
 
 window.fetch = vi.fn(() =>

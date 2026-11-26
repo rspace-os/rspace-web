@@ -10,7 +10,7 @@ import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import type { DMPUserInternalId, Plan } from "@/Export/repositories/common";
+import type { DMPUserInternalId, Plan } from "@/eln-dmp-integration/linkedPlan";
 
 const tableRowSx = { width: "100%", display: "flex", flexDirection: "row" };
 const tableRowCellSx: SxProps<Theme> = (_theme) => ({

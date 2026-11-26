@@ -68,8 +68,15 @@ public class DMPUser {
    * @param importedFrom the platform the plan is being imported from
    */
   public void adoptSourceIfUnknown(DMPSource importedFrom) {
-    if (source == null || source == DMPSource.UNKNOWN) {
+    if (!hasKnownSource()) {
       source = importedFrom;
     }
+  }
+
+  /**
+   * @return true when the plan's platform is recorded, false when it is missing or {@code UNKNOWN}
+   */
+  public boolean hasKnownSource() {
+    return source != null && source != DMPSource.UNKNOWN;
   }
 }

@@ -53,7 +53,7 @@ public class DmpToolReporter implements DmpReporter {
           user.getUsername(),
           e);
       outcome =
-          new ValueOutcome(value, false, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));
+          ValueOutcome.failed(deposit, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));
     }
     return new PlanReportResult(
         plan.getTitle(), DMPSource.DMP_TOOL, PlanReportStatus.REPORTED, List.of(outcome));

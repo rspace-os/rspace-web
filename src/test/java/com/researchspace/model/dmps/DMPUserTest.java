@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 
@@ -44,6 +45,12 @@ class DMPUserTest {
     dmpUser.adoptSourceIfUnknown(
         source == DMPSource.DMP_TOOL ? DMPSource.ARGOS : DMPSource.DMP_TOOL);
     assertEquals(source, dmpUser.getSource());
+  }
+
+  @ParameterizedTest
+  @CsvSource({", false", "UNKNOWN, false", "ARGOS, true"})
+  void sourceIsKnownOnlyWhenSetToAPlatform(DMPSource source, boolean known) {
+    assertEquals(known, planFrom(source).hasKnownSource());
   }
 
   private DMPUser planFrom(DMPSource source) {
