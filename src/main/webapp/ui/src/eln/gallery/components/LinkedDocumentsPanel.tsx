@@ -112,7 +112,7 @@ function LinkedDocumentsGrid({
         }}
       />
       {privateByOwner.map((p) => (
-        // splitLinkedRecords buckets a row with no owner name under "", so fall back to a
+        // a private row with no owner name is bucketed under "", so fall back to a
         // named unknown-owner string rather than rendering a dangling "belonging to "
         <Typography key={p.ownerFullName || "unknownOwner"} variant="body2" sx={{ ml: 2, mt: 0.5 }}>
           {t("linkedDocumentsPanel.privateDocs", {

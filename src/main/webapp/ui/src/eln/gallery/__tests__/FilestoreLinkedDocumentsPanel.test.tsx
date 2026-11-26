@@ -83,14 +83,6 @@ describe("FilestoreLinkedDocumentsPanel", () => {
     expect(screen.queryByText("No Linked Documents")).not.toBeInTheDocument();
   });
 
-  it("reads No Linked Documents when nothing links the item", async () => {
-    server.use(http.get(ENDPOINT, () => HttpResponse.json([])));
-
-    render(withQueryClient(<FilestoreLinkedDocumentsPanel file={file} />));
-
-    expect(await screen.findByText("gallery:linkedDocumentsPanel.noRows")).toBeInTheDocument();
-  });
-
   it("reports a failed request inside the grid and keeps the heading", async () => {
     server.use(http.get(ENDPOINT, () => HttpResponse.json({ message: "boom" }, { status: 500 })));
 

@@ -1900,7 +1900,12 @@ paths:
         - Gallery Filestores
       parameters:
         - $ref: "#/components/parameters/filestoreIdParam"
-        - $ref: "#/components/parameters/filestoreRemotePathParam"
+        - name: remotePath
+          in: query
+          required: true
+          description: Path of the file or folder, relative to the filestore root
+          schema:
+            type: string
       responses:
         "200":
           description: The linking documents, oldest first
@@ -1910,6 +1915,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/GalleryFilestoreLinkedDocument"
+        "400":
+          description: No `remotePath` given.
         "401":
           description: The user is not on the filesystem's read allowlist.
         "403":

@@ -56,16 +56,16 @@ function renderQuery(file: RemoteFile) {
 
 describe("useFilestoreLinkedDocumentsQuery", () => {
   it("asks the filestores API for the item with the bearer token and the raw remote path", async () => {
-    // spaces, "+" and "#" must survive the round trip as the remotePath parameter
+    // spaces, "+", "#" and "%" must survive the round trip as the remotePath parameter
     const requests = captureRequests("get", ENDPOINT, () => HttpResponse.json([]));
 
-    const { result } = renderQuery(remoteFile({ remotePath: "/XRD/run 1+2#final.dat" }));
+    const { result } = renderQuery(remoteFile({ remotePath: "/XRD/run 1+2#50%.dat" }));
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(requests).toHaveLength(1);
     const url = new URL(requests[0].url);
     expect(url.pathname).toBe("/api/v1/gallery/filestores/42/linkedDocuments");
-    expect(url.searchParams.get("remotePath")).toBe("/XRD/run 1+2#final.dat");
+    expect(url.searchParams.get("remotePath")).toBe("/XRD/run 1+2#50%.dat");
     expect(requests[0].headers.get("Authorization")).toBe("Bearer token");
   });
 
@@ -76,6 +76,7 @@ describe("useFilestoreLinkedDocumentsQuery", () => {
           { id: 11, globalId: "SD11", name: "Doc one", ownerFullName: "Ada Lovelace" },
           { ownerFullName: "Grace Hopper" },
           { ownerFullName: "Grace Hopper" },
+          { id: 12, ownerFullName: "Grace Hopper" },
           {}, // a placeholder with no owner name is still a private document
         ]),
       ),
@@ -88,7 +89,7 @@ describe("useFilestoreLinkedDocumentsQuery", () => {
       expect.objectContaining({ id: 11, globalId: "SD11", name: "Doc one", permalinkHref: "/globalId/SD11" }),
     ]);
     expect(result.current.data?.privateByOwner).toEqual([
-      { ownerFullName: "Grace Hopper", count: 2 },
+      { ownerFullName: "Grace Hopper", count: 3 },
       { ownerFullName: "", count: 1 },
     ]);
   });
@@ -123,6 +124,23 @@ describe("useFilestoreLinkedDocumentsQuery", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(requests).toHaveLength(1);
     expect(new URL(requests[0].url).searchParams.get("remotePath")).toBe(file.remotePath);
+  });
+
+  it("asks again when another item of the same filestore is selected", async () => {
+    const requests = captureRequests("get", ENDPOINT, () => HttpResponse.json([]));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, rerender } = renderHook(({ file }) => useFilestoreLinkedDocumentsQuery(file), {
+      initialProps: { file: remoteFile({ remotePath: "/XRD/a.dat" }) },
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    rerender({ file: remoteFile({ remotePath: "/XRD/b.dat" }) });
+
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests.map((r) => new URL(r.url).searchParams.get("remotePath"))).toEqual(["/XRD/a.dat", "/XRD/b.dat"]);
   });
 
   it("stays idle for a remote file whose path holds no filestore", async () => {
