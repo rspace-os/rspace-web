@@ -1,12 +1,18 @@
 package com.researchspace.webapp.controller;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
 import com.researchspace.model.EditStatus;
@@ -14,12 +20,14 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
-import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.testutils.TestGroup;
+import java.util.Iterator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +43,7 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.ModelAndView;
 
-public class PublicStructuredDocumentControllerIT extends RealTransactionSpringTestBase {
+public class PublicStructuredDocumentControllerIT extends MVCTestBase {
 
   private @Autowired PublicStructuredDocumentController controller;
   private @Autowired JdbcTemplate jdbcTemplate;
@@ -210,5 +218,161 @@ public class PublicStructuredDocumentControllerIT extends RealTransactionSpringT
     assertEquals(
         rgs.getPublicLink() + "?initialRecordToDisplay=" + notebookEntryID,
         controller.getPublicDocForRecordOrParentOfRecord("SD" + notebookEntryID));
+  }
+
+  @Test
+  public void anonymousCallerGetsNoLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    assertEquals(
+        "",
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousGuestGetsNoLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser();
+    assertEquals(
+        "",
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousCallerGetsNoLinkForLinkOnlyNotebookOrItsEntry() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE, true);
+    Long entryId = folderMgr.getFolderChildrenIds(setup.notebook).iterator().next();
+    logoutCurrentUser();
+    assertEquals(
+        "", controller.getPublicDocForRecordOrParentOfRecord(setup.notebook.getGlobalIdentifier()));
+    assertEquals("", controller.getPublicDocForRecordOrParentOfRecord("SD" + entryId));
+  }
+
+  @Test
+  public void anonymousCallerGetsLinkForInternetPublication() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    publishDocumentForUser(setup.user, setup.structuredDocument.getId(), true, false, "");
+    String link =
+        recShareMgr.getRecordSharingInfo(setup.structuredDocument.getId()).get(0).getPublicLink();
+    logoutCurrentUser();
+    assertEquals(
+        link,
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
+  }
+
+  @Test
+  public void anonymousCallerGetsInternetNotebookLinkForItsEntries() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, true, 2);
+    publishDocumentForUser(setup.user, setup.notebook.getId(), true, false, "");
+    String notebookLink =
+        recShareMgr.getRecordSharingInfo(setup.notebook.getId()).get(0).getPublicLink();
+    Iterator<Long> entryIds = folderMgr.getFolderChildrenIds(setup.notebook).iterator();
+    Long entryWithOwnLink = entryIds.next();
+    Long plainEntry = entryIds.next();
+    // a link-only publication of the entry itself, inside the internet notebook
+    publishDocumentForUser(setup.user, entryWithOwnLink);
+    // precondition: without the entry's own withheld link, the second assertion repeats the first
+    assertNotNull(recShareMgr.getRecordSharingInfo(entryWithOwnLink).get(0).getPublicLink());
+    logoutCurrentUser();
+    assertEquals(
+        notebookLink + "?initialRecordToDisplay=" + plainEntry,
+        controller.getPublicDocForRecordOrParentOfRecord("SD" + plainEntry));
+    assertEquals(
+        notebookLink + "?initialRecordToDisplay=" + entryWithOwnLink,
+        controller.getPublicDocForRecordOrParentOfRecord("SD" + entryWithOwnLink));
+  }
+
+  @Test
+  public void anonymousCallerGetsInternetNotebookLinkForEntrySharedWithGroup() throws Exception {
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, true, 1);
+    publishDocumentForUser(setup.user, setup.notebook.getId(), true, false, "");
+    String notebookLink =
+        recShareMgr.getRecordSharingInfo(setup.notebook.getId()).get(0).getPublicLink();
+    Long entryId = folderMgr.getFolderChildrenIds(setup.notebook).iterator().next();
+    publishDocumentForUser(setup.user, entryId);
+    StructuredDocument entry = (StructuredDocument) recordMgr.get(entryId);
+    shareRecordWithGroup(setup.user, setup.group, entry);
+    // precondition: sharing gives the entry a second parent, so getParent() is null
+    assertNull(recordMgr.get(entryId).getParent());
+    logoutCurrentUser();
+    mockMvc
+        .perform(get("/public/publishedView/publiclink").param("globalId", "SD" + entryId))
+        .andExpect(status().isOk())
+        .andExpect(content().string(notebookLink + "?initialRecordToDisplay=" + entryId));
+  }
+
+  @Test
+  public void anonymousCallerGetsOwnersNotebookLinkForEntrySharedIntoAnotherNotebook()
+      throws Exception {
+    TestGroup testGroup = createTestGroup(1);
+    User pi = testGroup.getPi();
+    User owner = testGroup.getUserByPrefix("u1");
+    logoutAndLoginAs(pi);
+    Notebook piNotebook =
+        createNotebookWithNEntries(getRootFolderForUser(pi).getId(), "piNotebook", 0, pi);
+    shareNotebookWithGroup(pi, piNotebook, testGroup.getGroup(), "write");
+    logoutAndLoginAs(owner);
+    Notebook notebook =
+        createNotebookWithNEntries(getRootFolderForUser(owner).getId(), "notebook", 1, owner);
+    publishDocumentForUser(owner, notebook.getId(), true, false, "");
+    String notebookLink = recShareMgr.getRecordSharingInfo(notebook.getId()).get(0).getPublicLink();
+    Long entryId = folderMgr.getFolderChildrenIds(notebook).iterator().next();
+    publishDocumentForUser(owner, entryId);
+    shareRecordIntoGroupNotebook(recordMgr.get(entryId), piNotebook, testGroup.getGroup(), owner);
+    // precondition: the entry now sits in two notebooks, its owner's and the PI's
+    assertEquals(2, recordMgr.get(entryId).getParentNotebooks().size());
+    logoutCurrentUser();
+    mockMvc
+        .perform(get("/public/publishedView/publiclink").param("globalId", "SD" + entryId))
+        .andExpect(status().isOk())
+        .andExpect(content().string(notebookLink + "?initialRecordToDisplay=" + entryId));
+  }
+
+  @Test
+  public void containerPrincipalWithoutRSpaceLoginGetsNoLinkForLinkOnlyPublication()
+      throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    logoutCurrentUser();
+    // under SSO the servlet container can supply a user who never signed in to RSpace
+    mockMvc
+        .perform(
+            get("/public/publishedView/publiclink")
+                .param("globalId", setup.structuredDocument.getGlobalIdentifier())
+                .principal(new MockPrincipal("ssoOnlyUser")))
+        .andExpect(status().isOk())
+        .andExpect(content().string(""));
+  }
+
+  @Test
+  public void otherSignedInUserGetsLinkForLinkOnlyPublication() throws Exception {
+    GroupSetUp setup =
+        setUpDocumentGroupAndPublishRecordWithPublisherHavingRole(
+            "standardUser", Constants.USER_ROLE);
+    String link =
+        recShareMgr.getRecordSharingInfo(setup.structuredDocument.getId()).get(0).getPublicLink();
+    User other = createAndSaveUser("other" + getRandomName(10), Constants.USER_ROLE);
+    logoutAndLoginAs(other);
+    assertEquals(
+        link,
+        controller.getPublicDocForRecordOrParentOfRecord(
+            setup.structuredDocument.getGlobalIdentifier()));
   }
 }
