@@ -167,6 +167,7 @@ var sketchDialog = {
     $('input[type=radio][name=template-radio-item]').on('change', function () {
       switch ($(this).val()) {
         case 'Gallery':
+          sketchDialog.loadGalleryImages();
           $("#gallery-editorSketch").show(100, function () {
             $("#template-editorSketch").hide();
             $("#save-template").hide();
@@ -189,14 +190,6 @@ var sketchDialog = {
     //		sketchDialog.addImageTool("/scripts/zwibbler2/icon3.png");
     //		sketchDialog.addImageTool("/scripts/zwibbler2/icon4.png");
     //		sketchDialog.addImageTool("/scripts/zwibbler2/icon5.png");
-
-    var jqxhr = $.get("/gallery/getImageListFromRootImageFolder");
-    jqxhr.done(function (result) {
-      var results = result.data;
-      results.forEach(function (imageId) {
-        sketchDialog.addGalleryImageTool("/gallery/getViewerImage/" + imageId);
-      });
-    });
 
     sketchDialog.listTemplates(function (templates, error) {
       for (var i = 0; i < templates.length; i++) {
@@ -307,14 +300,89 @@ var sketchDialog = {
     });
   },
 
-  addGalleryImageTool: function (urlOrCanvas, actionfn) {
-    var img;
-    if (typeof urlOrCanvas === "string") {
-      img = document.createElement("img");
-      img.src = urlOrCanvas;
-    } else {
-      img = urlOrCanvas;
+  /*
+   * Zwibbler loads a node's image separately; until then it draws an empty
+   * box, so this resolves once the node has the image's size, once
+   * isSameNode() is false, or after 5s.
+   */
+  waitForNodeImage: function (id, image, isSameNode) {
+    return new Promise(function (resolve) {
+      var deadline = Date.now() + 5000;
+      var check = function () {
+        var rect = isSameNode() ? context.getBoundingRectangle([id]) : null;
+        var drawn = rect && Math.abs(rect.width - image.naturalWidth) < 1 &&
+          Math.abs(rect.height - image.naturalHeight) < 1;
+        if (!rect || drawn || Date.now() > deadline) {
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    });
+  },
+
+  /* gallery images still downloading, so Insert can wait for them to render */
+  pendingImageLoads: new Set(),
+
+  /*
+   * Resolves once no dropped Gallery image is still loading, including any
+   * dropped while waiting, or after 15s so a stalled download cannot block
+   * Insert for good.
+   */
+  whenImagesDrawn: function () {
+    var waitForPending = function () {
+      var pending = Array.from(sketchDialog.pendingImageLoads);
+      return pending.length ? Promise.allSettled(pending).then(waitForPending) : Promise.resolve();
+    };
+    var timeout = new Promise(function (resolve) {
+      setTimeout(resolve, 15000);
+    });
+    return Promise.race([waitForPending(), timeout]);
+  },
+
+  /* drop token per node id, see addGalleryImageTool */
+  pendingCentring: {},
+
+  /*
+   * Fills the Gallery picker the first time it is opened. It stays hidden
+   * until then, so the image list and tiles are not requested on every open.
+   */
+  loadGalleryImages: function () {
+    if (sketchDialog.galleryImagesRequested) {
+      return;
     }
+    sketchDialog.galleryImagesRequested = true;
+    $.get("/gallery/getImageListFromRootImageFolder")
+      .done(function (result) {
+        if (!Array.isArray(result && result.data)) {
+          sketchDialog.galleryImagesRequested = false;
+          return;
+        }
+        result.data.forEach(function (imageId) {
+          sketchDialog.addGalleryImageTool(
+            "/gallery/getThumbnail/" + imageId + "/0",
+            "/gallery/getViewerImage/" + imageId);
+        });
+      })
+      .fail(function () {
+        sketchDialog.galleryImagesRequested = false;
+      });
+  },
+
+  /*
+   * Adds a tile showing thumbnailUrl; dropping or clicking it adds imageUrl
+   * to the canvas, centred on the drop point.
+   */
+  addGalleryImageTool: function (thumbnailUrl, imageUrl) {
+    var img = document.createElement("img");
+    img.loading = "lazy";
+    // images without a stored thumbnail make getThumbnail fail
+    img.onerror = function () {
+      img.onerror = null;
+      img.src = imageUrl;
+    };
+    img.src = thumbnailUrl;
 
     var div = document.createElement("div");
     div.appendChild(img);
@@ -322,23 +390,44 @@ var sketchDialog = {
 
     img.setAttribute("draggable", "true");
     img.ondragstart = function (e) {
-      console.log("ondragstart");
       draggedImage = img;
     };
     img.onselectstart = function (e) {
       return false;
     };
     img.dropfn = function (x, y) {
-      if (actionfn) {
-        actionfn(x, y);
-      } else {
-        context.beginTransaction();
-        var id = context.createNode("ImageNode", {
-          url: urlOrCanvas
-        });
-        context.translateNode(id, x - img.naturalWidth / 2, y - img.naturalHeight / 2);
-        context.commitTransaction();
-      }
+      // add the node now, so an Insert before the image loads still saves it
+      context.beginTransaction();
+      var id = context.createNode("ImageNode", {
+        url: imageUrl
+      });
+      context.translateNode(id, x, y);
+      context.commitTransaction();
+      // Zwibbler reuses the ids of undone nodes, so only centre the node this drop created
+      var token = {};
+      sketchDialog.pendingCentring[id] = token;
+      var isThisNode = function () {
+        return sketchDialog.pendingCentring[id] === token &&
+          context.getNodeType(id) === "ImageNode" &&
+          context.getNodeProperty(id, "url") === imageUrl;
+      };
+      // then centre it on the drop point; irreversible keeps adding it one undo step
+      var load = sketchDialog.loadImage(imageUrl).then(function (image) {
+        if (isThisNode()) {
+          context.beginTransaction();
+          context.translateNode(id, -image.naturalWidth / 2, -image.naturalHeight / 2);
+          context.commitIrreversibleTransaction();
+          return sketchDialog.waitForNodeImage(id, image, isThisNode);
+        }
+      }).catch(function (error) {
+        console.error(error);
+      }).finally(function () {
+        if (sketchDialog.pendingCentring[id] === token) {
+          delete sketchDialog.pendingCentring[id];
+        }
+        sketchDialog.pendingImageLoads.delete(load);
+      });
+      sketchDialog.pendingImageLoads.add(load);
       /** 
        * After adding gallery image to the sketch, the system will show the template 
        * section by default. Remove following line if we don't want this behaviour. 
@@ -562,7 +651,11 @@ $(document).ready(function (e) {
   	// listen for insert button click
 	parent.tinymce.activeEditor.on('sketch-insert', function () {
     if(parent && parent.tinymce) {
-      sketchDialog.insert(parent.tinymce.activeEditor);
+      var editor = parent.tinymce.activeEditor;
+      // the PNG is rendered on insert, so wait for dropped Gallery images to load
+      sketchDialog.whenImagesDrawn().then(function () {
+        sketchDialog.insert(editor);
+      });
     }
 	});
 });
