@@ -56,6 +56,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -339,7 +340,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   // Dryad URL-encodes the DOI into one path segment; what follows it is the edit code
   private static String landingPath(String landingPrefix, String doiAndEditCode) {
     String doi = StringUtils.substringBefore(doiAndEditCode, "/");
-    return doi.isEmpty() ? null : landingPrefix + doi;
+    return StringUtils.startsWithAny(doi.toLowerCase(Locale.ROOT), "doi:", "doi%3a")
+        ? landingPrefix + doi
+        : null;
   }
 
   private void notifyRepoDepositComplete(

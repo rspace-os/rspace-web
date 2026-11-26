@@ -477,6 +477,7 @@ public class AsyncDepositorImplTest {
     "https://datadryad.org/stash/other/edit/" + DRYAD_DOI + "/editCode",
     "https://datadryad.org/edit/",
     "https://datadryad.org/stash/edit//editCode",
+    "https://datadryad.org/stash/edit/dataset/" + DRYAD_DOI,
   })
   void unrecognisedDryadEditLinkSendsNothing(String link) throws Exception {
     assertNull(depositor.buildDepositReport(dryadResult(link), "Dryad", App.APP_DRYAD).accessUrl());
