@@ -266,7 +266,7 @@ function splitTopLevel(text, sep) {
 
 const BORDER_PROPS = /^border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-color)?$|^outline(-color)?$|^column-rule(-color)?$/;
 const TEXT_PROPS = new Set(["color", "fill", "stroke", "caret-color", "-webkit-text-fill-color"]);
-const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|url\(\s*(['"]?)[^)]*?\1\s*\)/gi;
+const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-gradient\((?:[^()]|\([^()]*\))*\)|-webkit-gradient\((?:[^()]|\([^()]*\))*\)|url\(\s*(['"]?)[^)]*?\1\s*\)/gi;
 
 /**
  * Rewrites a relative url() in `file` so it resolves from the generated file.
@@ -275,14 +275,21 @@ const IMAGE_RE = /(?:-webkit-|-moz-|-o-|-ms-)?(?:repeating-)?(?:linear|radial)-g
 function relocateUrl(token, file) {
   return token.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/i, (whole, quote, path) => {
     if (/^(data:|https?:|\/|#)/i.test(path)) return whole;
+    // A <style> block's relative urls resolve against the page URL, which
+    // the generator cannot know.
+    if (!file.endsWith(".css")) throw new Error(`${file}: relative url() in a <style> block: ${path}`);
     const target = posix.join(posix.dirname(file), path);
     return `url(${quote}${posix.relative(posix.dirname(OUTPUT), target)}${quote})`;
   });
 }
 
-const VENDOR_PREFIXED = /^-(webkit|moz|o|ms)-/i;
+/**
+ * Gradients with a prefix current browsers ignore. `-webkit-` gradients still
+ * render in Chromium, Firefox and Safari, so they are remapped like any other.
+ */
+const VENDOR_PREFIXED = /^-(moz|o|ms)-/i;
 
-/** Whether the value's only images are vendor-prefixed gradients. */
+/** Whether the value's only images are gradients with an ignored prefix. */
 function onlyPrefixedImages(value) {
   const images = value.match(IMAGE_RE) ?? [];
   return images.length > 0 && images.every((token) => VENDOR_PREFIXED.test(token));
@@ -309,7 +316,7 @@ function darkDeclarations(prop, value, important, file) {
   if (TEXT_PROPS.has(prop)) return decl(prop, mapColors(value, lightText));
   if (prop === "background-color") return decl(prop, mapColors(value, darkSurface));
   if (prop === "background-image") {
-    // A prefixed gradient is a fallback the browser may use; leave it alone.
+    // Only images the browser ignores: the declaration has no effect.
     if (onlyPrefixedImages(value)) return [];
     return decl(prop, /^\s*none\s*$/i.test(value) ? "none" : backgroundImages(value, file));
   }
@@ -414,18 +421,22 @@ const limit = `to (${USER_CONTENT.join(", ")})`;
 const stats = { rules: 0, skipped: new Set() };
 const sections = [];
 
-/** A stylesheet's rules, with those of its local @imports first, as they load. */
-function sheetRules(file, seen = new Set()) {
-  if (seen.has(file)) return [];
-  seen.add(file);
+/**
+ * A stylesheet's rules, with those of its local @imports first, as they load.
+ * `ancestors` guards against import cycles; a sheet imported twice is emitted
+ * twice, as the browser applies it twice.
+ */
+function sheetRules(file, ancestors = []) {
+  if (ancestors.includes(file)) throw new Error(`Import cycle: ${[...ancestors, file].join(" -> ")}`);
   const css = stripComments(readFileSync(join(WEBAPP, file), "utf8"));
-  const imported = [...css.matchAll(/@import\s+(?:url\(\s*)?['"]?([^'")\s;]+)['"]?\s*\)?[^;]*;/gi)]
-    .map((m) => m[1])
-    .filter((path) => !/^(https?:|\/\/)/i.test(path))
-    .flatMap((path) => {
+  const imported = [...css.matchAll(/@import\s+(?:url\(\s*)?['"]?([^'")\s;]+)['"]?\s*\)?([^;]*);/gi)]
+    .filter((m) => !/^(https?:|\/\/)/i.test(m[1]))
+    .flatMap((m) => {
+      if (m[2].trim()) throw new Error(`${file}: conditional @import is not supported: ${m[0]}`);
+      const path = m[1].split("?")[0];
       const target = path.startsWith("/") ? path.slice(1) : posix.join(posix.dirname(file), path);
       if (!existsSync(join(WEBAPP, target))) throw new Error(`${file} imports a missing stylesheet: ${path}`);
-      return sheetRules(target, seen);
+      return sheetRules(target, [...ancestors, file]);
     });
   return [...imported, ...convertRules(css, file, false, stats)];
 }

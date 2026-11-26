@@ -1107,6 +1107,15 @@
     }
   }
 
+  :scope .bootstrap-custom-flat .progress-bar-striped,
+  :scope .bootstrap-custom-flat .progress-striped .progress-bar,
+  :scope .bootstrap-custom-flat .progress-striped .progress-bar-danger,
+  :scope .bootstrap-custom-flat .progress-striped .progress-bar-info,
+  :scope .bootstrap-custom-flat .progress-striped .progress-bar-success,
+  :scope .bootstrap-custom-flat .progress-striped .progress-bar-warning {
+    background-image: -webkit-linear-gradient(45deg, rgba(22, 27, 29, 0.15) 25%, transparent 25%, transparent 50%, rgba(22, 27, 29, 0.15) 50%, rgba(22, 27, 29, 0.15) 75%, transparent 75%, transparent);
+  }
+
   :scope .bootstrap-custom-flat .navbar-form {
     border-top-color: transparent;
     border-bottom-color: transparent;
@@ -2146,10 +2155,12 @@
   }
 
   :scope .bootstrap-custom-flat .carousel-control.left {
+    background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5) 0, rgba(0, 0, 0, 0) 100%);
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0, rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .bootstrap-custom-flat .carousel-control.right {
+    background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.5) 100%);
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.5) 100%);
   }
 
@@ -2203,6 +2214,7 @@
 
   :scope .bootstrap-custom-flat .btn-default:active {
     background-color: #262f32;
+    background-image: -webkit-radial-gradient(circle, #262f32 10%, #161b1d 11%);
     background-image: radial-gradient(circle, #262f32 10%, #161b1d 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2218,6 +2230,7 @@
 
   :scope .bootstrap-custom-flat .btn-primary:active {
     background-color: #064272;
+    background-image: -webkit-radial-gradient(circle, #064272 10%, #074e86 11%);
     background-image: radial-gradient(circle, #064272 10%, #074e86 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2233,6 +2246,7 @@
 
   :scope .bootstrap-custom-flat .btn-success:active {
     background-color: #204921;
+    background-image: -webkit-radial-gradient(circle, #204921 10%, #275a29 11%);
     background-image: radial-gradient(circle, #204921 10%, #275a29 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2248,6 +2262,7 @@
 
   :scope .bootstrap-custom-flat .btn-info:active {
     background-color: #701c7e;
+    background-image: -webkit-radial-gradient(circle, #701c7e 10%, #5f186b 11%);
     background-image: radial-gradient(circle, #701c7e 10%, #5f186b 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2263,6 +2278,7 @@
 
   :scope .bootstrap-custom-flat .btn-warning:active {
     background-color: #663d00;
+    background-image: -webkit-radial-gradient(circle, #663d00 10%, #7f4c00 11%);
     background-image: radial-gradient(circle, #663d00 10%, #7f4c00 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2278,6 +2294,7 @@
 
   :scope .bootstrap-custom-flat .btn-danger:active {
     background-color: #b0141a;
+    background-image: -webkit-radial-gradient(circle, #b0141a 10%, #820f13 11%);
     background-image: radial-gradient(circle, #b0141a 10%, #820f13 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2293,6 +2310,7 @@
 
   :scope .bootstrap-custom-flat .btn-link:active {
     background-color: #262f32;
+    background-image: -webkit-radial-gradient(circle, #262f32 10%, #161b1d 11%);
     background-image: radial-gradient(circle, #262f32 10%, #161b1d 11%);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
@@ -2988,8 +3006,9 @@
 
   :scope #menu {
     background-color: #014464;
-    background-color: #014260;
     background-image: none;
+    background-color: transparent;
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#014260), to(#013953));
     border-color: #002232;
     box-shadow: inset 0px 0px 1px #11242d;
   }
@@ -2998,6 +3017,8 @@
     border-color: #777777;
     background-color: #1c2225;
     background-image: none;
+    background-color: transparent;
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1c2225), to(#1f2629));
   }
 
   :scope #menu li a {
@@ -3027,8 +3048,9 @@
   :scope .dropdown_5columns {
     border-color: #777777;
     background-color: #1c2225;
-    background-color: #1f2629;
     background-image: none;
+    background-color: transparent;
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#1f2629), to(#39464c));
   }
 
   :scope #menu p,
@@ -3337,8 +3359,8 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: #1b3848;
-    background-image: none;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
+    background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: none;
@@ -3461,8 +3483,8 @@
     border-color: #7096ab;
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: #1b3848;
-    background-image: none;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
+    background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(22, 27, 29, 0.8) inset;
@@ -3481,8 +3503,8 @@
   :scope .ui-buttonset .ui-button.ui-state-active {
     background-color: #1f2729;
     background-image: url(../../scripts/bower_components/jquery-ui/themes/researchspace/images/bg_fallback.png);
-    background-color: #1b3848;
-    background-image: none;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1b3848), color-stop(100%,#274f66));
+    background-image: -webkit-linear-gradient(top, #1b3848 0%,#274f66 100%);
     background-color: transparent;
     background-image: linear-gradient(top, #1b3848 0%,#274f66 100%);
     box-shadow: none;
@@ -4288,6 +4310,8 @@
   :scope .ui-accordion-header,
   :scope .accordion .ui-state-active {
     color: #ffffff;
+    background-color: transparent;
+    background-image: -webkit-linear-gradient(top, #00597a 0%, #005e81 100%);
   }
 
   :scope .ui-accordion-header,
@@ -6123,6 +6147,7 @@
 
   :scope .progress-bar-striped,
   :scope .progress-striped .progress-bar {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6131,6 +6156,7 @@
   }
 
   :scope .progress-striped .progress-bar-success {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6139,6 +6165,7 @@
   }
 
   :scope .progress-striped .progress-bar-info {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6147,6 +6174,7 @@
   }
 
   :scope .progress-striped .progress-bar-warning {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6155,6 +6183,7 @@
   }
 
   :scope .progress-striped .progress-bar-danger {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -6704,11 +6733,13 @@
   }
 
   :scope .carousel-control.left {
+    background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
     background-image: none;
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .carousel-control.right {
+    background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
     background-image: none;
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
   }
@@ -8076,8 +8107,9 @@
   }
 
   :scope #search_submit.search.ui-button.ui-widget.ui-state-default {
-    background-color: #33495b;
-    background-image: none;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #33495b), color-stop(100%, #33495b));
+    background-color: transparent;
+    background-image: -webkit-linear-gradient(top, #33495b 0%, #33495b 100%);
   }
 
   :scope input:focus {
@@ -10524,6 +10556,7 @@
 
   :scope .bootstrap-namespace .progress-bar-striped,
   :scope .bootstrap-namespace .progress-striped .progress-bar {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10532,6 +10565,7 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-success {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10540,6 +10574,7 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-info {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10548,6 +10583,7 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-warning {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -10556,6 +10592,7 @@
   }
 
   :scope .bootstrap-namespace .progress-striped .progress-bar-danger {
+    background-image: -webkit-linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
     background-image: linear-gradient(45deg,rgba(22, 27, 29, 0.15) 25%,transparent 25%,transparent 50%,rgba(22, 27, 29, 0.15) 50%,rgba(22, 27, 29, 0.15) 75%,transparent 75%,transparent);
   }
 
@@ -11067,11 +11104,13 @@
   }
 
   :scope .bootstrap-namespace .carousel-control.left {
+    background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
     background-image: none;
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0.5) 0,rgba(0, 0, 0, 0) 100%);
   }
 
   :scope .bootstrap-namespace .carousel-control.right {
+    background-image: -webkit-linear-gradient(left,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
     background-image: none;
     background-image: linear-gradient(to right,rgba(0, 0, 0, 0) 0,rgba(0, 0, 0, 0.5) 100%);
   }
@@ -11869,6 +11908,7 @@
   :scope .select2-container--classic .select2-selection--single {
     background-color: #1a2023;
     border-color: #aaaaaa;
+    background-image: -webkit-linear-gradient(top, #161b1d 50%, #1f2629 100%);
     background-image: linear-gradient(to bottom, #161b1d 50%, #1f2629 100%);
   }
 
@@ -11887,6 +11927,7 @@
   :scope .select2-container--classic .select2-selection--single .select2-selection__arrow {
     background-color: #273134;
     border-left-color: #aaaaaa;
+    background-image: -webkit-linear-gradient(top, #1f2629 50%, #303c40 100%);
     background-image: linear-gradient(to bottom, #1f2629 50%, #303c40 100%);
   }
 
@@ -11912,10 +11953,12 @@
   }
 
   :scope .select2-container--classic.select2-container--open.select2-container--above .select2-selection--single {
+    background-image: -webkit-linear-gradient(top, #161b1d 0%, #1f2629 50%);
     background-image: linear-gradient(to bottom, #161b1d 0%, #1f2629 50%);
   }
 
   :scope .select2-container--classic.select2-container--open.select2-container--below .select2-selection--single {
+    background-image: -webkit-linear-gradient(top, #1f2629 50%, #161b1d 100%);
     background-image: linear-gradient(to bottom, #1f2629 50%, #161b1d 100%);
   }
 
@@ -12115,7 +12158,8 @@
   :scope .rte-autocomplete:focus > a {
     color: #ffffff;
     background-color: #00476b;
-    background-image: none;
+    background-image: -webkit-gradient(linear,0 0,0 100%,from(#00496e),to(#004264));
+    background-image: -webkit-linear-gradient(top,#00496e,#004264);
     background-image: linear-gradient(to bottom,#00496e,#004264);
   }
 
@@ -12124,7 +12168,8 @@
   :scope .rte-autocomplete > .active > a:focus {
     color: #ffffff;
     background-color: #00476b;
-    background-image: none;
+    background-image: -webkit-gradient(linear,0 0,0 100%,from(#00496e),to(#004264));
+    background-image: -webkit-linear-gradient(top,#00496e,#004264);
     background-image: linear-gradient(to bottom,#00496e,#004264);
   }
 
@@ -12261,6 +12306,7 @@
   :scope .handsontable td.area {
     background-color: rgba(26, 42, 69, 0.34);
     background-image: none;
+    background-image: -webkit-linear-gradient(top,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
     background-color: transparent;
     background-image: linear-gradient(to bottom,  rgba(26, 42, 69, 0.34) 0%,rgba(26, 42, 69, 0.34) 100%);
     background-color: #161b1d;
