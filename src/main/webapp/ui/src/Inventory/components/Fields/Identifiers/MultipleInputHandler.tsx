@@ -18,6 +18,7 @@ import type { IdentifierField } from "../../../../stores/definitions/Identifier"
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import { RECOMMENDED_FIELDS_LABELS, subFields, subFieldsForNew } from "../../../../stores/models/IdentifierModel";
+import { objectKey } from "../../../../util/objectKey";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
 import GeoLocationField from "./GeoLocationField";
 
@@ -29,6 +30,188 @@ type MultipleInputArgs = {
   editable: boolean;
 };
 
+const itemLabelFor = (field: IdentifierField): string => field.key.slice(0, field.key.length - 1);
+
+type RecommendedFieldArgs = {
+  v: IdentifierField;
+  i: number;
+  field: IdentifierField;
+  editable: boolean;
+  handleUpdateValue: (index: number, key: string, newValue: string | Date) => void;
+};
+
+const RecommendedField = observer(({ v, i, field, editable, handleUpdateValue }: RecommendedFieldArgs): ReactNode => {
+  const { t } = useTranslation("inventory");
+  const itemLabel = itemLabelFor(field);
+  const isDuplicate = (value: string): boolean =>
+    // @ts-expect-error - field.value is an array
+    field.value.filter((val) => val === value).length > 1;
+  return (
+    <>
+      <Grid
+        sx={{
+          flexGrow: 1,
+          mb: 0.5,
+          p: 1,
+          border: "1px dotted grey",
+          borderRadius: "4px",
+        }}
+      >
+        {editable ? (
+          // FormControl required to prevent warning (although may prevent flexGrow to work)
+          <FormControl sx={{ width: "100%" }}>
+            {v.value instanceof Date ? (
+              <DateField
+                variant="outlined"
+                value={v.value}
+                disabled={false}
+                onChange={({ target: { value } }) => {
+                  if (value) handleUpdateValue(i, "value", value);
+                }}
+                disableWidthLimit
+                data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
+              />
+            ) : (
+              <TextField
+                sx={{
+                  marginBottom:
+                    // @ts-expect-error - subFields accepts field.value[i]
+                    subFields(field.value[i]).length > 0 ? "10px" : "0px",
+                }}
+                size="small"
+                variant="standard"
+                fullWidth
+                id={`IdentifierRecommendedField-${field.key}-${i}`}
+                disabled={false}
+                value={v.value ?? ""}
+                placeholder={t("fields.identifiers.multipleInput.enterNewValue", { itemLabel })}
+                onChange={({ target: { value } }) => {
+                  handleUpdateValue(i, "value", value);
+                }}
+                error={(editable && isDuplicate(String(v.value))) || isEmpty(String(v.value))}
+                helperText={
+                  editable && isEmpty(String(v.value))
+                    ? t("fields.identifiers.multipleInput.enterValueOrRemove")
+                    : editable && isDuplicate(String(v.value))
+                      ? t("fields.identifiers.multipleInput.duplicateValue")
+                      : null
+                }
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
+              />
+            )}
+            {
+              // @ts-expect-error - subFields accepts field.value[i]
+              subFields(field.value[i]).length > 0 &&
+                // @ts-expect-error - subFields accepts field.value[i]
+                subFields(field.value[i]).map((subField) => (
+                  <InputWrapper
+                    label={RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
+                    key={subField.key}
+                  >
+                    <Grid
+                      container
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        justifyContent: "space-between",
+                        width: "95%",
+                        m: 1,
+                      }}
+                    >
+                      <Grid sx={{ flexGrow: 1 }}>
+                        <TextField
+                          size="small"
+                          variant="standard"
+                          fullWidth
+                          id={`IdentifierRecommendedSubField-${subField.key}-${i}`}
+                          disabled={false}
+                          value={subField.value ?? ""}
+                          placeholder={t("fields.identifiers.multipleInput.enterValueFor", {
+                            fieldLabel:
+                              RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
+                          })}
+                          onChange={({ target: { value } }) => {
+                            handleUpdateValue(i, subField.key, value);
+                          }}
+                          /* value is optional for most subFields, not all */
+                          error={isEmpty(String(subField.value)) && subField.key === "freeType"}
+                          helperText={
+                            isEmpty(String(subField.value)) && subField.key === "freeType"
+                              ? t("fields.identifiers.multipleInput.valueRequired")
+                              : null
+                          }
+                          slotProps={{
+                            inputLabel: { shrink: true },
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </InputWrapper>
+                ))
+            }
+          </FormControl>
+        ) : (
+          <>
+            <Grid>{v.value instanceof Date ? format(v.value, "yyyy-MM-dd") : String(v.value)}</Grid>
+            {
+              // @ts-expect-error - subFields accepts field.value[i]
+              subFields(field.value[i]).length > 0 &&
+                // @ts-expect-error - subFields accepts field.value[i]
+                subFields(field.value[i]).map((sf) => (
+                  <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
+                    <Grid sx={{ minWidth: "150px" }}>
+                      {t("fields.identifiers.wrapper.fieldLabel", {
+                        label: RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
+                      })}
+                    </Grid>
+                    <Grid>
+                      {sf.value ? (
+                        String(sf.value)
+                      ) : (
+                        <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
+                          {t("fields.identifiers.wrapper.none")}
+                        </Typography>
+                      )}
+                    </Grid>
+                  </Grid>
+                ))
+            }
+          </>
+        )}
+      </Grid>
+      {field.options && (
+        <Grid sx={{ minWidth: "135px" }}>
+          {editable ? (
+            <FormControl>
+              <Select
+                variant="standard"
+                data-test-id={`${field.key}-option-selector`}
+                // @ts-expect-error - field.value[i].type exists
+                value={field.value[i].type}
+                onChange={({ target: { value } }) => handleUpdateValue(i, "type", value as string)}
+                inputProps={{
+                  "aria-label": field.selectLabelLabel ?? "",
+                }}
+              >
+                {field.options.map((option) => (
+                  <MenuItem key={option.value} value={option.value} data-test-id={`field-option-${option.value}`}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : (
+            // biome-ignore lint/suspicious/noExplicitAny: field.value is an untyped array (see @ts-expect-error usages elsewhere in this file)
+            capitaliseJustFirstChar((field.value as any)[i].type.toLowerCase())
+          )}
+        </Grid>
+      )}
+    </>
+  );
+});
+
 /**
  * A component designed to handle the "easy" addition, editing and removal of values to an array
  * via multiple input fields.
@@ -37,13 +220,7 @@ type MultipleInputArgs = {
  */
 const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputArgs): ReactNode => {
   const { t } = useTranslation("inventory");
-  const itemLabel: string = field.key.slice(0, field.key.length - 1);
-
-  const isDuplicate = (v: string): boolean =>
-    // @ts-expect-error - field.value is an array
-    field.value.filter((val) => val === v).length > 1;
-
-  const isRequired = (k: string): boolean => k === "freeType";
+  const itemLabel = itemLabelFor(field);
 
   const newItem = () => {
     return field.key === "Geolocations"
@@ -86,178 +263,6 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
     doUpdateIdentifiers();
   };
 
-  type RecommendedFieldArgs = {
-    v: IdentifierField;
-    i: number;
-  };
-
-  const RecommendedField = observer(({ v, i }: RecommendedFieldArgs): ReactNode => {
-    return (
-      <>
-        <Grid
-          sx={{
-            flexGrow: 1,
-            mb: 0.5,
-            p: 1,
-            border: "1px dotted grey",
-            borderRadius: "4px",
-          }}
-        >
-          {editable ? (
-            // FormControl required to prevent warning (although may prevent flexGrow to work)
-            <FormControl sx={{ width: "100%" }}>
-              {v.value instanceof Date ? (
-                <DateField
-                  variant="outlined"
-                  value={v.value}
-                  disabled={false}
-                  onChange={({ target: { value } }) => {
-                    if (value) handleUpdateValue(i, "value", value);
-                  }}
-                  disableWidthLimit
-                  data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
-                />
-              ) : (
-                <TextField
-                  sx={{
-                    marginBottom:
-                      // @ts-expect-error - subFields accepts field.value[i]
-                      subFields(field.value[i]).length > 0 ? "10px" : "0px",
-                  }}
-                  size="small"
-                  variant="standard"
-                  fullWidth
-                  id={`IdentifierRecommendedField-${field.key}-${i}`}
-                  disabled={false}
-                  value={v.value ?? ""}
-                  placeholder={t("fields.identifiers.multipleInput.enterNewValue", { itemLabel })}
-                  onChange={({ target: { value } }) => {
-                    handleUpdateValue(i, "value", value);
-                  }}
-                  error={(editable && isDuplicate(String(v.value))) || isEmpty(String(v.value))}
-                  helperText={
-                    editable && isEmpty(String(v.value))
-                      ? t("fields.identifiers.multipleInput.enterValueOrRemove")
-                      : editable && isDuplicate(String(v.value))
-                        ? t("fields.identifiers.multipleInput.duplicateValue")
-                        : null
-                  }
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                  }}
-                />
-              )}
-              {
-                // @ts-expect-error - subFields accepts field.value[i]
-                subFields(field.value[i]).length > 0 &&
-                  // @ts-expect-error - subFields accepts field.value[i]
-                  subFields(field.value[i]).map((subField) => (
-                    <InputWrapper
-                      label={RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
-                      key={subField.key}
-                    >
-                      <Grid
-                        container
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          justifyContent: "space-between",
-                          width: "95%",
-                          m: 1,
-                        }}
-                      >
-                        <Grid sx={{ flexGrow: 1 }}>
-                          <TextField
-                            size="small"
-                            variant="standard"
-                            fullWidth
-                            id={`IdentifierRecommendedSubField-${subField.key}-${i}`}
-                            disabled={false}
-                            value={subField.value ?? ""}
-                            placeholder={t("fields.identifiers.multipleInput.enterValueFor", {
-                              fieldLabel:
-                                RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
-                            })}
-                            onChange={({ target: { value } }) => {
-                              handleUpdateValue(i, subField.key, value);
-                            }}
-                            /* value is optional for most subFields, not all */
-                            error={isEmpty(String(subField.value)) && isRequired(subField.key)}
-                            helperText={
-                              isEmpty(String(subField.value)) && isRequired(subField.key)
-                                ? t("fields.identifiers.multipleInput.valueRequired")
-                                : null
-                            }
-                            slotProps={{
-                              inputLabel: { shrink: true },
-                            }}
-                          />
-                        </Grid>
-                      </Grid>
-                    </InputWrapper>
-                  ))
-              }
-            </FormControl>
-          ) : (
-            <>
-              <Grid>{v.value instanceof Date ? format(v.value, "yyyy-MM-dd") : String(v.value)}</Grid>
-              {
-                // @ts-expect-error - subFields accepts field.value[i]
-                subFields(field.value[i]).length > 0 &&
-                  // @ts-expect-error - subFields accepts field.value[i]
-                  subFields(field.value[i]).map((sf) => (
-                    <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
-                      <Grid sx={{ minWidth: "150px" }}>
-                        {t("fields.identifiers.wrapper.fieldLabel", {
-                          label: RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
-                        })}
-                      </Grid>
-                      <Grid>
-                        {sf.value ? (
-                          String(sf.value)
-                        ) : (
-                          <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
-                            {t("fields.identifiers.wrapper.none")}
-                          </Typography>
-                        )}
-                      </Grid>
-                    </Grid>
-                  ))
-              }
-            </>
-          )}
-        </Grid>
-        {field.options && (
-          <Grid sx={{ minWidth: "135px" }}>
-            {editable ? (
-              <FormControl>
-                <Select
-                  variant="standard"
-                  data-test-id={`${field.key}-option-selector`}
-                  // @ts-expect-error - field.value[i].type exists
-                  value={field.value[i].type}
-                  onChange={({ target: { value } }) => handleUpdateValue(i, "type", value as string)}
-                  inputProps={{
-                    "aria-label": field.selectLabelLabel ?? "",
-                  }}
-                >
-                  {field.options.map((option) => (
-                    <MenuItem key={option.value} value={option.value} data-test-id={`field-option-${option.value}`}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            ) : (
-              // biome-ignore lint/suspicious/noExplicitAny: field.value is an untyped array (see @ts-expect-error usages elsewhere in this file)
-              capitaliseJustFirstChar((field.value as any)[i].type.toLowerCase())
-            )}
-          </Grid>
-        )}
-      </>
-    );
-  });
-
   return (
     <InputWrapper
       label={field.key}
@@ -286,7 +291,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
               width: "100%",
               m: 0.5,
             }}
-            key={i}
+            key={typeof v === "object" && v !== null ? objectKey(v) : i}
           >
             {field.key === "Geolocations" ? (
               <GeoLocationField
@@ -300,7 +305,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
               />
             ) : (
               // @ts-expect-error - v is a field
-              <RecommendedField v={v} i={i} />
+              <RecommendedField v={v} i={i} field={field} editable={editable} handleUpdateValue={handleUpdateValue} />
             )}
             <Grid sx={{ marginRight: "6px" }}>
               <RemoveButton

@@ -9,6 +9,7 @@ import NumberField from "../../../../components/Inputs/NumberField";
 import TextField from "../../../../components/Inputs/TextField";
 import NoValue from "../../../../components/NoValue";
 import type Result from "../../../../stores/models/InventoryBaseRecord";
+import { objectKey } from "../../../../util/objectKey";
 import FormField from "../../../components/Inputs/FormField";
 import LinkField from "../Link/LinkField";
 import NewField from "./NewField";
@@ -19,16 +20,16 @@ type ExtraFieldsArgs = {
   result: Result;
 };
 
-function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
-  const EachField = observer(({ editable }: { editable: boolean }): React.ReactNode => {
+const EachField = observer(
+  ({ editable, onErrorStateChange, result }: ExtraFieldsArgs & { editable: boolean }): React.ReactNode => {
+    const { t } = useTranslation("inventory");
     const extraFieldsDisabled = !editable;
     return result.visibleExtraFields.map((ef, i) => (
       // the key must be stable while the field is edited: keying by the
       // user-editable name would remount the editor (dropping focus and
       // local state) whenever a rename commits, and two unsaved fields can
       // both briefly be named ""
-      <div key={ef.id !== null ? `field-${ef.id}` : `unsaved-${i}`} aria-live="polite">
+      <div key={ef.id !== null ? `field-${ef.id}` : `unsaved-${objectKey(ef)}`} aria-live="polite">
         {ef.editing ? (
           <UpdateField extraField={ef} index={i} record={result} />
         ) : ef.type === "Link" ? (
@@ -162,14 +163,17 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
         )}
       </div>
     ));
-  });
+  },
+);
 
+function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const editable = result.isFieldEditable("extraFields");
   const extraFields = result.extraFields;
   return (
     <>
       {extraFields.length > 0 ? (
-        <EachField editable={editable} />
+        <EachField editable={editable} onErrorStateChange={onErrorStateChange} result={result} />
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label={t("fields.extraFields.noMoreFields")} />
