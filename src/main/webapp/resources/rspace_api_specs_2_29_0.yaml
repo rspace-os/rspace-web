@@ -1889,13 +1889,13 @@ paths:
         `remotePath` (relative to the filestore root, with or without its leading slash), through
         any user's filestore of the same filesystem; on filesystems with per-user logins
         only through the caller's own filestores, since two logins can see different files at
-        one path, and on SFTP a link whose full path (the filestore's own path followed by the
-        item's path) starts without a slash, read relative to the login's home,
-        is kept apart from one that starts with a slash. Documents the caller cannot read are
-        returned as owner-only placeholders (no `id`, `globalId` or `name`). Requires read
-        access to the filesystem. On filesystems with per-user logins the user must also be
-        logged into the filesystem (see /login endpoint), and that login must be able to read
-        the item: list it if it is a folder, open it if it is a file. Any filestore type.
+        one path, and except on SMB a link whose full path (the filestore's own path followed by
+        the item's path) starts without a slash, which SFTP and iRODS can resolve under the
+        login's home, is kept apart from one that starts with a slash. Documents the caller
+        cannot read are returned as owner-only placeholders (no `id`, `globalId` or `name`).
+        Requires read access to the filesystem. On filesystems with per-user logins the user must
+        also be logged into the filesystem (see /login endpoint), and that login must be able to
+        read the item: list it if it is a folder, open it if it is a file. Any filestore type.
       tags:
         - Gallery Filestores
       parameters:
