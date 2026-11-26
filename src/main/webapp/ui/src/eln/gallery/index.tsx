@@ -6,7 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, Route, Routes, useParams } from "react-router";
+import { Navigate, Route, Routes, useParams, useSearchParams } from "react-router";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
@@ -424,6 +424,9 @@ type FileResolution =
  */
 function GalleryFileInFolder() {
   const { fileId: fileIdParam, version: versionParam } = useParams();
+  /* snippet permalinks add ?type=snippet, as snippets are not served by the files API */
+  const [searchParams] = useSearchParams();
+  const isSnippet = typeof versionParam === "undefined" && searchParams.get("type") === "snippet";
   const { t } = useTranslation("gallery");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
@@ -443,14 +446,12 @@ function GalleryFileInFolder() {
    */
   async function fetchFileDetails(hasBeenSuperseded: () => boolean) {
     try {
-      const { data } =
-        typeof versionParam === "undefined"
-          ? await axios.get<unknown>(`/gallery/ajax/item/${fileIdParam}`)
-          : await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
-              headers: {
-                Authorization: `Bearer ${await getToken()}`,
-              },
-            });
+      const token = await getToken();
+      const { data } = await axios.get<unknown>(`/api/v1/${isSnippet ? "snippets" : "files"}/${fileIdParam}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (hasBeenSuperseded()) return;
       setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
       const folderId = Parsers.objectPath(["parentFolderId"], data).flatMap(Parsers.isNumber).elseThrow();
@@ -507,7 +508,7 @@ function GalleryFileInFolder() {
     return () => {
       superseded = true;
     };
-  }, [fileIdParam, versionParam]);
+  }, [fileIdParam, versionParam, isSnippet]);
 
   const autoSelect = React.useMemo(
     () =>

@@ -86,6 +86,9 @@ public class GlobalLookupController extends BaseController {
         url = addTrailingSlashIfNeeded(url, prefix);
         url += oid.getDbId();
       }
+      if (GlobalIdPrefix.ST.equals(prefix)) {
+        url += GalleryController.SNIPPET_ITEM_QUERY;
+      }
     }
     if (oid.hasVersionId() && GlobalIdPrefix.SD.equals(oid.getPrefix())) {
       url = StructuredDocumentController.STRUCTURED_DOCUMENT_AUDIT_VIEW_URL;

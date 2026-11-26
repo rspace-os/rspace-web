@@ -4973,6 +4973,13 @@ components:
         content:
           type: string
           description: The raw HTML content of the snippet.
+        parentFolderId:
+          type: integer
+          format: int64
+          description: |
+            The folder through which the requesting user reaches this snippet in their Gallery:
+            the owner's folder for the owner, otherwise a folder the snippet is shared into,
+            falling back to the owner's folder. Null when the user cannot read that folder.
         _links:
           $ref: "#/components/schemas/LinkItemList"
       example:
@@ -4986,6 +4993,7 @@ components:
           firstName: Alice
           lastName: A
         content: <p>Reusable HTML block</p>
+        parentFolderId: 456
         _links:
           - link: https://myrspace.com/api/v1/snippets/123
             rel: self

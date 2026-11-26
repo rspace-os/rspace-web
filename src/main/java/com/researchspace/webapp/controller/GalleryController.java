@@ -78,6 +78,9 @@ public class GalleryController extends BaseController {
   /** URL to gallery item */
   public static final String GALLERY_ITEM_URL = "/gallery/item";
 
+  /** Tells the Gallery that a {@link #GALLERY_ITEM_URL} item is a snippet. */
+  public static final String SNIPPET_ITEM_QUERY = "?type=snippet";
+
   private static final int NUMBER_OF_RECORDS_ON_GALERY_PAGE = 20;
   private static final int MAX_FOLDER_NAME_LENGTH = 100;
   private static final int MAX_IDS_TO_PROCESS = 50;
@@ -86,38 +89,6 @@ public class GalleryController extends BaseController {
   private @Autowired MediaManager mediaManager;
   private @Autowired DetailedRecordInformationProvider infoProvider;
   private @Autowired RSChemElementManager rsChemElementManager;
-
-  /** Resolves a readable live Gallery item to a readable parent folder. */
-  @GetMapping("/ajax/item/{itemId}")
-  @ResponseBody
-  public Map<String, Object> resolveGalleryItem(@PathVariable("itemId") Long itemId) {
-    User user = userManager.getAuthenticatedUserInSession();
-    Record item = recordManager.get(itemId);
-    assertAuthorisation(user, item, PermissionType.READ);
-    if (!(item instanceof EcatMediaFile) && !item.isSnippet()) {
-      throw new IllegalArgumentException(getText("gallery.errors.accessDenied"));
-    }
-    if (item.getOwner().equals(user) && item.getOwnerParent().isPresent()) {
-      Folder parent = folderManager.getFolder(item.getOwnerParent().get().getId(), user);
-      return Map.of("name", item.getName(), "parentFolderId", parent.getId());
-    }
-    Folder galleryRoot = folderManager.getGalleryRootFolderForUser(user);
-    for (RecordToFolder relation : item.getParents()) {
-      Folder parent = relation.getFolder();
-      if (!relation.isRecordInFolderDeleted()
-          && !parent.isDeleted()
-          && !parent.getShortestPathToParent(galleryRoot).isEmpty()) {
-        folderManager.getFolder(parent.getId(), user);
-        return Map.of("name", item.getName(), "parentFolderId", parent.getId());
-      }
-    }
-    Folder parent =
-        item.getOwnerParent()
-            .orElseThrow(
-                () -> new IllegalArgumentException(getText("gallery.errors.folderNotInGallery")));
-    folderManager.getFolder(parent.getId(), user);
-    return Map.of("name", item.getName(), "parentFolderId", parent.getId());
-  }
 
   /** List Gallery folder by id of Gallery item: */
   @GetMapping("/item/{itemId}")

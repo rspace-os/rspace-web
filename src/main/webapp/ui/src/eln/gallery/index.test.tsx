@@ -27,7 +27,12 @@ import type { GallerySection } from "./common";
 function GalleryStory({
   urlSuffix,
 }: {
-  urlSuffix?: `?mediaType=${GallerySection}` | `/${number}` | `/item/${number}` | `/item/${number}/${string}`;
+  urlSuffix?:
+    | `?mediaType=${GallerySection}`
+    | `/${number}`
+    | `/item/${number}`
+    | `/item/${number}?type=snippet`
+    | `/item/${number}/${string}`;
 }) {
   return (
     <LandmarksProvider>
@@ -292,7 +297,7 @@ describe("Gallery", () => {
             document.title = "";
             mockAxios.reset();
             mockNetwork();
-            mockAxios.onGet(`/gallery/ajax/item/${id}`).reply(200, {
+            mockAxios.onGet(`/api/v1/files/${id}`).reply(200, {
               id,
               globalId: `GL${id}`,
               name: `${filename}.jpg`,
@@ -313,6 +318,22 @@ describe("Gallery", () => {
         ),
         { numRuns: 5 },
       );
+    });
+
+    test("On '/item/{id}?type=snippet', the snippet is fetched from the snippets API", async () => {
+      mockAxios.onGet("/api/v1/snippets/634").reply(200, {
+        id: 634,
+        globalId: "ST634",
+        name: "shared snippet",
+        parentFolderId: 123,
+      });
+
+      render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
+
+      await waitFor(() => {
+        expect(mockAxios.history.get.map(({ url }) => url)).toContain("/api/v1/snippets/634");
+      });
+      expect(mockAxios.history.get.map(({ url }) => url)).not.toContain("/api/v1/files/634");
     });
   });
 
@@ -379,10 +400,6 @@ describe("Gallery", () => {
 
     /** The live item, at version 3. */
     function mockLiveItem() {
-      mockAxios.onGet(`/gallery/ajax/item/${PINNED_ITEM_ID}`).reply(200, {
-        name: "assay.png",
-        parentFolderId: 123,
-      });
       mockAxios.onGet(`/api/v1/files/${PINNED_ITEM_ID}`).reply(200, {
         id: PINNED_ITEM_ID,
         globalId: `GL${PINNED_ITEM_ID}`,

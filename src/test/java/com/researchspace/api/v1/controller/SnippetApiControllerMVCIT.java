@@ -1,12 +1,16 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiSnippet;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.Snippet;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -121,6 +125,45 @@ public class SnippetApiControllerMVCIT extends API_MVC_TestBase {
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").value(makeNotFoundOrUnauthorizedMessage(snippet.getId())))
         .andReturn();
+  }
+
+  @Test
+  public void getSnippetByIdReturnsParentFolderInRequestersGallery() throws Exception {
+    User recipient = createInitAndLoginAnyUser();
+    String recipientKey = createNewApiKeyForUser(recipient);
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    initUser(pi);
+    logoutAndLoginAs(pi);
+    String piKey = createNewApiKeyForUser(pi);
+    Group group = createGroupForUsers(pi, pi.getUsername(), "", recipient, pi);
+    Snippet snippet = recordMgr.createSnippet("shared snippet", "text", pi);
+    Long ownerFolderId = snippet.getParent().getId();
+    sharingMgr.shareRecord(
+        pi,
+        snippet.getId(),
+        new ShareConfigElement[] {new ShareConfigElement(group.getId(), "read")});
+
+    assertEquals(ownerFolderId, getSnippet(piKey, pi, snippet).getParentFolderId());
+    Long sharedFolderId = group.getSharedSnippetGroupFolderId();
+    assertEquals(sharedFolderId, getSnippet(recipientKey, recipient, snippet).getParentFolderId());
+
+    doInTransaction(
+        () ->
+            recordMgr.get(snippet.getId()).getParents().stream()
+                .filter(relation -> relation.getFolder().getId().equals(sharedFolderId))
+                .forEach(relation -> relation.markRecordInFolderDeleted(true)));
+    assertNull(getSnippet(recipientKey, recipient, snippet).getParentFolderId());
+  }
+
+  private ApiSnippet getSnippet(String apiKey, User user, Snippet snippet) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/snippets/{id}", user, snippet.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSnippet.class);
   }
 
   private String makeNotFoundOrUnauthorizedMessage(long id) {
