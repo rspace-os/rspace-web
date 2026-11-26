@@ -79,6 +79,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * This test class is outside of the Spring tests transaction environment. This is because auditing
@@ -643,6 +644,12 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     UserGroup labAdminMembership = grp.getUserGroupForUser(reloadedLabAdmin);
     commitTransaction();
     assertThat(grp.getMembers()).hasSize(3);
+    // the archived PI is also listed as a member: still one membership row each (RSDEV-1400)
+    assertEquals(
+        3,
+        new JdbcTemplate(dataSource)
+            .queryForObject(
+                "SELECT COUNT(*) FROM UserGroup WHERE group_id = ?", Integer.class, grp.getId()));
     assertEquals(RoleInGroup.RS_LAB_ADMIN, labAdminMembership.getRoleInGroup());
     assertTrue(labAdminMembership.isAdminViewDocsEnabled());
 

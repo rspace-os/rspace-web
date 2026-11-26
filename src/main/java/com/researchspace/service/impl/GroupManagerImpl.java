@@ -183,14 +183,15 @@ public class GroupManagerImpl implements GroupManager {
   public Group addUserToGroup(String usernameToAdd, Long groupId, RoleInGroup role)
       throws IllegalAddChildOperation {
 
-    Group group = groupDao.get(groupId);
+    // locked until commit, so concurrent adds to this group cannot both pass the member check
+    Group group = groupDao.getForUpdate(groupId);
     User userToAdd = userDao.getUserByUsername(usernameToAdd);
     // Legacy users that have never logged in and dont belong to any group will not have the correct
     // snippet folders - this will create them
     userContentUpdater.doUserContentUpdates(userToAdd);
     Set<ConstraintBasedPermission> grpRolePerms = getPermissionsForRole(role, group);
     // if group already has user, just return
-    if (group.hasMember(userToAdd)) {
+    if (group.hasMember(userToAdd) || groupDao.hasMembership(groupId, userToAdd.getId())) {
       return group;
     }
     group.addMember(userToAdd, role, grpRolePerms);
