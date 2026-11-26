@@ -109,8 +109,8 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       "requester.value": requesterId,
       kind: "BOOKING",
       ...(period === "upcoming"
-        ? { state: "CONFIRMED", end: { greaterThan: asOfDate } }
-        : { or: [{ end: { lessThanOrEqual: asOfDate } }, { state: "CANCELLED" }] }),
+        ? { state: "CONFIRMED", end: { greaterThan: asOfDate.toISOString() } }
+        : { or: [{ end: { lessThanOrEqual: asOfDate.toISOString() } }, { state: "CANCELLED" }] }),
     }),
     [asOfDate, period, requesterId],
   );
