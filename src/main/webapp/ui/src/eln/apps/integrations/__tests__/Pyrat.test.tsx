@@ -1,14 +1,16 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import { Optional } from "@/util/optional";
+import { renderWithIntegrations } from "../../__tests__/integrationsQueryClient";
 import Pyrat from "../Pyrat";
 import "@/__tests__/__mocks__/matchMedia";
 
 const mockSaveAppOptions = vi.fn();
 vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
   useIntegrationsEndpoint: () => ({ saveAppOptions: mockSaveAppOptions, deleteAppOptions: vi.fn() }),
+  fetchAllIntegrations: vi.fn(),
 }));
 
 const state: IntegrationStates["PYRAT"] = {
@@ -19,11 +21,20 @@ const state: IntegrationStates["PYRAT"] = {
   },
 };
 
+const withApiKey = (apiKey: string | null): IntegrationStates["PYRAT"] => ({
+  ...state,
+  credentials: {
+    ...state.credentials,
+    authenticatedServers: [{ ...state.credentials.authenticatedServers[0], apiKey }],
+  },
+});
+
 describe("Pyrat", () => {
   test("shows a new API key as unchanged once it is saved", async () => {
     const user = userEvent.setup();
-    mockSaveAppOptions.mockResolvedValue(undefined);
-    render(<Pyrat integrationState={state} update={() => {}} />);
+    // the server returns a stored key as null
+    mockSaveAppOptions.mockReset().mockResolvedValue(withApiKey(null));
+    renderWithIntegrations(<Pyrat />, { PYRAT: state });
     await user.click(screen.getByRole("button", { name: "apps:integrations.pyrat.name" }));
     const apiKeyField = screen.getByLabelText("apps:integrations.pyrat.apiKeyLabel");
 
@@ -44,11 +55,11 @@ describe("Pyrat", () => {
   test("locks a row while clearing its saved API key is pending", async () => {
     const user = userEvent.setup();
     let finishSave!: () => void;
-    const pendingSave = new Promise<void>((resolve) => {
-      finishSave = resolve;
+    const pendingSave = new Promise<IntegrationStates["PYRAT"]>((resolve) => {
+      finishSave = () => resolve(withApiKey(""));
     });
     mockSaveAppOptions.mockReset().mockReturnValue(pendingSave);
-    render(<Pyrat integrationState={state} update={() => {}} />);
+    renderWithIntegrations(<Pyrat />, { PYRAT: state });
     await user.click(screen.getByRole("button", { name: "apps:integrations.pyrat.name" }));
     const apiKeyField = screen.getByLabelText("apps:integrations.pyrat.apiKeyLabel");
 

@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
 import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDisconnectEndpoint } from "../useDisconnect";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type ClustermarketArgs = {
-  integrationState: IntegrationStates["CLUSTERMARKET"];
-  update: (newIntegrationState: IntegrationStates["CLUSTERMARKET"]) => void;
-};
 
 export interface ClustermarketConnectedMessage extends Record<string, unknown> {
   type: "CLUSTERMARKET_CONNECTED";
@@ -46,11 +41,13 @@ export const CLUSTERMARKET_CONNECTION_CHANNEL = "rspace.apps.clustermarket.conne
  * The process of disconnecting is via a standard API call made by
  * ../useDisconnect.
  */
-function Clustermarket({ integrationState, update }: ClustermarketArgs): React.ReactNode {
+function Clustermarket(): React.ReactNode {
+  const integrationState = useIntegrationState("CLUSTERMARKET");
+  const updateMode = useIntegrationModeUpdate("CLUSTERMARKET");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useDisconnectEndpoint("/apps/clustermarket", t("integrations.calira.name"));
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("CLUSTERMARKET");
 
   useBroadcastChannel<ClustermarketConnectedMessage>(
     CLUSTERMARKET_CONNECTION_CHANNEL,
@@ -90,7 +87,7 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
         explanatoryText={t("integrations.calira.description")}
         image={ClustermarketIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         helpLinkText={t("integrations.calira.helpLink")}
         website="https://calira.co"
         docLink="clustermarket"

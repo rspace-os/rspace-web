@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useProtocolsioEndpoint } from "../useProtocolsio";
-
-type ProtocolsIOArgs = {
-  integrationState: IntegrationStates["PROTOCOLS_IO"];
-  update: (newIntegrationState: IntegrationStates["PROTOCOLS_IO"]) => void;
-};
 
 export interface ProtocolsIOConnectedMessage extends Record<string, unknown> {
   type: "PROTOCOLS_IO_CONNECTED";
@@ -46,11 +41,13 @@ export const PROTOCOLS_IO_CONNECTION_CHANNEL = "rspace.apps.protocolsio.connecti
  * The process of disconnecing is via a standard API call made by
  * ../useProtocolsio.
  */
-function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.ReactNode {
+function ProtocolsIO(): React.ReactNode {
+  const integrationState = useIntegrationState("PROTOCOLS_IO");
+  const updateMode = useIntegrationModeUpdate("PROTOCOLS_IO");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useProtocolsioEndpoint();
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("PROTOCOLS_IO");
 
   useBroadcastChannel<ProtocolsIOConnectedMessage>(
     PROTOCOLS_IO_CONNECTION_CHANNEL,
@@ -90,7 +87,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
         explanatoryText={t("integrations.protocolsIo.description")}
         image={ProtocolsIOIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.protocolsIo.usage")}
         helpLinkText={t("integrations.protocolsIo.helpLink")}
         website="https://protocols.io"

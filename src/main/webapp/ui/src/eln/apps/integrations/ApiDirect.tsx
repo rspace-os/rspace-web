@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -76,4 +75,4 @@ print(client.get_status())`}
   );
 }
 
-export default React.memo(observer(ApiDirect));
+export default React.memo(ApiDirect);

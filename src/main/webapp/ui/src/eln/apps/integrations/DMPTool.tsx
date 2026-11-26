@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DMPToolArgs = {
-  integrationState: IntegrationStates["DMPTOOL"];
-  update: (newIntegrationState: IntegrationStates["DMPTOOL"]) => void;
-};
 
 export interface DMPToolConnectedMessage extends Record<string, unknown> {
   type: "DMPTOOL_CONNECTED";
@@ -25,11 +20,13 @@ export const DMPTOOL_CONNECTION_CHANNEL = "rspace.apps.dmptool.connection";
 /*
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
  */
-function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
+function DMPTool(): React.ReactNode {
+  const integrationState = useIntegrationState("DMPTOOL");
+  const updateMode = useIntegrationModeUpdate("DMPTOOL");
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmptoolEndpoint();
-  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("DMPTOOL");
 
   useBroadcastChannel<DMPToolConnectedMessage>(
     DMPTOOL_CONNECTION_CHANNEL,
@@ -69,7 +66,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         explanatoryText={t("integrations.dmptool.description")}
         image={DMPToolIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         helpLinkText={t("integrations.dmptool.helpLink")}
         website="https://dmptool.org"
         docLink="dmptool"

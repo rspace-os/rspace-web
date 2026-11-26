@@ -9,8 +9,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { runInAction } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type FormEventHandler, type MouseEventHandler, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/raid";
@@ -20,12 +18,13 @@ import { Optional } from "@/util/optional";
 import RaidIcon from "../../../../assets/branding/raid/logo.svg";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import IntegrationCard from "../../IntegrationCard";
-import { type IntegrationStates, useIntegrationsEndpoint } from "../../useIntegrationsEndpoint";
-
-type RaidArgs = {
-  integrationState: IntegrationStates["RAID"];
-  update: (newIntegrationState: IntegrationStates["RAID"]) => void;
-};
+import {
+  useDeleteAppOptionsMutation,
+  useIntegrationModeUpdate,
+  useIntegrationState,
+  useRecordIntegrationChange,
+  useSaveAppOptionsMutation,
+} from "../../queries";
 
 export interface RaidConnectedMessage extends Record<string, unknown> {
   type: "RAID_CONNECTED";
@@ -35,12 +34,37 @@ export interface RaidConnectedMessage extends Record<string, unknown> {
 
 export const RAID_CONNECTION_CHANNEL = "rspace.apps.raid.connection";
 
-const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
+function RaidIntegrationCard(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
+  const integrationState = useIntegrationState("RAID");
+  const updateMode = useIntegrationModeUpdate("RAID");
+  const { mutateAsync: saveAppOptions } = useSaveAppOptionsMutation("RAID");
+  const { mutateAsync: deleteAppOptions } = useDeleteAppOptionsMutation("RAID");
+  const recordChange = useRecordIntegrationChange("RAID");
+  const { authenticatedServers } = integrationState.credentials;
+  const setAuthenticated = (alias: string, authenticated: boolean) => {
+    recordChange((current) => ({
+      ...current,
+      credentials: {
+        ...current.credentials,
+        authenticatedServers: current.credentials.authenticatedServers.map((s) =>
+          s.alias === alias ? { ...s, authenticated } : s,
+        ),
+      },
+    }));
+  };
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
+  /* Aliases whose add request is in flight, so a second click cannot create a duplicate. */
+  const [pendingAliases, setPendingAliases] = useState<ReadonlySet<string>>(() => new Set());
+  const setAliasPending = (alias: string, pending: boolean) => {
+    setPendingAliases((current) => {
+      const next = new Set(current);
+      if (pending) next.add(alias);
+      else next.delete(alias);
+      return next;
+    });
+  };
 
   useBroadcastChannel<RaidConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaidConnectedMessage>) => {
     if (e.data?.type === "RAID_CONNECTED" && e.data.error) {
@@ -59,21 +83,18 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       return;
     }
 
-    runInAction(() => {
-      const index = authenticatedServers.findIndex((s) => s.alias === e.data.alias);
-      if (index === -1) {
-        return;
-      }
+    if (!authenticatedServers.some((s) => s.alias === e.data.alias)) {
+      return;
+    }
 
-      authenticatedServers[index].authenticated = true;
+    setAuthenticated(e.data.alias, true);
 
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: t("integrations.raid.alerts.connectSuccess", { alias: e.data.alias }),
-        }),
-      );
-    });
+    addAlert(
+      mkAlert({
+        variant: "success",
+        message: t("integrations.raid.alerts.connectSuccess", { alias: e.data.alias }),
+      }),
+    );
   });
 
   const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
@@ -105,10 +126,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
 
           return;
         }
-        runInAction(() => {
-          const index = authenticatedServers.findIndex((s) => s.alias === alias);
-          authenticatedServers[index].authenticated = false;
-        });
+        setAuthenticated(alias, false);
         addAlert(
           mkAlert({
             variant: "success",
@@ -131,11 +149,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
     async (event) => {
       event.preventDefault();
       try {
-        await deleteAppOptions("RAID", optionsId);
-        runInAction(() => {
-          const index = authenticatedServers.findIndex((s) => s.alias === alias);
-          authenticatedServers.splice(index, 1);
-        });
+        await deleteAppOptions(optionsId);
         addAlert(
           mkAlert({
             variant: "success",
@@ -156,26 +170,19 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
   const handleAddServer =
     (alias: string, url: string): MouseEventHandler =>
     async () => {
+      setAliasPending(alias, true);
       try {
-        const newConfigs = await saveAppOptions("RAID", Optional.empty(), {
-          RAID_ALIAS: alias,
-          RAID_URL: url,
-          RAID_OAUTH_CONNECTED: false,
+        const newConfigs = await saveAppOptions({
+          optionsId: Optional.empty(),
+          option: {
+            RAID_ALIAS: alias,
+            RAID_URL: url,
+            RAID_OAUTH_CONNECTED: false,
+          },
         });
         setAddMenuAnchorEl(null);
-        const optionIdsOfExistingServers = new Set(authenticatedServers.map(({ optionsId }) => optionsId));
-        const newServer = newConfigs.credentials.authenticatedServers.find(
-          ({ optionsId }) => !optionIdsOfExistingServers.has(optionsId),
-        );
-        if (!newServer) throw new Error("Save completed but cannot show results.");
-        runInAction(() => {
-          authenticatedServers.push({
-            alias,
-            url,
-            authenticated: false,
-            optionsId: newServer.optionsId,
-          });
-        });
+        if (!newConfigs.credentials.authenticatedServers.some((server) => server.alias === alias))
+          throw new Error("Save completed but cannot show results.");
         addAlert(
           mkAlert({
             variant: "success",
@@ -190,6 +197,8 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
         );
+      } finally {
+        setAliasPending(alias, false);
       }
     };
 
@@ -223,7 +232,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                     <Typography variant="body2">{t("integrations.raid.noServers")}</Typography>
                   )}
                   {authenticatedServers.map((server) => (
-                    <Stack direction="row" spacing={1} key={server.alias} sx={{ justifyItems: "center" }}>
+                    <Stack direction="row" spacing={1} key={server.optionsId} sx={{ justifyItems: "center" }}>
                       <Stack direction="column" sx={{ flexGrow: 1, gap: 1 }}>
                         <Typography variant="body1" sx={{ fontWeight: "bold", lineHeight: 1 }}>
                           {server.alias}
@@ -274,7 +283,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                   onClose={() => setAddMenuAnchorEl(null)}
                 >
                   {unauthenticatedServers.map(({ alias, url }) => (
-                    <MenuItem key={alias} onClick={handleAddServer(alias, url)}>
+                    <MenuItem key={alias} disabled={pendingAliases.has(alias)} onClick={handleAddServer(alias, url)}>
                       <ListItemText primary={alias} secondary={url} />
                     </MenuItem>
                   ))}
@@ -283,18 +292,13 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
             </Card>
           </>
         }
-        update={(newMode) => {
-          return update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          });
-        }}
+        update={updateMode}
       />
     </Grid>
   );
-};
+}
 
 /**
  * The card and dialog for configuring the RAiD integration
  */
-export default observer(RaidIntegrationCard);
+export default React.memo(RaidIntegrationCard);

@@ -11,6 +11,7 @@ import "@/__tests__/__mocks__/muiTransitions";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { captureRequests } from "@/__tests__/mswRequestCapture";
+import { createIntegrationsClient, WithIntegrations } from "@/eln/apps/__tests__/integrationsQueryClient";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
@@ -24,6 +25,7 @@ vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
     saveAppOptions: mockSaveAppOptions,
     deleteAppOptions: mockDeleteAppOptions,
   }),
+  fetchAllIntegrations: vi.fn(),
 }));
 const broadcastHandlers: Array<(e: MessageEvent<RaidConnectedMessage>) => void> = [];
 vi.mock("@/modules/common/hooks/broadcast", () => ({
@@ -33,7 +35,6 @@ vi.mock("@/modules/common/hooks/broadcast", () => ({
 }));
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],
-  update: (s: IntegrationStates["RAID"]) => void = () => {},
   RealI18nWrapper?: React.ComponentType<{ children: React.ReactNode }>,
 ) => {
   const addAlert = vi.fn();
@@ -45,20 +46,18 @@ const renderWithProviders = (
   const tree = (
     <ThemeProvider theme={materialTheme}>
       <AlertContext.Provider value={result}>
-        <RaidIntegrationCard integrationState={integrationState} update={update} />
+        <WithIntegrations client={createIntegrationsClient({ RAID: integrationState })}>
+          <RaidIntegrationCard />
+        </WithIntegrations>
       </AlertContext.Provider>
     </ThemeProvider>
   );
   const view = render(RealI18nWrapper ? <RealI18nWrapper>{tree}</RealI18nWrapper> : tree);
   return { ...view, addAlert };
 };
-const renderWithRealI18n = async (
-  integrationState: IntegrationStates["RAID"],
-  update: (s: IntegrationStates["RAID"]) => void = () => {},
-) =>
+const renderWithRealI18n = async (integrationState: IntegrationStates["RAID"]) =>
   renderWithProviders(
     integrationState,
-    update,
     await createRealI18nWrapper({ resources: { apps: appsEn, common: commonEn }, defaultNS: "apps" }),
   );
 const openCard = (name = "apps:integrations.raid.name") => screen.getByRole("button", { name });
@@ -146,7 +145,7 @@ describe("RaidIntegrationCard", () => {
           h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaidConnectedMessage>),
         );
       });
-      expect(disconnectButton("Disconnect")).toBeVisible();
+      expect(await screen.findByRole("button", { name: "Disconnect" })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
       const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
       expect(alertArg.message).toBe("Successfully connected to srvA RAiD server.");
@@ -197,7 +196,12 @@ describe("RaidIntegrationCard", () => {
   describe("Add server", () => {
     test("Clicking Add menu item calls saveAppOptions and adds server.", async () => {
       mockSaveAppOptions.mockResolvedValue({
+        mode: "DISABLED",
         credentials: {
+          configuredServers: [
+            { alias: "srvA", url: "https://a.example" },
+            { alias: "srvB", url: "https://b.example" },
+          ],
           authenticatedServers: [
             { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
             { alias: "srvB", url: "https://b.example", authenticated: false, optionsId: "2" },

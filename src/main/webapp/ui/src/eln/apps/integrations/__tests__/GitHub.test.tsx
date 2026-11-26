@@ -1,18 +1,19 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { observable } from "mobx";
 import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { findTableCell } from "@/__tests__/tableQueries";
 import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
+import allIntegrationsAreDisabled from "@/eln/apps/__tests__/allIntegrationsAreDisabled.json";
 import { Optional } from "../../../../util/optional";
 import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { cachedState, createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 const broadcastHandlers: Array<(e: MessageEvent<GitHubConnectedMessage>) => void> = [];
 vi.mock("@/modules/common/hooks/broadcast", () => ({
@@ -33,13 +34,16 @@ describe("GitHub", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -53,13 +57,16 @@ describe("GitHub", () => {
     test("When there are no repositories, there is a label.", async () => {
       const user = userEvent.setup();
       render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -68,18 +75,21 @@ describe("GitHub", () => {
     test("The names of repositories should be shown in a table.", async () => {
       const user = userEvent.setup();
       render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -117,7 +127,9 @@ describe("GitHub", () => {
       const openWindow = vi.spyOn(window, "open").mockReturnValue(window);
       render(
         <Alerts>
-          <GitHub integrationState={observable({ mode: "DISABLED", credentials: [] })} update={() => {}} />
+          <WithIntegrations client={createIntegrationsClient({ GITHUB: { mode: "DISABLED", credentials: [] } })}>
+            <GitHub />
+          </WithIntegrations>
         </Alerts>,
       );
       await user.click(screen.getByRole("button", { name: "apps:integrations.github.name" }));
@@ -165,13 +177,16 @@ describe("GitHub", () => {
           }) as unknown as Window,
       );
       render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -198,6 +213,60 @@ describe("GitHub", () => {
         }),
       ).toHaveTextContent("a repo");
     });
+    test("Repositories that are already linked are not offered again after reconnecting.", async () => {
+      const user = userEvent.setup();
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("github/oauthUrl").reply(200, {
+        success: true,
+        data: "https://github.com/login/oauth/authorize?scope=repo,user&client_id=",
+        error: null,
+      });
+      mockAxios.onGet("github/allRepositories").reply(200, {
+        success: true,
+        data: [
+          { full_name: "linked repo", description: "" },
+          { full_name: "other repo", description: "" },
+        ],
+        error: null,
+      });
+      vi.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            close: () => {},
+          }) as unknown as Window,
+      );
+      render(
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [Optional.present({ GITHUB_REPOSITORY_FULL_NAME: "linked repo", optionsId: "1" })],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
+      );
+
+      await user.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
+      act(() => {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: matches the other broadcast tests
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED" },
+          } as MessageEvent<GitHubConnectedMessage>),
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getAllByRole("table").length).toBe(2);
+      });
+      const newReposTable = screen.getAllByRole("table")[1];
+      expect(await within(newReposTable).findByText("other repo")).toBeInTheDocument();
+      expect(within(newReposTable).queryByText("linked repo")).not.toBeInTheDocument();
+    });
+
     test("When tapped, the add button in the repositories table should make the right API call.", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
@@ -220,13 +289,16 @@ describe("GitHub", () => {
           }) as unknown as Window,
       );
       render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -291,13 +363,16 @@ describe("GitHub", () => {
           }) as unknown as Window,
       );
       render(
-        <GitHub
-          integrationState={observable({
-            mode: "DISABLED",
-            credentials: [],
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [],
+            },
           })}
-          update={() => {}}
-        />,
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -339,12 +414,13 @@ describe("GitHub", () => {
         }),
       ).toHaveTextContent("apps:integrations.github.repositories.noAvailable");
     });
-    test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
+    test("Adding a repository should update the integration's credentials.", async () => {
       const user = userEvent.setup();
-      const integrationState = observable<IntegrationStates["GITHUB"]>({
+      const integrationState: IntegrationStates["GITHUB"] = {
         mode: "DISABLED",
         credentials: [],
-      });
+      };
+      const queryClient = createIntegrationsClient({ GITHUB: integrationState });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("github/oauthUrl").reply(200, {
         success: true,
@@ -377,7 +453,11 @@ describe("GitHub", () => {
           }) as unknown as Window,
       );
 
-      render(<GitHub integrationState={integrationState} update={() => {}} />);
+      render(
+        <WithIntegrations client={queryClient}>
+          <GitHub />
+        </WithIntegrations>,
+      );
 
       await user.click(screen.getByRole("button"));
 
@@ -404,7 +484,106 @@ describe("GitHub", () => {
       await waitFor(() => {
         expect(screen.queryByText("apps:integrations.github.repositories.noLinked")).not.toBeInTheDocument();
       });
-      expect(integrationState.credentials.length).toBe(1);
+      expect(cachedState(queryClient, "GITHUB").credentials.length).toBe(1);
+    });
+
+    test("Two additions pending at once each show their own repository.", async () => {
+      const user = userEvent.setup();
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("github/oauthUrl").reply(200, {
+        success: true,
+        data: "https://github.com/login/oauth/authorize?scope=repo,user&client_id=",
+        error: null,
+      });
+      mockAxios.onGet("github/allRepositories").reply(200, {
+        success: true,
+        data: [
+          { full_name: "first repo", description: "" },
+          { full_name: "second repo", description: "" },
+        ],
+        error: null,
+      });
+      const saved = (options: Record<string, { GITHUB_REPOSITORY_FULL_NAME: string }>): [number, unknown] => [
+        200,
+        { success: true, data: { available: true, enabled: false, name: "GITHUB", options } },
+      ];
+      let finishFirst!: () => void;
+      mockAxios
+        .onPost("integration/saveAppOptions")
+        .replyOnce(
+          () =>
+            new Promise((resolve) => {
+              finishFirst = () => resolve(saved({ "1": { GITHUB_REPOSITORY_FULL_NAME: "first repo" } }));
+            }),
+        )
+        .onPost("integration/saveAppOptions")
+        .replyOnce(() =>
+          saved({
+            "1": { GITHUB_REPOSITORY_FULL_NAME: "first repo" },
+            "2": { GITHUB_REPOSITORY_FULL_NAME: "second repo" },
+          }),
+        );
+      // the first response may be older than the second, so once both have settled the integrations are refetched
+      mockAxios.onGet("integration/allIntegrations").reply(200, {
+        success: true,
+        data: {
+          ...allIntegrationsAreDisabled.data,
+          GITHUB: {
+            ...allIntegrationsAreDisabled.data.GITHUB,
+            options: {
+              "1": { GITHUB_REPOSITORY_FULL_NAME: "first repo" },
+              "2": { GITHUB_REPOSITORY_FULL_NAME: "second repo" },
+            },
+          },
+        },
+        error: null,
+      });
+      vi.spyOn(window, "open").mockImplementation(
+        () =>
+          ({
+            close: () => {},
+          }) as unknown as Window,
+      );
+
+      render(
+        <WithIntegrations client={createIntegrationsClient({ GITHUB: { mode: "DISABLED", credentials: [] } })}>
+          <GitHub />
+        </WithIntegrations>,
+      );
+      await user.click(screen.getByRole("button"));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
+      act(() => {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: matches the other broadcast tests
+        broadcastHandlers.forEach((handler) =>
+          handler({
+            data: { type: "GITHUB_CONNECTED" },
+          } as MessageEvent<GitHubConnectedMessage>),
+        );
+      });
+      await waitFor(() => {
+        expect(screen.getAllByRole("table").length).toBe(2);
+      });
+      const addButtonInRow = (name: string) =>
+        within(within(screen.getAllByRole("table")[1]).getByText(name).closest("tr") as HTMLElement).getByRole(
+          "button",
+          { name: "common:actions.add" },
+        );
+
+      await user.click(addButtonInRow("first repo"));
+      await user.click(addButtonInRow("second repo"));
+      await waitFor(() => {
+        expect(within(screen.getAllByRole("table")[0]).getByText("second repo")).toBeInTheDocument();
+      });
+      act(() => finishFirst());
+
+      await waitFor(() => {
+        expect(mockAxios.history.get.map(({ url }) => url)).toContain("allIntegrations");
+      });
+      const linkedTable = screen.getAllByRole("table")[0];
+      await waitFor(() => {
+        expect(within(linkedTable).getByText("first repo")).toBeInTheDocument();
+      });
+      expect(within(linkedTable).getAllByText(/repo$/)).toHaveLength(2);
     });
   });
   describe("Removing repositories", () => {
@@ -421,18 +600,21 @@ describe("GitHub", () => {
         },
       });
       render(
-        <GitHub
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            GITHUB: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <GitHub />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -448,17 +630,18 @@ describe("GitHub", () => {
         expect(within(table).queryByText("username/someRepo")).not.toBeInTheDocument();
       });
     });
-    test("Removing a repository should mutate the integration state being passed as a prop.", async () => {
+    test("Removing a repository should update the integration's credentials.", async () => {
       const user = userEvent.setup();
-      const integrationState = observable({
-        mode: "DISABLED" as const,
+      const integrationState: IntegrationStates["GITHUB"] = {
+        mode: "DISABLED",
         credentials: [
           Optional.present({
             GITHUB_REPOSITORY_FULL_NAME: "username/someRepo",
             optionsId: "1",
           }),
         ],
-      });
+      };
+      const queryClient = createIntegrationsClient({ GITHUB: integrationState });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -470,7 +653,11 @@ describe("GitHub", () => {
         },
       });
 
-      render(<GitHub integrationState={integrationState} update={() => {}} />);
+      render(
+        <WithIntegrations client={queryClient}>
+          <GitHub />
+        </WithIntegrations>,
+      );
 
       await user.click(screen.getByRole("button"));
 
@@ -478,7 +665,7 @@ describe("GitHub", () => {
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
       });
-      expect(integrationState.credentials.length).toBe(0);
+      expect(cachedState(queryClient, "GITHUB").credentials.length).toBe(0);
     });
     test("Removing the last repository asks for GitHub authorisation again before another can be added.", async () => {
       const user = userEvent.setup();
@@ -507,7 +694,11 @@ describe("GitHub", () => {
         data: { available: true, enabled: false, name: "GITHUB", options: {} },
       });
       const openWindow = vi.spyOn(window, "open").mockImplementation(() => ({ close: () => {} }) as unknown as Window);
-      render(<GitHub integrationState={observable({ mode: "DISABLED", credentials: [] })} update={() => {}} />);
+      render(
+        <WithIntegrations client={createIntegrationsClient({ GITHUB: { mode: "DISABLED", credentials: [] } })}>
+          <GitHub />
+        </WithIntegrations>,
+      );
 
       await user.click(screen.getByRole("button"));
       await user.click(screen.getByRole("button", { name: "common:actions.add" }));

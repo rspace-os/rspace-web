@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DigitalCommonsDataArgs = {
-  integrationState: IntegrationStates["DIGITALCOMMONSDATA"];
-  update: (newIntegrationState: IntegrationStates["DIGITALCOMMONSDATA"]) => void;
-};
 
 export interface DigitalCommonsDataConnectedMessage extends Record<string, unknown> {
   type: "DIGITALCOMMONSDATA_CONNECTED";
@@ -25,11 +20,13 @@ export const DIGITALCOMMONSDATA_CONNECTION_CHANNEL = "rspace.apps.digitalcommons
 /*
  * Digital Commons Data uses OAuth based authentication, as implemeted by the form below.
  */
-function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs): React.ReactNode {
+function DigitalCommonsData(): React.ReactNode {
+  const integrationState = useIntegrationState("DIGITALCOMMONSDATA");
+  const updateMode = useIntegrationModeUpdate("DIGITALCOMMONSDATA");
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDigitalCommonsDataEndpoint();
-  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("DIGITALCOMMONSDATA");
 
   useBroadcastChannel<DigitalCommonsDataConnectedMessage>(
     DIGITALCOMMONSDATA_CONNECTION_CHANNEL,
@@ -69,7 +66,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
         explanatoryText={t("integrations.digitalCommonsData.description")}
         image={DcdIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         helpLinkText={t("integrations.digitalCommonsData.helpLink")}
         website="https://elsevier.digitalcommonsdata.com"
         docLink="dcd"

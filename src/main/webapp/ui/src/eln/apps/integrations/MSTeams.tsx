@@ -12,10 +12,10 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { runInAction } from "mobx";
-import { observer } from "mobx-react-lite";
+import { useForm } from "@tanstack/react-form";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
@@ -24,24 +24,64 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
+import {
+  useDeleteAppOptionsMutation,
+  useIntegrationModeUpdate,
+  useIntegrationState,
+  useSaveAppOptionsMutation,
+} from "../queries";
 
-type MSTeamsArgs = {
-  integrationState: IntegrationStates["MSTEAMS"];
-  update: (newIntegrationState: IntegrationStates["MSTEAMS"]) => void;
-};
+const newChannelSchema = v.object({
+  channelName: v.string(),
+  webhookUrl: v.string(),
+});
 
 /*
  * Microsoft's Teams integration uses a Webhook URL based approach, where the
  * user provides us with a URL to which we can call to send messages to their
  * Teams channel.
  */
-function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
+function MSTeams(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
+  const integrationState = useIntegrationState("MSTEAMS");
+  const updateMode = useIntegrationModeUpdate("MSTEAMS");
+  const { mutateAsync: deleteAppOptions } = useDeleteAppOptionsMutation("MSTEAMS");
+  const { mutateAsync: saveAppOptions } = useSaveAppOptionsMutation("MSTEAMS");
   const { addAlert } = useContext(AlertContext);
-  const [newChannelName, setNewChannelName] = useState<string | null>(null);
-  const [newWebhook, setNewWebhook] = useState<string | null>(null);
+  const [addingChannel, setAddingChannel] = useState(false);
+  const newChannelForm = useForm({
+    defaultValues: { channelName: "", webhookUrl: "" },
+    validators: { onChange: newChannelSchema },
+    onSubmit: async ({ value, formApi }) => {
+      try {
+        await saveAppOptions({
+          optionsId: Optional.empty(),
+          option: {
+            MSTEAMS_CHANNEL_LABEL: value.channelName,
+            MSTEAMS_WEBHOOK_URL: value.webhookUrl,
+          },
+        });
+        setAddingChannel(false);
+        formApi.reset();
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: t("integrations.msteams.alerts.addSuccess"),
+          }),
+        );
+      } catch (e) {
+        if (e instanceof Error) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: t("integrations.msteams.alerts.addError"),
+              message: e.message,
+            }),
+          );
+        }
+      }
+    },
+  });
 
   return (
     <Grid
@@ -57,7 +97,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
         explanatoryText={t("integrations.msteams.description")}
         image={TeamsIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.msteams.usage")}
         helpLinkText={t("integrations.msteams.helpLink")}
         website="https://teams.microsoft.com"
@@ -86,13 +126,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                 onClick={() => {
                                   void (async () => {
                                     try {
-                                      await deleteAppOptions("MSTEAMS", channel.optionsId);
-                                      const indexOfDeleted = channels.findIndex(
-                                        (c) => c.optionsId === channel.optionsId,
-                                      );
-                                      runInAction(() => {
-                                        integrationState.credentials.splice(indexOfDeleted, 1);
-                                      });
+                                      await deleteAppOptions(channel.optionsId);
                                       addAlert(
                                         mkAlert({
                                           variant: "success",
@@ -122,75 +156,56 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                     </Table>
                   </Box>
                   <Box>
-                    {newChannelName === null ? (
-                      <Button
-                        onClick={() => {
-                          setNewChannelName("");
-                          setNewWebhook("");
-                        }}
-                      >
-                        {t("common:actions.add")}
-                      </Button>
-                    ) : (
+                    {addingChannel ? (
                       <Card variant="outlined">
                         <form
                           onSubmit={(event) => {
-                            void (async () => {
-                              event.preventDefault();
-                              try {
-                                const newState = await saveAppOptions("MSTEAMS", Optional.empty(), {
-                                  MSTEAMS_CHANNEL_LABEL: newChannelName,
-                                  MSTEAMS_WEBHOOK_URL: newWebhook,
-                                });
-                                runInAction(() => {
-                                  integrationState.credentials = newState.credentials;
-                                });
-                                setNewChannelName(null);
-                                setNewWebhook(null);
-                                addAlert(
-                                  mkAlert({
-                                    variant: "success",
-                                    message: t("integrations.msteams.alerts.addSuccess"),
-                                  }),
-                                );
-                              } catch (e) {
-                                if (e instanceof Error) {
-                                  addAlert(
-                                    mkAlert({
-                                      variant: "error",
-                                      title: t("integrations.msteams.alerts.addError"),
-                                      message: e.message,
-                                    }),
-                                  );
-                                }
-                              }
-                            })();
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void newChannelForm.handleSubmit();
                           }}
                         >
                           <CardContent>
-                            <TextField
-                              label={t("integrations.msteams.fields.channelName")}
-                              fullWidth
-                              value={newChannelName}
-                              onChange={({ target: { value } }) => {
-                                setNewChannelName(value);
-                              }}
-                              sx={{ mt: 1 }}
-                            />
-                            <SecretField
-                              label={t("integrations.msteams.fields.webhookUrl")}
-                              fullWidth
-                              value={newWebhook ?? ""}
-                              onChange={setNewWebhook}
-                              autoComplete="new-password"
-                              sx={{ mt: 1 }}
-                            />
+                            <newChannelForm.Field name="channelName">
+                              {(field) => (
+                                <TextField
+                                  label={t("integrations.msteams.fields.channelName")}
+                                  fullWidth
+                                  value={field.state.value}
+                                  onChange={({ target: { value } }) => {
+                                    field.handleChange(value);
+                                  }}
+                                  sx={{ mt: 1 }}
+                                />
+                              )}
+                            </newChannelForm.Field>
+                            <newChannelForm.Field name="webhookUrl">
+                              {(field) => (
+                                <SecretField
+                                  label={t("integrations.msteams.fields.webhookUrl")}
+                                  fullWidth
+                                  value={field.state.value}
+                                  onChange={field.handleChange}
+                                  autoComplete="new-password"
+                                  sx={{ mt: 1 }}
+                                />
+                              )}
+                            </newChannelForm.Field>
                           </CardContent>
                           <CardActions>
                             <Button type="submit">{t("common:actions.save")}</Button>
                           </CardActions>
                         </form>
                       </Card>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          newChannelForm.reset();
+                          setAddingChannel(true);
+                        }}
+                      >
+                        {t("common:actions.add")}
+                      </Button>
                     )}
                   </Box>
                 </Stack>
@@ -203,4 +218,4 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
   );
 }
 
-export default React.memo(observer(MSTeams));
+export default React.memo(MSTeams);

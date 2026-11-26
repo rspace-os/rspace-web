@@ -5,12 +5,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dropbox";
 import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DropboxArgs = {
-  integrationState: IntegrationStates["DROPBOX"];
-  update: (newIntegrationState: IntegrationStates["DROPBOX"]) => void;
-};
+import { useIntegrationModeUpdate, useIntegrationState } from "../queries";
 
 /*
  * Note that authentication with dropbox is performed when the user goes to
@@ -22,7 +17,9 @@ type DropboxArgs = {
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
+function Dropbox(): React.ReactNode {
+  const integrationState = useIntegrationState("DROPBOX");
+  const updateMode = useIntegrationModeUpdate("DROPBOX");
   const { t } = useTranslation("apps");
   return (
     <Grid
@@ -38,7 +35,7 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
         explanatoryText={t("integrations.dropbox.description")}
         image={DropboxIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: {} })}
+        update={updateMode}
         usageText={t("integrations.dropbox.usage")}
         helpLinkText={t("integrations.dropbox.helpLink")}
         website="https://dropbox.com"

@@ -2,8 +2,10 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import React, { useContext, useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
@@ -11,13 +13,17 @@ import OmeroIcon from "../../../assets/branding/omero/logo.svg";
 import SecretField from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDisconnectEndpoint } from "../useDisconnect";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
-type OmeroArgs = {
-  integrationState: IntegrationStates["OMERO"];
-  update: (newIntegrationState: IntegrationStates["OMERO"]) => void;
-};
+/*
+ * The credentials are posted by the browser to /apps/omero/connect in a new
+ * window, so the form only holds them until then.
+ */
+const omeroCredentialsSchema = v.object({
+  username: v.string(),
+  password: v.string(),
+});
 
 export interface OmeroConnectedMessage extends Record<string, unknown> {
   type: "OMERO_CONNECTED";
@@ -30,13 +36,17 @@ export const OMERO_CONNECTION_CHANNEL = "rspace.apps.omero.connection";
  * backend stores them in the UserConnection table, so the connection outlives
  * the session and this card shows a Disconnect button once connected.
  */
-function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
+function Omero(): React.ReactNode {
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
+  const integrationState = useIntegrationState("OMERO");
+  const updateMode = useIntegrationModeUpdate("OMERO");
   const { disconnect } = useDisconnectEndpoint("/apps/omero", t("integrations.omero.name"));
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("OMERO");
+  const form = useForm({
+    defaultValues: { username: "", password: "" },
+    validators: { onChange: omeroCredentialsSchema },
+  });
 
   useBroadcastChannel<OmeroConnectedMessage>(OMERO_CONNECTION_CHANNEL, (e: MessageEvent<OmeroConnectedMessage>) => {
     if (e.data?.type !== "OMERO_CONNECTED") return;
@@ -51,9 +61,8 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
       return;
     }
     setConnected(true);
-    // do not leave the password in component state, ready to be resubmitted
-    setUsername("");
-    setPassword("");
+    // do not leave the password in the form, ready to be resubmitted
+    form.reset();
     addAlert(
       mkAlert({
         variant: "success",
@@ -76,7 +85,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
         explanatoryText={t("integrations.omero.description")}
         image={OmeroIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.omero.usage")}
         helpLinkText={t("integrations.omero.helpLink")}
         website="https://openmicroscopy.org/omero"
@@ -105,28 +114,36 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                 rel="noopener"
               >
                 <Stack spacing={1}>
-                  <TextField
-                    fullWidth
-                    value={username}
-                    onChange={({ target: { value } }) => setUsername(value)}
-                    label={t("integrations.omero.fields.username")}
-                    sx={{ mt: 1 }}
-                    slotProps={{
-                      htmlInput: {
-                        name: "omerousername",
-                        autoComplete: "off",
-                      },
-                    }}
-                  />
-                  <SecretField
-                    fullWidth
-                    value={password}
-                    onChange={setPassword}
-                    label={t("integrations.omero.fields.password")}
-                    sx={{ mt: 1 }}
-                    name="omeropassword"
-                    autoComplete="new-password"
-                  />
+                  <form.Field name="username">
+                    {(field) => (
+                      <TextField
+                        fullWidth
+                        value={field.state.value}
+                        onChange={({ target: { value } }) => field.handleChange(value)}
+                        label={t("integrations.omero.fields.username")}
+                        sx={{ mt: 1 }}
+                        slotProps={{
+                          htmlInput: {
+                            name: "omerousername",
+                            autoComplete: "off",
+                          },
+                        }}
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="password">
+                    {(field) => (
+                      <SecretField
+                        fullWidth
+                        value={field.state.value}
+                        onChange={field.handleChange}
+                        label={t("integrations.omero.fields.password")}
+                        sx={{ mt: 1 }}
+                        name="omeropassword"
+                        autoComplete="new-password"
+                      />
+                    )}
+                  </form.Field>
                   <Button type="submit" sx={{ mt: 1 }}>
                     {t("actions.connect")}
                   </Button>

@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 import App from "../App";
 import "@/__tests__/assertSemanticHeadings";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import MockAdapter from "axios-mock-adapter";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
@@ -48,12 +49,15 @@ beforeEach(() => {
 });
 
 function renderApp() {
+  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   return render(
-    <ThemeProvider theme={materialTheme}>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </ThemeProvider>,
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={materialTheme}>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
 }
 

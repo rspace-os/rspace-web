@@ -5,21 +5,25 @@ import { Optional } from "../../../../util/optional";
 import ProtocolsIO from "../ProtocolsIO";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <ProtocolsIO
-          integrationState={{
-            mode: "DISABLED",
-            credentials: {
-              ACCESS_TOKEN: Optional.empty(),
+        <WithIntegrations
+          client={createIntegrationsClient({
+            PROTOCOLS_IO: {
+              mode: "DISABLED",
+              credentials: {
+                ACCESS_TOKEN: Optional.empty(),
+              },
             },
-          }}
-          update={() => {}}
-        />,
+          })}
+        >
+          <ProtocolsIO />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -32,15 +36,18 @@ describe("ProtocolsIO", () => {
   test("Should have a connect button when the user is not authenticated.", async () => {
     const user = userEvent.setup();
     render(
-      <ProtocolsIO
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.empty(),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          PROTOCOLS_IO: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.empty(),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <ProtocolsIO />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -49,15 +56,18 @@ describe("ProtocolsIO", () => {
   test("Should have a disconnect button when the user is authenticated.", async () => {
     const user = userEvent.setup();
     render(
-      <ProtocolsIO
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.present("some token"),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          PROTOCOLS_IO: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.present("some token"),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <ProtocolsIO />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));

@@ -5,12 +5,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/onedrive";
 import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type OneDriveArgs = {
-  integrationState: IntegrationStates["ONEDRIVE"];
-  update: (newIntegrationState: IntegrationStates["ONEDRIVE"]) => void;
-};
+import { useIntegrationModeUpdate, useIntegrationState } from "../queries";
 
 /*
  * Note that authentication with microsoft is performed when the user goes to
@@ -22,7 +17,9 @@ type OneDriveArgs = {
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
+function OneDrive(): React.ReactNode {
+  const integrationState = useIntegrationState("ONEDRIVE");
+  const updateMode = useIntegrationModeUpdate("ONEDRIVE");
   const { t } = useTranslation("apps");
   return (
     <Grid
@@ -38,7 +35,7 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
         explanatoryText={t("integrations.oneDrive.description")}
         image={OneDriveIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: {} })}
+        update={updateMode}
         usageText={t("integrations.oneDrive.usage")}
         helpLinkText={t("integrations.oneDrive.helpLink")}
         website="https://onedrive.live.com"

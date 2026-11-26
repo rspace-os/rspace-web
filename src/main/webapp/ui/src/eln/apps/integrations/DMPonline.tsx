@@ -1,6 +1,5 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
@@ -9,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDmpOnlineEndpoint } from "../useDmpOnlineEndpoint";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DMPOnlineArgs = {
-  integrationState: IntegrationStates["DMPONLINE"];
-  update: (newIntegrationState: IntegrationStates["DMPONLINE"]) => void;
-};
 
 export interface DMPOnlineConnectedMessage extends Record<string, unknown> {
   type: "DMPONLINE_CONNECTED";
@@ -27,11 +21,13 @@ export const DMPONLINE_CONNECTION_CHANNEL = "rspace.apps.dmponline.connection";
  * There is no authentication mechanism with DMPonline. All DMPs are public and by
  * simply enabling the integration users can import those DMPs into the Gallery
  */
-function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode {
+function DMPOnline(): React.ReactNode {
+  const integrationState = useIntegrationState("DMPONLINE");
+  const updateMode = useIntegrationModeUpdate("DMPONLINE");
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpOnlineEndpoint();
-  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("DMPONLINE");
 
   useBroadcastChannel<DMPOnlineConnectedMessage>(
     DMPONLINE_CONNECTION_CHANNEL,
@@ -100,11 +96,11 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
             )}
           </>
         }
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         integrationState={integrationState}
       />
     </Grid>
   );
 }
 
-export default React.memo(observer(DMPOnline));
+export default React.memo(DMPOnline);

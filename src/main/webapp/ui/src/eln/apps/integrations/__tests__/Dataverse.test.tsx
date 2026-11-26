@@ -1,7 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { observable } from "mobx";
 import { describe, expect, test } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import axios from "@/common/axios";
@@ -13,19 +12,23 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Dataverse from "../Dataverse";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { cachedState, createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("Dataverse", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <Dataverse
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DATAVERSE: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <Dataverse />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -39,13 +42,16 @@ describe("Dataverse", () => {
     test("Add should be disabled whilst a new config is being added.", async () => {
       const user = userEvent.setup();
       render(
-        <Dataverse
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DATAVERSE: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <Dataverse />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -74,13 +80,16 @@ describe("Dataverse", () => {
           },
         },
       });
-      const integrationState = observable<IntegrationStates["DATAVERSE"]>({
+      const integrationState: IntegrationStates["DATAVERSE"] = {
         mode: "DISABLED",
         credentials: [],
-      });
+      };
+      const queryClient = createIntegrationsClient({ DATAVERSE: integrationState });
       render(
         <Alerts>
-          <Dataverse integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -96,7 +105,7 @@ describe("Dataverse", () => {
       await screen.findByRole("alert", {
         name: "apps:integrations.dataverse.alerts.saveNewSuccess",
       });
-      expect(integrationState.credentials.length).toBe(1);
+      expect(cachedState(queryClient, "DATAVERSE").credentials.length).toBe(1);
     });
   });
   describe("Saving", () => {
@@ -106,21 +115,24 @@ describe("Dataverse", () => {
 
       mockAxios.onPost("integration/saveAppOptions");
       render(
-        <Dataverse
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                DATAVERSE_APIKEY: null,
-                DATAVERSE_URL: "url",
-                DATAVERSE_ALIAS: "alias",
-                _label: "label",
-                optionsId: "4",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DATAVERSE: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  DATAVERSE_APIKEY: null,
+                  DATAVERSE_URL: "url",
+                  DATAVERSE_ALIAS: "alias",
+                  _label: "label",
+                  optionsId: "4",
+                }),
+              ],
+            },
+          })}
+        >
+          <Dataverse />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -148,13 +160,16 @@ describe("Dataverse", () => {
 
       mockAxios.onPost("integration/saveAppOptions");
       render(
-        <Dataverse
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DATAVERSE: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <Dataverse />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -201,28 +216,31 @@ describe("Dataverse", () => {
       });
       render(
         <Alerts>
-          <Dataverse
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "new name",
-                  _label: "label",
-                  optionsId: "1",
-                }),
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "new name",
-                  _label: "label",
-                  optionsId: "2",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DATAVERSE: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "new name",
+                    _label: "label",
+                    optionsId: "1",
+                  }),
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "new name",
+                    _label: "label",
+                    optionsId: "2",
+                  }),
+                ],
+              },
+            })}
+          >
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -262,21 +280,24 @@ describe("Dataverse", () => {
       });
       render(
         <Alerts>
-          <Dataverse
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "new name",
-                  _label: "label",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DATAVERSE: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "new name",
+                    _label: "label",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -318,21 +339,24 @@ describe("Dataverse", () => {
       });
       render(
         <Alerts>
-          <Dataverse
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "name",
-                  _label: "label",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DATAVERSE: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "name",
+                    _label: "label",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -384,21 +408,24 @@ describe("Dataverse", () => {
         },
       });
       render(
-        <Dataverse
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                DATAVERSE_APIKEY: "apikey",
-                DATAVERSE_URL: "url",
-                DATAVERSE_ALIAS: "alias",
-                _label: "label",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DATAVERSE: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  DATAVERSE_APIKEY: "apikey",
+                  DATAVERSE_URL: "url",
+                  DATAVERSE_ALIAS: "alias",
+                  _label: "label",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <Dataverse />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -419,21 +446,24 @@ describe("Dataverse", () => {
       mockAxios.onGet("/repository/ajax/testRepository/1").reply(200, "Success! Test connection OK!");
       render(
         <Alerts>
-          <Dataverse
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "name",
-                  _label: "label",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DATAVERSE: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "name",
+                    _label: "label",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -467,21 +497,24 @@ describe("Dataverse", () => {
       });
       await renderWithRealI18n(
         <Alerts>
-          <Dataverse
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DATAVERSE_APIKEY: "apikey",
-                  DATAVERSE_URL: "url",
-                  DATAVERSE_ALIAS: "name",
-                  _label: "label",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DATAVERSE: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DATAVERSE_APIKEY: "apikey",
+                    DATAVERSE_URL: "url",
+                    DATAVERSE_ALIAS: "name",
+                    _label: "label",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
         { resources: { apps, common }, defaultNS: "apps" },
       );
@@ -503,8 +536,8 @@ describe("Dataverse", () => {
     });
     test.each([true, false])("Confirmed deletion updates state only on success: %s", async (success) => {
       const user = userEvent.setup();
-      const integrationState = observable({
-        mode: "DISABLED" as const,
+      const integrationState: IntegrationStates["DATAVERSE"] = {
+        mode: "DISABLED",
         credentials: [
           Optional.present({
             DATAVERSE_APIKEY: "retained key",
@@ -521,7 +554,8 @@ describe("Dataverse", () => {
             optionsId: "1",
           }),
         ],
-      });
+      };
+      const queryClient = createIntegrationsClient({ DATAVERSE: integrationState });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success,
@@ -535,7 +569,9 @@ describe("Dataverse", () => {
       });
       render(
         <Alerts>
-          <Dataverse integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <Dataverse />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -559,7 +595,7 @@ describe("Dataverse", () => {
         ),
       ).toBeVisible();
       if (!success) expect(within(alert).getByText("Local deletion failure")).toBeVisible();
-      expect(integrationState.credentials).toHaveLength(success ? 1 : 2);
+      expect(cachedState(queryClient, "DATAVERSE").credentials).toHaveLength(success ? 1 : 2);
       expect(within(forms[0]).getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" })).toHaveValue(
         "retained name",
       );
@@ -575,7 +611,7 @@ describe("Dataverse", () => {
     test("Cancel preserves the configuration and edited fields without sending a delete request.", async () => {
       const user = userEvent.setup();
       const mockAxios = new MockAdapter(axios);
-      const integrationState = observable<IntegrationStates["DATAVERSE"]>({
+      const integrationState: IntegrationStates["DATAVERSE"] = {
         mode: "DISABLED",
         credentials: [
           Optional.present({
@@ -586,8 +622,13 @@ describe("Dataverse", () => {
             optionsId: "1",
           }),
         ],
-      });
-      render(<Dataverse integrationState={integrationState} update={() => {}} />);
+      };
+      const queryClient = createIntegrationsClient({ DATAVERSE: integrationState });
+      render(
+        <WithIntegrations client={queryClient}>
+          <Dataverse />
+        </WithIntegrations>,
+      );
       await user.click(screen.getByRole("button"));
       const alias = screen.getByRole("textbox", { name: "apps:integrations.dataverse.fields.alias" });
       await user.clear(alias);
@@ -602,7 +643,7 @@ describe("Dataverse", () => {
       expect(screen.getByRole("textbox", { name: "apps:integrations.dataverse.fields.serverUrl" })).toHaveValue("url");
       expect(screen.getByLabelText("apps:integrations.dataverse.fields.apiKey")).toHaveValue("apikey");
       expect(screen.getByRole("button", { name: "apps:actions.test" })).toBeDisabled();
-      expect(integrationState.credentials).toHaveLength(1);
+      expect(cachedState(queryClient, "DATAVERSE").credentials).toHaveLength(1);
       expect(mockAxios.history.post).toHaveLength(0);
     });
   });

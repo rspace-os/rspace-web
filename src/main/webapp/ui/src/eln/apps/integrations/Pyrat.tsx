@@ -1,50 +1,20 @@
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
-import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import ListItemText from "@mui/material/ListItemText";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { runInAction } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
-import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
-
-type PyratArgs = {
-  integrationState: IntegrationStates["PYRAT"];
-  update: (newIntegrationState: IntegrationStates["PYRAT"]) => void;
-};
+import { useIntegrationModeUpdate, useIntegrationState } from "../queries";
+import ApiKeyServers from "./ApiKeyServers";
 
 /*
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
-function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
+function Pyrat(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
-  const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() =>
-    integrationState.credentials.authenticatedServers.map((server) => ({
-      ...server,
-      storedSecretExists: server.apiKey !== "",
-      saving: false,
-    })),
-  );
-  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
-
-  const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
-    ({ alias }) => !authenticatedServers.find((s) => s.alias === alias),
-  );
+  const integrationState = useIntegrationState("PYRAT");
+  const updateMode = useIntegrationModeUpdate("PYRAT");
 
   return (
     <Grid
@@ -67,187 +37,22 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.pyrat.setup.instructions" />
-            <Card variant="outlined" sx={{ mt: 2 }}>
-              <CardContent>
-                <Stack spacing={1}>
-                  {authenticatedServers.length === 0 && (
-                    <Typography variant="body2">{t("integrations.pyrat.noServers")}</Typography>
-                  )}
-                  {authenticatedServers.map((server) => (
-                    <form
-                      key={server.alias}
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        if (server.saving) return;
-                        const submittedApiKey = server.apiKey;
-                        runInAction(() => {
-                          server.saving = true;
-                        });
-                        void saveAppOptions("PYRAT", Optional.present(server.optionsId), {
-                          PYRAT_ALIAS: server.alias,
-                          PYRAT_URL: server.url,
-                          PYRAT_APIKEY: submittedApiKey,
-                        })
-                          .then(() => {
-                            runInAction(() => {
-                              server.storedSecretExists = submittedApiKey !== "";
-                              server.apiKey = secretAfterSave(submittedApiKey);
-                            });
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: t("integrations.pyrat.alerts.saveSuccess"),
-                              }),
-                            );
-                          })
-                          .catch((e) => {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: t("integrations.pyrat.alerts.saveError"),
-                                  message: e.message,
-                                }),
-                              );
-                          })
-                          .finally(() => {
-                            runInAction(() => {
-                              server.saving = false;
-                            });
-                          });
-                      }}
-                    >
-                      <Stack direction="row" spacing={1}>
-                        <SecretField
-                          fullWidth
-                          variant="outlined"
-                          label={t("integrations.pyrat.apiKeyLabel", { alias: server.alias })}
-                          size="small"
-                          autoComplete="new-password"
-                          value={server.apiKey}
-                          storedSecretExists={server.storedSecretExists}
-                          disabled={server.saving}
-                          onChange={(value) => {
-                            runInAction(() => {
-                              server.apiKey = value;
-                            });
-                          }}
-                        />
-                        <Button type="submit" disabled={server.saving}>
-                          {t("common:actions.save")}
-                        </Button>
-                        <Button
-                          disabled={server.saving}
-                          onClick={() => {
-                            void deleteAppOptions("PYRAT", server.optionsId)
-                              .then(() => {
-                                runInAction(() => {
-                                  const indexOfRemovedServer = authenticatedServers.findIndex(
-                                    (s) => s.alias === server.alias,
-                                  );
-                                  authenticatedServers.splice(indexOfRemovedServer, 1);
-                                });
-                                addAlert(
-                                  mkAlert({
-                                    variant: "success",
-                                    message: t("integrations.pyrat.alerts.deleteSuccess"),
-                                  }),
-                                );
-                              })
-                              .catch((e) => {
-                                if (e instanceof Error)
-                                  addAlert(
-                                    mkAlert({
-                                      variant: "error",
-                                      title: t("integrations.pyrat.alerts.deleteError"),
-                                      message: e.message,
-                                    }),
-                                  );
-                              });
-                          }}
-                        >
-                          {t("common:actions.delete")}
-                        </Button>
-                      </Stack>
-                    </form>
-                  ))}
-                </Stack>
-              </CardContent>
-              <CardActions>
-                <Button
-                  onClick={(e) => {
-                    setAddMenuAnchorEl(e.currentTarget);
-                  }}
-                  disabled={unauthenticatedServers.length === 0}
-                >
-                  {t("common:actions.add")}
-                </Button>
-                <Menu
-                  open={Boolean(addMenuAnchorEl)}
-                  anchorEl={addMenuAnchorEl}
-                  onClose={() => setAddMenuAnchorEl(null)}
-                >
-                  {unauthenticatedServers.map(({ alias, url }) => (
-                    <MenuItem
-                      key={alias}
-                      onClick={() => {
-                        void saveAppOptions("PYRAT", Optional.empty(), {
-                          PYRAT_ALIAS: alias,
-                          PYRAT_URL: url,
-                          PYRAT_APIKEY: "",
-                        })
-                          .then((newConfigs) => {
-                            setAddMenuAnchorEl(null);
-                            const optionIdsOfExistingServers = new Set(
-                              authenticatedServers.map(({ optionsId }) => optionsId),
-                            );
-                            const newServer = newConfigs.credentials.authenticatedServers.find(
-                              ({ optionsId }) => !optionIdsOfExistingServers.has(optionsId),
-                            );
-                            if (!newServer) throw new Error("Save completed but cannot show results.");
-                            runInAction(() => {
-                              authenticatedServers.push({
-                                alias,
-                                url,
-                                apiKey: "",
-                                storedSecretExists: false,
-                                saving: false,
-                                optionsId: newServer.optionsId,
-                              });
-                              addAlert(
-                                mkAlert({
-                                  variant: "success",
-                                  message: t("integrations.pyrat.alerts.addSuccess"),
-                                }),
-                              );
-                            });
-                          })
-                          .catch((e) => {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: t("integrations.pyrat.alerts.addError"),
-                                  message: e.message,
-                                }),
-                              );
-                          });
-                      }}
-                    >
-                      <ListItemText primary={alias} secondary={url} />
-                    </MenuItem>
-                  ))}
-                </Menu>
-              </CardActions>
-            </Card>
+            <ApiKeyServers
+              integration="PYRAT"
+              messages={{
+                noServers: t("integrations.pyrat.noServers"),
+                apiKeyLabel: (alias) => t("integrations.pyrat.apiKeyLabel", { alias }),
+                saveSuccess: t("integrations.pyrat.alerts.saveSuccess"),
+                saveError: t("integrations.pyrat.alerts.saveError"),
+                deleteSuccess: t("integrations.pyrat.alerts.deleteSuccess"),
+                deleteError: t("integrations.pyrat.alerts.deleteError"),
+                addSuccess: t("integrations.pyrat.alerts.addSuccess"),
+                addError: t("integrations.pyrat.alerts.addError"),
+              }}
+            />
           </>
         }
-        update={(newMode) => {
-          return update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          });
-        }}
+        update={updateMode}
       />
     </Grid>
   );
@@ -256,4 +61,4 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
 /**
  * The card and dialog for configuring the PyRAT integration
  */
-export default React.memo(observer(Pyrat));
+export default React.memo(Pyrat);

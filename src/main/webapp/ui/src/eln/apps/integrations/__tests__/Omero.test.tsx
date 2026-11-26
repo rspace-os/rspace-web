@@ -8,18 +8,22 @@ import { Optional } from "../../../../util/optional";
 import Omero, { OMERO_CONNECTION_CHANNEL } from "../Omero";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("Omero", () => {
   test("Should have no axe violations.", async () => {
     const user = userEvent.setup();
     const { baseElement } = render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.empty() },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.empty() },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -31,13 +35,16 @@ describe("Omero", () => {
   test("Should render username and password fields.", async () => {
     const user = userEvent.setup();
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.empty() },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.empty() },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -54,13 +61,16 @@ describe("Omero", () => {
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     try {
       render(
-        <Omero
-          integrationState={{
-            mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.empty() },
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            OMERO: {
+              mode: "DISABLED",
+              credentials: { ACCESS_TOKEN: Optional.empty() },
+            },
+          })}
+        >
+          <Omero />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -83,13 +93,16 @@ describe("Omero", () => {
   test("Should show a disconnect button when the user is already connected.", async () => {
     const user = userEvent.setup();
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present(null) },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.present(null) },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -107,13 +120,16 @@ describe("Omero", () => {
     );
 
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present(null) },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.present(null) },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -126,13 +142,16 @@ describe("Omero", () => {
   test("The OMERO_CONNECTED broadcast marks the card as connected.", async () => {
     const user = userEvent.setup();
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.empty() },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.empty() },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -153,13 +172,16 @@ describe("Omero", () => {
 
     render(
       <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
-        <Omero
-          integrationState={{
-            mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.present(null) },
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            OMERO: {
+              mode: "DISABLED",
+              credentials: { ACCESS_TOKEN: Optional.present(null) },
+            },
+          })}
+        >
+          <Omero />
+        </WithIntegrations>
       </AlertContext.Provider>,
     );
 
@@ -180,13 +202,16 @@ describe("Omero", () => {
     const addAlert = vi.fn();
     render(
       <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
-        <Omero
-          integrationState={{
-            mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.empty() },
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            OMERO: {
+              mode: "DISABLED",
+              credentials: { ACCESS_TOKEN: Optional.empty() },
+            },
+          })}
+        >
+          <Omero />
+        </WithIntegrations>
       </AlertContext.Provider>,
     );
 
@@ -211,13 +236,16 @@ describe("Omero", () => {
     const user = userEvent.setup();
     server.use(http.delete("/apps/omero/connect", () => new HttpResponse(null, { status: 200 })));
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.empty() },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          OMERO: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.empty() },
+          },
+        })}
+      >
+        <Omero />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));

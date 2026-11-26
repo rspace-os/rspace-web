@@ -1,7 +1,7 @@
 import { createContext } from "react";
-import type { IntegrationStates } from "./useIntegrationsEndpoint";
+import type { IntegrationModes } from "./queries";
 
-export type FrozenModes = Readonly<Record<keyof IntegrationStates, IntegrationStates[keyof IntegrationStates]["mode"]>>;
+export type FrozenModes = IntegrationModes;
 
 /**
  * Enabling or disabling an integration moves its card to another section of
