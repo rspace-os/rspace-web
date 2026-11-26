@@ -4,7 +4,9 @@ import com.researchspace.model.EditStatus;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -47,6 +49,9 @@ public class JournalEntry {
   private long formIconId;
 
   private EditStatus editStatus;
+
+  /** Current names of live internal link targets, by global ID; empty keeps the saved labels. */
+  private Map<String, String> linkedDocumentNames = Collections.emptyMap();
 
   public JournalEntry(BaseRecord document, String html) {
     this(document.getName(), html);

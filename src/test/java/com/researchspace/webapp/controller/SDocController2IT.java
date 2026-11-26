@@ -757,4 +757,44 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     StructuredDocument copiedSDoc = copyResult.getUniqueCopy().asStrucDoc();
     assertThat(copiedSDoc.getFields().get(0).getData()).doesNotContain("revision=");
   }
+
+  @Test
+  public void openDocumentSendsCurrentNamesOfReadableLinkedDocumentsWithoutSavingThem()
+      throws Exception {
+    User other = createInitAndLoginAnyUser();
+    StructuredDocument privateTarget = createBasicDocumentInRootFolderWithText(other, "p");
+    String privateLink = richTextUpdater.generateURLStringForInternalLink(privateTarget);
+    recordMgr.renameRecord("private new title", privateTarget.getId(), other);
+
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument target = createBasicDocumentInRootFolderWithText(user, "t");
+    String savedName = target.getName();
+    String targetLink = richTextUpdater.generateURLStringForInternalLink(target);
+    StructuredDocument source =
+        createBasicDocumentInRootFolderWithText(user, targetLink + privateLink);
+    recordMgr.renameRecord("target new title", target.getId(), user);
+
+    ModelAndView result =
+        controller.openDocument(
+            source.getId(),
+            "",
+            false,
+            false,
+            null,
+            modelTss,
+            mockHttpSession,
+            new MockPrincipal(user.getUsername()));
+
+    assertEquals(
+        "{\"" + target.getGlobalIdentifier() + "\":\"target new title\"}",
+        result.getModelMap().getAttribute("linkedDocumentNames"));
+    String savedField =
+        recordMgr
+            .getRecordWithFields(source.getId(), user)
+            .asStrucDoc()
+            .getFields()
+            .get(0)
+            .getFieldData();
+    assertThat(savedField).contains(savedName).doesNotContain("target new title");
+  }
 }

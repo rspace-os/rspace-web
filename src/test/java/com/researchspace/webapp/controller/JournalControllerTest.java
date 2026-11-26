@@ -52,6 +52,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
 
@@ -152,7 +153,9 @@ public class JournalControllerTest extends SpringTransactionalTest {
     final Long targetParent = 0L;
     // test retrieval of first record call used when editing a record or
     // when you first open the editor
-    JournalEntry entry = journalController.retrieveEntry(targetParent, 0, 0, mockPrincipal);
+    JournalEntry entry =
+        journalController.retrieveEntry(
+            targetParent, 0, 0, mockPrincipal, new MockHttpServletRequest());
 
     assertNotNull(entry);
     assertEquals(new Long(1), entry.getId());
@@ -161,7 +164,9 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertThat(entry.getHtml()).contains(TEXT_FIELD_NAME + 1L);
 
     // test retrieval of next record should skip 2L
-    JournalEntry nextEntry = journalController.retrieveEntry(targetParent, 0, 1, mockPrincipal);
+    JournalEntry nextEntry =
+        journalController.retrieveEntry(
+            targetParent, 0, 1, mockPrincipal, new MockHttpServletRequest());
     assertNotNull(nextEntry);
     assertEquals(new Long(3), nextEntry.getId());
     assertEquals(new Integer(2), nextEntry.getPosition());
@@ -170,7 +175,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
     // test retrieval of previous record should skip 2L
     JournalEntry previousEntry =
-        journalController.retrieveEntry(targetParent, 1, -1, mockPrincipal);
+        journalController.retrieveEntry(
+            targetParent, 1, -1, mockPrincipal, new MockHttpServletRequest());
     assertNotNull(previousEntry);
     assertEquals(new Long(1), previousEntry.getId());
     assertEquals(new Integer(0), previousEntry.getPosition());
@@ -179,7 +185,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
     // test nothing to the left of position
     JournalEntry nothingLeftEntry =
-        journalController.retrieveEntry(targetParent, 0, -1, mockPrincipal);
+        journalController.retrieveEntry(
+            targetParent, 0, -1, mockPrincipal, new MockHttpServletRequest());
     assertNotNull(nothingLeftEntry);
     assertNull(nothingLeftEntry.getId());
     assertEquals("NO_RESULT", nothingLeftEntry.getName()); // name should be
@@ -187,7 +194,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
     // test nothing to the right of position
     JournalEntry nothingRightEntry =
-        journalController.retrieveEntry(targetParent, 20, 1, mockPrincipal);
+        journalController.retrieveEntry(
+            targetParent, 20, 1, mockPrincipal, new MockHttpServletRequest());
     assertNotNull(nothingRightEntry);
     assertNull(nothingRightEntry.getId());
     assertEquals("NO_RESULT", nothingRightEntry.getName()); // name should
@@ -195,7 +203,9 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
     // test when no records exist
     recordManagerStub.makeEmpty(true);
-    JournalEntry emptyEntry = journalController.retrieveEntry(targetParent, 0, 0, mockPrincipal);
+    JournalEntry emptyEntry =
+        journalController.retrieveEntry(
+            targetParent, 0, 0, mockPrincipal, new MockHttpServletRequest());
     assertNotNull(emptyEntry);
     assertNull(emptyEntry.getId());
     assertNull(emptyEntry.getPosition());

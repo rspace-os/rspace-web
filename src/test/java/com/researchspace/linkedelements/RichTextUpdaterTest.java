@@ -32,13 +32,18 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RichTextUpdaterTest extends SpringTransactionalTest {
@@ -650,5 +655,46 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     assertThat(d2.getElementsByAttribute(NfsElement.FULL_PATH_DATA_ATTR_NAME)).isEmpty();
     assertThat(d2.getElementsByTag("a")).hasSize(1);
     assertEquals("#", d2.getElementsByTag("a").get(0).attr("href"));
+  }
+
+  static Stream<Arguments> internalLinks() {
+    return Stream.of(
+        Arguments.of(
+            "<a id='12' data-globalid='SD12' class='linkedRecord mceNonEditable'"
+                + " href='/globalId/SD12' data-name='B'>SD12: B</a>",
+            Set.of(12L)),
+        Arguments.of(
+            "<a id='13' class='linkedRecord' href='/workspace/editor/structuredDocument/13'"
+                + " data-name='B'>B</a>",
+            Set.of(13L)),
+        Arguments.of(
+            "<a id='12' data-globalid='SD12v3' class='linkedRecord' href='/globalId/SD12v3'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='12' data-globalid='SD12' class='linkedRecord'"
+                + " href='https://other.example/globalId/SD12'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='99' data-globalid='SD12' class='linkedRecord' href='/globalId/SD12'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='12' data-globalid='SD99' class='linkedRecord' href='/globalId/SD12'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='x' data-globalid='SDx' class='linkedRecord' href='/globalId/SDx'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='13' class='linkedRecord'"
+                + " href='/workspace/editor/structuredDocument/13?revision=2'>x</a>",
+            Set.of()),
+        Arguments.of(
+            "<a id='5' data-globalid='NB5' class='linkedRecord' href='/globalId/NB5'>x</a>",
+            Set.of()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("internalLinks")
+  public void findLiveLinkedDocumentIds(String fieldData, Set<Long> expectedIds) {
+    assertEquals(expectedIds, updater.findLiveLinkedDocumentIds(fieldData));
   }
 }

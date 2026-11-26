@@ -19,6 +19,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
@@ -225,5 +226,48 @@ public class JournalControllerMVCIT extends MVCTestBase {
     assertTrue(
         entrySwitchTime.getSeconds() < 2,
         "switching entry should take under 2 second, but was: " + entrySwitchTime.toString());
+  }
+
+  @Test
+  public void notebookEntryShowsCurrentNamesOfReadableLinkedDocumentsOutsidePublicView()
+      throws Exception {
+    User other = createInitAndLoginAnyUser();
+    StructuredDocument privateTarget = createBasicDocumentInRootFolderWithText(other, "p");
+    String privateLink = richTextUpdater.generateURLStringForInternalLink(privateTarget);
+    recordMgr.renameRecord("private new title", privateTarget.getId(), other);
+
+    User user = createInitAndLoginAnyUser();
+    StructuredDocument target = createBasicDocumentInRootFolderWithText(user, "t");
+    String targetLink = richTextUpdater.generateURLStringForInternalLink(target);
+    Folder rootFolder = folderMgr.getRootRecordForUser(user, user);
+    Notebook nbook = createNotebookWithNEntries(rootFolder.getId(), "nb", 1, user);
+    StructuredDocument entry = createBasicDocumentInFolder(user, nbook, targetLink + privateLink);
+    recordMgr.renameRecord("target new title", target.getId(), user);
+
+    String entryUrl = "/journal/ajax/retrieveEntryById/{notebookId}/{entryId}";
+    MvcResult result =
+        mockMvc
+            .perform(
+                get(entryUrl, nbook.getId(), entry.getId())
+                    .principal(new MockPrincipal(user.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+    JournalEntry retrieved = getFromJsonResponseBody(result, JournalEntry.class);
+    assertEquals(
+        Map.of(target.getGlobalIdentifier(), "target new title"),
+        retrieved.getLinkedDocumentNames());
+    assertThat(result.getResponse().getContentAsString()).doesNotContain("private new title");
+
+    MvcResult publicResult =
+        mockMvc
+            .perform(
+                get("/public/publicView" + entryUrl, nbook.getId(), entry.getId())
+                    .principal(new MockPrincipal(user.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertTrue(
+        getFromJsonResponseBody(publicResult, JournalEntry.class)
+            .getLinkedDocumentNames()
+            .isEmpty());
   }
 }

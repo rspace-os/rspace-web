@@ -9,6 +9,7 @@ import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_P
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.document.importer.ExternalFileImporter;
@@ -585,6 +586,10 @@ public class StructuredDocumentController extends BaseController {
       signatureInfo = signingManager.getSignatureForRecord(recordId).toSignatureInfo();
       canWitness = signingManager.canWitness(recordId, user);
     }
+    model.addAttribute(
+        "linkedDocumentNames",
+        JacksonUtil.toJson(
+            recordManager.getCurrentNamesOfLinkedDocuments(structuredDocument, user)));
 
     model.addAttribute("structuredDocument", structuredDocument);
     if (structuredDocument.getDocTag() != null) {

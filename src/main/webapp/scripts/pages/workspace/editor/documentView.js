@@ -130,6 +130,8 @@ function updateRichTextViewModeContent(textFieldId, newHtml) {
   $viewModeNode.html(newHtml);
   // some beautification of text field content
   updateAttachmentDivs($viewModeNode.find('.attachmentDiv'));
+  refreshLinkedRecordNames($viewModeNode.find('a.linkedRecord'),
+      parseLinkedDocumentNames($('#linkedDocumentNames').attr('data-names')));
   updateInternalLinks($viewModeNode.find('a.linkedRecord'));
   updateEmbedIframes($viewModeNode.find('div.embedIframeDiv'));
   addImagePreviewToChems($viewModeNode.find('img.chem'));

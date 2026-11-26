@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.axiope.service.cfg.RSDevConfig.DummyWord2HTMLConverter;
 import com.researchspace.Constants;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.Transformer;
@@ -1066,5 +1067,43 @@ public class SDocControllerMVCIT extends MVCTestBase {
     // exception TYPE (not merely that some exception resolved) is what proves it is the
     // authorization guard refusing, rather than a missing-parameter or database error.
     assertAuthorizationException(result);
+  }
+
+  @Test
+  public void documentPageSendsReaderOnlyCurrentNamesOfLinkedDocumentsTheyCanRead()
+      throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User reader = createAndSaveUser(getRandomAlphabeticString("reader"));
+    initUsers(pi, reader);
+    Group group = createGroupForUsers(pi, pi.getUsername(), null, pi, reader);
+    logoutAndLoginAs(pi);
+    StructuredDocument sharedTarget = createBasicDocumentInRootFolderWithText(pi, "shared");
+    StructuredDocument privateTarget = createBasicDocumentInRootFolderWithText(pi, "private");
+    StructuredDocument source =
+        createBasicDocumentInRootFolderWithText(
+            pi,
+            richTextUpdater.generateURLStringForInternalLink(sharedTarget)
+                + richTextUpdater.generateURLStringForInternalLink(privateTarget));
+    String sharedTitle = "Tom's \"<b>new</b>\" & title";
+    recordMgr.renameRecord(sharedTitle, sharedTarget.getId(), pi);
+    recordMgr.renameRecord("private new title", privateTarget.getId(), pi);
+    shareRecordWithGroup(pi, group, source);
+    shareRecordWithGroup(pi, group, sharedTarget);
+
+    logoutAndLoginAs(reader);
+    MvcResult result =
+        mockMvc
+            .perform(
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/{id}", source.getId())
+                    .principal(reader::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    // MockMvc does not render the JSP; this is the value it writes into data-names.
+    String names = (String) result.getModelAndView().getModel().get("linkedDocumentNames");
+    assertThat(names).doesNotContain("private new title");
+    assertEquals(
+        Map.of(sharedTarget.getGlobalIdentifier(), sharedTitle),
+        JacksonUtil.fromJson(names, Map.class));
   }
 }

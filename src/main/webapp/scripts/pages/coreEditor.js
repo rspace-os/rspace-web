@@ -433,6 +433,67 @@ function updateAttachmentDivs($attachmentDivs) {
   });
 }
 
+/* Global ID (e.g. SD123) of the document an unversioned internal link opens, or null.
+ * Mirrors RichTextUpdater.findLiveLinkedDocumentIds. */
+function getLiveLinkedDocumentGlobalId($link) {
+  var href = $link.attr('href') || '';
+  var id = $link.attr('id');
+  var globalId = $link.attr('data-globalid');
+  var match = globalId === undefined
+    ? /^\/workspace\/editor\/structuredDocument\/(\d{1,18})$/.exec(href)
+    : /^\/globalId\/SD(\d{1,18})$/.exec(href);
+  if (!match || match[1] !== id) {
+    return null;
+  }
+  if (globalId !== undefined && globalId !== 'SD' + match[1]) {
+    return null;
+  }
+  return 'SD' + match[1];
+}
+
+/* Reads the current link target names the server put in a data-names JSON attribute. */
+function parseLinkedDocumentNames(json) {
+  if (!json) {
+    return {};
+  }
+  try {
+    return JSON.parse(json) || {};
+  } catch (e) {
+    console.warn('Could not read linked document names', e);
+    return {};
+  }
+}
+
+/* Shows the current name of renamed link targets (RSDEV-1454). Saved field content is not changed,
+ * and labels the user has edited (neither "<globalId>: <saved name>" nor "<saved name>") are kept. */
+function refreshLinkedRecordNames($internalLinks, currentNames) {
+  if (!currentNames) {
+    return;
+  }
+  $internalLinks.each(function () {
+    var $link = $(this);
+    var globalId = getLiveLinkedDocumentGlobalId($link);
+    if (globalId === null || !Object.prototype.hasOwnProperty.call(currentNames, globalId)
+        || $link.children().length > 0) {
+      return;
+    }
+    var savedName = $link.attr('data-name');
+    var currentName = currentNames[globalId];
+    var label = $link.text();
+    if (savedName === undefined || savedName === currentName) {
+      return;
+    }
+    if (label === globalId + ': ' + savedName) {
+      $link.text(globalId + ': ' + currentName);
+    } else if (label === savedName) {
+      $link.text(currentName);
+    } else {
+      return;
+    }
+    $link.attr('data-name', currentName);
+  });
+}
+
 /* adding getinfo icon to internal links */
 function updateInternalLinks($internalLinks) {
 

@@ -34,9 +34,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -1003,6 +1005,42 @@ public class RichTextUpdater {
       }
     }
     return d.body().html();
+  }
+
+  private static final Pattern LIVE_DOCUMENT_LINK_HREF =
+      Pattern.compile("/globalId/" + GlobalIdPrefix.SD + "(\\d{1,18})");
+  private static final Pattern LEGACY_DOCUMENT_LINK_HREF =
+      Pattern.compile("/workspace/editor/structuredDocument/(\\d{1,18})");
+
+  /**
+   * Finds the database IDs of documents that internal links in the given field content point to
+   * without a version, i.e. links that always open the current document. Links pinned to a version,
+   * links to other RSpace servers and malformed links are skipped.
+   *
+   * @param fieldData HTML content of a text field, may be null
+   * @return the linked document IDs, never null
+   */
+  public Set<Long> findLiveLinkedDocumentIds(String fieldData) {
+    Set<Long> ids = new LinkedHashSet<>();
+    if (StringUtils.isBlank(fieldData)) {
+      return ids;
+    }
+    Elements links =
+        Jsoup.parse(fieldData).select("a." + FieldParserConstants.LINKEDRECORD_CLASS_NAME);
+    for (Element link : links) {
+      boolean newLinkFormat = link.hasAttr(DATA_GLOBALID);
+      Matcher href =
+          (newLinkFormat ? LIVE_DOCUMENT_LINK_HREF : LEGACY_DOCUMENT_LINK_HREF)
+              .matcher(link.attr("href"));
+      if (!href.matches() || !href.group(1).equals(link.attr("id"))) {
+        continue;
+      }
+      if (newLinkFormat && !link.attr(DATA_GLOBALID).equals(GlobalIdPrefix.SD + href.group(1))) {
+        continue;
+      }
+      ids.add(Long.valueOf(href.group(1)));
+    }
+    return ids;
   }
 
   /**
