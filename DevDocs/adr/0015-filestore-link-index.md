@@ -34,8 +34,9 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    one that does not: SFTP reads a path without the slash under the login's home, and iRODS
    prefixes the account's home to any path that does not already start with it. The stored path
    drops that slash, so the query reads it from the filestore's base and the link's own path. SMB
-   reads both spellings from the share root, and an SMB server that returns no name for the share
-   root makes the Gallery write links without the slash, so there both spellings match. Where the
+   reads both spellings from the share root, or from the folder the server URL names after the
+   share, and an SMB server that returns no name for the share root makes the Gallery write links
+   without the slash, so there both spellings match. Where the
    slash changes nothing elsewhere (a login chrooted to its home) this fails closed: a user's own links through a relative and an
    absolute base no longer meet, nor do document links that older Gallery versions wrote without
    the slash through a filestore with no base. A filesystem reached with one shared login (S3)

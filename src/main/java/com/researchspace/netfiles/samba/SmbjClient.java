@@ -387,8 +387,14 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
       path = path.substring(shareName.length()); // removing share bit
     } else if (path.startsWith("\\" + shareName + afterShareNamePath)) {
       path = path.substring(("\\" + shareName).length()); // removing share bit
+    } else if (path.isEmpty()) {
+      path = afterShareNamePath;
     } else {
-      path = afterShareNamePath + path;
+      // one separator, whether or not the path or the server URL brings its own
+      path =
+          StringUtils.removeEnd(afterShareNamePath, "\\")
+              + "\\"
+              + StringUtils.removeStart(path, "\\");
     }
     if (path.startsWith("\\")) {
       path = path.substring(1);
