@@ -141,7 +141,6 @@ public class DMPUpdateHandler {
       log.warn("Write-back to plan {} on {} failed", plan.getDmpId(), platform, e);
       return new PlanReportResult(
           plan.getTitle(),
-          plan.getDmpId(),
           platform,
           PlanReportStatus.REPORTED,
           List.of(
@@ -152,6 +151,6 @@ public class DMPUpdateHandler {
 
   private static PlanReportResult withStatus(
       DMPUser plan, DMPSource platform, PlanReportStatus status) {
-    return PlanReportResult.withStatus(plan.getTitle(), plan.getDmpId(), platform, status);
+    return PlanReportResult.withStatus(plan.getTitle(), platform, status);
   }
 }

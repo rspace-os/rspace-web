@@ -9,7 +9,6 @@ import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.DmpReporter;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
-import com.researchspace.service.dmp.ReportedValueKind;
 import com.researchspace.service.dmp.ValueOutcome;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +34,6 @@ public class DmpToolReporter implements DmpReporter {
   @Override
   public PlanReportResult report(DMPUser plan, DepositReport deposit, User user) {
     boolean hasDoi = deposit.identifier() != null;
-    ReportedValueKind kind = hasDoi ? ReportedValueKind.IDENTIFIER : ReportedValueKind.ACCESS_URL;
     String value = (hasDoi ? deposit.identifier() : deposit.accessUrl()).toString();
     ValueOutcome outcome;
     try {
@@ -43,20 +41,19 @@ public class DmpToolReporter implements DmpReporter {
           provider.addRelatedIdentifierToDMP(plan.getDmpId(), hasDoi ? "doi" : "url", value, user);
       outcome =
           sent.isSucceeded()
-              ? new ValueOutcome(kind, value, true, null)
-              : new ValueOutcome(kind, value, false, failureMessage(sent));
+              ? new ValueOutcome(value, true, null)
+              : new ValueOutcome(value, false, failureMessage(sent));
     } catch (RuntimeException e) {
-      log.warn("Couldn't add the deposit's {} to DMPtool plan {}", kind, plan.getDmpId(), e);
+      log.warn(
+          "Couldn't add the deposit's {} to DMPtool plan {}",
+          hasDoi ? "DOI link" : "repository link",
+          plan.getDmpId(),
+          e);
       outcome =
-          new ValueOutcome(
-              kind, value, false, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));
+          new ValueOutcome(value, false, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));
     }
     return new PlanReportResult(
-        plan.getTitle(),
-        plan.getDmpId(),
-        DMPSource.DMP_TOOL,
-        PlanReportStatus.REPORTED,
-        List.of(outcome));
+        plan.getTitle(), DMPSource.DMP_TOOL, PlanReportStatus.REPORTED, List.of(outcome));
   }
 
   // ServiceOperationResult.fromOptionalError puts the error in the entity, not the message

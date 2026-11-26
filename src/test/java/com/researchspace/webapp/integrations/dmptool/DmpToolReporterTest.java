@@ -15,7 +15,6 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
-import com.researchspace.service.dmp.ReportedValueKind;
 import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.testutils.TestFactory;
 import java.net.URL;
@@ -62,10 +61,9 @@ class DmpToolReporterTest {
     assertEquals(
         new PlanReportResult(
             "My plan",
-            "123",
             DMPSource.DMP_TOOL,
             PlanReportStatus.REPORTED,
-            List.of(new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, true, null))),
+            List.of(new ValueOutcome(DOI, true, null))),
         result);
   }
 
@@ -77,9 +75,7 @@ class DmpToolReporterTest {
     PlanReportResult result =
         reporter.report(plan, new DepositReport("Repo", null, new URL(LANDING)), user);
 
-    assertEquals(
-        List.of(new ValueOutcome(ReportedValueKind.ACCESS_URL, LANDING, true, null)),
-        result.values());
+    assertEquals(List.of(new ValueOutcome(LANDING, true, null)), result.values());
   }
 
   @Test
@@ -93,12 +89,7 @@ class DmpToolReporterTest {
         reporter.report(plan, new DepositReport("Repo", new URL(DOI), null), user);
 
     assertEquals(
-        List.of(
-            new ValueOutcome(
-                ReportedValueKind.IDENTIFIER,
-                DOI,
-                false,
-                "DMPTool refused the update (error 403).")),
+        List.of(new ValueOutcome(DOI, false, "DMPTool refused the update (error 403).")),
         result.values());
   }
 
@@ -112,9 +103,6 @@ class DmpToolReporterTest {
 
     assertEquals(PlanReportStatus.REPORTED, result.status());
     assertEquals(
-        List.of(
-            new ValueOutcome(
-                ReportedValueKind.IDENTIFIER, DOI, false, "An unexpected error occurred.")),
-        result.values());
+        List.of(new ValueOutcome(DOI, false, "An unexpected error occurred.")), result.values());
   }
 }

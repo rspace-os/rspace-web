@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
-import static com.researchspace.service.dmp.ReportedValueKind.IDENTIFIER;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -37,7 +36,6 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.dmp.DepositReport;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
-import com.researchspace.service.dmp.ReportedValueKind;
 import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
@@ -490,10 +488,8 @@ public class AsyncDepositorImplTest {
     when(dmpUpdateHandler.report(new DepositReport("Dataverse", doi, null), anyUser, List.of(1L)))
         .thenReturn(
             List.of(
-                reported(
-                    "Written <plan>", new ValueOutcome(IDENTIFIER, doi.toString(), true, null)),
-                reported(
-                    "Failed plan", new ValueOutcome(IDENTIFIER, doi.toString(), false, "Denied.")),
+                reported("Written <plan>", new ValueOutcome(doi.toString(), true, null)),
+                reported("Failed plan", new ValueOutcome(doi.toString(), false, "Denied.")),
                 withStatus("Empty plan", DMPSource.DMP_TOOL, PlanReportStatus.NOTHING_TO_SEND),
                 withStatus("Online plan", DMPSource.DMP_ONLINE, PlanReportStatus.NOT_SUPPORTED),
                 withStatus("Off plan", DMPSource.DMP_TOOL, PlanReportStatus.PLATFORM_OFF),
@@ -541,11 +537,7 @@ public class AsyncDepositorImplTest {
     String hostileLink = "https://repo.example/ds?x=\"><script>alert(1)</script>";
     when(dmpUpdateHandler.report(new DepositReport("Repo<b>", null, null), anyUser, List.of(1L)))
         .thenReturn(
-            List.of(
-                reported(
-                    "A plan",
-                    new ValueOutcome(
-                        ReportedValueKind.ACCESS_URL, hostileLink, false, "<img src=x>."))));
+            List.of(reported("A plan", new ValueOutcome(hostileLink, false, "<img src=x>."))));
 
     depositor.postDeposit(
         new RepositoryOperationResult(true, "done", null, null),
@@ -583,12 +575,7 @@ public class AsyncDepositorImplTest {
     URL landing = new URL("https://dv.example/ds");
     when(dmpUpdateHandler.report(
             new DepositReport("Dataverse", null, landing), anyUser, List.of(1L)))
-        .thenReturn(
-            List.of(
-                reported(
-                    "A plan",
-                    new ValueOutcome(
-                        ReportedValueKind.ACCESS_URL, landing.toString(), true, null))));
+        .thenReturn(List.of(reported("A plan", new ValueOutcome(landing.toString(), true, null))));
 
     depositor.postDeposit(
         new RepositoryOperationResult(true, "done", landing, null),
@@ -609,11 +596,7 @@ public class AsyncDepositorImplTest {
   void failedOutcomeWithoutValueRendersNoEmptyLink() throws Exception {
     RepoDepositConfig cfg = configWithPlans(App.APP_DATAVERSE, 1L);
     when(dmpUpdateHandler.report(new DepositReport("Dataverse", null, null), anyUser, List.of(1L)))
-        .thenReturn(
-            List.of(
-                reported(
-                    "A plan",
-                    new ValueOutcome(ReportedValueKind.ACCESS_URL, null, false, "It failed."))));
+        .thenReturn(List.of(reported("A plan", new ValueOutcome(null, false, "It failed."))));
 
     depositor.postDeposit(
         new RepositoryOperationResult(true, "done", null, null),
@@ -637,7 +620,7 @@ public class AsyncDepositorImplTest {
       results.add(
           reported(
               StringUtils.leftPad("plan " + i, 100, 'x'),
-              new ValueOutcome(IDENTIFIER, "https://doi.org/10.1/x", true, null)));
+              new ValueOutcome("https://doi.org/10.1/x", true, null)));
     }
 
     String planMessage = planNotificationFor(results);
@@ -652,9 +635,7 @@ public class AsyncDepositorImplTest {
   void introNamesASinglePlan() throws Exception {
     String planMessage =
         planNotificationFor(
-            List.of(
-                reported(
-                    "A plan", new ValueOutcome(IDENTIFIER, "https://doi.org/10.1/x", true, null))));
+            List.of(reported("A plan", new ValueOutcome("https://doi.org/10.1/x", true, null))));
 
     assertThat(planMessage)
         .contains("RSpace tried to add your deposit on \"Dataverse\" to the plan you selected.");
@@ -1017,10 +998,10 @@ public class AsyncDepositorImplTest {
 
   private PlanReportResult reported(String title, ValueOutcome outcome) {
     return new PlanReportResult(
-        title, "id", DMPSource.DMP_TOOL, PlanReportStatus.REPORTED, List.of(outcome));
+        title, DMPSource.DMP_TOOL, PlanReportStatus.REPORTED, List.of(outcome));
   }
 
   private PlanReportResult withStatus(String title, DMPSource platform, PlanReportStatus status) {
-    return PlanReportResult.withStatus(title, "id", platform, status);
+    return PlanReportResult.withStatus(title, platform, status);
   }
 }

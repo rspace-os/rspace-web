@@ -23,7 +23,6 @@ import com.researchspace.service.dmp.DmpPlatformStatusResolver.PlatformStatus;
 import com.researchspace.service.dmp.DmpReporter;
 import com.researchspace.service.dmp.PlanReportResult;
 import com.researchspace.service.dmp.PlanReportStatus;
-import com.researchspace.service.dmp.ReportedValueKind;
 import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.testutils.TestFactory;
 import java.net.URL;
@@ -165,9 +164,7 @@ class DMPUpdateHandlerTest {
 
     assertThat(results).hasSize(2);
     assertEquals(PlanReportStatus.REPORTED, results.get(0).status());
-    assertEquals(
-        new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, false, UNEXPECTED_ERROR),
-        results.get(0).values().get(0));
+    assertEquals(new ValueOutcome(DOI, false, UNEXPECTED_ERROR), results.get(0).values().get(0));
     assertEquals(secondReported, results.get(1));
   }
 
@@ -301,9 +298,8 @@ class DMPUpdateHandlerTest {
   private PlanReportResult reported(DMPUser plan) {
     return new PlanReportResult(
         plan.getTitle(),
-        plan.getDmpId(),
         DMPSource.DMP_TOOL,
         PlanReportStatus.REPORTED,
-        List.of(new ValueOutcome(ReportedValueKind.IDENTIFIER, DOI, true, null)));
+        List.of(new ValueOutcome(DOI, true, null)));
   }
 }
