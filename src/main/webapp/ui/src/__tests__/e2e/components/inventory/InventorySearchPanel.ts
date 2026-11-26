@@ -138,7 +138,7 @@ export class InventorySearchPanel {
 
   async hideRightPanel(): Promise<void> {
     if (await this.hideRightPanelButton.isVisible().catch(() => false)) {
-      await this.hideRightPanelButton.dispatchEvent("click");
+      await this.hideRightPanelButton.click();
       await this.showRightPanelButton.waitFor({ state: "visible" });
     }
   }

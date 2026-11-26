@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 
 export class PidinstImportDialog {
   readonly root: Locator;
@@ -50,8 +51,8 @@ export class PidinstImportDialog {
    * so they are paired by position; read through `expect.poll` so it retries until the preview settles.
    */
   async previewFields(): Promise<Record<string, string>> {
-    const labels = await this.preview.getByRole("term").allInnerTexts();
-    const values = await this.preview.getByRole("definition").allInnerTexts();
+    const labels = await innerTexts(this.preview.getByRole("term"));
+    const values = await innerTexts(this.preview.getByRole("definition"));
     return Object.fromEntries(labels.map((label, i) => [label.trim(), values[i]?.trim() ?? ""]));
   }
 

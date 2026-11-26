@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { ToastsComponent } from "../shared/ToastsComponent";
 import { AccessPermissionsEditor } from "./AccessPermissionsEditor";
 import { AddToBasketDialogComponent } from "./AddToBasketDialogComponent";
@@ -211,13 +212,13 @@ export class InventoryDetailsPanel {
   async saveEdit(): Promise<void> {
     const cancel = this.root.getByRole("button", { name: "Cancel", exact: true });
     const errorToasts = new ToastsComponent(this.page).root.getByRole("group", { name: "error alert" });
-    const errorsBefore = await errorToasts.allInnerTexts();
+    const errorsBefore = await innerTexts(errorToasts);
     await clickAndWaitDetached(this.root.getByRole("button", { name: "Save", exact: true }));
 
     let failure: string | undefined;
     await expect(async () => {
       if ((await cancel.count()) === 0) return;
-      const errors = await errorToasts.allInnerTexts();
+      const errors = await innerTexts(errorToasts);
       failure = errors.find((text) => !errorsBefore.includes(text));
       if (failure === undefined && errors.length > errorsBefore.length) failure = errors.at(-1);
       if (failure !== undefined) return;

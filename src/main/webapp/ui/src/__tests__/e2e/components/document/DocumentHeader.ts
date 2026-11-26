@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 
 /** /tagRecord rejects with 200 + errorMsg, so ok() alone proves nothing. */
 async function expectTagSaved(response: Response, action: string): Promise<void> {
@@ -49,7 +50,7 @@ export class DocumentHeader {
 
   /** View-mode pills: plain and ontology tags use different classes but share the `tagpill{n}` id. */
   async getTags(): Promise<string[]> {
-    return this.tags.locator("[id^='tagpill']").allInnerTexts();
+    return innerTexts(this.tags.locator("[id^='tagpill']"));
   }
 
   /** Chips in the open tag-it editor; empty when the editor is closed. */
@@ -117,7 +118,7 @@ export class DocumentHeader {
     await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
     // Empty responses close the menu but leave its previous items in the DOM.
     const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
-    const texts = await items.allInnerTexts();
+    const texts = await innerTexts(items);
     return texts.map((text) => text.trim()).filter((text) => text.length > 0 && text !== "&nbsp;");
   }
 
@@ -144,7 +145,7 @@ export class DocumentHeader {
     }
     await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
     const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
-    return (await items.allInnerTexts()).map((text) => text.trim()).filter((text) => text.length > 0);
+    return (await innerTexts(items)).map((text) => text.trim()).filter((text) => text.length > 0);
   }
 
   /** Adds a tag by clicking it from the suggestions dropdown, rather than typing it as free text. */

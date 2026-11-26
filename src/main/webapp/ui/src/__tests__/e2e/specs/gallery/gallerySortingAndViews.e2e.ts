@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { galleryEmptyStateLocator } from "@/__tests__/e2e/components/gallery/GalleryEmptyState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
@@ -50,7 +51,7 @@ test.describe("Gallery sorting and views", { tag: tags.MOBILE }, () => {
     const nameC = `c-${token}.png`;
 
     const orderOf = async (names: string[]): Promise<string[]> => {
-      const cellTexts = await pageGallery.fileGrid.getByRole("gridcell").allInnerTexts();
+      const cellTexts = await innerTexts(pageGallery.fileGrid.getByRole("gridcell"));
       return cellTexts.filter((text) => names.includes(text));
     };
 

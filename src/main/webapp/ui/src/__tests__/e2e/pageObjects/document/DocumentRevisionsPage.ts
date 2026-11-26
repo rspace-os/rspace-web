@@ -1,4 +1,5 @@
 import type { Locator } from "@playwright/test";
+import { textContents } from "@/__tests__/e2e/locatorTexts";
 import { BasePage } from "../BasePage";
 
 export class DocumentRevisionsPage extends BasePage {
@@ -28,10 +29,9 @@ export class DocumentRevisionsPage extends BasePage {
   }
 
   async latestVersion(): Promise<number> {
-    const ids = await this.page
-      .locator("#documentHistory")
-      .getByRole("link", { name: this.versionLinkPrefix(), exact: false })
-      .allTextContents();
+    const ids = await textContents(
+      this.page.locator("#documentHistory").getByRole("link", { name: this.versionLinkPrefix(), exact: false }),
+    );
     if (!ids.length) throw new Error("Revision history contains no document versions.");
     return Math.max(...ids.map((id) => Number(id.slice(id.lastIndexOf("v") + 1))));
   }
