@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import {
   type ApiV2Where,
@@ -17,7 +18,10 @@ describe("apiV2WhereToRsql", () => {
     [{ id: { in: [1, 2] }, username: { notIn: ["root"] } }, "id=in=(1,2);username=out=(root)"],
     [{ email: { exists: false } }, "email=exists=false"],
     [{ firstName: { contains: "Ann" }, lastName: { matches: "Sm*" } }, "firstName=contains=Ann;lastName=like=Sm*"],
-    [{ createdAt: { greaterThanOrEqual: new Date("2026-01-01T00:00:00Z") } }, "createdAt=ge=2026-01-01T00:00:00.000Z"],
+    [
+      { createdAt: { greaterThanOrEqual: Temporal.Instant.from("2026-01-01T00:00:00Z") } },
+      "createdAt=ge=2026-01-01T00:00:00.000Z",
+    ],
     [{ lastName: 'O\'Brien (QA); "x"' }, 'lastName=="O\'Brien (QA); \\"x\\""'],
     [{ firstName: "" }, 'firstName==""'],
     [{ id: undefined, username: "ann" }, "username==ann"],
@@ -62,7 +66,7 @@ describe("ApiV2Where types", () => {
   it("accepts allowed selectors, operators and values only", () => {
     const valid: ApiV2Where<"Users">[] = [
       {},
-      { id: 7, email: { contains: "x" }, createdAt: { lessThan: new Date() } },
+      { id: 7, email: { contains: "x" }, createdAt: { lessThan: Temporal.Now.instant() } },
       { username: { in: ["a", "b"] }, or: [{ id: { notIn: [1] } }] },
       { and: [{ id: 1 }, { or: [{ id: 2 }, { email: { contains: "x" } }] }] },
       { firstName: { exists: true } },

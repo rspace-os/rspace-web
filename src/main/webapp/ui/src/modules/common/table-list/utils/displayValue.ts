@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { isNil } from "es-toolkit";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatDate, formatDateTime, formatNumber, formatTime } from "@/modules/common/i18n/localeFormat";
@@ -11,7 +12,7 @@ export type DisplayLocale = { language: string | undefined; yes: string; no: str
 export function displayValue(value: unknown, locale: DisplayLocale, format?: DisplayFormat): string {
   const { language } = locale;
   if (isNil(value)) return "";
-  if (value instanceof Date) return formatDateTime(value, language);
+  if (value instanceof Temporal.Instant) return formatDateTime(value, language);
   if (typeof value === "number") return format === "number" ? formatNumber(value, language) : String(value);
   if (typeof value === "string") {
     if (format === "dateTime") return formatDateTime(value, language);

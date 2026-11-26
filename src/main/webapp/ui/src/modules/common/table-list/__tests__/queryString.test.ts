@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
@@ -61,8 +62,9 @@ describe("table-list query string state", () => {
     expect(serializeFilters<TestRecord>({ search: "", expression: comparison })).toBe(
       serializeFilters<TestRecord>({ search: "", expression: reordered }),
     );
-    expect(serializeFilters<TestRecord>({ search: "", expression: { ...comparison, value: new Date(at) } })).not.toBe(
-      serializeFilters<TestRecord>({ search: "", expression: comparison }),
-    );
+    const instant = (value: string) =>
+      serializeFilters<TestRecord>({ search: "", expression: { ...comparison, value: Temporal.Instant.from(value) } });
+    expect(instant(at)).not.toBe(serializeFilters<TestRecord>({ search: "", expression: comparison }));
+    expect(instant(at)).toBe(instant("2026-11-23T01:00:00+01:00"));
   });
 });

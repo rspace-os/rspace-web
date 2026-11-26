@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import type { ReactNode, Ref } from "react";
 import type { FieldName, ResolvedCollectionConfig, SearchSelector, SortRule } from "@/modules/common/collection/config";
 import type { FilterOperator } from "@/modules/common/collection/filterOperators";
@@ -5,7 +6,9 @@ import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "./
 import type { TableListAlertsApi } from "./components/TableListAlerts";
 import type { TableListPersistenceIdentity } from "./persistence";
 
-export type FilterValue = string | number | boolean | Date | readonly (string | number | boolean | Date)[];
+/** One filter operand; date-time operands are instants cut to milliseconds. */
+export type FilterScalar = string | number | boolean | Temporal.Instant;
+export type FilterValue = FilterScalar | readonly FilterScalar[];
 
 export type FilterExpression<TDocument> =
   | {

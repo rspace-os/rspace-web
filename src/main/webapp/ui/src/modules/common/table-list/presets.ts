@@ -1,8 +1,24 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { isEqual } from "es-toolkit";
-import type { FilterExpression } from "./types";
+import type { FilterExpression, FilterScalar, FilterValue } from "./types";
 import { allOf } from "./utils/expressions";
 
 type Rule<T> = Extract<FilterExpression<T>, { kind: "comparison" }>;
+
+function scalarEquals(left: FilterScalar, right: FilterScalar): boolean {
+  if (left instanceof Temporal.Instant && right instanceof Temporal.Instant)
+    return Temporal.Instant.compare(left, right) === 0;
+  return isEqual(left, right);
+}
+
+/** Whether two filter operands are the same: instants by time, lists element by element, other values by value. */
+export function filterValueEquals(left: FilterValue, right: FilterValue): boolean {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+    return left.every((item, index) => scalarEquals(item, right[index]));
+  }
+  return scalarEquals(left as FilterScalar, right as FilterScalar);
+}
 
 function conjuncts<T>(expression: FilterExpression<T> | null): readonly FilterExpression<T>[] {
   if (expression === null) return [];
@@ -14,7 +30,7 @@ function matches<T>(expression: FilterExpression<T>, rule: Rule<T>) {
     expression.kind === "comparison" &&
     expression.field === rule.field &&
     expression.operator === rule.operator &&
-    isEqual(expression.value, rule.value)
+    filterValueEquals(expression.value, rule.value)
   );
 }
 

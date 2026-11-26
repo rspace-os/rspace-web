@@ -1,6 +1,9 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
+import { hasPreset } from "../presets";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
+import { serializeFilters } from "../utils/queryString";
 import { config, type TestRecord } from "./fixtures/tableList";
 
 describe("table-list RSQL query state", () => {
@@ -17,7 +20,7 @@ describe("table-list RSQL query state", () => {
               kind: "comparison",
               field: "modifiedAt",
               operator: "greaterThan",
-              value: new Date("2026-08-01T10:00:00Z"),
+              value: Temporal.Instant.from("2026-08-01T10:00:00Z"),
             },
           ],
         },
@@ -36,6 +39,31 @@ describe("table-list RSQL query state", () => {
     expect(parseRsqlExpression("enabled=contains=true", config)).toBeNull();
     expect(parseRsqlExpression("score==many", config)).toBeNull();
     expect(parseRsqlExpression("modifiedAt==yesterday", config)).toBeNull();
+    expect(parseRsqlExpression("modifiedAt==2026-02-30T10:00:00Z", config)).toBeNull();
+  });
+
+  it.each(["2026-08-01", "2026-08-01T10:00"])("rejects the date-time %s without an offset", (value) => {
+    expect(parseRsqlExpression(`modifiedAt==${value}`, config)).toBeNull();
+  });
+
+  it("round-trips a saved view's date-time filter unchanged", () => {
+    const saved = "modifiedAt=ge=2026-08-01T10:00:00.000Z;modifiedAt=lt=2026-08-03T12:30:00.500Z";
+    const parsed = parseRsqlExpression(saved, config);
+    expect(parsed).not.toBeNull();
+    expect(serializeRsqlExpression(parsed as FilterExpression<TestRecord>)).toBe(saved);
+  });
+
+  it("cuts a six-digit fraction to milliseconds on the way in", () => {
+    const parsed = parseRsqlExpression("modifiedAt==2026-08-01T10:00:00.123456Z", config);
+    const rule = { kind: "comparison", field: "modifiedAt", operator: "equals" } as const;
+    const preset = { ...rule, value: Temporal.Instant.from("2026-08-01T10:00:00.123Z") };
+    expect(hasPreset(parsed, preset)).toBe(true);
+    expect(serializeFilters<TestRecord>({ search: "", expression: parsed })).toBe(
+      serializeFilters<TestRecord>({ search: "", expression: preset }),
+    );
+    expect(serializeRsqlExpression(parsed as FilterExpression<TestRecord>)).toBe(
+      "modifiedAt==2026-08-01T10:00:00.123Z",
+    );
   });
 
   it.each(["and", "or"] as const)("round-trips 50 flat %s comparisons and collects every runtime selector", (kind) => {

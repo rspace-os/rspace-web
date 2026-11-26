@@ -8,6 +8,7 @@ import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { registerTemporalEquality } from "@/__tests__/helpers/temporalEquality";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { deploymentPropertyQueryClient } from "@/hooks/api/deploymentPropertyQueryClient";
@@ -45,6 +46,7 @@ function createStorageMock() {
 setup();
 
 expect.extend(jestDomMatchers);
+registerTemporalEquality();
 // Mirror Vitest 5 Browser Mode: toHaveTextContent is exact, toMatchTextContent is partial/RegExp.
 expect.extend({
   toMatchTextContent: jestDomMatchers.toHaveTextContent,

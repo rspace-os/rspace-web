@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { isPlainObject } from "es-toolkit";
 import {
   type ApiV2FilterResource,
@@ -6,15 +7,20 @@ import {
   apiV2WhereOperators,
 } from "@/modules/common/api/v2/apiV2Where";
 import type { SearchSelector } from "@/modules/common/collection/config";
-import type { FilterExpression } from "../types";
+import type { FilterExpression, FilterScalar } from "../types";
 import { allOf } from "../utils/expressions";
 
 type Expression<TDocument> = FilterExpression<TDocument>;
 
 const isOperator = (operator: string): operator is ApiV2WhereOperator => Object.hasOwn(apiV2WhereOperators, operator);
 
-function filterValue(value: unknown, location: string): string | number | boolean | Date {
-  if (value instanceof Date || typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+function filterValue(value: unknown, location: string): FilterScalar {
+  if (
+    value instanceof Temporal.Instant ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  )
     return value;
   throw new TypeError(`${location}: Unsupported filter value ${String(value)}`);
 }

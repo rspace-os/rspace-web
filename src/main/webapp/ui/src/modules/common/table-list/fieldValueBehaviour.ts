@@ -1,23 +1,23 @@
-import { format } from "date-fns";
+import { Temporal } from "@js-temporal/polyfill";
 import type { HTMLInputTypeAttribute } from "react";
 import type * as v from "valibot";
 import type { ResolvedFieldConfig, SelectOption } from "@/modules/common/collection/config";
 import type { FieldType } from "@/modules/common/collection/fieldTypes";
 import type { RuntimeFieldValueType } from "@/modules/common/collection/runtimeFields";
+import { parseInstant, truncateToMilliseconds } from "@/modules/common/time/instant";
 import { booleanScalar, dateTimeScalar, numberScalar } from "./schema";
+import type { FilterScalar } from "./types";
 import type { DisplayFormat } from "./utils/displayValue";
 
 type ScalarFieldType = "text" | "number" | "boolean" | "dateTime" | "select" | "relationship";
 
-type DraftScalar = string | number | boolean | Date;
-
 export type ValueBehaviour = {
   /** Schema for a typed URL `where` scalar; absent keeps the string. */
-  urlScalar?: v.GenericSchema<string, number | boolean | Date>;
-  /** Draft text for a Date or string filter value; absent uses ISO text for a Date and `String` otherwise. */
-  toDraft?: (value: Date | string) => string;
+  urlScalar?: v.GenericSchema<string, number | boolean | Temporal.Instant>;
+  /** Draft text for an instant or string filter value; absent uses ISO text for an instant and `String` otherwise. */
+  toDraft?: (value: Temporal.Instant | string) => string;
   /** Filter value from one draft entry, given the original value at the same position of an unchanged field. */
-  fromDraft?: (draft: string, previous: DraftScalar | undefined) => DraftScalar;
+  fromDraft?: (draft: string, previous: FilterScalar | undefined) => FilterScalar;
   comparesAsInstant: boolean;
   displayFormat?: DisplayFormat;
   valueControl: "select" | "boolean" | "input";
@@ -28,14 +28,32 @@ export type ValueBehaviour = {
   prefersEquals: boolean;
 };
 
-const DATE_TIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+function instantOf(value: FilterScalar | undefined): Temporal.Instant | null {
+  if (value instanceof Temporal.Instant) return value;
+  const parsed = typeof value === "string" ? parseInstant(value) : null;
+  return parsed && truncateToMilliseconds(parsed);
+}
 
-const toLocalDateTime = (value: Date | string) => format(new Date(value), DATE_TIME_LOCAL_FORMAT);
+/** `yyyy-MM-ddTHH:mm:ss.SSS` in the browser's time zone; text that is not an instant is kept. */
+function toLocalDateTime(value: Temporal.Instant | string): string {
+  const instant = instantOf(value);
+  if (instant === null) return String(value);
+  return instant
+    .toZonedDateTimeISO(Temporal.Now.timeZoneId())
+    .toPlainDateTime()
+    .toString({ fractionalSecondDigits: 3 });
+}
 
-function instantOf(value: DraftScalar | undefined): Date | null {
-  if (value instanceof Date) return value;
-  if (typeof value === "string") return new Date(value);
-  return null;
+/** The instant of an edited local draft; a skipped clock time moves forward and a repeated one takes the earlier instant. */
+function fromLocalDateTime(draft: string): FilterScalar {
+  try {
+    const local = Temporal.PlainDateTime.from(draft);
+    return truncateToMilliseconds(
+      local.toZonedDateTime(Temporal.Now.timeZoneId(), { disambiguation: "compatible" }).toInstant(),
+    );
+  } catch {
+    return draft;
+  }
 }
 
 const text: ValueBehaviour = {
@@ -64,7 +82,7 @@ const valueBehaviours: Readonly<Record<ScalarFieldType, ValueBehaviour>> = {
     // A local clock value cannot distinguish the two instants in a DST overlap, so an unchanged draft keeps its original.
     fromDraft: (draft, previous) => {
       const instant = instantOf(previous);
-      return instant && toLocalDateTime(instant) === draft ? instant : new Date(draft);
+      return instant && toLocalDateTime(instant) === draft ? instant : fromLocalDateTime(draft);
     },
     comparesAsInstant: true,
     displayFormat: "dateTime",

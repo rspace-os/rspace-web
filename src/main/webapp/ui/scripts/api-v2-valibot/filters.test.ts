@@ -44,7 +44,8 @@ describe("filter types", () => {
     expect(source).toContain('"id": { operators: "==" | "=in="; value: number };');
     expect(source).toContain('"owner.name": { operators: "=like="; value: string };');
     expect(source).toContain('"state": { operators: "=="; value: "OPEN" | "CLOSED" };');
-    expect(source).toContain('"when": { operators: "=gt="; value: string | Date };');
+    expect(source).toContain('"when": { operators: "=gt="; value: string | Temporal.Instant };');
+    expect(source).toContain('import type { Temporal } from "@js-temporal/polyfill";');
     expect(source).not.toContain("hidden");
   });
 

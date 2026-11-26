@@ -1,11 +1,14 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { escapeRegExp, isNil, isNotNil } from "es-toolkit";
 import type { SearchSelector } from "@/modules/common/collection/config";
+import { parseInstant } from "@/modules/common/time/instant";
 import { valueBehaviourOf } from "../fieldValueBehaviour";
 import type { FilterExpression, FilterState, TableListProps } from "../types";
 
 function comparable(value: unknown, dateTime = false): string | number | boolean {
-  if (value instanceof Date) return value.getTime();
-  if (dateTime && typeof value === "string") return Date.parse(value);
+  if (value instanceof Temporal.Instant) return value.epochMilliseconds;
+  // A missing or unreadable date-time never compares, rather than reading as the empty string.
+  if (dateTime) return typeof value === "string" ? (parseInstant(value)?.epochMilliseconds ?? Number.NaN) : Number.NaN;
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
   return String(value ?? "");
 }
