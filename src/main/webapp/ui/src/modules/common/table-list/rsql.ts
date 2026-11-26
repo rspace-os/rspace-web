@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { parse } from "@rsql/parser";
 import { and, or } from "rsql-builder";
 import * as v from "valibot";
@@ -5,9 +6,10 @@ import { type RsqlOperand, rsqlComparison } from "@/modules/common/api/v2/apiV2W
 import type { ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import type { FilterOperator } from "@/modules/common/collection/filterOperators";
 import { filterOperatorsByToken } from "@/modules/common/collection/filterOperators";
+import { instantToWire } from "@/modules/common/time/instant";
 import { valueBehaviourOf } from "./fieldValueBehaviour";
 import { booleanScalar } from "./schema";
-import type { FilterExpression, FilterValue } from "./types";
+import type { FilterExpression, FilterScalar, FilterValue } from "./types";
 
 const operators = new Map<string, FilterOperator>([
   ...Object.entries(filterOperatorsByToken),
@@ -50,7 +52,7 @@ function typedScalar<TDocument>(
   value: string,
   field: ResolvedFieldConfig<TDocument>,
   operator: FilterOperator,
-): string | number | boolean | Date | null {
+): FilterScalar | null {
   if (operator === "exists") return parseScalar(booleanScalar, value);
   const schema = valueBehaviourOf(field).behaviour.urlScalar;
   return schema ? parseScalar(schema, value) : value;
@@ -67,7 +69,7 @@ function comparison<TDocument>(
   if (operator === "in" || operator === "notIn") {
     if (!Array.isArray(rawValue) || rawValue.length === 0) return null;
     const values = rawValue.map((value) => typedScalar(value, field, operator));
-    if (!values.every((value): value is string | number | boolean | Date => value !== null)) return null;
+    if (!values.every((value): value is FilterScalar => value !== null)) return null;
     return {
       kind: "comparison",
       field: field.name,
@@ -199,12 +201,12 @@ export function parseRsqlExpression<TDocument>(
 
 export function normalizeRsqlScalar(value: FilterValue): RsqlOperand {
   if (Array.isArray(value)) throw new Error("Expected a scalar filter value");
-  if (value instanceof Date) return value.toISOString();
+  if (value instanceof Temporal.Instant) return instantToWire(value);
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
   throw new Error("Null filter values are not supported");
 }
 
 export function normalizeRsqlList(value: FilterValue): readonly RsqlOperand[] {
   if (!Array.isArray(value) || value.length === 0) throw new Error("List filters require at least one value");
-  return value.map((item) => (item instanceof Date ? item.toISOString() : item));
+  return value.map((item) => (item instanceof Temporal.Instant ? instantToWire(item) : item));
 }

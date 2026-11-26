@@ -1,7 +1,9 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { ResolvedCollectionConfig, ResolvedFieldConfig, SearchSelector } from "@/modules/common/collection/config";
 import type { FilterOperator } from "@/modules/common/collection/filterOperators";
+import { instantToWire } from "@/modules/common/time/instant";
 import { valueBehaviourOf } from "../fieldValueBehaviour";
-import type { FilterExpression, FilterValue } from "../types";
+import type { FilterExpression, FilterScalar, FilterValue } from "../types";
 
 export type DraftRule<TDocument> = {
   id: number;
@@ -40,11 +42,11 @@ function draftValue<TDocument>(
   field: ResolvedFieldConfig<TDocument> | undefined,
 ): string | readonly string[] {
   const { toDraft } = valueBehaviourOf(field).behaviour;
-  const scalar = (item: string | number | boolean | Date) => {
-    if (toDraft && (item instanceof Date || typeof item === "string")) return toDraft(item);
-    return item instanceof Date ? item.toISOString() : String(item);
+  const scalar = (item: FilterScalar) => {
+    if (toDraft && (item instanceof Temporal.Instant || typeof item === "string")) return toDraft(item);
+    return item instanceof Temporal.Instant ? instantToWire(item) : String(item);
   };
-  return Array.isArray(value) ? value.map(scalar) : scalar(value as string | number | boolean | Date);
+  return Array.isArray(value) ? value.map(scalar) : scalar(value as FilterScalar);
 }
 
 export function valueForOperator(
@@ -68,9 +70,8 @@ export function parsedValue<TDocument>(rule: DraftRule<TDocument>, field: Resolv
   if (rule.operator === "exists") return scalarValue(rule.value) !== "false";
   const { fromDraft } = valueBehaviourOf(field).behaviour;
   const original = rule.original?.field === rule.field ? rule.original.value : undefined;
-  const parse = (value: string, index = 0): string | number | boolean | Date => {
-    const previous =
-      original === undefined || original instanceof Date || typeof original !== "object" ? original : original[index];
+  const parse = (value: string, index = 0): FilterScalar => {
+    const previous = Array.isArray(original) ? original[index] : (original as FilterScalar | undefined);
     return fromDraft?.(value, previous) ?? value;
   };
   if (rule.operator === "in" || rule.operator === "notIn") {

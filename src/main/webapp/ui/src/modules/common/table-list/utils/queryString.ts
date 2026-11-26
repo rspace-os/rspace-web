@@ -1,6 +1,8 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { hashKey } from "@tanstack/react-query";
 import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { StaleFieldPolicy } from "../rsql";
 import type { FilterExpression, FilterState, FilterValue } from "../types";
 import { sortRuleFromToken } from "./sortRuleFromToken";
@@ -11,7 +13,7 @@ const columnSelectorsSchema = v.pipe(v.string(), v.parseJson(), v.object({ field
 const columnsSchema = v.pipe(v.string(), v.parseJson(), v.object({ fields: v.array(v.string()) }));
 
 function serializeValue(value: FilterValue): unknown {
-  if (value instanceof Date) return { $date: value.toISOString() } satisfies SerializedDate;
+  if (value instanceof Temporal.Instant) return { $date: instantToWire(value) } satisfies SerializedDate;
   if (Array.isArray(value)) return value.map(serializeValue);
   return value;
 }
@@ -25,7 +27,7 @@ function serializeExpression<TDocument>(expression: FilterExpression<TDocument>)
 
 /**
  * An in-memory equality fingerprint of the filter state, for effect dependencies and refs; not a URL or storage
- * format. Object keys are sorted, and a `Date` stays distinct from its ISO string.
+ * format. Object keys are sorted, and an instant stays distinct from its ISO string.
  */
 export function serializeFilters<TDocument>(filters: FilterState<TDocument>): string {
   return hashKey([
