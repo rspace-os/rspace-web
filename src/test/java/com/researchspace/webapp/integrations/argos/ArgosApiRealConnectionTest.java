@@ -2,55 +2,39 @@ package com.researchspace.webapp.integrations.argos;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.argos.model.ArgosDMP;
 import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.DataTableData;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.springframework.web.client.RestTemplate;
 
 // The following tests run nightly and assert that the Argos API has not
 // changed in such a way that our integration no longer works correctly
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
-  private RestTemplate restTemplate;
-
   private ArgosDMPProvider argosClient;
 
   @BeforeEach
   public void setUp() throws Exception {
-    restTemplate = new RestTemplate();
-
-    this.argosClient = new ArgosDMPProvider(new URL("https://devel.opendmp.eu/srv/api/public"));
-    this.argosClient.setRestTemplate(restTemplate);
+    this.argosClient = new ArgosDMPProvider(new URL("https://argos.openaire.eu/api"));
   }
 
   @Test
   public void listPlansTest() {
-    try {
-      DataTableData<ArgosDMPListing> list = argosClient.listPlans(10, 0, null, null, null, null);
-      assertThat(list.getData().size()).isGreaterThanOrEqualTo(0);
-    } catch (MalformedURLException | URISyntaxException e) {
-      fail("argosClient.listPlans threw an exception.");
-    }
+    DataTableData<ArgosDMPListing> list = argosClient.listPlans(10, 0, null);
+    assertThat(list.getData()).isNotEmpty();
+    assertThat(list.getTotalCount()).isGreaterThanOrEqualTo(list.getData().size());
   }
 
   @Test
   public void getPlanByIdTest() {
-    try {
-      DataTableData<ArgosDMPListing> list = argosClient.listPlans(1, 0, null, null, null, null);
-      String id = list.getData().get(0).id;
-      ArgosDMP plan = argosClient.getPlanById(id);
-      assertEquals(plan.id, id);
-    } catch (MalformedURLException | URISyntaxException e) {
-      fail("argosClient.getPlanById threw an exception." + e.getMessage());
-    }
+    DataTableData<ArgosDMPListing> list = argosClient.listPlans(1, 0, null);
+    String id = list.getData().get(0).id;
+    ArgosDMP plan = argosClient.getPlanById(id);
+    assertEquals(id, plan.id);
   }
 }

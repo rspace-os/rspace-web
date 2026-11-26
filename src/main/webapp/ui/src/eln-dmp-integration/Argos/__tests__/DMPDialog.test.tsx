@@ -8,6 +8,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { stubAppChrome } from "@/__tests__/helpers/appChrome";
 import { findTableCell } from "@/__tests__/tableQueries";
 import axios from "@/common/axios";
+import AlertContext from "@/stores/contexts/Alert";
 import DMPDialog from "../DMPDialog";
 
 const mockAxios = new MockAdapter(axios);
@@ -105,7 +106,9 @@ describe("DMPDialog", () => {
     const user = userEvent.setup();
     const onImport = vi.fn();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, plansResponse);
-    mockAxios.onPost("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e").reply(200);
+    mockAxios
+      .onPost("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e")
+      .reply(200, { data: true, error: null, success: true });
     render(<DMPDialog open setOpen={() => {}} onImport={onImport} />);
     await waitFor(
       () => {
@@ -124,6 +127,49 @@ describe("DMPDialog", () => {
       ).toBe(true);
     });
     expect(onImport).toHaveBeenCalledOnce();
+  });
+
+  test("A failed list response shows the server's error message.", async () => {
+    const addAlert = vi.fn();
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
+      data: null,
+      error: { errorMessages: ["Couldn't list DMPs"] },
+      success: false,
+    });
+    render(
+      <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
+        <DMPDialog open setOpen={() => {}} />
+      </AlertContext.Provider>,
+    );
+    await waitFor(() => {
+      expect(addAlert).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: "error", message: "Couldn't list DMPs" }),
+      );
+    });
+  });
+
+  test("A failed import shows an error and no success message.", async () => {
+    const user = userEvent.setup();
+    const addAlert = vi.fn();
+    const onImport = vi.fn();
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, plansResponse);
+    mockAxios.onPost("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e").reply(200, {
+      data: null,
+      error: { errorMessages: ["Couldn't import DMP"] },
+      success: false,
+    });
+    render(
+      <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
+        <DMPDialog open setOpen={() => {}} onImport={onImport} />
+      </AlertContext.Provider>,
+    );
+    await user.click((await screen.findAllByRole("radio", { name: "apps:dmpIntegrations.dialog.selectPlanLabel" }))[0]);
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+    await waitFor(() => {
+      expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" }));
+    });
+    expect(addAlert).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+    expect(onImport).not.toHaveBeenCalled();
   });
 
   describe("Pagination should work.", () => {

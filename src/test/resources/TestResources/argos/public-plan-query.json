@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "label": "Example Plan for Soil Samples",
+      "createdAt": "2025-01-02T03:04:05.678Z",
+      "updatedAt": "2025-02-03T04:05:06Z",
+      "planReferences": [
+        {
+          "isActive": 0,
+          "reference": { "label": "Withdrawn Grant", "type": { "code": "grants" } }
+        },
+        {
+          "isActive": 1,
+          "reference": { "label": "Example Researcher", "type": { "code": "researchers" } }
+        },
+        {
+          "isActive": 1,
+          "reference": { "label": "Example Grant 101", "type": { "code": "grants" } }
+        }
+      ]
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "label": "Plan With String Flags",
+      "createdAt": "2025-03-04T05:06:07Z",
+      "updatedAt": "not a date",
+      "planReferences": [
+        { "isActive": "1", "reference": { "label": "Untyped Reference" } },
+        { "isActive": "1", "reference": { "label": "Example Grant 202", "type": { "code": "grants" } } }
+      ]
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "label": "Plan Without References"
+    }
+  ],
+  "count": 42
+}

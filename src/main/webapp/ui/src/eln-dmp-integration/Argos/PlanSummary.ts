@@ -10,9 +10,6 @@ export type PlanSummary = {
 
 export type SearchParameters = {
   like: string | null;
-  grantsLike: string | null;
-  fundersLike: string | null;
-  collaboratorsLike: string | null;
   page: number;
   pageSize: number;
 };
@@ -28,34 +25,25 @@ type SuccessResponse = {
 };
 
 type ErrorResponse = {
-  error: unknown;
+  success: false;
+  error: { errorMessages: Array<string> } | null;
 };
 
 type ApiResponse = SuccessResponse | ErrorResponse;
 
 function isErrorResponse(response: ApiResponse): response is ErrorResponse {
-  return !("success" in response);
+  return response.success !== true;
 }
 
-export async function fetchPlanSummaries({
-  like,
-  grantsLike,
-  fundersLike,
-  collaboratorsLike,
-  page,
-  pageSize,
-}: SearchParameters): Promise<Plans> {
+export async function fetchPlanSummaries({ like, page, pageSize }: SearchParameters): Promise<Plans> {
   const urlArgs = new URLSearchParams({
     ...(like ? { like } : {}),
-    ...(grantsLike ? { grantsLike } : {}),
-    ...(fundersLike ? { fundersLike } : {}),
-    ...(collaboratorsLike ? { collaboratorsLike } : {}),
     page: page.toString(),
     pageSize: pageSize.toString(),
   });
   const { data } = await axios.get<ApiResponse>(`/apps/argos/plans?${urlArgs.toString()}`);
   if (isErrorResponse(data)) {
-    throw data.error;
+    throw data.error?.errorMessages[0] ?? new Error("Listing DMPs failed.");
   }
   const plans = data.data;
   return {

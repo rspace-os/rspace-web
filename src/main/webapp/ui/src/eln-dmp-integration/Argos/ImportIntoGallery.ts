@@ -8,5 +8,8 @@ import type { PlanSummary } from "./PlanSummary";
 
 export async function importPlan(plan: PlanSummary): Promise<void> {
   const id: string = `${plan.id}`;
-  await axios.post<void>(`/apps/argos/importPlan/${id}`);
+  const { data } = await axios.post<{ success: boolean }>(`/apps/argos/importPlan/${id}`);
+  if (data?.success !== true) {
+    throw new Error(`Importing DMP ${id} failed.`);
+  }
 }

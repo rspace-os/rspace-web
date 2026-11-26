@@ -87,9 +87,7 @@ export default interface Resources {
         "noProjects": "No projects found",
         "notSpecified": "Not Specified",
         "search": {
-          "collaborators": "Collaborators",
-          "filters": "Search filters",
-          "funder": "Funder"
+          "filters": "Search filters"
         },
         "selectAllLabel": "Select all DMPs on this page",
         "selectColumn": "Select",
