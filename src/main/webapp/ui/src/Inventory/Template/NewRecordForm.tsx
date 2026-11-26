@@ -107,7 +107,7 @@ const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel 
   );
 });
 
-export default function NewRecordForm(): React.ReactNode {
+function NewRecordForm(): React.ReactNode {
   const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
@@ -136,3 +136,5 @@ export default function NewRecordForm(): React.ReactNode {
     </SynchroniseFormSections>
   );
 }
+
+export default observer(NewRecordForm);

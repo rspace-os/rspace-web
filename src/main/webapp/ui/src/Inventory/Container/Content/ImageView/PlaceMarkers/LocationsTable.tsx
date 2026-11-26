@@ -28,47 +28,43 @@ type LocationsTableArgs = {
   onClick: (data: TappedLocationData) => void;
 };
 
-function LocationsTable({
-  locations,
-  onRemove,
-  isCompactView,
-  parentRef,
-  selected,
-  onClick,
-}: LocationsTableArgs): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
-  const tableBody = React.useRef(null);
+type CustomEvent = {
+  detail: { number: number };
+};
 
-  type CustomEvent = {
-    detail: { number: number };
-  };
+type LocationTableRowArgs = {
+  location: Location;
+  number: number;
+  isCompactView: boolean;
+  parentRef: React.RefObject<HTMLElement | null>;
+  selected?: number;
+  onClick: (data: TappedLocationData) => void;
+  onRemove: ({ location, number }: { location: Location; number: number }) => void;
+};
 
-  const listener = (num: number, rowRef: React.RefObject<HTMLTableRowElement | null>) => (event: Event) => {
-    const customEvent = event as unknown as CustomEvent;
-    const tappedNum = customEvent.detail.number;
-    if (tappedNum === num && isCompactView && rowRef.current) {
-      rowRef.current.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
-  };
-
-  const LocationTableRow = ({ location, number }: { location: Location; number: number }) => {
-    const rowRef = React.createRef<HTMLTableRowElement>();
-    const l = listener(number, rowRef);
+const LocationTableRow = observer(
+  ({ location, number, isCompactView, parentRef, selected, onClick, onRemove }: LocationTableRowArgs) => {
+    const { t } = useTranslation(["inventory", "common"]);
+    const rowRef = React.useRef<HTMLTableRowElement>(null);
     const mark = { location, number, point: { left: 0, top: 0 } }; // point is unused, but necessary for type
 
     React.useEffect(() => {
       const tb = parentRef.current;
-      if (tb) {
-        tb.addEventListener(LOCATION_TAPPED_EVENT, l);
-        return () => tb.removeEventListener(LOCATION_TAPPED_EVENT, l);
-      }
-      return undefined;
-    });
+      if (!tb) return undefined;
+      const listener = (event: Event) => {
+        const tappedNum = (event as unknown as CustomEvent).detail.number;
+        if (tappedNum === number && isCompactView && rowRef.current) {
+          rowRef.current.scrollIntoView({
+            behavior: "smooth",
+          });
+        }
+      };
+      tb.addEventListener(LOCATION_TAPPED_EVENT, listener);
+      return () => tb.removeEventListener(LOCATION_TAPPED_EVENT, listener);
+    }, [parentRef, number, isCompactView]);
 
     return (
-      <TableRow key={number} ref={rowRef} onClick={() => onClick(mark)}>
+      <TableRow ref={rowRef} onClick={() => onClick(mark)}>
         <TableCell sx={{ padding: 0 }}>
           <NumberedLocation number={number} inline selected={Boolean(selected) && selected === number} />
         </TableCell>
@@ -95,7 +91,19 @@ function LocationsTable({
         </TableCell>
       </TableRow>
     );
-  };
+  },
+);
+
+function LocationsTable({
+  locations,
+  onRemove,
+  isCompactView,
+  parentRef,
+  selected,
+  onClick,
+}: LocationsTableArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
+  const tableBody = React.useRef(null);
 
   return (
     <TableContainer>
@@ -111,7 +119,16 @@ function LocationsTable({
         </TableHead>
         <TableBody ref={tableBody}>
           {locations.map((location, index) => (
-            <LocationTableRow location={location} number={index + 1} key={index} />
+            <LocationTableRow
+              location={location}
+              number={index + 1}
+              key={index}
+              isCompactView={isCompactView}
+              parentRef={parentRef}
+              selected={selected}
+              onClick={onClick}
+              onRemove={onRemove}
+            />
           ))}
         </TableBody>
       </Table>
@@ -119,4 +136,4 @@ function LocationsTable({
   );
 }
 
-export default observer(LocationsTable);
+export default LocationsTable;

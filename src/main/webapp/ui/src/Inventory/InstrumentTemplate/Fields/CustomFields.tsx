@@ -11,6 +11,7 @@ import NoValue from "../../../components/NoValue";
 import FieldModel, { type FieldModelAttrs } from "../../../stores/models/FieldModel";
 import InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
 import useStores from "../../../stores/use-stores";
+import { objectKey } from "../../../util/objectKey";
 import CustomField from "../../Template/Fields/CustomField";
 
 const EMPTY_FIELD: FieldModelAttrs = {
@@ -28,49 +29,55 @@ type CustomFieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
 };
 
+type TemplateFieldsArgs = {
+  activeResult: InstrumentTemplateModel;
+  editable: boolean;
+  onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
+};
+
+const TemplateFields = observer(({ activeResult, editable, onErrorStateChange }: TemplateFieldsArgs) => {
+  const { uiStore } = useStores();
+  const removeCustomField =
+    (field: FieldModel) =>
+    (b = false) => {
+      activeResult.removeCustomField(field.id, activeResult.fields.indexOf(field), b);
+    };
+
+  return (
+    <Stack spacing={2}>
+      {activeResult.fields
+        .filter((field): field is FieldModel => field instanceof FieldModel)
+        .map((field: FieldModel, i: number) => (
+          <CustomField
+            field={field}
+            i={i}
+            key={objectKey(field)}
+            editable={editable}
+            onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
+            onRemove={(b) => removeCustomField(field)(b)}
+            forceColumnLayout={!uiStore.isLarge}
+            onMove={(index) => activeResult.moveField(field, index)}
+            recordTypeName="instrument"
+          />
+        ))}
+    </Stack>
+  );
+});
+
 function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
   const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
-    uiStore,
   } = useStores();
   if (!activeResult || !(activeResult instanceof InstrumentTemplateModel))
     throw new Error("ActiveResult must be an Instrument Template");
-
-  const TemplateFields = observer(({ editable }: { editable: boolean }) => {
-    const removeCustomField =
-      (field: FieldModel) =>
-      (b = false) => {
-        activeResult.removeCustomField(field.id, activeResult.fields.indexOf(field), b);
-      };
-
-    return (
-      <Stack spacing={2}>
-        {activeResult.fields
-          .filter((field): field is FieldModel => field instanceof FieldModel)
-          .map((field: FieldModel, i: number) => (
-            <CustomField
-              field={field}
-              i={i}
-              key={i}
-              editable={editable}
-              onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
-              onRemove={(b) => removeCustomField(field)(b)}
-              forceColumnLayout={!uiStore.isLarge}
-              onMove={(index) => activeResult.moveField(field, index)}
-              recordTypeName="instrument"
-            />
-          ))}
-      </Stack>
-    );
-  });
 
   const fields = activeResult.fields;
   const editable = activeResult.isFieldEditable("fields");
   return (
     <>
       {fields.length > 0 ? (
-        <TemplateFields editable={editable} />
+        <TemplateFields activeResult={activeResult} editable={editable} onErrorStateChange={onErrorStateChange} />
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label={t("instrumentTemplate.customFields.noCustomFields")} />
