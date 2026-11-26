@@ -185,7 +185,7 @@
 				</label>
 			</td>
 			<td colspan="3">
-				<label style="color:darkblue;">
+				<label class="accountPasswordNote">
 					<spring:message code="system.createAccountForm.notePassword.label" />
 				</label>
 			</td>

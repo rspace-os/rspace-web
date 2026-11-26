@@ -34,25 +34,25 @@
   
   <div id="formActions" class="crudopsTopPanel" style="margin-bottom: 5px !important;">
     <ul>
-      <li class="formAction deleteForm deleteFormIcon" tabindex="0">
+      <li class="formAction deleteForm deleteFormIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/deleteForm.png" alt="" aria-hidden="true">
         <spring:message code="common:actions.delete"/>
       </li>
-      <li class="formAction publish single publishIcon" tabindex="0">
+      <li class="formAction publish single publishIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/publishForm.png" alt="" aria-hidden="true">
         <spring:message code="common:actions.publish"/>
       </li>
-      <li class="formAction unpublish single unpublishIcon" tabindex="0">
+      <li class="formAction unpublish single unpublishIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/unpublishForm.png" alt="" aria-hidden="true">
         <spring:message code="form.editor.unpublishLabel"/>
       </li>
-      <li class="formAction managePermissions single permissionsIcon" tabindex="0">
+      <li class="formAction managePermissions single permissionsIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/formPermissions.png" alt="" aria-hidden="true">
         <spring:message code="form.manage.permissionsLabel"/>
       </li>
-      <li class="formAction copyForm copyFormIcon" tabindex="0">
+      <li class="formAction copyForm copyFormIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/copyForm.png" alt="" aria-hidden="true">
         <spring:message code="common:actions.duplicate"/>
       </li>
-      <li class="formAction removeFromMenu single removeFromMenuIcon" tabindex="0">
+      <li class="formAction removeFromMenu single removeFromMenuIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/removeFromMenu.png" alt="" aria-hidden="true">
         <spring:message code="form.manage.removeFromMenu"/>
       </li>
-      <li class="formAction addToMenu single addToMenuIcon" tabindex="0">
+      <li class="formAction addToMenu single addToMenuIcon" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/addToMenu.png" alt="" aria-hidden="true">
         <spring:message code="form.manage.addToMenu"/>
       </li>
     </ul>

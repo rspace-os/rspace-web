@@ -219,8 +219,9 @@
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon2.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
-                      href="#" data-username="${ug.user.username}"></a>
+                    <spring:message code="groups.view.exportWork.label" var="exportWorkLabel"/>
+                    <a class="exportUsersWorkButton groupEditButton" style="padding:4px 7px 3px 40px;"
+                      href="#" data-username="${ug.user.username}" title="${exportWorkLabel}"><img class="rs-bg-icon exportUsersWorkButtonBgIcon" src="/images/icons/exportIcon2.png" alt="${exportWorkLabel}"></a>
                   </c:if>
                 </td>
               </c:if>

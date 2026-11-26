@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Generates styles/dark/legacy-generated.css: dark-mode colour overrides for
- * every stylesheet a JSP page or tag links, and for the <style> blocks and
- * static style attributes in JSP pages and tags.
+ * Generates styles/dark/generated/: dark-mode colour overrides for every
+ * stylesheet a JSP page or tag links, and for the <style> blocks in JSP
+ * pages and tags.
  *
  * For each rule it keeps only the colour declarations and remaps the colours:
  * light surfaces and borders become dark, dark text becomes light, and
@@ -11,27 +11,37 @@
  * so the generated rules keep the cascade of the originals: a hover rule
  * whose colour needs no change still beats its generated base rule.
  *
- * Each stylesheet's rules are wrapped in
- *   @scope (html.dark[data-stylesheets*="<sheet> "]) to (<user content>)
- * so they apply only in dark mode, only on pages that link that sheet, and
- * never inside user-authored rich text, which stays light.
- * common/legacyDarkMode.jsp lists the page's stylesheets in that attribute. The hand-written
- * styles/dark/legacy-dark.css loads after this file and fine-tunes it.
+ * Each stylesheet's rules go to styles/dark/generated/<its path>, wrapped in
+ *   @scope (html.dark) to (<user content>)
+ * so they apply only in dark mode and never inside user-authored rich text,
+ * which stays light. scripts/darkMode.js loads them in dark mode for the
+ * stylesheets the page links, before the hand-written
+ * styles/dark/legacy-dark.css, which fine-tunes them.
  *
  * Usage: node scripts/generate-legacy-dark-css.mjs [--check]
- *   --check  exit non-zero if the committed file is out of date.
+ *   --check  exit non-zero if the committed files are out of date.
  */
-import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, globSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { transform } from "lightningcss";
 
 const WEBAPP = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "main", "webapp");
-const OUTPUT = "styles/dark/legacy-generated.css";
+/**
+ * Output: one file per source stylesheet at the same path under OUTPUT_DIR,
+ * one for <style> blocks, and a manifest listing the stylesheets that have
+ * one. scripts/darkMode.js loads, in dark mode only, the files for the
+ * stylesheets a page links.
+ */
+const OUTPUT_DIR = "styles/dark/generated";
+const TEMPLATES_OUTPUT = `${OUTPUT_DIR}/templates.css`;
+const MANIFEST = `${OUTPUT_DIR}/sheets.js`;
+
+/** Where the dark rules for `file` are written. */
+const outputFor = (file) => (file.endsWith(".css") ? `${OUTPUT_DIR}/${file}` : TEMPLATES_OUTPUT);
 
 /** Linked stylesheets that must not be converted. */
 const IGNORED = [
-  "styles/dark/legacy-generated.css",
   "styles/dark/legacy-dark.css",
   "styles/simplicity/print.css", // linked with media="print"
 ];
@@ -71,6 +81,8 @@ function linkedStylesheets() {
 const PANEL = { h: 197, s: 0.14, l: 0.1 };
 /* Highest luminance at which #e3e3e3 text keeps 4.5:1 (with some margin). */
 const ACCENT_MAX_LUMINANCE = 0.1;
+/* The lightest dark surface text sits on (--rs-dark-band in legacy-dark.css). */
+const BAND = { r: 0x1c, g: 0x2a, b: 0x35 };
 
 // ---------------------------------------------------------------- colours
 
@@ -191,12 +203,23 @@ function focusShadow(c) {
   return luminance(c) < 0.2 && rgbToHsl(c).s < 0.15 ? lightText(c) : darkShadow(c);
 }
 
-/** Dark text becomes light; light and mid-tone text stays. */
+/**
+ * Dark text becomes light. Light and mid-tone text stays, lightened where
+ * needed to keep 4.5:1 on the dark surfaces (for example pure red).
+ */
 function lightText(c) {
-  if (luminance(c) >= 0.2) return c;
-  const { h, s, l } = rgbToHsl(c);
-  const nl = s < 0.15 ? 0.89 - l * 0.35 : Math.max(0.68, 1 - l * 0.55);
-  return { ...hslToRgb(h, s < 0.15 ? 0 : Math.min(s, 0.85), nl), a: c.a };
+  let text = c;
+  if (luminance(c) < 0.2) {
+    const { h, s, l } = rgbToHsl(c);
+    const nl = s < 0.15 ? 0.89 - l * 0.35 : Math.max(0.68, 1 - l * 0.55);
+    text = { ...hslToRgb(h, s < 0.15 ? 0 : Math.min(s, 0.85), nl), a: c.a };
+  }
+  const target = 4.5 * (luminance(BAND) + 0.05) - 0.05;
+  const { h, s, l } = rgbToHsl(text);
+  for (let nl = l; luminance(text) < target && nl < 1; nl += 0.005) {
+    text = { ...hslToRgb(h, s, nl), a: text.a };
+  }
+  return text;
 }
 
 /** Light borders become dark grey; dark borders become mid grey. */
@@ -302,7 +325,7 @@ function relocateUrl(token, file) {
     // which the generator cannot know.
     if (!file.endsWith(".css")) throw new Error(`${file}: relative url() outside a stylesheet: ${path}`);
     const target = posix.join(posix.dirname(file), path);
-    return `url(${quote}${posix.relative(posix.dirname(OUTPUT), target)}${quote})`;
+    return `url(${quote}${posix.relative(posix.dirname(outputFor(file)), target)}${quote})`;
   });
 }
 
@@ -457,51 +480,9 @@ function inlineStyles(file) {
     .join("\n");
 }
 
-/**
- * The static `style` attributes of a template. Attributes built from JSP
- * expressions, or holding entities or line breaks, are skipped.
- */
-function styleAttributes(file) {
-  const source = readFileSync(join(WEBAPP, file), "utf8").replace(/<%--[\s\S]*?--%>/g, "");
-  return [...source.matchAll(/\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)]
-    .map((m) => (m[1] ?? m[2]).trim())
-    .filter((value) => value && !/\$\{|<%|[&<>\n\\]/.test(value));
-}
-
-/**
- * Rules for colours set in `style` attributes. Each matches its attribute
- * exactly, and marks its colours !important to beat the inline style. An
- * inline style already wins the cascade, so only changed colours are emitted.
- * A script that changes an element's style rewrites the attribute, so such
- * elements need a rule in legacy-dark.css instead.
- */
-function styleAttributeRules(values) {
-  const colours = (text) =>
-    (text.match(COLOR_RE) ?? [])
-      .map((c) => parseColor(c))
-      .filter(Boolean)
-      .map(format)
-      .join(" ");
-  return values.flatMap((value) => {
-    const dark = splitTopLevel(value, ";").flatMap((d) => {
-      const colon = d.indexOf(":");
-      if (colon === -1) return [];
-      const prop = d.slice(0, colon).trim().toLowerCase();
-      const original = d.slice(colon + 1).replace(/!\s*important\s*$/i, "").trim();
-      return darkDeclarations(prop, original, false, "style attribute", false)
-        .filter((dd) => colours(dd.slice(dd.indexOf(":") + 1)) !== colours(original))
-        .map((dd) => `${dd} !important`);
-    });
-    if (!dark.length) return [];
-    stats.rules++;
-    return [`:scope [style="${value.replace(/"/g, '\\"')}"] {\n${keepLast(dark).map((d) => `  ${d};`).join("\n")}\n}`];
-  });
-}
-
 const indent = (text) => text.replace(/^(?=.)/gm, "  ");
 const limit = `to (${USER_CONTENT.join(", ")})`;
 const stats = { rules: 0, skipped: new Set() };
-const sections = [];
 
 /**
  * A stylesheet's rules, with those of its local @imports first, as they load.
@@ -523,56 +504,61 @@ function sheetRules(file, ancestors = []) {
   return [...imported, ...convertRules(css, file, false, stats)];
 }
 
-const sheets = linkedStylesheets();
-for (const file of sheets) {
-  const rules = sheetRules(file);
-  if (rules.length) {
-    sections.push(`/* ${file} */\n@scope (html.dark[data-stylesheets*="/${file} "]) ${limit} {\n${indent(rules.join("\n\n"))}\n}`);
-  }
+const HEADER = `/*
+ * GENERATED by scripts/generate-legacy-dark-css.mjs. Do not edit; change the
+ * script or override in legacy-dark.css, then run \`pnpm run css:legacy-dark\`.
+ */
+`;
+
+/** The generated files, by webapp-relative path. */
+const outputs = new Map();
+
+/** Dark rules in an @scope block that stops at user-authored rich text. */
+function scoped(rules) {
+  return `${HEADER}\n@scope (html.dark) ${limit} {\n${indent(rules.join("\n\n"))}\n}\n`;
 }
+
+const sheets = linkedStylesheets().filter((file) => {
+  const rules = sheetRules(file);
+  if (rules.length) outputs.set(outputFor(file), scoped(rules));
+  return rules.length > 0;
+});
 // <style> blocks cannot be tied to the pages that render them, so they apply
 // on every page; their element-only selectors (such as \`th\`) are skipped.
 const inline = TEMPLATES.flatMap((file) => {
   const rules = convertRules(stripComments(inlineStyles(file)), file, true, stats);
   return rules.length ? [`/* ${file} */\n\n${rules.join("\n\n")}`] : [];
 });
-if (inline.length) sections.push(`/* <style> blocks in templates */\n@scope (html.dark) ${limit} {\n${indent(inline.join("\n\n"))}\n}`);
-// Like <style> blocks, style attributes apply on every page.
-const attributeRules = styleAttributeRules([...new Set(TEMPLATES.flatMap(styleAttributes))]);
-if (attributeRules.length) {
-  sections.push(`/* style attributes in templates */\n@scope (html.dark) ${limit} {\n${indent(attributeRules.join("\n\n"))}\n}`);
+outputs.set(TEMPLATES_OUTPUT, scoped(inline));
+outputs.set(
+  MANIFEST,
+  `${HEADER}
+// Stylesheets with dark rules in ${OUTPUT_DIR}/, read by scripts/darkMode.js.
+window.RS_DARK_SHEETS = ${JSON.stringify(sheets, null, 2)};
+`,
+);
+
+// Fail loudly if any output is not valid CSS.
+for (const [file, css] of outputs) {
+  if (file.endsWith(".css")) transform({ filename: file, code: Buffer.from(css), errorRecovery: false });
 }
 
-const output = `/*
- * GENERATED by scripts/generate-legacy-dark-css.mjs. Do not edit; change the
- * script or override in legacy-dark.css, then run \`pnpm run css:legacy-dark\`.
- *
- * Dark-mode colour overrides for the legacy stylesheets. Each block applies
- * in dark mode on pages that link its source stylesheet, and stops at
- * user-authored rich text, which stays light.
- */
-
-${sections.join("\n\n")}
-`;
-
-// Fail loudly if the output is not valid CSS.
-transform({ filename: OUTPUT, code: Buffer.from(output), errorRecovery: false });
-
-const target = join(WEBAPP, OUTPUT);
+const existing = globSync(`${OUTPUT_DIR}/**/*.{css,js}`, { cwd: WEBAPP });
 if (process.argv.includes("--check")) {
-  const current = (() => {
-    try {
-      return readFileSync(target, "utf8");
-    } catch {
-      return "";
-    }
-  })();
-  if (current !== output) {
-    console.error(`${OUTPUT} is out of date; run \`pnpm run css:legacy-dark\`.`);
+  const stale = [
+    ...[...outputs].filter(([file, text]) => !existsSync(join(WEBAPP, file)) || readFileSync(join(WEBAPP, file), "utf8") !== text),
+    ...existing.filter((file) => !outputs.has(file)).map((file) => [file]),
+  ].map(([file]) => file);
+  if (stale.length) {
+    console.error(`${OUTPUT_DIR} is out of date (${stale.join(", ")}); run \`pnpm run css:legacy-dark\`.`);
     process.exit(1);
   }
-  console.log(`${OUTPUT} is up to date.`);
+  console.log(`${OUTPUT_DIR} is up to date.`);
 } else {
-  writeFileSync(target, output);
-  console.log(`Wrote ${OUTPUT}: ${stats.rules} rules from ${sheets.length} stylesheets, ${inline.length} templates' <style> blocks and ${attributeRules.length} style attributes; skipped ${stats.skipped.size} element-only selectors in <style> blocks.`);
+  for (const file of existing) if (!outputs.has(file)) rmSync(join(WEBAPP, file));
+  for (const [file, text] of outputs) {
+    mkdirSync(dirname(join(WEBAPP, file)), { recursive: true });
+    writeFileSync(join(WEBAPP, file), text);
+  }
+  console.log(`Wrote ${OUTPUT_DIR}: ${stats.rules} rules from ${sheets.length} stylesheets, ${inline.length} templates' <style> blocks; skipped ${stats.skipped.size} element-only selectors in <style> blocks.`);
 }

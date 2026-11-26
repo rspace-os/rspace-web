@@ -13,6 +13,7 @@
     <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsInitialiser.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsRSpaceAuthentication.js'/>"></script>
 
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <div id="msTeamsAuthenticationDiv">

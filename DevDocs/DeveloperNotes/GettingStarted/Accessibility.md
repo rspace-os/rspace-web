@@ -28,7 +28,7 @@ For RSpace, consider both the application and the content users create.
 | 6. | Images | Provide meaningful alternative text for informative images and empty alt text for decorative images. See [WAI's image guidance][wai-alt-text]. |
 | 7. | Headings | Give each page an `h1` and nest headings in order. In MUI `Typography`, use `component` for the semantic level and `variant` for appearance. |
 | 8. | Motion | Disable unnecessary animations and transitions when [`prefers-reduced-motion`][mdn-reduced-motion] is set. |
-| 9. | Dark mode | Take colours from the theme rather than literals so they follow the light and dark schemes. Every decorated JSP page and the React pages in `DARK_MODE_PATHS` ([colorScheme.ts][colorScheme]) render dark. After changing a legacy stylesheet, run `pnpm run css:legacy-dark` to regenerate its dark overrides ([generator][legacyDarkGenerator]); fix what the generated colours get wrong in [legacy-dark.css][legacyDark], or tune a colour everywhere through the generator's `COLOUR_OVERRIDES`. Colours in static `style` attributes are generated too, but an element whose style a script changes needs a hand rule. A new UI icon that is drawn on white or is a dark glyph needs adding to the icon list in legacy-dark.css. User-authored rich text stays light, like paper, and pages always print light. |
+| 9. | Dark mode | Take colours from the theme rather than literals so they follow the light and dark schemes. Every decorated JSP page and the React pages in `DARK_MODE_PATHS` ([colorScheme.ts][colorScheme]) render dark. A page without a decorator, or one opened in a frame, opts in by including `common/legacyDarkMode.jsp`, or `styles/dark/generated/sheets.js` and [darkMode.js][darkModeJs] at the end of its `<head>`. Put colours in stylesheets, and change them from scripts by toggling classes, not inline styles. After changing a legacy stylesheet, run `pnpm run css:legacy-dark` to regenerate its dark overrides ([generator][legacyDarkGenerator]); fix what the generated colours get wrong in [legacy-dark.css][legacyDark], or tune a colour everywhere through the generator's `COLOUR_OVERRIDES`. Show icons with `<img>`; a new icon that is drawn on white or is a dark glyph needs adding to the icon list in legacy-dark.css. User-authored rich text stays light, like paper, and pages always print light. |
 
 ### Semantic HTML and ARIA
 
@@ -102,6 +102,7 @@ landmarks, heading structure, dialogs, and complete user flows.
 [colorScheme]: ../../../src/main/webapp/ui/src/colorScheme.ts
 [legacyDarkGenerator]: ../../../scripts/generate-legacy-dark-css.mjs
 [legacyDark]: ../../../src/main/webapp/styles/dark/legacy-dark.css
+[darkModeJs]: ../../../src/main/webapp/scripts/darkMode.js
 [accessibilityTips]: ../../../src/main/webapp/ui/src/components/AccessibilityTips.tsx
 [DialogBoundary]: ../../../src/main/webapp/ui/src/components/DialogBoundary.tsx
 [dynamicHeadingLevel]: ../../../src/main/webapp/ui/src/components/DynamicHeadingLevel.tsx

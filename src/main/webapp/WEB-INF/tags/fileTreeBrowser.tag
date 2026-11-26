@@ -24,7 +24,7 @@
       <ul class="nav navbar-nav">
         <li class="sortingSettingsLi">
           <div class="sortingSettings" style="display:none">
-            <span style="margin-left: 10px; color: white;">
+            <span class="sortingSettingsLabel" style="margin-left: 10px;">
                 <spring:message code="workspace.sort.label"/>
             </span>
             <br/>

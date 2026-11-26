@@ -39,8 +39,8 @@
                     <input class="settingTextValue" type="text" style="display:none"></input>
                 </div>
                 <div class="settingActions">
-                    <a class="settingCancelLink" href="#"><spring:message code="common:actions.cancel"/></a>
-                    <a class="settingSaveLink" href="#"><spring:message code="common:actions.save"/></a>
+                    <a class="settingCancelLink" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.cancel"/></a>
+                    <a class="settingSaveLink" href="#"><img class="rs-bg-icon" src="/images/icons/createDocumentIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.save"/></a>
                 </div>
             </div>
         </div>

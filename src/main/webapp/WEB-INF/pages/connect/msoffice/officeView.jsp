@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/connect/msoffice/officeView.css'/>" />
 
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <div id="msOfficeIframeDiv">
@@ -21,6 +22,7 @@
     <form id="office_form" name="office_form" target="office_frame"
         <%--  action="https://FFC-excel.officeapps.live.com/x/_layouts/xlviewerinternal.aspx?wopisrc=https://load-test.researchspace.com/wopi/files/${fileId}"  --%>
           action="${actionUrl}"
+          data-theme-supported="${themeSupported}"
           method="post">
 
         <input name="access_token" value="${msAccessToken}" type="hidden"/>

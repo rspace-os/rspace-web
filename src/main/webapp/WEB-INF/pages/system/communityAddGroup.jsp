@@ -5,8 +5,8 @@
     <form id="addGroupsForm">
         <div class="topGreyBar">
             <spring:message code="community.addGroup.chooseLabel"/>
-            <a id="addGroupSubmit" class="systemButton systemGoButton" href="#"><spring:message code="community.actions.go"/></a>
-            <a id="addGroupCancel" class="cancel systemButton systemCancelButton" href="#"><spring:message code="common:actions.cancel"/></a>
+            <a id="addGroupSubmit" class="systemButton systemGoButton" href="#"><img class="rs-bg-icon" src="/images/icons/goIcon.png" alt="" aria-hidden="true"><spring:message code="community.actions.go"/></a>
+            <a id="addGroupCancel" class="cancel systemButton systemCancelButton" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.cancel"/></a>
         </div>
         <div class="communityViewInnerList">
             <c:if test="${community.id ne -1}"> <%-- i.e. not a default 'All Groups' community --%>

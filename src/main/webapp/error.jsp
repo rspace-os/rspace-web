@@ -14,6 +14,7 @@
 <link rel="stylesheet" media="all"
 	href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
 	<link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet">
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <body id="error">

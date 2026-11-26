@@ -15,7 +15,7 @@
 	<h3><spring:message code="system.createCommunity.title" /></h3>
 	<p />
 	<form:form modelAttribute="community" action="/system/createCommunity">
-	<span style="color:red">
+	<span class="rs-error-text">
             <form:errors path="*"></form:errors>
         </span>
 		<c:choose>

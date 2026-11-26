@@ -8,6 +8,7 @@
     
     <link rel="stylesheet" type="text/css" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
 
+    <%@ include file="/common/legacyDarkMode.jsp"%>
 </head>
 
 <style>

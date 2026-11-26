@@ -20,7 +20,13 @@ function initOfficeOnlineFrame() {
             'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-popups-to-escape-sandbox');
     frameholder.appendChild(office_frame);
 
-    document.getElementById('office_form').submit();
+    // Office for the web takes the theme as `thm` (1 light, 2 dark) when the
+    // action supports it.
+    var form = document.getElementById('office_form');
+    if (form.dataset.themeSupported === 'true') {
+        form.action += '&thm=' + (document.documentElement.classList.contains('dark') ? 2 : 1);
+    }
+    form.submit();
 }
 
 function initConvertDialog() {

@@ -1,9 +1,10 @@
 /*
- * Hand-written dark overrides for the legacy (JSP) pages. Both page
- * decorators include common/legacyDarkMode.jsp, which sets the `dark` class
- * on <html> before first paint and loads legacy-generated.css and then this
- * file. legacy-generated.css is derived from the legacy stylesheets by
- * scripts/generate-legacy-dark-css.mjs; this file adjusts what it gets wrong.
+ * Hand-written dark overrides for the pages React does not render.
+ * scripts/darkMode.js sets the `dark` class on <html> before first paint and,
+ * in dark mode, loads the generated overrides in styles/dark/generated/ for
+ * the stylesheets the page links, then this file. The generated files come
+ * from scripts/generate-legacy-dark-css.mjs; this file adjusts what they get
+ * wrong.
  *
  * The colours match the dark MUI palette in ui/src/theme.ts. Some legacy
  * rules use !important, so the overrides for those properties must too.
@@ -186,12 +187,8 @@ html.dark .journalPageContent {
     color: #fff;
   }
 
-  /* jqueryFileTree (the Move dialog's folder picker sets its background inline) */
+  /* jqueryFileTree */
 
-  :scope #movefolder-tree {
-    background: var(--rs-dark-panel) !important;
-    border-color: var(--rs-dark-border-strong) !important;
-  }
   :scope ul.jqueryFileTree a {
     color: var(--rs-dark-text);
   }
@@ -199,12 +196,7 @@ html.dark .journalPageContent {
     background: var(--rs-dark-hover);
   }
 
-  /*
-   * Small action buttons (.smallBtn, .crudopsTopPanel) draw dark grey PNG icons
-   * as background images. Inverting each button lightens its icon; the text and
-   * border colours below are chosen so they come out light after the inversion.
-   * On hover the filter is dropped and the dark icon sits on the light accent.
-   */
+  /* Small action buttons (.smallBtn, .crudopsTopPanel); their icons are in the list below. */
 
   :scope .crudopsTopPanel {
     border-color: var(--rs-dark-border);
@@ -214,19 +206,23 @@ html.dark .journalPageContent {
   :scope .crudopsTopPanel a.link,
   :scope .crudopsTopPanel ul li,
   :scope .crudopsTopPanel ul a.link {
-    filter: invert(1) hue-rotate(180deg);
-    color: #1c1c1c;
-    border-color: #0e6aa8;
+    color: var(--rs-dark-text);
+    border-color: var(--rs-dark-link);
   }
   :scope .smallBtn:hover,
   :scope .crudopsTopPanel li:hover,
   :scope .crudopsTopPanel a.link:hover,
   :scope .crudopsTopPanel ul li:hover,
   :scope .crudopsTopPanel ul a.link:hover {
-    filter: none;
     background-color: var(--rs-dark-link);
     color: var(--rs-dark-on-link);
     border-color: var(--rs-dark-link);
+  }
+  /* the dark icon reads better on the light accent */
+  :scope .smallBtn:hover > .rs-bg-icon,
+  :scope .crudopsTopPanel li:hover > .rs-bg-icon,
+  :scope .crudopsTopPanel a.link:hover > .rs-bg-icon {
+    filter: none;
   }
 
   /*
@@ -239,7 +235,11 @@ html.dark .journalPageContent {
 
   :scope img[src*="/scripts/externalTinymcePlugins/toolbar/img/"],
 
+  :scope img[src*="/images/icons/DownArrow25.png"],
   :scope img[src*="/images/icons/GitHub-Mark-64px.png"],
+  :scope img[src*="/images/icons/RightArrow25.png"],
+  :scope img[src*="/images/icons/addToFavouritesIcon.png"],
+  :scope img[src*="/images/icons/addToMenu.png"],
   :scope img[src*="/images/icons/archiveImport.png"],
   :scope img[src*="/images/icons/arrow-left.png"],
   :scope img[src*="/images/icons/audioIcon.png"],
@@ -248,23 +248,33 @@ html.dark .journalPageContent {
   :scope img[src*="/images/icons/camera.png"],
   :scope img[src*="/images/icons/chemistry-file.png"],
   :scope img[src*="/images/icons/chrome-icon.png"],
+  :scope img[src*="/images/icons/copyForm.png"],
+  :scope img[src*="/images/icons/copyIcon.png"],
+  :scope img[src*="/images/icons/createDocumentIcon.png"],
+  :scope img[src*="/images/icons/deleteForm.png"],
+  :scope img[src*="/images/icons/deleteIcon.png"],
   :scope img[src*="/images/icons/deletedDocuments.png"],
   :scope img[src*="/images/icons/directory.png"],
   :scope img[src*="/images/icons/dna-file.svg"],
   :scope img[src*="/images/icons/door.png"],
+  :scope img[src*="/images/icons/editIcon.png"],
+  :scope img[src*="/images/icons/exportAllGroupIcon.png"],
   :scope img[src*="/images/icons/exportImportN2.png"],
   :scope img[src*="/images/icons/file-tree-icon-small.png"],
   :scope img[src*="/images/icons/file-tree-icon.png"],
   :scope img[src*="/images/icons/firefox-icon.png"],
+  :scope img[src*="/images/icons/formPermissions.png"],
   :scope img[src*="/images/icons/groups.png"],
   :scope img[src*="/images/icons/ie-icon.png"],
   :scope img[src*="/images/icons/instrumentTemplate.png"],
   :scope img[src*="/images/icons/leavecollaboration.png"],
+  :scope img[src*="/images/icons/license2.png"],
   :scope img[src*="/images/icons/listForms.png"],
   :scope img[src*="/images/icons/logButtonIconSend.png"],
   :scope img[src*="/images/icons/logButtonIconView.png"],
   :scope img[src*="/images/icons/manageShared.png"],
   :scope img[src*="/images/icons/messageSettings.png"],
+  :scope img[src*="/images/icons/moveIcon.png"],
   :scope img[src*="/images/icons/mp4.png"],
   :scope img[src*="/images/icons/myLabGroup.png"],
   :scope img[src*="/images/icons/myProfile.png"],
@@ -275,13 +285,27 @@ html.dark .journalPageContent {
   :scope img[src*="/images/icons/plus_thin.png"],
   :scope img[src*="/images/icons/projectGroupsListIcon.png"],
   :scope img[src*="/images/icons/projectgroup.png"],
+  :scope img[src*="/images/icons/publishForm.png"],
+  :scope img[src*="/images/icons/publishIcon.png"],
+  :scope img[src*="/images/icons/removeFromFavouritesIcon.png"],
+  :scope img[src*="/images/icons/removeFromMenu.png"],
+  :scope img[src*="/images/icons/renameIcon.png"],
+  :scope img[src*="/images/icons/revisionsIcon.png"],
   :scope img[src*="/images/icons/safari-icon.png"],
   :scope img[src*="/images/icons/sampleTemplate.png"],
+  :scope img[src*="/images/icons/saveIcon.png"],
   :scope img[src*="/images/icons/scheduleDowntime.png"],
   :scope img[src*="/images/icons/settings.png"],
+  :scope img[src*="/images/icons/shareIcon.png"],
+  :scope img[src*="/images/icons/showAllIcon.png"],
+  :scope img[src*="/images/icons/tagIcon.png"],
   :scope img[src*="/images/icons/templatex.jpg"],
   :scope img[src*="/images/icons/tiffNoPreview.png"],
-  :scope img[src*="/images/icons/unlock.png"] {
+  :scope img[src*="/images/icons/unlock.png"],
+  :scope img[src*="/images/icons/unpublishForm.png"],
+  :scope img[src*="/images/icons/uploadImageIcon.png"],
+  :scope img[src*="/images/icons/whitelistIcon.png"],
+  :scope img[src*="/images/icons/zipExportIcon.png"] {
     filter: invert(0.9) hue-rotate(180deg);
   }
 
@@ -297,15 +321,6 @@ html.dark .journalPageContent {
     background-color: #fff;
     border-radius: 4px;
     box-shadow: 0 0 0 6px #fff;
-  }
-
-  /*
-   * The date field's input sets black text inline, and scripts rewrite its
-   * style attribute, so the generated exact-match rule misses it.
-   */
-
-  :scope input.datepicker {
-    color: var(--rs-dark-text) !important;
   }
 
   /*

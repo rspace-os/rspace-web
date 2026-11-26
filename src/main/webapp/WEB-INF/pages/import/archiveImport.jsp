@@ -37,8 +37,7 @@
 	border-width:1px 1px 1px 1px;
 	border-color:#AFAFAF;
 	background:white;
-	background-repeat: no-repeat;
-	background-position: center left;
+	position: relative;
 	border-radius:0 !important;
 	text-shadow:none !important;
 	cursor: pointer;
@@ -100,8 +99,7 @@
 		<p>
 			<spring:message code="importExport.export.all.instructions" />
 		</p>
-		<a href="#" id="exportMyWork" class="exportLink"
-			style="background-image:url('/images/icons/exportIcon2.png');"><spring:message code="archiveImport.exportAllLink"/></a>
+		<a href="#" id="exportMyWork" class="exportLink"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/exportIcon2.png" alt="" aria-hidden="true"><spring:message code="archiveImport.exportAllLink"/></a>
 	</div>
 
 	<div id="importBlock">
@@ -129,8 +127,7 @@
 					<label>
 						<spring:message code="importExport.import.submitHelp" /><br />
 						<br />
-						<input id="importSubmit" class="exportLink" style="background-image:url('/images/icons/importIcon2.png');"
-							type="submit" value='<spring:message code="common:actions.import"/>'>
+						<button id="importSubmit" class="exportLink" type="submit"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/importIcon2.png" alt="" aria-hidden="true"><spring:message code="common:actions.import"/></button>
 					</label>
 				</div>
 				<div class="importForm" style="text-align: right; line-height: 32px;">
@@ -182,8 +179,7 @@
 					<label>
 						<spring:message code="importExport.import.submitHelp" /><br />
 						<br />
-						<input id="importSubmitOntology" class="exportLink" style="background-image:url('/images/icons/importIcon2.png');"
-							   type="submit" value='<spring:message code="common:actions.import"/>'>
+						<button id="importSubmitOntology" class="exportLink" type="submit"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/importIcon2.png" alt="" aria-hidden="true"><spring:message code="common:actions.import"/></button>
 					</label>
 				</div>
 				<div class="importForm" style="text-align: right; line-height: 32px;">
@@ -212,9 +208,7 @@
 						<label>
 							<spring:message code="importExport.import.submitHelp" /><br />
 							<br />
-							<input id="importServerSubmit" class="exportLink"
-								style="background-image:url('/images/icons/importIcon2.png');" type="submit"
-								value='<spring:message code="common:actions.import"/>'>
+							<button id="importServerSubmit" class="exportLink" type="submit"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/importIcon2.png" alt="" aria-hidden="true"><spring:message code="common:actions.import"/></button>
 						</label>
 					</div>
 					<div class="importForm" style="text-align: right; line-height: 32px;">

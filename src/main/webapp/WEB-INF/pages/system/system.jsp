@@ -28,7 +28,7 @@
       </div>
     </c:if>
 
-<div id="statusMsg" style="margin-top:10px;color:red">
+<div id="statusMsg" class="rs-error-text" style="margin-top:10px">
   <c:if test="${not empty errorList}">
     <spring:message code="general.operationFailed" /><br />
 

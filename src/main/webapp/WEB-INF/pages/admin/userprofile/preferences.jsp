@@ -8,7 +8,7 @@
     <meta name="menu" content="AdminMenu"/>
 </head>
 
-<div style="font-size:1.5em; color: #444; margin-bottom: 10px;">
+<div class="rs-subheading" style="font-size:1.5em; margin-bottom: 10px;">
   <spring:message code="userProfile.message.title" />
 </div>
 

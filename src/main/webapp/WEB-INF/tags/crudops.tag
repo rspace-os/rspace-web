@@ -30,50 +30,50 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
 <spring:message code="dialogs.crudops.msTeamsAbbreviation" var="crudopsMsTeamsAbbreviation"/>
 <div id="crudops" class="rs-panel-flat crudopsTopPanel">
   <ul>
-    <li class="crudopsAction copyIcon" id="createDocFromTemplate" tabindex="0">
+    <li class="crudopsAction copyIcon" id="createDocFromTemplate" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/copyIcon.png" alt="" aria-hidden="true">
       <spring:message code="dialogs.crudops.createDocument"/>
     </li>
-  	<li class="crudopsAction copyIcon" id="copyRecords" tabindex="0">
+  	<li class="crudopsAction copyIcon" id="copyRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/copyIcon.png" alt="" aria-hidden="true">
       <spring:message code="common:actions.duplicate"/>
     </li>
-  	<li class="crudopsAction moveIcon" id="moveRecords" tabindex="0">
+  	<li class="crudopsAction moveIcon" id="moveRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/moveIcon.png" alt="" aria-hidden="true">
       <spring:message code="common:actions.move"/>
     </li>
-  	<li class="crudopsAction renameIcon" id="renameRecords" tabindex="0">
+  	<li class="crudopsAction renameIcon" id="renameRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/renameIcon.png" alt="" aria-hidden="true">
       <spring:message code="dialogs.renameRecord.action"/>
     </li>
-  	<li class="crudopsAction deleteIcon" id="deleteRecords" tabindex="0">
+  	<li class="crudopsAction deleteIcon" id="deleteRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/deleteIcon.png" alt="" aria-hidden="true">
       <spring:message code="common:actions.delete"/>
     </li>
-    <li class="crudopsAction exportIcon" id="exportRecords" tabindex="0">
+    <li class="crudopsAction exportIcon" id="exportRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/zipExportIcon.png" alt="" aria-hidden="true">
       <spring:message code="common:actions.export"/>
     </li>
-    <li class="crudopsAction exportIcon" id="compareRecords" tabindex="0">
+    <li class="crudopsAction exportIcon" id="compareRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/zipExportIcon.png" alt="" aria-hidden="true">
       <a href="#"><spring:message code="dialogs.crudops.csv"/></a>
     </li>
-  	<li class="crudopsAction revisionsIcon" id="viewRevisions" tabindex="0">
+  	<li class="crudopsAction revisionsIcon" id="viewRevisions" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/revisionsIcon.png" alt="" aria-hidden="true">
       <spring:message code="workspace:export.format.chooser.revisionsSection"/>
     </li>
-    <li class="crudopsAction favoritesIcon" id="addToFavorites" tabindex="0">
+    <li class="crudopsAction favoritesIcon" id="addToFavorites" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/addToFavouritesIcon.png" alt="" aria-hidden="true">
       <spring:message code="dialogs.crudops.addToFavorites"/>
     </li>
-    <li class="crudopsAction removeFavoritesIcon" id="removeFromFavorites" tabindex="0">
+    <li class="crudopsAction removeFavoritesIcon" id="removeFromFavorites" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/removeFromFavouritesIcon.png" alt="" aria-hidden="true">
       <spring:message code="dialogs.crudops.removeFromFavorites"/>
 
   <rst:hasDeploymentProperty name="cloud" value="false">
     <c:if test="${not empty  groups}">
-    <li class="crudopsAction shareIcon" id="shareRecord">
+    <li class="crudopsAction shareIcon" id="shareRecord"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/shareIcon.png" alt="" aria-hidden="true">
       <a href="#" data-cloud="false"><spring:message code="common:actions.share"/></a>
     </li>
     </c:if>
       <c:if test="${publish_own_documents}">
-          <li class="crudopsAction publishButton" id="publishRecord">
+          <li class="crudopsAction publishButton" id="publishRecord"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/html.png" alt="" aria-hidden="true">
               <a href="#" data-cloud="false"> <spring:message code="common:actions.publish"/> </a>
           </li>
       </c:if>
   </rst:hasDeploymentProperty>
   <rst:hasDeploymentProperty name="cloud" value="true">
-    <li class="crudopsAction shareIcon" id="shareRecord">
+    <li class="crudopsAction shareIcon" id="shareRecord"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/shareIcon.png" alt="" aria-hidden="true">
       <a href="#" data-cloud="true"><spring:message code="common:actions.share"/></a>
     </li>
   </rst:hasDeploymentProperty>
@@ -83,14 +83,14 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
       <c:forEach items="${extMessaging}" var="extMessageTarget">
           <c:if test="${extMessageTarget.available and extMessageTarget.enabled && extMessageTarget.hasOptions()}">
               <li class="crudopsAction sendToIcon" id="sendTo${extMessageTarget.name}"
-                data-app="${extMessageTarget.name}" title="<spring:message code='dialogs.crudops.sendToTitle' arguments='${extMessageTarget.displayName}'/>" >
+                data-app="${extMessageTarget.name}" title="<spring:message code='dialogs.crudops.sendToTitle' arguments='${extMessageTarget.displayName}'/>" ><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/publishIcon.png" alt="" aria-hidden="true">
                  <a href="#"><spring:message code="dialogs.crudops.sendToLabel" arguments="${extMessageTarget.displayName eq 'Microsoft Teams' ? crudopsMsTeamsAbbreviation : extMessageTarget.displayName}"/></a>
               </li>
           </c:if>
       </c:forEach>
   </c:if>
 
-    <li class="crudopsAction tagIcon" id="tagRecords" tabindex="0">
+    <li class="crudopsAction tagIcon" id="tagRecords" tabindex="0"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/tagIcon.png" alt="" aria-hidden="true">
       <a href="#"><spring:message code="dialogs.crudops.addRemoveTags"/></a>
     </li>
   </ul>
@@ -113,7 +113,7 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
             </select>
         </div>
         <div id="movefolder-tree"
-            style="height: 350px; background: white; overflow: scroll; border-style: solid; border-width: 1px; border-color: black; padding: 3px;">
+            style="height: 350px; overflow: scroll; border-style: solid; border-width: 1px; padding: 3px;">
         </div>
         <br />
         <p>

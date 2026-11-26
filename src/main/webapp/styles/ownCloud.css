@@ -48,15 +48,15 @@
     flex: 0 0 14px;
 }
 
-#owncloudDialogTree .fancytree-has-children>.fancytree-expander {
-    background: url(/images/icons/RightArrow25.png);
-    background-size: contain;
-    background-repeat: no-repeat;    
+/* the owncloud and nextcloud plugins put both arrows in each expander */
+#owncloudDialogTree .owncloudExpanderIcon {
+    display: none;
+    width: 100%;
+    height: 100%;
 }
-#owncloudDialogTree .fancytree-expanded.fancytree-has-children>.fancytree-expander {
-    background: url(/images/icons/DownArrow25.png);
-    background-size: contain;
-    background-repeat: no-repeat;
+#owncloudDialogTree .fancytree-has-children:not(.fancytree-expanded)>.fancytree-expander>.owncloudExpanderIcon--collapsed,
+#owncloudDialogTree .fancytree-expanded.fancytree-has-children>.fancytree-expander>.owncloudExpanderIcon--expanded {
+    display: block;
 }
 #owncloudDialogTree .fancytree-node .fancytree-title {
     display: inline-block;
@@ -89,9 +89,9 @@
     background-image: url(/image/getIconImage/-1);
     background-repeat: no-repeat;
 }
-#owncloudDialogTree .fancytree-folder>.fancytree-icon {
-    background-image: url(/images/icons/folder.png);
-    background-repeat: no-repeat;
+/* the folder image comes from the plugins' node data */
+#owncloudDialogTree .fancytree-folder>img.fancytree-icon {
+    background-image: none;
 }
 
 #owncloudDialogTree .fancytree-node.file {
@@ -99,15 +99,6 @@
 }
 #owncloudDialogTree .fancytree-node.file .fancytree-expander {
     display: none;
-}
-#owncloudDialogTree .fancytree-node.file.ext_jpg>.fancytree-icon {
-    background-image: url(/images/icons/jpg.png);
-}
-#owncloudDialogTree .fancytree-node.file.ext_png>.fancytree-icon {
-    background-image: url(/images/icons/png.png);
-}
-#owncloudDialogTree .fancytree-node.file.ext_gif>.fancytree-icon {
-    background-image: url(/images/icons/gif.png);
 }
 
 #owncloudDialogTree .checkbox {

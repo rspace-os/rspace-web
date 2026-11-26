@@ -11,7 +11,7 @@
               <form:radiobuttons class="alwaysActive" path="groupOptions" items="${groupAvailableOptionList}"/>
                 <a href="#" class="templateSharingForm_help">?</a>
 			    <p class="templateSharingForm_helpContent" style="display:none">
-			     <spring:message code="form.sharingConfig.groupHelpText"/> <a href="#" style="font-size: 75%;color:blue" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
+			     <spring:message code="form.sharingConfig.groupHelpText"/> <a href="#" style="font-size: 75%" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
 			   </td>
  </tr>
  <tr>
@@ -20,7 +20,7 @@
               <td><form:radiobuttons class="alwaysActive" path="worldOptions" items="${worldAvaialbleOptionList}"/>
 	<a href="#" class="templateSharingForm_help">?</a>
 			    <p class="templateSharingForm_helpContent" style="display:none">
-			     <spring:message code="form.sharingConfig.worldHelpText"/> <a href="#" style="font-size: 75%; color:blue" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
+			     <spring:message code="form.sharingConfig.worldHelpText"/> <a href="#" style="font-size: 75%" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
               </td>
  </tr>
 

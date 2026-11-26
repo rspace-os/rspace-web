@@ -282,7 +282,7 @@
     <c:when test='${fieldTemplate.type.type eq "resource"}'>
     </c:when>
 	<c:otherwise>
-		<b style="color:red"><spring:message code="form.fieldEditor.noEditorAssociated"/></b>
+		<b class="rs-error-text"><spring:message code="form.fieldEditor.noEditorAssociated"/></b>
 	</c:otherwise>
 </c:choose>
 

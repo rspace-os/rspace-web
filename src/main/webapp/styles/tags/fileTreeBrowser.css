@@ -78,6 +78,10 @@
     color: #b2dbfb;
 }
 
+.fileTreeButtons .sortingSettingsLabel {
+    color: white;
+}
+
 .fileTreeButtons .sortingSettings select {
     padding: 0px 13px 0px 1px;
     margin: 0px;
@@ -131,13 +135,15 @@
 .fileTreeBrowserPanel .fancytree-node .fancytree-expander {
     vertical-align: middle;
 }
-.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children>.fancytree-expander {
-    background: url(/images/icons/RightArrow25.png);
-    background-size: contain;
+/* fileTreeBrowser.js puts both arrows in each expander */
+.fileTreeBrowserPanel .fileTreeExpanderIcon {
+    display: none;
+    width: 100%;
+    height: 100%;
 }
-.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children.fancytree-expanded>.fancytree-expander {
-    background: url(/images/icons/DownArrow25.png);
-    background-size: contain;
+.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children:not(.fancytree-expanded)>.fancytree-expander>.fileTreeExpanderIcon--collapsed,
+.fileTreeBrowserPanel .fancytree-node.fancytree-folder.fancytree-has-children.fancytree-expanded>.fancytree-expander>.fileTreeExpanderIcon--expanded {
+    display: block;
 }
 .fileTreeBrowserPanel .fancytree-node .fancytree-title {
     display: inline-block;
@@ -152,15 +158,6 @@
     margin-bottom: 1px;
     background-position: 0 0;
 }
-.fileTreeBrowserPanel .fancytree-node.file>.fancytree-icon {
-    background-image: url(/images/icons/unknownDocument.png);
-}
-.fileTreeBrowserPanel .fancytree-node.directory>.fancytree-icon {
-    background-image: url(/images/icons/folder.png);
-}
-.fileTreeBrowserPanel .fancytree-node.notebook>.fancytree-icon {
-    background-image: url(/images/icons/notebook.png);
-}
 .fileTreeBrowserPanel .fancytree-node.record>.fancytree-icon {
     background-image: url(/image/getIconImage/-1);
 }
@@ -169,112 +166,6 @@
 }
 .fileTreeBrowserPanel .fancytree-node.file .fancytree-expander {
     display: none;
-}
-
-.fileTreeBrowserPanel .fancytree-node.file.ext_avi>.fancytree-icon {
-    background-image: url(/images/icons/avi.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_bmp>.fancytree-icon {
-    background-image: url(/images/icons/bmp.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_gif>.fancytree-icon {
-    background-image: url(/images/icons/gif.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_docx>.fancytree-icon {
-    background-image: url(/images/icons/docx.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_flv>.fancytree-icon {
-    background-image: url(/images/icons/flv.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_gif>.fancytree-icon {
-    background-image: url(/images/icons/gif.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_jpg>.fancytree-icon {
-    background-image: url(/images/icons/jpg.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_jpeg>.fancytree-icon {
-    background-image: url(/images/icons/jpeg.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_m4v>.fancytree-icon {
-    background-image: url(/images/icons/m4v.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_mov>.fancytree-icon {
-    background-image: url(/images/icons/mov.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_mp3>.fancytree-icon {
-    background-image: url(/images/icons/mp3.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_mp4>.fancytree-icon {
-    background-image: url(/images/icons/mp4.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_mpg>.fancytree-icon {
-    background-image: url(/images/icons/mpg.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_ods>.fancytree-icon {
-    background-image: url(/images/icons/ods.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_odp>.fancytree-icon {
-    background-image: url(/images/icons/odp.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_csv>.fancytree-icon {
-    background-image: url(/images/icons/csv.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_pps>.fancytree-icon {
-    background-image: url(/images/icons/pps.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_odt>.fancytree-icon {
-    background-image: url(/images/icons/odt.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_pdf>.fancytree-icon {
-    background-image: url(/images/icons/pdf.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_png>.fancytree-icon {
-    background-image: url(/images/icons/png.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_rtf>.fancytree-icon {
-    background-image: url(/images/icons/rtf.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_wav>.fancytree-icon {
-    background-image: url(/images/icons/wav.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_wma>.fancytree-icon {
-    background-image: url(/images/icons/wma.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_wmv>.fancytree-icon {
-    background-image: url(/images/icons/wmv.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_xls>.fancytree-icon {
-    background-image: url(/images/icons/xls.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_xlsx>.fancytree-icon {
-    background-image: url(/images/icons/xlsx.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_xml>.fancytree-icon {
-    background-image: url(/images/icons/xml.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_zip>.fancytree-icon {
-    background-image: url(/images/icons/zip.png);
-}
-
-.fileTreeBrowserPanel .fancytree-node.file.ext_htm>.fancytree-icon {
-    background-image: url(/images/icons/html.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_html>.fancytree-icon {
-    background-image: url(/images/icons/html.png);
-}
-
-.fileTreeBrowserPanel .fancytree-node.file.ext_ppt>.fancytree-icon {
-    background-image: url(/images/icons/powerpoint.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_pptx>.fancytree-icon {
-    background-image: url(/images/icons/powerpoint.png);
-}
-
-.fileTreeBrowserPanel .fancytree-node.file.ext_txt>.fancytree-icon {
-    background-image: url(/images/icons/txt.png);
-}
-.fileTreeBrowserPanel .fancytree-node.file.ext_text>.fancytree-icon {
-    background-image: url(/images/icons/txt.png);
 }
 
 /* 

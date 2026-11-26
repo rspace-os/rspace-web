@@ -26,9 +26,9 @@
                            aria-label="<spring:message code='dialogs.folderChooser.newFolderAriaLabel'/>"
                            style="font-size:12px;height:24px;padding-left:1px;padding-right:1px"/>
                     <span id="folderChooser-createFolderSpan${folderChooserId}">
-                        <a style="color:#337ab7;padding-left:1px"
+                        <a style="padding-left:1px"
                            id="folderChooser-createNewSubfolder${folderChooserId}"
-                           class="nobutton" href="#"><spring:message code="common:actions.create"/></a>
+                           class="nobutton folderChooser-createLink" href="#"><spring:message code="common:actions.create"/></a>
                     </span>
                 </div>
             </div>

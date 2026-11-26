@@ -49,3 +49,7 @@ body {
     font-size:0.8em;
     margin-top: 30px; 
 }
+/* blockUI progress bar (scripts/templates/blockUI.html); rs-global.css has the same rule */
+#blockprogressBar {
+    background: green;
+}

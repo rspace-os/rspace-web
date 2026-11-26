@@ -14,6 +14,7 @@
         <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
         <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/connect/wopi/collabora/collaboraView.css'/>" />
 
+        <%@ include file="/common/legacyDarkMode.jsp"%>
     </head>
 
     <div id="collaboraIframeDiv">

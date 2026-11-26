@@ -10,43 +10,14 @@ input:focus {
 button:focus {
   outline: none; }
 
-#showAll {
-  background-image: url("/images/icons/showAllIcon.png"); }
-
-#grantPiRoleLink {
-  display: none;
-  background-image: url("/images/icons/promoteUser.png"); }
-
-#archiveAllLink {
-  display: none;
-  background-image: url("/images/icons/archivingIcon.png"); }
-
-#disableUser {
-  display: none;
-  background-image: url("/images/icons/disableIcon.png"); }
-
-#enableUser {
-  display: none;
-  background-image: url("/images/icons/enableIcon.png"); }
-
-#unlockUser {
-  display: none;
-  background-image: url("/images/icons/unlock.png"); }
-
-#deleteUser, #deleteGroup {
-  background-image: url("/images/icons/deleteUserIcon.png"); }
-
 #exportGroupRecord {
-  padding-left: 48px;
-  background-image: url("/images/icons/exportAllGroupIcon.png"); }
+  padding-left: 48px; }
 
 #createCommunityButton {
-  padding-left: 50px;
-  background-image: url("/images/icons/createCommIcon.png"); }
+  padding-left: 50px; }
 
 #removeCommunity {
-  padding-left: 40px;
-  background-image: url("/images/icons/removeCommIcon.png"); }
+  padding-left: 40px; }
 
 .communityViewInnerList {
   max-height: 400px;
@@ -55,8 +26,7 @@ button:focus {
   overflow: auto; }
 
 #createGroupButton {
-  padding-left: 45px;
-  background-image: url("/images/icons/createGroupIcon.png"); }
+  padding-left: 45px; }
 
 .enabled {
   font-weight: bold;
@@ -66,18 +36,6 @@ button:focus {
   font-weight: bold;
   color: #444 !important;
 }
-
-.uname[data-signupsource="SSO_BACKDOOR"] a {
-  padding-left: 20px;
-  padding-top: 1px;
-  background-image: url("/images/icons/door.png");
-  background-repeat: no-repeat;
-}
-
-.locked {
-  padding-left: 25px;
-  background-image: url("/images/icons/unlock.png");
-  background-repeat: no-repeat;}
 
 .disabled {
   font-weight: bold;
@@ -149,51 +107,34 @@ button:focus {
   border-width: 1px 1px 1px 1px;
   border-color: #AFAFAF;
   background: transparent;
-  background-repeat: no-repeat;
-  background-position: top left;
+  position: relative;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer; }
 
 .systemEditButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/editIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .systemCancelButton {
-  padding: 3px 7px 2px 22px;
-  background-image: url("/images/icons/closeIcon.png");
-}
+  padding: 3px 7px 2px 22px; }
 
 .systemSaveButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/saveIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .systemMoveButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/moveIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .systemRemoveButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/removeGroupIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .systemAddAdminButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/addAdminIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .systemAddLabGroupButton {
-  padding: 3px 7px 2px 37px;
-  background-image: url("/images/icons/addGroupIcon.png");
-}
+  padding: 3px 7px 2px 37px; }
 
 .systemGoButton {
-  padding: 3px 7px 2px 25px;
-  background-image: url("/images/icons/goIcon.png");
-}
+  padding: 3px 7px 2px 25px; }
 
 .topGreyBar {
   background-color: #DDDDDD;
@@ -237,8 +178,7 @@ button:focus {
   border-color: #AFAFAF;
   margin: 0 9px 0 0 !important;
   background: transparent;
-  background-repeat: no-repeat;
-  background-position: top left;
+  position: relative;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer; }
@@ -372,11 +312,22 @@ button:focus {
   border-color: #AFAFAF;
   margin: 0 9px 0 0 !important;
   background: transparent;
-  background-repeat: no-repeat;
-  background-position: 1px 1px;
+  position: relative;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer; }
+  /* Some of these icons are opaque and run under the text, as the background did. */
+  .topSectionTextIconBtn {
+    z-index: 0; }
+  .topSectionTextIconBtn > .rs-bg-icon {
+    z-index: -1;
+    object-position: 1px 1px; }
+  #rorRegistryLink > .rs-bg-icon {
+    top: 5px;
+    left: 5px;
+    width: 25%;
+    height: auto;
+    object-fit: fill; }
 
 .settingCategoryRow {
   margin: 20px 5px 20px 5px; }
@@ -416,8 +367,7 @@ button:focus {
   border-style: solid;
   border-width: 1px;
   border-color: #AFAFAF;
-  background-image: url("/images/icons/closeIcon.png");
-  background-repeat: no-repeat; }
+  position: relative; }
 
 .settingSaveLink {
   margin-left: 10px;
@@ -425,8 +375,7 @@ button:focus {
   border-style: solid;
   border-width: 1px;
   border-color: #AFAFAF;
-  background-image: url("/images/icons/createDocumentIcon.png");
-  background-repeat: no-repeat; }
+  position: relative; }
 
 .ui-tooltip {
   max-width: 550px; }

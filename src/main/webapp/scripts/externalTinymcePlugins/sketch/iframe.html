@@ -9,8 +9,11 @@
     <script src='/scripts/tinymceDialogUtils.js'></script>
 	<script src="/scripts/bower_components/mustache/v420/mustache.min.js"></script>
 	<script src="/scripts/externalTinymcePlugins/sketch/js/main.js"></script>
+    <!-- Follows the user's colour mode; see scripts/darkMode.js. -->
+    <script src="/styles/dark/generated/sheets.js"></script>
+    <script src="/scripts/darkMode.js"></script>
 </head>
-<body style="color:#ffffff">
+<body class="sketchDialog">
 <div id="draw-dialog">
 	<div id="image-editorSketch"></div>
 	<input type="hidden" class="sketchId" data-id=""/>

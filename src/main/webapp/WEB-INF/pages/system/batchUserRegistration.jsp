@@ -5,8 +5,7 @@
       border: 2px solid #cc0000;
     }
     .removeBatchRowLnk {
-      background-image:url('/images/icons/closeIcon.png');
-      background-repeat: no-repeat;
+      position: relative;
       padding:4px 7px 3px 25px;
     }
     .errorMsg {
@@ -103,7 +102,7 @@
               </rst:hasDeploymentProperty>
             </rst:hasDeploymentProperty>
             <td style="width: 160px;"><span class="batchCreateStatus"></span></td>
-            <td><a class="removeBatchRowLnk" href="#"><spring:message code="common:actions.remove"/></a></td>
+            <td><a class="removeBatchRowLnk" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></a></td>
         </tr>
       </table>
     </div>
@@ -115,7 +114,7 @@
             <td><input type="text" data-fieldname="pi" value="{{pi}}" style="width:107px;" required></td>
             <td><input type="text" data-fieldname="otherMembers" value="{{otherMembers}}" style="width:470px;"></td>
             <td style="width: 160px;"><span class="batchCreateStatus"></span></td>
-            <td><a class="removeBatchRowLnk" href="#"><spring:message code="common:actions.remove"/></a></td>
+            <td><a class="removeBatchRowLnk" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></a></td>
         </tr>
       </table>
     </div>
@@ -127,7 +126,7 @@
             <td><input type="text" data-fieldname="admins" value="{{admins}}" style="width:220px;" required></td>
             <td><input type="text" data-fieldname="labGroups" value="{{labGroups}}" style="width:357px;"></td>
             <td style="width: 160px;"><span class="batchCreateStatus"></span></td>
-            <td><a class="removeBatchRowLnk" href="#"><spring:message code="common:actions.remove"/></a></td>
+            <td><a class="removeBatchRowLnk" href="#"><img class="rs-bg-icon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></a></td>
         </tr>
       </table>
     </div>
@@ -164,7 +163,7 @@
                   </rst:hasDeploymentProperty>
                 </rst:hasDeploymentProperty>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
-                <th style="background-color: white"></th>
+                <th class="batchRegistrationActionsHeader"></th>
             </tr>
         </thead>
         <tbody id="usersToCreateTableBody">
@@ -189,7 +188,7 @@
                 <th><spring:message code="system:usersPage.roleLabels.pi"/></th>
                 <th><spring:message code="system.batchRegistration.columns.members"/></th>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
-                <th style="background-color: white"></th>
+                <th class="batchRegistrationActionsHeader"></th>
             </tr>
         </thead>
         <tbody id="groupsToCreateTableBody">
@@ -209,7 +208,7 @@
                 <th><spring:message code="system:usersPage.communityAdmins"/></th>
                 <th><spring:message code="system.batchRegistration.columns.labGroups"/></th>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
-                <th style="background-color: white"></th>
+                <th class="batchRegistrationActionsHeader"></th>
             </tr>
         </thead>
         <tbody id="communitiesToCreateTableBody">

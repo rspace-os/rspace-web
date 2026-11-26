@@ -25,7 +25,7 @@
 				<img  src="/image/getIconImage/${form.iconId}" alt="<spring:message code='dialogs.createFromForm.iconAlt'/>" height="32" width="32" />
                 </div>
     			<div style="float:left;padding-top:12px;padding-left:5px;" >
-    				<a href="#" style="color:blue;" class="createSDFromFormLink">${form.name}</a>
+    				<a href="#" class="createSDFromFormLink">${form.name}</a>
     			</div>
     			<input type="hidden" name="template" value="${form.id}">
 			</form>

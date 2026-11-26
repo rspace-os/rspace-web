@@ -81,8 +81,8 @@ pre-commit:
     i18n:
       glob: "src/main/webapp/ui/src/**/*.{ts,tsx,json}"
       run: pnpm run i18n:check && pnpm run i18n:lint
-    # Keep styles/dark/legacy-generated.css in step with the legacy
-    # stylesheets and JSP <style> blocks it is generated from.
+    # Keep styles/dark/generated/ in step with the legacy stylesheets and
+    # JSP <style> blocks it is generated from.
     legacy-dark-css:
       glob: "{src/main/webapp/**/*.{css,jsp,tag,jspf,html},scripts/generate-legacy-dark-css.mjs}"
       run: pnpm run css:legacy-dark:check

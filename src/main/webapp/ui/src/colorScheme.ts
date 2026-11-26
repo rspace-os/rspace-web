@@ -16,10 +16,11 @@ import { flushSync } from "react-dom";
 export type ColorMode = "light" | "dark" | "system";
 
 /**
- * Pages rendered entirely by React, which have no JSP decorator. Decorated
- * JSP pages opt in through `common/legacyDarkMode.jsp`, which marks <html>
- * with `data-dark-mode`. Anything else, such as bare JSP pages without the
- * decorator, stays light, and so do the MUI elements embedded in it.
+ * Pages rendered entirely by React, which have no JSP decorator. Other pages
+ * opt in through `scripts/darkMode.js` (included by
+ * `common/legacyDarkMode.jsp` and by pages opened in frames), which marks
+ * <html> with `data-dark-mode`. Anything else stays light, and so do the MUI
+ * elements embedded in it.
  */
 const DARK_MODE_PATHS = [
   /^\/gallery(\/|$)/,
@@ -39,8 +40,8 @@ export const darkModeAvailable: boolean =
   (isDarkModePath(window.location.pathname) || document.documentElement.hasAttribute("data-dark-mode"));
 
 /**
- * A JSP page in a browser without CSS `@scope`, which the legacy dark styles
- * need; legacyDarkMode.jsp keeps such pages light.
+ * A page in a browser without CSS `@scope`, which the legacy dark styles
+ * need; scripts/darkMode.js keeps such pages light.
  */
 export const darkModeUnsupported: boolean =
   typeof window !== "undefined" &&

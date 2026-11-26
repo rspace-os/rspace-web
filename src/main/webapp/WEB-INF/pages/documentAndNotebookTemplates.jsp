@@ -12,7 +12,7 @@
     </label>
   </div>
   <div class="comments" style="height: 300px; overflow:auto;margin:4px;">
-    <table id="tablecomments" style="background-color:#EFEDED; margin-top:6px;"></table>
+    <table id="tablecomments" style="margin-top:6px;"></table>
     </table>
   </div>
   <div id="comment-loading">

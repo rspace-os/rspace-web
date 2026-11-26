@@ -21,10 +21,10 @@
 <shiro:hasRole name="ROLE_SYSADMIN">
   <div class="crudopsTopPanel" style="margin-bottom: 10px">
     <ul>
-      <a class="link" href="/system/createCommunity" id="createCommunityButton" >
+      <a class="link" href="/system/createCommunity" id="createCommunityButton" ><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/createCommIcon.png" alt="" aria-hidden="true">
         <span><spring:message code="system.createCommunity.button.label"/></span>
       </a>
-      <a id="removeCommunity" class="link commcrudops" href="#"><spring:message code="system.communityList.removeCommunityLink"/></a>
+      <a id="removeCommunity" class="link commcrudops" href="#"><img class="rs-bg-icon rs-bg-icon--middle" src="/images/icons/removeCommIcon.png" alt="" aria-hidden="true"><spring:message code="system.communityList.removeCommunityLink"/></a>
     </ul>
   </div>
 </shiro:hasRole>

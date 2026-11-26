@@ -183,8 +183,8 @@ function initCommentViewDialog() {
 }
 
 function createCommentRow(commentData) {
-  var result = '<tr class="commentRow"><td style="padding-bottom: 0px; padding-top: 0px;"><table><tr><td style="color:black; font-weight: bold; background-color:#CCC; padding: 12px;">' + RS.msg("legacyjs.workspace.coreEditor.commentByAt", commentData.lastUpdater, commentData.formatDate) + '</td></tr>' +
-    '<tr><td style="color:black; background-color:white; width:500px;">' + RS.escapeHtml(commentData.itemContent) + '</td></tr></table></td></tr>';
+  var result = '<tr class="commentRow"><td style="padding-bottom: 0px; padding-top: 0px;"><table><tr><td class="commentHeading" style="padding: 12px;">' + RS.msg("legacyjs.workspace.coreEditor.commentByAt", commentData.lastUpdater, commentData.formatDate) + '</td></tr>' +
+    '<tr><td class="commentText" style="width:500px;">' + RS.escapeHtml(commentData.itemContent) + '</td></tr></table></td></tr>';
   return result;
 }
 
@@ -447,7 +447,7 @@ function updateInternalLinks($internalLinks) {
     if (href && !href.startsWith('/')) {
       if (href.indexOf('/globalId/') > 0) {
         var externalServerUrl = href.substring(0, href.indexOf('/globalId/'));
-        $thisLink.append(" <span style=\"color: red\">" + RS.msg("legacyjs.workspace.coreEditor.linkAtServer", externalServerUrl) + "</span>");
+        $thisLink.append(" <span class=\"linkedRecordServer\">" + RS.msg("legacyjs.workspace.coreEditor.linkAtServer", externalServerUrl) + "</span>");
       }
     }
     // add info button
@@ -934,7 +934,7 @@ function _loadAttachmentThumbnail($attachmentDiv, docId, revision, thumbId) {
 
   $attachmentDiv.find('img.attachmentIcon')
     .removeAttr("width")
-    .css('background-color', 'white');
+    .addClass('attachmentThumbnail');
 
   var thumbnailId = thumbId || new Date().getTime(); // if no thumbId use current time to force refresh
   var thumbnailSrc = "/image/docThumbnail/" + docId + '/' + thumbnailId;
@@ -1511,8 +1511,7 @@ function initTagForm(selector) {
           if(hasMeta) {
               $(ui.tag[0]).prepend('<svg id="' + label + '" xmlns="http://www.w3.org/2000/svg"  width="1.4em" height="0.8em" viewBox="30 -20 576 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M208 80c0-26.5 21.5-48 48-48h64c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48h-8v40H464c30.9 0 56 25.1 56 56v32h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H464c-26.5 0-48-21.5-48-48V368c0-26.5 21.5-48 48-48h8V288c0-4.4-3.6-8-8-8H312v40h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H256c-26.5 0-48-21.5-48-48V368c0-26.5 21.5-48 48-48h8V280H112c-4.4 0-8 3.6-8 8v32h8c26.5 0 48 21.5 48 48v64c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V368c0-26.5 21.5-48 48-48h8V288c0-30.9 25.1-56 56-56H264V192h-8c-26.5 0-48-21.5-48-48V80z"/></svg>');
           } else {
-              ui.tag.css("background-color", "#c0e2fc");
-              ui.tag.css("color", "#6389a8");
+              ui.tag.addClass("tagit-choice--free-text");
           }
           if(label.indexOf("'")!==-1){
               label = label.replaceAll("'","\\'");

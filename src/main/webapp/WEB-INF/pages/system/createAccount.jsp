@@ -32,24 +32,24 @@
   <div id="pageTopButtons">
     <div id="selectAccountToCreateSection">
       <a href="#" class="pageTopButton" id="newUserAccountButton"
-        style="padding:11px 7px 9px 55px;background-image:url('/images/icons/addUserIcon.png');">
+        style="padding:11px 7px 9px 55px;"><img class="rs-bg-icon" src="/images/icons/addUserIcon.png" alt="" aria-hidden="true">
         <spring:message code="system:usersPage.roleLabels.user" /></a>
       <a href="#" class="pageTopButton" id="newPiAccountButton"
-        style="padding:11px 7px 9px 61px;background-image:url('/images/icons/addPiIcon.png');">
+        style="padding:11px 7px 9px 61px;"><img class="rs-bg-icon" src="/images/icons/addPiIcon.png" alt="" aria-hidden="true">
         <spring:message code="system:usersPage.roleLabels.pi" /></a>
       <a href="#" class="pageTopButton" id="newAdminAccountButton"
-        style="padding:11px 7px 9px 62px;background-image:url('/images/icons/addRSpaceAdminIcon.png');">
+        style="padding:11px 7px 9px 62px;"><img class="rs-bg-icon" src="/images/icons/addRSpaceAdminIcon.png" alt="" aria-hidden="true">
         <spring:message code="system.createAccount.newAdmin.label" /></a>
       <shiro:hasRole name="ROLE_SYSADMIN">
         <a href="#" class="pageTopButton" id="newSysAdminAccountButton"
-          style="padding:11px 7px 9px 59px;background-image:url('/images/icons/addSysAdminIcon.png');">
+          style="padding:11px 7px 9px 59px;"><img class="rs-bg-icon" src="/images/icons/addSysAdminIcon.png" alt="" aria-hidden="true">
           <spring:message code="system.createAccount.newSysAdmin.label" /></a>
       </shiro:hasRole>
     </div>
     <shiro:hasRole name="ROLE_SYSADMIN">
       <rst:hasDeploymentProperty name="ldapAuthenticationEnabled" value="false">
         <div id="toAmend"><a class="pageTopButton" id="batchUserRegistrationButton" href="#"
-            style="padding:11px 7px 9px 73px;background-image:url('/images/icons/batchUploadIcon.png');">
+            style="padding:11px 7px 9px 73px;"><img class="rs-bg-icon" src="/images/icons/batchUploadIcon.png" alt="" aria-hidden="true">
             <spring:message code="system.batchRegistration.button.label" /></a></div>
       </rst:hasDeploymentProperty>
     </shiro:hasRole>
@@ -108,7 +108,7 @@
   <br /><br />
   <spring:message code="system.batchRegistration.helpText.exampleCsvLabel" var="createAccountExampleCsvLabel"/>
   <spring:message code="system.batchRegistration.helpText.exampleCsvIntro">
-    <spring:argument value='<a href="/resources/batch_registration_example.csv" style="outline:none; color: #1465b7">${createAccountExampleCsvLabel}</a>'/>
+    <spring:argument value='<a href="/resources/batch_registration_example.csv" class="rs-link-color" style="outline:none">${createAccountExampleCsvLabel}</a>'/>
   </spring:message>
 
   <rst:hasDeploymentProperty name="ldapEnabled" value="true">

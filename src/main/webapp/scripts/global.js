@@ -75,33 +75,6 @@ new MutationObserver(function () {
   });
 }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-/*
- * TinyMCE plugin dialogs that open a page in a frame have no page decorator,
- * so in dark mode each frame gets the dark class, its stylesheet list and the
- * dark stylesheets as it loads (see common/legacyDarkMode.jsp). Load events
- * do not bubble, so they are caught on the way down.
- */
-document.addEventListener(
-  "load",
-  function (event) {
-    var frame = event.target;
-    if (!(frame instanceof HTMLIFrameElement) || !frame.closest(".tox-dialog")) return;
-    if (!document.documentElement.classList.contains("dark")) return;
-    var doc = frame.contentDocument;
-    if (!doc || !doc.head || doc.documentElement.classList.contains("dark")) return;
-    var paths = [];
-    doc.querySelectorAll('link[rel~="stylesheet"][href]').forEach(function (link) {
-      paths.push(new URL(link.href).pathname + " ");
-    });
-    doc.documentElement.setAttribute("data-stylesheets", paths.join(""));
-    doc.documentElement.classList.add("dark");
-    document.querySelectorAll('link[href*="/styles/dark/"]').forEach(function (link) {
-      doc.head.appendChild(link.cloneNode());
-    });
-  },
-  true,
-);
-
 /**
  * BEGINNING OF EXPERIMENTAL BOOTSTRAP DIALOGS (RSPAC-1287)
  */

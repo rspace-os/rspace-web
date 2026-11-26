@@ -138,6 +138,6 @@ function _inactivateCreateFolder(folderChooserId) {
 
 function _activateCreateFolder(folderChooserId) {
     $("#folderChooser-createFolderSpan"+folderChooserId).html(
-            "<a style='color: #1465b7;' id='folderChooser-createNewSubfolder"+folderChooserId+"' href='#'>" +
+            "<a class='rs-link-color' id='folderChooser-createNewSubfolder"+folderChooserId+"' href='#'>" +
             RS.msg("legacyjs.core.action.create") + "</a>");
 }

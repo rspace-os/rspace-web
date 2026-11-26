@@ -97,6 +97,14 @@ public class OfficeOnlineControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void themeSupportFollowsDiscovery() {
+    Map<String, WopiAction> pptActions = discoveryServiceHandler.getActionsForFileType("pptx");
+    assertTrue(pptActions.values().stream().anyMatch(OfficeOnlineController::supportsTheme));
+    Map<String, WopiAction> docActions = discoveryServiceHandler.getActionsForFileType("doc");
+    assertFalse(OfficeOnlineController.supportsTheme(docActions.get("view")));
+  }
+
+  @Test
   public void checkSupportedConversionExtensions() {
     assertTrue(officeController.isConversionSupportedForExtension("doc"));
     assertFalse(officeController.isConversionSupportedForExtension("docx"));

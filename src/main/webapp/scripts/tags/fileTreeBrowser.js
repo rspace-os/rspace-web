@@ -111,7 +111,10 @@ function setUpFileTreeBrowser(settings) {
     },
     renderNode: function(event, data) {
       _onFileTreeBrowserNodeRender(data.node);
-    } 
+    },
+    enhanceTitle: function(event, data) {
+      _addFileTreeBrowserExpanderIcons(data.node);
+    }
   });
 
   $(document).on('click', '#fileTreeSettingsToggle', function() {
@@ -217,6 +220,7 @@ function _loadFileTreeBrowserNode(data, nodeRel) {
         lazy: true,
         folder: isFolder,
         extraClasses: $li.attr('class'),
+        icon: _fileTreeBrowserNodeIcon(classes),
         checkbox: false,
         tooltip: RS.escapeHtml(name)
       };
@@ -231,6 +235,47 @@ function _loadFileTreeBrowserNode(data, nodeRel) {
   });
   return dfd;
 };
+
+// Icons by the extension class that workspaceTreeView.jsp puts on media files
+var FILE_TREE_BROWSER_EXTENSION_ICONS = {
+  avi: 'avi', bmp: 'bmp', gif: 'gif', docx: 'docx', flv: 'flv', jpg: 'jpg', jpeg: 'jpeg',
+  m4v: 'm4v', mov: 'mov', mp3: 'mp3', mp4: 'mp4', mpg: 'mpg', ods: 'ods', odp: 'odp',
+  csv: 'csv', pps: 'pps', odt: 'odt', pdf: 'pdf', png: 'png', rtf: 'rtf', wav: 'wav',
+  wma: 'wma', wmv: 'wmv', xls: 'xls', xlsx: 'xlsx', xml: 'xml', zip: 'zip',
+  htm: 'html', html: 'html', ppt: 'powerpoint', pptx: 'powerpoint', txt: 'txt', text: 'txt'
+};
+
+/*
+ * An image path, which fancytree renders as an <img> that dark mode can
+ * invert, or undefined for documents, whose icon fileTreeBrowser.css sets.
+ */
+function _fileTreeBrowserNodeIcon(classes) {
+  if (classes.includes('notebook')) {
+    return '/images/icons/notebook.png';
+  }
+  if (classes.includes('directory')) {
+    return '/images/icons/folder.png';
+  }
+  if (classes.includes('record')) {
+    return undefined;
+  }
+  var extensionClass = classes.find(function(c) { return c.startsWith('ext_'); });
+  var icon = extensionClass && FILE_TREE_BROWSER_EXTENSION_ICONS[extensionClass.substring(4)];
+  return '/images/icons/' + (icon || 'unknownDocument') + '.png';
+}
+
+/*
+ * Fancytree draws the expander as an empty span, so it gets both arrow
+ * images and fileTreeBrowser.css shows the one for the node's state.
+ */
+function _addFileTreeBrowserExpanderIcons(node) {
+  var expander = node.span && node.span.querySelector('.fancytree-expander');
+  if (expander && !expander.firstChild) {
+    expander.innerHTML =
+      '<img class="fileTreeExpanderIcon fileTreeExpanderIcon--collapsed" src="/images/icons/RightArrow25.png" alt="" aria-hidden="true">' +
+      '<img class="fileTreeExpanderIcon fileTreeExpanderIcon--expanded" src="/images/icons/DownArrow25.png" alt="" aria-hidden="true">';
+  }
+}
 
 function _onFileTreeBrowserNodeRender(node) {
   var $li = $(node.li); 
