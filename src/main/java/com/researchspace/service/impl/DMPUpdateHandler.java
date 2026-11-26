@@ -74,7 +74,7 @@ public class DMPUpdateHandler {
   public List<LinkedDMP> linkablePlans(User user) {
     Map<DMPSource, PlatformStatus> statusByPlatform = new EnumMap<>(DMPSource.class);
     List<LinkedDMP> linkable = new ArrayList<>();
-    for (DMPUser plan : dmpManager.findDMPsForUser(user)) {
+    for (DMPUser plan : dmpManager.detectMissingSources(user)) {
       String platformName =
           isUnknownSource(plan)
               ? ""

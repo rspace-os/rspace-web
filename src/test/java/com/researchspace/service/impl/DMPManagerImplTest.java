@@ -46,10 +46,19 @@ class DMPManagerImplTest {
   }
 
   @Test
+  void findingPlansReadsNoFileAndSavesNothing() {
+    givenPlans(plan(1L, DMPSource.UNKNOWN));
+
+    assertEquals(DMPSource.UNKNOWN, manager.findDMPsForUser(user).get(0).getSource());
+    verifyNoInteractions(detector, transactionManager);
+    verify(dmpDao, never()).detach(any());
+  }
+
+  @Test
   void planWithKnownSourceIsNotDetected() {
     givenPlans(plan(1L, DMPSource.DMP_ONLINE));
 
-    assertEquals(DMPSource.DMP_ONLINE, manager.findDMPsForUser(user).get(0).getSource());
+    assertEquals(DMPSource.DMP_ONLINE, manager.detectMissingSources(user).get(0).getSource());
     verifyNoInteractions(detector, transactionManager);
   }
 
@@ -62,7 +71,7 @@ class DMPManagerImplTest {
     when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
     when(dmpDao.get(1L)).thenReturn(storedRow);
 
-    assertThat(manager.findDMPsForUser(user)).containsExactly(plan);
+    assertThat(manager.detectMissingSources(user)).containsExactly(plan);
 
     assertEquals(DMPSource.ARGOS, plan.getSource());
     assertEquals(DMPSource.ARGOS, storedRow.getSource());
@@ -83,7 +92,7 @@ class DMPManagerImplTest {
     when(transactionManager.getTransaction(any()))
         .thenThrow(new IllegalStateException("database down"));
 
-    assertDoesNotThrow(() -> manager.findDMPsForUser(user));
+    assertDoesNotThrow(() -> manager.detectMissingSources(user));
     assertEquals(DMPSource.DMP_TOOL, plan.getSource());
   }
 
@@ -93,7 +102,7 @@ class DMPManagerImplTest {
     givenPlans(plan);
     when(detector.detect(plan)).thenReturn(DMPSource.UNKNOWN);
 
-    assertEquals(DMPSource.UNKNOWN, manager.findDMPsForUser(user).get(0).getSource());
+    assertEquals(DMPSource.UNKNOWN, manager.detectMissingSources(user).get(0).getSource());
     verifyNoInteractions(transactionManager);
     verify(dmpDao, never()).detach(any());
   }

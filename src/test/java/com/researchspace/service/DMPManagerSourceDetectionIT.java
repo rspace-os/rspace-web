@@ -43,12 +43,12 @@ class DMPManagerSourceDetectionIT extends RealTransactionSpringTestBase {
   void detectedSourceIsSavedAndNotDetectedAgain() throws Exception {
     DMPUser plan = saveUnknownPlanWithFile("dmptool-plan.json");
 
-    assertEquals(DMPSource.DMP_TOOL, readOnlyPlan().getSource());
+    assertEquals(DMPSource.DMP_TOOL, detectedPlan().getSource());
     assertEquals("DMP_TOOL", storedSource(plan));
 
     // a known source is not detected again, so a missing file no longer matters
     assertTrue(fileStore.findFile(plan.getDmpDownloadFile().getFileProperty()).delete());
-    assertEquals(DMPSource.DMP_TOOL, readOnlyPlan().getSource());
+    assertEquals(DMPSource.DMP_TOOL, detectedPlan().getSource());
   }
 
   @Test
@@ -56,7 +56,7 @@ class DMPManagerSourceDetectionIT extends RealTransactionSpringTestBase {
     DMPUser plan = saveUnknownPlanWithFile("dmptool-plan.json");
 
     openTransaction();
-    assertEquals(DMPSource.DMP_TOOL, readOnlyPlan().getSource());
+    assertEquals(DMPSource.DMP_TOOL, detectedPlan().getSource());
     getTxMger().rollback(status);
 
     assertEquals("DMP_TOOL", storedSource(plan));
@@ -66,7 +66,7 @@ class DMPManagerSourceDetectionIT extends RealTransactionSpringTestBase {
   void planWhoseFileHasNoKnownLayoutStaysUnknown() throws Exception {
     DMPUser plan = saveUnknownPlanWithFile("unrecognised-plan.json");
 
-    assertEquals(DMPSource.UNKNOWN, readOnlyPlan().getSource());
+    assertEquals(DMPSource.UNKNOWN, detectedPlan().getSource());
     assertEquals("UNKNOWN", storedSource(plan));
   }
 
@@ -80,8 +80,8 @@ class DMPManagerSourceDetectionIT extends RealTransactionSpringTestBase {
     return dmpManager.save(plan);
   }
 
-  private DMPUser readOnlyPlan() {
-    List<DMPUser> plans = dmpManager.findDMPsForUser(user);
+  private DMPUser detectedPlan() {
+    List<DMPUser> plans = dmpManager.detectMissingSources(user);
     assertEquals(1, plans.size());
     return plans.get(0);
   }

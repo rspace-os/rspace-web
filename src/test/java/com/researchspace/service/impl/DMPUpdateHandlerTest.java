@@ -218,7 +218,7 @@ class DMPUpdateHandlerTest {
 
   @Test
   void everyPlanIsLinkableWhateverIsSwitchedOn() {
-    givenPlans(
+    givenLinkablePlans(
         plan(1L, DMPSource.DMP_TOOL),
         plan(2L, DMPSource.DMP_ONLINE),
         plan(3L, DMPSource.DSW),
@@ -236,7 +236,7 @@ class DMPUpdateHandlerTest {
 
   @Test
   void linkablePlanOnConnectedDmpToolHasNoWarning() {
-    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenLinkablePlans(plan(1L, DMPSource.DMP_TOOL));
     givenDmpToolSupported();
     when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
 
@@ -246,7 +246,7 @@ class DMPUpdateHandlerTest {
 
   @Test
   void linkablePlanIsMarkedNotConnectedWhenItsPlatformHasWriteBack() {
-    givenPlans(plan(1L, DMPSource.DMP_TOOL));
+    givenLinkablePlans(plan(1L, DMPSource.DMP_TOOL));
     givenDmpToolSupported();
     when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.NOT_CONNECTED);
 
@@ -259,7 +259,7 @@ class DMPUpdateHandlerTest {
       value = DMPSource.class,
       names = {"DMP_ONLINE", "ARGOS", "DMP_ASSISTANT", "DSW"})
   void linkablePlanOnPlatformWithoutWriteBackIsMarkedNotSupported(DMPSource source) {
-    givenPlans(plan(1L, source));
+    givenLinkablePlans(plan(1L, source));
     when(statusResolver.resolve(source, user)).thenReturn(PlatformStatus.OK);
     when(dmpToolReporter.supports(source)).thenReturn(false);
 
@@ -268,7 +268,7 @@ class DMPUpdateHandlerTest {
 
   @Test
   void unknownPlanIsLinkableWithoutPlatformAndNoStatusLookup() {
-    givenPlans(plan(1L, DMPSource.UNKNOWN));
+    givenLinkablePlans(plan(1L, DMPSource.UNKNOWN));
 
     assertThat(handler.linkablePlans(user))
         .containsExactly(new LinkedDMP(1L, "title1", "id1", "", "UNKNOWN_SOURCE"));
@@ -277,6 +277,10 @@ class DMPUpdateHandlerTest {
 
   private void givenPlans(DMPUser... plans) {
     when(dmpManager.findDMPsForUser(user)).thenReturn(List.of(plans));
+  }
+
+  private void givenLinkablePlans(DMPUser... plans) {
+    when(dmpManager.detectMissingSources(user)).thenReturn(List.of(plans));
   }
 
   private void givenDmpToolSupported() {

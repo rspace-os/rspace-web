@@ -40,6 +40,11 @@ public class DMPManagerImpl extends GenericManagerImpl<DMPUser, Long> implements
 
   @Override
   public List<DMPUser> findDMPsForUser(User subject) {
+    return dmpDao.findDMPsForUser(subject);
+  }
+
+  @Override
+  public List<DMPUser> detectMissingSources(User subject) {
     List<DMPUser> plans = dmpDao.findDMPsForUser(subject);
     for (DMPUser plan : plans) {
       if (plan.getSource() == null || plan.getSource() == DMPSource.UNKNOWN) {
