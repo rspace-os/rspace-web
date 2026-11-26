@@ -92,7 +92,7 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
       ...(uiColumns ?? []),
       {
         ...rowActions,
-        card: { ...rowActions.card, placement: "footer" as const },
+        item: { ...rowActions.item, placement: "footer" as const },
         renderCell: (row: TDocument) => (
           // Lets an alert's undo return focus to the row it brings back.
           <div data-table-list-row-actions={getRowIdRef.current(row)} className="contents">

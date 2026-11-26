@@ -1,5 +1,5 @@
 import { onlineManager } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { TableList } from "../TableList";
@@ -59,6 +59,7 @@ describe("TableList states", () => {
     };
     const { rerender } = render(<TableList {...commonProps} status="loading" />);
     expect(busyRegion()).toHaveAttribute("aria-busy", "true");
+    expect(within(busyRegion()).queryAllByRole("listitem")).toHaveLength(0);
 
     rerender(<TableList {...commonProps} />);
     expect(screen.getByText("common:tableList.empty.title")).toBeVisible();

@@ -14,15 +14,14 @@ import {
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import type { CollectionTranslationKey, FieldOrigin, LabelText } from "@/modules/common/collection/config";
-import type { TableListCardFieldLayout, TableListFeatures } from "../types";
+import type { TableListFeatures, TableListItemFieldLayout } from "../types";
 
 export type ColumnMeta = {
   labelKey?: CollectionTranslationKey;
   label?: string;
   derivedLabel?: LabelText;
   origin?: Pick<FieldOrigin, "sourceLabel" | "via">;
-  cardLabel?: ReactNode;
-  card?: TableListCardFieldLayout;
+  item?: TableListItemFieldLayout & { label?: ReactNode };
   descriptionKey?: CollectionTranslationKey;
   description?: string;
 };

@@ -27,7 +27,7 @@ describe("TableList data table", () => {
           {
             id: "summary",
             label: "Summary",
-            card: { fullWidth: true },
+            item: { fullWidth: true },
             renderCell: (row) => <p>{`${row.owner} scored ${row.score}`}</p>,
           },
         ]}
