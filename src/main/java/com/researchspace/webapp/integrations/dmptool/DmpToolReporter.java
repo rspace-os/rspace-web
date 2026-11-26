@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.dmptool;
 
+import static com.researchspace.service.dmp.DmpLogging.planIdForLog;
+
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
@@ -45,9 +47,10 @@ public class DmpToolReporter implements DmpReporter {
               : new ValueOutcome(value, false, failureMessage(sent));
     } catch (RuntimeException e) {
       log.warn(
-          "Couldn't add the deposit's {} to DMPtool plan {}",
+          "Couldn't add the deposit's {} to DMPtool plan {} of user {}",
           hasDoi ? "DOI link" : "repository link",
-          plan.getDmpId(),
+          planIdForLog(plan.getDmpId()),
+          user.getUsername(),
           e);
       outcome =
           new ValueOutcome(value, false, messages.getMessage(ValueOutcome.UNEXPECTED_ERROR_KEY));

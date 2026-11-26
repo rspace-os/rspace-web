@@ -1,5 +1,7 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.dmp.DmpLogging.planIdForLog;
+
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
@@ -18,6 +20,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /** Writes a deposit's link onto each ticked plan, routed by the plan's own platform. */
@@ -127,6 +130,43 @@ public class DMPUpdateHandler {
       DepositReport deposit,
       User subject,
       Map<DMPSource, PlatformStatus> statusByPlatform) {
+    PlanReportResult result = attemptPlan(plan, deposit, subject, statusByPlatform);
+    logOutcome(plan, subject, result);
+    return result;
+  }
+
+  private static void logOutcome(DMPUser plan, User subject, PlanReportResult result) {
+    boolean updated =
+        result.status() == PlanReportStatus.REPORTED
+            && result.values().stream().allMatch(ValueOutcome::written);
+    String written =
+        result.status() == PlanReportStatus.REPORTED
+            ? ", written: "
+                + result.values().stream()
+                    .map(value -> String.valueOf(value.written()))
+                    .collect(Collectors.joining(","))
+            : "";
+    String line = "Write-back to plan row {} of user {} on {} (plan id {}): {}{}";
+    Object[] args = {
+      plan.getId(),
+      subject.getUsername(),
+      result.platform(),
+      planIdForLog(plan.getDmpId()),
+      result.status(),
+      written
+    };
+    if (updated) {
+      log.info(line, args);
+    } else {
+      log.warn(line, args);
+    }
+  }
+
+  private PlanReportResult attemptPlan(
+      DMPUser plan,
+      DepositReport deposit,
+      User subject,
+      Map<DMPSource, PlatformStatus> statusByPlatform) {
     DMPSource platform = isUnknownSource(plan) ? DMPSource.UNKNOWN : plan.getSource();
     try {
       Optional<PlanReportStatus> noWriteBack = noWriteBackReason(plan, subject, statusByPlatform);
@@ -138,7 +178,12 @@ public class DMPUpdateHandler {
       }
       return reporterFor(platform).orElseThrow().report(plan, deposit, subject);
     } catch (RuntimeException e) {
-      log.warn("Write-back to plan {} on {} failed", plan.getDmpId(), platform, e);
+      log.warn(
+          "Write-back to plan {} of user {} on {} failed",
+          planIdForLog(plan.getDmpId()),
+          subject.getUsername(),
+          platform,
+          e);
       return new PlanReportResult(
           plan.getTitle(),
           platform,

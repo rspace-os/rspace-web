@@ -26,7 +26,15 @@ import com.researchspace.service.dmp.PlanReportStatus;
 import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.testutils.TestFactory;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +55,10 @@ class DMPUpdateHandlerTest {
   private @Mock DmpPlatformStatusResolver statusResolver;
   private @Mock DmpReporter dmpToolReporter;
 
+  private final EventCapture logs = new EventCapture();
+  private final Logger logger = (Logger) LogManager.getLogger(DMPUpdateHandler.class);
+
+  private Level levelBefore;
   private DMPUpdateHandler handler;
   private User user;
 
@@ -59,6 +71,64 @@ class DMPUpdateHandlerTest {
             List.of(dmpToolReporter),
             new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("any");
+    logs.start();
+    logger.addAppender(logs);
+    levelBefore = logger.getLevel();
+    logger.setLevel(Level.INFO);
+  }
+
+  @AfterEach
+  void removeLogCapture() {
+    logger.setLevel(levelBefore);
+    logger.removeAppender(logs);
+    logs.stop();
+  }
+
+  @Test
+  void skippedPlanIsLoggedAsWarningWithItsRowAndUser() throws Exception {
+    givenPlans(plan(7L, DMPSource.DMP_TOOL));
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.PLATFORM_OFF);
+
+    handler.report(deposit(DOI, null), user, List.of(7L));
+
+    assertEquals(1, logs.events.size());
+    assertEquals(Level.WARN, logs.events.get(0).getLevel());
+    assertThat(logs.events.get(0).getMessage().getFormattedMessage())
+        .contains("7", user.getUsername(), "DMP_TOOL", "id7", "PLATFORM_OFF");
+  }
+
+  @Test
+  void writtenValueIsLoggedAsInfo() throws Exception {
+    DMPUser plan = plan(7L, DMPSource.DMP_TOOL);
+    givenPlans(plan);
+    givenDmpToolSupported();
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.OK);
+    DepositReport deposit = deposit(DOI, null);
+    when(dmpToolReporter.report(plan, deposit, user)).thenReturn(reported(plan));
+
+    handler.report(deposit, user, List.of(7L));
+
+    assertEquals(1, logs.events.size());
+    assertEquals(Level.INFO, logs.events.get(0).getLevel());
+    assertThat(logs.events.get(0).getMessage().getFormattedMessage())
+        .contains("7", user.getUsername(), "REPORTED", "written: true");
+  }
+
+  @Test
+  void lineBreakInPlanIdCannotStartAnotherLogLine() throws Exception {
+    DMPUser plan =
+        new DMPUser(
+            user, new DmpDto("id\r\nWARN forged line", "title", DMPSource.DMP_TOOL, null, null));
+    ReflectionTestUtils.setField(plan, "id", 7L);
+    givenPlans(plan);
+    when(statusResolver.resolve(DMPSource.DMP_TOOL, user)).thenReturn(PlatformStatus.PLATFORM_OFF);
+
+    handler.report(deposit(DOI, null), user, List.of(7L));
+
+    assertEquals(1, logs.events.size());
+    assertThat(logs.events.get(0).getMessage().getFormattedMessage())
+        .doesNotContain("\r", "\n")
+        .contains("WARN forged line");
   }
 
   @Test
@@ -274,6 +344,19 @@ class DMPUpdateHandlerTest {
 
   private void givenPlans(DMPUser... plans) {
     when(dmpManager.findDMPsForUser(user)).thenReturn(List.of(plans));
+  }
+
+  private static class EventCapture extends AbstractAppender {
+    final List<LogEvent> events = new ArrayList<>();
+
+    EventCapture() {
+      super("dmpUpdateHandlerCapture", null, null, false, Property.EMPTY_ARRAY);
+    }
+
+    @Override
+    public void append(LogEvent event) {
+      events.add(event.toImmutable());
+    }
   }
 
   private void givenLinkablePlans(DMPUser... plans) {

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmptool;
 
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
+import static com.researchspace.service.dmp.DmpLogging.planIdForLog;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.analytics.service.AnalyticsManager;
@@ -75,7 +76,8 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
     } catch (HttpStatusCodeException e) {
       // the response body may echo the identifier (e.g. a Dryad edit link), so only the status
       int status = e.getStatusCode().value();
-      log.warn("DMPtool refused related identifier for plan {}: HTTP {}", dmpId, status);
+      log.warn(
+          "DMPtool refused related identifier for plan {}: HTTP {}", planIdForLog(dmpId), status);
       return ServiceOperationResult.fromOptionalError(
           Optional.of(
               messages.getMessage(
@@ -87,7 +89,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
         | JsonProcessingException e) {
       log.warn(
           "Couldn't send related identifier to DMPtool plan {}: {}",
-          dmpId,
+          planIdForLog(dmpId),
           e.getClass().getSimpleName());
       return ServiceOperationResult.fromOptionalError(
           Optional.of(messages.getMessage("apps.dmpTool.errors.relatedIdentifierUnreachable")));
