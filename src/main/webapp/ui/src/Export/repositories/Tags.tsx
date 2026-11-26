@@ -2,7 +2,6 @@ import Button from "@mui/material/Button";
 import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
@@ -126,4 +125,4 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
  * tags/controlled vocabulary terms for the deposit that will be made with the
  * chosen repository.
  */
-export default observer(Tags);
+export default Tags;

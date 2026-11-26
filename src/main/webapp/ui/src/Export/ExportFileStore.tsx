@@ -1,8 +1,7 @@
 import Card from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
-import { observable, runInAction } from "mobx";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -105,22 +104,22 @@ export default function ExportFileStore({
   const [scanResultsAvailableCount, setScanResultsAvailableCount] = useState(0);
   const [scanResultsTotalFileSize, setScanResultsTotalFileSize] = useState(0);
 
-  const [validationData] = useState(
-    observable({
-      totalFilesFound: 0,
-      loggedOut: [] as Array<FileSystem>,
-      scanResultsPresent: false,
-      maxArchiveSizeBytes: 0,
-      scanResultsTotalFileSize: 0,
-      currentlyAllowedArchiveSizeBytes: 0,
-    }),
-  );
+  // read only by the validation function, so changes need not trigger a re-render
+  const validationData = useRef({
+    totalFilesFound: 0,
+    loggedOut: [] as Array<FileSystem>,
+    scanResultsPresent: false,
+    maxArchiveSizeBytes: 0,
+    scanResultsTotalFileSize: 0,
+    currentlyAllowedArchiveSizeBytes: 0,
+  });
 
   const confirm = useConfirm();
 
   useEffect(() => {
     validator.setValidFunc(async () => {
-      if (validationData.totalFilesFound > 0 && validationData.loggedOut.length > 0) {
+      const data = validationData.current;
+      if (data.totalFilesFound > 0 && data.loggedOut.length > 0) {
         if (
           !(await confirm(
             "",
@@ -131,7 +130,7 @@ export default function ExportFileStore({
           return false;
       }
 
-      if (!validationData.scanResultsPresent) {
+      if (!data.scanResultsPresent) {
         if (
           !(await confirm(
             "",
@@ -143,18 +142,18 @@ export default function ExportFileStore({
       }
 
       if (
-        validationData.scanResultsPresent &&
-        validationData.maxArchiveSizeBytes !== 0 &&
-        validationData.scanResultsTotalFileSize >= validationData.currentlyAllowedArchiveSizeBytes
+        data.scanResultsPresent &&
+        data.maxArchiveSizeBytes !== 0 &&
+        data.scanResultsTotalFileSize >= data.currentlyAllowedArchiveSizeBytes
       ) {
         await confirm(
           "",
-          validationData.scanResultsTotalFileSize > validationData.maxArchiveSizeBytes
+          data.scanResultsTotalFileSize > data.maxArchiveSizeBytes
             ? t("export.fileStore.validation.exceedsGlobalLimit", {
-                size: formatFileSize(validationData.scanResultsTotalFileSize),
+                size: formatFileSize(data.scanResultsTotalFileSize),
               })
             : t("export.fileStore.validation.exceedsDiskSpace", {
-                size: formatFileSize(validationData.scanResultsTotalFileSize),
+                size: formatFileSize(data.scanResultsTotalFileSize),
               }),
           t("common:actions.ok"),
           "",
@@ -164,7 +163,7 @@ export default function ExportFileStore({
 
       return true;
     });
-  }, [confirm, t, validationData, validator]);
+  }, [confirm, t, validator]);
 
   const fileStoreCheck = async () => {
     const url = "/nfsExport/ajax/createQuickExportPlan";
@@ -182,10 +181,8 @@ export default function ExportFileStore({
       const newTotalFilesFound = sum(fileSystems.map((fs) => fs.foundNfsLinks.length));
       setTotalFilesFound(newTotalFilesFound);
 
-      runInAction(() => {
-        validationData.loggedOut = fileSystems.filter((fs) => !fs.loggedAs);
-        validationData.totalFilesFound = newTotalFilesFound;
-      });
+      validationData.current.loggedOut = fileSystems.filter((fs) => !fs.loggedAs);
+      validationData.current.totalFilesFound = newTotalFilesFound;
 
       setPlanId(response.data.planId);
     } catch (error) {
@@ -240,10 +237,9 @@ export default function ExportFileStore({
 
     setScanResultsOmittedCount(omittedCount);
     setScanResultsAvailableCount(fileLinks.size);
-    setScanResultsTotalFileSize(sum(fileLinks.map((link) => link.size)));
-    runInAction(() => {
-      validationData.scanResultsTotalFileSize = sum(fileLinks.map((link) => link.size));
-    });
+    const totalFileSize = sum(fileLinks.map((link) => link.size));
+    setScanResultsTotalFileSize(totalFileSize);
+    validationData.current.scanResultsTotalFileSize = totalFileSize;
   };
 
   const fileStoreScan = async () => {
@@ -259,11 +255,10 @@ export default function ExportFileStore({
       calculateFullScanSummary(response.data);
       setCheckedFileSystems(response.data.foundFileSystems);
       setScanResultsPresent(true);
-      runInAction(() => {
-        validationData.scanResultsPresent = true;
-        validationData.maxArchiveSizeBytes = response.data.maxArchiveSizeMBProp * 1024 * 1024;
-        validationData.currentlyAllowedArchiveSizeBytes = response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024;
-      });
+      validationData.current.scanResultsPresent = true;
+      validationData.current.maxArchiveSizeBytes = response.data.maxArchiveSizeMBProp * 1024 * 1024;
+      validationData.current.currentlyAllowedArchiveSizeBytes =
+        response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024;
     } catch (error) {
       console.error(error);
     } finally {

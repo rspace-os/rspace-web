@@ -5,7 +5,6 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -339,4 +338,4 @@ function FormatChoice({
   );
 }
 
-export default observer(FormatChoice);
+export default FormatChoice;

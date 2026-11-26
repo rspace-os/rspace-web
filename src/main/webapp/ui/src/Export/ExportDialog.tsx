@@ -9,8 +9,6 @@ import Divider from "@mui/material/Divider";
 import MobileStepper from "@mui/material/MobileStepper";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { action, observable, runInAction } from "mobx";
-import { observer } from "mobx-react-lite";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios, { isAxiosError } from "@/common/axios";
@@ -46,6 +44,7 @@ import {
   type Repo,
 } from "./repositories/common";
 import type { Tag } from "./repositories/Tags";
+import useLatestState from "./useLatestState";
 import { appendPane, getIndexOfPane, getPaneByKey, makePane, numberOfPanes } from "./WizardPanes";
 import type { WordExportDetails } from "./WordExport";
 
@@ -68,7 +67,9 @@ type ExportDialogArgs = {
   allowFileStores: boolean;
 };
 
-const isArchiveExport = (archiveType: (typeof DEFAULT_STATE)["exportConfig"]["archiveType"]) => {
+type ExportState = typeof DEFAULT_STATE;
+
+const isArchiveExport = (archiveType: ExportState["exportConfig"]["archiveType"]) => {
   return archiveType === "html" || archiveType === "xml" || archiveType === "eln";
 };
 
@@ -78,7 +79,8 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const [state, setState] = useState<typeof DEFAULT_STATE>(observable(DEFAULT_STATE));
+  // DEFAULT_STATE is a shared constant, so every update must build new objects rather than mutate the state
+  const [state, updateState, getState] = useLatestState<ExportState>(() => DEFAULT_STATE);
 
   const { data: raidData } = useRaidIntegrationInfoAjaxQuery();
   const raidEnabled = raidData.success ? raidData.data.enabled : false;
@@ -106,35 +108,34 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   const [firstPane, setFirstPane] = useState(makePane("FormatChoice", t("export.dialog.panes.export")));
   const [activePane, setActivePane] = useState(firstPane);
 
-  const createWizardPanes = () => {
+  const { archiveType, repository, fileStores } = state.exportConfig;
+
+  /*
+   * The format and destination switches change which panes are reachable, so
+   * the list of panes is rebuilt whenever they change.
+   */
+  useEffect(() => {
     const newListOfPanes = makePane("FormatChoice", t("export.dialog.panes.export"));
     appendPane(newListOfPanes, makePane("FormatSpecificOptions", t("export.dialog.panes.export")));
 
-    if (state.exportConfig.repository) {
+    if (repository) {
       if (raidEnabled) {
         appendPane(newListOfPanes, makePane("ExportDialogRaid", t("export.dialog.panes.raid")));
       }
       appendPane(newListOfPanes, makePane("ExportRepo", t("export.dialog.panes.setupRepository")));
     }
 
-    if (state.exportConfig.fileStores) {
+    if (fileStores) {
       appendPane(newListOfPanes, makePane("ExportFileStore", t("export.dialog.panes.filestoreExportConfiguration")));
     }
 
     setFirstPane(newListOfPanes);
     setActivePane(newListOfPanes);
-  };
-
-  useEffect(() => {
-    createWizardPanes();
-  }, [state.exportConfig.archiveType]);
+  }, [archiveType, repository, fileStores]);
 
   useEffect(() => {
     setInitialDocPDF(exportSelection);
-    runInAction(() => {
-      state.open = open;
-      state.exportSelection = exportSelection;
-    });
+    updateState((s) => ({ ...s, open, exportSelection }));
   }, [open, exportSelection]);
 
   const setInitialDocPDF = (exportSelection: ExportSelection) => {
@@ -173,7 +174,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   }, []);
 
   const handleClose = () => {
-    setState(observable(DEFAULT_STATE));
+    updateState(() => DEFAULT_STATE);
     setActivePane(firstPane);
     onClose?.();
   };
@@ -199,7 +200,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   };
 
   const prepareRepositoryConfig = () => {
-    const config = state.repositoryConfig;
+    const config = getState().repositoryConfig;
     if (!config.depositToRepository) return {};
     const appName = "appName" in config ? config.appName : undefined;
     return typeof appName === "string" && REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(appName)
@@ -208,31 +209,26 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   };
 
   const prepareExportData = () => {
+    const current = getState();
     return {
-      exportSelection: { ...state.exportSelection },
-      exportConfig: { ...state.exportDetails },
+      exportSelection: { ...current.exportSelection },
+      exportConfig: { ...current.exportDetails },
       repositoryConfig: prepareRepositoryConfig(),
-      nfsConfig: { ...state.nfsConfig },
-      ...(raidEnabled ? { projectGroupId: state.projectGroupId } : {}),
+      nfsConfig: { ...current.nfsConfig },
+      ...(raidEnabled ? { projectGroupId: current.projectGroupId } : {}),
     };
   };
 
   const submitExport = () => {
-    const archiveType = state.exportConfig.archiveType;
-    runInAction(() => {
-      state.loading = true;
-    });
+    const archiveType = getState().exportConfig.archiveType;
+    setLoading(true);
 
     const url = isArchiveExport(archiveType) ? "/export/ajax/exportArchive" : "/export/ajax/export";
     const data = prepareExportData();
     axios
       .post<string>(url, data)
       .then((response) => {
-        setState(
-          observable({
-            ...DEFAULT_STATE,
-          }),
-        );
+        updateState(() => DEFAULT_STATE);
         addAlert(
           mkAlert({
             variant: "success",
@@ -256,11 +252,9 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   };
 
   const fetchTags = async (): Promise<Array<Tag>> => {
-    runInAction(() => {
-      state.loading = true;
-    });
+    setLoading(true);
 
-    const archiveType = state.exportConfig.archiveType;
+    const archiveType = getState().exportConfig.archiveType;
     const url =
       archiveType === "html" || archiveType === "xml"
         ? "/export/ajax/exportRecordTagsArchive"
@@ -310,9 +304,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
       console.error(e);
       return [] as Array<Tag>;
     } finally {
-      runInAction(() => {
-        state.loading = false;
-      });
+      setLoading(false);
     }
   };
 
@@ -325,21 +317,21 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     itemToUpdate: "archiveType" | "repository" | "allVersions" | "fileStores" | "repoData",
     value: ArchiveType | boolean | ReadonlyArray<Repo>,
   ) {
-    action((newState: typeof DEFAULT_STATE) => {
+    updateState((s) => {
+      const newState = {
+        ...s,
+        exportConfig: { ...s.exportConfig, [itemToUpdate]: value },
+      };
       if (itemToUpdate === "archiveType") {
-        // @ts-expect-error Impossible to typecheck
-        newState.exportDetails = { ...exportConfigSwitch(value) };
+        // @ts-expect-error exportDetails holds the chosen format's options, which ExportConfig does not model
+        newState.exportDetails = { ...exportConfigSwitch(value as ArchiveType) };
       } else if (itemToUpdate === "repository") {
         newState.repositoryConfig = DEFAULT_REPO_CONFIG;
       } else if (itemToUpdate === "allVersions") {
-        newState.exportDetails.allVersions = value as boolean;
+        newState.exportDetails = { ...s.exportDetails, allVersions: value as boolean };
       }
-      // @ts-expect-error Impossible to typecheck
-      newState.exportConfig[itemToUpdate] = value;
-
-      // some of the switches change which panes are reachable so recreate panes
-      if (itemToUpdate === "repository" || itemToUpdate === "fileStores") createWizardPanes();
-    })(state);
+      return newState;
+    });
   }
 
   const exportConfigSwitch = (type: ArchiveType) => {
@@ -357,13 +349,11 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     }
   };
 
-  const updateFileStoreFilters = <Key extends keyof typeof state.nfsConfig>(
+  const updateFileStoreFilters = <Key extends keyof ExportState["nfsConfig"]>(
     name: Key,
-    value: (typeof state.nfsConfig)[Key],
+    value: ExportState["nfsConfig"][Key],
   ) => {
-    runInAction(() => {
-      state.nfsConfig[name] = value;
-    });
+    updateState((s) => ({ ...s, nfsConfig: { ...s.nfsConfig, [name]: value } }));
   };
 
   function updateExportDetails<Key extends keyof PdfExportDetails>(name: Key, value: PdfExportDetails[Key]): void;
@@ -372,23 +362,22 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     value: HtmlXmlExportDetails[Key],
   ): void;
   function updateExportDetails<Key extends keyof WordExportDetails>(name: Key, value: WordExportDetails[Key]): void;
-  function updateExportDetails<Key extends keyof ExportConfig>(name: Key, value: (typeof state.exportDetails)[Key]) {
-    runInAction(() => {
-      state.exportDetails[name] = value;
-    });
+  function updateExportDetails<Key extends keyof ExportConfig>(name: Key, value: ExportConfig[Key]) {
+    updateState((s) => ({ ...s, exportDetails: { ...s.exportDetails, [name]: value } }));
   }
 
-  const updateRepoConfig = (config: typeof state.repositoryConfig) => {
-    runInAction(() => {
-      state.repositoryConfig = config;
-    });
+  const updateRepoConfig = (config: ExportState["repositoryConfig"]) => {
+    updateState((s) => ({ ...s, repositoryConfig: config }));
   };
 
-  const updateProjectGroupId = (groupId: number | null) => {
-    runInAction(() => {
-      state.projectGroupId = groupId;
-    });
-  };
+  function setLoading(loading: boolean) {
+    updateState((s) => ({ ...s, loading }));
+  }
+
+  function updateProjectGroupId(groupId: number | null) {
+    // Keep the same state object when nothing changes, so that React can skip the re-render.
+    updateState((s) => (s.projectGroupId === groupId ? s : { ...s, projectGroupId: groupId }));
+  }
 
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
@@ -402,18 +391,18 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
                   <FormatChoice
                     exportSelection={state.exportSelection}
                     exportConfigUpdate={exportConfigUpdate}
-                    archiveType={state.exportConfig.archiveType}
+                    archiveType={archiveType}
                     allowFileStores={allowFileStores}
-                    repoSelected={state.exportConfig.repository}
-                    fileStoresSelected={state.exportConfig.fileStores}
+                    repoSelected={repository}
+                    fileStoresSelected={fileStores}
                     allVersions={state.exportConfig.allVersions}
                     updateFileStores={updateFileStoreFilters}
                     validator={getPaneByKey(firstPane, "FormatChoice").validator}
                   />
                 )}
-                {activePane.key === "FormatSpecificOptions" && state.exportConfig.archiveType !== "" && (
+                {activePane.key === "FormatSpecificOptions" && archiveType !== "" && (
                   <FormatSpecificOptions
-                    exportType={state.exportConfig.archiveType}
+                    exportType={archiveType}
                     // @ts-expect-error Impossible to type check this
                     exportDetails={state.exportDetails}
                     updateExportDetails={updateExportDetails}
@@ -478,7 +467,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
                     onClick={() => {
                       void handleNext();
                     }}
-                    disabled={state.exportConfig.archiveType === ""}
+                    disabled={archiveType === ""}
                   >
                     {activePane.next ? t("common:actions.next") : t("common:actions.export")}
                   </Button>
@@ -536,4 +525,4 @@ const docConfig = {
   setPageSizeAsDefault: false,
 };
 
-export default observer(ExportDialog);
+export default ExportDialog;

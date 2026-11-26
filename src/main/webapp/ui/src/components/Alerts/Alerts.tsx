@@ -1,6 +1,4 @@
 import Box from "@mui/material/Box";
-import { observable, runInAction } from "mobx";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,12 +16,8 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const { isViewportVerySmall } = useViewportDimensions();
 
-  // Ordered from the top down. Shallow (deep: false) so each alert object is stored by reference
-  // rather than deep-observed. Deep-observing an alert would turn its React-element `icon` into a
-  // MobX proxy, and React 19 dev-mode fiber work then invokes `element._debugTask.run(...)` on that
-  // proxy, throwing "'run' called with illegal receiver". Alerts are immutable after mkAlert, so
-  // nothing reactive is lost.
-  const [alerts] = useState(() => observable.array<Alert>([], { deep: false }));
+  // Ordered from the top down
+  const [alerts, setAlerts] = useState<ReadonlyArray<Alert>>([]);
 
   /*
    * The context value that is exposed to all of the components down the tree
@@ -34,18 +28,12 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
   const contextValue = useMemo(
     () => ({
       addAlert: (alert: Alert) => {
-        runInAction(() => {
-          alerts.push(alert);
-        });
+        setAlerts((current) => [...current, alert]);
       },
       removeAlert: (alert: Alert) => {
-        runInAction(() => {
-          const i = alerts.findIndex((a) => a.id === alert.id);
-          if (i >= 0) alerts.splice(i, 1);
-        });
+        setAlerts((current) => current.filter((a) => a.id !== alert.id));
       },
     }),
-
     [],
   );
 
@@ -74,4 +62,4 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
   );
 }
 
-export default observer(Alerts);
+export default Alerts;

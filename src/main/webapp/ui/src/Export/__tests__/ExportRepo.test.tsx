@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import fc, { type Arbitrary } from "fast-check";
 import { HttpResponse, http } from "msw/http";
@@ -193,5 +193,41 @@ describe("ExportRepo", () => {
     if (!config) throw new Error("ExportRepo did not report its config");
     renderRepo(config);
     await switchFromZenodoToDataverse();
+  });
+  test("Validation reads the latest form values and marks the fields that fail it.", async () => {
+    const user = userEvent.setup();
+    const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
+    const validator = mkValidator();
+    render(
+      <ExportRepo
+        state={DEFAULT_STATE}
+        repoList={[{ ...zenodoRepoList[0], repoCfg: -1 }]}
+        repoDetails={{ ...DEFAULT_REPO_CONFIG, repoChoice: 0 }}
+        validator={validator}
+        updateRepoConfig={updateRepoConfig}
+        fetchTags={vi.fn().mockResolvedValue([])}
+      />,
+    );
+    const title = screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" });
+    expect(title).toHaveAttribute("aria-invalid", "false");
+
+    let valid: boolean | undefined;
+    await act(async () => {
+      valid = await validator.isValid();
+    });
+    expect(valid).toBe(false);
+    expect(title).toHaveAttribute("aria-invalid", "true");
+
+    await user.type(title, "Title");
+    await user.type(
+      screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
+      "Description",
+    );
+    await act(async () => {
+      valid = await validator.isValid();
+    });
+    expect(valid).toBe(true);
+    expect(title).toHaveAttribute("aria-invalid", "false");
+    expect(updateRepoConfig.mock.lastCall?.[0].meta).toMatchObject({ title: "Title", description: "Description" });
   });
 });

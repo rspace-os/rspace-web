@@ -34,13 +34,12 @@ export default function FormatSpecificOptions(
   });
   const [submitAttempt, setSubmitAttempt] = useState(false);
 
+  const exportName = props.exportType === "pdf" || props.exportType === "doc" ? props.exportDetails.exportName : null;
+
+  // exportDetails is replaced on every change, so the validation function is re-registered to see the latest name
   useEffect(() => {
-    props.validator.setValidFunc(() =>
-      Promise.resolve(
-        (props.exportType !== "pdf" && props.exportType !== "doc") || props.exportDetails.exportName.length > 2,
-      ),
-    );
-  }, []);
+    props.validator.setValidFunc(() => Promise.resolve(exportName === null || exportName.length > 2));
+  }, [props.validator, exportName]);
 
   return (
     <>

@@ -7,7 +7,6 @@ import Stack from "@mui/material/Stack";
 import type { SwitchProps } from "@mui/material/Switch";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react";
 import { useTranslation } from "react-i18next";
 import type { DEFAULT_STATE } from "@/Export/constants";
 import type { RepoDetails } from "@/Export/repositories/common";
@@ -134,4 +133,4 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
   );
 };
 
-export default observer(ExportDialogRaid);
+export default ExportDialogRaid;
