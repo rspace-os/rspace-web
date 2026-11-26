@@ -351,15 +351,19 @@ public class SmbjClient extends NfsAbstractClient implements NfsClient {
   private static final String SMBJ_PATH_SEPARATOR = "/";
 
   /**
-   * Whether the server URL names no folder after the share, so that a path is read from the share
-   * root whether or not it starts with a slash. False for a URL that cannot be parsed.
+   * Whether a path names the same file with or without its leading slash: when the server URL names
+   * no folder after the share, or ends with a slash, as a doubled separator reads as one. Not when
+   * it names a folder without a trailing slash, as that folder is then glued to a path without the
+   * slash. False for a URL that cannot be parsed.
    */
-  public static boolean readsPathsFromTheShareRoot(String serverUrl, String shareName) {
+  public static boolean readsPathsAlikeWithOrWithoutLeadingSlash(
+      String serverUrl, String shareName) {
     try {
       String share =
           shareName == null ? "" : StringUtils.removeStart(shareName, SMBJ_PATH_SEPARATOR);
-      return calculateAfterShareNamePath(SambaUtils.parseSambaUrl(serverUrl).getPath(), share)
-          .isEmpty();
+      String afterShareName =
+          calculateAfterShareNamePath(SambaUtils.parseSambaUrl(serverUrl).getPath(), share);
+      return afterShareName.isEmpty() || afterShareName.endsWith("\\");
     } catch (MalformedURLException e) {
       log.warn("couldn't parse SMB serverUrl: {}", serverUrl, e);
       return false;

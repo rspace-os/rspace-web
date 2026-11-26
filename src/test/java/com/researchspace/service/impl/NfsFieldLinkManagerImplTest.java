@@ -259,7 +259,7 @@ class NfsFieldLinkManagerImplTest {
 
   @ParameterizedTest
   @EnumSource(names = {"SAMBA", "SMBJ"})
-  void onSmbReadingFromTheShareRootOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(
+  void whereSmbReadsBothSpellingsAlikeOnlyTheCallersFilestoresAreSearchedWhateverTheSlash(
       NfsClientType clientType) {
     NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(2L);
     smb.setClientType(clientType);

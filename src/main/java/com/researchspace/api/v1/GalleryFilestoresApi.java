@@ -62,11 +62,12 @@ public interface GalleryFilestoresApi {
    * Returns the ELN documents linking the filestore item, oldest first, then the Inventory items
    * whose Link field targets it, by Global ID, each once, through any user's filestore of the same
    * filesystem; where each user signs in with their own login, only through the caller's own
-   * filestores, and except on SMB reading from the share root a filestore path without a leading
-   * slash is kept apart from one with it, as SFTP, iRODS and SMB under a server URL's folder can
-   * read the two as different files. Every row carries its {@code type}: {@code DOCUMENT} or the
-   * kind of item. Documents and items the user cannot read in full are placeholders with only the
-   * type and the owner's name. Requires read access; works for every filestore type.
+   * filestores, and except where SMB reads both spellings as one file a filestore path without a
+   * leading slash is kept apart from one with it, as SFTP, iRODS and SMB under a server URL's
+   * folder can read the two as different files. Every row carries its {@code type}: {@code
+   * DOCUMENT} or the kind of item. Documents and items the user cannot read in full are
+   * placeholders with only the type and the owner's name. Requires read access; works for every
+   * filestore type.
    */
   @GetMapping("/filestores/{filestoreId}/linkedDocuments")
   List<ApiGalleryFilestoreLinkedDocument> getFilestoreItemLinkedDocuments(

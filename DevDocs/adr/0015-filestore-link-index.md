@@ -30,15 +30,15 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    same path can name a different file for each login, through a chroot or a filestore path
    relative to the login's home, and RSpace cannot tell when two logins see the same file. There a
    lookup counts only links made through the caller's own filestores, removed ones included.
-   Except on SMB reading from the share root it also keeps a path (base plus link path) that
-   starts with a slash apart from one that does not: SFTP reads a path without the slash under the
-   login's home, iRODS prefixes the account's home to any path that does not already start with
-   it, and SMBJ glues a folder that the server URL names after the share to a path without the
-   slash. The stored path drops that slash, so the query reads it from the filestore's base and the
-   link's own path. SMB reading from the share root reads both spellings alike, and an SMB server
-   that returns no name for the share root makes the Gallery write links without the slash, so
-   there both spellings match. The client's path resolution is left as it is, as changing it would
-   change which file existing links open. Where the
+   Except where SMB reads both spellings as one file, it also keeps a path (base plus link path)
+   that starts with a slash apart from one that does not: SFTP reads a path without the slash under
+   the login's home, iRODS prefixes the account's home to any path that does not already start
+   with it, and SMBJ glues a folder that the server URL names after the share, without a trailing
+   slash, to a path without the slash. The stored path drops that slash, so the query reads it
+   from the filestore's base and the link's own path. jcifs and every other SMBJ URL read both
+   spellings alike, and an SMB server that returns no name for the share root makes the Gallery
+   write links without the slash, so there both spellings match. The client's path resolution is
+   left as it is, as changing it would change which file existing links open. Where the
    slash changes nothing elsewhere (a login chrooted to its home) this fails closed: a user's own links through a relative and an
    absolute base no longer meet, nor do document links that older Gallery versions wrote without
    the slash through a filestore with no base. A filesystem reached with one shared login (S3)

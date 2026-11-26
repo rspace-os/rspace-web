@@ -255,7 +255,7 @@ class InventoryLinkManagerImplFilestoreLookupTest {
 
   @ParameterizedTest
   @EnumSource(names = {"SAMBA", "SMBJ"})
-  void onSmbReadingFromTheShareRootOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(
+  void whereSmbReadsBothSpellingsAlikeOnlyTheActorsFilestoresAreSearchedWhateverTheSlash(
       NfsClientType clientType) {
     NfsFileSystem smb = GalleryFilestoreTestUtils.createIrodsFileSystem(8L);
     smb.setClientType(clientType);

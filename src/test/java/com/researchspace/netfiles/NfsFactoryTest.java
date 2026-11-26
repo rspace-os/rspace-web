@@ -170,7 +170,7 @@ public class NfsFactoryTest {
   }
 
   @Test
-  public void onlySmbReadingFromTheShareRootReadsAPathAlikeWithOrWithoutItsLeadingSlash() {
+  public void onlySmbReadsAPathAlikeWithOrWithoutItsLeadingSlash() {
     testFileSystem.setClientType(NfsClientType.SMBJ);
     testFileSystem.setClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME, "share");
     testFileSystem.setUrl("smb://host");
@@ -180,15 +180,18 @@ public class NfsFactoryTest {
     // SMBJ puts the folder after the share in front of a path without a separator
     testFileSystem.setUrl("smb://host/share/project");
     assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    // unless the URL ends with one, and SMBJ collapses a doubled one
+    testFileSystem.setUrl("smb://host/share/project/");
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
     testFileSystem.setUrl("smb://host/share/");
-    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
 
     testFileSystem.setClientType(NfsClientType.SAMBA);
     testFileSystem.setUrl("smb://host/share/project");
     assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
-    // jcifs doubles the slash after a URL ending with one
+    // jcifs puts a slash in front of a path without one
     testFileSystem.setUrl("smb://host/share/");
-    assertFalse(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
+    assertTrue(factory.readsPathsAlikeWithOrWithoutLeadingSlash(testFileSystem));
     // downloads handed to SMBJ
     ReflectionTestUtils.setField(factory, "smbjDownload", true);
     ReflectionTestUtils.setField(factory, "smbjShareName", "share");
