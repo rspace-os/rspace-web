@@ -227,6 +227,11 @@
       "errors": {
         "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
       }
+    },
+    "witness": {
+      "errors": {
+        "noAccess": "Signing could not be completed because you no longer have access to this document. Ask the signer to share it with you again."
+      }
     }
   },
   "errors": {

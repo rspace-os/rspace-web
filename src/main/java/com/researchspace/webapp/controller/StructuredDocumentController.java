@@ -26,6 +26,8 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.RenameAuditEvent;
+import com.researchspace.model.comms.CommunicationStatus;
+import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -653,9 +655,31 @@ public class StructuredDocumentController extends BaseController {
     EditStatus res = recordManager.requestRecordView(recordId, user);
     assertViewPermission(recordId, res);
     // now we can load full record, after access check
-    StructuredDocument structuredDocument =
-        recordManager.getRecordWithFields(recordId, user).asStrucDoc();
+    StructuredDocument structuredDocument;
+    try {
+      structuredDocument = recordManager.getRecordWithFields(recordId, user).asStrucDoc();
+    } catch (AuthorizationException e) {
+      // signed documents pass requestRecordView even when the document was unshared
+      if (hasPendingWitnessRequest(recordId, user)) {
+        throw new RecordAccessDeniedException(getText("document.witness.errors.noAccess"));
+      }
+      throw e;
+    }
     return new DocumentEditContext(res, users, structuredDocument);
+  }
+
+  // canWitness is also true after a decline or a cancelled request, which keep their Witness row
+  private boolean hasPendingWitnessRequest(long recordId, User user) {
+    if (!signingManager.canWitness(recordId, user)) {
+      return false;
+    }
+    Signature signature = signingManager.getSignatureForRecord(recordId);
+    MessageOrRequest request = signature.getWitnessRequest();
+    if (request != null && CommunicationStatus.CANCELLED.equals(request.getStatus())) {
+      return false;
+    }
+    return signature.getWitnesses().stream()
+        .anyMatch(w -> user.equals(w.getWitness()) && !w.isWitnessed() && !w.isDeclined());
   }
 
   private void assertViewPermission(long recordId, EditStatus res)
