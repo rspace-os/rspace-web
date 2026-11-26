@@ -152,24 +152,19 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   /**
-   * Counts, per message type, the rows {@link #getActiveMessageOrRequestDistinctCTIds} would return
-   * without a type filter. Each message has one type, so the standard and special totals are sums
-   * of these counts and need only this one query.
+   * Counts the user's active messages and requests per message type. Each message has one type, so
+   * the standard and special totals are sums of these counts and need only this one query.
    */
   private Map<MessageType, Long> countActiveMessageOrRequestsByType(User user) {
-    List<Object[]> rows =
+    Query<Object[]> query =
         getSession()
             .createQuery(
-                "select mor.messageType, count(distinct mor.id) from MessageOrRequest mor "
-                    + "join mor.recipients ct join ct.recipient recipient "
-                    + "join mor.originator originator "
-                    + "where ct.status not in :terminatedStates "
-                    + "and recipient.id = :userId "
-                    + "group by mor.messageType",
-                Object[].class)
-            .setParameterList("terminatedStates", TERMINATED_STATES)
-            .setParameter("userId", user.getId())
-            .getResultList();
+                "select mor.messageType, count(distinct mor.id) "
+                    + activeMessageOrRequestFromWhere(null)
+                    + " group by mor.messageType",
+                Object[].class);
+    activeMessageOrRequestParams(user, null).accept(query);
+    List<Object[]> rows = query.getResultList();
     Map<MessageType, Long> counts = new EnumMap<>(MessageType.class);
     for (Object[] row : rows) {
       counts.put((MessageType) row[0], (Long) row[1]);
@@ -389,19 +384,6 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     }
   }
 
-  private List<Long> getActiveMessageOrRequestDistinctCTIds(
-      User user, MessageTypeFilter filter, PaginationCriteria<CommunicationTarget> pgCrit) {
-    Query<Long> query =
-        getSession()
-            .createQuery(
-                "select distinct mor.id "
-                    + activeMessageOrRequestFromWhere(filter)
-                    + buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
-                Long.class);
-    activeMessageOrRequestParams(user, filter).accept(query);
-    return query.list();
-  }
-
   private static final String NEW_NOTIFICATION_FROM_WHERE =
       "from Notification n "
           + "join n.recipients ct "
@@ -420,7 +402,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return filter == null ? fromWhere : fromWhere + " and mor.messageType in :messageTypes";
   }
 
-  private static Consumer<Query<Long>> activeMessageOrRequestParams(
+  private static Consumer<Query<?>> activeMessageOrRequestParams(
       User user, MessageTypeFilter filter) {
     return query -> {
       query
@@ -446,7 +428,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       String fromWhere,
       String orderBy,
       PaginationCriteria<?> pgCrit,
-      Consumer<Query<Long>> bindParameters) {
+      Consumer<Query<?>> bindParameters) {
     Query<Long> countQuery =
         getSession().createQuery("select count(distinct " + idPath + ") " + fromWhere, Long.class);
     bindParameters.accept(countQuery);

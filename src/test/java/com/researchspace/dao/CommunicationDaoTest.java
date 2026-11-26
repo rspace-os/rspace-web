@@ -660,109 +660,6 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  public void notificationStatusCountsMatchListingTotals() throws InterruptedException {
-    User sender = createAndSaveUserIfNotExists(getRandomAlphabeticString("source"));
-    User target = createAndSaveUserIfNotExists(getRandomAlphabeticString("recipient"));
-    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
-
-    // standard messages: 2 shared with another user, 1 request, 1 targeting the user twice
-    saveNMessages(2, sender, MessageType.SIMPLE_MESSAGE, target, other);
-    saveNMessages(1, sender, MessageType.REQUEST_RECORD_REVIEW, target);
-    MessageOrRequest twiceTargeted =
-        saveMessage(sender, MessageType.SIMPLE_MESSAGE, CommunicationStatus.NEW, target);
-    addTarget(twiceTargeted, target, CommunicationStatus.NEW);
-    // not counted: terminated for the user, or sent by the user
-    saveMessage(sender, MessageType.SIMPLE_MESSAGE, CommunicationStatus.COMPLETED, target);
-    saveNMessages(1, target, MessageType.SIMPLE_MESSAGE, sender);
-
-    // special messages: 1 share request, 1 global, 1 active through only one of its two targets
-    saveNMessages(1, sender, MessageType.REQUEST_SHARE_RECORD, target);
-    saveNMessages(1, sender, MessageType.GLOBAL_MESSAGE, target, other);
-    MessageOrRequest partlyTerminated =
-        saveMessage(sender, MessageType.REQUEST_JOIN_LAB_GROUP, CommunicationStatus.NEW, target);
-    addTarget(partlyTerminated, target, CommunicationStatus.REJECTED);
-
-    // notifications: 2 new, 1 targeting the user twice, 1 read (not counted)
-    saveNNotifications(2, sender, target);
-    Notification twiceNotified = saveNotification(sender, CommunicationStatus.NEW, target);
-    addTarget(twiceNotified, target, CommunicationStatus.NEW);
-    saveNotification(sender, CommunicationStatus.COMPLETED, target);
-
-    Session session = sessionFactory.getCurrentSession();
-    session.flush();
-    session.clear();
-
-    // the login counters must stay count queries (one for notifications, one grouped by message
-    // type), not ID-list loads
-    Statistics stats = sessionFactory.getStatistics();
-    boolean statsWereEnabled = stats.isStatisticsEnabled();
-    stats.setStatisticsEnabled(true);
-    stats.clear();
-    NotificationStatus status;
-    try {
-      status = dao.getNotificationStatus(target);
-      assertEquals(2, stats.getPrepareStatementCount());
-      assertEquals(2, stats.getQueryExecutionCount());
-      assertThat(stats.getQueries())
-          .isNotEmpty()
-          .allMatch(hql -> hql.contains("count(distinct "))
-          .noneMatch(hql -> hql.startsWith("select distinct "));
-    } finally {
-      stats.setStatisticsEnabled(statsWereEnabled);
-    }
-
-    assertEquals(3, status.getNotificationCount());
-    assertEquals(4, status.getMessageCount());
-    assertEquals(3, status.getSpecialMessageCount());
-    PaginationCriteria<CommunicationTarget> pgCrit = getDefaultPgCrit();
-    assertEquals(
-        dao.getNewNotificationsForUser(target, pgCrit).getTotalHits().intValue(),
-        status.getNotificationCount());
-    assertEquals(
-        dao.getActiveRequestsAndMessagesForUser(
-                target, pgCrit, MessageTypeFilter.DEFAULT_MESSAGE_LISTING)
-            .getTotalHits()
-            .intValue(),
-        status.getMessageCount());
-    assertEquals(
-        dao.getActiveRequestsAndMessagesForUser(
-                target, pgCrit, MessageTypeFilter.SPECIAL_MESSAGE_LISTING)
-            .getTotalHits()
-            .intValue(),
-        status.getSpecialMessageCount());
-  }
-
-  private MessageOrRequest saveMessage(
-      User from, MessageType type, CommunicationStatus status, User to) {
-    MessageOrRequest mor = createRequestOfType(from, type);
-    CommunicationTarget ct = createCommTarget(to, mor);
-    ct.setStatus(status);
-    mor.setRecipients(toSet(ct));
-    dao.save(mor);
-    return mor;
-  }
-
-  private Notification saveNotification(User from, CommunicationStatus status, User to) {
-    Notification notification = createAnyNotification(from);
-    CommunicationTarget ct = new CommunicationTarget();
-    ct.setCommunication(notification);
-    ct.setRecipient(to);
-    ct.setStatus(status);
-    notification.setRecipients(toSet(ct));
-    dao.save(notification);
-    return notification;
-  }
-
-  /** Persists a target row directly, as the entity's recipient set would merge a duplicate. */
-  private void addTarget(Communication comm, User to, CommunicationStatus status) {
-    CommunicationTarget ct = new CommunicationTarget();
-    ct.setCommunication(comm);
-    ct.setRecipient(to);
-    ct.setStatus(status);
-    sessionFactory.getCurrentSession().persist(ct);
-  }
-
-  @Test
   public void listingPagesAreSlicesOfTheFullListingForEverySort() throws InterruptedException {
     ListingFixture fx = saveListingFixture();
     EnumSet<CommunicationSort> allSorts = EnumSet.allOf(CommunicationSort.class);
@@ -929,6 +826,109 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
   private static List<Long> idsOf(ISearchResults<? extends Communication> results) {
     return results.getResults().stream().map(Communication::getId).toList();
+  }
+
+  @Test
+  public void notificationStatusCountsMatchListingTotals() throws InterruptedException {
+    User sender = createAndSaveUserIfNotExists(getRandomAlphabeticString("source"));
+    User target = createAndSaveUserIfNotExists(getRandomAlphabeticString("recipient"));
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+
+    // standard messages: 2 shared with another user, 1 request, 1 targeting the user twice
+    saveNMessages(2, sender, MessageType.SIMPLE_MESSAGE, target, other);
+    saveNMessages(1, sender, MessageType.REQUEST_RECORD_REVIEW, target);
+    MessageOrRequest twiceTargeted =
+        saveMessage(sender, MessageType.SIMPLE_MESSAGE, CommunicationStatus.NEW, target);
+    addTarget(twiceTargeted, target, CommunicationStatus.NEW);
+    // not counted: terminated for the user, or sent by the user
+    saveMessage(sender, MessageType.SIMPLE_MESSAGE, CommunicationStatus.COMPLETED, target);
+    saveNMessages(1, target, MessageType.SIMPLE_MESSAGE, sender);
+
+    // special messages: 1 share request, 1 global, 1 active through only one of its two targets
+    saveNMessages(1, sender, MessageType.REQUEST_SHARE_RECORD, target);
+    saveNMessages(1, sender, MessageType.GLOBAL_MESSAGE, target, other);
+    MessageOrRequest partlyTerminated =
+        saveMessage(sender, MessageType.REQUEST_JOIN_LAB_GROUP, CommunicationStatus.NEW, target);
+    addTarget(partlyTerminated, target, CommunicationStatus.REJECTED);
+
+    // notifications: 2 new, 1 targeting the user twice, 1 read (not counted)
+    saveNNotifications(2, sender, target);
+    Notification twiceNotified = saveNotification(sender, CommunicationStatus.NEW, target);
+    addTarget(twiceNotified, target, CommunicationStatus.NEW);
+    saveNotification(sender, CommunicationStatus.COMPLETED, target);
+
+    Session session = sessionFactory.getCurrentSession();
+    session.flush();
+    session.clear();
+
+    // the login counters must stay count queries (one for notifications, one grouped by message
+    // type), not ID-list loads
+    Statistics stats = sessionFactory.getStatistics();
+    boolean statsWereEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    NotificationStatus status;
+    try {
+      status = dao.getNotificationStatus(target);
+      assertEquals(2, stats.getPrepareStatementCount());
+      assertEquals(2, stats.getQueryExecutionCount());
+      assertThat(stats.getQueries())
+          .isNotEmpty()
+          .allMatch(hql -> hql.contains("count(distinct "))
+          .noneMatch(hql -> hql.startsWith("select distinct "));
+    } finally {
+      stats.setStatisticsEnabled(statsWereEnabled);
+    }
+
+    assertEquals(3, status.getNotificationCount());
+    assertEquals(4, status.getMessageCount());
+    assertEquals(3, status.getSpecialMessageCount());
+    PaginationCriteria<CommunicationTarget> pgCrit = getDefaultPgCrit();
+    assertEquals(
+        dao.getNewNotificationsForUser(target, pgCrit).getTotalHits().intValue(),
+        status.getNotificationCount());
+    assertEquals(
+        dao.getActiveRequestsAndMessagesForUser(
+                target, pgCrit, MessageTypeFilter.DEFAULT_MESSAGE_LISTING)
+            .getTotalHits()
+            .intValue(),
+        status.getMessageCount());
+    assertEquals(
+        dao.getActiveRequestsAndMessagesForUser(
+                target, pgCrit, MessageTypeFilter.SPECIAL_MESSAGE_LISTING)
+            .getTotalHits()
+            .intValue(),
+        status.getSpecialMessageCount());
+  }
+
+  private MessageOrRequest saveMessage(
+      User from, MessageType type, CommunicationStatus status, User to) {
+    MessageOrRequest mor = createRequestOfType(from, type);
+    CommunicationTarget ct = createCommTarget(to, mor);
+    ct.setStatus(status);
+    mor.setRecipients(toSet(ct));
+    dao.save(mor);
+    return mor;
+  }
+
+  private Notification saveNotification(User from, CommunicationStatus status, User to) {
+    Notification notification = createAnyNotification(from);
+    CommunicationTarget ct = new CommunicationTarget();
+    ct.setCommunication(notification);
+    ct.setRecipient(to);
+    ct.setStatus(status);
+    notification.setRecipients(toSet(ct));
+    dao.save(notification);
+    return notification;
+  }
+
+  /** Persists a target row directly, as the entity's recipient set would merge a duplicate. */
+  private void addTarget(Communication comm, User to, CommunicationStatus status) {
+    CommunicationTarget ct = new CommunicationTarget();
+    ct.setCommunication(comm);
+    ct.setRecipient(to);
+    ct.setStatus(status);
+    sessionFactory.getCurrentSession().persist(ct);
   }
 
   private PaginationCriteria<CommunicationTarget> getDefaultPgCrit() {
