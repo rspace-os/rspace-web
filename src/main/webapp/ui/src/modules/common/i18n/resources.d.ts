@@ -1477,6 +1477,8 @@ export default interface Resources {
       },
       "targetFilter": {
         "label": "Bookable item: {name} ({globalId})",
+        "labelRestoreFailed": "Bookable item: {globalId}. Could not restore this saved selection. Try again.",
+        "labelUnavailable": "Bookable item: {globalId} (unavailable)",
         "labelWithoutName": "Bookable item: {globalId}",
         "remove": "Remove bookable item filter"
       },

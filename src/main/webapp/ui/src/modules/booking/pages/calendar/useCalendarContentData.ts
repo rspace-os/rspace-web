@@ -48,6 +48,8 @@ const calendarResourceSourceConfig = {
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } satisfies CollectionConfig<BookingConfiguration>;
 
+// The target chip words a missing or failed item itself (`CalendarTargetFilterChip`), so the option keeps the bare ID.
+const TARGET_OPTION_LABELS = {};
 const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
 const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
 const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
@@ -126,7 +128,6 @@ function filterIssue<TDocument>({
 export function useCalendarContentData() {
   const queryClient = useQueryClient();
   const { t } = useTranslation("booking");
-  const { t: commonT } = useTranslation("common");
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
@@ -441,13 +442,6 @@ export function useCalendarContentData() {
     () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : [])),
     [resourceTable.tableProps.rows],
   );
-  const targetOptionLabels = React.useMemo(
-    () => ({
-      unavailableLabel: (value: string) => commonT("relationshipPicker.unavailable", { value }),
-      failedLabel: () => commonT("relationshipPicker.restoreFailed"),
-    }),
-    [commonT],
-  );
   // Search and the filters can hide the item from the loaded rows and events, so resolve its name on its own,
   // as the Location filter restores its chips.
   const [targetOption] = useSelectedRelationshipOptions({
@@ -455,7 +449,7 @@ export function useCalendarContentData() {
     values: target ? [target] : [],
 
     authScope: currentUser.id,
-    labels: targetOptionLabels,
+    labels: TARGET_OPTION_LABELS,
   });
   const loadedTargetName = target
     ? (resourceTargets.find((resource) => resource.globalId === target)?.value.name ??

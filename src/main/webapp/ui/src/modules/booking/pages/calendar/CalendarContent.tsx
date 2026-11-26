@@ -85,10 +85,12 @@ export function CalendarContent() {
                 globalId: target,
                 name: targetName,
                 loading: targetName === undefined && targetOption?.restoreStatus === "loading",
-                unresolvedLabel:
-                  targetName === undefined && targetOption?.restoreStatus !== "loading"
-                    ? targetOption?.label
-                    : undefined,
+                unresolved:
+                  targetName === undefined && targetOption?.restoreStatus === "missing"
+                    ? "unavailable"
+                    : targetName === undefined && targetOption?.restoreStatus === "failed"
+                      ? "failed"
+                      : undefined,
                 onRemove: () => replaceSearch("target"),
               }
             : undefined

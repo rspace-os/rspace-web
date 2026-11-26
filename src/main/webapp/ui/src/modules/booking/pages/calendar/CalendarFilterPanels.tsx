@@ -38,8 +38,8 @@ export type CalendarTargetFilterState = {
   name?: string;
   /** The name is still resolving, so the global ID is shown with a spinner, as a restoring relationship filter is. */
   loading?: boolean;
-  /** Shown in place of the global ID when the name could not be resolved, e.g. "IN123 (unavailable)". */
-  unresolvedLabel?: string;
+  /** Why the name could not be resolved, when the chip should say so: the item is gone, or loading it failed. */
+  unresolved?: "unavailable" | "failed";
   onRemove: () => void;
 };
 
@@ -98,11 +98,15 @@ function FilterChip({
 }
 
 /** The bookable item that the route focuses the calendar on, e.g. after creating a booking. */
-function CalendarTargetFilterChip({ globalId, name, loading, unresolvedLabel, onRemove }: CalendarTargetFilterState) {
+function CalendarTargetFilterChip({ globalId, name, loading, unresolved, onRemove }: CalendarTargetFilterState) {
   const { t } = useTranslation("booking");
   const label = name
     ? t("calendar.targetFilter.label", { name, globalId })
-    : t("calendar.targetFilter.labelWithoutName", { globalId: unresolvedLabel ?? globalId });
+    : unresolved === "unavailable"
+      ? t("calendar.targetFilter.labelUnavailable", { globalId })
+      : unresolved === "failed"
+        ? t("calendar.targetFilter.labelRestoreFailed", { globalId })
+        : t("calendar.targetFilter.labelWithoutName", { globalId });
   return (
     <FilterChip
       data-calendar-target-filter
