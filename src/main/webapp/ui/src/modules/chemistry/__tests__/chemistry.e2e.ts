@@ -61,6 +61,34 @@ function pageBlocker(page: Page): Locator {
   return page.locator(".blockUI.blockOverlay");
 }
 
+type TinyMceEditorHandle = { id: string; getContent: () => string };
+type TinyMceGlobal = {
+  init: (settings: Record<string, unknown>) => Promise<TinyMceEditorHandle[]>;
+  get: (id: string) => TinyMceEditorHandle;
+  setActive: (editor: TinyMceEditorHandle) => void;
+};
+
+const OTHER_EDITOR_ID = "rtf_other";
+
+/** Makes a second TinyMCE editor the active one, as if the user had moved to another field. */
+async function activateAnotherEditor(page: Page): Promise<void> {
+  await page.evaluate(async (id) => {
+    const { tinymce } = window as unknown as { tinymce: TinyMceGlobal };
+    const host = document.createElement("textarea");
+    host.id = id;
+    document.body.append(host);
+    const [editor] = await tinymce.init({ target: host, menubar: false, toolbar: false, plugins: [] });
+    tinymce.setActive(editor);
+  }, OTHER_EDITOR_ID);
+}
+
+function otherEditorContent(page: Page): Promise<string> {
+  return page.evaluate(
+    (id) => (window as unknown as { tinymce: TinyMceGlobal }).tinymce.get(id).getContent(),
+    OTHER_EDITOR_ID,
+  );
+}
+
 /** Creates a Basic Document and inserts aspirin into its "New List of Materials" field via Ketcher. */
 async function insertAspirinViaKetcher(
   pageWorkspace: WorkspacePage,
@@ -230,6 +258,26 @@ test.describe("Chemistry service", { tag: tags.APPS }, () => {
     await template.continue();
     await expect(field.chemistry.chemElement).toBeVisible();
     await expect(pageBlocker(page)).toBeHidden();
+  });
+
+  test("As a user, a dropped chemistry file is not inserted into another field that became active while it was inserting", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    await pageWorkspace.open();
+    const docEditor = await pageWorkspace.createBasicDocument();
+    const field = await docEditor.getField("New List of Materials");
+    const templates = await holdRequests(page, CHEM_ELEMENT_TEMPLATE_URL);
+
+    await field.dropFiles([chemdrawFile("Fluorescein1.cdx")]);
+    const template = await templates.next();
+    await activateAnotherEditor(page);
+
+    await template.continue();
+    await expect(page.getByText("There was a problem creating chemical: Fluorescein1.cdx")).toBeVisible();
+    await expect(pageBlocker(page)).toBeHidden();
+    await expect(field.chemistry.chemElement).toHaveCount(0);
+    expect(await otherEditorContent(page)).toBe("");
   });
 
   test("As a user, when some dropped chemistry files fail, the editor stays blocked until every file settles", async ({

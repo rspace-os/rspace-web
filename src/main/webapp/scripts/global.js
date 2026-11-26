@@ -1167,8 +1167,11 @@ function setUpJWMediaPlayer(id, name, extension) {
  * @param callback
  *            Calls the callback after the request has been finished (optional),
  *            with true if the template was inserted and false if the request or insertion failed
+ * @param canInsert
+ *            Called when the template arrives, just before insertion (optional). If it returns
+ *            false, nothing is inserted and the callback receives false.
  */
-RS.insertTemplateIntoTinyMCE = function (templateId, json, ed, callback) {
+RS.insertTemplateIntoTinyMCE = function (templateId, json, ed, callback, canInsert) {
   if (templateId.indexOf('#') === 0) {
     templateId = templateId.substr(1);
   }
@@ -1176,11 +1179,13 @@ RS.insertTemplateIntoTinyMCE = function (templateId, json, ed, callback) {
     function (elementTemplate) {
       var inserted = false;
       try {
-        var html = Mustache.render(elementTemplate, json);
-        if (html !== "") {
-          RS.tinymceInsertContent(html, ed);
+        if (canInsert === undefined || canInsert()) {
+          var html = Mustache.render(elementTemplate, json);
+          if (html !== "") {
+            RS.tinymceInsertContent(html, ed);
+          }
+          inserted = true;
         }
-        inserted = true;
       } finally {
         if (callback !== undefined) {
           callback(inserted);

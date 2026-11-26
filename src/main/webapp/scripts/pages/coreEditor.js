@@ -2061,10 +2061,14 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
           fieldId: data.fieldId,
           tstamp: milliseconds
         };
-        // the template is inserted into the active editor, which must still be the requested field
-        var activeEditor = tinyMCE.activeEditor;
-        if (!activeEditor || activeEditor.removed
-            || String(getFieldIdFromTextFieldId(activeEditor.id)) !== String(fieldId)) {
+        // the template is inserted into the active editor, which must still be the requested field,
+        // both now and when the template arrives
+        var isDestinationActive = function () {
+          var activeEditor = tinyMCE.activeEditor;
+          return !!activeEditor && !activeEditor.removed
+              && String(getFieldIdFromTextFieldId(activeEditor.id)) === String(fieldId);
+        };
+        if (!isDestinationActive()) {
           handleChemistryInsertionFailure(fileName, result);
           return;
         }
@@ -2074,7 +2078,7 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
           } else {
             handleChemistryInsertionFailure(fileName, result);
           }
-        });
+        }, isDestinationActive);
       } else if (response.error) {
         handleChemistryError(response, fileName);
         result.reject();
