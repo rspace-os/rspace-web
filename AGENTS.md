@@ -2,6 +2,8 @@
 
 RSpace is a Java/Spring application (built for Java 17, runs on 17 or 21) with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
+RSpace runs as a single application server against one database. Don't add handling, tests, or deployment steps for multiple application nodes. Concurrency within one server (several tabs, users, or transactions) still applies.
+
 Applies repository-wide; nested `AGENTS.md` files take precedence.
 
 ## Project map
