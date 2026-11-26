@@ -569,7 +569,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       return metadata;
     }
     if (selected.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName())) {
-      throw new NoSuchElementException("Could not find DMP with selected ID.");
+      throw new NoSuchElementException(messages.getMessage("apps.dmp.errors.zenodoSinglePlanOnly"));
     }
     if (selected.size() > 1) {
       log.info("{} plans selected, so no plan identifier is set on the deposit", selected.size());

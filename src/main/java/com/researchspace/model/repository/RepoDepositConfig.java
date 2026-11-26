@@ -35,6 +35,6 @@ public class RepoDepositConfig {
    */
   @JsonIgnore
   public boolean hasDMPs() {
-    return selectedDMPs.size() > 0;
+    return selectedDMPs != null && !selectedDMPs.isEmpty();
   }
 }

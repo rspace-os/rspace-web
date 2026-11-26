@@ -792,7 +792,31 @@ public class AsyncDepositorImplTest {
             .get();
 
     assertFalse(result.isSucceeded());
+    assertTrue(
+        result.getMessage().endsWith("Only one DMP can be associated with an export to Zenodo."),
+        result.getMessage());
     Mockito.verifyNoInteractions(repository);
+  }
+
+  @Test
+  void missingPlanListIsDepositedWithoutPlanIdentifier() throws Exception {
+    givenDepositSucceeds();
+    RepoDepositConfig cfg = depositConfigWithPlans(APP_ZENODO);
+    cfg.setSelectedDMPs(null);
+
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(APP_ZENODO, "Zenodo", true),
+                anyUser,
+                repository,
+                cfg,
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+
+    assertTrue(result.isSucceeded(), result.getMessage());
+    Mockito.verifyNoInteractions(dmpManager, dmpUpdateHandler);
   }
 
   @Test

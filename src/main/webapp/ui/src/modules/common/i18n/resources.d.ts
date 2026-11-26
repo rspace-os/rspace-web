@@ -5625,7 +5625,8 @@ export default interface Resources {
         "errors": {
           "import": "Couldn't import DMP",
           "invalidLicenseUrl": "{0} is not a valid URL",
-          "list": "Couldn't list DMPs"
+          "list": "Couldn't list DMPs",
+          "zenodoSinglePlanOnly": "Only one DMP can be associated with an export to Zenodo."
         },
         "platformName": {
           "argos": "Argos",
