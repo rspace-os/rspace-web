@@ -557,12 +557,13 @@ const queryClient = new QueryClient();
 export function Gallery() {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
-      <CssBaseline />
       <meta
         name="theme-color"
         content={`hsl(${ACCENT_COLOR.background.hue}, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`}
       />
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        {/* Inside the ThemeProvider so the page background follows the colour scheme. */}
+        <CssBaseline />
         <Alerts>
           <QueryClientProvider client={queryClient}>
             <Analytics>

@@ -4,6 +4,7 @@ import { darken, useTheme } from "@mui/material/styles";
 import type { TFunction } from "i18next";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { modeGrey } from "@/util/colors";
 
 const STATUS_LABEL_KEY = {
   PENDING: "requestsManagement.status.pending",
@@ -104,8 +105,8 @@ export default function RequestsStatusChip({
         sx={{
           fontWeight: theme.typography.fontWeightMedium,
           "&&&": {
-            backgroundColor: theme.palette.grey[300],
-            color: theme.palette.grey[700],
+            backgroundColor: modeGrey(theme, 300),
+            color: modeGrey(theme, 700),
             border,
           },
         }}

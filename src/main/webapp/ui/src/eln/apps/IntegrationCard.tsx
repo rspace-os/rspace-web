@@ -35,9 +35,13 @@ function hsl(hue: number, saturation: number, lightness: number, opacity: number
     ? `hsl(${hue} ${saturation}% ${adjustedLightness}% / 100%)`
     : `hsl(${hue} ${saturation}% ${lightness}% / ${opacity}%)`;
 }
-const accentTextColor = (color: Hsl, opacity: number = 100) => hsl(color.hue, color.saturation, 27, opacity);
-const mainTextColor = (color: Hsl, opacity: number = 100) => hsl(color.hue, color.saturation, 20, opacity);
-const borderColor = (color: Hsl, opacity: number = 25) => hsl(color.hue, color.saturation, 20, opacity);
+// In dark mode the text sits on a near-black card, so the lightness is mirrored.
+const accentTextColor = (color: Hsl, dark: boolean, opacity: number = 100) =>
+  hsl(color.hue, color.saturation, dark ? 75 : 27, opacity);
+const mainTextColor = (color: Hsl, dark: boolean, opacity: number = 100) =>
+  hsl(color.hue, color.saturation, dark ? 85 : 20, opacity);
+const borderColor = (color: Hsl, dark: boolean, opacity: number = 25) =>
+  hsl(color.hue, color.saturation, dark ? 80 : 20, opacity);
 type IntegrationCardArgs<Credentials> = {
   // The name of the integration, as rendered in the UI. Be sure to check how
   // the company chooses to brand the service.
@@ -123,6 +127,7 @@ function IntegrationCard<Credentials>({
   const { dialogOpened, dialogClosed } = useContext(CardPlacementContext);
   const mode = integrationState.mode;
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const { trackEvent } = useContext(AnalyticsContext);
 
   const cardMediaWrapperSx = {
@@ -144,16 +149,16 @@ function IntegrationCard<Credentials>({
             },
             styleOverrides: {
               root: {
-                color: accentTextColor(color),
-                textDecorationColor: accentTextColor(color, 40),
-                outlineColor: mainTextColor(color, 25),
+                color: accentTextColor(color, isDark),
+                textDecorationColor: accentTextColor(color, isDark, 40),
+                outlineColor: mainTextColor(color, isDark, 25),
               },
             },
           },
           MuiCard: {
             styleOverrides: {
               root: {
-                border: `2px solid ${borderColor(color)}`,
+                border: `2px solid ${borderColor(color, isDark)}`,
                 borderRadius: theme.spacing(1),
               },
             },
@@ -167,11 +172,11 @@ function IntegrationCard<Credentials>({
               title: {
                 fontWeight: 500,
                 fontSize: "1.3rem",
-                color: accentTextColor(color),
+                color: accentTextColor(color, isDark),
                 paddingBottom: 0,
               },
               subheader: {
-                color: mainTextColor(color),
+                color: mainTextColor(color, isDark),
               },
             },
           },
@@ -202,7 +207,7 @@ function IntegrationCard<Credentials>({
           MuiDialog: {
             styleOverrides: {
               paper: {
-                border: `3px solid ${borderColor(color)}`,
+                border: `3px solid ${borderColor(color, isDark)}`,
                 borderRadius: theme.spacing(1),
               },
             },
@@ -215,7 +220,7 @@ function IntegrationCard<Credentials>({
               root: {
                 padding: theme.spacing(1),
                 margin: 0,
-                borderBottom: `1px solid ${borderColor(color, 20)}`,
+                borderBottom: `1px solid ${borderColor(color, isDark, 20)}`,
                 textTransform: "none",
               },
             },
@@ -240,9 +245,9 @@ function IntegrationCard<Credentials>({
           MuiButton: {
             styleOverrides: {
               root: {
-                border: `2px solid ${borderColor(color)}`,
-                color: mainTextColor(color),
-                outlineColor: `${accentTextColor(color)} !important`,
+                border: `2px solid ${borderColor(color, isDark)}`,
+                color: mainTextColor(color, isDark),
+                outlineColor: `${accentTextColor(color, isDark)} !important`,
                 borderRadius: 6,
                 paddingTop: theme.spacing(0.5),
                 paddingBottom: theme.spacing(0.5),
@@ -250,7 +255,7 @@ function IntegrationCard<Credentials>({
                 paddingRight: theme.spacing(2.5),
                 transition: "background-color ease 0.3s",
                 "&:hover": {
-                  border: `2px solid ${mainTextColor(color, 20)}`,
+                  border: `2px solid ${mainTextColor(color, isDark, 20)}`,
                   // hover background is not adjusted for prefers-contrast as
                   // it is purely a visual effect and not necessary for
                   // understanding the interface
@@ -262,18 +267,18 @@ function IntegrationCard<Credentials>({
           MuiTypography: {
             styleOverrides: {
               h6: {
-                color: accentTextColor(color),
+                color: accentTextColor(color, isDark),
                 lineHeight: 1.5,
               },
               subtitle1: {
-                color: accentTextColor(color),
+                color: accentTextColor(color, isDark),
                 fontWeight: 500,
               },
               body1: {
-                color: mainTextColor(color),
+                color: mainTextColor(color, isDark),
               },
               body2: {
-                color: mainTextColor(color),
+                color: mainTextColor(color, isDark),
                 paddingBottom: theme.spacing(0.5),
               },
             },
@@ -296,7 +301,7 @@ function IntegrationCard<Credentials>({
             styleOverrides: {
               root: {
                 [`& .${svgIconClasses.root}`]: {
-                  color: accentTextColor(color),
+                  color: accentTextColor(color, isDark),
                 },
                 [`&.${radioClasses.disabled}`]: {
                   [`& .${svgIconClasses.root}`]: {
@@ -309,7 +314,7 @@ function IntegrationCard<Credentials>({
           MuiDivider: {
             styleOverrides: {
               root: {
-                borderColor: borderColor(color, 20),
+                borderColor: borderColor(color, isDark, 20),
                 marginTop: theme.spacing(2),
                 marginBottom: theme.spacing(2),
               },
@@ -318,14 +323,14 @@ function IntegrationCard<Credentials>({
           MuiOutlinedInput: {
             styleOverrides: {
               notchedOutline: {
-                borderColor: `${accentTextColor(color)} !important`,
+                borderColor: `${accentTextColor(color, isDark)} !important`,
               },
             },
           },
           MuiInputLabel: {
             styleOverrides: {
               root: {
-                color: `${accentTextColor(color)} !important`,
+                color: `${accentTextColor(color, isDark)} !important`,
               },
             },
           },
@@ -394,12 +399,12 @@ function IntegrationCard<Credentials>({
           "& ol > li": {
             position: "relative",
             paddingLeft: theme.spacing(1),
-            color: mainTextColor(color),
+            color: mainTextColor(color, isDark),
             paddingBottom: theme.spacing(0.5),
             lineHeight: 1.6,
             fontSize: "0.875rem",
             "&::marker": {
-              color: mainTextColor(color),
+              color: mainTextColor(color, isDark),
               fontWeight: 500,
               content: "counter(list-item) ' '",
               paddingRight: theme.spacing(0.25),
@@ -416,7 +421,7 @@ function IntegrationCard<Credentials>({
               borderRadius: "50%",
               backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                 ? "transparent"
-                : borderColor(color),
+                : borderColor(color, isDark),
             },
           },
         }}

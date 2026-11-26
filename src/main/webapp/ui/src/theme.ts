@@ -8,6 +8,7 @@ import {
   type Transitions,
 } from "@mui/material/styles";
 import { fontFamily } from "@/fonts";
+import { darkModeAvailable, initColorMode } from "./colorScheme";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -248,131 +249,223 @@ export const COLORS = {
   },
 };
 
-const baseTheme = createTheme({
-  palette: {
-    primary: {
-      main: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, COLORS.primary.lightness),
-      contrastText: "#fff",
-      saturated: "#009ad6",
-      placeholderText: "#8babcb",
-      background: "#00adef22",
-      dark: "rgba(0, 121, 167, 1)",
-      light: "rgba(51, 189, 242, 1)",
-    },
-    callToAction: {
-      main: hslToHex(207, 76, 76),
-      contrastText: "#264b58",
-      saturated: "#ff0000",
-      placeholderText: "#8babcb",
-      background: hslToHex(207, 76, 66),
-      dark: hslToHex(207, 76, 66),
-      light: "rgba(51, 189, 242, 1)",
-    },
-    secondary: {
-      main: "#f50057",
-      light: "#fc6da0",
-      contrastText: "#fff",
-    },
-    tertiary: {
-      main: "#fb8c00",
-      light: "#ffcc80",
-      contrastText: "#000",
-    },
-    background: {
-      default: "#fafafa",
-      alt: "#fff",
-    },
-    error: {
-      main: "#d32f2f",
-    },
-    warning: {
-      main: "#f57c00",
-    },
-    info: {
-      main: "#2196f3",
-      contrastText: "#0d3c61",
-    },
-    hover: {
-      tableRow: "rgba(0,0,0,0.04)",
-      iconButton: "rgba(0,0,0,0.04)",
-    },
-    record: {
-      container: {
-        fg: "#2196f3",
-        bg: "#4175AA",
-        lighter: "#e6edf4",
-      },
-      sample: {
-        fg: "#4caf50",
-        bg: "#509554",
-        lighter: "#e9f2e9",
-      },
-      subSample: {
-        fg: "#21b07c",
-        bg: "#256F5C",
-        lighter: "#e9f1ef",
-      },
-      sampleTemplate: {
-        fg: "#651ef5",
-        bg: "#6B5C8A",
-        lighter: "#ecebf0",
-      },
-      instrument: {
-        fg: "#f57c00",
-        bg: "#ab4c08",
-        lighter: "#fce8d5",
-      },
-      instrumentTemplate: {
-        fg: "#651ef5",
-        bg: "#6B5C8A",
-        lighter: "#ecebf0",
-      },
-      document: {
-        bg: "#af5076",
-        fg: "#d16691",
-      },
-      mixed: {
-        bg: "#77858d",
-        fg: "#fafafa",
-        lighter: "#ecedef",
-      },
-      attachment: {
-        fg: "#e64a19",
-      },
-      gallery: {
-        fg: "#a768c6",
-      },
-    },
-    standardIcon: {
-      main: "rgba(0,0,0,0.54)",
-    },
-    sidebar: {
-      selected: {
-        bg: "#e6e6e6",
-        badge: "#f7f7f7",
-      },
-    },
-    sampleRequestStatus: {
-      pending: "#FDF0DF",
-      approved: "#E7EEF2",
-      fulfilled: "#E6F1E8",
-      rejected: "#FBEAE8",
-    },
-    sampleRequestActions: {
-      reject: { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" },
-      approve: { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" },
-      approvedDisabled: { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" },
-      markAsFulfilled: { color: "#3A4A52", borderColor: "#7D8D95", backgroundColor: "white" },
-    },
+initColorMode();
 
-    // the lightest grey on a white background that has AA contrast
-    lightestGrey: "#949494",
-    menuIconGrey: "#616161",
-    faIconGrey: "#8d8d8d",
-    modifiedHighlight: "teal",
-    warningRed: red[500],
-    deletedGrey: grey[700],
+const lightPalette = {
+  primary: {
+    main: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, COLORS.primary.lightness),
+    contrastText: "#fff",
+    saturated: "#009ad6",
+    placeholderText: "#8babcb",
+    background: "#00adef22",
+    dark: "rgba(0, 121, 167, 1)",
+    light: "rgba(51, 189, 242, 1)",
   },
+  callToAction: {
+    main: hslToHex(207, 76, 76),
+    contrastText: "#264b58",
+    saturated: "#ff0000",
+    placeholderText: "#8babcb",
+    background: hslToHex(207, 76, 66),
+    dark: hslToHex(207, 76, 66),
+    light: "rgba(51, 189, 242, 1)",
+  },
+  secondary: {
+    main: "#f50057",
+    light: "#fc6da0",
+    contrastText: "#fff",
+  },
+  tertiary: {
+    main: "#fb8c00",
+    light: "#ffcc80",
+    contrastText: "#000",
+  },
+  background: {
+    default: "#fafafa",
+    alt: "#fff",
+  },
+  error: {
+    main: "#d32f2f",
+  },
+  warning: {
+    main: "#f57c00",
+  },
+  info: {
+    main: "#2196f3",
+    contrastText: "#0d3c61",
+  },
+  hover: {
+    tableRow: "rgba(0,0,0,0.04)",
+    iconButton: "rgba(0,0,0,0.04)",
+  },
+  record: {
+    container: {
+      fg: "#2196f3",
+      bg: "#4175AA",
+      lighter: "#e6edf4",
+    },
+    sample: {
+      fg: "#4caf50",
+      bg: "#509554",
+      lighter: "#e9f2e9",
+    },
+    subSample: {
+      fg: "#21b07c",
+      bg: "#256F5C",
+      lighter: "#e9f1ef",
+    },
+    sampleTemplate: {
+      fg: "#651ef5",
+      bg: "#6B5C8A",
+      lighter: "#ecebf0",
+    },
+    instrument: {
+      fg: "#f57c00",
+      bg: "#ab4c08",
+      lighter: "#fce8d5",
+    },
+    instrumentTemplate: {
+      fg: "#651ef5",
+      bg: "#6B5C8A",
+      lighter: "#ecebf0",
+    },
+    document: {
+      bg: "#af5076",
+      fg: "#d16691",
+    },
+    mixed: {
+      bg: "#77858d",
+      fg: "#fafafa",
+      lighter: "#ecedef",
+    },
+    attachment: {
+      fg: "#e64a19",
+    },
+    gallery: {
+      fg: "#a768c6",
+    },
+  },
+  standardIcon: {
+    main: "rgba(0,0,0,0.54)",
+  },
+  sidebar: {
+    selected: {
+      bg: "#e6e6e6",
+      badge: "#f7f7f7",
+    },
+  },
+  sampleRequestStatus: {
+    pending: "#FDF0DF",
+    approved: "#E7EEF2",
+    fulfilled: "#E6F1E8",
+    rejected: "#FBEAE8",
+  },
+  sampleRequestActions: {
+    reject: { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" },
+    approve: { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" },
+    approvedDisabled: { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" },
+    markAsFulfilled: { color: "#3A4A52", borderColor: "#7D8D95", backgroundColor: "white" },
+  },
+
+  // the lightest grey on a white background that has AA contrast
+  lightestGrey: "#949494",
+  menuIconGrey: "#616161",
+  faIconGrey: "#8d8d8d",
+  modifiedHighlight: "teal",
+  warningRed: red[500],
+  deletedGrey: grey[700],
+} satisfies MuiThemeOptions["palette"];
+
+/**
+ * Dark counterparts of `lightPalette`. Each value keeps its light hue and is
+ * solved so its WCAG contrast against the dark surface matches its light
+ * contrast against white, raised to 4.5:1 for text and 3:1 for icons and
+ * borders. Surfaces match the booking stack's Tailwind dark tokens. error,
+ * warning, info and success are left to MUI's dark defaults.
+ */
+const darkPalette = {
+  mode: "dark",
+  primary: {
+    main: "#59b7fa",
+    contrastText: "#000000",
+    saturated: "#008bc1",
+    placeholderText: "#6f8aa6",
+    background: "#00adef22",
+  },
+  callToAction: lightPalette.callToAction,
+  secondary: { main: "#ff065e", contrastText: "#000000" },
+  tertiary: lightPalette.tertiary,
+  background: { default: "#090b0c", paper: "#161b1d", alt: "#161b1d" },
+  hover: { tableRow: "rgba(255,255,255,0.08)", iconButton: "rgba(255,255,255,0.08)" },
+  // record.*.bg keep their light values: they are header backgrounds behind white text.
+  record: {
+    container: { fg: "#0a6ab7", bg: "#4175AA", lighter: "#192a3a" },
+    sample: { fg: "#327334", bg: "#509554", lighter: "#192a19" },
+    subSample: { fg: "#167351", bg: "#256F5C", lighter: "#1a2925" },
+    sampleTemplate: { fg: "#b390fa", bg: "#6B5C8A", lighter: "#292734" },
+    instrument: { fg: "#9f5000", bg: "#ab4c08", lighter: "#352617" },
+    instrumentTemplate: { fg: "#b390fa", bg: "#6B5C8A", lighter: "#292734" },
+    document: { bg: "#af5076", fg: "#c43b72" },
+    mixed: { bg: "#77858d", fg: "#fafafa", lighter: "#25282c" },
+    attachment: { fg: "#d74517" },
+    gallery: { fg: "#9e59c0" },
+  },
+  standardIcon: { main: "rgba(255,255,255,0.7)" },
+  sidebar: { selected: { bg: "#2c2c2c", badge: "#202020" } },
+  sampleRequestStatus: {
+    pending: "#2f2212",
+    approved: "#1b2a32",
+    fulfilled: "#182b1c",
+    rejected: "#411d18",
+  },
+  sampleRequestActions: {
+    reject: { color: "#e27070", borderColor: "#b65148", backgroundColor: "#161b1d" },
+    approve: { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" },
+    approvedDisabled: { color: "#7295a5", borderColor: "#243c48", backgroundColor: "#14262f" },
+    markAsFulfilled: { color: "#b0bfc7", borderColor: "#627178", backgroundColor: "#161b1d" },
+  },
+  lightestGrey: "#828282",
+  menuIconGrey: "#9a9a9a",
+  faIconGrey: "#6c6c6c",
+  modifiedHighlight: "#009696",
+  warningRed: "#f3392b",
+  deletedGrey: "#9a9a9a",
+} satisfies MuiThemeOptions["palette"];
+
+const lightBorders = {
+  table: "1px solid rgba(224, 224, 224, 1)",
+  descriptionList: "1px solid rgba(224, 224, 224, 1)",
+  floatingActions: "1px solid rgba(224, 224, 224, 1)",
+  menu: "1px solid #d3d4d5",
+  section: "2px solid rgb(235, 235, 235)",
+  menuButton: "1px solid rgba(192 ,192, 192, 1)",
+  card: "1px solid rgba(0, 0, 0, 0.12)",
+  themedDialog: (hue: number, sat: number, lig: number) => `3px solid hsl(${hue} ${sat}% ${lig}% / 25%)`,
+  themedDialogTitle: (hue: number, sat: number, lig: number) => `1px solid hsl(${hue} ${sat}% ${lig}% / 20%)`,
+};
+
+const darkBorders: typeof lightBorders = {
+  ...lightBorders,
+  table: "1px solid #303030",
+  descriptionList: "1px solid #303030",
+  floatingActions: "1px solid #303030",
+  menu: "1px solid #37383a",
+  section: "2px solid #292929",
+  menuButton: "1px solid #454545",
+  card: "1px solid rgba(255, 255, 255, 0.12)",
+};
+
+/**
+ * Light and dark colour schemes. Theme-level keys other than `palette` (here
+ * `borders`) are merged into the theme by ThemeProvider for the active scheme.
+ */
+export const colorSchemes = {
+  light: { palette: lightPalette, borders: lightBorders },
+  dark: { palette: darkPalette, borders: darkBorders },
+} as unknown as NonNullable<MuiThemeOptions["colorSchemes"]>;
+
+const baseTheme = createTheme({
+  ...(darkModeAvailable ? { colorSchemes } : { palette: lightPalette }),
   breakpoints: {
     values: {
       xs: 0,
@@ -382,17 +475,7 @@ const baseTheme = createTheme({
       xl: 1920,
     },
   },
-  borders: {
-    table: "1px solid rgba(224, 224, 224, 1)",
-    descriptionList: "1px solid rgba(224, 224, 224, 1)",
-    floatingActions: "1px solid rgba(224, 224, 224, 1)",
-    menu: "1px solid #d3d4d5",
-    section: "2px solid rgb(235, 235, 235)",
-    menuButton: "1px solid rgba(192 ,192, 192, 1)",
-    card: "1px solid rgba(0, 0, 0, 0.12)",
-    themedDialog: (hue: number, sat: number, lig: number) => `3px solid hsl(${hue} ${sat}% ${lig}% / 25%)`,
-    themedDialogTitle: (hue: number, sat: number, lig: number) => `1px solid hsl(${hue} ${sat}% ${lig}% / 20%)`,
-  },
+  borders: lightBorders,
   transitions: {
     iconTransformations: "transform 0.3s cubic-bezier(0.42, 0, 0.94, 1.49) 0s", // just a little bounce
     filterToggle: "filter .2s ease-in-out, opacity .2s ease-in-out",
@@ -419,9 +502,9 @@ export default createTheme({
   components: {
     MuiFormLabel: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           cursor: "text !important",
-          color: "rgb(10,10,10)",
+          color: theme.palette.mode === "dark" ? theme.palette.text.primary : "rgb(10,10,10)",
           marginBottom: baseTheme.spacing(0.25),
           fontWeight: 600,
           fontSize: "0.95em",
@@ -430,22 +513,22 @@ export default createTheme({
             fontSize: "1.1em",
           },
           [`&.${formLabelClasses.focused}`]: {
-            color: "rgb(10,10,10)",
+            color: theme.palette.mode === "dark" ? theme.palette.text.primary : "rgb(10,10,10)",
           },
-        },
-        asterisk: {
-          color: baseTheme.palette.error.main,
-        },
+        }),
+        asterisk: ({ theme }) => ({
+          color: theme.palette.error.main,
+        }),
       },
     },
     MuiButtonBase: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           cursor: "default",
           "&:focus-visible": {
-            outline: `2px solid ${baseTheme.palette.primary.main}`,
+            outline: `2px solid ${theme.palette.primary.main}`,
           },
-        },
+        }),
       },
     },
     MuiButton: {
@@ -493,13 +576,13 @@ export default createTheme({
     },
     MuiTableSortLabel: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           cursor: "default",
           "&:focus-visible": {
-            outline: `2px solid ${baseTheme.palette.primary.main}`,
+            outline: `2px solid ${theme.palette.primary.main}`,
             borderRadius: baseTheme.spacing(0.5),
           },
-        },
+        }),
       },
     },
     MuiChip: {

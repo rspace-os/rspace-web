@@ -133,7 +133,7 @@ function RecordsImport(): React.ReactNode {
           </Tabs>
           <Box
             sx={{
-              backgroundColor: "white",
+              backgroundColor: "background.paper",
               borderRadius: 1,
               ml: 1,
               pt: 0.25,

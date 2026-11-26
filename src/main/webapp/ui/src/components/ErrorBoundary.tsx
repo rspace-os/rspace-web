@@ -54,7 +54,7 @@ function Container({
           top: 0,
           left: 0,
           fontSize: 20,
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
           borderBottom: "2px solid black",
           padding: "20px",
           zIndex: 9999 /* higher than anything else */,

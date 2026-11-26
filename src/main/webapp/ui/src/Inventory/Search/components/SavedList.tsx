@@ -79,7 +79,7 @@ function SavedList<T extends SavedItem>({
               <ListItemSecondaryAction
                 sx={(theme) => ({
                   [`& .${iconButtonClasses.root}`]: {
-                    backgroundColor: "white",
+                    backgroundColor: theme.palette.background.paper,
                     padding: theme.spacing(0.5),
                     marginLeft: theme.spacing(1),
                     marginRight: "-4px !important",

@@ -3,6 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { modeGrey } from "@/util/colors";
 import RequestsStatusChip from "./RequestsStatusChip";
 
 /**
@@ -25,7 +26,7 @@ export default function RequestDetailHeader({
     <Box
       sx={{
         p: 2,
-        backgroundColor: theme.palette.grey[200],
+        backgroundColor: modeGrey(theme, 200),
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

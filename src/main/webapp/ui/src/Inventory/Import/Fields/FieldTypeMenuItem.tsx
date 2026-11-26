@@ -82,10 +82,10 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                   sx={{
                     position: "absolute",
                     top: theme.spacing(6),
-                    backgroundColor: "white",
+                    backgroundColor: theme.palette.background.paper,
                     right: theme.spacing(8),
                     px: 1,
-                    color: "rgba(0, 0, 0, 0.42)",
+                    color: theme.palette.text.disabled,
                     fontSize: "0.7rem",
                     opacity: open ? 1 : 0,
                     transition: "opacity 0.2s ease 0s",

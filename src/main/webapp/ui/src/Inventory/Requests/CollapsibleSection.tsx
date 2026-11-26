@@ -9,6 +9,7 @@ import type React from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "@/components/CustomTooltip";
+import { modeGrey } from "@/util/colors";
 
 /**
  * A collapsible section used throughout the Requests detail panel: a clickable header with a
@@ -42,7 +43,7 @@ export default function CollapsibleSection({
       <Box
         sx={{
           p: 1,
-          backgroundColor: theme.palette.grey[100],
+          backgroundColor: modeGrey(theme, 100),
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

@@ -3,6 +3,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useContext, useEffect, useRef } from "react";
 import SearchContext from "@/stores/contexts/Search";
+import { modeGrey } from "@/util/colors";
 import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
@@ -114,7 +115,7 @@ function GridCell({
       sx={(theme) => ({
         color: "grey",
         borderBottom: "none",
-        "&:hover, &:focus": { backgroundColor: theme.palette.grey[200] },
+        "&:hover, &:focus": { backgroundColor: modeGrey(theme, 200) },
         "&:focus-within": { boxShadow: `inset 0 0 0 2px ${theme.palette.primary.main}` },
         padding: "3px !important",
         width,

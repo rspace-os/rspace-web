@@ -36,3 +36,27 @@ export const selectColor = (colorNum: number, colors: number): string => {
   const hex = hslToHex(30 + colorNum * (300 / c), 100, 50);
   return hex;
 };
+
+const MIRRORED_GREY = {
+  50: 900,
+  100: 900,
+  200: 800,
+  300: 700,
+  400: 600,
+  500: 500,
+  600: 400,
+  700: 300,
+  800: 200,
+  900: 50,
+} as const;
+
+/**
+ * A shade of `theme.palette.grey` that keeps its role in both colour schemes:
+ * light shades used as backgrounds become dark ones in dark mode, and vice versa.
+ */
+export function modeGrey(
+  theme: { palette: { mode: "light" | "dark"; grey: Record<keyof typeof MIRRORED_GREY, string> } },
+  shade: keyof typeof MIRRORED_GREY,
+): string {
+  return theme.palette.grey[theme.palette.mode === "dark" ? MIRRORED_GREY[shade] : shade];
+}

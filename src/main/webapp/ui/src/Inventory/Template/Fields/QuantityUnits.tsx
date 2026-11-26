@@ -26,7 +26,7 @@ function FormBoxWithLabel({ children, label }: { children: React.ReactNode; labe
                 padding: theme.spacing(0, 0.5),
                 position: "absolute",
                 fontSize: "0.9em",
-                backgroundColor: "white",
+                backgroundColor: theme.palette.background.paper,
                 fontWeight: "400 !important",
               }),
             },
