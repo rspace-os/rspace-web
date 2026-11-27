@@ -46,6 +46,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
@@ -528,6 +529,7 @@ public abstract class SampleEntity extends InventoryRecord
    */
   @OneToMany(mappedBy = "sample", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   @Override
   protected List<Barcode> getBarcodes() {
     return barcodes;
@@ -540,6 +542,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   @OneToMany(mappedBy = "sample", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   @Override
   protected List<DigitalObjectIdentifier> getIdentifiers() {
     return identifiers;
@@ -555,6 +558,7 @@ public abstract class SampleEntity extends InventoryRecord
    */
   @OneToMany(mappedBy = "sample", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   protected List<InventoryFile> getFiles() {
     return files;
   }

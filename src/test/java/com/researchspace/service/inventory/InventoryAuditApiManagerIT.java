@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
@@ -17,6 +19,8 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +34,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
+  private @Autowired DataCiteConnector realDataCiteConnector;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -142,5 +148,39 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals("updated instrument", apiInstrumentRev2.getName());
     assertEquals(secondRevisionId, apiInstrumentRev2.getRevisionId());
     assertNotNull(apiInstrumentRev2.getGlobalId());
+  }
+
+  @Test
+  public void sampleRevisionIncludesBarcodesIdentifiersAndAttachments() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("barcoded sample");
+    newSample.getBarcodes().add(new ApiBarcode("revision-barcode"));
+    ApiSampleWithFullSubSamples sample = sampleApiMgr.createNewApiSample(newSample, anyUser);
+    inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
+    try {
+      inventoryIdentifierApiMgr.registerNewIdentifier(sample.getOid(), anyUser);
+    } finally {
+      inventoryIdentifierApiMgr.setDataCiteConnector(realDataCiteConnector);
+    }
+    addFileAttachmentToInventoryItem(sample.getOid(), anyUser);
+    ApiSample nameUpdate = new ApiSample();
+    nameUpdate.setId(sample.getId());
+    nameUpdate.setName("renamed barcoded sample");
+    sampleApiMgr.updateApiSample(nameUpdate, anyUser);
+
+    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(sample.getId(), anyUser);
+    List<ApiInventoryRecordRevision> revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbSample).getRevisions();
+    long latestRevisionId = revisions.get(revisions.size() - 1).getRevisionId();
+
+    ApiSample revision = inventoryAuditMgr.getApiSampleRevision(sample.getId(), latestRevisionId);
+    assertEquals("renamed barcoded sample", revision.getName());
+    assertThat(revision.getBarcodes())
+        .extracting(ApiBarcode::getData)
+        .containsExactly("revision-barcode");
+    assertThat(revision.getIdentifiers()).hasSize(1);
+    assertThat(revision.getAttachments())
+        .extracting(ApiInventoryFile::getName)
+        .containsExactly("Picture1.png");
   }
 }

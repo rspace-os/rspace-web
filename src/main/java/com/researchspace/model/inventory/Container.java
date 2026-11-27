@@ -43,6 +43,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
@@ -214,9 +215,19 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   @Override
   protected List<Barcode> getBarcodes() {
     return barcodes;
+  }
+
+  /**
+   * Container contents and Inventory search load every candidate container before slicing the page,
+   * so container barcodes stay lazy until the page's records are converted.
+   */
+  @Override
+  protected boolean buildsActiveBarcodesOnLoad() {
+    return false;
   }
 
   protected void setBarcodes(List<Barcode> barcodes) {
@@ -225,6 +236,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   @Override
   protected List<DigitalObjectIdentifier> getIdentifiers() {
     return identifiers;
@@ -237,6 +249,7 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
+  @BatchSize(size = 20)
   protected List<InventoryFile> getFiles() {
     return files;
   }

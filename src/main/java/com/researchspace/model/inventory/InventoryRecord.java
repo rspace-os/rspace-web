@@ -21,6 +21,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -35,6 +36,7 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 import org.hibernate.search.engine.backend.types.Projectable;
@@ -424,9 +426,17 @@ public abstract class InventoryRecord {
     return attachedFiles;
   }
 
+  /**
+   * Rebuilds the cached active attached files. A collection Hibernate has not loaded yet is left to
+   * {@link #initializeActiveListsAfterLoad()}, so the attached files of records loaded together
+   * load in batches. Envers revision entities never run that hook and their collections report as
+   * not loaded, so on them the list is built on first read.
+   */
   public void refreshActiveAttachedFiles() {
     attachedFiles = null;
-    getAttachedFiles();
+    if (Hibernate.isInitialized(getFiles())) {
+      getAttachedFiles();
+    }
   }
 
   @Transient
@@ -455,9 +465,17 @@ public abstract class InventoryRecord {
     return activeBarcodes;
   }
 
+  /**
+   * Rebuilds the cached active barcodes. A collection Hibernate has not loaded yet is left to
+   * {@link #initializeActiveListsAfterLoad()}, so the barcodes of records loaded together load in
+   * batches. Envers revision entities never run that hook and their collections report as not
+   * loaded, so on them the list is built on first read.
+   */
   public void refreshActiveBarcodes() {
     activeBarcodes = null;
-    getActiveBarcodes();
+    if (Hibernate.isInitialized(getBarcodes())) {
+      getActiveBarcodes();
+    }
   }
 
   @Transient
@@ -486,9 +504,40 @@ public abstract class InventoryRecord {
     return activeIdentifiers;
   }
 
+  /**
+   * Rebuilds the cached active identifiers. A collection Hibernate has not loaded yet is left to
+   * {@link #initializeActiveListsAfterLoad()}, so the identifiers of records loaded together load
+   * in batches. Envers revision entities never run that hook and their collections report as not
+   * loaded, so on them the list is built on first read.
+   */
   public void refreshActiveIdentifiers() {
     activeIdentifiers = null;
+    if (Hibernate.isInitialized(getIdentifiers())) {
+      getActiveIdentifiers();
+    }
+  }
+
+  /**
+   * Builds the active attachment, barcode and identifier lists once Hibernate has loaded all
+   * records of a query, so their collections load in batches and stay readable after the session
+   * closes.
+   */
+  @PostLoad
+  private void initializeActiveListsAfterLoad() {
+    getAttachedFiles();
+    if (buildsActiveBarcodesOnLoad()) {
+      getActiveBarcodes();
+    }
     getActiveIdentifiers();
+  }
+
+  /**
+   * Whether {@link #initializeActiveListsAfterLoad()} builds the active barcodes. Records whose
+   * barcodes are only read once a listing converts its page return false, so loading every
+   * candidate for sorting or paging leaves the barcodes of off-page records unloaded.
+   */
+  protected boolean buildsActiveBarcodesOnLoad() {
+    return true;
   }
 
   public void increaseVersion() {
