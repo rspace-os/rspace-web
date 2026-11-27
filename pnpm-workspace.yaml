@@ -16,7 +16,9 @@ overrides:
   # until sa11y supports Vitest 5.
   '@sa11y/vitest>vitest': 5.1.1
   # Keep React-PDF's API on the same version as the bundled PDF.js worker.
-  react-pdf>pdfjs-dist: 5.7.284
+  # React-PDF 11.1.0 pins pdfjs-dist 6.5.438; move this with the direct
+  # pdfjs-dist dependency.
+  react-pdf>pdfjs-dist: 6.5.438
   # @jupyter-kit/katex and rehype-katex still ask for katex ^0.16, which is
   # below the patched release used by this project.
   katex@<0.19.1: 0.19.1
