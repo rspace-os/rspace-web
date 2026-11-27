@@ -71,4 +71,31 @@ describe("Fields", () => {
       expect(input).toHaveAttribute("step", "any");
     });
   });
+  test("View-only link field names its group without a heading", () => {
+    const sample = makeMockSample({
+      fields: [
+        {
+          attachment: null,
+          columnIndex: 1,
+          content: null,
+          definition: null,
+          globalId: "SF20",
+          id: 20,
+          mandatory: false,
+          name: "Reference",
+          selectedOptions: null,
+          type: "link",
+          allowedRelationTypes: ["References"],
+          link: null,
+        },
+      ],
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <Fields onErrorStateChange={() => {}} sample={sample} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("group", { name: "Reference" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reference" })).not.toBeInTheDocument();
+  });
 });

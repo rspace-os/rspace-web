@@ -763,10 +763,12 @@ function Identifiers<
   },
   FieldOwner extends HasEditableFields<Fields> & { recordType: InventoryRecord["recordType"] },
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
+  const { t } = useTranslation("inventory");
   const isInstrument = fieldOwner.recordType === "instrument";
   return (
     <InputWrapper
-      label=""
+      label={t("formSections.identifiers")}
+      hideLabel
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (

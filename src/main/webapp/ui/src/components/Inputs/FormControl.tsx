@@ -19,16 +19,18 @@ function FullLabel({
   explanation,
   explanationId,
   disabled: _disabled,
+  hideLabel,
 }: {
   explanation?: React.ReactNode;
   explanationId: string;
   label?: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }): React.ReactNode {
   const theme = useTheme();
   return (
     <>
-      <Heading>{label}</Heading>
+      {!hideLabel && <Heading>{label}</Heading>}
       {explanation && (
         <Box
           sx={{
@@ -60,6 +62,13 @@ export type FormControlArgs = {
   "aria-label"?: string;
   flexWrap?: "nowrap" | "wrap" | "wrap-reverse" | "initial" | "inherit";
   disabled?: boolean;
+
+  /**
+   * When true the label is not rendered as a heading, but it still names the
+   * fieldset. Use this where the title is already shown by an enclosing
+   * section heading, so it would otherwise be repeated.
+   */
+  hideLabel?: boolean;
 };
 
 function CustomFormControl({
@@ -77,6 +86,7 @@ function CustomFormControl({
   "aria-label": ariaLabel,
   flexWrap = "initial",
   disabled,
+  hideLabel,
 }: FormControlArgs): React.ReactNode {
   const explanationId = useId();
 
@@ -119,7 +129,13 @@ function CustomFormControl({
             sx={slotProps?.label?.sx}
             required={required}
           >
-            <FullLabel label={label} explanation={explanation} explanationId={explanationId} disabled={disabled} />
+            <FullLabel
+              label={label}
+              explanation={explanation}
+              explanationId={explanationId}
+              disabled={disabled}
+              hideLabel={hideLabel}
+            />
           </FieldLabel>
         )}
         {actions}

@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
@@ -22,6 +23,7 @@ function BarcodesFromField<
   connectedItem?: InventoryRecord;
   factory: Factory;
 }): ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <BatchFormField
       /*
@@ -29,7 +31,8 @@ function BarcodesFromField<
        * generated barcode and thus this field should never show "No Value"
        */
       value={true}
-      label=""
+      label={t("formSections.barcodes")}
+      hideLabel
       explanation={
         fieldOwner.isFieldEditable("barcodes") ? (
           <TransRichText i18nKey="inventory:fields.barcodes.formField.addingBarcodes" />

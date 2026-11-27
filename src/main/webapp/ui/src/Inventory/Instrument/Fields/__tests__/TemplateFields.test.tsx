@@ -84,6 +84,8 @@ describe("TemplateFields -- link field", () => {
 
     expect(screen.queryByText("inventory:instrument.templateFields.unknownFieldType")).not.toBeInTheDocument();
     expect(screen.getByText("inventory:sample.fields.linkFieldValue.none")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Reference" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reference" })).not.toBeInTheDocument();
   });
 
   it("renders the committed link card, not 'Unknown field type', when view-only with a committed link", () => {

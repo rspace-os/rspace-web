@@ -330,6 +330,11 @@ function FieldCard<
   useEffect(() => {
     setOpen(barcodes.length > 0);
   }, [barcodes]);
+  const toggleTitle = match<void, string>([
+    [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],
+    [() => open, t("fields.barcodes.toggle.hide")],
+    [() => true, t("fields.barcodes.toggle.show")],
+  ])();
   return (
     <Card variant="outlined">
       {(typeof connectedItem === "undefined" || connectedItem.canEdit) && (
@@ -380,14 +385,8 @@ function FieldCard<
                   });
                 }}
               />
-              <CustomTooltip
-                title={match<void, string>([
-                  [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],
-                  [() => open, t("fields.barcodes.toggle.hide")],
-                  [() => true, t("fields.barcodes.toggle.show")],
-                ])()}
-              >
-                <IconButton onClick={() => setOpen(!open)} disabled={barcodes.length === 0}>
+              <CustomTooltip title={toggleTitle}>
+                <IconButton aria-label={toggleTitle} onClick={() => setOpen(!open)} disabled={barcodes.length === 0}>
                   <Badge color="primary" badgeContent={barcodes.length}>
                     <ExpandCollapseIcon open={open} />
                   </Badge>
