@@ -1,7 +1,10 @@
 import { createRoot } from "react-dom/client";
+import { startCrossTabLogout } from "@/modules/common/session/crossTabLogout";
 import { App } from "./App";
 import LoaderCircular from "./components/LoadingCircular";
 import I18nRoot from "./modules/common/i18n/I18nRoot";
+
+startCrossTabLogout();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");

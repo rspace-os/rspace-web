@@ -26,6 +26,11 @@ replacing the previous ESLint + Prettier setup.
   reload their existing URL to restore the anonymous session. Other refresh or
   validation failures leave the original error with the caller. Concurrent
   failures share recovery only when their tokens match.
+- Authenticated top-level page entrypoints call `startCrossTabLogout()` from
+  `modules/common/session/crossTabLogout`. When another tab signs out, the
+  receiver clears the tab's UI token and dispatches a cancelable
+  `rspace:session-ended` event before navigating. The document editor cancels
+  navigation while editing and uses its existing sign-in prompt.
 - Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
 - Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the

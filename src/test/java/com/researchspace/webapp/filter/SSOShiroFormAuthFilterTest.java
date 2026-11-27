@@ -107,6 +107,21 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   }
 
   @Test
+  void remoteUserAuthenticatesAgainAfterLogout() throws UserExistsException {
+    User user = createAndSaveSsoTestUser();
+    remoteUserPolicy.setUsername(user.getUsername());
+    req.setRequestURI("/workspace");
+    assertTrue(filter.isAccessAllowed(req, resp, null));
+
+    logoutAndResetMockRequestResponse();
+    assertFalse(SecurityUtils.getSubject().isAuthenticated());
+    req.setRequestURI("/workspace");
+    assertTrue(filter.isAccessAllowed(req, resp, null));
+    assertTrue(SecurityUtils.getSubject().isAuthenticated());
+    assertEquals(user.getUsername(), SecurityUtils.getSubject().getPrincipal());
+  }
+
+  @Test
   public void testUnknownUserRedirectsWithUserSignupDisabled() {
     remoteUserPolicy.setUsername("unknown@rs.com");
     assertFalse(hasRemoteUserUsernameSet());

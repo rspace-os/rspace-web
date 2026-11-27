@@ -65,7 +65,9 @@ public class LogoutControllerTest extends SpringTransactionalTest {
         .setAttribute(SSOShiroFormAuthFilterExt.REMOTE_USER_USERNAME_ATTR, user.getUsername());
 
     ModelAndView mav = logoutController.logout(new MockPrincipal(user.getUsername()), request);
-    assertThat(mav.getModel()).containsEntry("redirectLocation", "/public/ssologout");
+    assertThat(mav.getModel())
+        .containsEntry("redirectLocation", "/public/ssologout")
+        .containsEntry("logoutMode", "sso");
 
     // user still logged in
     assertTrue(!SecurityUtils.getSubject().isAuthenticated());

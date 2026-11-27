@@ -1,9 +1,12 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
+import { startCrossTabLogout } from "@/modules/common/session/crossTabLogout";
 import LoaderCircular from "../../components/LoadingCircular";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import { Gallery } from "./index";
+
+startCrossTabLogout();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");

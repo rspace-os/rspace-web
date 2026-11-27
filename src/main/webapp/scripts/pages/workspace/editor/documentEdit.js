@@ -127,10 +127,14 @@ function handleEditorSessionExpiry(jqxhr, retrying = false) {
     return false;
   }
 
-  const showPrompt = !editSessionExpired || retrying;
+  enterEditorSessionEnded(!editSessionExpired || retrying);
+  return true;
+}
+
+function enterEditorSessionEnded(showPrompt) {
   editSessionExpired = true;
   hasEditLock = false;
-  if (showPrompt) {
+  if (showPrompt && !document.getElementById("editor-session-title")) {
     const title = RS.msg("legacyjs.workspace.documentEdit.sessionExpiredTitle");
     const previousFocus = $(document.activeElement).is(":focusable")
       ? document.activeElement
@@ -163,8 +167,14 @@ function handleEditorSessionExpiry(jqxhr, retrying = false) {
       tabindex: "-1",
     }).modal("show", previousFocus);
   }
-  return true;
 }
+
+window.addEventListener("rspace:session-ended", function (event) {
+  if (editable === "EDIT_MODE" || editSessionExpired) {
+    event.preventDefault();
+    enterEditorSessionEnded(true);
+  }
+});
 
 /* returns a promise of edit lock */
 function requestEditStatus(editable, recordId, recoveringSession = false) {
