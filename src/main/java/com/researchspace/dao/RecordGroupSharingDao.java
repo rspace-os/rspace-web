@@ -69,6 +69,23 @@ public interface RecordGroupSharingDao extends GenericDao<RecordGroupSharing, Lo
   List<RecordGroupSharing> getSharedRecordsForUser(User u);
 
   /**
+   * Gets the shares of records with a user, excluding public links.
+   *
+   * @param shareeId the id of the user the records are shared with
+   * @return the shares, ordered by id
+   */
+  List<RecordGroupSharing> getIndividualSharesWithUser(Long shareeId);
+
+  /**
+   * Gets the shares a user made, excluding public links. A share with no recorded sharer counts as
+   * made by the record owner. Shares with groups are included; callers filter by sharee.
+   *
+   * @param sharer the user who made the shares
+   * @return the shares, ordered by id
+   */
+  List<RecordGroupSharing> getSharesMadeBy(User sharer);
+
+  /**
    * Gets all records shared with a specific user.
    *
    * @param u user

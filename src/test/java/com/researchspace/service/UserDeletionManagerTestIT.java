@@ -42,9 +42,14 @@ import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditTrailService;
+import com.researchspace.model.audittrail.GenericEvent;
+import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
@@ -63,8 +68,10 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.record.ACLPropagationPolicy;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
@@ -92,11 +99,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -126,6 +137,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired ContainerDao containerDao;
   private @Autowired SampleDao sampleDao;
   private @Autowired InventoryLinkDao inventoryLinkDao;
+  private @Autowired AuditTrailService auditService;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -209,6 +221,44 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(result.isSucceeded());
     assertUserNotExist(tempuser);
     assertEquals(initialTargetCount, countCommunicationTargetRows());
+  }
+
+  // RSDEV-1636: temporary accounts get the same final sweep as other deletions
+  @Test
+  public void removeTempUserRemovesResidualAccessEntries() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "doc");
+    final User tempuser =
+        communityUserMgr.createInvitedUser(
+            getRandomAlphabeticString("temp") + "@researchspace.com");
+    Folder pairFolder =
+        doInTransaction(
+            () -> {
+              Folder folder = recordFactory.createIndividualSharedFolder(owner, tempuser);
+              perFactory.setUpACLForIndividSharedFolder(owner, tempuser, folder);
+              folderMgr.addChild(
+                  folderDao.getIndividualSharedItemsFolderForUser(owner).getId(),
+                  folder,
+                  owner,
+                  ACLPropagationPolicy.NULL_POLICY);
+              return folder;
+            });
+    jdbcTemplate.update(
+        "update BaseRecord set acl = concat(acl, '&', ?, '=RECORD:READ:') where id = ?",
+        tempuser.getUsername(),
+        doc.getId());
+    assertThat(aclNames(pairFolder.getId())).contains(tempuser.getUsername());
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    assertTrue(
+        userDeletionMgr
+            .removeUser(tempuser.getId(), getDeleteTempUserPolicy(), sysadmin)
+            .isSucceeded());
+
+    assertUserNotExist(tempuser);
+    for (Long id : List.of(doc.getId(), pairFolder.getId())) {
+      assertThat(aclNames(id)).contains(owner.getUsername()).doesNotContain(tempuser.getUsername());
+    }
   }
 
   private int countCommunicationTargetRows() {
@@ -499,6 +549,217 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report2 =
         userDeletionMgr.removeUser(toDelete.getId(), policy, sysadmin);
     assertTrue(report2.isSucceeded());
+  }
+
+  // RSDEV-1636
+  @Test
+  public void deletionRevokesIndividualSharesWithTheDeletedUser() throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUser(getRandomAlphabeticString("owner"));
+    User sharee = createAndSaveUser(getRandomAlphabeticString("sharee"));
+    User otherSharee = createAndSaveUser(getRandomAlphabeticString("other"));
+    User prefixedSharee = createAndSaveUser(sharee.getUsername() + "2");
+    initUsers(pi, owner, sharee, otherSharee, prefixedSharee);
+    logoutAndLoginAs(pi);
+    createGroupForUsers(pi, pi.getUsername(), "", pi, owner, sharee, otherSharee, prefixedSharee);
+
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "doc");
+    StructuredDocument prefixedDoc = createBasicDocumentInRootFolderWithText(owner, "prefixed");
+    StructuredDocument residueDoc = createBasicDocumentInRootFolderWithText(owner, "residue");
+    Notebook notebook = createNotebookWithNEntries(owner.getRootFolder().getId(), "nb", 1, owner);
+    BaseRecord entry = doInTransaction(() -> folderDao.getChildren(notebook).get(0));
+    share(owner, doc, sharee, "write");
+    share(owner, doc, otherSharee, "write");
+    share(owner, notebook, sharee, "read");
+    share(owner, entry, sharee, "write");
+    share(owner, prefixedDoc, prefixedSharee, "read");
+    List<Long> incomingShares =
+        List.of(shareId(doc, sharee), shareId(notebook, sharee), shareId(entry, sharee));
+    logoutAndLoginAs(sharee);
+    StructuredDocument shareesDoc = createBasicDocumentInRootFolderWithText(sharee, "own");
+    share(sharee, shareesDoc, owner, "read");
+    Long outgoingShare = shareId(shareesDoc, owner);
+    // residue of an older version: an entry without a share
+    jdbcTemplate.update(
+        "update BaseRecord set acl = concat(acl, '&', ?, '=RECORD:READ:') where id = ?",
+        sharee.getUsername(),
+        residueDoc.getId());
+    Folder pairFolder =
+        doInTransaction(() -> folderDao.getIndividualSharedFolderForUsers(owner, sharee, null));
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Mockito.clearInvocations(auditService);
+    assertTrue(
+        userDeletionMgr
+            .removeUser(sharee.getId(), unrestrictedDeletionPolicy(), sysadmin)
+            .isSucceeded());
+
+    assertEquals(
+        0,
+        countRowsInTableWhere(jdbcTemplate, "RecordGroupSharing", "sharee_id=" + sharee.getId()));
+    for (Long id :
+        List.of(
+            doc.getId(), notebook.getId(), entry.getId(), residueDoc.getId(), pairFolder.getId())) {
+      assertThat(aclNames(id)).doesNotContain(sharee.getUsername());
+    }
+    assertThat(aclNames(doc.getId())).contains(otherSharee.getUsername());
+    assertThat(aclNames(prefixedDoc.getId())).contains(prefixedSharee.getUsername());
+    assertEquals(
+        0,
+        countRowsInTableWhere(jdbcTemplate, "RecordToFolder", "record_id=" + pairFolder.getId()));
+    assertEquals(
+        1,
+        countRowsInTableWhere(jdbcTemplate, "BaseRecord", "name='" + pairFolder.getName() + "'"));
+    // one event per removed row: the three incoming shares (the notebook's separately shared entry
+    // included) and the deleted user's own share with the owner (RSDEV-1429)
+    assertThat(unshareEvents())
+        .containsExactlyInAnyOrderElementsOf(
+            events(
+                Stream.concat(incomingShares.stream(), Stream.of(outgoingShare)).toList(),
+                sysadmin));
+
+    User reused = createAndSaveUser(sharee.getUsername());
+    initUsers(reused);
+    logoutAndLoginAs(reused);
+    doInTransaction(
+        () -> {
+          for (BaseRecord item :
+              List.of(
+                  recordMgr.get(doc.getId()),
+                  folderMgr.getNotebook(notebook.getId()),
+                  recordMgr.get(entry.getId()))) {
+            assertFalse(permissionUtils.isPermitted(item, PermissionType.READ, reused));
+            assertFalse(permissionUtils.isPermitted(item, PermissionType.WRITE, reused));
+          }
+        });
+  }
+
+  // RSDEV-1429 with RSDEV-1636: shares made by and with the deleted user both end
+  @Test
+  public void deletionRevokesIncomingAndOutgoingIndividualShares() throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
+    User colleague = createAndSaveUser(getRandomAlphabeticString("colleague"));
+    initUsers(pi, toDelete, colleague);
+    logoutAndLoginAs(pi);
+    createGroupForUsers(pi, pi.getUsername(), "", pi, toDelete, colleague);
+    logoutAndLoginAs(toDelete);
+    StructuredDocument outgoing = createBasicDocumentInRootFolderWithText(toDelete, "out");
+    share(toDelete, outgoing, colleague, "read");
+    logoutAndLoginAs(colleague);
+    StructuredDocument incoming = createBasicDocumentInRootFolderWithText(colleague, "in");
+    share(colleague, incoming, toDelete, "write");
+    List<Long> shares = List.of(shareId(outgoing, colleague), shareId(incoming, toDelete));
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Mockito.clearInvocations(auditService);
+    assertTrue(
+        userDeletionMgr
+            .removeUser(toDelete.getId(), unrestrictedDeletionPolicy(), sysadmin)
+            .isSucceeded());
+
+    assertEquals(
+        0,
+        countRowsInTableWhere(
+            jdbcTemplate,
+            "RecordGroupSharing",
+            "sharee_id=" + toDelete.getId() + " or shared_id=" + outgoing.getId()));
+    assertThat(aclNames(incoming.getId())).doesNotContain(toDelete.getUsername());
+    assertThat(unshareEvents()).containsExactlyInAnyOrderElementsOf(events(shares, sysadmin));
+  }
+
+  // RSDEV-1636: a legacy share whose recorded sharer did not create the folder it is linked in
+  @Test
+  public void deletionUnlinksLegacyShareRecordedWithAnotherSharer() throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUser(getRandomAlphabeticString("owner"));
+    User sharee = createAndSaveUser(getRandomAlphabeticString("sharee"));
+    initUsers(pi, owner, sharee);
+    logoutAndLoginAs(pi);
+    createGroupForUsers(pi, pi.getUsername(), "", pi, owner, sharee);
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "doc");
+    share(owner, doc, sharee, "read");
+    Long shareId = shareId(doc, sharee);
+    jdbcTemplate.update(
+        "update RecordGroupSharing set sharedBy_id = ? where shared_id = ? and sharee_id = ?",
+        pi.getId(),
+        doc.getId(),
+        sharee.getId());
+    Folder pairFolder =
+        doInTransaction(() -> folderDao.getIndividualSharedFolderForUsers(owner, sharee, null));
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Mockito.clearInvocations(auditService);
+    assertTrue(
+        userDeletionMgr
+            .removeUser(sharee.getId(), unrestrictedDeletionPolicy(), sysadmin)
+            .isSucceeded());
+
+    assertThat(childIds(pairFolder)).isEmpty();
+    assertEquals(
+        0,
+        countRowsInTableWhere(jdbcTemplate, "RecordToFolder", "record_id=" + pairFolder.getId()));
+    assertEquals(
+        0,
+        countRowsInTableWhere(
+            jdbcTemplate,
+            "BaseRecord",
+            "name like '%"
+                + pi.getUsername()
+                + "%' and name like '%"
+                + sharee.getUsername()
+                + "%'"));
+    assertThat(aclNames(doc.getId())).doesNotContain(sharee.getUsername());
+    assertThat(unshareEvents()).containsExactly(Map.entry(shareId, sysadmin.getUsername()));
+  }
+
+  private void share(User sharer, BaseRecord item, User sharee, String permission) {
+    ShareConfigElement cfg = new ShareConfigElement(sharee.getId(), permission);
+    cfg.setUserId(sharee.getId());
+    assertTrue(
+        sharingMgr.shareRecord(sharer, item.getId(), new ShareConfigElement[] {cfg}).isSucceeded());
+  }
+
+  private List<String> aclNames(Long recordId) {
+    String acl =
+        jdbcTemplate.queryForObject(
+            "select acl from BaseRecord where id = ?", String.class, recordId);
+    return Stream.of(acl.split("&")).map(el -> el.split("=")[0]).collect(Collectors.toList());
+  }
+
+  private List<Long> childIds(Folder folder) {
+    return jdbcTemplate.queryForList(
+        "select record_id from RecordToFolder where folder_id = ?", Long.class, folder.getId());
+  }
+
+  private Long shareId(BaseRecord item, User sharee) {
+    return jdbcTemplate.queryForObject(
+        "select id from RecordGroupSharing where shared_id = ? and sharee_id = ?",
+        Long.class,
+        item.getId(),
+        sharee.getId());
+  }
+
+  // the UNSHARE events as (share row id, subject)
+  private List<Map.Entry<Long, String>> unshareEvents() {
+    ArgumentCaptor<HistoricalEvent> events = ArgumentCaptor.forClass(HistoricalEvent.class);
+    Mockito.verify(auditService, Mockito.atLeast(0)).notify(events.capture());
+    return events.getAllValues().stream()
+        .filter(e -> e instanceof GenericEvent && e.getAuditAction() == AuditAction.UNSHARE)
+        .map(
+            e ->
+                Map.entry(
+                    ((RecordGroupSharing) e.getAuditedObject()).getId(),
+                    e.getSubject().getUniqueName()))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Map.Entry<Long, String>> events(List<Long> shareIds, User subject) {
+    return shareIds.stream()
+        .map(id -> Map.entry(id, subject.getUsername()))
+        .collect(Collectors.toList());
   }
 
   // RSPAC-1858

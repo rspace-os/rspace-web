@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FileMetadataDao;
+import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.UserDao;
@@ -10,18 +11,28 @@ import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.record.ACLPropagationPolicy;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Record;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormsAndTemplatesUsage;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
+import com.researchspace.service.UserFolderCreator;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
@@ -46,6 +57,9 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   private @Autowired IPermissionUtils permUtils;
   private @Autowired UserDeletionDao deletionDao;
   private @Autowired FileMetadataDao fileMetadataDao;
+  private @Autowired RecordSharingManager sharingMgr;
+  private @Autowired FolderDao folderDao;
+  private @Autowired FolderManager folderMgr;
 
   private @Autowired @Qualifier("compositeFileStore") FileStore fileStore;
 
@@ -96,10 +110,13 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
           return new ServiceOperationResult<>(null, false, msg);
         }
       }
+      revokeIncomingIndividualShares(toDelete);
       // only remove from groups if all group-leaving-criteria are satisfied.
       for (Group group : toDelete.getGroups()) {
         grpMgr.removeUserFromGroup(toDelete.getUsername(), group.getId(), subject);
       }
+      unlinkEmptyIndividualSharedFolders(toDelete);
+      removeRemainingAclEntries(toDelete);
 
       if (toDelete.hasRole(Role.ADMIN_ROLE)) {
         communityDao
@@ -108,10 +125,88 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       }
     }
 
+    if (policy.isTempUserOnlyDelete() && toDelete.isTempAccount()) {
+      revokeIncomingIndividualShares(toDelete);
+      unlinkEmptyIndividualSharedFolders(toDelete);
+      removeRemainingAclEntries(toDelete);
+    }
+
     ServiceOperationResult<User> deletionResult = deletionDao.deleteUser(userId, policy);
     updateTempResourcesListAfterDatabaseDeletion(userId, deletionResult);
 
     return deletionResult;
+  }
+
+  /**
+   * Revokes the shares other users made with the user being deleted, so no access survives for a
+   * later account with the same username.
+   */
+  private void revokeIncomingIndividualShares(User toDelete) {
+    List<RecordGroupSharing> shares = sharingMgr.getIndividualSharesWithUser(toDelete);
+    int revoked = 0;
+    for (RecordGroupSharing share : shares) {
+      if (sharingMgr.revokeIndividualShare(share, false)) {
+        revoked++;
+      }
+    }
+    log.info(
+        "Revoked {} of {} shares with deleted user [{}]", revoked, shares.size(), toDelete.getId());
+  }
+
+  // Unlinks the folders other users own for sharing with the deleted user, once they hold nothing
+  // but the deleted user's own records. Folders the deleted user owns are deleted with the user.
+  private void unlinkEmptyIndividualSharedFolders(User toDelete) {
+    List<Folder> shareItemsFolders = new ArrayList<>();
+    shareItemsFolders.add(folderDao.getIndividualSharedItemsFolderForUser(toDelete));
+    shareItemsFolders.add(
+        folderDao.getSystemFolderForUserByName(
+            toDelete,
+            UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX
+                + Folder.INDIVIDUAL_SHARE_ITEMS_FLDER_NAME));
+    for (Folder shareItemsFolder : shareItemsFolders) {
+      if (shareItemsFolder == null) {
+        continue;
+      }
+      for (BaseRecord child : folderDao.getChildren(shareItemsFolder)) {
+        if (!child.isFolder()
+            || !child.hasType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT)
+            || child.getOwner().equals(toDelete)) {
+          continue;
+        }
+        Folder pairFolder = (Folder) child;
+        boolean onlyDeletedUsersItems =
+            folderDao.getChildren(pairFolder).stream()
+                .allMatch(item -> item.getOwner().equals(toDelete));
+        if (!onlyDeletedUsersItems) {
+          log.warn("Shared folder [{}] still holds other users' items, kept", pairFolder.getId());
+          continue;
+        }
+        for (Folder parent : new ArrayList<>(pairFolder.getParentFolders())) {
+          folderMgr.removeBaseRecordFromFolder(
+              pairFolder, parent.getId(), ACLPropagationPolicy.NULL_POLICY);
+        }
+      }
+    }
+  }
+
+  // Removes access-list entries naming the deleted user that no share removal reached, such as the
+  // entry for both users on a shared folder or residue of older versions.
+  private void removeRemainingAclEntries(User toDelete) {
+    List<Long> changed = new ArrayList<>();
+    for (BaseRecord item : deletionDao.getOtherUsersRecordsNamingUserInAcl(toDelete)) {
+      if (item.getSharingACL().removeACLsforUserOrGroup(toDelete).isEmpty()) {
+        continue;
+      }
+      if (item.isFolder()) {
+        folderDao.save((Folder) item);
+      } else {
+        recordDao.save((Record) item);
+      }
+      changed.add(item.getId());
+    }
+    if (!changed.isEmpty()) {
+      log.info("Removed access entries of deleted user [{}] from {}", toDelete.getId(), changed);
+    }
   }
 
   /**

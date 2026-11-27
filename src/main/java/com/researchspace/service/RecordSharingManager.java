@@ -13,6 +13,7 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 /** Services for sharing records with other users/ groups. */
 public interface RecordSharingManager {
@@ -117,6 +118,41 @@ public interface RecordSharingManager {
   void unshareRecord(
       User unsharing, Long recordToUnshareId, ShareConfigElement[] groupIdsToUnshareWith)
       throws IllegalAddChildOperation;
+
+  /**
+   * Lists the shares of records with the given user, excluding public links.
+   *
+   * @param sharee the user the records are shared with
+   * @return the shares, oldest first
+   */
+  List<RecordGroupSharing> getIndividualSharesWithUser(User sharee);
+
+  /**
+   * Revokes one share with a user through the normal unshare path, never creating a folder.
+   *
+   * <p>Unshares as the user who made the share while they may still share or delete the record,
+   * otherwise as the record owner. Emits one {@code AuditAction.UNSHARE} event for each removed
+   * share (a notebook's separately shared entries included), attributed to the logged-in user.
+   *
+   * @param share a share with a user other than the anonymous guest
+   * @param notifySharee false suppresses the "stopped sharing" notification
+   * @return true if the share was revoked; false, with nothing changed, if the share or the
+   *     sharee's permission is already gone, or if neither the sharer nor the owner may unshare
+   */
+  boolean revokeIndividualShare(RecordGroupSharing share, boolean notifySharee);
+
+  /**
+   * Like {@link #revokeIndividualShare(RecordGroupSharing, boolean)}, keeping some separately
+   * shared entries of a revoked notebook shared.
+   *
+   * @param share a share with a user other than the anonymous guest
+   * @param notifySharee false suppresses the "stopped sharing" notification
+   * @param keepEntryShare selects the separately shared entry shares to keep when a notebook is
+   *     revoked
+   * @return true if the share was revoked
+   */
+  boolean revokeIndividualShare(
+      RecordGroupSharing share, boolean notifySharee, Predicate<RecordGroupSharing> keepEntryShare);
 
   /**
    * ALters permission for a record that is already shared.
