@@ -201,7 +201,7 @@
           "granularity": "The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
           "dayEndMissing": "This booking would end at {0} on {1}, but that local time does not exist in {2}. Change the start time or choose another duration.",
           "dayEndMissingTitle": "The booking end time does not exist in the local time zone.",
-          "openingHours": "The booking must remain within this bookable item's opening hours.",
+          "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
           "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
           "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
           "purpose": {

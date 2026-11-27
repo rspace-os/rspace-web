@@ -944,6 +944,7 @@ export default interface Resources {
           "availabilityWindowStart": "Availability window start",
           "bufferAfter": "Buffer after (minutes)",
           "bufferBefore": "Buffer before (minutes)",
+          "cancellationReason": "Cancellation reason",
           "configuration": "Booking configuration",
           "configurationVersion": "Configuration version",
           "customTimezone": "Custom time zone",
@@ -966,7 +967,8 @@ export default interface Resources {
           "state": "Status",
           "target": "Bookable item",
           "targetName": "Bookable item name",
-          "timezone": "Scheduling timezone",
+          "timeFormat": "Time format",
+          "timezone": "Scheduling time zone",
           "timezoneMode": "Time zone mode"
         }
       },
@@ -7746,7 +7748,7 @@ export default interface Resources {
             "ifMatchRequired": "The current booking version is required.",
             "maximumDuration": "The booking exceeds this bookable item''s maximum duration of {0}.",
             "maximumDurationTitle": "The booking exceeds this bookable item's maximum duration.",
-            "openingHours": "The booking must remain within this bookable item's opening hours.",
+            "openingHours": "The booking must remain within this bookable item's opening hours and cannot include a day on which it is closed.",
             "overlap": "The selected time overlaps another booking.",
             "patch": "The booking patch is invalid.",
             "purpose": {
