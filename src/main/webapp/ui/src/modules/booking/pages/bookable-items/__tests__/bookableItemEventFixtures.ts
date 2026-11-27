@@ -14,6 +14,7 @@ export const booking = {
   kind: "BOOKING",
   privacy: "full",
   purpose: null,
+  cancellationReason: null,
   bookedBy: "Ada Lovelace",
   canEdit: true,
   canCancel: true,

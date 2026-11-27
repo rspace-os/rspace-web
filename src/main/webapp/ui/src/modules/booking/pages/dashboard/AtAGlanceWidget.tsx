@@ -4,16 +4,14 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { pickerDate, plainDateFromPicker } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { monthlyDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { DashboardCalendarContext, DashboardCalendarDay } from "./DashboardCalendarDay";
 import { DashboardEmpty, DashboardError } from "./DashboardFeedback";
 import {
   dashboardMonthInterval,
-  fetchMonthlyDashboardBookings,
   groupDashboardBookingsByDay,
-  monthlyBookingWhere,
   TooManyDashboardBookingsError,
 } from "./dashboardBookings";
 import { dashboardBooking, formatCalendarDate, formatDayPickerDate, monthStartForTimeZone } from "./dashboardHelpers";
@@ -35,15 +33,7 @@ export function AtAGlanceWidget({
   const interval = useMemo(() => dashboardMonthInterval(month, timeZone), [month, timeZone]);
   // Plain useQuery: the month grid stays mounted so open day popovers keep focus while months load.
   const query = useQuery({
-    queryKey: [
-      ...getListBookingsQueryKey({ where: monthlyBookingWhere(requesterId, interval.start, interval.end) }),
-      "dashboardMonthly",
-    ],
-    queryFn: ({ signal }) =>
-      fetchMonthlyDashboardBookings({ requesterId, start: interval.start, end: interval.end, signal }),
-
-    retry: false,
-    refetchOnWindowFocus: true,
+    ...monthlyDashboardBookingsQuery(requesterId, timeZone, interval.start, interval.end),
   });
   const bookingsByDay = useMemo(
     () =>

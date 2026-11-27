@@ -372,6 +372,15 @@ export const BookingsRead = v.object({
   canCancel: v.optional(v.boolean()),
   canEdit: v.optional(v.boolean()),
   canViewConfiguration: v.optional(v.boolean()),
+  cancellationReason: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 500 || (value.length <= 1000 && [...value].length <= 500),
+        "Invalid length: Expected <=500",
+      ),
+    ),
+  ),
   createdAt: v.optional(
     v.pipe(
       v.string(),
@@ -864,12 +873,10 @@ export const BookingDisplayPreferencesReplacement = v.object({
       v.description("Required only when timezoneMode is CUSTOM; must be a valid IANA timezone."),
     ),
   ),
-  timeFormat: v.optional(
-    v.pipe(
-      v.union([BookingTimeFormat, v.null()]),
-      v.description(
-        "AUTOMATIC (default when omitted) follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
-      ),
+  timeFormat: v.pipe(
+    BookingTimeFormat,
+    v.description(
+      "AUTOMATIC follows the browser region in the UI and the language's usual clock in email; H12 and H24 force a 12- or 24-hour clock.",
     ),
   ),
   timezoneMode: BookingTimezoneMode,
@@ -999,6 +1006,15 @@ export const BookingsReference = v.object({
 });
 
 export const BookingsUpdate = v.object({
+  cancellationReason: v.nullish(
+    v.pipe(
+      v.string(),
+      v.check(
+        (value) => value.length <= 500 || (value.length <= 1000 && [...value].length <= 500),
+        "Invalid length: Expected <=500",
+      ),
+    ),
+  ),
   end: v.optional(
     v.pipe(
       v.string(),
@@ -2208,7 +2224,7 @@ export const GetBookingQueryParams = v.object({
 export const GetBookingResponse = BookingsRead;
 
 /**
- * Partially updates one booking and returns the updated document. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
+ * Updates or cancels one booking. Problem extensions: errors.api.v2.booking.overlap includes conflict, an object with integer id, kind BOOKING or MAINTENANCE, and start/end date-time strings. errors.api.v2.booking.buffer includes conflict and integer bufferBeforeMinutes and bufferAfterMinutes. errors.api.v2.booking.maximumDuration includes integer maximumDurationMinutes.
  * @summary Update one bookings
  */
 export const UpdateBookingParams = v.object({
@@ -3484,7 +3500,7 @@ export const LookupMyBookingNotificationSubscriptionsResponse = BookingNotificat
 export const GetMyBookingPreferencesResponse = BookingDisplayPreferences;
 
 /**
- * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. An omitted timeFormat is AUTOMATIC.
+ * Stores one complete override. customTimezone is required only for CUSTOM and is discarded for BROWSER or INSTITUTION. timeFormat is required.
  * @summary Replace Booking display preferences
  */
 export const ReplaceMyBookingPreferencesBody = BookingDisplayPreferencesReplacement;

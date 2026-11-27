@@ -16,4 +16,5 @@ public class BookingNotificationData extends NotificationData {
   private String instrumentGlobalIdentifier;
   private String startTime;
   private String endTime;
+  private String cancellationReason;
 }

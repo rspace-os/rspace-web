@@ -11,6 +11,11 @@ import type { Temporal } from "@js-temporal/polyfill";
 import type { BookingState } from "./bookingState.ts";
 
 export interface BookingsUpdate {
+  /**
+   * @maxLength 500
+   * @nullable
+   */
+  cancellationReason?: string | null;
   end?: Temporal.Instant;
   /**
    * @maxLength 1000

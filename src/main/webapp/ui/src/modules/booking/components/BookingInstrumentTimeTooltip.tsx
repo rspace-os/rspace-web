@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { bookingHourCycle, formatInstantRange, instrumentZoneDiffers } from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -29,10 +29,11 @@ export function BookingInstrumentTimeTooltip({
   const browserZone = browserTimeZone();
   const timeFormat = useBookingTimeFormat();
 
+  // Aliases such as Asia/Kolkata and the Asia/Calcutta a browser may report are one zone, so they need no tooltip.
   const showTooltip =
     (!!start || !!time) &&
     !!instrumentTimeZone &&
-    (instrumentTimeZone !== displayTimeZone || (browserZone !== null && instrumentTimeZone !== browserZone));
+    instrumentZoneDiffers(instrumentTimeZone, displayTimeZone, browserZone);
 
   if (!showTooltip && !trigger) return children ?? null;
 
@@ -49,7 +50,12 @@ export function BookingInstrumentTimeTooltip({
   const dateTime =
     time ??
     (start && end
-      ? `${formatter.format(Temporal.Instant.from(start).epochMilliseconds)} – ${formatter.format(Temporal.Instant.from(end).epochMilliseconds)}`
+      ? formatInstantRange(
+          formatter,
+          Temporal.Instant.from(start).epochMilliseconds,
+          Temporal.Instant.from(end).epochMilliseconds,
+          " – ",
+        )
       : start
         ? formatter.format(Temporal.Instant.from(start).epochMilliseconds)
         : "");

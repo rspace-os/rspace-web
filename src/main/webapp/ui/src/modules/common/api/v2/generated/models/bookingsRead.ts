@@ -21,6 +21,11 @@ export interface BookingsRead {
   readonly canCancel?: boolean;
   readonly canEdit?: boolean;
   readonly canViewConfiguration?: boolean;
+  /**
+   * @maxLength 500
+   * @nullable
+   */
+  cancellationReason?: string | null;
   readonly createdAt?: Temporal.Instant;
   /** @nullable */
   readonly createdBy?: string | null;
