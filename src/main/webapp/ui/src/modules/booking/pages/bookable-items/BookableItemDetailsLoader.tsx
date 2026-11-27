@@ -8,15 +8,19 @@ import { BookableItemSkeleton } from "./BookableItemSkeleton";
 import { bookingConfigurationTargetQuery } from "./bookingConfigurationApi";
 import { type BookableItemTab, LoadedBookableItemPage } from "./LoadedBookableItemPage";
 
-function BookableItemUnavailable({ onRetry }: { onRetry: () => void }) {
+function BookableItemUnavailable({ notFound, onRetry }: { notFound: boolean; onRetry: () => void }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   return (
     <main className="p-4 sm:p-8">
       <Empty className="border">
         <EmptyHeader>
-          <EmptyTitle>{t("bookableItemDetails.error.title")}</EmptyTitle>
-          <EmptyDescription>{t("bookableItemDetails.error.description")}</EmptyDescription>
+          <EmptyTitle>
+            {notFound ? t("bookableItemDetails.notFound.title") : t("bookableItemDetails.error.title")}
+          </EmptyTitle>
+          <EmptyDescription>
+            {notFound ? t("bookableItemDetails.notFound.description") : t("bookableItemDetails.error.description")}
+          </EmptyDescription>
         </EmptyHeader>
         <Button type="button" variant="outline" onClick={onRetry}>
           {commonT("actions.retry")}
@@ -31,7 +35,12 @@ function BookableItemDetails({ globalId, tab }: { globalId: string; tab: Bookabl
   const document = configuration.data;
   const target = document?.target;
   if (!document || isPermanentClientError(configuration.error) || !target || target.globalId !== globalId) {
-    return <BookableItemUnavailable onRetry={() => void configuration.refetch()} />;
+    return (
+      <BookableItemUnavailable
+        notFound={!configuration.isError || isPermanentClientError(configuration.error)}
+        onRetry={() => void configuration.refetch()}
+      />
+    );
   }
 
   return (
@@ -50,7 +59,7 @@ export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string;
   return (
     <QueryBoundary
       fallback={<BookableItemSkeleton />}
-      error={({ retry }) => <BookableItemUnavailable onRetry={retry} />}
+      error={({ error, retry }) => <BookableItemUnavailable notFound={isPermanentClientError(error)} onRetry={retry} />}
     >
       <BookableItemDetails globalId={globalId} tab={tab} />
     </QueryBoundary>

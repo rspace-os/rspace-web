@@ -1,5 +1,6 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { PencilIcon } from "lucide-react";
+import { Temporal } from "@js-temporal/polyfill";
+import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +9,7 @@ import { bookableItemOption } from "@/modules/booking/creation/bookableItemOptio
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { instantToWire } from "@/modules/common/time/instant";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
@@ -104,8 +106,10 @@ export function LoadedBookableItemPage({
     handleLifecycleAction,
     rulesSaveBlocked,
     setRulesSaveBlocked,
+    conflictVersion,
+    discardConflictedDraft,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab });
-  const [cutoff] = useState(() => new Date().toISOString());
+  const [cutoff] = useState(() => instantToWire(Temporal.Now.instant()));
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
   const target = configuration.target;
@@ -239,6 +243,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending || rulesSaveBlocked}
                               aria-busy={updateMutation.isPending}
                             >
+                              <SaveIcon aria-hidden="true" />
                               {t("bookableItems.actions.save")}
                             </Button>
                             <Button
@@ -248,6 +253,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending}
                               onClick={cancelEdit}
                             >
+                              <XIcon aria-hidden="true" />
                               {t("bookableItemDetails.cancelEdit")}
                             </Button>
                           </>
@@ -275,8 +281,10 @@ export function LoadedBookableItemPage({
                         formId={formId}
                         pending={updateMutation.isPending}
                         staleEdit={staleEdit}
+                        conflictVersion={conflictVersion}
                         failed={updateMutation.isError}
                         onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                        onDiscardConflictedDraft={discardConflictedDraft}
                         onSaveBlockedChange={setRulesSaveBlocked}
                       />
                     ) : (
@@ -302,11 +310,13 @@ export function LoadedBookableItemPage({
             </div>
             <div className="min-w-0 space-y-6 @2xl:sticky @2xl:top-4 @2xl:self-start">
               <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
-              <BookableItemNotificationSubscription
-                configurationId={configuration.id}
-                globalId={globalId}
-                canManageNotificationSubscription={configuration.capabilities.canManageNotificationSubscription}
-              />
+              {configuration.capabilities.canManageNotificationSubscription ? (
+                <BookableItemNotificationSubscription
+                  key={`${currentUser.id}-${configuration.id}-${configuration.capabilities.canManageNotificationSubscription}`}
+                  configurationId={configuration.id}
+                  globalId={globalId}
+                />
+              ) : null}
             </div>
           </div>
         </Tabs.Root>
