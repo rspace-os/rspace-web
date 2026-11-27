@@ -7,7 +7,6 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
-import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
@@ -348,4 +347,4 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   );
 }
 
-export default observer(DMPDialog);
+export default DMPDialog;

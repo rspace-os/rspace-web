@@ -4,7 +4,6 @@ import Stack from "@mui/material/Stack";
 import { lighten, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useParams } from "react-router";
@@ -60,7 +59,7 @@ import { GallerySelection, useGallerySelection } from "./useGallerySelection";
  */
 const EMPTY_PATH = Object.freeze([]) as ReadonlyArray<GalleryFile>;
 
-const WholePageContent = ({
+const WholePage = ({
   listingOf,
   setSelectedSection,
   setPath,
@@ -325,13 +324,6 @@ const WholePageContent = ({
     </Box>
   );
 };
-
-/*
- * Observes the MobX-backed viewport so that, when the window crosses the small
- * breakpoint, the page re-renders and hands the Sidebar the matching drawer
- * state setter.
- */
-const WholePage = observer(WholePageContent);
 
 /**
  * This component is responsible for rendering the gallery when no folder is

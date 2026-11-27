@@ -13,7 +13,6 @@ import Grid from "@mui/material/Grid";
 import SnackbarContent, { snackbarContentClasses } from "@mui/material/SnackbarContent";
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import { forwardRef, useId } from "react";
 import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -217,4 +216,4 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
 /**
  * The actual content of the alert toast.
  */
-export default observer(SnackbarContentWrapper);
+export default SnackbarContentWrapper;

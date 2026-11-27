@@ -33,7 +33,6 @@ import SvgIcon from "@mui/material/SvgIcon";
 import { darken, lighten, useTheme } from "@mui/material/styles";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -974,4 +973,4 @@ function GalleryAppBar({
   );
 }
 
-export default observer(GalleryAppBar);
+export default GalleryAppBar;

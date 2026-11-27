@@ -1,63 +1,70 @@
-import { computed, makeObservable, observable, runInAction } from "mobx";
-import { useLocalObservable } from "mobx-react-lite";
 import React from "react";
 import theme from "../../theme";
 
-class ViewportDimensions {
-  width: number;
-  height: number;
+type ViewportSize = "xl" | "lg" | "md" | "sm" | "xs";
 
-  constructor({ width, height }: { width: number; height: number }) {
-    makeObservable(this, {
-      width: observable,
-      height: observable,
-      viewportSize: computed,
-      isViewportVerySmall: computed,
-      isViewportSmall: computed,
-      isViewportLarge: computed,
-    });
-    this.width = width;
-    this.height = height;
-  }
-
+type ViewportDimensions = {
   /**
-   * Returns the label of the largest breakpoint that is smaller than the
-   * current width.
+   * The label of the largest breakpoint that is smaller than the current
+   * width.
    */
-  get viewportSize(): "xl" | "lg" | "md" | "sm" | "xs" {
-    if (this.width > theme.breakpoints.values.xl) return "xl";
-    if (this.width > theme.breakpoints.values.lg) return "lg";
-    if (this.width > theme.breakpoints.values.md) return "md";
-    if (this.width > theme.breakpoints.values.sm) return "sm";
-    return "xs";
-  }
+  readonly viewportSize: ViewportSize;
 
   /**
    * Pretty much just phones, but also tablets that support side-by-side apps,
    * and very narrow laptop/desktop windows.
    */
-  get isViewportVerySmall(): boolean {
-    return this.viewportSize === "xs";
-  }
+  readonly isViewportVerySmall: boolean;
 
   /**
    * Viewports of this size are typically phones or tablets but also when
    * windows are pinned to just one side of laptop screens.
    */
-  get isViewportSmall(): boolean {
-    return this.viewportSize === "xs" || this.viewportSize === "sm";
-  }
+  readonly isViewportSmall: boolean;
 
   /**
    * Full screen/maximised windows on laptops and most windows on desktops
    */
-  get isViewportLarge(): boolean {
-    return this.viewportSize === "lg" || this.viewportSize === "xl";
-  }
+  readonly isViewportLarge: boolean;
+};
 
-  get isViewportNotLarge(): boolean {
-    return this.viewportSize === "xs" || this.viewportSize === "sm" || this.viewportSize === "md";
-  }
+function viewportSizeOf(width: number): ViewportSize {
+  if (width > theme.breakpoints.values.xl) return "xl";
+  if (width > theme.breakpoints.values.lg) return "lg";
+  if (width > theme.breakpoints.values.md) return "md";
+  if (width > theme.breakpoints.values.sm) return "sm";
+  return "xs";
+}
+
+function dimensionsFor(viewportSize: ViewportSize): ViewportDimensions {
+  return Object.freeze({
+    viewportSize,
+    isViewportVerySmall: viewportSize === "xs",
+    isViewportSmall: viewportSize === "xs" || viewportSize === "sm",
+    isViewportLarge: viewportSize === "lg" || viewportSize === "xl",
+  });
+}
+
+/*
+ * One object per breakpoint, so that the hook returns the same object for as
+ * long as the breakpoint does not change and callers can use it as an effect
+ * dependency.
+ */
+const DIMENSIONS_BY_SIZE: Readonly<Record<ViewportSize, ViewportDimensions>> = {
+  xl: dimensionsFor("xl"),
+  lg: dimensionsFor("lg"),
+  md: dimensionsFor("md"),
+  sm: dimensionsFor("sm"),
+  xs: dimensionsFor("xs"),
+};
+
+function subscribe(onChange: () => void): () => void {
+  window.addEventListener("resize", onChange);
+  return () => window.removeEventListener("resize", onChange);
+}
+
+function getSnapshot(): ViewportSize {
+  return viewportSizeOf(window.innerWidth);
 }
 
 /**
@@ -75,40 +82,16 @@ class ViewportDimensions {
  * the most of the screen real estate available we are constantly adapting the
  * layout and behaviour of the page based on the size of the viewport. This
  * custom hook provides a simple way of accessing and reacting to changes to
- * the space available. Computed properties are exposed by the class defined
- * above based on the breakpoints defined in the theme (../theme.js), which can
- * be destructured and used as conditionals:
+ * the space available. The returned properties are based on the breakpoints
+ * defined in the theme (../theme.js), and can be destructured and used as
+ * conditionals:
  *   const { isViewportSmall } = useViewportDimensions();
  *   if (isViewportSmall) return <span>is small</span>;
  *   return <span>is not small</span>;
  *
- * Note that this hook uses mobx to maintain the mutable state. As such, it is
- * necessary that any component that uses this hook be wrapped in mobx's
- * `observer` function. If a component isn't updating when the window width
- * changes its almost certainly because the relevant component isn't wrapped
- * correctly. For more information on that, see
- * https://mobx.js.org/react-integration.html
+ * A component re-renders only when the window is resized across one of those
+ * breakpoints, not on every resize event.
  */
 export default function useViewportDimensions(): ViewportDimensions {
-  const viewportDimensions = useLocalObservable(
-    () =>
-      new ViewportDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      }),
-  );
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      runInAction(() => {
-        viewportDimensions.width = window.innerWidth;
-        viewportDimensions.height = window.innerHeight;
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return viewportDimensions;
+  return DIMENSIONS_BY_SIZE[React.useSyncExternalStore(subscribe, getSnapshot)];
 }

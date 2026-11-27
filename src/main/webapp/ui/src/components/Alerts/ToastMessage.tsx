@@ -1,5 +1,4 @@
 import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
-import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -71,4 +70,4 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
 /**
  * This components displays a single toast alert.
  */
-export default observer(ToastMessage);
+export default ToastMessage;

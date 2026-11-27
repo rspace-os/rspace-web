@@ -1,8 +1,6 @@
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import CustomToggleButton from "../../components/CustomToggleButton";
 import CustomToggleButtonGroup from "../../components/CustomToggleButtonGroup";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 
 function ColumnVisibilitySettings({
   visibleColumnIds,
@@ -16,12 +14,11 @@ function ColumnVisibilitySettings({
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   allTableHeaderCells: any;
 }) {
-  const { width } = useViewportDimensions();
   const { t } = useTranslation("apps");
 
   return (
     <CustomToggleButtonGroup
-      sx={width < 900 ? { display: "block !important" } : undefined}
+      sx={{ "@media (max-width: 899.95px)": { display: "block !important" } }}
       value={visibleColumnIds}
       size="small"
       onChange={(_, columns) => setVisibleColumnIds(columns)}
@@ -37,4 +34,4 @@ function ColumnVisibilitySettings({
   );
 }
 
-export default observer(ColumnVisibilitySettings);
+export default ColumnVisibilitySettings;
