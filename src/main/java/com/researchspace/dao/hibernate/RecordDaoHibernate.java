@@ -129,6 +129,22 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
   }
 
   @Override
+  public boolean isActiveChildWithFilter(
+      Long recordId, Long parentId, RecordTypeFilter recordFilter) {
+    return getSession()
+            .createQuery(
+                "select count(br.id) "
+                    + RECORDS_IN_FOLDER_QUERY
+                    + createInClause(recordFilter)
+                    + " and br.id=:recordId",
+                Long.class)
+            .setParameter(PARENT_ID, parentId)
+            .setParameter("recordId", recordId)
+            .uniqueResult()
+        > 0;
+  }
+
+  @Override
   public List<BaseRecord> loadRecordFromResults(List<Object> results) {
     List<BaseRecord> toReturn = new ArrayList<>();
     for (Object row : results) {
