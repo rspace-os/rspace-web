@@ -188,6 +188,20 @@ test.describe("Document image annotations", () => {
     sketch = await savedField.openSketch(savedImages.nth(0));
     expect(await sketch.strokeCount(), "The untouched copy keeps its original stroke").toBe(1);
     await sketch.cancel();
+
+    // A link from before 1.29 shows the oldest annotation, so editing its explicit copy separates them.
+    const legacySrc = `/image/getImage/${imageIds[0]}/1`;
+    await savedField.insertHtmlAtEnd(`<img id="${imageIds[0]}" class="imageDropped" src="${legacySrc}" alt="image" />`);
+    await expect(savedImages).toHaveCount(4);
+    sketch = await savedField.openSketch(savedImages.nth(0));
+    await sketch.drawStroke(0.75);
+    await sketch.insert();
+    const [separatedId] = await annotationIds(savedImages);
+    expect(separatedId).toMatch(/^\d+$/);
+    expect(separatedId).not.toBe(firstId);
+    sketch = await savedField.openSketch(savedImages.nth(3));
+    expect(await sketch.strokeCount(), "The legacy copy keeps the original stroke").toBe(1);
+    await sketch.cancel();
   });
 
   test("As a user, I see an error when a sketch save fails and can insert the sketch again", async ({

@@ -564,13 +564,13 @@ var sketchDialog = {
       data.parentId = this.fieldId;
       data.imageId = sketchId;
       var annotationId = sketchDialog.annotationId;
+      request.compositeId = this.fieldId + "-" + sketchId;
       if (saved) {
         data.annotationId = saved.data.id;
-      } else if (annotationId && $(ed.getBody()).find('img.imageDropped[data-id="' + annotationId + '"]').length === 1) {
+      } else if (annotationId && sketchDialog.isOnlyReference(ed, annotationId, request.compositeId)) {
         // images sharing one annotation keep it; the edited one gets a new annotation
         data.annotationId = annotationId;
       }
-      request.compositeId = this.fieldId + "-" + sketchId;
 
       request.url = prefix.concat("/image/ajax/saveImageAnnotation");
       request.templateUrl = "/fieldTemplates/ajax/annotatedImageLink";
@@ -583,6 +583,19 @@ var sketchDialog = {
     });
     request.formData.append("image", sketchDialog.dataUrlToBlob(dataPng), "sketch.png");
     return request;
+  },
+
+  /**
+   * Whether the edited image is the only one showing the annotation. A legacy link to the same
+   * field and image shows the field's oldest annotation for that image, which may be this one.
+   */
+  isOnlyReference: function (ed, annotationId, compositeId) {
+    var body = $(ed.getBody());
+    var legacySrc = "/image/getImage/" + compositeId + "/";
+    var legacyLinks = body.find("img.imageDropped").filter(function () {
+      return !this.hasAttribute("data-id") && (this.getAttribute("src") || "").indexOf(legacySrc) !== -1;
+    });
+    return legacyLinks.length === 0 && body.find('img.imageDropped[data-id="' + annotationId + '"]').length === 1;
   },
 
   /** Inserts the saved sketch into the editor and closes the dialog, which discards savedResult. */
