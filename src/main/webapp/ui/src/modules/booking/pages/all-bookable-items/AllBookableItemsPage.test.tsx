@@ -52,6 +52,11 @@ type BookingConfigurationsBulkResult = v.InferInput<typeof BookingConfigurations
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
 beforeEach(() => {
+  server.use(
+    http.get("/api/v2/booking-catalogue/availability-counts", () =>
+      HttpResponse.json({ availableNow: 2, freeLaterToday: 1 }),
+    ),
+  );
   vi.mocked(useCurrentUserQuery).mockReturnValue({
     data: { hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
@@ -190,6 +195,16 @@ describe("BookableItemsPage", () => {
       defaultColumns: bookingConfigurationConfig.defaultColumns,
       malformed: "issue",
     });
+  });
+
+  it("shows today's server availability counts", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(pagedCollectionResponse([bookingConfiguration], 1)),
+      ),
+    );
+    renderBookableItemsPage();
+    expect(await screen.findByText("booking:allBookableItems.quickFilters.availableNow: 2")).toBeInTheDocument();
   });
 
   it("starts at the first page when applying the owner-attention filter", async () => {

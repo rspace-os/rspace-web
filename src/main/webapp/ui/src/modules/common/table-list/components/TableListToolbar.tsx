@@ -38,6 +38,7 @@ export function TableListToolbar<TDocument>({
   debounceSearch = false,
   onPanelChange,
   onReset,
+  resetView,
 }: {
   config: ResolvedCollectionConfig<TDocument>;
   collectionLabel: string;
@@ -53,6 +54,7 @@ export function TableListToolbar<TDocument>({
   debounceSearch?: boolean;
   onPanelChange: (panel: TableListControlPanel) => void;
   onReset: () => void;
+  resetView?: () => void;
 }) {
   const { t } = useTranslation("common");
   const filtering = features.filtering;
@@ -187,11 +189,15 @@ export function TableListToolbar<TDocument>({
                   size="icon"
                   variant="ghost"
                   onClick={() => {
-                    if (filtering !== false) filtering.onChange({ search: "", expression: null });
-                    if (features.sorting !== false) features.sorting.onChange(defaultSorting);
-                    if (features.columns !== false) features.columns.onChange(config.defaultColumns);
-                    toFirstPage(features.pagination);
-                    filterButtons?.onReset();
+                    if (resetView) {
+                      resetView();
+                    } else {
+                      if (filtering !== false) filtering.onChange({ search: "", expression: null });
+                      if (features.sorting !== false) features.sorting.onChange(defaultSorting);
+                      if (features.columns !== false) features.columns.onChange(config.defaultColumns);
+                      toFirstPage(features.pagination);
+                      filterButtons?.onReset();
+                    }
                     setSearchResetSignal((current) => current + 1);
                     onReset();
                   }}

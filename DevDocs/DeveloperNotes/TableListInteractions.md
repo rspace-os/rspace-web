@@ -160,6 +160,13 @@ function showEnabledExperiments() {
 
 Move the hook to the nearest common owner when distant siblings need the same state.
 
+## Reset and quick filters
+
+Pass `onReset` to `TableList` when a page owns table filters, pagination, and extra controls
+in one route search state. That callback replaces the default per-feature resets,
+including `filterButtons.onReset`; it must reset the complete view in one update.
+Independent state owners can omit the callback and keep the built-in reset behavior.
+
 ## Browser query and storage defaults
 
 `useTableList` and `useApiV2TableList` keep the view in component state: they never touch the URL or
