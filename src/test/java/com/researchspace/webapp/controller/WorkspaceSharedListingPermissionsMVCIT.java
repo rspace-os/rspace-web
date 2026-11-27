@@ -155,9 +155,9 @@ public class WorkspaceSharedListingPermissionsMVCIT extends MVCTestBase {
     assertTrue(listingContains(listing, docSharedRead));
     assertTrue(listingContains(listing, docSharedEdit));
     ActionPermissionsDTO dto = permissionsDto();
-    // a sharee is not the owner: export only, whatever the share permission
+    // a sharee is not the owner: export only, plus rename when they can edit it (RSDEV-1453)
     assertFlags(dto, docSharedRead, false, false, false, true, false);
-    assertFlags(dto, docSharedEdit, false, false, false, true, false);
+    assertFlags(dto, docSharedEdit, true, false, false, true, false);
   }
 
   @Test

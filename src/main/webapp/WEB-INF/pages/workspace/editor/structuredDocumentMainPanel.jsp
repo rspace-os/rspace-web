@@ -175,7 +175,7 @@
 <jsp:include page="include/photoswipe.jsp" />
 <script>
   var editable = '${editStatus}';
-   var isEditable = '${editStatus.editable}';
+   var isEditable = ${editStatus.editable or editStatus eq 'CANNOT_EDIT_OTHER_EDITING'};
     var editor = '${editor}';
     var hasAutosave = '${hasAutosave}';
     var modificationDate = '${modificationDate}';

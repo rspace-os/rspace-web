@@ -178,7 +178,8 @@ public class WorkspacePermissionsDTOBuilder {
   }
 
   private boolean calculateRenameEnabled(User usr, BaseRecord br) {
-    return br.getSharingACL().isPermitted(usr, PermissionType.RENAME)
+    return (br.getSharingACL().isPermitted(usr, PermissionType.RENAME)
+            || permissionUtils.isRenamePermittedByEditAccess(br, usr))
         && !br.hasType(SHARED_GROUP_FOLDER_ROOT); // rspac-1636
   }
 
