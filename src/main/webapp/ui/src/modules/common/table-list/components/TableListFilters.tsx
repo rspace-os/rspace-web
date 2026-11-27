@@ -14,16 +14,9 @@ import { useTableListDragSensors } from "../hooks/useTableListDragSensors";
 import { serializeRsqlExpression } from "../rsql";
 import type { FilterExpression, TableListRuntimeFields } from "../types";
 import { allOf } from "../utils/expressions";
-import {
-  comparisonNodes,
-  type DraftRule,
-  defaultOperator,
-  isActive,
-  parsedValue,
-  sentinelFor,
-} from "../utils/filterDrafts";
+import { comparisonNodes, type DraftRule, defaultOperator, isActive, parsedValue } from "../utils/filterDrafts";
 import { groupRuntimeFieldSources, type RuntimeFieldSourceGroup } from "./CustomFieldPicker";
-import { FilterRuleRow } from "./FilterRuleRow";
+import { customFieldOptionValue, FilterRuleRow } from "./FilterRuleRow";
 import type { FilterSelectOption } from "./FilterSelect";
 
 type FieldLabels = ReturnType<typeof useFieldLabels>;
@@ -64,7 +57,7 @@ function filterFieldOptions<TDocument>(
     ...groups.map((group): FilterSelectOption => {
       const viaLabel = group.via ? text(group.via.label) : "";
       return {
-        value: sentinelFor(group.key),
+        value: customFieldOptionValue(group.key),
         label: t("tableList.filters.customField.option"),
         selectedLabel:
           viaLabel === ""
