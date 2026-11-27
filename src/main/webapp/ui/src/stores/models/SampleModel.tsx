@@ -623,7 +623,10 @@ export default class SampleModel
       storageTempMax: this.storageTempMax,
       newBase64Image,
       fields: [
-        ...this.fields.map((f) => f.paramsForBackend),
+        // a template's default link cannot target a filestore item
+        ...this.fields.map((f) =>
+          f.link?.filestoreTarget ? { ...f.paramsForBackend, link: null } : f.paramsForBackend,
+        ),
         ...this.extraFields.map(({ name, type, content, id }) => ({
           name,
           type,
