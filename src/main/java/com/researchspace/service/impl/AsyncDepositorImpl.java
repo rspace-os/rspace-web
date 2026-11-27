@@ -552,13 +552,14 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   private FileStore fileStore;
 
   /**
-   * Sets the ticked plan's identifier on the deposit metadata, read from the plan's stored file by
-   * the plan's own platform, whatever is switched on. Only Zenodo reads it, so several ticked plans
-   * are refused there and set nothing elsewhere. A plan without a readable identifier sets nothing.
+   * Sets the ticked plan's identifier on a Zenodo deposit's metadata, read from the plan's stored
+   * file by the plan's own platform, whatever is switched on. Only Zenodo reads it, so other
+   * repositories skip the lookup and several ticked plans are refused on Zenodo. A plan without a
+   * readable identifier sets nothing.
    */
   private SubmissionMetadata setPlanIdentifierOnSubmissionMetadata(
       User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig) {
-    if (!archiveConfig.hasDMPs()) {
+    if (!archiveConfig.hasDMPs() || !APP_ZENODO.equals(archiveConfig.getAppName())) {
       return metadata;
     }
     List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
@@ -573,12 +574,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           subject.getUsername());
       return metadata;
     }
-    if (selected.size() > 1 && APP_ZENODO.equals(archiveConfig.getAppName())) {
-      throw new NoSuchElementException(messages.getMessage("apps.dmp.errors.zenodoSinglePlanOnly"));
-    }
     if (selected.size() > 1) {
-      log.info("{} plans selected, so no plan identifier is set on the deposit", selected.size());
-      return metadata;
+      throw new NoSuchElementException(messages.getMessage("apps.dmp.errors.zenodoSinglePlanOnly"));
     }
     readPlanIdentifier(selected.get(0))
         .ifPresent(identifier -> metadata.setDmpDoi(Optional.of(identifier)));

@@ -768,7 +768,7 @@ public class AsyncDepositorImplTest {
 
   @Test
   void twoTickedPlansOnDataverseAreDepositedWithoutPlanDoiAndBothAreReported() throws Exception {
-    givenDepositorWithPlans(plan(1L), plan(2L));
+    wireDepositor();
     givenDepositSucceeds();
     RepoDepositConfig cfg = depositConfigWithPlans(App.APP_DATAVERSE, 1L, 2L);
 
@@ -790,6 +790,26 @@ public class AsyncDepositorImplTest {
     assertTrue(metadata.getValue().getDmpDoi().isEmpty());
     Mockito.verify(dmpUpdateHandler)
         .report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L, 2L)));
+  }
+
+  @Test
+  void depositOutsideZenodoDoesNotLookUpTickedPlans() throws Exception {
+    wireDepositor();
+    givenDepositSucceeds();
+
+    RepositoryOperationResult result =
+        depositor
+            .depositArchive(
+                new App(APP_DATAVERSE, "Dataverse", true),
+                anyUser,
+                repository,
+                depositConfigWithPlans(App.APP_DATAVERSE, 1L),
+                null,
+                CompletableFuture.completedFuture(new ArchiveResult()))
+            .get();
+
+    assertTrue(result.isSucceeded(), result.getMessage());
+    Mockito.verifyNoInteractions(dmpManager, fileStore);
   }
 
   @Test
@@ -848,10 +868,10 @@ public class AsyncDepositorImplTest {
 
     depositor
         .depositArchive(
-            new App(APP_DATAVERSE, "Dataverse", true),
+            new App(APP_ZENODO, "Zenodo", true),
             anyUser,
             repository,
-            depositConfigWithPlans(App.APP_DATAVERSE, 1L),
+            depositConfigWithPlans(APP_ZENODO, 1L),
             null,
             CompletableFuture.completedFuture(new ArchiveResult()))
         .get();
