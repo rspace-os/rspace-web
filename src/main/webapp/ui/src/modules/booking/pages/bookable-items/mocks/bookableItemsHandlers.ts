@@ -1,14 +1,23 @@
 import { parse } from "@rsql/parser";
 import { HttpResponse, http, type RequestHandler } from "msw";
+import type * as v from "valibot";
 import { apiV2CollectionResponse, apiV2ListResult } from "@/__tests__/mocks/apiV2CollectionMock";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import type { ApiV2RuntimeFieldCatalog } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldCatalog";
 import type { ApiV2RuntimeFieldSearch } from "@/modules/common/api/v2/generated/models/apiV2RuntimeFieldSearch";
 import type { BookingCatalogueLocationPageDocument } from "@/modules/common/api/v2/generated/models/bookingCatalogueLocationPageDocument";
+import type {
+  BookingCalendarSubscriptionCreatedSchema,
+  BookingCalendarSubscriptionStatusSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import { dereferenceApiV2OpenApi } from "@/modules/common/api/v2/openApiReferences";
 import { bookableItemFixtures, sampleBookingEvents } from "./bookableItemFixtures";
 import { bookableItemsOpenApi } from "./bookableItemsOpenApi";
+
+/** Subscription responses as JSON carries them, before the transport decodes `updatedAt`. */
+type BookingCalendarSubscriptionStatus = v.InferInput<typeof BookingCalendarSubscriptionStatusSchema>;
+type BookingCalendarSubscriptionCreated = v.InferInput<typeof BookingCalendarSubscriptionCreatedSchema>;
 
 const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   ...booking,
@@ -305,21 +314,20 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       });
     }),
     http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-      HttpResponse.json<CalendarSubscriptionFixture>({ active: false, updatedAt: null, subscriptionUrl: null }),
+      HttpResponse.json<BookingCalendarSubscriptionStatus>(
+        { active: false, updatedAt: null, subscriptionUrl: null },
+        { headers: { ETag: '"inactive"' } },
+      ),
     ),
     http.post("/api/v2/booking-configurations/7/calendar-subscription", () =>
-      HttpResponse.json<CalendarSubscriptionFixture>({
-        active: true,
-        updatedAt: "2026-08-27T12:00:00.000Z",
-        subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
-      }),
+      HttpResponse.json<BookingCalendarSubscriptionCreated>(
+        {
+          active: true,
+          updatedAt: "2026-08-27T12:00:00.000Z",
+          subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+        },
+        { headers: { ETag: '"current"' } },
+      ),
     ),
   ];
 }
-
-// Calendar subscriptions are not part of this layer's published spec yet.
-type CalendarSubscriptionFixture = {
-  active: boolean;
-  updatedAt: string | null;
-  subscriptionUrl: string | null;
-};

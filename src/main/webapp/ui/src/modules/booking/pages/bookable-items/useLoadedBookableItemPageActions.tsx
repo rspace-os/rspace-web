@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import {
+  invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
   useDeleteBookingConfiguration,
   useLeaveBookingConfigurationAccess,
@@ -90,6 +91,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+        invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setArchiveOpen(false);
       setSaveAnnouncement("archived");
@@ -113,6 +115,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+        invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setSaveAnnouncement("restored");
     },

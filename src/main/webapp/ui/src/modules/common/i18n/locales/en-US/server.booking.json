@@ -1,6 +1,12 @@
 {
   "bookingCalendarFeed": {
-    "myBookings": "My RSpace bookings"
+    "bookedBy": "Booked by: {0}",
+    "bookingSummary": "{0} - Booking",
+    "createdBy": "Created by: {0}",
+    "fileNameFallback": "booking",
+    "maintenanceSummary": "{0} - Maintenance",
+    "myBookings": "My RSpace bookings",
+    "purpose": "Purpose: {0}"
   },
   "bookingFixtures": {
     "description": "Docker development booking fixture",

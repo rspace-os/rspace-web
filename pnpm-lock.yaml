@@ -257,6 +257,9 @@ importers:
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
+      '@fortawesome/free-brands-svg-icons':
+        specifier: 7.3.1
+        version: 7.3.1
       '@fortawesome/free-regular-svg-icons':
         specifier: 7.3.1
         version: 7.3.1
@@ -517,8 +520,8 @@ importers:
         specifier: 2.1.5
         version: 2.1.5(hono@4.13.13)
       '@ls-lint/ls-lint':
-        specifier: 2.3.1
-        version: 2.3.1
+        specifier: 2.3.2
+        version: 2.3.2
       '@msw/serve':
         specifier: 0.11.0
         version: 0.11.0(hono@4.13.13)(msw@3.0.3(@types/node@24.12.4)(graphql@16.14.2)(supports-color@7.2.0)(typescript@7.0.2)(vite@8.2.4(@types/node@24.12.4)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))
@@ -1525,6 +1528,10 @@ packages:
     resolution: {integrity: sha512-BoxVN3PKnMbgStHhjoaky/oWdxHomDqmBVA24IA3KEmssFGeI7u9YT/BJceOjIum/t6TpPa/vcMKaVYQeIQ/3Q==}
     engines: {node: '>=6'}
 
+  '@fortawesome/free-brands-svg-icons@7.3.1':
+    resolution: {integrity: sha512-8eiNzycuFhy3mZsi5EVO8JpO3H8l7/kSCl4Gk4iUew9hJuzYFqAAD6kqgeEup3+YZ9hL+5cjjorGzrRLkYuURg==}
+    engines: {node: '>=6'}
+
   '@fortawesome/free-regular-svg-icons@7.3.1':
     resolution: {integrity: sha512-q1EsmL7Q8DDnkRBUjSvrxbq7c9oVwwVjCn/xa5apKmdp65YSgzUg2y0Ltnd5aDbT6GdAQQdXql5Ha90ArqIReQ==}
     engines: {node: '>=6'}
@@ -1941,8 +1948,8 @@ packages:
   '@lezer/yaml@1.0.4':
     resolution: {integrity: sha512-2lrrHqxalACEbxIbsjhqGpSW8kWpUKuY6RHgnSAFZa6qK62wvnPxA8hGOwOoDbwHcOFs5M4o27mjGu+P7TvBmw==}
 
-  '@ls-lint/ls-lint@2.3.1':
-    resolution: {integrity: sha512-vPe6IDByQnQRTxcAYjTxrmga/tSIui50VBFTB5KIJWY3OOFmxE2VtymjeSEfQfiMbhZV/ZPAqYy2lt8pZFQ0Rw==}
+  '@ls-lint/ls-lint@2.3.2':
+    resolution: {integrity: sha512-8GPo2oRjpEEX/soVzWqb692mwrt9iKs3Z9xK7abSonyizmSVsdLwSQWS4OmqPIwwKdungwhNkzsmPwNFg9gSgg==}
     cpu: [x64, arm64, s390x, ppc64le]
     os: [darwin, linux, win32]
     hasBin: true
@@ -9526,6 +9533,10 @@ snapshots:
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.3.1
 
+  '@fortawesome/free-brands-svg-icons@7.3.1':
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 7.3.1
+
   '@fortawesome/free-regular-svg-icons@7.3.1':
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.3.1
@@ -9994,7 +10005,7 @@ snapshots:
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.10
 
-  '@ls-lint/ls-lint@2.3.1': {}
+  '@ls-lint/ls-lint@2.3.2': {}
 
   '@marijn/find-cluster-break@1.0.4': {}
 

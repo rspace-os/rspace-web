@@ -294,7 +294,7 @@ final class ApiV2OpenApiQueryParameters {
         "If-Match",
         "header",
         required,
-        ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
+        ordered("type", "string", "pattern", "^\\\"[!#-~]+\\\"$"),
         description);
   }
 
