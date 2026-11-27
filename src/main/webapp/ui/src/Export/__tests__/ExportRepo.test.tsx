@@ -380,6 +380,53 @@ describe("ExportRepo", () => {
       await waitFor(() => expect(sentMeta()?.tags).toEqual(tags));
     });
 
+    test("switches to a repository with fewer licences after the saved licence was restored", async () => {
+      const user = userEvent.setup();
+      const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
+      await renderWithRealI18n(
+        <ExportRepo
+          repoDetails={{
+            ...props.repoDetails,
+            repoChoice: 0,
+            meta: {
+              ...props.repoDetails.meta,
+              title: "Survey data",
+              description: "Survey data",
+              licenseName: "CC-BY-4.0",
+            },
+          }}
+          repoList={[dataverseWithTwoLicences, { ...zenodoRepoList[0], linkedDMPs: plans, repoCfg: -1 }]}
+          state={DEFAULT_STATE}
+          updateRepoConfig={updateRepoConfig}
+          validator={mkValidator()}
+          fetchTags={props.fetchTags}
+        />,
+        { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
+      );
+      await user.click(await screen.findByRole("radio", { name: "Zenodo" }));
+
+      const sent = updateRepoConfig.mock.lastCall?.[0] as (RepoDetails & { appName?: string }) | undefined;
+      expect(sent?.appName).toBe("app.zenodo");
+      expect(sent?.meta.licenseName).toBe("CC-0");
+    });
+
+    test.each([
+      ["edited", [{ value: "edited", vocabulary: "RSpace", uri: "", version: "" }]],
+      ["cleared", []],
+    ])("keeps %s tags from the saved request when a plan is ticked after going back", async (_, savedTags) => {
+      const fetchTags = vi.fn().mockResolvedValue([{ value: "original", vocabulary: "RSpace", uri: "", version: "" }]);
+      const { user, sentMeta } = await renderDataverse(
+        {
+          ...props.repoDetails,
+          meta: { ...props.repoDetails.meta, title: "Survey data", description: "Survey data", tags: savedTags },
+        } as RepoDetails,
+        fetchTags,
+      );
+      await tick(user, "River survey plan");
+
+      expect(sentMeta()?.tags).toEqual(savedTags);
+    });
+
     test("restores the switch and ticked plans from the saved request when reopened", async () => {
       const { associateSwitch } = await renderWithPlans([2]);
       expect(associateSwitch).toBeChecked();

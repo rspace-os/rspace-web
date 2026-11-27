@@ -141,6 +141,8 @@ function ExportRepo({
   const savedLicense = (repoList[repoDetails.repoChoice]?.license.licenses ?? []).findIndex(
     (license) => license.licenseDefinition.name === repoDetails.meta.licenseName,
   );
+  // the saved request carries the deposit tags once the form has been saved, an empty list included
+  const savedTags = (repoDetails.meta as { tags?: Array<Tag> }).tags;
   const [state] = useState(
     observable({
       inputValidations: STANDARD_VALIDATIONS,
@@ -158,7 +160,7 @@ function ExportRepo({
       selectedPlans: repoDetails.selectedDMPs,
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
-      tags: [] as Array<Tag>,
+      tags: savedTags ?? ([] as Array<Tag>),
       metadataLanguage:
         typeof savedOtherProperties.metadataLanguage === "string" ? savedOtherProperties.metadataLanguage : "",
       exportToRaid: upstreamState.repositoryConfig.exportToRaid,
@@ -169,6 +171,7 @@ function ExportRepo({
     state.linkDMP ? listedPlans(state.selectedPlans, repoList[state.repoChoice].linkedDMPs) : [];
 
   useEffect(() => {
+    if (savedTags) return;
     void (async () => {
       setFetchingTags(true);
       const tags = await fetchTags();
@@ -247,6 +250,8 @@ function ExportRepo({
   }) => {
     runInAction(() => {
       state[event.target.name] = event.target.value;
+      // a licence index only means something in its own repository's list
+      if (event.target.name === "repoChoice") state.license = 0;
     });
     updateRemoteConfig();
   };
